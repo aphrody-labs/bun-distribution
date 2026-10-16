@@ -10,8 +10,8 @@ set -euo pipefail
 # ADAPTER.json records the infra commit and every installed hash; the bundle
 # adapter refuses a bundle pinned to another aphrody-infra commit. Reinstall
 # after changing any adapter or config/{service-catalog,secrets-contract}.json
-# or yolo tools/config/host/nginx/routes.json (installed as nginx-routes.json).
-yolo_routes="${YOLO_ROOT:-$HOME/src/aphrody}/tools/config/host/nginx/routes.json"
+# or yolo infra/config/host/nginx/routes.json (installed as nginx-routes.json).
+yolo_routes="${YOLO_ROOT:-$HOME/src/aphrody}/infra/config/host/nginx/routes.json"
 infra="${APHRODY_ADAPTER_SOURCE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 sbin="${APHRODY_ADAPTER_SBIN:-/usr/local/sbin}"
 share="${APHRODY_ADAPTER_SHARE:-/usr/local/share/aphrody-infra}"
@@ -39,7 +39,7 @@ if [[ -n "$source_manifest" ]]; then
 import hashlib, json, pathlib, sys
 manifest_path, root, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
 m = json.loads(manifest_path.read_text())
-expected = {'scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'scripts/release/shenron_deployment_identity.py', 'tools/config/service-catalog.json', 'config/nginx-routes.json', 'tools/config/secrets-contract.json'}
+expected = {'scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'scripts/release/shenron_deployment_identity.py', 'infra/config/service-catalog.json', 'config/nginx-routes.json', 'tools/config/secrets-contract.json'}
 if m.get('backupOwner') is True: expected.update({'scripts/tools/infra/backup-shenron-sqlite.sh'})
 if m.get('schemaVersion') != 1 or m.get('repository') != 'aphrody-labs/aphrody' or m.get('stack') != 'shenron' or m.get('sourceCommit') != revision or set(m.get('files', {})) != expected:
     raise SystemExit('sealed adapter source manifest differs from requested revision/files')
@@ -82,13 +82,13 @@ destination.parent.mkdir(parents=True, exist_ok=True)
 stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destination.parent))
 try:
     files = {}
-    selected = ['scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'scripts/release/shenron_deployment_identity.py', 'tools/config/service-catalog.json', 'config/nginx-routes.json', 'tools/config/secrets-contract.json']
+    selected = ['scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'scripts/release/shenron_deployment_identity.py', 'infra/config/service-catalog.json', 'config/nginx-routes.json', 'tools/config/secrets-contract.json']
     if backup_owner: selected += ['scripts/tools/infra/backup-shenron-sqlite.sh']
     for relative in selected:
         source = root / relative
         target = stage / relative; target.parent.mkdir(parents=True, exist_ok=True)
         if relative == 'config/nginx-routes.json':
-            # Routes are owned by yolo (tools/config/host/nginx/routes.json), not by the aphrody revision.
+            # Routes are owned by yolo (infra/config/host/nginx/routes.json), not by the aphrody revision.
             if yolo_routes.is_symlink() or not yolo_routes.is_file(): raise ValueError('yolo routes must be a regular file')
             shutil.copy2(yolo_routes, target)
         elif committed:

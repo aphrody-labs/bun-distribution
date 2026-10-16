@@ -18,15 +18,7 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, posix } from "node:path";
-import {
-  aphrodyRoot,
-  buildFactoryInfo,
-  onPath,
-  sshCapture,
-  sshService,
-  sshServiceArgs,
-  sshTune,
-} from "./aphrody";
+import { aphrodyRoot, buildFactoryInfo, onPath, sshCapture, sshService, sshServiceArgs, sshTune } from "./aphrody";
 import {
   type Audit,
   type Finding,
@@ -60,13 +52,7 @@ import {
   removalRefusals,
   isDatabasePath,
 } from "./host-safety";
-import {
-  estimateReclaim,
-  parseDfSizeAvail,
-  resolveMinFree,
-  scanLinks,
-  spaceGate,
-} from "./host-space";
+import { estimateReclaim, parseDfSizeAvail, resolveMinFree, scanLinks, spaceGate } from "./host-space";
 
 export const HOSTS: readonly HostName[] = ["vps", "dbfr", "local"];
 export const HOST_COMMANDS = [
@@ -88,10 +74,8 @@ export function sq(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
-const isTTY =
-  process.stdout.isTTY === true && process.env["NO_COLOR"] === undefined;
-const paint = (code: string, s: string): string =>
-  isTTY ? `\x1b[${code}m${s}\x1b[0m` : s;
+const isTTY = process.stdout.isTTY === true && process.env["NO_COLOR"] === undefined;
+const paint = (code: string, s: string): string => (isTTY ? `\x1b[${code}m${s}\x1b[0m` : s);
 const bold = (s: string): string => paint("1", s);
 const red = (s: string): string => paint("31", s);
 const yellow = (s: string): string => paint("33", s);
@@ -103,17 +87,12 @@ function pad(s: string, width: number, right = false): string {
   return right ? " ".repeat(gap) + s : s + " ".repeat(gap);
 }
 
-function table(
-  rows: readonly (readonly string[])[],
-  right: readonly number[] = [],
-): string {
+function table(rows: readonly (readonly string[])[], right: readonly number[] = []): string {
   if (rows.length === 0) return "";
-  const widths = rows[0]!.map((_, i) =>
-    Math.max(...rows.map((r) => Bun.stringWidth(r[i] ?? ""))),
-  );
+  const widths = rows[0]!.map((_, i) => Math.max(...rows.map(r => Bun.stringWidth(r[i] ?? ""))));
   return rows
     .map(
-      (r) =>
+      r =>
         "  " +
         r
           .map((c, i) => pad(c, widths[i] ?? 0, right.includes(i)))
@@ -200,9 +179,7 @@ export class RemoteTransport implements Transport {
 export function makeTransport(host: HostName): Transport {
   if (host === "local") return new LocalTransport();
   if (!onPath("aphrody-infra")) {
-    throw new Error(
-      `\`aphrody-infra\` is not on PATH (Aphrody install: ${aphrodyRoot()})`,
-    );
+    throw new Error(`\`aphrody-infra\` is not on PATH (Aphrody install: ${aphrodyRoot()})`);
   }
   return new RemoteTransport(host);
 }
@@ -214,10 +191,9 @@ export function policyFile(yoloRoot: string, explicit?: string): string | null {
     explicit,
     process.env["YOLO_HOST_POLICY"],
     join(process.cwd(), "host-policy.toml"),
-    join(yoloRoot, "tools/config/host/host-policy.toml"),
+    join(yoloRoot, "infra/config/host/host-policy.toml"),
   ];
-  for (const c of candidates)
-    if (c !== undefined && c !== "" && existsSync(c)) return c;
+  for (const c of candidates) if (c !== undefined && c !== "" && existsSync(c)) return c;
   return null;
 }
 
@@ -228,34 +204,25 @@ export function loadPolicy(
 ): { policy: Policy; file: string | null } {
   const file = policyFile(yoloRoot, explicit);
   return {
-    policy: parsePolicy(
-      file === null ? null : readFileSync(file, "utf8"),
-      host,
-    ),
+    policy: parsePolicy(file === null ? null : readFileSync(file, "utf8"), host),
     file,
   };
 }
 
 export function expandHome(p: string, home: string): string {
-  return p === "~"
-    ? home
-    : p.startsWith("~/")
-      ? posix.join(home, p.slice(2))
-      : p;
+  return p === "~" ? home : p.startsWith("~/") ? posix.join(home, p.slice(2)) : p;
 }
 
 /** Quote a policy path for a shell script, keeping `~` as "$HOME". Throws on anything unusual. */
 function shellPath(p: string): string {
-  if (!/^[~/][\w./@+-]*$/.test(p))
-    throw new Error(`unsupported path in policy: ${p}`);
+  if (!/^[~/][\w./@+-]*$/.test(p)) throw new Error(`unsupported path in policy: ${p}`);
   if (p === "~") return '"$HOME"';
   if (p.startsWith("~/")) return `"$HOME"/${sq(p.slice(2))}`;
   return sq(p);
 }
 
 function shellGlob(p: string): string {
-  if (!/^\/[\w./@+*?-]*$/.test(p))
-    throw new Error(`unsupported glob in policy: ${p}`);
+  if (!/^\/[\w./@+*?-]*$/.test(p)) throw new Error(`unsupported glob in policy: ${p}`);
   return p;
 }
 
@@ -263,12 +230,7 @@ function shellGlob(p: string): string {
 export function effectiveLocks(host: HostName, policy: Policy): string[] {
   const out = [...policy.locks];
   const factory = buildFactoryInfo();
-  if (
-    factory !== null &&
-    factory.target === host &&
-    !out.includes(factory.lockPath)
-  )
-    out.push(factory.lockPath);
+  if (factory !== null && factory.target === host && !out.includes(factory.lockPath)) out.push(factory.lockPath);
   return out;
 }
 
@@ -313,50 +275,32 @@ export const SECTIONS = [
 export type Section = (typeof SECTIONS)[number];
 
 /** What mutating subcommands need before they act: identity, build processes, locks, swap and disk usage. */
-export const FACT_SECTIONS: readonly Section[] = [
-  "identity",
-  "df",
-  "swapon",
-  "ps",
-  "cwds",
-  "locks",
-];
+export const FACT_SECTIONS: readonly Section[] = ["identity", "df", "swapon", "ps", "cwds", "locks"];
 
-export const ROTATED_LOG_PATTERNS = [
-  "*.gz",
-  "*.xz",
-  "*.zst",
-  "*.[0-9]",
-  "*.old",
-] as const;
+export const ROTATED_LOG_PATTERNS = ["*.gz", "*.xz", "*.zst", "*.[0-9]", "*.old"] as const;
 
 export function rotatedLogsFind(days: number, tail: string): string {
-  const names = ROTATED_LOG_PATTERNS.map((n) => `-name '${n}'`).join(" -o ");
+  const names = ROTATED_LOG_PATTERNS.map(n => `-name '${n}'`).join(" -o ");
   return `find /var/log -xdev -type f \\( ${names} \\) -mtime +${Math.floor(days)} ${tail}`;
 }
 
 /** The read-only collector. Its text is what `yolo host audit --print-script` shows. */
-export function collectorScript(
-  sections: readonly Section[],
-  policy: Policy,
-  locks: readonly string[],
-): string {
+export function collectorScript(sections: readonly Section[], policy: Policy, locks: readonly string[]): string {
   const roots = policy.reclaim.scanRoots.map(shellPath).join(" ");
   const caches = policy.reclaim.cacheDirs.map(shellPath).join(" ");
   const exclude = policy.reclaim.excludeNames
-    .map((n) => {
-      if (!/^[\w.@+-]+$/.test(n))
-        throw new Error(`unsupported exclude name in policy: ${n}`);
+    .map(n => {
+      if (!/^[\w.@+-]+$/.test(n)) throw new Error(`unsupported exclude name in policy: ${n}`);
       return `-name ${sq(n)}`;
     })
     .join(" -o ");
   const duExclude = policy.reclaim.excludeNames
-    .filter((n) => !n.startsWith("."))
-    .map((n) => `--exclude=${sq(n)}`)
+    .filter(n => !n.startsWith("."))
+    .map(n => `--exclude=${sq(n)}`)
     .join(" ");
   const swapGlobs = policy.reclaim.swapFileGlobs.map(shellGlob).join(" ");
   const age = Math.floor(policy.reclaim.buildArtifactMinAgeDays);
-  const lockList = locks.map((l) => sq(normalizePath(l))).join(" ");
+  const lockList = locks.map(l => sq(normalizePath(l))).join(" ");
   const body: Record<Section, string> = {
     identity: String.raw`echo "user=$ME"; echo "uid=$(id -u)"; echo "home=$HOME"; echo "hostname=$(hostname)"
 echo "kernel=$(uname -r)"; echo "os=$(. /etc/os-release 2>/dev/null; echo "$PRETTY_NAME")"
@@ -370,13 +314,10 @@ done`,
     df: "df -PT -B1 2>/dev/null",
     dfi: "df -Pi 2>/dev/null",
     mounts: "findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS 2>/dev/null",
-    swapon:
-      "swapon --noheadings --raw --bytes --show=NAME,TYPE,SIZE,USED,PRIO 2>/dev/null",
+    swapon: "swapon --noheadings --raw --bytes --show=NAME,TYPE,SIZE,USED,PRIO 2>/dev/null",
     zram: "zramctl --noheadings --raw --bytes -o NAME,DISKSIZE,DATA,COMPR,ALGORITHM 2>/dev/null",
-    services:
-      "systemctl list-units --type=service --state=running --no-legend --plain --no-pager 2>/dev/null",
-    failed:
-      "systemctl list-units --state=failed --no-legend --plain --no-pager 2>/dev/null",
+    services: "systemctl list-units --type=service --state=running --no-legend --plain --no-pager 2>/dev/null",
+    failed: "systemctl list-units --state=failed --no-legend --plain --no-pager 2>/dev/null",
     timers: "systemctl list-timers --all --no-legend --no-pager 2>/dev/null",
     ports: "$S ss -H -tulnp 2>/dev/null",
     ps: "ps -eo pid=,ppid=,rss=,pcpu=,etimes=,stat=,user:32=,args= 2>/dev/null",
@@ -437,7 +378,7 @@ done`,
 if [ "$(id -u)" != 0 ] && sudo -n true 2>/dev/null; then S="sudo -n"; fi
 ME=$(id -un)
 sec() { printf '@@@ %s\n' "$1"; }`;
-  const parts = sections.map((s) => `sec ${s}\n${body[s]}`);
+  const parts = sections.map(s => `sec ${s}\n${body[s]}`);
   return `${prelude}\n${parts.join("\n")}\n`;
 }
 
@@ -446,29 +387,15 @@ export function wrapScript(script: string): string {
   return `printf %s ${sq(Buffer.from(script).toString("base64"))} | base64 -d | sh`;
 }
 
-export async function collect(
-  t: Transport,
-  policy: Policy,
-  sections: readonly Section[] = SECTIONS,
-): Promise<Audit> {
-  const script = collectorScript(
-    sections,
-    policy,
-    effectiveLocks(t.host, policy),
-  );
+export async function collect(t: Transport, policy: Policy, sections: readonly Section[] = SECTIONS): Promise<Audit> {
+  const script = collectorScript(sections, policy, effectiveLocks(t.host, policy));
   const r = await t.exec(wrapScript(script), 300);
   if (r.code !== 0 && r.stdout.trim() === "")
-    throw new Error(
-      `collector failed on ${t.host} (exit ${r.code}): ${r.stderr.trim().slice(0, 300)}`,
-    );
+    throw new Error(`collector failed on ${t.host} (exit ${r.code}): ${r.stderr.trim().slice(0, 300)}`);
   return buildAudit(t.host, r.stdout);
 }
 
-export function pathContext(
-  a: Audit,
-  host: HostName,
-  policy: Policy,
-): PathContext {
+export function pathContext(a: Audit, host: HostName, policy: Policy): PathContext {
   return {
     user: a.identity.user,
     home: a.identity.home,
@@ -477,7 +404,7 @@ export function pathContext(
 }
 
 export function heldLocks(a: Audit): LockState[] {
-  return a.locks.filter((l) => l.state === "held");
+  return a.locks.filter(l => l.state === "held");
 }
 
 /** Run a command as root: itself when root, `sudo -n sh -c` when sudo is passwordless, null otherwise. */
@@ -488,7 +415,7 @@ export function asRoot(id: Identity, cmd: string): string | null {
 
 export function metricsCommand(paths: readonly string[]): string {
   const frees = [...new Set(paths)].map(
-    (p) =>
+    p =>
       `d=${sq(p)}; while [ ! -e "$d" ] && [ "$d" != / ]; do d=$(dirname "$d"); done; printf 'free:%s=%s\\n' ${sq(p)} "$(df -PB1 -- "$d" 2>/dev/null | awk 'NR==2{print $4}')"`,
   );
   return [
@@ -533,11 +460,9 @@ export interface Step {
   /** extra exit codes that count as success */
   readonly okCodes?: readonly number[] | undefined;
   /** re-checked at run time; a string refuses the step */
-  readonly gate?:
-    ((ctx: RunContext, state: RunState) => Promise<string | null>) | undefined;
+  readonly gate?: ((ctx: RunContext, state: RunState) => Promise<string | null>) | undefined;
   readonly record?: ((r: StepResult, state: RunState) => void) | undefined;
-  readonly run?:
-    ((ctx: RunContext, state: RunState) => Promise<StepResult>) | undefined;
+  readonly run?: ((ctx: RunContext, state: RunState) => Promise<StepResult>) | undefined;
 }
 
 export interface Plan {
@@ -580,25 +505,16 @@ export function journalPath(yoloRoot: string, host: HostName): string {
   return join(yoloRoot, "var/host", host, "journal.jsonl");
 }
 
-export async function appendJournal(
-  yoloRoot: string,
-  entry: JournalEntry,
-): Promise<void> {
+export async function appendJournal(yoloRoot: string, entry: JournalEntry): Promise<void> {
   const file = journalPath(yoloRoot, entry.host);
   await mkdir(dirname(file), { recursive: true });
   // a torn last line (crash, full disk) must not swallow the next record
   const f = Bun.file(file);
-  const torn =
-    (await f.exists()) &&
-    f.size > 0 &&
-    (await f.slice(f.size - 1).text()) !== "\n";
+  const torn = (await f.exists()) && f.size > 0 && (await f.slice(f.size - 1).text()) !== "\n";
   await appendFile(file, `${torn ? "\n" : ""}${JSON.stringify(entry)}\n`);
 }
 
-export async function readJournal(
-  yoloRoot: string,
-  host: HostName,
-): Promise<JournalEntry[]> {
+export async function readJournal(yoloRoot: string, host: HostName): Promise<JournalEntry[]> {
   const file = journalPath(yoloRoot, host);
   if (!existsSync(file)) return [];
   const out: JournalEntry[] = [];
@@ -615,39 +531,25 @@ export async function readJournal(
 
 export function renderPlan(plan: Plan): string {
   const lines: string[] = [];
-  lines.push(
-    `${bold(`yolo host ${plan.command}`)} on ${bold(plan.host)}: ${plan.steps.length} step(s)`,
-  );
+  lines.push(`${bold(`yolo host ${plan.command}`)} on ${bold(plan.host)}: ${plan.steps.length} step(s)`);
   for (const n of plan.notes) lines.push(`  note: ${n}`);
   plan.steps.forEach((s, i) => {
     const tags = [
       s.mutates ? "" : "read-only",
-      s.estimateBytes !== undefined && s.estimateBytes > 0
-        ? `~${fmtBytes(s.estimateBytes)}`
-        : "",
+      s.estimateBytes !== undefined && s.estimateBytes > 0 ? `~${fmtBytes(s.estimateBytes)}` : "",
       s.blocked !== undefined ? red(`BLOCKED: ${s.blocked}`) : "",
     ]
-      .filter((x) => x !== "")
+      .filter(x => x !== "")
       .join(", ");
-    lines.push(
-      `${String(i + 1).padStart(3)}. ${s.title}${tags === "" ? "" : ` ${dim(`[${tags}]`)}`}`,
-    );
-    const where =
-      s.kind === "local-exec"
-        ? "local$"
-        : s.kind === "inproc"
-          ? "in-process:"
-          : "$";
+    lines.push(`${String(i + 1).padStart(3)}. ${s.title}${tags === "" ? "" : ` ${dim(`[${tags}]`)}`}`);
+    const where = s.kind === "local-exec" ? "local$" : s.kind === "inproc" ? "in-process:" : "$";
     lines.push(`       ${where} ${s.cmd}`);
     if (s.undo !== null) lines.push(`       undo: ${s.undo}`);
   });
   const SHOWN = 8;
-  for (const k of plan.skipped.slice(0, SHOWN))
-    lines.push(`  left alone: ${k.what} (${k.why})`);
+  for (const k of plan.skipped.slice(0, SHOWN)) lines.push(`  left alone: ${k.what} (${k.why})`);
   if (plan.skipped.length > SHOWN)
-    lines.push(
-      `  left alone: ... and ${plan.skipped.length - SHOWN} more (--json lists them all)`,
-    );
+    lines.push(`  left alone: ... and ${plan.skipped.length - SHOWN} more (--json lists them all)`);
   return lines.join("\n");
 }
 
@@ -657,10 +559,7 @@ const nowId = (): string => Bun.randomUUIDv7().slice(0, 18);
  * Execute a plan. Refuses when a build lock is held; stops a group at its first failure; journals every
  * step. Returns 0 when all steps succeeded, 1 on failure, 3 on a refusal.
  */
-export async function executePlan(
-  plan: Plan,
-  ctx: RunContext,
-): Promise<number> {
+export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> {
   const run = nowId();
   const state: RunState = { verification: new Map(), values: new Map() };
   const policyLocks = effectiveLocks(ctx.host, ctx.policy);
@@ -694,19 +593,18 @@ export async function executePlan(
     if (policyLocks.length === 0) return null;
     const script = collectorScript(["locks"], ctx.policy, policyLocks);
     const r = await ctx.transport.exec(wrapScript(script), 60);
-    if (r.code !== 0)
-      return `cannot read the build lock state (exit ${r.code}): refusing to mutate`;
+    if (r.code !== 0) return `cannot read the build lock state (exit ${r.code}): refusing to mutate`;
     const held = heldLocks(buildAudit(ctx.host, r.stdout));
     return held.length === 0
       ? null
-      : `build lock held: ${held.map((l) => `${l.path} (pid ${l.pids.join(",")})`).join(", ")}`;
+      : `build lock held: ${held.map(l => `${l.path} (pid ${l.pids.join(",")})`).join(", ")}`;
   };
 
-  if (plan.steps.some((s) => s.mutates)) {
+  if (plan.steps.some(s => s.mutates)) {
     const held = await lockHeld();
     if (held !== null) {
       ctx.out(red(`refused: ${held}. Nothing was changed.`));
-      const first = plan.steps.find((s) => s.mutates) as Step;
+      const first = plan.steps.find(s => s.mutates) as Step;
       await journal(first, "refused", null, 0, null, null, held);
       return 3;
     }
@@ -717,20 +615,11 @@ export async function executePlan(
   let refused = false;
   for (const step of plan.steps) {
     const started = Bun.nanoseconds();
-    const elapsed = (): number =>
-      Math.round((Bun.nanoseconds() - started) / 1e6);
+    const elapsed = (): number => Math.round((Bun.nanoseconds() - started) / 1e6);
     if (step.group !== undefined && aborted.has(step.group)) {
       ctx.out(`  skip  ${step.title} (an earlier step of this group failed)`);
       // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-      await journal(
-        step,
-        "skipped",
-        null,
-        0,
-        null,
-        null,
-        "an earlier step of the group failed",
-      );
+      await journal(step, "skipped", null, 0, null, null, "an earlier step of the group failed");
       continue;
     }
     if (step.blocked !== undefined) {
@@ -740,8 +629,7 @@ export async function executePlan(
       continue;
     }
     try {
-      if (step.kind === "exec" || step.kind === "local-exec")
-        assertSafeCommand(step.cmd);
+      if (step.kind === "exec" || step.kind === "local-exec") assertSafeCommand(step.cmd);
       if (step.gate !== undefined) {
         // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
         const why = await step.gate(ctx, state);
@@ -783,43 +671,23 @@ export async function executePlan(
     let after: Metrics | null = null;
     if (step.mutates && step.metricPaths !== undefined && result.ok)
       // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-      after = parseMetrics(
-        (await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout,
-      );
+      after = parseMetrics((await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout);
 
-    const note =
-      (
-        result.note ?? result.output.trim().split("\n").slice(-3).join(" | ")
-      ).slice(0, 400) || null;
+    const note = (result.note ?? result.output.trim().split("\n").slice(-3).join(" | ")).slice(0, 400) || null;
     // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
-    await journal(
-      step,
-      result.ok ? "ok" : "failed",
-      result.code,
-      elapsed(),
-      before,
-      after,
-      note,
-    );
+    await journal(step, result.ok ? "ok" : "failed", result.code, elapsed(), before, after, note);
     if (result.ok) {
       const freed =
         before !== null && after !== null
           ? Object.keys(after.freeBytes).reduce(
-              (n, k) =>
-                n + ((after.freeBytes[k] ?? 0) - (before.freeBytes[k] ?? 0)),
+              (n, k) => n + ((after.freeBytes[k] ?? 0) - (before.freeBytes[k] ?? 0)),
               0,
             )
           : 0;
-      ctx.out(
-        `  ok    ${step.title}${freed > 0 ? green(` (+${fmtBytes(freed)} free)`) : ""}`,
-      );
+      ctx.out(`  ok    ${step.title}${freed > 0 ? green(` (+${fmtBytes(freed)} free)`) : ""}`);
     } else {
       failed = true;
-      ctx.out(
-        red(
-          `  FAIL  ${step.title} (exit ${result.code}): ${(note ?? "").slice(0, 200)}`,
-        ),
-      );
+      ctx.out(red(`  FAIL  ${step.title} (exit ${result.code}): ${(note ?? "").slice(0, 200)}`));
       if (step.group !== undefined) aborted.add(step.group);
       else break;
     }
@@ -828,18 +696,12 @@ export async function executePlan(
   return refused ? 3 : failed ? 1 : 0;
 }
 
-async function runStep(
-  step: Step,
-  ctx: RunContext,
-  state: RunState,
-): Promise<StepResult> {
+async function runStep(step: Step, ctx: RunContext, state: RunState): Promise<StepResult> {
   if (step.run !== undefined) return step.run(ctx, state);
   let r: ExecResult;
-  if (step.kind === "service")
-    r = await ctx.transport.service(step.unit as string, step.action as string);
+  if (step.kind === "service") r = await ctx.transport.service(step.unit as string, step.action as string);
   else if (step.kind === "tune") r = await ctx.transport.tune(true);
-  else if (step.kind === "local-exec")
-    r = await ctx.local.exec(step.cmd, step.timeoutSecs ?? 21600);
+  else if (step.kind === "local-exec") r = await ctx.local.exec(step.cmd, step.timeoutSecs ?? 21600);
   else r = await ctx.transport.exec(step.cmd, step.timeoutSecs ?? 120);
   return {
     ok: r.code === 0 || (step.okCodes ?? []).includes(r.code),
@@ -849,30 +711,15 @@ async function runStep(
 }
 
 /** Print or apply a plan: the single place where "plan by default, --apply to execute" is decided. */
-export async function finish(
-  plan: Plan,
-  ctx: RunContext,
-  apply: boolean,
-  json: boolean,
-): Promise<number> {
+export async function finish(plan: Plan, ctx: RunContext, apply: boolean, json: boolean): Promise<number> {
   if (!apply) {
     if (json) {
-      ctx.out(
-        JSON.stringify(
-          { apply: false, ...plan, steps: plan.steps.map(stepJson) },
-          null,
-          2,
-        ),
-      );
+      ctx.out(JSON.stringify({ apply: false, ...plan, steps: plan.steps.map(stepJson) }, null, 2));
     } else {
       ctx.out(renderPlan(plan));
-      const n = plan.steps.filter(
-        (s) => s.mutates && s.blocked === undefined,
-      ).length;
+      const n = plan.steps.filter(s => s.mutates && s.blocked === undefined).length;
       ctx.out(
-        n === 0
-          ? "\nNothing to apply."
-          : `\nPlan only. Re-run with --apply to execute these ${n} mutating step(s).`,
+        n === 0 ? "\nNothing to apply." : `\nPlan only. Re-run with --apply to execute these ${n} mutating step(s).`,
       );
     }
     return 0;
@@ -896,14 +743,7 @@ const stepJson = (s: Step): Record<string, unknown> => ({
 
 export interface Candidate {
   readonly id: string;
-  readonly kind:
-    | "apt-cache"
-    | "journal"
-    | "rotated-logs"
-    | "docker"
-    | "build-artifact"
-    | "cache-dir"
-    | "swapfile";
+  readonly kind: "apt-cache" | "journal" | "rotated-logs" | "docker" | "build-artifact" | "cache-dir" | "swapfile";
   readonly title: string;
   readonly bytes: number;
   readonly risk: "low" | "medium";
@@ -925,13 +765,9 @@ export function reclaimCandidates(
   const skipped: { what: string; why: string }[] = [];
   const id = a.identity;
   const ctx = pathContext(a, host, policy);
-  const rootCmd = (
-    cmd: string,
-  ): { cmd: string | null; blocked?: string | undefined } => {
+  const rootCmd = (cmd: string): { cmd: string | null; blocked?: string | undefined } => {
     const c = asRoot(id, cmd);
-    return c === null
-      ? { cmd, blocked: "needs root and passwordless sudo is not available" }
-      : { cmd: c };
+    return c === null ? { cmd, blocked: "needs root and passwordless sudo is not available" } : { cmd: c };
   };
   const r = a.reclaim;
 
@@ -972,8 +808,7 @@ export function reclaimCandidates(
     });
 
   if (a.docker.available) {
-    const reclaimable = (t: string): number =>
-      a.docker.usage.find((u) => u.type === t)?.reclaimableBytes ?? 0;
+    const reclaimable = (t: string): number => a.docker.usage.find(u => u.type === t)?.reclaimableBytes ?? 0;
     const dk: [string, string, string, number, "low" | "medium"][] = [
       [
         "docker-containers",
@@ -982,13 +817,7 @@ export function reclaimCandidates(
         reclaimable("Containers"),
         "medium",
       ],
-      [
-        "docker-images",
-        "dangling docker images",
-        "docker image prune -f",
-        reclaimable("Images"),
-        "low",
-      ],
+      ["docker-images", "dangling docker images", "docker image prune -f", reclaimable("Images"), "low"],
       [
         "docker-builder",
         "docker build cache older than 7d",
@@ -1010,7 +839,7 @@ export function reclaimCandidates(
         });
   }
 
-  const active = new Set(a.swap.devices.map((s) => s.name));
+  const active = new Set(a.swap.devices.map(s => s.name));
   for (const sw of r.swapFiles) {
     if (active.has(sw.path)) continue;
     if (!sw.swapSignature) {
@@ -1027,12 +856,7 @@ export function reclaimCandidates(
       });
       continue;
     }
-    if (
-      !policy.reclaim.swapFileGlobs.some((g) =>
-        new Bun.Glob(g).match(sw.path),
-      ) ||
-      isDatabasePath(sw.path)
-    ) {
+    if (!policy.reclaim.swapFileGlobs.some(g => new Bun.Glob(g).match(sw.path)) || isDatabasePath(sw.path)) {
       skipped.push({
         what: sw.path,
         why: "not matching the swap file patterns",
@@ -1054,9 +878,9 @@ export function reclaimCandidates(
     });
   }
 
-  const scanRoots = policy.reclaim.scanRoots.map((p) => expandHome(p, id.home));
-  const buildCwds = a.buildProcs.map((b) => b.cwd);
-  const unseen = a.buildProcs.find((b) => b.cwd === null);
+  const scanRoots = policy.reclaim.scanRoots.map(p => expandHome(p, id.home));
+  const buildCwds = a.buildProcs.map(b => b.cwd);
+  const unseen = a.buildProcs.find(b => b.cwd === null);
   for (const art of r.artifacts) {
     const v = canDeleteBuildArtifact(art.path, art.marker, scanRoots, ctx);
     if (!v.ok) {
@@ -1071,8 +895,7 @@ export function reclaimCandidates(
       continue;
     }
     let blocked: string | undefined;
-    if (pathInUse(art.path, buildCwds))
-      blocked = "a build process (cargo/bun/...) is working in or above it";
+    if (pathInUse(art.path, buildCwds)) blocked = "a build process (cargo/bun/...) is working in or above it";
     else if (unseen !== undefined)
       blocked = `cannot see the working directory of build process ${unseen.pid}: not safe`;
     out.push({
@@ -1088,7 +911,7 @@ export function reclaimCandidates(
     });
   }
 
-  const caches = new Map(r.cacheDirs.map((c) => [c.path, c.bytes]));
+  const caches = new Map(r.cacheDirs.map(c => [c.path, c.bytes]));
   for (const raw of policy.reclaim.cacheDirs) {
     const p = expandHome(raw, id.home);
     const bytes = caches.get(p);
@@ -1111,19 +934,16 @@ export function reclaimCandidates(
   }
   for (const k of [".cache/sccache", ".cargo/registry", ".bun/install/cache"]) {
     const p = posix.join(id.home, k);
-    if (keptCacheReason(p, ctx) !== null)
-      skipped.push({ what: `~/${k}`, why: "reusable cache kept on purpose" });
+    if (keptCacheReason(p, ctx) !== null) skipped.push({ what: `~/${k}`, why: "reusable cache kept on purpose" });
   }
 
-  out.sort((x, y) =>
-    x.risk === y.risk ? y.bytes - x.bytes : x.risk === "low" ? -1 : 1,
-  );
+  out.sort((x, y) => (x.risk === y.risk ? y.bytes - x.bytes : x.risk === "low" ? -1 : 1));
   return { candidates: out, skipped };
 }
 
 export function planReclaim(a: Audit, policy: Policy, host: HostName): Plan {
   const { candidates, skipped } = reclaimCandidates(a, policy, host);
-  const steps: Step[] = candidates.map((c) => ({
+  const steps: Step[] = candidates.map(c => ({
     id: c.id,
     title: c.title,
     kind: "exec",
@@ -1136,14 +956,9 @@ export function planReclaim(a: Audit, policy: Policy, host: HostName): Plan {
     timeoutSecs: 900,
     group: c.id, // independent cleanups: one failure does not stop the others
   }));
-  const notes = [
-    `only regenerable data is removed; protected paths need \`yolo host archive\``,
-  ];
+  const notes = [`only regenerable data is removed; protected paths need \`yolo host archive\``];
   const held = heldLocks(a);
-  if (held.length > 0)
-    notes.push(
-      `BUILD LOCK HELD (${held.map((l) => l.path).join(", ")}): --apply will refuse`,
-    );
+  if (held.length > 0) notes.push(`BUILD LOCK HELD (${held.map(l => l.path).join(", ")}): --apply will refuse`);
   return { host, command: "reclaim", steps, notes, skipped };
 }
 
@@ -1190,41 +1005,32 @@ export function renderAudit(
   const swapTotal = a.swap.devices.reduce((n, s) => n + s.sizeBytes, 0);
   const swapUsed = a.swap.devices.reduce((n, s) => n + s.usedBytes, 0);
   L.push(
-    `  swap ${fmtBytes(swapUsed)} used of ${fmtBytes(swapTotal)}: ${a.swap.devices.map((s) => `${s.name} ${fmtBytes(s.sizeBytes)} prio ${s.priority}`).join(", ") || "none"}`,
+    `  swap ${fmtBytes(swapUsed)} used of ${fmtBytes(swapTotal)}: ${a.swap.devices.map(s => `${s.name} ${fmtBytes(s.sizeBytes)} prio ${s.priority}`).join(", ") || "none"}`,
   );
   if (a.swap.zram.length > 0)
     L.push(
-      `  zram: ${a.swap.zram.map((z) => `${z.name} ${fmtBytes(z.diskSizeBytes)} ${z.algorithm}, data ${fmtBytes(z.dataBytes)} -> ${fmtBytes(z.compressedBytes)}`).join("; ")}`,
+      `  zram: ${a.swap.zram.map(z => `${z.name} ${fmtBytes(z.diskSizeBytes)} ${z.algorithm}, data ${fmtBytes(z.dataBytes)} -> ${fmtBytes(z.compressedBytes)}`).join("; ")}`,
     );
 
   L.push("", bold("Findings"));
   if (findings.length === 0) L.push("  none");
   for (const f of findings) {
     const tag =
-      f.severity === "critical"
-        ? red("CRITICAL")
-        : f.severity === "warn"
-          ? yellow("WARN    ")
-          : dim("info    ");
+      f.severity === "critical" ? red("CRITICAL") : f.severity === "warn" ? yellow("WARN    ") : dim("info    ");
     L.push(`  ${tag} ${f.title}`);
-    L.push(
-      `           ${f.detail}${f.action === undefined ? "" : `  ->  ${f.action}`}`,
-    );
+    L.push(`           ${f.detail}${f.action === undefined ? "" : `  ->  ${f.action}`}`);
   }
 
   L.push("", bold("Disks (lsblk)"));
   L.push(
     table([
       ["DISK", "SIZE", "STATE", "FILESYSTEMS", "NOTE"],
-      ...a.disks.map((d) => [
+      ...a.disks.map(d => [
         d.path,
         fmtBytes(d.sizeBytes),
         d.state,
         d.filesystems
-          .map(
-            (f) =>
-              `${f.path.replace("/dev/", "")}:${f.fstype}${f.mounted ? "" : " (unmounted)"}`,
-          )
+          .map(f => `${f.path.replace("/dev/", "")}:${f.fstype}${f.mounted ? "" : " (unmounted)"}`)
           .join(", ") || "-",
         d.note,
       ]),
@@ -1236,8 +1042,8 @@ export function renderAudit(
       [
         ["MOUNT", "TYPE", "SIZE", "USED", "AVAIL", "USE%", "INODE%"],
         ...a.filesystems
-          .filter((f) => f.real)
-          .map((f) => [
+          .filter(f => f.real)
+          .map(f => [
             f.mount,
             f.type,
             fmtBytes(f.sizeBytes),
@@ -1262,9 +1068,7 @@ export function renderAudit(
       .join(" ")}`,
   );
   for (const t of p.topRss.slice(0, 5))
-    L.push(
-      `  ${pad(fmtBytes(t.rssBytes), 9, true)}  ${pad(t.user, 10)} ${t.command}`,
-    );
+    L.push(`  ${pad(fmtBytes(t.rssBytes), 9, true)}  ${pad(t.user, 10)} ${t.command}`);
 
   L.push(
     "",
@@ -1272,24 +1076,16 @@ export function renderAudit(
       `Services: ${a.services.running.length} running, ${a.services.failed.length} failed, ${a.timers.length} timers, ${a.cron.files.length} cron.d files, ${a.cron.userEntries} user crontab entries`,
     ),
   );
-  L.push(
-    `  ${a.services.running.map((u) => u.name.replace(/\.service$/, "")).join(", ")}`,
-  );
-  if (a.services.failed.length > 0)
-    L.push(`  failed: ${a.services.failed.map((u) => u.name).join(", ")}`);
+  L.push(`  ${a.services.running.map(u => u.name.replace(/\.service$/, "")).join(", ")}`);
+  if (a.services.failed.length > 0) L.push(`  failed: ${a.services.failed.map(u => u.name).join(", ")}`);
 
   L.push("", bold(`Listening ports (${a.ports.length})`));
   L.push(
     table(
       a.ports
-        .filter((x) => x.proto.startsWith("tcp") || x.exposed)
+        .filter(x => x.proto.startsWith("tcp") || x.exposed)
         .slice(0, 24)
-        .map((x) => [
-          x.proto,
-          `${x.address}:${x.port}`,
-          x.exposed ? "all interfaces" : "local",
-          x.process ?? "-",
-        ]),
+        .map(x => [x.proto, `${x.address}:${x.port}`, x.exposed ? "all interfaces" : "local", x.process ?? "-"]),
     ),
   );
 
@@ -1303,30 +1099,17 @@ export function renderAudit(
   L.push("", bold("Biggest directories"));
   L.push(
     table(
-      a.biggest.slice(0, 10).map((d) => [fmtBytes(d.bytes), d.path]),
+      a.biggest.slice(0, 10).map(d => [fmtBytes(d.bytes), d.path]),
       [0],
     ),
   );
   for (const lk of a.locks)
-    L.push(
-      "",
-      `Build lock ${lk.path}: ${lk.state}${lk.pids.length > 0 ? ` (pid ${lk.pids.join(",")})` : ""}`,
-    );
+    L.push("", `Build lock ${lk.path}: ${lk.state}${lk.pids.length > 0 ? ` (pid ${lk.pids.join(",")})` : ""}`);
   if (a.buildProcs.length > 0)
-    L.push(
-      `Build processes: ${a.buildProcs.map((b) => `${b.pid}:${b.command.split(" ")[0]}`).join(", ")}`,
-    );
+    L.push(`Build processes: ${a.buildProcs.map(b => `${b.pid}:${b.command.split(" ")[0]}`).join(", ")}`);
 
-  L.push(
-    "",
-    bold(
-      "Prioritized reclaim plan (regenerable first; nothing runs without `yolo host reclaim --apply`)",
-    ),
-  );
-  const total = plan.steps.reduce(
-    (n, s) => n + (s.blocked === undefined ? (s.estimateBytes ?? 0) : 0),
-    0,
-  );
+  L.push("", bold("Prioritized reclaim plan (regenerable first; nothing runs without `yolo host reclaim --apply`)"));
+  const total = plan.steps.reduce((n, s) => n + (s.blocked === undefined ? (s.estimateBytes ?? 0) : 0), 0);
   plan.steps.forEach((s, i) =>
     L.push(
       `  ${i + 1}. ${pad(fmtBytes(s.estimateBytes ?? 0), 9, true)}  ${s.title}${s.blocked === undefined ? "" : red(`  [blocked: ${s.blocked}]`)}`,
@@ -1336,8 +1119,7 @@ export function renderAudit(
   else L.push(`     total about ${fmtBytes(total)}`);
   if (suggestions.length > 0) {
     L.push("", bold("Then, through archive + verify only"));
-    for (const s of suggestions)
-      L.push(`  ${pad(fmtBytes(s.bytes), 9, true)}  ${s.path}  (${s.why})`);
+    for (const s of suggestions) L.push(`  ${pad(fmtBytes(s.bytes), 9, true)}  ${s.path}  (${s.why})`);
   }
   return L.join("\n");
 }
@@ -1357,16 +1139,14 @@ export function planServices(
   host: HostName,
   opts: { stop: readonly string[]; disable: boolean; candidates: boolean },
 ): { rows: ServiceRow[]; plan: Plan } {
-  const rows: ServiceRow[] = a.services.running.map((u) => {
+  const rows: ServiceRow[] = a.services.running.map(u => {
     const c = classifyService(u.name, policy.services);
     return { name: u.name, cls: c.cls, why: c.why, description: u.description };
   });
-  const running = new Set(a.services.running.map((u) => u.name));
+  const running = new Set(a.services.running.map(u => u.name));
   const wanted = new Set<string>();
-  if (opts.candidates)
-    for (const r of rows) if (r.cls === "candidate") wanted.add(r.name);
-  for (const s of opts.stop)
-    wanted.add(s.endsWith(".service") ? s : `${s}.service`);
+  if (opts.candidates) for (const r of rows) if (r.cls === "candidate") wanted.add(r.name);
+  for (const s of opts.stop) wanted.add(s.endsWith(".service") ? s : `${s}.service`);
 
   const steps: Step[] = [];
   const skipped: { what: string; why: string }[] = [];
@@ -1375,7 +1155,7 @@ export function planServices(
     local
       ? `sudo -n systemctl ${action} ${sq(unit)}`
       : sshServiceArgs(host, unit, action)
-          .map((x) => (/^[\w./@:+-]+$/.test(x) ? x : sq(x)))
+          .map(x => (/^[\w./@:+-]+$/.test(x) ? x : sq(x)))
           .join(" ");
   for (const unit of [...wanted].toSorted()) {
     const v = canStopUnit(unit, policy.services);
@@ -1410,21 +1190,14 @@ export function planServices(
         action: "disable",
       });
   }
-  const notes = [
-    "ssh and the keep-list are never stopped; edit host-policy.toml to change the lists",
-  ];
+  const notes = ["ssh and the keep-list are never stopped; edit host-policy.toml to change the lists"];
   return { rows, plan: { host, command: "services", steps, notes, skipped } };
 }
 
 export function renderServices(rows: readonly ServiceRow[]): string {
   const order = { candidate: 0, unknown: 1, keep: 2 } as const;
-  const sorted = [...rows].toSorted(
-    (x, y) => order[x.cls] - order[y.cls] || x.name.localeCompare(y.name),
-  );
-  return table([
-    ["CLASS", "UNIT", "WHY"],
-    ...sorted.map((r) => [r.cls, r.name, r.why]),
-  ]);
+  const sorted = [...rows].toSorted((x, y) => order[x.cls] - order[y.cls] || x.name.localeCompare(y.name));
+  return table([["CLASS", "UNIT", "WHY"], ...sorted.map(r => [r.cls, r.name, r.why])]);
 }
 
 // ------------------------------------------------------------------------------------------------ tune
@@ -1535,16 +1308,11 @@ export const norm = (v: string): string => v.replace(/\s+/g, " ").trim();
 const CEILING_KEYS =
   /^(fs\.file-max|fs\.inotify\..*|net\.core\.(r|w)mem_max|net\.core\.somaxconn|net\.core\.netdev_max_backlog|net\.ipv4\.tcp_max_syn_backlog|net\.ipv4\.tcp_(r|w)mem)$/;
 
-export function satisfies(
-  key: string,
-  current: string,
-  target: string,
-): boolean {
+export function satisfies(key: string, current: string, target: string): boolean {
   if (norm(current) === norm(target)) return true;
   if (!CEILING_KEYS.test(key)) return false;
   const last = (v: string): number => Number(norm(v).split(" ").at(-1));
-  const mid = (v: string): number =>
-    Number(norm(v).split(" ").at(-2) ?? norm(v));
+  const mid = (v: string): number => Number(norm(v).split(" ").at(-2) ?? norm(v));
   if (key.endsWith("tcp_rmem") || key.endsWith("tcp_wmem"))
     return last(current) >= last(target) && mid(current) >= mid(target);
   return Number(norm(current)) >= Number(norm(target));
@@ -1555,10 +1323,7 @@ export function suggestedSwapBytes(ramBytes: number): number {
   const GiB = 1024 ** 3;
   if (ramBytes <= 2 * GiB) return 2 * ramBytes;
   if (ramBytes <= 8 * GiB) return ramBytes;
-  return Math.min(
-    16 * GiB,
-    Math.max(4 * GiB, Math.round(ramBytes / 8 / GiB) * GiB),
-  );
+  return Math.min(16 * GiB, Math.max(4 * GiB, Math.round(ramBytes / 8 / GiB) * GiB));
 }
 
 export function tuneProbeScript(keys: readonly string[]): string {
@@ -1616,25 +1381,20 @@ export function planTune(
   const stamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
   const root = (cmd: string): { cmd: string; blocked?: string | undefined } => {
     const c = asRoot(id, cmd);
-    return c === null
-      ? { cmd, blocked: "needs root and passwordless sudo is not available" }
-      : { cmd: c };
+    return c === null ? { cmd, blocked: "needs root and passwordless sudo is not available" } : { cmd: c };
   };
 
-  const ownerKeys = new Set(owner.map((o) => o.key));
+  const ownerKeys = new Set(owner.map(o => o.key));
   for (const o of owner)
     rows.push({
       key: o.key,
       current: norm(o.current_value),
       target: norm(o.recommended_value),
-      status:
-        norm(o.current_value) === norm(o.recommended_value) ? "ok" : "change",
+      status: norm(o.current_value) === norm(o.recommended_value) ? "ok" : "change",
       source: "aphrody-infra",
       why: o.rationale ?? "",
     });
-  const ownerPending = owner.filter(
-    (o) => norm(o.current_value) !== norm(o.recommended_value),
-  );
+  const ownerPending = owner.filter(o => norm(o.current_value) !== norm(o.recommended_value));
   for (const o of ownerPending)
     if (satisfies(o.key, o.current_value, o.recommended_value))
       notes.push(
@@ -1643,11 +1403,11 @@ export function planTune(
   if (ownerPending.length > 0)
     steps.push({
       id: "owner-tune",
-      title: `aphrody-infra ssh tune --apply (${ownerPending.length} setting(s): ${ownerPending.map((o) => o.key).join(", ")})`,
+      title: `aphrody-infra ssh tune --apply (${ownerPending.length} setting(s): ${ownerPending.map(o => o.key).join(", ")})`,
       kind: "tune",
       cmd: `aphrody-infra ssh tune --host ${host} --json --apply`,
       mutates: true,
-      undo: `sysctl -w ${ownerPending.map((o) => `${o.key}="${norm(o.current_value)}"`).join(" ")}`,
+      undo: `sysctl -w ${ownerPending.map(o => `${o.key}="${norm(o.current_value)}"`).join(" ")}`,
       metricPaths: ["/"],
     });
 
@@ -1679,10 +1439,7 @@ export function planTune(
       });
       continue;
     }
-    if (
-      t.key === "net.ipv4.tcp_congestion_control" &&
-      !available.includes("bbr")
-    ) {
+    if (t.key === "net.ipv4.tcp_congestion_control" && !available.includes("bbr")) {
       rows.push({
         key: t.key,
         current,
@@ -1700,20 +1457,15 @@ export function planTune(
       target: t.value,
       status,
       source: "yolo",
-      why:
-        status === "ok" && current !== norm(t.value)
-          ? `${t.why} (current is already higher: kept)`
-          : t.why,
+      why: status === "ok" && current !== norm(t.value) ? `${t.why} (current is already higher: kept)` : t.why,
     });
     if (status === "change") ours.push(t);
     if (status === "change" || current === norm(t.value)) managed.push(t);
   }
   if (ours.length > 0) {
     const file = "/etc/sysctl.d/99-yolo-tune.conf";
-    const content = managed.map((t) => `${t.key} = ${t.value}`);
-    const modprobe = managed.some(
-      (t) => t.key === "net.ipv4.tcp_congestion_control",
-    )
+    const content = managed.map(t => `${t.key} = ${t.value}`);
+    const modprobe = managed.some(t => t.key === "net.ipv4.tcp_congestion_control")
       ? "modprobe tcp_bbr 2>/dev/null; "
       : "";
     const cmd = `${modprobe}printf '%s\\n' ${content.map(sq).join(" ")} > ${file}.tmp && if [ -f ${file} ] && cmp -s ${file}.tmp ${file}; then rm -f ${file}.tmp; else { [ -f ${file} ] && cp -a ${file} ${file}.bak-${stamp}; mv ${file}.tmp ${file}; }; fi && sysctl -p ${file}`;
@@ -1722,7 +1474,7 @@ export function planTune(
       title: `write ${file} (${ours.length} setting(s)) and load it`,
       kind: "exec",
       mutates: true,
-      undo: `sysctl -w ${ours.map((t) => `${t.key}="${norm(probe[t.key] ?? "")}"`).join(" ")}; rm ${file}`,
+      undo: `sysctl -w ${ours.map(t => `${t.key}="${norm(probe[t.key] ?? "")}"`).join(" ")}; rm ${file}`,
       metricPaths: ["/"],
       ...root(cmd),
     });
@@ -1787,10 +1539,7 @@ export function planTune(
 
   if (probe["nginx_present"] === "yes") {
     const cur = probe["nginx_workers"] ?? "";
-    const target =
-      policy.tune.nginxWorkers === "cpus"
-        ? String(id.cpus)
-        : policy.tune.nginxWorkers;
+    const target = policy.tune.nginxWorkers === "cpus" ? String(id.cpus) : policy.tune.nginxWorkers;
     const status = cur === target ? "ok" : "change";
     rows.push({
       key: "nginx worker_processes",
@@ -1838,8 +1587,7 @@ export function planTune(
 
   // swap sizing: only creates a swap file when there is no swap at all; never resizes or removes
   const swapTotal =
-    a.swap.devices.reduce((n, s) => n + s.sizeBytes, 0) +
-    a.swap.zram.reduce((n, z) => n + z.diskSizeBytes, 0);
+    a.swap.devices.reduce((n, s) => n + s.sizeBytes, 0) + a.swap.zram.reduce((n, z) => n + z.diskSizeBytes, 0);
   const wantSwap = suggestedSwapBytes(a.memory.totalBytes);
   const swapOk = swapTotal >= wantSwap;
   rows.push({
@@ -1857,8 +1605,7 @@ export function planTune(
         what: "swap file",
         why: `root filesystem is ${probe["root_fstype"] || "unknown"}: no swap file on it`,
       });
-    else if (probe["swapfile_yolo"] === "present")
-      skipped.push({ what: "/swapfile.yolo", why: "exists already" });
+    else if (probe["swapfile_yolo"] === "present") skipped.push({ what: "/swapfile.yolo", why: "exists already" });
     else
       steps.push({
         id: "swapfile",
@@ -1878,9 +1625,7 @@ export function planTune(
     );
 
   if (host !== "local" && owner.length === 0)
-    notes.push(
-      "aphrody-infra ssh tune returned no items; only yolo's own targets are shown",
-    );
+    notes.push("aphrody-infra ssh tune returned no items; only yolo's own targets are shown");
   notes.push(
     "a sysctl value owned by aphrody-infra ssh tune is applied through it; yolo adds the settings it does not manage",
   );
@@ -1890,7 +1635,7 @@ export function planTune(
 export function renderTune(rows: readonly TuneRow[]): string {
   return table([
     ["SETTING", "CURRENT", "TARGET", "STATUS", "BY"],
-    ...rows.map((r) => [r.key, r.current, r.target, r.status, r.source]),
+    ...rows.map(r => [r.key, r.current, r.target, r.status, r.source]),
   ]);
 }
 
@@ -1911,8 +1656,7 @@ export function parseCurlStats(text: string): CurlStats | null {
   const kv = parseKeyValues(text.trim().split(/\s+/).join("\n"));
   const size = Number(kv["size"]);
   const total = Number(kv["total"]);
-  if (!Number.isFinite(size) || !Number.isFinite(total) || total <= 0)
-    return null;
+  if (!Number.isFinite(size) || !Number.isFinite(total) || total <= 0) return null;
   return {
     sizeBytes: size,
     totalSecs: total,
@@ -1928,15 +1672,10 @@ export function median(xs: readonly number[]): number {
   if (xs.length === 0) return Number.NaN;
   const s = [...xs].toSorted((a, b) => a - b);
   const m = Math.floor(s.length / 2);
-  return s.length % 2 === 1
-    ? (s[m] as number)
-    : ((s[m - 1] as number) + (s[m] as number)) / 2;
+  return s.length % 2 === 1 ? (s[m] as number) : ((s[m - 1] as number) + (s[m] as number)) / 2;
 }
 
-export function netUrl(
-  size: number,
-  base = "https://speed.cloudflare.com/__down",
-): string {
+export function netUrl(size: number, base = "https://speed.cloudflare.com/__down"): string {
   return `${base}?bytes=${size}`;
 }
 
@@ -1944,30 +1683,21 @@ export function hostCurlCommand(url: string): string {
   return `curl -sS -o /dev/null --max-time 90 -w ${sq(CURL_FORMAT)} ${sq(url)}`;
 }
 
-export async function sshEndpoint(
-  alias: string,
-): Promise<{ hostname: string; port: number }> {
+export async function sshEndpoint(alias: string): Promise<{ hostname: string; port: number }> {
   const p = Bun.spawn(["ssh", "-G", alias], {
     windowsHide: true,
     stdout: "pipe",
     stderr: "ignore",
   });
   const text = await new Response(p.stdout).text();
-  const kv = Object.fromEntries(
-    text
-      .split("\n")
-      .map((l) => [l.split(" ")[0], l.split(" ").slice(1).join(" ")]),
-  );
+  const kv = Object.fromEntries(text.split("\n").map(l => [l.split(" ")[0], l.split(" ").slice(1).join(" ")]));
   return {
     hostname: String(kv["hostname"] ?? alias),
     port: Number(kv["port"] ?? 22),
   };
 }
 
-export async function tcpConnectMs(
-  hostname: string,
-  port: number,
-): Promise<number> {
+export async function tcpConnectMs(hostname: string, port: number): Promise<number> {
   const t0 = Bun.nanoseconds();
   let first = 0;
   await new Promise<void>((resolve, reject) => {
@@ -2000,8 +1730,7 @@ export function planNet(host: HostName, size: number, url: string): Plan {
   if (host !== "local") {
     steps.push({
       id: "tcp",
-      title:
-        "TCP connect latency from this machine to the host's ssh port (Bun.connect, 5 samples)",
+      title: "TCP connect latency from this machine to the host's ssh port (Bun.connect, 5 samples)",
       kind: "inproc",
       cmd: `Bun.connect ${host}:<ssh port from \`ssh -G ${host}\`>`,
       mutates: false,
@@ -2066,11 +1795,7 @@ export async function runNet(
       samples: ms,
     };
     rows.push(
-      [
-        "tcp connect (this machine -> host:" + ep.port + ") min",
-        Math.min(...good).toFixed(1),
-        "ms",
-      ],
+      ["tcp connect (this machine -> host:" + ep.port + ") min", Math.min(...good).toFixed(1), "ms"],
       ["tcp connect median", median(good).toFixed(1), "ms"],
     );
     const rtt: number[] = [];
@@ -2081,19 +1806,11 @@ export async function runNet(
       rtt.push((Bun.nanoseconds() - t0) / 1e6);
     }
     result["sshExecMs"] = { median: median(rtt), samples: rtt };
-    rows.push([
-      "ssh exec round trip (aphrody-infra) median",
-      median(rtt).toFixed(0),
-      "ms",
-    ]);
+    rows.push(["ssh exec round trip (aphrody-infra) median", median(rtt).toFixed(0), "ms"]);
     const r = await t.exec(hostCurlCommand(url), 120);
     const stats = r.code === 0 ? parseCurlStats(r.stdout) : null;
     if (stats === null)
-      rows.push([
-        "download on the host",
-        `failed (exit ${r.code}) ${r.stderr.trim().slice(0, 80)}`,
-        "",
-      ]);
+      rows.push(["download on the host", `failed (exit ${r.code}) ${r.stderr.trim().slice(0, 80)}`, ""]);
     else {
       result["hostDownload"] = {
         ...stats,
@@ -2103,20 +1820,11 @@ export async function runNet(
       rows.push(
         [
           "download ON the host: size received",
-          fmtBytes(stats.sizeBytes) +
-            (stats.sizeBytes === size ? "" : " (INCOMPLETE)"),
+          fmtBytes(stats.sizeBytes) + (stats.sizeBytes === size ? "" : " (INCOMPLETE)"),
           "",
         ],
-        [
-          "download ON the host: throughput",
-          (stats.bytesPerSec / 1e6).toFixed(1),
-          "MB/s",
-        ],
-        [
-          "download ON the host: throughput",
-          mbit(stats.bytesPerSec).toFixed(0),
-          "Mbit/s",
-        ],
+        ["download ON the host: throughput", (stats.bytesPerSec / 1e6).toFixed(1), "MB/s"],
+        ["download ON the host: throughput", mbit(stats.bytesPerSec).toFixed(0), "Mbit/s"],
         [
           "download ON the host: connect / first byte",
           `${(stats.connectSecs * 1000).toFixed(0)} / ${(stats.ttfbSecs * 1000).toFixed(0)}`,
@@ -2143,35 +1851,15 @@ export async function runNet(
       complete: got === size,
     };
     rows.push(
-      [
-        "download FROM this machine (fetch): size received",
-        fmtBytes(got) + (got === size ? "" : " (INCOMPLETE)"),
-        "",
-      ],
-      [
-        "download FROM this machine (fetch): throughput",
-        (got / secs / 1e6).toFixed(1),
-        "MB/s",
-      ],
-      [
-        "download FROM this machine (fetch): throughput",
-        mbit(got / secs).toFixed(0),
-        "Mbit/s",
-      ],
+      ["download FROM this machine (fetch): size received", fmtBytes(got) + (got === size ? "" : " (INCOMPLETE)"), ""],
+      ["download FROM this machine (fetch): throughput", (got / secs / 1e6).toFixed(1), "MB/s"],
+      ["download FROM this machine (fetch): throughput", mbit(got / secs).toFixed(0), "Mbit/s"],
       ["download FROM this machine (fetch): first byte", ttfb.toFixed(0), "ms"],
     );
   } catch (e) {
-    rows.push([
-      "download from this machine",
-      `failed: ${(e as Error).message}`,
-      "",
-    ]);
+    rows.push(["download from this machine", `failed: ${(e as Error).message}`, ""]);
   }
-  out(
-    json
-      ? JSON.stringify(result, null, 2)
-      : `${bold(`yolo host net`)} ${host} (${url})\n${table(rows, [1])}`,
-  );
+  out(json ? JSON.stringify(result, null, 2) : `${bold(`yolo host net`)} ${host} (${url})\n${table(rows, [1])}`);
   return 0;
 }
 
@@ -2203,12 +1891,7 @@ export function readOnlyOptions(fstype: string): string {
   return base;
 }
 
-export function planMount(
-  a: Audit,
-  o: MountOptions,
-  host: HostName,
-  now: Date,
-): Plan {
+export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date): Plan {
   const refuse = (why: string): Plan => ({
     host,
     command: "mount",
@@ -2216,31 +1899,22 @@ export function planMount(
     notes: [`refused: ${why}`],
     skipped: [{ what: o.device, why }],
   });
-  if (!/^\/dev\/[A-Za-z0-9/_-]+$/.test(o.device))
-    return refuse("device must look like /dev/sdb1");
-  const disk = a.disks.find((d) => d.devicePaths.includes(o.device));
+  if (!/^\/dev\/[A-Za-z0-9/_-]+$/.test(o.device)) return refuse("device must look like /dev/sdb1");
+  const disk = a.disks.find(d => d.devicePaths.includes(o.device));
   if (disk === undefined)
-    return refuse(
-      `${o.device} is not a disk or partition of this host (see \`yolo host audit\`)`,
-    );
-  if (disk.state === "system")
-    return refuse(
-      `${o.device} belongs to the disk carrying the running system`,
-    );
-  const fs = disk.filesystems.find((f) => f.path === o.device);
+    return refuse(`${o.device} is not a disk or partition of this host (see \`yolo host audit\`)`);
+  if (disk.state === "system") return refuse(`${o.device} belongs to the disk carrying the running system`);
+  const fs = disk.filesystems.find(f => f.path === o.device);
   if (fs === undefined) {
     return refuse(
       disk.path === o.device && disk.filesystems.length > 0
-        ? `${o.device} is a whole disk with partitions: choose one of ${disk.filesystems.map((f) => f.path).join(", ")}`
+        ? `${o.device} is a whole disk with partitions: choose one of ${disk.filesystems.map(f => f.path).join(", ")}`
         : `${o.device} has no filesystem: yolo never formats or wipes a disk`,
     );
   }
   if (VOLUME_LAYERS.has(fs.fstype))
-    return refuse(
-      `${o.device} is a ${fs.fstype} volume layer: assemble or unlock it first, yolo does not`,
-    );
-  if (fs.mounted)
-    return refuse(`${o.device} is already mounted (nothing to do)`);
+    return refuse(`${o.device} is a ${fs.fstype} volume layer: assemble or unlock it first, yolo does not`);
+  if (fs.mounted) return refuse(`${o.device} is already mounted (nothing to do)`);
   if (o.rw && !o.confirmBackup)
     return refuse(
       `${o.device} already holds an existing ${fs.fstype} filesystem with data: --rw also needs --i-know-this-is-a-backup (it only confirms that writing is intended, it never wipes)`,
@@ -2256,16 +1930,12 @@ export function planMount(
   }
   if (!(t.startsWith("/mnt/") || t.startsWith("/media/")))
     return refuse(`mount point ${t} must be under /mnt or /media`);
-  const opts = o.rw
-    ? "rw,nosuid,nodev,noexec,nofail"
-    : `${readOnlyOptions(fs.fstype)},nofail`;
+  const opts = o.rw ? "rw,nosuid,nodev,noexec,nofail" : `${readOnlyOptions(fs.fstype)},nofail`;
   const stamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
   const id = a.identity;
   const root = (cmd: string): { cmd: string; blocked?: string | undefined } => {
     const c = asRoot(id, cmd);
-    return c === null
-      ? { cmd, blocked: "needs root and passwordless sudo is not available" }
-      : { cmd: c };
+    return c === null ? { cmd, blocked: "needs root and passwordless sudo is not available" } : { cmd: c };
   };
   const steps: Step[] = [
     {
@@ -2346,31 +2016,19 @@ export function archiveLabel(path: string): string {
 }
 
 /** Pure: the archive plan for one or more sources. Everything that runs is visible in `cmd`. */
-export function planArchive(
-  a: Audit,
-  o: ArchiveOptions,
-  host: HostName,
-  policy: Policy,
-  now: Date,
-): Plan {
+export function planArchive(a: Audit, o: ArchiveOptions, host: HostName, policy: Policy, now: Date): Plan {
   const steps: Step[] = [];
   const skipped: { what: string; why: string }[] = [];
   const notes: string[] = [];
   const ctx = pathContext(a, host, policy);
   const day = o.stamp ?? now.toISOString().slice(0, 10).replaceAll("-", "");
-  const refuse = (what: string, why: string): void =>
-    void skipped.push({ what, why });
+  const refuse = (what: string, why: string): void => void skipped.push({ what, why });
   let to: string;
   try {
     to = normalizePath(o.to);
-    if (!SIMPLE_PATH.test(to))
-      throw new Error(
-        `--to must use only letters, digits and ._/@+- (got ${o.to})`,
-      );
+    if (!SIMPLE_PATH.test(to)) throw new Error(`--to must use only letters, digits and ._/@+- (got ${o.to})`);
     if (o.pull !== undefined && !SIMPLE_PATH.test(normalizePath(o.pull)))
-      throw new Error(
-        `--pull must use only letters, digits and ._/@+- (got ${o.pull})`,
-      );
+      throw new Error(`--pull must use only letters, digits and ._/@+- (got ${o.pull})`);
   } catch (e) {
     return {
       host,
@@ -2392,17 +2050,13 @@ export function planArchive(
     const files = [main, sum];
     const rsync = local
       ? `rsync -a --partial --append-verify ${files.map(sq).join(" ")} ${sq(`${dest}/`)}`
-      : `rsync -a --partial --append-verify -e ssh ${files.map((f) => sq(`${host}:${f}`)).join(" ")} ${sq(`${dest}/`)}`;
-    const rcloneRemote = (f: string): string =>
-      sq(local ? f : `${host.toUpperCase()}:${f}`);
+      : `rsync -a --partial --append-verify -e ssh ${files.map(f => sq(`${host}:${f}`)).join(" ")} ${sq(`${dest}/`)}`;
+    const rcloneRemote = (f: string): string => sq(local ? f : `${host.toUpperCase()}:${f}`);
     const rcloneEnv = local
       ? ""
       : `RCLONE_CONFIG_${host.toUpperCase()}_TYPE=sftp RCLONE_CONFIG_${host.toUpperCase()}_SSH=${sq(`ssh ${host}`)} `;
     const rclone = files
-      .map(
-        (f) =>
-          `${rcloneEnv}rclone copyto ${rcloneRemote(f)} ${sq(`${dest}/${posix.basename(f)}`)} --checksum`,
-      )
+      .map(f => `${rcloneEnv}rclone copyto ${rcloneRemote(f)} ${sq(`${dest}/${posix.basename(f)}`)} --checksum`)
       .join(" && ");
     return [
       {
@@ -2410,7 +2064,7 @@ export function planArchive(
         title: `pull ${posix.basename(main)} off the host into ${dest} (resumable: rsync --partial --append-verify, rclone --checksum when rsync is missing)`,
         kind: "local-exec",
         mutates: true,
-        undo: `rm -f ${files.map((f) => sq(`${dest}/${posix.basename(f)}`)).join(" ")}`,
+        undo: `rm -f ${files.map(f => sq(`${dest}/${posix.basename(f)}`)).join(" ")}`,
         group,
         timeoutSecs: 86400,
         cmd: `mkdir -p -- ${sq(dest)} && { command -v rsync >/dev/null && ${rsync} || ${rclone}; }`,
@@ -2428,7 +2082,7 @@ export function planArchive(
             ...st.verification.get(group),
             pullChecksumMatches: r.ok,
           }),
-        run: async (ctx2) => {
+        run: async ctx2 => {
           const m = await ctx2.transport.exec(`cat ${sq(sum)}`, 60);
           const expected = /^([0-9a-f]{64})\s/.exec(m.stdout)?.[1];
           if (m.code !== 0 || expected === undefined)
@@ -2439,10 +2093,7 @@ export function planArchive(
               note: "host manifest unreadable",
             };
           const hasher = new Bun.CryptoHasher("sha256");
-          for await (const chunk of Bun.file(
-            `${dest}/${posix.basename(main)}`,
-          ).stream())
-            hasher.update(chunk);
+          for await (const chunk of Bun.file(`${dest}/${posix.basename(main)}`).stream()) hasher.update(chunk);
           const actual = hasher.digest("hex");
           return {
             ok: actual === expected,
@@ -2485,8 +2136,7 @@ export function planArchive(
           dumpListed: r.ok,
         }),
     });
-    if (o.pull !== undefined)
-      steps.push(...pullSteps(pgGroup, dump, `${dump}.sha256`));
+    if (o.pull !== undefined) steps.push(...pullSteps(pgGroup, dump, `${dump}.sha256`));
   }
 
   for (const raw of o.sources) {
@@ -2516,18 +2166,14 @@ export function planArchive(
     const sum = `${arc}.sha256`;
     const group = src;
     const prot = protectedReason(src, ctx);
-    if (prot !== null)
-      notes.push(
-        `${src} is ${prot}: it can only be reduced through this archive + verify path`,
-      );
+    if (prot !== null) notes.push(`${src} is ${prot}: it can only be reduced through this archive + verify path`);
     if (isDatabasePath(src))
       notes.push(
         `${src} is database state: a file-level archive of a live database may be inconsistent, use --pg-dump for PostgreSQL`,
       );
     const refusals = removalRefusals(src, ctx);
     const wantRemove = o.removeSource && refusals.length === 0;
-    if (o.removeSource && refusals.length > 0)
-      notes.push(`--remove-source refused for ${src}: ${refusals.join("; ")}`);
+    if (o.removeSource && refusals.length > 0) notes.push(`--remove-source refused for ${src}: ${refusals.join("; ")}`);
 
     steps.push({
       id: `precheck:${src}`,
@@ -2572,8 +2218,7 @@ export function planArchive(
     });
     steps.push({
       id: `verify-count:${src}`,
-      title:
-        "verify: entry count of the source equals the entries listed in the archive",
+      title: "verify: entry count of the source equals the entries listed in the archive",
       kind: "exec",
       mutates: false,
       undo: null,
@@ -2631,34 +2276,22 @@ export function planArchive(
               ? {
                   pullChecksumMatches:
                     v.pullChecksumMatches === true &&
-                    (pgGroup === undefined ||
-                      st.verification.get(pgGroup)?.pullChecksumMatches ===
-                        true),
+                    (pgGroup === undefined || st.verification.get(pgGroup)?.pullChecksumMatches === true),
                 }
               : {}),
           };
-          if (!canRemoveSource(need))
-            return `verification incomplete or failed (${JSON.stringify(need)}): source kept`;
+          if (!canRemoveSource(need)) return `verification incomplete or failed (${JSON.stringify(need)}): source kept`;
           const lock = await rc.transport.exec(
-            wrapScript(
-              collectorScript(
-                ["locks"],
-                rc.policy,
-                effectiveLocks(rc.host, rc.policy),
-              ),
-            ),
+            wrapScript(collectorScript(["locks"], rc.policy, effectiveLocks(rc.host, rc.policy))),
             60,
           );
           const held = heldLocks(buildAudit(rc.host, lock.stdout));
-          return held.length > 0
-            ? `build lock held (${held[0]?.path}): source kept`
-            : null;
+          return held.length > 0 ? `build lock held (${held[0]?.path}): source kept` : null;
         },
       });
     }
   }
-  if (o.pull !== undefined && local)
-    notes.push("host is local: --pull copies between local directories");
+  if (o.pull !== undefined && local) notes.push("host is local: --pull copies between local directories");
   return { host, command: "archive", steps, notes, skipped };
 }
 
@@ -2748,10 +2381,7 @@ export async function runHostCommand(
   const one = (k: string): string | undefined => f.values.get(k)?.at(-1);
   const has = (k: string): boolean => f.values.has(k);
   const hostArg = one("host") ?? process.env["YOLO_HOST"];
-  if (
-    hostArg === undefined ||
-    !(HOSTS as readonly string[]).includes(hostArg)
-  ) {
+  if (hostArg === undefined || !(HOSTS as readonly string[]).includes(hostArg)) {
     console.error(`--host is required: ${HOSTS.join("|")}`);
     return 2;
   }
@@ -2765,17 +2395,13 @@ export async function runHostCommand(
     const tail = Math.max(1, Number(one("tail") ?? 20));
     const shown = entries.slice(-tail);
     if (json) out(JSON.stringify(shown, null, 2));
-    else if (shown.length === 0)
-      out(`no journal for ${host} (${journalPath(yoloRoot, host)})`);
+    else if (shown.length === 0) out(`no journal for ${host} (${journalPath(yoloRoot, host)})`);
     else
       for (const e of shown) {
         const freed =
           e.before !== null && e.after !== null
             ? Object.keys(e.after.freeBytes).reduce(
-                (n, k) =>
-                  n +
-                  ((e.after?.freeBytes[k] ?? 0) -
-                    (e.before?.freeBytes[k] ?? 0)),
+                (n, k) => n + ((e.after?.freeBytes[k] ?? 0) - (e.before?.freeBytes[k] ?? 0)),
                 0,
               )
             : 0;
@@ -2858,12 +2484,9 @@ export async function runHostCommand(
     if (sub === "services") {
       const a = await collect(transport, policy, ["identity", "services"]);
       const { rows, plan } = planServices(a, policy, host, {
-        stop: (f.values.get("stop") ?? [])
-          .flatMap((s) => s.split(","))
-          .filter((s) => s !== ""),
+        stop: (f.values.get("stop") ?? []).flatMap(s => s.split(",")).filter(s => s !== ""),
         disable: has("disable"),
-        candidates:
-          has("candidates") || (!has("stop") && !has("no-candidates")),
+        candidates: has("candidates") || (!has("stop") && !has("no-candidates")),
       });
       if (!json)
         out(
@@ -2873,22 +2496,11 @@ export async function runHostCommand(
     }
 
     if (sub === "tune") {
-      const a = await collect(transport, policy, [
-        "identity",
-        "meminfo",
-        "swapon",
-        "zram",
-        "locks",
-      ]);
-      const keys = [...SYSCTL_TARGETS.map((t) => t.key), "vm.swappiness"];
-      const probe = parseKeyValues(
-        (await transport.exec(tuneProbeScript(keys), 60)).stdout,
-      );
+      const a = await collect(transport, policy, ["identity", "meminfo", "swapon", "zram", "locks"]);
+      const keys = [...SYSCTL_TARGETS.map(t => t.key), "vm.swappiness"];
+      const probe = parseKeyValues((await transport.exec(tuneProbeScript(keys), 60)).stdout);
       const ownerRes = host === "local" ? null : await transport.tune(false);
-      const owner =
-        ownerRes !== null && ownerRes.code === 0
-          ? parseOwnerTune(ownerRes.stdout)
-          : [];
+      const owner = ownerRes !== null && ownerRes.code === 0 ? parseOwnerTune(ownerRes.stdout) : [];
       const { rows, plan } = planTune(a, probe, owner, policy, host, now);
       if (!json) out(`${bold("Tuning")} on ${host}\n${renderTune(rows)}\n`);
       return finish(plan, ctx, apply, json);
@@ -2913,32 +2525,17 @@ export async function runHostCommand(
         return 2;
       }
       const fs = one("fs") ?? "/";
-      const parallel = Math.max(
-        1,
-        Number(one("parallel") ?? policy.space.parallel),
-      );
-      const depth = Math.max(
-        0,
-        Number(one("depth") ?? policy.space.splitDepth),
-      );
+      const parallel = Math.max(1, Number(one("parallel") ?? policy.space.parallel));
+      const depth = Math.max(0, Number(one("depth") ?? policy.space.splitDepth));
       const scanStart = performance.now();
       const links = await scanLinks(f.positional, {
-        run: async (cmd) =>
-          (
-            await transport.exec(
-              `timeout 300 nice -n 19 ionice -c3 ${cmd}`,
-              330,
-            )
-          ).stdout,
+        run: async cmd => (await transport.exec(`timeout 300 nice -n 19 ionice -c3 ${cmd}`, 330)).stdout,
         depth,
         parallel,
         sudo: has("sudo"),
       });
       const scanMs = Math.round(performance.now() - scanStart);
-      const df = await transport.exec(
-        `df -B1 --output=size,avail -- ${sq(fs)}`,
-        30,
-      );
+      const df = await transport.exec(`df -B1 --output=size,avail -- ${sq(fs)}`, 30);
       if (df.code !== 0) {
         console.error(`df ${fs} failed: ${df.stderr.trim()}`);
         return 1;
@@ -2976,23 +2573,15 @@ export async function runHostCommand(
               `${est.inodes} inodes, ${fmtBytes(est.naiveBytes)} summed per name (${scanMs} ms, ${parallel} parallel, depth ${depth})`,
             ],
             ["unique bytes", fmtBytes(est.uniqueBytes)],
-            [
-              "really freed",
-              `${fmtBytes(est.freedBytes)} (${fmtBytes(est.keptBytes)} kept alive by links outside)`,
-            ],
+            ["really freed", `${fmtBytes(est.freedBytes)} (${fmtBytes(est.keptBytes)} kept alive by links outside)`],
             [
               "free now",
               `${fmtBytes(freeBytes)} of ${fmtBytes(totalBytes)} on ${fs} (${(before.freeRatio * 100).toFixed(1)} %)`,
             ],
-            [
-              "free after",
-              `${fmtBytes(freeBytes + est.freedBytes)} (${(after.freeRatio * 100).toFixed(1)} %)`,
-            ],
+            ["free after", `${fmtBytes(freeBytes + est.freedBytes)} (${(after.freeRatio * 100).toFixed(1)} %)`],
             [
               `floor ${(minFree * 100).toFixed(0)} %`,
-              after.ok
-                ? green("reached")
-                : red(`short by ${fmtBytes(after.shortfallBytes)}`),
+              after.ok ? green("reached") : red(`short by ${fmtBytes(after.shortfallBytes)}`),
             ],
           ]),
         );
@@ -3016,11 +2605,7 @@ export async function runHostCommand(
         );
         return 2;
       }
-      const a = await collect(transport, policy, [
-        "identity",
-        "lsblk",
-        "locks",
-      ]);
+      const a = await collect(transport, policy, ["identity", "lsblk", "locks"]);
       const plan = planMount(
         a,
         {
@@ -3069,11 +2654,7 @@ export async function runHostCommand(
         now,
       );
       if (plan.steps.length === 0) {
-        out(
-          red(
-            `nothing to do: ${plan.skipped.map((s) => `${s.what}: ${s.why}`).join("; ") || plan.notes.join("; ")}`,
-          ),
-        );
+        out(red(`nothing to do: ${plan.skipped.map(s => `${s.what}: ${s.why}`).join("; ") || plan.notes.join("; ")}`));
         return 3;
       }
       return finish(plan, ctx, apply, json);

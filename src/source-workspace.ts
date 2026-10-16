@@ -31,15 +31,15 @@ async function inventory() {
     schemaVersion: number;
     sourceRoot: string;
     integrationScope: string[];
-    excludedRepositories: string[];
+    externalSourceRepositories: string[];
     components: Component[];
   };
   if (
     catalog.schemaVersion !== 1 ||
     !Array.isArray(catalog.components) ||
     !Array.isArray(catalog.integrationScope) ||
-    !Array.isArray(catalog.excludedRepositories) ||
-    [...catalog.integrationScope, ...catalog.excludedRepositories].some(id => !/^[\w.-]+$/.test(id))
+    !Array.isArray(catalog.externalSourceRepositories) ||
+    [...catalog.integrationScope, ...catalog.externalSourceRepositories].some(id => !/^[\w.-]+$/.test(id))
   )
     throw new Error("Invalid source workspace");
   const ids = new Set<string>();
@@ -130,14 +130,16 @@ export async function inspectSourceWorkspace(config: Config = {}) {
   }
   const sourceRoot = resolve(packageRoot, catalog.sourceRoot);
   const knownPaths = new Set(components.map(component => component.path.toLowerCase()));
-  const excludedPaths = new Set(catalog.excludedRepositories.map(name => resolve(sourceRoot, name).toLowerCase()));
+  const externalSourcePaths = new Set(
+    catalog.externalSourceRepositories.map(name => resolve(sourceRoot, name).toLowerCase()),
+  );
   const additional = [];
   for (const entry of await readdir(sourceRoot, { withFileTypes: true })) {
     if ((!entry.isDirectory() && !entry.isSymbolicLink()) || entry.name.startsWith(".")) continue;
     const path = join(sourceRoot, entry.name);
     if (knownPaths.has(path.toLowerCase())) continue;
-    if (excludedPaths.has(path.toLowerCase())) {
-      additional.push({ path, type: "external-repository", state: "outside-integration" });
+    if (externalSourcePaths.has(path.toLowerCase())) {
+      additional.push({ path, type: "external-repository", state: "pinned-source-owner" });
       continue;
     }
     if (!existsSync(join(path, ".git"))) {

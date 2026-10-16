@@ -195,7 +195,7 @@ tasks launch the declared mount adapters with the interactive user's token.
 Their process start is verified; graphical Explorer reads and reboot
 persistence remain unqualified.
 
-The declared [VPS user unit](../../../../../tools/aphrody/config/host/systemd/aphrody/aphrody-gpu-depot.service)
+The declared [VPS user unit](../../../../../infra/config/host/systemd/aphrody/aphrody-gpu-depot.service)
 uses that product owner bundle, replacing the temporary artifact tmux session.
 `systemd-analyze --user verify` passed before activation. The unit is enabled
 and active, user linger is enabled, and its declared private mesh address returns

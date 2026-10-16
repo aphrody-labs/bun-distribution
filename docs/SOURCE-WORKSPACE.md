@@ -28,7 +28,7 @@ checkout; explicit `checkouts` configuration can override them.
 
 `bun src/cli.ts workspace` reports source revisions, local changes, physical
 locations, workspace owners and migration state; `--config factory.local.json`
-supplies checkout overrides. It identifies excluded repositories, linked
+supplies checkout overrides. It identifies external source owners, linked
 worktrees and unclassified siblings. Inventory coverage does not imply physical
 consolidation, native qualification or application behavior.
 
@@ -50,7 +50,7 @@ receipts belong under `.local/`; a source inventory never imports dirty work.
 
 Active checkouts and the composition worktree remain available during the
 migration. Earlier source checkpoints and pulls are retained in history;
-they do not expand the selected absorption scope. The composition branch is
+their source history remains available. The composition branch is
 published as `codex/material-work` and has not been merged into `os`.
 
 Provider authentication, raw sessions, cookies, protected local stores,

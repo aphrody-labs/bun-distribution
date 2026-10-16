@@ -3233,7 +3233,7 @@ fn init_adaptive_env(env_file: Option<&std::path::Path>) -> Result<()> {
     // third, unrelated literal port next to `http_rest.rs`'s own (now
     // removed) `127.0.0.1:8080` default, and it never matched the vps
     // deployment's actual embed service (`:8794`, per
-    // `tools/config/local-ai.json`). `EMBED_URL` is a legacy alias of
+    // `tools/aphrody/config/local-ai.json`). `EMBED_URL` is a legacy alias of
     // the canonical `APHRODY_AI_EMBED_BASE_URL`
     // (`aphrody_config::ai_env::EMBED_BASE_URL`); every reader now resolves it
     // through that one contract and reports "not configured" when nothing is

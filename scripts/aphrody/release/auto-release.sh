@@ -9,7 +9,7 @@ set -euo pipefail
 REV="${1:?usage: auto-release.sh <full-sha>}"
 case "$REV" in *[!0-9a-f]* | "") echo "invalid revision" >&2; exit 2 ;; esac
 [ "${#REV}" -eq 40 ] || { echo "revision must be a full sha" >&2; exit 2; }
-# ONE checkout per repository (tools/config/host/host-policy.toml [layout]): the release builds in ~/src/aphrody, the
+# ONE checkout per repository (infra/config/host/host-policy.toml [layout]): the release builds in ~/src/aphrody, the
 # checkout aphrody-sync fast-forwards; state and log live in ~/.aphrody/deploy.
 SRC="$HOME/src/aphrody"
 STATE="$HOME/.aphrody/deploy"

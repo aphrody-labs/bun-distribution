@@ -28,9 +28,12 @@ import {
 } from "./distribution.ts";
 
 const usage = `Bun OS factory
+  infra <command> [arguments]     Bun OS native infrastructure and host operations
+  ops <command> [arguments]       Bun OS workspace operations
+  workspace <command> [arguments] Bun OS workspace automation
   server serve [ROOT] | verify [BINARY] [RECEIPT] | --version
   plan [--profile full|perf] [--target linux-x64|linux-arm64|windows-x64|macos-arm64|wasm]
-  workspace [--config FILE]
+  workspace [--config FILE] | workspace inventory [--config FILE]
   graph [--profile full|perf] [--target TARGET]
   msys2 plan|doctor|lock [--abi msvc-x64|msvc-arm64|msys-x64|ucrt64-x64|clang64-x64|clangarm64-arm64]
         [--msys-source-root DIR] [--msys-root INSTALLED_MSYS2] [--msys-pacman FILE] [--msys-home DIR]
@@ -53,7 +56,22 @@ Sources contain committed, pinned files and every locked submodule; protected st
 WASM builds libm3's portable API. Native Bun/JSC and the Linux compositor require their native targets.`;
 
 try {
-  if (Bun.argv[2] === "server") {
+  if (Bun.argv[2] === "infra") {
+    const { runInfra } = await import("../packages/bun-workspace/src/automation/runtime.ts");
+    const result = await runInfra({ args: Bun.argv.slice(3), stdout: "inherit", stderr: "inherit" });
+    process.exitCode = result.exitCode;
+  } else if (Bun.argv[2] === "ops") {
+    const { runOps } = await import("../packages/bun-workspace/src/automation/ops.ts");
+    process.exitCode = await runOps(Bun.argv.slice(3));
+  } else if (
+    Bun.argv[2] === "workspace" &&
+    Bun.argv[3] &&
+    !Bun.argv[3].startsWith("--") &&
+    Bun.argv[3] !== "inventory"
+  ) {
+    const { runWorkspace } = await import("../packages/bun-workspace/src/automation/cli.ts");
+    process.exitCode = await runWorkspace(Bun.argv.slice(3));
+  } else if (Bun.argv[2] === "server") {
     await runProductCLI(Bun.argv.slice(3));
   } else if (Bun.argv[2] === "factory" && Bun.argv[3] === "image") {
     const { main } = await import("../factory/images/build.ts");
@@ -63,7 +81,10 @@ try {
     console.log(JSON.stringify(await main(Bun.argv.slice(4)), null, 2));
   } else {
     const { positionals, values } = parseArgs({
-      args: Bun.argv.slice(2),
+      args:
+        Bun.argv[2] === "workspace" && Bun.argv[3] === "inventory"
+          ? ["workspace", ...Bun.argv.slice(4)]
+          : Bun.argv.slice(2),
       allowPositionals: true,
       options: {
         help: { type: "boolean", short: "h" },

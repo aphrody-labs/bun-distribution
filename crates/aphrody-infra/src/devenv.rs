@@ -1,4 +1,4 @@
-//! Native Linux host provisioning driven by `tools/config/system-packages.json`
+//! Native Linux host provisioning driven by `infra/config/system-packages.json`
 //! and `rust-toolchain.toml`. The generated POSIX script is idempotent.
 
 use anyhow::{Context, Result, bail};
@@ -25,8 +25,8 @@ fn version_token(value: &str) -> Result<&str> {
 
 pub fn load(root: &Path, host: &str) -> Result<Pins> {
     let packages: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("tools/config/system-packages.json"))
-            .context("lecture tools/config/system-packages.json")?,
+        &fs::read_to_string(root.join("infra/config/system-packages.json"))
+            .context("lecture infra/config/system-packages.json")?,
     )?;
     let toolchain = fs::read_to_string(root.join("rust-toolchain.toml"))
         .context("lecture rust-toolchain.toml")?;
@@ -129,7 +129,7 @@ printf 'apt\t%s missing of {count}\n' "$missing"
 /// Optional developer tools share the canonical catalog and installer.
 pub fn developer_script(root: &Path, apply: bool) -> Result<String> {
     let catalog: Value = serde_json::from_str(&fs::read_to_string(
-        root.join("tools/config/developer-cli-tools.json"),
+        root.join("infra/config/developer-cli-tools.json"),
     )?)?;
     let mut out = String::from("set -eu\n");
     out.push_str(&format!("{PATH_BLOCK}\n"));
@@ -216,7 +216,7 @@ mod tests {
             std::env::temp_dir().join(format!("aphrody-developer-test-{}", std::process::id()));
         fs::create_dir_all(root.join("tools").join("config")).unwrap();
         fs::write(
-            root.join("tools/config/developer-cli-tools.json"),
+            root.join("infra/config/developer-cli-tools.json"),
             r#"{"tools":[{"command":"safe","package":"unsafe;touch-marker"}],"nu_plugins":[]}"#,
         )
         .unwrap();
@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn repository_pins_load_for_every_host() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         for host in ["vps", "dbfr", "wsl"] {
             let pins = load(&root, host).unwrap();
             script(&pins, true).unwrap();

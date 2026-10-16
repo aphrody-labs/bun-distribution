@@ -15,7 +15,7 @@ for arg in "$@"; do
   esac
 done
 command -v apt-get >/dev/null || { echo 'This bootstrap currently supports Ubuntu/WSL (apt-get).' >&2; exit 2; }
-packages_file="$root/tools/config/system-packages.json"
+packages_file="$root/infra/config/system-packages.json"
 if ! command -v jq >/dev/null; then
   sudo apt-get update
   sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y jq

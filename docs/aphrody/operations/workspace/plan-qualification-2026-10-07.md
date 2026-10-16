@@ -51,7 +51,7 @@ La commande actuelle
 `/home/aphro/.local/bin/aphrody infra --root /home/aphro/aphrody validate --json`
 échoue avant validation : la CLI installée cherche encore l'ancien chemin
 config/service-catalog.json. Le catalogue courant est
-[tools/config/service-catalog.json](../../../../tools/aphrody/config/service-catalog.json).
+[tools/config/service-catalog.json](../../../../infra/config/service-catalog.json).
 
 Le journal de la précédente gate de fabrique des consommateurs de
 configuration a également été consulté : 74 tests Infra passent, deux

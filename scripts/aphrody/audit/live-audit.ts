@@ -4,7 +4,7 @@
  *
  *   bun scripts/audit/live-audit.ts [--site <host>] [--skip-crawl] [--ssh <alias>] [--json]
  *
- * 1. routes  — every public route of yolo tools/config/host/nginx/routes.json answers < 400 on its probe path.
+ * 1. routes  — every public route of yolo infra/config/host/nginx/routes.json answers < 400 on its probe path.
  * 2. crawl   — the native Aphrody Web crawler scans each active site of
  *              tools/config/live-audit.json; every crawled page must be 2xx and free of error markers.
  * 3. links   — internal links found in crawled pages but not crawled are fetched (broken links).
@@ -21,14 +21,7 @@
 // Audit sites and browser pages run in order; the bounded pool handles independent requests.
 // oxlint-disable no-await-in-loop
 
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseCrawlReport, type CrawlPage } from "./live-audit-report.ts";
@@ -65,46 +58,26 @@ type Finding = {
 
 const root = resolve(import.meta.dir, "..", "..");
 const webBin = process.env.APHRODY_WEB_BIN ?? "aphrody-web";
-const crawlState = join(
-  process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"),
-  "aphrody",
-  "live-audit",
-);
+const crawlState = join(process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"), "aphrody", "live-audit");
 const argv = Bun.argv.slice(2);
 const flag = (name: string) => argv.includes(name);
 const option = (name: string) => {
   const index = argv.indexOf(name);
   return index >= 0 ? argv[index + 1] : undefined;
 };
-const config = (await Bun.file(
-  join(root, "tools", "config", "live-audit.json"),
-).json()) as Config;
+const config = (await Bun.file(join(root, "tools", "config", "live-audit.json")).json()) as Config;
 const routes = (
-  (await Bun.file(
-    join(
-      process.env.YOLO_ROOT ?? root,
-      "tools",
-      "config",
-      "host",
-      "nginx",
-      "routes.json",
-    ),
-  ).json()) as { routes: Route[] }
+  (await Bun.file(join(process.env.YOLO_ROOT ?? root, "tools", "config", "host", "nginx", "routes.json")).json()) as {
+    routes: Route[];
+  }
 ).routes;
 const onlySite = option("--site");
-const sites = config.sites.filter(
-  (site) => site.status !== "retired" && (!onlySite || site.host === onlySite),
-);
-if (onlySite && sites.length === 0)
-  throw new Error(`unknown or retired live-audit site: ${onlySite}`);
+const sites = config.sites.filter(site => site.status !== "retired" && (!onlySite || site.host === onlySite));
+if (onlySite && sites.length === 0) throw new Error(`unknown or retired live-audit site: ${onlySite}`);
 const findings: Finding[] = [];
 const startedAt = Date.now();
-const add = (
-  level: Finding["level"],
-  check: string,
-  site: string,
-  detail: string,
-) => findings.push({ level, check, site, detail });
+const add = (level: Finding["level"], check: string, site: string, detail: string) =>
+  findings.push({ level, check, site, detail });
 
 async function status(url: string): Promise<number | string> {
   try {
@@ -113,11 +86,7 @@ async function status(url: string): Promise<number | string> {
       redirect: "follow",
       signal: AbortSignal.timeout(30_000),
     });
-    if (
-      response.status === 405 ||
-      response.status === 501 ||
-      response.status === 403
-    ) {
+    if (response.status === 405 || response.status === 501 || response.status === 403) {
       response = await fetch(url, {
         redirect: "follow",
         signal: AbortSignal.timeout(30_000),
@@ -130,11 +99,7 @@ async function status(url: string): Promise<number | string> {
   }
 }
 
-async function pool<T>(
-  items: T[],
-  size: number,
-  work: (item: T) => Promise<void>,
-) {
+async function pool<T>(items: T[], size: number, work: (item: T) => Promise<void>) {
   const queue = [...items];
   await Promise.all(
     Array.from({ length: Math.min(size, queue.length) }, async () => {
@@ -143,8 +108,7 @@ async function pool<T>(
   );
 }
 
-const failed = (code: number | string) =>
-  typeof code === "string" || code >= 400;
+const failed = (code: number | string) => typeof code === "string" || code >= 400;
 const hostOf = (url: string) => {
   try {
     return new URL(url).host;
@@ -155,23 +119,12 @@ const hostOf = (url: string) => {
 
 // 1. routes
 await pool(
-  routes.filter(
-    (route) =>
-      route.status !== "retired" &&
-      (!onlySite || route.host.endsWith(onlySite)),
-  ),
+  routes.filter(route => route.status !== "retired" && (!onlySite || route.host.endsWith(onlySite))),
   8,
-  async (route) => {
-    const path =
-      route.probePath ?? (route.paths?.includes("/health") ? "/health" : "/");
+  async route => {
+    const path = route.probePath ?? (route.paths?.includes("/health") ? "/health" : "/");
     const code = await status(`https://${route.host}${path}`);
-    if (failed(code))
-      add(
-        "error",
-        "route",
-        route.host,
-        `${code} https://${route.host}${path} (${route.service})`,
-      );
+    if (failed(code)) add("error", "route", route.host, `${code} https://${route.host}${path} (${route.service})`);
   },
 );
 
@@ -186,10 +139,7 @@ for (const site of sites) {
   try {
     let raw: string;
     if (flag("--skip-crawl")) {
-      if (
-        !existsSync(crawlFile) ||
-        Date.now() - statSync(crawlFile).mtimeMs > 24 * 3600_000
-      ) {
+      if (!existsSync(crawlFile) || Date.now() - statSync(crawlFile).mtimeMs > 24 * 3600_000) {
         throw new Error("no native crawl report from the last 24 hours");
       }
       raw = readFileSync(crawlFile, "utf8");
@@ -198,7 +148,7 @@ for (const site of sites) {
         [
           webBin,
           "crawl",
-          ...site.seeds.map((seed) => origin + seed),
+          ...site.seeds.map(seed => origin + seed),
           "--format",
           "json",
           "--include-html",
@@ -222,14 +172,12 @@ for (const site of sites) {
         new Response(crawl.stdout).text(),
         new Response(crawl.stderr).text(),
       ]);
-      if (code !== 0)
-        throw new Error(`native crawl exit ${code}: ${stderr.slice(-300)}`);
+      if (code !== 0) throw new Error(`native crawl exit ${code}: ${stderr.slice(-300)}`);
       raw = stdout;
     }
     const report = parseCrawlReport(raw);
-    pages = report.pages.filter((page) => new URL(page.url).host === site.host);
-    for (const error of report.errors)
-      add("error", "crawl", site.host, `${error.url}: ${error.error}`);
+    pages = report.pages.filter(page => new URL(page.url).host === site.host);
+    for (const error of report.errors) add("error", "crawl", site.host, `${error.url}: ${error.error}`);
     if (!flag("--skip-crawl")) {
       mkdirSync(crawlState, { recursive: true });
       writeFileSync(crawlFile, raw, { mode: 0o600 });
@@ -238,22 +186,17 @@ for (const site of sites) {
   } catch (error) {
     add("error", "crawl", site.host, String(error).slice(0, 300));
   }
-  if (!flag("--skip-crawl") && pages.length === 0)
-    add("error", "crawl", site.host, "aucune page crawlée");
-  const crawled = new Set(pages.map((page) => new URL(page.url).pathname));
+  if (!flag("--skip-crawl") && pages.length === 0) add("error", "crawl", site.host, "aucune page crawlée");
+  const crawled = new Set(pages.map(page => new URL(page.url).pathname));
   const assets = new Map<string, string>();
   const links = new Map<string, string>();
 
   for (const page of pages) {
-    if (page.status < 200 || page.status >= 300)
-      add("error", "page", site.host, `${page.status} ${page.url}`);
+    if (page.status < 200 || page.status >= 300) add("error", "page", site.host, `${page.status} ${page.url}`);
     const html = page.html;
-    const marker = config.errorMarkers.find((text) => html.includes(text));
-    if (marker)
-      add("error", "page", site.host, `« ${marker} » sur ${page.url}`);
-    for (const [, captured] of html.matchAll(
-      /\s(?:src|href|content)="([^"#]+)"/g,
-    )) {
+    const marker = config.errorMarkers.find(text => html.includes(text));
+    if (marker) add("error", "page", site.host, `« ${marker} » sur ${page.url}`);
+    for (const [, captured] of html.matchAll(/\s(?:src|href|content)="([^"#]+)"/g)) {
       if (captured === undefined) continue;
       const raw = captured.replaceAll("&amp;", "&");
       if (!/^(https?:|\/)/.test(raw) || raw.startsWith("//")) continue;
@@ -264,9 +207,7 @@ for (const site of sites) {
         continue;
       }
       const isAsset =
-        /\.(png|jpe?g|webp|avif|gif|svg|ico|css|js|mjs|woff2?|ttf|mp4|webm|glb|json)$/i.test(
-          url.pathname,
-        ) ||
+        /\.(png|jpe?g|webp|avif|gif|svg|ico|css|js|mjs|woff2?|ttf|mp4|webm|glb|json)$/i.test(url.pathname) ||
         url.pathname.startsWith("/_next/") ||
         url.pathname.startsWith("/storage/v1/") ||
         url.pathname.startsWith("/api/og");
@@ -285,20 +226,14 @@ for (const site of sites) {
   // 3. internal links not reached by the crawl
   await pool([...links], 16, async ([url, from]) => {
     const code = await status(url);
-    if (failed(code))
-      add("error", "link", site.host, `${code} ${url} ← ${from}`);
+    if (failed(code)) add("error", "link", site.host, `${code} ${url} ← ${from}`);
   });
 
   // 4. assets
   await pool([...assets], 24, async ([url, from]) => {
     const code = await status(url);
     if (failed(code))
-      add(
-        firstParty.has(hostOf(url)) ? "error" : "warning",
-        "asset",
-        site.host,
-        `${code} ${url} ← ${from}`,
-      );
+      add(firstParty.has(hostOf(url)) ? "error" : "warning", "asset", site.host, `${code} ${url} ← ${from}`);
   });
 
   // 5. key pages through the monorepo's native Web test owner.
@@ -308,46 +243,20 @@ for (const site of sites) {
     try {
       page = await TestPage.create({ profile: "http" });
       const navigation = await page.goto(origin + spec.path);
-      if (!navigation.ok)
-        add(
-          "error",
-          "render",
-          site.host,
-          `${navigation.status} sur ${spec.path}`,
-        );
-      const [title, content] = await Promise.all([
-        page.title(),
-        page.content(),
-      ]);
-      if (!title?.trim())
-        add("error", "render", site.host, `titre vide sur ${spec.path}`);
+      if (!navigation.ok) add("error", "render", site.host, `${navigation.status} sur ${spec.path}`);
+      const [title, content] = await Promise.all([page.title(), page.content()]);
+      if (!title?.trim()) add("error", "render", site.host, `titre vide sur ${spec.path}`);
       if (spec.expectText && !content.includes(spec.expectText))
-        add(
-          "error",
-          "render",
-          site.host,
-          `« ${spec.expectText} » absent de ${spec.path}`,
-        );
-      const marker = config.errorMarkers.find((text) => content.includes(text));
-      if (marker)
-        add("error", "render", site.host, `« ${marker} » sur ${spec.path}`);
+        add("error", "render", site.host, `« ${spec.expectText} » absent de ${spec.path}`);
+      const marker = config.errorMarkers.find(text => content.includes(text));
+      if (marker) add("error", "render", site.host, `« ${marker} » sur ${spec.path}`);
     } catch (error) {
-      add(
-        "error",
-        "render",
-        site.host,
-        `${spec.path}: ${String(error).slice(0, 160)}`,
-      );
+      add("error", "render", site.host, `${spec.path}: ${String(error).slice(0, 160)}`);
     } finally {
       try {
         await page?.close();
       } catch (error) {
-        add(
-          "error",
-          "render",
-          site.host,
-          `${spec.path}: fermeture: ${String(error).slice(0, 120)}`,
-        );
+        add("error", "render", site.host, `${spec.path}: fermeture: ${String(error).slice(0, 120)}`);
       }
     }
   }
@@ -355,14 +264,9 @@ for (const site of sites) {
   // 6. server-side errors logged while the audit ran
   const ssh = option("--ssh");
   if (ssh && site.serverUnits.length) {
-    const since = new Date(siteStart - 5_000)
-      .toISOString()
-      .replace("T", " ")
-      .slice(0, 19);
-    const units = site.serverUnits.map((unit) => `-u ${unit}`).join(" ");
-    const pattern = config.serverErrorPatterns
-      .map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("|");
+    const since = new Date(siteStart - 5_000).toISOString().replace("T", " ").slice(0, 19);
+    const units = site.serverUnits.map(unit => `-u ${unit}`).join(" ");
+    const pattern = config.serverErrorPatterns.map(text => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
     const journal = Bun.spawn(
       [
         "ssh",
@@ -375,12 +279,11 @@ for (const site of sites) {
     );
     const lines = (await new Response(journal.stdout).text()).trim();
     await journal.exited;
-    for (const line of lines ? lines.split("\n") : [])
-      add("error", "server", site.host, line.trim().slice(0, 240));
+    for (const line of lines ? lines.split("\n") : []) add("error", "server", site.host, line.trim().slice(0, 240));
   }
 }
 
-const errors = findings.filter((finding) => finding.level === "error");
+const errors = findings.filter(finding => finding.level === "error");
 const report = {
   startedAt: new Date(startedAt).toISOString(),
   durationMs: Date.now() - startedAt,
@@ -390,10 +293,7 @@ const report = {
 };
 const outDir = join(root, "var", "runs", "live-audit");
 mkdirSync(outDir, { recursive: true });
-const outFile = join(
-  outDir,
-  `${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}.json`,
-);
+const outFile = join(outDir, `${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}.json`);
 await Bun.write(outFile, JSON.stringify(report, null, 2));
 
 if (flag("--json")) console.log(JSON.stringify(report));
@@ -402,13 +302,10 @@ else {
   for (const finding of findings)
     summary.set(
       `${finding.level} ${finding.check} ${finding.site}`,
-      (summary.get(`${finding.level} ${finding.check} ${finding.site}`) ?? 0) +
-        1,
+      (summary.get(`${finding.level} ${finding.check} ${finding.site}`) ?? 0) + 1,
     );
-  for (const [key, count] of [...summary].toSorted())
-    console.log(`${String(count).padStart(6)}  ${key}`);
-  for (const finding of errors.slice(0, 40))
-    console.log(`✗ [${finding.check}] ${finding.detail}`);
+  for (const [key, count] of [...summary].toSorted()) console.log(`${String(count).padStart(6)}  ${key}`);
+  for (const finding of errors.slice(0, 40)) console.log(`✗ [${finding.check}] ${finding.detail}`);
   console.log(
     `${errors.length === 0 ? "✓" : "✗"} live audit: ${errors.length} erreur(s), ${report.warnings} avertissement(s) — ${outFile}`,
   );

@@ -25,7 +25,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { copyFile, mkdir } from "node:fs/promises";
 import { join, dirname, relative, resolve } from "node:path";
-import { resolveBunDocs } from "@aphrody/workspace/bun-upstream-docs";
+import { resolveBunDocs } from "@aphrody/bun-workspace/automation/bun-upstream-docs";
 
 const SCRIPT_DIR = dirname(import.meta.path);
 // scripts/audit/compat/scripts/n2b -> repository root is five levels up.

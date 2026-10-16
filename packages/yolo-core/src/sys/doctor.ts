@@ -3,11 +3,7 @@
  */
 import { existsSync } from "node:fs";
 import { delimiter, join, resolve } from "node:path";
-import {
-  hostTarget,
-  loadArtifact,
-  runtimeHome,
-} from "@aphrody/runtime-sdk/src/artifact.ts";
+import { hostTarget, loadArtifact, runtimeHome } from "@aphrody/runtime-sdk/src/artifact.ts";
 import { list } from "@aphrody/runtime-sdk/src/release.ts";
 import { isCompiled, yoloHome, yoloVersion } from "../vfs/home";
 import { templatesRoot } from "../scaffold/create";
@@ -60,15 +56,15 @@ export interface DoctorReport {
 }
 
 export function aphrodyTools(): { name: string; found: boolean }[] {
-  return ["aphrody-infra"].map((name) => ({
+  return ["aphrody-infra"].map(name => ({
     name,
     found: Boolean(Bun.which(name)),
   }));
 }
 
-/** Language servers and context-reduction tools (yolo `tools/config/host/toolchain.json` codeIntel). */
+/** Language servers and context-reduction tools (yolo `infra/config/host/toolchain.json` codeIntel). */
 export function codeIntelTools(): { name: string; found: boolean }[] {
-  return ["rust-analyzer", "tsc", "rtk", "context-mode"].map((name) => ({
+  return ["rust-analyzer", "tsc", "rtk", "context-mode"].map(name => ({
     name,
     found: Boolean(Bun.which(name)),
   }));
@@ -85,16 +81,8 @@ export function collectDoctorReport(): DoctorReport {
   for (const [path, label, required] of [
     [join(templatesRoot(home), "stack.toml"), "templates (yolo create)", true],
     ["packages/engine/runtime/package.json", "runtime SDK", true],
-    [
-      "packages/engine/python/pyproject.toml",
-      "Python package (uv / maturin)",
-      sourceInstallation,
-    ],
-    [
-      join(templatesRoot(home), "desktop/src-tauri/icons"),
-      "desktop scaffold icons (templates)",
-      false,
-    ],
+    ["packages/engine/python/pyproject.toml", "Python package (uv / maturin)", sourceInstallation],
+    [join(templatesRoot(home), "desktop/src-tauri/icons"), "desktop scaffold icons (templates)", false],
   ] as const) {
     const exists = existsSync(resolve(home, path));
     if (!exists && required) okStatus = false;
@@ -129,16 +117,14 @@ export function collectDoctorReport(): DoctorReport {
   };
 
   let runtimeInfo: DoctorReport["runtime"] = { installed: false };
-  const active = list().find((e) => e.current);
+  const active = list().find(e => e.current);
   if (active === undefined) {
     // A source checkout runs without the native artifact; only a compiled install requires it.
     if (!sourceInstallation) okStatus = false;
     runtimeInfo = { installed: false, error: "no runtime artifact installed" };
   } else {
     try {
-      using runtime = loadArtifact(
-        join(runtimeHome(), hostTarget(), active.name),
-      );
+      using runtime = loadArtifact(join(runtimeHome(), hostTarget(), active.name));
       const info = runtime.buildInfo();
       runtimeInfo = {
         installed: true,
@@ -158,7 +144,7 @@ export function collectDoctorReport(): DoctorReport {
     }
   }
 
-  const previous = list().find((e) => e.previous);
+  const previous = list().find(e => e.previous);
   const bin = join(home, "bin");
   const binOnPath = (process.env["PATH"] ?? "").split(delimiter).includes(bin);
   const ghFound = Boolean(Bun.which("gh"));

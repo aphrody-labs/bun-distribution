@@ -3,7 +3,7 @@
 Run repository commands through the root Bun workspace using the qualified
 Aphrody Bun fork declared in `config/bun-runtime.json`. The runtime guard checks
 the current executable CLI identity and source revision; standard Bun is rejected. Shared operations belong
-to the installed `@aphrody/workspace/ops` registry export; IECODE keeps thin bindings
+to the installed `@aphrody/bun-workspace/automation/ops` registry export; IECODE keeps thin bindings
 and game-specific tools. Explicit `APHRODY_ROOT` selects a validated source checkout. No legacy Infra
 checkout fallback or second release orchestrator is active here.
 

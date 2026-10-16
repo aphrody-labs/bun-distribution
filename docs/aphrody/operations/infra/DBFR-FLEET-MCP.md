@@ -22,9 +22,9 @@ du nouveau binaire par Infra.
 
 ## Déclarations et installation
 
-- [Déclaration MCP DBFR](../../../../tools/aphrody/config/host/agent-fleet-mcp-dbfr.json), installée
+- [Déclaration MCP DBFR](../../../../infra/config/host/agent-fleet-mcp-dbfr.json), installée
   dans `/home/ubuntu/.aphrody/fleet/agent-fleet-mcp.json`, mode `0600`.
-- [Alias SSH DBFR](../../../../tools/aphrody/config/host/user/dbfr-aphrody-vps-wg.ssh.conf), installé
+- [Alias SSH DBFR](../../../../infra/config/host/user/dbfr-aphrody-vps-wg.ssh.conf), installé
   dans `/home/ubuntu/.ssh/aphrody-fleet-vps.conf`, mode `0600`.
 - [Audit Discord](../../../../scripts/aphrody/audit/discord/fleet-membership.ts) : lecture
   des seules métadonnées d'application, de guilde, de membres et de permissions
@@ -84,7 +84,7 @@ L'audit natif a confirmé le bot Aphrody et le propriétaire dans la guilde
 `1554189180030947338`. Le compte Omar `1527405876695142620` est membre et
 dispose de `Manage Guild` ; l'ancien alias `1323725494184841256` renvoie `404`.
 Le compte présent est désormais le principal de
-[la politique administrateur](../../../../tools/aphrody/config/host/omar-admin.json).
+[la politique administrateur](../../../../infra/config/host/omar-admin.json).
 L'ancien compte reste un alias. Le moniteur Codex d'Omar a été supprimé le 2026-10-09. Le réconciliateur
 administrateur relit sa politique toutes les deux minutes.
 

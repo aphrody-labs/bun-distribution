@@ -216,7 +216,7 @@
           "APHRODY_AGENT_HOME=%h/.aphrody/workspaces/dbfr",
           "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
         ],
-        "ExecStart": "%h/.bun/bin/bun packages/infra/workspace/src/agent-home-drive-sync.ts daemon",
+        "ExecStart": "%h/.bun/bin/bun packages/bun-workspace/src/automation/agent-home-drive-sync.ts daemon",
         "Restart": "on-failure",
         "RestartSec": "30s",
         "UMask": "0077",

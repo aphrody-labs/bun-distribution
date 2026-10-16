@@ -2,7 +2,7 @@
 
 Le 14 octobre 2026, le propriétaire a demandé la synchronisation automatique de
 Shenron sur `main`, le déploiement des services et le retrait des composants legacy.
-La déclaration hôte est [shenron-autodeploy.json](../../../../tools/aphrody/config/host/dbfr/shenron-autodeploy.json).
+La déclaration hôte est [shenron-autodeploy.json](../../../../infra/config/host/dbfr/shenron-autodeploy.json).
 
 ## Fonctionnement installé
 
@@ -21,7 +21,7 @@ PostgreSQL, Redis, modèles, secrets et médias restent dans leurs stores proté
 Les scripts versionnés vivent dans
 [`scripts/release/shenron-autodeploy`](../../../../scripts/aphrody/release/shenron-autodeploy).
 Les unités se trouvent dans
-[`tools/config/host/systemd/shenron`](../../../../tools/aphrody/config/host/systemd/shenron).
+[`tools/config/host/systemd/shenron`](../../../../infra/config/host/systemd/shenron).
 Les copies exécutées sont installées sous `/home/ubuntu/.config/shenron-autodeploy`
 et les unités système sous `/etc/systemd/system`. Le récepteur utilise les scripts
 canoniques installés sous `/usr/local/libexec/shenron-autodeploy` : l'adaptateur et

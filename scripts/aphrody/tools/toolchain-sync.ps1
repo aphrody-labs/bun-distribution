@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Idempotent per-user toolchain sync for Windows (pwsh 7, non-elevated), driven by tools/config/host/toolchain.json.
+# Idempotent per-user toolchain sync for Windows (pwsh 7, non-elevated), driven by infra/config/host/toolchain.json.
 # No Cargo build, no PATH/profile edits (owned by aphrody-claude user/shell/profile.ps1).
 param([string]$Manifest = (Join-Path $(if ($env:YOLO_ROOT) { $env:YOLO_ROOT } else { Join-Path $PSScriptRoot '..\..' }) 'tools\config\host\toolchain.json'))
 $ErrorActionPreference = 'Continue'

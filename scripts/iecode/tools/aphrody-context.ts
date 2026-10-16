@@ -10,8 +10,8 @@ export function operationsContext(
   const manifest = JSON.parse(readFileSync(resolve(root, "workspace.manifest.json"), "utf8"));
   const source = manifest.operations?.source;
   const authority = manifest.operations?.authority;
-  if (authority !== "@aphrody/workspace") throw new Error("Unexpected operations authority");
-  const configured = [environment.APHRODY_ROOT, environment.APHRODY_INFRA_ROOT]
+  if (authority !== "@aphrody/bun-workspace") throw new Error("Unexpected operations authority");
+  const configured = [environment.BUN_OS_ROOT ?? environment.APHRODY_ROOT, environment.APHRODY_INFRA_ROOT]
     .filter((value): value is string => Boolean(value))
     .map(value => {
       const path = resolve(root, value);
@@ -22,7 +22,7 @@ export function operationsContext(
   if (!configured.length) {
     let entry: string | undefined;
     try {
-      entry = Bun.resolveSync(`${authority}/ops`, root);
+      entry = Bun.resolveSync(`${authority}/automation/ops.ts`, root);
     } catch (error) {
       if (existsSync(resolve(root, "node_modules", authority))) throw error;
     }
@@ -39,14 +39,14 @@ export function operationsContext(
     }
   }
   if (!configured.length && typeof source !== "string")
-    throw new Error("Install @aphrody/workspace or explicitly configure the operations checkout");
-  const operationsRoot = configured[0] ?? realpathSync(resolve(root, source, "../../../.."));
-  const packageRoot = resolve(operationsRoot, "packages/infra/workspace");
+    throw new Error("Install @aphrody/bun-workspace or explicitly configure the operations checkout");
+  const operationsRoot = configured[0] ?? realpathSync(resolve(root, source, "../.."));
+  const packageRoot = resolve(operationsRoot, "packages/bun-workspace");
   const packageFile = resolve(packageRoot, "package.json");
   if (!existsSync(packageFile)) throw new Error(`Missing operations owner: ${packageFile}`);
   const owner = JSON.parse(readFileSync(packageFile, "utf8"));
   if (owner.name !== manifest.operations.authority) throw new Error(`Unexpected operations owner: ${owner.name}`);
-  const entry = resolve(packageRoot, "src/ops.ts");
+  const entry = resolve(packageRoot, "src/automation/ops.ts");
   if (!existsSync(entry)) throw new Error(`Missing operations entry: ${entry}`);
   return { repositoryRoot: root, operationsRoot, entry };
 }

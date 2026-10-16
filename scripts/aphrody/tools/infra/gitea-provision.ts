@@ -33,7 +33,7 @@ interface Report {
   actions: boolean;
   runner_key: string;
 }
-const catalogPath = "tools/config/host/apps/vps/gitea/bun-os-repositories.json";
+const catalogPath = "infra/config/host/apps/vps/gitea/bun-os-repositories.json";
 const clientPath = "scripts/tools/infra/gitea-provision.ts";
 const remotePath = "scripts/tools/infra/gitea-provision-remote.ts";
 const rustPath = "crates/infra/infra/src/gitea.rs";
@@ -49,19 +49,16 @@ function argumentsFrom(argv: string[]) {
   const repositories: string[] = [];
   for (let index = 0; index < args.length; index++) {
     const flag = args[index];
-    if (flag === "--help")
-      return { help: true, root, apply, json, repositories };
+    if (flag === "--help") return { help: true, root, apply, json, repositories };
     if (flag === "--apply" && !apply) apply = true;
     else if (flag === "--json" && !json) json = true;
-    else if (flag === "--root" && args[index + 1])
-      root = resolve(args[++index]!);
-    else if (flag === "--repository" && args[index + 1])
-      repositories.push(...args[++index]!.split(","));
+    else if (flag === "--root" && args[index + 1]) root = resolve(args[++index]!);
+    else if (flag === "--repository" && args[index + 1]) repositories.push(...args[++index]!.split(","));
     else throw new Error("Invalid provision arguments.");
   }
   if (
     new Set(repositories).size !== repositories.length ||
-    repositories.some((name) => !/^[a-zA-Z0-9-]{1,100}$/.test(name))
+    repositories.some(name => !/^[a-zA-Z0-9-]{1,100}$/.test(name))
   )
     throw new Error("Invalid repository selection.");
   return { help: false, root, apply, json, repositories };
@@ -75,11 +72,9 @@ async function safeSourceFile(root: string, name: string): Promise<string> {
   let current = root;
   for (const part of ["", ...within.split(sep)]) {
     if (part) current = join(current, part);
-    if ((await lstat(current)).isSymbolicLink())
-      throw new Error("Provision source reparse paths refused.");
+    if ((await lstat(current)).isSymbolicLink()) throw new Error("Provision source reparse paths refused.");
   }
-  if (!(await lstat(path)).isFile())
-    throw new Error("Provision input is not a regular source file.");
+  if (!(await lstat(path)).isFile()) throw new Error("Provision input is not a regular source file.");
   return path;
 }
 
@@ -94,8 +89,7 @@ function validatePlan(value: Plan): void {
     value.tokenFile !== "/home/ubuntu/.aphrody/config/gitea.env" ||
     value.tokenVariable !== "GITEA_TOKEN_OWNER" ||
     value.bunExecutable !== "/home/ubuntu/.bun/bin/bun-1.4.4" ||
-    value.runnerKey !==
-      "/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner" ||
+    value.runnerKey !== "/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner" ||
     !Array.isArray(value.repositories) ||
     !value.repositories.length ||
     value.repositories.length > 1024
@@ -112,16 +106,10 @@ function validatePlan(value: Plan): void {
       throw new Error("Invalid declared forge repository.");
     names.add(repo.name);
     if (repo.mirror) {
-      if (
-        repo.name !== "bun-distribution" ||
-        repo.upstream !== "https://github.com/aphrody-labs/bun-distribution.git"
-      )
+      if (repo.name !== "bun-distribution" || repo.upstream !== "https://github.com/aphrody-labs/bun-distribution.git")
         throw new Error("Mirror source is outside the owner contract.");
     } else if (
-      !(
-        repo.name.startsWith("bun-crate-") ||
-        repo.name.startsWith("bun-package-")
-      ) ||
+      !(repo.name.startsWith("bun-crate-") || repo.name.startsWith("bun-package-")) ||
       (repo.private ?? value.private) !== true ||
       repo.upstream !== undefined
     )
@@ -129,16 +117,10 @@ function validatePlan(value: Plan): void {
   }
 }
 
-async function bounded(
-  argv: string[],
-  options: { cwd: string; input?: string; timeoutMs: number },
-) {
+async function bounded(argv: string[], options: { cwd: string; input?: string; timeoutMs: number }) {
   const child = Bun.spawn(argv, {
     cwd: options.cwd,
-    stdin:
-      options.input === undefined
-        ? "ignore"
-        : new TextEncoder().encode(options.input),
+    stdin: options.input === undefined ? "ignore" : new TextEncoder().encode(options.input),
     stdout: "pipe",
     stderr: "pipe",
     timeout: options.timeoutMs,
@@ -163,15 +145,8 @@ async function bounded(
     }
     return new TextDecoder().decode(buffer);
   }
-  const [stdout, , code] = await Promise.all([
-    capture(child.stdout),
-    capture(child.stderr),
-    child.exited,
-  ]);
-  if (code !== 0)
-    throw new Error(
-      "Provision owner subprocess failed; no credential diagnostics are printed.",
-    );
+  const [stdout, , code] = await Promise.all([capture(child.stdout), capture(child.stderr), child.exited]);
+  if (code !== 0) throw new Error("Provision owner subprocess failed; no credential diagnostics are printed.");
   return stdout;
 }
 
@@ -182,78 +157,52 @@ async function main() {
     return;
   }
   const root = await realpath(options.root);
-  const plan = (await Bun.file(
-    await safeSourceFile(root, catalogPath),
-  ).json()) as Plan;
+  const plan = (await Bun.file(await safeSourceFile(root, catalogPath)).json()) as Plan;
   validatePlan(plan);
   if (options.repositories.length) {
-    plan.repositories = options.repositories.map((name) => {
-      const repo = plan.repositories.find((item) => item.name === name);
-      if (!repo)
-        throw new Error(
-          "Selected repository is absent from the authorized catalog.",
-        );
+    plan.repositories = options.repositories.map(name => {
+      const repo = plan.repositories.find(item => item.name === name);
+      if (!repo) throw new Error("Selected repository is absent from the authorized catalog.");
       return repo;
     });
   }
   const report: Report = {
     applied: false,
     owner: plan.owner,
-    repositories: plan.repositories.map((repo) => repo.name),
+    repositories: plan.repositories.map(repo => repo.name),
     actions: plan.actions,
     runner_key: "VPS protected deploy key",
   };
   if (options.apply) {
-    if (
-      options.repositories.length !== 1 ||
-      plan.repositories.some((repo) => repo.mirror)
-    )
-      throw new Error(
-        "Apply requires one selected private source repository; mirror orchestration remains separate.",
-      );
+    if (options.repositories.length !== 1 || plan.repositories.some(repo => repo.mirror))
+      throw new Error("Apply requires one selected private source repository; mirror orchestration remains separate.");
     if (
       Bun.version !== "1.4.4" ||
-      !process.release.sourceUrl?.startsWith(
-        "https://github.com/aphrody-labs/bun/releases/download/",
-      )
+      !process.release.sourceUrl?.startsWith("https://github.com/aphrody-labs/bun/releases/download/")
     )
       throw new Error("Use the owner-qualified Aphrody Bun runtime.");
     for (const source of [catalogPath, clientPath, remotePath, rustPath]) {
       await safeSourceFile(root, source);
-      const current = await bounded(
-        ["git", "hash-object", `--path=${source}`, source],
-        {
-          cwd: root,
-          timeoutMs: 15000,
-        },
-      );
+      const current = await bounded(["git", "hash-object", `--path=${source}`, source], {
+        cwd: root,
+        timeoutMs: 15000,
+      });
       const committed = await bounded(["git", "rev-parse", `HEAD:${source}`], {
         cwd: root,
         timeoutMs: 15000,
       });
-      if (current.trim() !== committed.trim())
-        throw new Error("Commit reviewed provision inputs before apply.");
+      if (current.trim() !== committed.trim()) throw new Error("Commit reviewed provision inputs before apply.");
     }
-    const remoteProgram = await Bun.file(
-      await safeSourceFile(root, remotePath),
-    ).text();
-    if (
-      Bun.env.APHRODY_GITEA_REMOTE_PROGRAM !== undefined &&
-      Bun.env.APHRODY_GITEA_REMOTE_PROGRAM !== remoteProgram
-    )
-      throw new Error(
-        "Embedded remote owner differs from the reviewed shared source.",
-      );
+    const remoteProgram = await Bun.file(await safeSourceFile(root, remotePath)).text();
+    if (Bun.env.APHRODY_GITEA_REMOTE_PROGRAM !== undefined && Bun.env.APHRODY_GITEA_REMOTE_PROGRAM !== remoteProgram)
+      throw new Error("Embedded remote owner differs from the reviewed shared source.");
     const profile = Bun.env.USERPROFILE ?? Bun.env.HOME;
     if (!profile) throw new Error("Workstation profile unavailable.");
     const publicPath = join(profile, ".ssh/id_ed25519_aphrody.pub");
-    if (!(await lstat(publicPath)).isFile())
-      throw new Error("Workstation public key metadata unavailable.");
+    if (!(await lstat(publicPath)).isFile()) throw new Error("Workstation public key metadata unavailable.");
     const accountKey = (await Bun.file(publicPath).text()).trim();
     if (!/^ssh-ed25519 [A-Za-z0-9+/=]+(?: [^\r\n]*)?$/.test(accountKey))
-      throw new Error(
-        "Workstation public key is not the declared ED25519 identity.",
-      );
+      throw new Error("Workstation public key is not the declared ED25519 identity.");
     const data = {
       owner: plan.owner,
       branch: plan.branch,
@@ -264,7 +213,7 @@ async function main() {
       tokenVariable: plan.tokenVariable,
       bunExecutable: plan.bunExecutable,
       runnerKey: plan.runnerKey,
-      repositories: plan.repositories.map((repo) => ({
+      repositories: plan.repositories.map(repo => ({
         name: repo.name,
         mirror: repo.mirror,
         upstream: repo.upstream,
@@ -298,8 +247,7 @@ async function main() {
     if (
       response.owner !== report.owner ||
       response.actions !== report.actions ||
-      JSON.stringify(response.repositories) !==
-        JSON.stringify(report.repositories) ||
+      JSON.stringify(response.repositories) !== JSON.stringify(report.repositories) ||
       response.account_key !== "present" ||
       response.runner_key !== "present"
     )
@@ -315,8 +263,6 @@ async function main() {
 
 if (import.meta.main)
   main().catch(() => {
-    console.error(
-      "Gitea provision failed; review the selected catalog, committed source and owner capability.",
-    );
+    console.error("Gitea provision failed; review the selected catalog, committed source and owner capability.");
     process.exitCode = 1;
   });

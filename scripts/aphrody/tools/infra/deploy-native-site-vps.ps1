@@ -9,7 +9,7 @@ param(
     [switch]$Apply
 )
 $ErrorActionPreference = 'Stop'
-$unitPath = Join-Path $WorkspaceRoot 'tools/config/host/systemd/aphrody/aphrody-site.service'
+$unitPath = Join-Path $WorkspaceRoot 'infra/config/host/systemd/aphrody/aphrody-site.service'
 if (!(Test-Path -LiteralPath $unitPath)) { throw 'Missing declared native site unit' }
 $releaseId = 'native-site-' + $SourceManifestSha256.Substring(0,16)
 $unitSha256 = (Get-FileHash -LiteralPath $unitPath -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -36,7 +36,7 @@ if (!$Apply) {
     Write-Output "Plan: qualified native build and $($uiFiles.Count) hash-verified app-ui files -> /home/ubuntu/apps/aphrody/releases/$releaseId; dedicated aphrody-site identity; port80; backing up current link, unit and active state; native Infra apply required"
     return
 }
-$catalog = Get-Content (Join-Path $WorkspaceRoot 'tools/config/service-catalog.json') -Raw | ConvertFrom-Json
+$catalog = Get-Content (Join-Path $WorkspaceRoot 'infra/config/service-catalog.json') -Raw | ConvertFrom-Json
 $service = @($catalog.services | Where-Object id -EQ 'aphrody-site')
 if ($service.Count -ne 1 -or $service[0].runtime -ne 'rust' -or $service[0].port -ne 80 -or $service[0].host -ne 'vps' -or $service[0].status -eq 'retired') {
     throw 'Catalog does not authorize the native VPS site on port80'

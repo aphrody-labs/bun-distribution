@@ -6,7 +6,7 @@ import { assertOutsideRepo, buildAccessPack, type Tunnel } from "../access.ts";
 import type { Command } from "./types.ts";
 const pairs = (values: string[] | undefined): Record<string, string> =>
   Object.fromEntries(
-    (values ?? []).map((entry) => {
+    (values ?? []).map(entry => {
       const at = entry.indexOf("=");
       if (at < 1) throw new Error(`« ${entry} » : forme hôte=valeur attendue`);
       return [entry.slice(0, at), entry.slice(at + 1)] as const;
@@ -33,21 +33,17 @@ async function run(argv: string[]): Promise<number> {
   }
   const repoRoot = resolve(import.meta.dir, "../../../../../docs/aphrody");
   assertOutsideRepo(values.out, repoRoot);
-  const tunnelFile =
-    values.tunnel ??
-    join(repoRoot, "tools/config/host/wireguard/aphrody-tunnel.json");
+  const tunnelFile = values.tunnel ?? join(repoRoot, "infra/config/host/wireguard/aphrody-tunnel.json");
   const tunnel = JSON.parse(await readFile(tunnelFile, "utf8")) as Tunnel;
   const hostKeys = values["host-keys"]
     ? (await readFile(values["host-keys"], "utf8"))
         .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter((line) => line !== "" && !line.startsWith("#"))
+        .map(line => line.trim())
+        .filter(line => line !== "" && !line.startsWith("#"))
     : [];
   const pack = buildAccessPack(tunnel, {
     peer: values.peer,
-    ...(values["wg-block"]
-      ? { wgBlock: await readFile(values["wg-block"], "utf8") }
-      : {}),
+    ...(values["wg-block"] ? { wgBlock: await readFile(values["wg-block"], "utf8") } : {}),
     ...(values["train-host"] ? { trainHost: values["train-host"] } : {}),
     hostKeys,
     repoDirs: pairs(values["repo-dir"]),
@@ -60,9 +56,7 @@ async function run(argv: string[]): Promise<number> {
   console.log(
     `écrit : ${values.out} (hôtes : ${Object.keys(pack.hosts).join(", ")}${pack.wireguard?.block ? ", tunnel WireGuard" : ", SANS tunnel WireGuard"}${pack.hostKeys.length > 0 ? `, ${pack.hostKeys.length} empreintes` : ", SANS empreintes d'hôtes (première connexion non vérifiée)"})`,
   );
-  console.log(
-    "À envoyer en privé à la personne (jamais dans le dépôt). Il ne contient aucune clé privée.",
-  );
+  console.log("À envoyer en privé à la personne (jamais dans le dépôt). Il ne contient aucune clé privée.");
   return 0;
 }
 

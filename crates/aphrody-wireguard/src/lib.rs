@@ -6,7 +6,7 @@
 //! - [`Tunnel`]: `wg-quick up/down`, `wg show`, `wg set`, `wg syncconf` on the Linux kernel
 //!   module (netlink), the boringtun userspace device (Linux, BSD, macOS) or the WireGuardNT
 //!   kernel driver (Windows, [`driver`]).
-//! - [`Inventory`]: the declared tunnel `tools/config/host/wireguard/aphrody-tunnel.json`.
+//! - [`Inventory`]: the declared tunnel `infra/config/host/wireguard/aphrody-tunnel.json`.
 //!
 //! `aphrody infra wg set-peer` uses [`PeerPatch`]: omitted options preserve the live peer's
 //! AllowedIPs, endpoint, keepalive and preshared key. An explicit empty `--allowed-ips` clears

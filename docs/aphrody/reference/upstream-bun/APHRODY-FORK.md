@@ -12,7 +12,7 @@ release notes and the installers (`/install`, `/install.sh`, `/install.ps1`). Th
 `scripts/aphrody/site/` (test `test/internal/aphrody-site.test.ts`); `publish.ts` (user timer on the vps) deploys it
 to Cloudflare as the static assets of the Worker `aphrody-app` (`packages/bun-cloudflare/app` of the fork, API under
 `/api`). `bun.aphrody.com` answers a permanent redirect to the same path on aphrody.app
-([`bun.aphrody.com.conf`](../../../../tools/aphrody/config/host/nginx/aphrody/bun.aphrody.com.conf)). `aphrody.com` and
+([`bun.aphrody.com.conf`](../../../../infra/config/host/nginx/aphrody/bun.aphrody.com.conf)). `aphrody.com` and
 `aphrody.com/docs` stay the Aphrody app and its documentation; they do not duplicate the Bun docs.
 
 ## Rules

@@ -13,9 +13,26 @@
     "./coverage": "./src/coverage.ts",
     "./hash": "./src/hash.ts",
     "./process": "./src/process.ts",
-    "./runtime": "./src/runtime.ts"
+    "./runtime": "./src/runtime.ts",
+    "./automation": "./src/automation/index.ts",
+    "./automation/*": "./src/automation/*"
   },
   "engines": {
     "bun": "1.4.4"
+  },
+  "license": "MIT AND Apache-2.0",
+  "dependencies": {
+    "@aphrody/a2a": "workspace:*",
+    "@aphrody/os": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/timeline": "workspace:*",
+    "@aphrody/update": "workspace:*",
+    "@aphrody/web-source": "workspace:*",
+    "@aphrody/yolo-core": "workspace:*",
+    "ts-morph": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/yolo-cli": "workspace:*"
   }
 }

@@ -3,18 +3,11 @@ import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { composeUnit, loadCatalog } from "../src/host/index.ts";
 import { applyPlan, hostPlan, trackProxyMutations } from "../src/host/plan.ts";
-import {
-  mkdtempSync,
-  mkdirSync,
-  writeFileSync,
-  readFileSync,
-  existsSync,
-  rmSync,
-} from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { loadTunnel, selectedProxySteps } from "../src/host/wireguard.ts";
 
-const root = join(import.meta.dir, "../../../tools/aphrody/config/host");
+const root = join(import.meta.dir, "../../../infra/config/host");
 const ctx = {
   root,
   catalog: loadCatalog(root),
@@ -24,18 +17,10 @@ const ctx = {
 test("Selected DBFR proxy reuses only its owner steps, address and granted sources", () => {
   const projected = selectedProxySteps(loadTunnel(root), ctx, "mcp-http-dbfr");
   expect(projected.length).toBeGreaterThan(4);
-  expect(
-    projected.every(
-      (step) => step.host === "dbfr" && step.id.startsWith("dbfr.proxy-"),
-    ),
-  ).toBe(true);
-  const commands = projected.map((step) => step.run ?? "").join("\n");
-  expect(commands).not.toMatch(
-    /wg genkey|wg-quick|wireguard\/wg1\.conf|useradd|authorized_keys|ufw reset/,
-  );
-  const socket = projected.find(
-    (step) => step.id === "dbfr.proxy-unit.socket",
-  )!.run!;
+  expect(projected.every(step => step.host === "dbfr" && step.id.startsWith("dbfr.proxy-"))).toBe(true);
+  const commands = projected.map(step => step.run ?? "").join("\n");
+  expect(commands).not.toMatch(/wg genkey|wg-quick|wireguard\/wg1\.conf|useradd|authorized_keys|ufw reset/);
+  const socket = projected.find(step => step.id === "dbfr.proxy-unit.socket")!.run!;
   const encoded = /echo ([A-Za-z0-9+/=]+) \| base64/.exec(socket)![1]!;
   const template = Buffer.from(encoded, "base64").toString();
   expect(template).toContain("ListenStream=10.200.77.3:%i");
@@ -56,47 +41,30 @@ test("The selected projection rejects public, foreign-host and unauthenticated s
   ]) {
     const tunnel = loadTunnel(root);
     Object.assign(
-      tunnel.services.find((service) => service.id === "mcp-http-dbfr")!,
+      tunnel.services.find(service => service.id === "mcp-http-dbfr")!,
       patch,
     );
-    expect(() => selectedProxySteps(tunnel, ctx, "mcp-http-dbfr")).toThrow(
-      "declared private authenticated loopback",
-    );
+    expect(() => selectedProxySteps(tunnel, ctx, "mcp-http-dbfr")).toThrow("declared private authenticated loopback");
   }
 });
 
 test("MCP DBFR plan checks existing templates and authenticates native service before proxy mutation", () => {
   const plan = hostPlan(["aphrody-mcp-http-dbfr"], { target: "dbfr" });
-  expect(
-    plan.steps.find((step) => step.id.endsWith("/wireguard-live"))?.run,
-  ).toContain("10.200.77.3/32");
-  const templates = plan.steps.filter((step) =>
-    step.id.includes("/wireguard-template:"),
-  );
+  expect(plan.steps.find(step => step.id.endsWith("/wireguard-live"))?.run).toContain("10.200.77.3/32");
+  const templates = plan.steps.filter(step => step.id.includes("/wireguard-template:"));
   expect(templates).toHaveLength(2);
   expect(
-    templates.every(
-      (step) =>
-        step.phase === "preflight" &&
-        step.kind === "check" &&
-        step.run.includes("sudo -n cat"),
-    ),
+    templates.every(step => step.phase === "preflight" && step.kind === "check" && step.run.includes("sudo -n cat")),
   ).toBe(true);
-  const auth = plan.steps.findIndex((step) =>
-    step.id.endsWith("/auth-wrong-token"),
-  );
-  const proxy = plan.steps.findIndex((step) =>
-    step.id.includes("/wireguard:dbfr.proxy-unit"),
-  );
+  const auth = plan.steps.findIndex(step => step.id.endsWith("/auth-wrong-token"));
+  const proxy = plan.steps.findIndex(step => step.id.includes("/wireguard:dbfr.proxy-unit"));
   expect(auth).toBeGreaterThan(0);
   expect(proxy).toBeGreaterThan(auth);
+  expect(plan.steps.find(step => step.id.endsWith("/private-auth-required"))?.run).toContain(
+    "http://10.200.77.3:8793/mcp",
+  );
   expect(
-    plan.steps.find((step) => step.id.endsWith("/private-auth-required"))?.run,
-  ).toContain("http://10.200.77.3:8793/mcp");
-  expect(
-    plan.steps
-      .filter((step) => step.id.includes("/wireguard:"))
-      .every((step) => step.run.startsWith("sudo -n sh -c")),
+    plan.steps.filter(step => step.id.includes("/wireguard:")).every(step => step.run.startsWith("sudo -n sh -c")),
   ).toBe(true);
 });
 
@@ -132,11 +100,7 @@ test("Rollback removes newly owned templates and grants while keeping prior live
       log = join(dir, "calls");
     mkdirSync(state);
     mkdirSync(units);
-    const projection = selectedProxySteps(
-      loadTunnel(root),
-      ctx,
-      "mcp-http-dbfr",
-    );
+    const projection = selectedProxySteps(loadTunnel(root), ctx, "mcp-http-dbfr");
     const tracked = trackProxyMutations(projection, state, 8793);
     for (const marker of [
       "ready",
@@ -158,22 +122,12 @@ test("Rollback removes newly owned templates and grants while keeping prior live
         stderr: "ignore",
       }).exited,
     ).toBe(0);
-    expect(readFileSync(join(units, "aphrody-wg-proxy@.socket"), "utf8")).toBe(
-      "prior template",
-    );
+    expect(readFileSync(join(units, "aphrody-wg-proxy@.socket"), "utf8")).toBe("prior template");
     expect(existsSync(join(units, "aphrody-wg-proxy@.service"))).toBe(false);
     const calls = readFileSync(log, "utf8");
-    const rules = projection.filter((step) => step.id.includes(".proxy-ufw."));
-    expect(calls).toContain(
-      rules[1]!
-        .run!.replace(/^ufw /, "ufw --force delete ")
-        .replaceAll("'", ""),
-    );
-    expect(calls).not.toContain(
-      rules[0]!
-        .run!.replace(/^ufw /, "ufw --force delete ")
-        .replaceAll("'", ""),
-    );
+    const rules = projection.filter(step => step.id.includes(".proxy-ufw."));
+    expect(calls).toContain(rules[1]!.run!.replace(/^ufw /, "ufw --force delete ").replaceAll("'", ""));
+    expect(calls).not.toContain(rules[0]!.run!.replace(/^ufw /, "ufw --force delete ").replaceAll("'", ""));
     expect(calls).not.toContain("systemctl stop");
     expect(calls).not.toContain("systemctl disable");
   } finally {
@@ -184,18 +138,10 @@ test("Rollback removes newly owned templates and grants while keeping prior live
 test("Firewall tracking preserves canonical existing rules and refuses ambiguous foreign tuples", async () => {
   const dir = mkdtempSync(join(tmpdir(), "proxy-rule-"));
   try {
-    const projection = selectedProxySteps(
-      loadTunnel(root),
-      ctx,
-      "mcp-http-dbfr",
-    );
+    const projection = selectedProxySteps(loadTunnel(root), ctx, "mcp-http-dbfr");
     const tracked = trackProxyMutations(projection, dir, 8793);
-    const rule = projection.find((step) =>
-      step.id.includes(".proxy-ufw."),
-    )!.run!;
-    const command = tracked.steps.find((step) =>
-      step.id.includes(".proxy-ufw."),
-    )!.run!;
+    const rule = projection.find(step => step.id.includes(".proxy-ufw."))!.run!;
+    const command = tracked.steps.find(step => step.id.includes(".proxy-ufw."))!.run!;
     const marker = join(dir, "new-rule.0"),
       log = join(dir, "calls");
     const run = async (known: string, code = 0) =>
@@ -214,9 +160,7 @@ test("Firewall tracking preserves canonical existing rules and refuses ambiguous
       ).exited;
     expect(await run(rule)).toBe(0);
     expect(existsSync(marker)).toBe(false);
-    expect(
-      await run(rule.replace(/comment .*/, "comment 'foreign-owner'")),
-    ).toBe(1);
+    expect(await run(rule.replace(/comment .*/, "comment 'foreign-owner'"))).toBe(1);
     expect(existsSync(marker)).toBe(false);
     expect(await run("", 1)).toBe(1);
     expect(existsSync(marker)).toBe(false);

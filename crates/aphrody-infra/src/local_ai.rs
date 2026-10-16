@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Typed access to `tools/config/local-ai.json`, the local/open-source AI contract
+//! Typed access to `tools/aphrody/config/local-ai.json`, the local/open-source AI contract
 //! (capabilities, canonical env names and aliases, targets, consumers).
 //!
 //! Included by `validate` so the library and the binary share one definition.
@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-/// `tools/config/local-ai.json`: how every repository reaches the local AI stack.
+/// `tools/aphrody/config/local-ai.json`: how every repository reaches the local AI stack.
 ///
 /// Unknown fields are rejected so a typo in the contract fails validation
 /// instead of silently dropping a rule.
@@ -51,7 +51,7 @@ pub struct LocalAiResolution {
 }
 
 /// A service whose listeners are started on demand (dynamic ports), as
-/// opposed to a systemd unit of `tools/config/service-catalog.json`.
+/// opposed to a systemd unit of `infra/config/service-catalog.json`.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LocalAiManagedService {
@@ -214,7 +214,7 @@ impl LocalAiContract {
 }
 
 pub fn load_local_ai(root: &Path) -> Result<LocalAiContract> {
-    let path = root.join("tools/config/local-ai.json");
+    let path = root.join("tools/aphrody/config/local-ai.json");
     let content =
         fs::read_to_string(&path).with_context(|| format!("lecture de {}", path.display()))?;
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))

@@ -2,10 +2,10 @@
 //! Unified catalog access for Aphrody infrastructure.
 //!
 //! Provides typed access to:
-//! - `tools/config/service-catalog.json` (systemd services, runtimes, proxy links)
-//! - yolo `tools/config/host/nginx/routes.json` (`$YOLO_ROOT`; public domain mappings and upstreams)
-//! - `tools/config/application-contracts.json` (inter-app architecture constraints)
-//! - yolo `tools/config/host/inventory/targets.json` (cross-host infrastructure matrix)
+//! - `infra/config/service-catalog.json` (systemd services, runtimes, proxy links)
+//! - yolo `infra/config/host/nginx/routes.json` (`$YOLO_ROOT`; public domain mappings and upstreams)
+//! - `infra/config/application-contracts.json` (inter-app architecture constraints)
+//! - yolo `infra/config/host/inventory/targets.json` (cross-host infrastructure matrix)
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -59,7 +59,7 @@ pub struct CatalogService {
     /// when absent, [`CatalogService::effective_port`] derives it from `health`.
     pub port: Option<u16>,
     /// Capability ids this service provides (for AI services, the capability
-    /// and gateway ids of `tools/config/local-ai.json`).
+    /// and gateway ids of `tools/aphrody/config/local-ai.json`).
     pub capabilities: Option<Vec<String>>,
     /// `retired` when the unit was decommissioned from its target host; the
     /// entry stays cataloged (ports, health path, routes) for an eventual
@@ -175,13 +175,13 @@ pub struct TargetInfo {
 }
 
 pub fn load_service_catalog(root: &Path) -> Result<ServiceCatalog> {
-    let path = root.join("tools/config/service-catalog.json");
+    let path = root.join("infra/config/service-catalog.json");
     let content =
         fs::read_to_string(&path).with_context(|| format!("lecture de {}", path.display()))?;
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))
 }
 
-/// The cross-host matrix lives in `$APHRODY_ROOT/tools/config/host/inventory/targets.json`.
+/// The cross-host matrix lives in `$APHRODY_ROOT/infra/config/host/inventory/targets.json`.
 pub fn load_target_matrix() -> Result<TargetMatrix> {
     let path = crate::validate::host_config_root().join("inventory/targets.json");
     let content =

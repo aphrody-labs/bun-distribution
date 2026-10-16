@@ -37,7 +37,7 @@ bun scripts/build/rust/cargo-serial.ts --msvc check -p <crate> --locked
 Le tunnel Windows lance un superviseur Bun natif, SSH natif et le daemon Git
 local sous tmux natif. Il n'utilise ni shell WSL ni socket ControlMaster Unix.
 L'hôte distant reste Linux et utilise le wrapper Cargo sérialisé et tmux.
-La configuration est [vps-cargo.json](../../../../tools/aphrody/config/host/vps-cargo.json).
+La configuration est [vps-cargo.json](../../../../infra/config/host/vps-cargo.json).
 Les chemins distants existants `aphrody-wsl`, `vu-wsl`, `shenron-wsl` restent
 des identifiants de stores/caches : ce lot ne les déplace ni ne les purge.
 

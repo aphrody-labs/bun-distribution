@@ -34,11 +34,6 @@
       "integrity": "sha512-Ee9YF77G6Az5/ozEpBO1j3l8nS60+rKTSBylQSS1M9UdpHs9nXMbNCiJbmsv2PmNCydog81uIq/3XLSPPS5F3Q=="
     },
     {
-      "name": "@aphrody/workspace",
-      "version": "0.1.2",
-      "integrity": "sha512-pv7OWBe+EOx7X/XaTDDnu7Lj5QYqsfVGonxSwSs2qmY01mlRtr8daXwSEHoMVwJnWvOBdO/mZVmPQb5eKBR+SA=="
-    },
-    {
       "name": "@aphrody/bun",
       "version": "3.3.11",
       "integrity": "sha512-lw3t9Ydx17EGZBsh9kisZNjTYGIvxEFa8DgYqb3Mi30tPhzlNpFP5Twj0gRHJqonz+fOxTMLsugYzxKqrfaoHA=="

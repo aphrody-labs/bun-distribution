@@ -52,7 +52,7 @@ const configuredAphrody = process.env.APHRODY_ROOT || process.env.APHRODY_INFRA_
 if (configuredAphrody) {
   console.log(`[INFO] Explicit operations checkout: ${resolve(root, configuredAphrody)}`);
 } else {
-  console.log("[INFO] Shared operations use the installed @aphrody/workspace registry owner.");
+  console.log("[INFO] Shared operations use the installed @aphrody/bun-workspace registry owner.");
 }
 
 // 2. Ensure Git-Ignored Directory Structure

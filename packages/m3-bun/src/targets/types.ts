@@ -25,7 +25,7 @@ export interface TargetContext {
   api?: string;
   /** Bun version the app is built with. */
   bunVersion: string;
-  /** The yolo checkout (host conventions are read from `tools/config/host`). */
+  /** The yolo checkout (host conventions are read from `infra/config/host`). */
   yoloRoot: string;
   /** How generated scripts invoke the CLI (`bunx --bun m3-bun`). */
   cli: string;

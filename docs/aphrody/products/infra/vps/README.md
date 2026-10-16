@@ -8,9 +8,9 @@ catalogs of this repository.
 
 | Fact | Source of truth |
 |---|---|
-| Workloads, units, health URLs, loopback ports, source repositories | [`tools/config/service-catalog.json`](../../../../../tools/aphrody/config/service-catalog.json) |
+| Workloads, units, health URLs, loopback ports, source repositories | [`tools/config/service-catalog.json`](../../../../../infra/config/service-catalog.json) |
 | Public hosts, Nginx upstreams and internal routes | `yolo/tools/config/host/nginx/routes.json` |
-| Host roles, priorities, public and loopback-only ports | [`tools/config/production-topology.json`](../../../../../tools/aphrody/config/production-topology.json), [`docs/products/infra/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
+| Host roles, priorities, public and loopback-only ports | [`tools/config/production-topology.json`](../../../../../infra/config/production-topology.json), [`docs/products/infra/PRODUCTION-ALLOCATION.md`](../PRODUCTION-ALLOCATION.md) |
 | Targets and SSH aliases | `yolo/tools/config/host/inventory/targets.json` |
 | Last dated observation of the host | `yolo/tools/config/host/inventory/vps-source.json` (evidence, never live state) |
 | Kernel, sysctl and journald tuning | `yolo/tools/config/host/aphrody-os/VPS-TUNING.md` (reference proposal, not an installed configuration) |

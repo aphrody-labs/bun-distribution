@@ -50,7 +50,7 @@ fi
 
 step "versions from the repository"
 channel="$(sed -nE 's/^channel[[:space:]]*=[[:space:]]*"([^"]+)"/\1/p' "$root/rust-toolchain.toml" 2>/dev/null | head -1)"
-bun_pin="$(sed -nE '/"bun"[[:space:]]*:[[:space:]]*\{/,/\}/ s/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$root/tools/config/system-packages.json" 2>/dev/null | head -1)"
+bun_pin="$(sed -nE '/"bun"[[:space:]]*:[[:space:]]*\{/,/\}/ s/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "$root/infra/config/system-packages.json" 2>/dev/null | head -1)"
 echo "  rust channel: ${channel:-stable}  bun: ${bun_pin:-latest}"
 
 step "rust"
@@ -86,8 +86,8 @@ if have cargo-binstall || (( dry == 1 )); then
   done
 fi
 # Where the proxy blocks api.github.com/graphql (cargo-binstall cannot resolve releases), the same cargo-quickinstall
-# archives are downloaded directly; the missing command lists come from tools/config/developer-cli-tools.json and the
-# cargoTools of tools/config/system-packages.json.
+# archives are downloaded directly; the missing command lists come from infra/config/developer-cli-tools.json and the
+# cargoTools of infra/config/system-packages.json.
 if have bun || (( dry == 1 )); then
   missing=""
   for crate in nu choose du-dust dysk procs bottom zoxide git-delta xh tealdeer gitui just atuin starship zellij sccache \

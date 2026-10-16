@@ -3,47 +3,26 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-  BEGIN,
-  END,
-  captureSshConfig,
-  envValue,
-  mergeNetMap,
-  reachable,
-  renderNetMap,
-} from "../src/host/net-env.ts";
-import {
-  collectFacts,
-  parseWgDump,
-  renderFacts,
-  setKeys,
-  staticUpdates,
-} from "../src/host/net-facts.ts";
+import { BEGIN, END, captureSshConfig, envValue, mergeNetMap, reachable, renderNetMap } from "../src/host/net-env.ts";
+import { collectFacts, parseWgDump, renderFacts, setKeys, staticUpdates } from "../src/host/net-facts.ts";
 import { loadTunnel } from "../src/host/wireguard.ts";
 
-const tunnel = loadTunnel(
-  resolve(import.meta.dir, "../../../tools/aphrody/config/host"),
-);
+const tunnel = loadTunnel(resolve(import.meta.dir, "../../../infra/config/host"));
 const now = new Date("2026-10-09T12:00:00Z");
 
 test("aphro-pc reaches its grants and its mesh members, never a meshDenied host by mesh", () => {
   const own = reachable(tunnel, "aphro-pc");
-  expect(own.mesh.map((m) => m.id).toSorted()).toEqual(["omar", "vps"]);
-  expect(own.services.every((s) => s.status !== "pending")).toBe(true);
+  expect(own.mesh.map(m => m.id).toSorted()).toEqual(["omar", "vps"]);
+  expect(own.services.every(s => s.status !== "pending")).toBe(true);
   expect(
     reachable(tunnel, "dbfr")
-      .mesh.map((m) => m.id)
+      .mesh.map(m => m.id)
       .toSorted(),
   ).toEqual(["aphro-pc", "omar", "vps"]);
 });
 
 test("the rendered block carries addresses and probes but no secret", () => {
-  const block = renderNetMap(
-    tunnel,
-    "aphro-pc",
-    [{ name: "ssh-vps", target: "10.200.77.1:22", ok: true, ms: 3 }],
-    now,
-  );
+  const block = renderNetMap(tunnel, "aphro-pc", [{ name: "ssh-vps", target: "10.200.77.1:22", ok: true, ms: 3 }], now);
   expect(block.startsWith(BEGIN)).toBe(true);
   expect(block.endsWith(END)).toBe(true);
   expect(block).toContain("NET_SELF=aphro-pc");
@@ -56,10 +35,7 @@ test("the rendered block carries addresses and probes but no secret", () => {
 
 test("merge replaces only the generated block and keeps the secrets around it", () => {
   const secrets = 'WG_PRIVATE_KEY=abc\nSSH_KEY="-----BEGIN\nx\n-----END"\n';
-  const first = mergeNetMap(
-    secrets,
-    renderNetMap(tunnel, "aphro-pc", undefined, now),
-  );
+  const first = mergeNetMap(secrets, renderNetMap(tunnel, "aphro-pc", undefined, now));
   expect(first.startsWith(secrets.trimEnd())).toBe(true);
   const second = mergeNetMap(first, `${BEGIN}\nNET_SELF=omar\n${END}`);
   expect(second.split(BEGIN).length).toBe(2);
@@ -71,18 +47,10 @@ test("merge replaces only the generated block and keeps the secrets around it", 
 
 test("the SSH config is mirrored from the live file", () => {
   const file = join(mkdtempSync(join(tmpdir(), "net-env-")), "config");
-  writeFileSync(
-    file,
-    'Host vps\r\n  HostName 10.200.77.1\r\n  ProxyCommand "x"\r\n',
-  );
+  writeFileSync(file, 'Host vps\r\n  HostName 10.200.77.1\r\n  ProxyCommand "x"\r\n');
   const added = captureSshConfig("A=1\n", file);
-  expect(envValue(added, "SSH_CONFIG")).toBe(
-    "Host vps\n  HostName 10.200.77.1\n  ProxyCommand 'x'",
-  );
-  const replaced = captureSshConfig(
-    'A=1\nSSH_CONFIG="old\nvalue"\nB=2\n',
-    file,
-  );
+  expect(envValue(added, "SSH_CONFIG")).toBe("Host vps\n  HostName 10.200.77.1\n  ProxyCommand 'x'");
+  const replaced = captureSshConfig('A=1\nSSH_CONFIG="old\nvalue"\nB=2\n', file);
   expect(replaced).toContain("B=2");
   expect(replaced).not.toContain("old");
 });
@@ -109,26 +77,15 @@ test("wg dump parsing gives public address, handshake age and traffic per member
 });
 
 test("live facts are rendered without secrets and rewrite the static public addresses", async () => {
-  const hubDump =
-    "i\tp\t1\toff\nk\t(none)\t92.170.252.46:1\t10.200.77.10/32\t100\t1\t2\t25";
-  const runner = async (cmd: string[]) =>
-    cmd.at(-1)?.includes("wg show") ? hubDump : "hostname=h\nufw_rules=3";
-  const c = await collectFacts(
-    tunnel,
-    "aphro-pc",
-    async (_h, p) => p === 22,
-    runner,
-    130,
-  );
+  const hubDump = "i\tp\t1\toff\nk\t(none)\t92.170.252.46:1\t10.200.77.10/32\t100\t1\t2\t25";
+  const runner = async (cmd: string[]) => (cmd.at(-1)?.includes("wg show") ? hubDump : "hostname=h\nufw_rules=3");
+  const c = await collectFacts(tunnel, "aphro-pc", async (_h, p) => p === 22, runner, 130);
   const lines = renderFacts(c, now).join("\n");
   expect(lines).toContain("NET_LIVE_OMAR_PUBLIC_IP=92.170.252.46");
   expect(lines).toContain("NET_LIVE_OMAR_WG_ONLINE=yes");
   expect(lines).toContain("NET_LIVE_VPS_UFW_RULES=3");
   expect(lines).toContain("NET_LIVE_DBFR_PORTS_OPEN=22");
   expect(lines).not.toMatch(/PRIVATE|KEY=/);
-  const text = setKeys(
-    "OMAR_PUBLIC_IP=1.1.1.1\nOTHER=x\n",
-    staticUpdates(c.publicIps),
-  );
+  const text = setKeys("OMAR_PUBLIC_IP=1.1.1.1\nOTHER=x\n", staticUpdates(c.publicIps));
   expect(text).toBe("OMAR_PUBLIC_IP=92.170.252.46\nOTHER=x\n");
 });

@@ -28,7 +28,7 @@ export type Options = {
 export const RUNTIME_CONTEXT = [
   DOCKERFILE,
   "tools/config/container/entrypoint.sh",
-  "packages/infra/workspace/assets/downloads/install-full.sh",
+  "packages/bun-workspace/assets/downloads/install-full.sh",
 ];
 
 export function parseArgs(argv: string[]): {

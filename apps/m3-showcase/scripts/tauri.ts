@@ -14,7 +14,7 @@ import {
   readFactoryConfig,
   routeHeavyBuild,
   type BuildFactoryStatus,
-} from "../../../../packages/infra/workspace/src/build-factory";
+} from "../../../../packages/bun-workspace/src/automation/build-factory";
 import { APHRODY_ROOT, SHOWCASE_ROOT, TAURI_ROOT } from "./icons";
 
 export const CARGO_RUNNER = resolve(

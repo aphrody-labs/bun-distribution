@@ -1,7 +1,7 @@
 # Source tunnel authentication
 
 Observed on 2026-10-14. Aphrody Infra owns the host configuration and the
-[private network declaration](../../../../tools/aphrody/config/host/wireguard/cloudflare-private-network.json).
+[private network declaration](../../../../infra/config/host/wireguard/cloudflare-private-network.json).
 
 ## Active server configuration
 
@@ -52,7 +52,7 @@ the live forge blocks and selected environment keys. It does not deploy the
 source Compose storage migration or the pending product API include.
 [`issue-source-certificate.sh`](../../../../scripts/aphrody/tools/infra/issue-source-certificate.sh)
 reuses the existing certificate owner.
-[`source-private-dns.ps1`](../../../../tools/aphrody/config/host/windows/source-private-dns.ps1)
+[`source-private-dns.ps1`](../../../../infra/config/host/windows/source-private-dns.ps1)
 provides an alternative direct WireGuard hosts mapping only after real Windows
 elevation, route and TLS qualification. It was applied: ordinary hostname
 resolution returns `10.200.77.1`, and `/user/settings` returns HTTP 200 with

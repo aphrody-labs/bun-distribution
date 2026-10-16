@@ -38,7 +38,7 @@ downloaded, verified and installed the official MSI once. See
 [client qualification](cloudflare-one-client-windows.md). The Cloudflare organization, owner enrollment,
 private `/24` route, precise split-tunnel exclusions and Source Gateway DNS rule
 are now configured in
-[`cloudflare-private-network.json`](../../../tools/aphrody/config/host/wireguard/cloudflare-private-network.json).
+[`cloudflare-private-network.json`](../../../infra/config/host/wireguard/cloudflare-private-network.json).
 The Windows device is installed and enrolled in `aphrody-labs` (managed=true).
 WARP reported Connected/unstable and broke Source private HTTPS; disconnecting
 WARP restored hostname HTTP 200. It remains disconnected for WireGuard access.

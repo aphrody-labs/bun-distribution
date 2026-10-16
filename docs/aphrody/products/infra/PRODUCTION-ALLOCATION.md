@@ -3,8 +3,8 @@
 ## Décision
 
 La topologie déclarée est portée par
-[`tools/config/production-topology.json`](../../../../tools/aphrody/config/production-topology.json),
-les unités par [`tools/config/service-catalog.json`](../../../../tools/aphrody/config/service-catalog.json)
+[`tools/config/production-topology.json`](../../../../infra/config/production-topology.json),
+les unités par [`tools/config/service-catalog.json`](../../../../infra/config/service-catalog.json)
 et les routes par `yolo/tools/config/host/nginx/routes.json`.
 Le VPS héberge les allocations actives RG, Shenron et Nginx ; les allocations
 Aphrody Web/AI et NIE sont marquées retired dans le catalogue. La pile Aphrody

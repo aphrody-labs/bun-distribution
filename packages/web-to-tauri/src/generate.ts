@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Writes the Tauri 3 project of a conversion plan. The generated app is configuration only: the
- * behaviour lives in the `aphrody-tauri-wrap` runtime plugin, so a converted app carries no
+ * behaviour lives in the `tauri-plugin-aphrody` runtime plugin, so a converted app carries no
  * copy of the navigation, download or proxy logic. The Tauri shell itself comes from
  * `@aphrody/scaffold`, the single scaffolder.
  */
@@ -21,7 +21,7 @@ import {
 import type { ConversionPlan, IconRef, SiteProbe } from "./types.ts";
 
 export interface GenerateOptions {
-  /** Directory of the `aphrody-tauri-wrap` crate. Defaults to `crates/ui/tauri-wrap` of this checkout. */
+  /** Directory of the `tauri-plugin-aphrody` crate. Defaults to `packages/bun-tauri/crates/tauri-plugin-aphrody` of this checkout. */
   wrapCrate?: string;
   /** Copy the repository `Cargo.lock` next to the project so versions match and offline builds work. */
   copyLock?: boolean;
@@ -43,17 +43,14 @@ export class GenerateError extends Error {
   }
 }
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../..");
+const REPO_ROOT = resolve(import.meta.dir, "../../..");
 
 function iconScore(icon: IconRef): number {
   const size = Math.max(
     0,
-    ...(icon.sizes ?? "")
-      .split(/\s+/)
-      .map((part) => Number.parseInt(part.split("x")[0] ?? "0", 10) || 0),
+    ...(icon.sizes ?? "").split(/\s+/).map(part => Number.parseInt(part.split("x")[0] ?? "0", 10) || 0),
   );
-  const png =
-    /png/i.test(icon.type ?? "") || /\.png(?:$|\?)/i.test(icon.href) ? 1 : 0;
+  const png = /png/i.test(icon.type ?? "") || /\.png(?:$|\?)/i.test(icon.href) ? 1 : 0;
   const apple = /apple-touch/.test(icon.rel) ? 50 : 0;
   return png * 1000 + Math.min(size, 1024) + apple;
 }
@@ -79,23 +76,14 @@ async function fetchIcon(
       if (!res.ok) continue;
       const bytes = new Uint8Array(await res.arrayBuffer());
       if (bytes.length === 0 || bytes.length > 5_000_000) continue;
-      if (isUsableAppIcon(bytes))
-        return { png: bytes, source: { ext: "png", bytes } };
+      if (isUsableAppIcon(bytes)) return { png: bytes, source: { ext: "png", bytes } };
       if (!source) {
         const type = res.headers.get("content-type") ?? icon.type ?? "";
-        const ext = /svg/i.test(type)
-          ? "svg"
-          : /png/i.test(type)
-            ? "png"
-            : /icon|ico/i.test(type)
-              ? "ico"
-              : "png";
+        const ext = /svg/i.test(type) ? "svg" : /png/i.test(type) ? "png" : /icon|ico/i.test(type) ? "ico" : "png";
         source = { ext, bytes };
       }
     } catch (error) {
-      notes.push(
-        `icon ${icon.href} not fetched: ${error instanceof Error ? error.message : error}`,
-      );
+      notes.push(`icon ${icon.href} not fetched: ${error instanceof Error ? error.message : error}`);
     }
   }
   return { png: null, source };
@@ -154,16 +142,12 @@ export async function generateProject(
   const { config } = plan;
   const notes: string[] = [];
   const doFetch = options.fetch ?? fetch;
-  const wrapCrate = resolve(
-    options.wrapCrate ?? join(REPO_ROOT, "crates/ui/tauri-wrap"),
-  );
+  const wrapCrate = resolve(options.wrapCrate ?? join(REPO_ROOT, "packages/bun-tauri/crates/tauri-plugin-aphrody"));
   if (!existsSync(join(wrapCrate, "Cargo.toml"))) {
-    throw new GenerateError(
-      `aphrody-tauri-wrap crate not found at ${wrapCrate}`,
-    );
+    throw new GenerateError(`tauri-plugin-aphrody crate not found at ${wrapCrate}`);
   }
   const tauriDir = join(out, "src-tauri");
-  // The debug bridge is a feature of the wrap crate itself (`aphrody_tauri_wrap::debug`), wry only.
+  // The debug bridge is a feature of the wrap crate itself (`tauri_plugin_aphrody::wrap::debug`), wry only.
   const withDebug = config.engine === "wry";
 
   // Icon: the site's own when it is a usable PNG, otherwise a solid colour from its theme.
@@ -177,10 +161,7 @@ export async function generateProject(
     icon = await findProjectIcon(plan.probe.input);
   }
   if (!icon) {
-    const color =
-      parseHexColor(
-        plan.probe.kind === "site" ? plan.probe.themeColor : null,
-      ) ?? undefined;
+    const color = parseHexColor(plan.probe.kind === "site" ? plan.probe.themeColor : null) ?? undefined;
     icon = solidIconPng(256, color);
     notes.push(
       iconSource
@@ -200,12 +181,12 @@ export async function generateProject(
     capabilityDescription:
       "No IPC: the wrapped page runs as in a browser. Grant permissions per origin with a `remote` capability.",
     runtimePlugin: {
-      crate: "aphrody-tauri-wrap",
+      crate: "tauri-plugin-aphrody",
       path: relativeCrate(tauriDir, wrapCrate),
-      init: 'aphrody_tauri_wrap::init(include_str!("../wrap.json"))',
+      init: 'tauri_plugin_aphrody::wrap::init(include_str!("../wrap.json"))',
       // Only the bundle mode needs the loopback server (axum, reqwest, rustls, tokio); `remote`
       // loads the deployed origin and `sidecar` spawns the project's own server with std only.
-      features: config.mode === "bundle" ? undefined : [],
+      features: [config.mode === "bundle" ? "wrap-bundle" : "wrap"],
     },
     debugBridge: withDebug,
     externalBin: config.mode === "sidecar" ? ["binaries/server"] : undefined,
@@ -242,9 +223,7 @@ export async function generateProject(
         resolve(plan.probe.input),
       );
       scripts["build:sidecar"] = "bun scripts/build-sidecar.ts";
-      notes.push(
-        "run `bun run build:sidecar` before `tauri build`: Tauri bundles src-tauri/binaries/server-<triple>",
-      );
+      notes.push("run `bun run build:sidecar` before `tauri build`: Tauri bundles src-tauri/binaries/server-<triple>");
     }
   }
   files["package.json"] =
@@ -252,11 +231,7 @@ export async function generateProject(
   files["wrap-plan.json"] = `${JSON.stringify(plan, null, 2)}\n`;
   files["README.md"] = readme(plan);
 
-  const written = await writeFiles(
-    out,
-    files,
-    options.force ? "merge" : "empty",
-  );
+  const written = await writeFiles(out, files, options.force ? "merge" : "empty");
   if (bundleDist) {
     await cp(bundleDist.from, bundleDist.to, {
       recursive: true,
@@ -271,16 +246,10 @@ export async function generateProject(
   if (options.copyLock !== false) {
     const lock = join(REPO_ROOT, "Cargo.lock");
     const target = join(tauriDir, "Cargo.lock");
-    if (
-      existsSync(lock) &&
-      wrapCrate.startsWith(REPO_ROOT) &&
-      !existsSync(target)
-    ) {
+    if (existsSync(lock) && wrapCrate.startsWith(REPO_ROOT) && !existsSync(target)) {
       await copyFile(lock, target);
       written.push(target);
-      notes.push(
-        "Cargo.lock copied from the repository so dependency versions match its pins",
-      );
+      notes.push("Cargo.lock copied from the repository so dependency versions match its pins");
     }
   }
   if (config.engine === "cef")
@@ -294,16 +263,15 @@ export function readme(plan: ConversionPlan): string {
   const { config } = plan;
   const risks = plan.risks
     .map(
-      (risk) =>
+      risk =>
         `| ${risk.severity} | ${risk.area} | ${risk.summary} | ${risk.mitigation.kind}: ${risk.mitigation.detail} |`,
     )
     .join("\n");
-  const target =
-    plan.probe.kind === "site" ? plan.probe.finalUrl : plan.probe.input;
+  const target = plan.probe.kind === "site" ? plan.probe.finalUrl : plan.probe.input;
   const runtimeNote =
     config.mode === "bundle"
       ? ""
-      : "- The runtime is built without its `bundle` feature (no loopback server). To switch `mode` to `bundle`, drop `default-features = false` from the `aphrody-tauri-wrap` line of `src-tauri/Cargo.toml`.\n";
+      : "- The runtime is built without its `wrap-bundle` feature (no loopback server). To switch `mode` to `bundle`, select `wrap-bundle` in the features of the `tauri-plugin-aphrody` line of `src-tauri/Cargo.toml`.\n";
   return `<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # ${config.name}
@@ -311,12 +279,12 @@ export function readme(plan: ConversionPlan): string {
 Native Tauri 3 app generated by \`@aphrody/web-to-tauri\` from \`${target}\`.
 
 - Mode: **${config.mode}** · engine: **${config.engine}** · verdict: **${plan.verdict}**
-- Behaviour: \`src-tauri/wrap.json\` (read by the \`aphrody-tauri-wrap\` runtime plugin). Edit it, do not fork the runtime.
+- Behaviour: \`src-tauri/wrap.json\` (read by the \`tauri-plugin-aphrody\` runtime plugin). Edit it, do not fork the runtime.
 ${runtimeNote}- Plan and probe: \`wrap-plan.json\`.
 
 ## Why this mode
 
-${plan.reasons.map((reason) => `- ${reason}`).join("\n")}
+${plan.reasons.map(reason => `- ${reason}`).join("\n")}
 
 ## Remaining risks
 

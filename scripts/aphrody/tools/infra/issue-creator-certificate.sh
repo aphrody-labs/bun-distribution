@@ -3,7 +3,7 @@ set -Eeuo pipefail
 set +x
 
 # Issue the creator.aphrody.com certificate with HTTP-01 before the creator vhost is active
-# (tools/config/host/nginx/aphrody/creator.aphrody.com.conf keeps the same challenge webroot for renewals).
+# (infra/config/host/nginx/aphrody/creator.aphrody.com.conf keeps the same challenge webroot for renewals).
 # Requires the DNS record creator.aphrody.com (CNAME aphrody.com). Run once, as root, on the vps.
 [[ "$(id -u)" = 0 ]] || { echo 'run as root' >&2; exit 2; }
 command -v certbot >/dev/null || { echo 'certbot is required' >&2; exit 2; }

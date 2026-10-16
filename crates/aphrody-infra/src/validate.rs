@@ -1,7 +1,7 @@
-//! Cross-catalog invariants between `tools/config/service-catalog.json`,
-//! yolo `tools/config/host/nginx/routes.json`, `tools/config/local-ai.json`, `tools/config/pipeline.json`,
-//! the topology port policy of `tools/config/production-topology.json` and the
-//! repository registry of `tools/config/stack-training.json`.
+//! Cross-catalog invariants between `infra/config/service-catalog.json`,
+//! yolo `infra/config/host/nginx/routes.json`, `tools/aphrody/config/local-ai.json`, `infra/config/pipeline.json`,
+//! the topology port policy of `infra/config/production-topology.json` and the
+//! repository registry of `tools/aphrody/config/stack-training.json`.
 
 use crate::catalog::ServiceCatalog;
 use crate::local_ai::{LocalAiContract, LocalAiEndpoint, LocalAiEnv, LocalAiTarget, load_local_ai};
@@ -18,7 +18,7 @@ pub struct Report {
     pub warnings: Vec<String>,
     pub services: usize,
     pub routes: usize,
-    /// Canonical env names declared by `tools/config/local-ai.json`.
+    /// Canonical env names declared by `tools/aphrody/config/local-ai.json`.
     pub local_ai_env: usize,
 }
 
@@ -36,19 +36,19 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
 }
 
-/// Host config (systemd units, nginx sites) lives in `$APHRODY_ROOT/tools/config/host`,
+/// Host config (systemd units, nginx sites) lives in `$APHRODY_ROOT/infra/config/host`,
 /// default `$HOME/src/aphrody` (`%USERPROFILE%\src\aphrody` on Windows).
 pub fn host_systemd_root() -> PathBuf {
     host_config_root().join("systemd")
 }
 
-/// `$APHRODY_ROOT/tools/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
+/// `$APHRODY_ROOT/infra/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
     let root = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
         PathBuf::from(home.unwrap_or_default()).join("src/aphrody")
     });
-    root.join("tools/config/host")
+    root.join("infra/config/host")
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
@@ -82,7 +82,7 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
         })
         .map(|service| {
             format!(
-                "{}: unité {} absente de yolo tools/config/host/systemd/",
+                "{}: unité {} absente de yolo infra/config/host/systemd/",
                 service.id,
                 service.unit.as_deref().unwrap_or_default()
             )
@@ -93,16 +93,16 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
 /// Validate the selected source snapshot. Live-host helpers resolve their own
 /// configuration root, independently of this explicit repository argument.
 pub fn run(root: &Path) -> Result<Report> {
-    let catalog = load(root, "tools/config/service-catalog.json")?;
-    let topology = load(root, "tools/config/production-topology.json")?;
+    let catalog = load(root, "infra/config/service-catalog.json")?;
+    let topology = load(root, "infra/config/production-topology.json")?;
     let contract = load_local_ai(root)?;
     let pipeline = load_pipeline_config(root)?;
-    let mut report = check(&catalog, &load(root, "tools/config/host/nginx/routes.json")?);
+    let mut report = check(&catalog, &load(root, "infra/config/host/nginx/routes.json")?);
     report.merge(check_topology_ports(&catalog, &topology));
     report.merge(check_local_ai(&catalog, &topology, &contract));
     report.errors.extend(check_pipeline(&pipeline));
     report.merge(check_repositories(
-        &load(root, "tools/config/stack-training.json")?,
+        &load(root, "tools/aphrody/config/stack-training.json")?,
         &catalog,
         &contract,
         &pipeline,
@@ -148,7 +148,7 @@ impl<'a> RepositoryRegistry<'a> {
                 successors.join(", ")
             ),
             None => format!(
-                "{context}: unknown repository {repo} (not in tools/config/stack-training.json repositories)"
+                "{context}: unknown repository {repo} (not in tools/aphrody/config/stack-training.json repositories)"
             ),
         })
     }
@@ -469,7 +469,7 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
         } else if !internal.contains(&port) {
             let scope = declared_host.map_or(String::new(), |host| format!(" on host {host}"));
             report.errors.push(format!(
-                "{id}: port {port} is not internalOnly{scope} in tools/config/production-topology.json"
+                "{id}: port {port} is not internalOnly{scope} in infra/config/production-topology.json"
             ));
         }
     }
@@ -770,7 +770,7 @@ fn check_local_ai_endpoint(
                 Some(_) => {}
                 None if contract.managed_services.contains_key(service) => {}
                 None => errors.push(format!(
-                    "local-ai: {id}: unknown service {service} (not in tools/config/service-catalog.json nor managedServices)"
+                    "local-ai: {id}: unknown service {service} (not in infra/config/service-catalog.json nor managedServices)"
                 )),
             },
         }
@@ -907,7 +907,7 @@ fn check_static_target(
         };
         let Some(entry) = services.get(binding.service.as_str()) else {
             errors.push(format!(
-                "{label}: service {} is not in tools/config/service-catalog.json",
+                "{label}: service {} is not in infra/config/service-catalog.json",
                 binding.service
             ));
             continue;
@@ -1004,7 +1004,7 @@ fn check_static_target(
     }
 }
 
-/// `tools/config/local-ai.json` against the service catalog and the topology:
+/// `tools/aphrody/config/local-ai.json` against the service catalog and the topology:
 /// services exist and declare the capability they back, static ports are
 /// internal-only, canonical names are unique, aliases unambiguous, indexes
 /// pinned to their embedding space and consumers only read known names.
@@ -1066,7 +1066,7 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
             )),
             Some(_) => {},
             None => errors.push(format!(
-                "local-ai: index {id}: service {} is not in tools/config/service-catalog.json",
+                "local-ai: index {id}: service {} is not in infra/config/service-catalog.json",
                 index.service
             )),
         }
@@ -1485,16 +1485,17 @@ mod tests {
 
     #[test]
     fn repository_catalogs_are_coherent() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = run(&root).unwrap();
         assert!(report.errors.is_empty(), "{:#?}", report.errors);
     }
 
     #[test]
     fn source_validation_reads_routes_from_the_selected_snapshot() {
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let selected = tempfile::tempdir().expect("selected snapshot");
-        fs::create_dir_all(selected.path().join("tools/config/host/nginx")).unwrap();
+        fs::create_dir_all(selected.path().join("infra/config/host/nginx")).unwrap();
+        fs::create_dir_all(selected.path().join("tools/aphrody/config")).unwrap();
         for file in [
             "service-catalog.json",
             "production-topology.json",
@@ -1502,14 +1503,16 @@ mod tests {
             "pipeline.json",
             "stack-training.json",
         ] {
-            fs::copy(
-                source.join("tools/config").join(file),
-                selected.path().join("tools/config").join(file),
-            )
+            let directory = if matches!(file, "local-ai.json" | "stack-training.json") {
+                "tools/aphrody/config"
+            } else {
+                "infra/config"
+            };
+            fs::copy(source.join(directory).join(file), selected.path().join(directory).join(file))
             .expect("source catalog fixture");
         }
         fs::write(
-            selected.path().join("tools/config/host/nginx/routes.json"),
+            selected.path().join("infra/config/host/nginx/routes.json"),
             serde_json::to_vec(&json!({ "routes": [{
                 "host": "snapshot-fixture.invalid",
                 "service": "snapshot-fixture-only",
@@ -1525,7 +1528,7 @@ mod tests {
 
     #[test]
     fn repository_local_ai_contract_pins_v1_env_names() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let contract = load_local_ai(&root).unwrap();
         let names: BTreeSet<&str> =
             contract.env_entries().map(|(_, env)| env.canonical.as_str()).collect();
@@ -2051,7 +2054,7 @@ mod tests {
 
     #[test]
     fn repository_catalogs_name_only_live_repositories() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = run(&root).expect("catalogs load");
         assert_eq!(report.errors, Vec::<String>::new());
     }

@@ -13,7 +13,7 @@
 API servers exposed, configured or consumed on the production VPS: what each one serves, which
 repository owns its code, how it is authenticated and how Nginx exposes it. Listener ports and
 public hosts are not repeated here: read them from
-[`tools/config/service-catalog.json`](../../../../../tools/aphrody/config/service-catalog.json) (`health`, `port`) and
+[`tools/config/service-catalog.json`](../../../../../infra/config/service-catalog.json) (`health`, `port`) and
 `yolo/tools/config/host/nginx/routes.json` (`routes`, `internal`). Restored from
 the retired `aphrody` monolith (docs/vps/APIS.md) and updated to the category repositories.
 

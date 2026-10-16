@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Idempotent per-user toolchain sync for a Linux host, driven by yolo tools/config/host/toolchain.json.
+# Idempotent per-user toolchain sync for a Linux host, driven by yolo infra/config/host/toolchain.json.
 # Runs ON the host: ssh <host> 'bash -s' < scripts/tools/toolchain-sync.sh  (needs jq; stdin: manifest path in $MANIFEST_JSON)
 # No Cargo build, only the marked PATH block in ~/.bashrc (above the interactive guard) and ~/.profile, no service/nginx/systemd/database access.
 set -uo pipefail

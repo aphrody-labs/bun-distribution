@@ -6,7 +6,7 @@ Le job Workspace `drive-review` rapproche les sept contrats DBFR (`AGENTS`, `SOU
 `IDENTITY`, `USER`, `TOOLS`, `HEARTBEAT`, `BOOT`, tous en `.md`) avec leur référence validée
 et les documents natifs Google. Le timer déclaré continue ce travail quand les clients
 Codex, Claude ou AGY sont fermés. La configuration propriétaire est
-[`tools/config/host/agent-sync-vps.json`](../../../../tools/aphrody/config/host/agent-sync-vps.json) ; son ordre
+[`tools/config/host/agent-sync-vps.json`](../../../../infra/config/host/agent-sync-vps.json) ; son ordre
 est téléchargement → revue → réplication → indexation. Le plan n'exécute aucune tâche :
 
 ```sh

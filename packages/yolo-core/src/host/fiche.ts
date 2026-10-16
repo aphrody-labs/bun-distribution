@@ -23,11 +23,7 @@ const strip = (v: unknown): unknown =>
         )
       : v;
 
-export const fact = (
-  block: string,
-  member: string,
-  name: string,
-): string | undefined =>
+export const fact = (block: string, member: string, name: string): string | undefined =>
   new RegExp(`^NET_LIVE_${member}_${name}=(.*)$`, "m").exec(block)?.[1];
 
 const mark = (ok: boolean) => (ok ? "[x]" : "[ ]");
@@ -52,32 +48,21 @@ export function omarChecklist(block: string): string[] {
   ];
 }
 
-export async function buildFiche(
-  root: string,
-  envFile: string,
-  runner: Run = run,
-  now = new Date(),
-): Promise<string> {
+export async function buildFiche(root: string, envFile: string, runner: Run = run, now = new Date()): Promise<string> {
   const env = read(envFile);
   const a = env.indexOf(BEGIN);
   const b = env.indexOf(END);
   const block = a >= 0 && b > a ? env.slice(a, b + END.length) : "";
-  const wg = JSON.parse(
-    read(join(root, "tools/config/host/wireguard/aphrody-tunnel.json")) || "{}",
-  );
+  const wg = JSON.parse(read(join(root, "infra/config/host/wireguard/aphrody-tunnel.json")) || "{}");
   const omar = read(join(root, "tools/config/var/omar.json"));
   const ssh = read(join(homedir(), ".ssh", "config"))
     .split(/\r?\n/)
-    .filter((l) => !/IdentityFile|UserKnownHostsFile/i.test(l))
+    .filter(l => !/IdentityFile|UserKnownHostsFile/i.test(l))
     .join("\n");
-  const catalog = JSON.parse(
-    read(join(root, "tools/config/service-catalog.json")) || "{}",
-  );
-  const tasks = (
-    await runner(["schtasks", "/query", "/fo", "CSV", "/nh"], 15_000)
-  )
+  const catalog = JSON.parse(read(join(root, "infra/config/service-catalog.json")) || "{}");
+  const tasks = (await runner(["schtasks", "/query", "/fo", "CSV", "/nh"], 15_000))
     .split(/\r?\n/)
-    .filter((l) => l.includes("\\Aphrody\\"))
+    .filter(l => l.includes("\\Aphrody\\"))
     .join("\n");
   const doc = [
     "# Fiche factuelle Aphrody ↔ Omar",
@@ -91,9 +76,7 @@ export async function buildFiche(
     "## Alias SSH du propriétaire",
     "```\n" + ssh.trim() + "\n```",
     "## État de boot déclaré (service-catalog.json › boot.entries)",
-    "```json\n" +
-      JSON.stringify(catalog.boot?.entries ?? [], null, 1) +
-      "\n```",
+    "```json\n" + JSON.stringify(catalog.boot?.entries ?? [], null, 1) + "\n```",
     "## Tâches planifiées du dossier Aphrody du PC propriétaire",
     "```\n" + tasks + "\n```",
     "## Ce qu'Omar doit compléter (case cochée = vérifié en direct)",
@@ -101,15 +84,12 @@ export async function buildFiche(
   ].join("\n\n");
   return doc
     .split("\n")
-    .filter((l) => !SECRET.test(l) || /bearer-token|vnc-password/i.test(l))
+    .filter(l => !SECRET.test(l) || /bearer-token|vnc-password/i.test(l))
     .join("\n");
 }
 
 /** Pousse la fiche sur l'hôte hub puis récupère la version fusionnée avec la partie d'Omar. */
-export async function syncFicheWith(
-  host: string,
-  fiche: string,
-): Promise<string | undefined> {
+export async function syncFicheWith(host: string, fiche: string): Promise<string | undefined> {
   const dir = "/var/lib/aphrody-discord-sync";
   const proc = Bun.spawn(
     [
@@ -127,15 +107,7 @@ export async function syncFicheWith(
   await proc.stdin.end();
   if ((await proc.exited) !== 0) return undefined;
   const merged = await run(
-    [
-      "ssh",
-      "-o",
-      "BatchMode=yes",
-      "-o",
-      "ConnectTimeout=8",
-      host,
-      `cat ${dir}/fiche-merged.md`,
-    ],
+    ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", host, `cat ${dir}/fiche-merged.md`],
     15_000,
   );
   return merged.trim() ? merged : undefined;
@@ -149,8 +121,7 @@ export function mergeIntoMemory(text: string, fiche: string): string {
   const block = `${FICHE_BEGIN}\n${fiche.trimEnd()}\n${FICHE_END}`;
   const a = text.indexOf(FICHE_BEGIN);
   const b = text.indexOf(FICHE_END);
-  if (a >= 0 && b > a)
-    return text.slice(0, a) + block + text.slice(b + FICHE_END.length);
+  if (a >= 0 && b > a) return text.slice(0, a) + block + text.slice(b + FICHE_END.length);
   return `${text.trimEnd()}\n\n${block}\n`;
 }
 

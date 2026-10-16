@@ -2633,7 +2633,7 @@ nginx failed failed
             "--offset",
             "500",
             "--catalog",
-            "tools/config/service-catalog.json",
+            "infra/config/service-catalog.json",
             "--dry-run",
         ])
         .unwrap();
@@ -2643,7 +2643,7 @@ nginx failed failed
                 assert_eq!(args.offset, 500);
                 assert_eq!(
                     args.catalog.as_deref(),
-                    Some(Path::new("tools/config/service-catalog.json"))
+                    Some(Path::new("infra/config/service-catalog.json"))
                 );
                 assert!(args.dry_run);
                 assert!(action.is_none());

@@ -5,8 +5,8 @@
 #
 # Owner: aphrody-infra (moved from shenron/scripts/backup-shenron-sqlite.sh; the
 # Shenron copy is frozen until the DBFR units are reinstalled from this repo).
-# Units: tools/config/host/systemd/shenron/shenron-backup.{service,timer} (main VPS, release pointer) and
-# tools/config/host/systemd/shenron/shenron-sqlite-replica-backup.{service,timer} (DBFR replica).
+# Units: infra/config/host/systemd/shenron/shenron-backup.{service,timer} (main VPS, release pointer) and
+# infra/config/host/systemd/shenron/shenron-sqlite-replica-backup.{service,timer} (DBFR replica).
 #
 # Environment:
 #   SHENRON_ROOT                          Shenron checkout/release root

@@ -38,7 +38,7 @@ export type Surface = {
    * aphrody-nie-forge.
    */
   readonly smoke: readonly (readonly string[])[];
-  /** Retained deployment target labels; deployment belongs to @aphrody/workspace. */
+  /** Retained deployment target labels; deployment belongs to @aphrody/bun-workspace. */
   readonly deployTargets: readonly string[];
   /** Tag prefix that releases this surface alone, e.g. `cli-v0.6.0`. */
   readonly tagPrefix: string;
@@ -361,7 +361,7 @@ async function main(): Promise<number> {
       return await runAll(surface.smoke, `smoke ${surface.name}`);
     case "deploy":
       process.stderr.write(
-        `Deployment for ${surface.name} is owned by Aphrody @aphrody/workspace. Inspect bun run infra --help and use its release workflow; local upstream deployment scripts are historical references.\n`,
+        `Deployment for ${surface.name} is owned by Aphrody @aphrody/bun-workspace. Inspect bun run infra --help and use its release workflow; local upstream deployment scripts are historical references.\n`,
       );
       return 2;
     default:

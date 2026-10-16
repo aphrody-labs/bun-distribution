@@ -3,7 +3,7 @@
 # VPS build factory and DBFR Shenron runtime
 
 Owner: Infra. Policy: [`tools/config/build-factory.json`](../../../../tools/aphrody/config/build-factory.json).
-Requested placement: [`production-topology.json`](../../../../tools/aphrody/config/production-topology.json).
+Requested placement: [`production-topology.json`](../../../../infra/config/production-topology.json).
 
 Current placement: Omar's Windows PC (`omar-pc`) is the native Windows build
 factory, in addition to the SSH VPS factory. The Windows factory is scoped to

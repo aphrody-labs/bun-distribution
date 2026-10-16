@@ -14,8 +14,8 @@ import {
   factoryResourceAdmissionProgram,
   factoryResourcePolicy,
   type BuildFactoryConfig,
-} from "@aphrody/workspace/src/build-factory.ts";
-import { factoryTransientShell } from "@aphrody/workspace/src/build-factory-cleanup.ts";
+} from "@aphrody/bun-workspace/automation/build-factory.ts";
+import { factoryTransientShell } from "@aphrody/bun-workspace/automation/build-factory-cleanup.ts";
 import {
   activeDeployment,
   deploymentIsCurrent,
@@ -791,7 +791,7 @@ if (import.meta.main) {
       command(
         [
           config.bun,
-          join(infra, "packages/infra/workspace/src/build-factory-cleanup.ts"),
+          join(infra, "packages/bun-workspace/src/automation/build-factory-cleanup.ts"),
           "--held",
           factoryPath,
         ],

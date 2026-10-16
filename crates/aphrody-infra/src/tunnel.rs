@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn repository_default_name_and_render() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let name = default_name(&root);
         assert_eq!(name, if cfg!(windows) { "aphrody" } else { "wg1" });
         let inv = inventory(&root).unwrap();

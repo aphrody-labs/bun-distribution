@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Parser)]
-#[command(name = "aphrody-infra", version, about = "Aphrody unified infra/workflow orchestrator")]
+#[command(name = "bunos-infra", version, about = "Bun OS unified infrastructure and workflow orchestrator")]
 struct Cli {
     #[arg(long, env = "APHRODY_INFRA_ROOT", default_value = ".")]
     root: PathBuf,
@@ -109,7 +109,7 @@ enum CommandKind {
         json: bool,
     },
     /// Reclaim allowlisted disk/tmpfs space on a target; root-level steps run through sudo -n
-    /// (tools/config/disk-reclaim.json).
+    /// (infra/config/disk-reclaim.json).
     Reclaim {
         #[arg(long)]
         target: String,
@@ -133,7 +133,7 @@ enum CommandKind {
     Service {
         #[arg(value_enum)]
         action: crate::lifecycle::ServiceAction,
-        /// Workload id from tools/config/service-catalog.json (or all if omitted).
+        /// Workload id from infra/config/service-catalog.json (or all if omitted).
         #[arg(long)]
         id: Option<String>,
         /// Remote target (default: "vps" or "local" if on Linux).
@@ -170,7 +170,7 @@ enum CommandKind {
     },
     /// Execute declared monorepo validation stages.
     Pipeline {
-        /// Target stage from tools/config/pipeline.json, or plan/check.
+        /// Target stage from infra/config/pipeline.json, or plan/check.
         #[arg(long, default_value = "plan")]
         stage: String,
         #[arg(long)]
@@ -596,7 +596,7 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
 
 /// Use the same selected source root as the run, including explicit `--root`.
 fn load_matrix(root: &Path) -> Result<Matrix> {
-    let path = root.join("tools/config/host/inventory/targets.json");
+    let path = root.join("infra/config/host/inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
     serde_json::from_slice(&bytes).with_context(|| format!("{} invalide", path.display()))
 }
@@ -1527,7 +1527,7 @@ fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
     let catalog = crate::catalog::load_service_catalog(root)?;
     report
         .errors
-        .extend(validate::check_unit_templates(&root.join("tools/config/host/systemd"), &catalog));
+        .extend(validate::check_unit_templates(&root.join("infra/config/host/systemd"), &catalog));
     run.action(
         "validate",
         if report.errors.is_empty() { "success" } else { "failed" },
@@ -1579,7 +1579,7 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
     let target = config
         .targets
         .get(target_id)
-        .with_context(|| format!("cible absente de tools/config/disk-reclaim.json: {target_id}"))?;
+        .with_context(|| format!("cible absente de infra/config/disk-reclaim.json: {target_id}"))?;
     let script = reclaim::script(target, apply)?;
     let stdout =
         run_remote("ssh", &["-o", "BatchMode=yes", &target.ssh_alias, "sh", "-s"], &script)?;
@@ -1740,7 +1740,7 @@ fn service_lifecycle(
 ) -> Result<()> {
     match action {
         ServiceAction::Catalog => {
-            let catalog_path = root.join("tools/config/service-catalog.json");
+            let catalog_path = root.join("infra/config/service-catalog.json");
             let content = fs::read_to_string(&catalog_path)
                 .with_context(|| format!("lecture {}", catalog_path.display()))?;
             if as_json {
@@ -2798,9 +2798,9 @@ mod tests {
     fn deploy_plans_preserve_unqualified_targets_but_apply_rejects_before_ssh() {
         let fixture = tempfile::tempdir().unwrap();
         let root = fixture.path();
-        fs::create_dir_all(root.join("tools/config/host/inventory")).unwrap();
+        fs::create_dir_all(root.join("infra/config/host/inventory")).unwrap();
         fs::write(
-            root.join("tools/config/host/inventory/targets.json"),
+            root.join("infra/config/host/inventory/targets.json"),
             r#"{"schemaVersion":1,"generatedAt":"fixture","targets":[{"id":"dbfr","kind":"host","os":"linux"}]}"#,
         )
         .unwrap();

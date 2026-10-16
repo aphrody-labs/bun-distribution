@@ -174,7 +174,7 @@ adapter does not automatically reverse this protected-data conversion.
 Sur `dbfr`, le service existant `shenron-cloudflare-s3-renew.service` reste
 l'unique émetteur, déclenché par son timer de dix minutes. Son propriétaire
 déclaratif est
-[`shenron-cloudflare-s3-renew.service`](../../../../tools/aphrody/config/host/systemd/shenron/shenron-cloudflare-s3-renew.service).
+[`shenron-cloudflare-s3-renew.service`](../../../../infra/config/host/systemd/shenron/shenron-cloudflare-s3-renew.service).
 Le jeton Cloudflare parent reste dans `LoadCredential`, et le profil émetteur
 `/etc/aphrody/cloudflare/shenron-s3.json` reste root:root, mode0400.
 

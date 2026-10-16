@@ -18,7 +18,7 @@ L'adapter [restore-ssh-tunnel.ps1](../../../../scripts/aphrody/tools/infra/resto
 affiche un plan par défaut. `-Apply`, avec élévation Windows, installe le
 service absent et converge son démarrage et sa reprise. Il conserve la
 configuration protégée et refuse un autre réseau ou une autre adresse locale.
-Le [catalogue Infra](../../../../tools/aphrody/config/service-catalog.json) déclare le
+Le [catalogue Infra](../../../../infra/config/service-catalog.json) déclare le
 service ; voir la [procédure boot](BOOT.md).
 
 Validation : analyse syntaxique PowerShell et JSON, plan avant application,

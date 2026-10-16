@@ -8,20 +8,8 @@
 // oxlint-disable no-await-in-loop -- sequential by design: host commands run one after the other and stop on failure.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import {
-  composeUnit,
-  type HostUnit,
-  hostRepositoryRoot,
-  hostRoot,
-  loadCatalog,
-} from "./index.ts";
-import {
-  inCidr,
-  loadTunnel,
-  selectedProxySteps,
-  TUNNEL_FILE,
-  type WgStep,
-} from "./wireguard.ts";
+import { composeUnit, type HostUnit, hostRepositoryRoot, hostRoot, loadCatalog } from "./index.ts";
+import { inCidr, loadTunnel, selectedProxySteps, TUNNEL_FILE, type WgStep } from "./wireguard.ts";
 
 export interface UnitFacts {
   unit: string;
@@ -36,8 +24,7 @@ export interface UnitFacts {
   writePaths: string[];
 }
 
-export type StepPhase =
-  "preflight" | "provision" | "install" | "verify" | "rollback";
+export type StepPhase = "preflight" | "provision" | "install" | "verify" | "rollback";
 /** `check` fails the plan, `info` only reports, `mutate` changes the host. */
 export type StepKind = "check" | "info" | "mutate";
 export interface PlanStep {
@@ -61,10 +48,7 @@ export interface PlanOptions {
   /** A build already on the target host (for example in the factory target directory) to install as the unit's binary. */
   binary?: { from: string; sha256: string };
 }
-export type Runner = (
-  host: string,
-  command: string,
-) => Promise<{ code: number; stdout: string; stderr: string }>;
+export type Runner = (host: string, command: string) => Promise<{ code: number; stdout: string; stderr: string }>;
 
 const LOOPBACK = /^(127\.\d+\.\d+\.\d+|localhost|\[?::1\]?)$/;
 const STAGE_DIR = "/tmp/aphrody-host-plan";
@@ -74,11 +58,7 @@ const MCP_TOKEN_ENV = "APHRODY_MCP_HTTP_TOKEN";
 const b64 = (text: string) => Buffer.from(text).toString("base64");
 const sq = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 const socketPattern = (sockets: string[]) =>
-  "^(" +
-  sockets
-    .map((socket) => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("|") +
-  ")$";
+  "^(" + sockets.map(socket => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")$";
 
 /** Retain immutable pins without duplicate bytes; never write through a live binary or rollback symlink. */
 export function pinnedBinaryInstall(
@@ -110,33 +90,29 @@ export function pinnedBinaryInstall(
 
 /** Only an explicitly declared private relay may share a native service's port. */
 function socketRelays(repoRoot: string, facts: UnitFacts): string[] {
-  const root = join(repoRoot, "tools/config/host");
+  const root = join(repoRoot, "infra/config/host");
   if (!facts.bind || !existsSync(join(root, TUNNEL_FILE))) return [];
   const tunnel = loadTunnel(root);
   const address =
     tunnel.hub.peer === facts.targetHost
       ? tunnel.hub.address
-      : tunnel.peers.find((peer) => peer.host === facts.targetHost)?.address;
+      : tunnel.peers.find(peer => peer.host === facts.targetHost)?.address;
   return tunnel.services
     .filter(
-      (service) =>
+      service =>
         service.host === facts.targetHost &&
         service.unit === facts.service &&
         service.port === facts.bind!.port &&
         service.expose === "socket-proxyd" &&
         service.upstream === `${facts.bind!.host}:${facts.bind!.port}`,
     )
-    .map((service) => {
+    .map(service => {
       if (
         service.address !== address ||
         !inCidr(service.address, tunnel.subnet) ||
-        !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some((cidr) =>
-          inCidr(service.address, cidr),
-        )
+        !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some(cidr => inCidr(service.address, cidr))
       )
-        throw new Error(
-          `${facts.unit}: relay must use its declared private WireGuard address`,
-        );
+        throw new Error(`${facts.unit}: relay must use its declared private WireGuard address`);
       return `${service.address}:${service.port}`;
     });
 }
@@ -148,8 +124,7 @@ function serviceDirectives(text: string): Map<string, string[]> {
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (line.startsWith("[")) inService = line === "[Service]";
-    if (!inService || !line || line.startsWith("#") || line.startsWith("["))
-      continue;
+    if (!inService || !line || line.startsWith("#") || line.startsWith("[")) continue;
     const eq = line.indexOf("=");
     if (eq < 0) continue;
     const key = line.slice(0, eq).trim();
@@ -169,17 +144,12 @@ export function unitFacts(entry: HostUnit, text: string): UnitFacts {
     bind = { host: address.slice(0, at), port: Number(address.slice(at + 1)) };
     // Never a public listener: the plan refuses a unit that would bind anything but loopback.
     if (!LOOPBACK.test(bind.host) || !Number.isInteger(bind.port)) {
-      throw new Error(
-        `${entry.unit}: bind address ${address} is not a loopback address`,
-      );
+      throw new Error(`${entry.unit}: bind address ${address} is not a loopback address`);
     }
   }
-  const paths = [
-    ...(d.get("ReadWritePaths") ?? []),
-    ...(d.get("BindPaths") ?? []),
-  ]
-    .flatMap((v) => v.split(/\s+/))
-    .map((p) => p.replace(/^-/, "").split(":")[0] ?? "")
+  const paths = [...(d.get("ReadWritePaths") ?? []), ...(d.get("BindPaths") ?? [])]
+    .flatMap(v => v.split(/\s+/))
+    .map(p => p.replace(/^-/, "").split(":")[0] ?? "")
     .filter(Boolean);
   return {
     unit: entry.unit,
@@ -190,7 +160,7 @@ export function unitFacts(entry: HostUnit, text: string): UnitFacts {
     execStart,
     binary: execStart.split(/\s+/)[0] ?? execStart,
     bind,
-    envFiles: (d.get("EnvironmentFile") ?? []).map((v) => ({
+    envFiles: (d.get("EnvironmentFile") ?? []).map(v => ({
       path: v.replace(/^-/, ""),
       optional: v.startsWith("-"),
     })),
@@ -205,21 +175,17 @@ interface ServiceEntry {
   modelId?: string;
 }
 function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
-  const file = join(repoRoot, "tools/config/service-catalog.json");
+  const file = join(repoRoot, "infra/config/service-catalog.json");
   if (!existsSync(file)) return undefined;
   const catalog = JSON.parse(readFileSync(file, "utf8")) as {
     services: ServiceEntry[];
   };
-  return catalog.services.find((s) => s.id === id);
+  return catalog.services.find(s => s.id === id);
 }
 
 /** Track only resources introduced by this selected proxy apply; existing resources remain owned by their prior state. */
-export function trackProxyMutations(
-  projection: WgStep[],
-  state: string,
-  port: number,
-) {
-  const rules = projection.filter((proxy) => proxy.id.includes(".proxy-ufw."));
+export function trackProxyMutations(projection: WgStep[], state: string, port: number) {
+  const rules = projection.filter(proxy => proxy.id.includes(".proxy-ufw."));
   const markers = [
     "ready",
     "new-template.socket",
@@ -229,18 +195,17 @@ export function trackProxyMutations(
     "enabled.socket",
     ...rules.map((_, index) => `new-rule.${index}`),
   ];
-  const before = `set -e; install -d -m 0700 ${sq(state)}; rm -f ${markers.map((marker) => sq(`${state}/${marker}`)).join(" ")}; if systemctl is-active --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/active.socket`)}; fi; if systemctl is-active --quiet aphrody-wg-proxy@${port}.service; then touch ${sq(`${state}/active.service`)}; fi; if systemctl is-enabled --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/enabled.socket`)}; fi; touch ${sq(`${state}/ready`)}`;
-  const tracked = projection.map((proxy) => {
+  const before = `set -e; install -d -m 0700 ${sq(state)}; rm -f ${markers.map(marker => sq(`${state}/${marker}`)).join(" ")}; if systemctl is-active --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/active.socket`)}; fi; if systemctl is-active --quiet aphrody-wg-proxy@${port}.service; then touch ${sq(`${state}/active.service`)}; fi; if systemctl is-enabled --quiet aphrody-wg-proxy@${port}.socket; then touch ${sq(`${state}/enabled.socket`)}; fi; touch ${sq(`${state}/ready`)}`;
+  const tracked = projection.map(proxy => {
     let prefix = "set -e; ";
     for (const extension of ["socket", "service"] as const) {
       if (proxy.id.endsWith(`proxy-unit.${extension}`))
         prefix += `if [ ! -e /etc/systemd/system/aphrody-wg-proxy@.${extension} ]; then touch ${sq(`${state}/new-template.${extension}`)}; fi; `;
     }
-    const rule = rules.findIndex((candidate) => candidate.id === proxy.id);
+    const rule = rules.findIndex(candidate => candidate.id === proxy.id);
     if (rule >= 0) {
       const tuple = /from (\S+) to (\S+) port (\d+) proto tcp/.exec(proxy.run!);
-      if (!tuple)
-        throw new Error("Unsupported selected proxy firewall command");
+      if (!tuple) throw new Error("Unsupported selected proxy firewall command");
       prefix += `known=$(ufw show added) || exit 1; known=$(printf %s "$known" | tr -d "'"); desired=$(printf %s ${sq(proxy.run!)} | tr -d "'"); if ! printf '%s\\n' "$known" | grep -Fx -- "$desired" >/dev/null; then if printf '%s\\n' "$known" | grep -F -- ${sq(tuple[1]!)} | grep -F -- ${sq(tuple[2]!)} | grep -F -- ${sq(`port ${tuple[3]!}`)} >/dev/null; then exit 1; fi; touch ${sq(`${state}/new-rule.${rule}`)}; fi; `;
     }
     return { ...proxy, run: prefix + proxy.run };
@@ -256,20 +221,13 @@ export function trackProxyMutations(
 }
 
 /** A pinned refresh may reuse only this unit's exact native listener. */
-export function pinnedSocketCheck(
-  facts: UnitFacts,
-  relays: string[],
-  requireListener = false,
-): string {
-  if (!facts.bind)
-    throw new Error("Pinned socket qualification requires a bind address");
+export function pinnedSocketCheck(facts: UnitFacts, relays: string[], requireListener = false): string {
+  if (!facts.bind) throw new Error("Pinned socket qualification requires a bind address");
   const port = facts.bind.port;
-  const endpoints = (
-    facts.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [facts.bind.host]
-  ).map((host) => `${host === "::1" ? "[::1]" : host}:${port}`);
-  const endpointFilter = endpoints
-    .map((endpoint) => `$4 == ${JSON.stringify(endpoint)}`)
-    .join(" || ");
+  const endpoints = (facts.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [facts.bind.host]).map(
+    host => `${host === "::1" ? "[::1]" : host}:${port}`,
+  );
+  const endpointFilter = endpoints.map(endpoint => `$4 == ${JSON.stringify(endpoint)}`).join(" || ");
   return [
     `rows=$(timeout 5 sudo -n ss -H -ltnp "sport = :${port}") || exit 1`,
     `addresses=$(printf '%s\\n' "$rows" | awk '{print $4}')`,
@@ -284,10 +242,9 @@ export function pinnedSocketCheck(
   ].join("; ");
 }
 
-const isMcp = (service: string) =>
-  service === "aphrody-mcp-http" || service === "aphrody-mcp-http-dbfr";
+const isMcp = (service: string) => service === "aphrody-mcp-http" || service === "aphrody-mcp-http-dbfr";
 
-/** Steps for one unit. `repoRoot` holds `ai.json`, `tools/config/service-catalog.json` and `scripts/tools/infra`. */
+/** Steps for one unit. `repoRoot` holds `ai.json`, `infra/config/service-catalog.json` and `scripts/tools/infra`. */
 function unitSteps(
   entry: HostUnit,
   text: string,
@@ -298,17 +255,9 @@ function unitSteps(
   const f = unitFacts(entry, text);
   const svc = serviceEntry(repoRoot, entry.service);
   if (f.bind && svc?.port !== undefined && svc.port !== f.bind.port) {
-    throw new Error(
-      `${entry.unit}: binds :${f.bind.port} but tools/config/service-catalog.json declares :${svc.port}`,
-    );
+    throw new Error(`${entry.unit}: binds :${f.bind.port} but infra/config/service-catalog.json declares :${svc.port}`);
   }
-  const step = (
-    phase: StepPhase,
-    kind: StepKind,
-    id: string,
-    note: string,
-    run: string,
-  ): PlanStep => ({
+  const step = (phase: StepPhase, kind: StepKind, id: string, note: string, run: string): PlanStep => ({
     id: `${f.service}/${id}`,
     unit: f.unit,
     phase,
@@ -319,10 +268,9 @@ function unitSteps(
   const port = f.bind?.port;
   const relays = socketRelays(repoRoot, f);
   const expectedSockets = f.bind
-    ? (f.bind.host === "localhost"
-        ? ["127.0.0.1", "[::1]"]
-        : [f.bind.host]
-      ).map((host) => `${host === "::1" ? "[::1]" : host}:${port}`)
+    ? (f.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [f.bind.host]).map(
+        host => `${host === "::1" ? "[::1]" : host}:${port}`,
+      )
     : [];
   const socketRows = `socket_rows=$(ss -H -ltn "sport = :${port}") || exit 1; sockets=$(printf '%s\\n' "$socket_rows" | awk '{print $4}')`;
   const stage = `${STAGE_DIR}/${f.unit}`;
@@ -334,11 +282,9 @@ function unitSteps(
   const gateway = f.service === "aphrody-ai-gateway-dbfr";
   const install = mcp || a2a || jobs || gateway ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
-    throw new Error(
-      `${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`,
-    );
+    throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
   }
-  const tokenFile = f.envFiles.find((e) => !e.optional)?.path;
+  const tokenFile = f.envFiles.find(e => !e.optional)?.path;
   steps.push(
     install
       ? step(
@@ -355,13 +301,7 @@ function unitSteps(
           `${f.binary} is installed and runs`,
           `test -x ${f.binary} && ${f.binary} --version`,
         ),
-    step(
-      "preflight",
-      "info",
-      "binary-sha256",
-      "identity of the binary the unit will run",
-      `sha256sum ${f.binary}`,
-    ),
+    step("preflight", "info", "binary-sha256", "identity of the binary the unit will run", `sha256sum ${f.binary}`),
   );
   if (jobs) {
     const executable = sq(install?.from ?? f.binary);
@@ -437,12 +377,10 @@ function unitSteps(
   if (f.service === "aphrody-a2a") {
     const aiJson = join(repoRoot, "ai.json");
     if (!existsSync(aiJson))
-      throw new Error(
-        `${f.unit}: ${aiJson} is missing (the A2A server needs ai.json in its working directory)`,
-      );
+      throw new Error(`${f.unit}: ${aiJson} is missing (the A2A server needs ai.json in its working directory)`);
     const content = readFileSync(aiJson, "utf8");
     const dir = f.workingDirectory ?? "/home/ubuntu/apps/aphrody/shared/a2a";
-    const fleetPath = join(repoRoot, "tools/config/host/agent-fleet.json");
+    const fleetPath = join(repoRoot, "infra/config/host/agent-fleet.json");
     const fleetConfigured = existsSync(fleetPath);
     if (fleetConfigured) {
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
@@ -455,15 +393,10 @@ function unitSteps(
         };
       };
       if (hub.workspace !== dir || hub.branch !== "main")
-        throw new Error(
-          "A2A fleet workspace and unit must agree on the dedicated main checkout",
-        );
-      const revision = Bun.spawnSync(
-        ["git", "-C", repoRoot, "rev-parse", "HEAD"],
-        {
-          windowsHide: true,
-        },
-      );
+        throw new Error("A2A fleet workspace and unit must agree on the dedicated main checkout");
+      const revision = Bun.spawnSync(["git", "-C", repoRoot, "rev-parse", "HEAD"], {
+        windowsHide: true,
+      });
       const sha = revision.stdout.toString().trim();
       if (revision.exitCode !== 0 || !/^[0-9a-f]{40}$/.test(sha))
         throw new Error("Cannot qualify the A2A workspace source revision");
@@ -512,11 +445,7 @@ function unitSteps(
       ),
     );
   }
-  const tokenEnv = mcp
-    ? MCP_TOKEN_ENV
-    : gateway
-      ? "APHRODY_AI_HTTP_TOKEN"
-      : "APHRODY_A2A_COORD_TOKEN";
+  const tokenEnv = mcp ? MCP_TOKEN_ENV : gateway ? "APHRODY_AI_HTTP_TOKEN" : "APHRODY_A2A_COORD_TOKEN";
   if ((mcp || a2a || gateway) && tokenFile) {
     // The token is made on the host and never leaves it: nothing here prints it, and the plan carries no value.
     const script = [
@@ -538,15 +467,12 @@ function unitSteps(
         `sudo -n sh -c ${sq(script)}`,
       ),
     );
-    const fleetPath = join(repoRoot, "tools/config/host/agent-fleet.json");
+    const fleetPath = join(repoRoot, "infra/config/host/agent-fleet.json");
     if (f.service === "aphrody-a2a" && existsSync(fleetPath)) {
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
         hub: { clientTokenFile: string };
       };
-      const parent = hub.clientTokenFile.slice(
-        0,
-        hub.clientTokenFile.lastIndexOf("/"),
-      );
+      const parent = hub.clientTokenFile.slice(0, hub.clientTokenFile.lastIndexOf("/"));
       const clientCredentialScript = [
         "set -e",
         "umask 077",
@@ -599,13 +525,7 @@ function unitSteps(
       `write the composed unit (drop-ins applied) to ${stage}`,
       `mkdir -p ${STAGE_DIR} && printf %s ${sq(b64(text))} | base64 -d > ${stage}`,
     ),
-    step(
-      "install",
-      "check",
-      "systemd-verify",
-      "systemd accepts the unit",
-      `sudo -n systemd-analyze verify ${stage}`,
-    ),
+    step("install", "check", "systemd-verify", "systemd accepts the unit", `sudo -n systemd-analyze verify ${stage}`),
     step(
       "install",
       "mutate",
@@ -613,35 +533,19 @@ function unitSteps(
       `install /etc/systemd/system/${f.unit} (root:root 0644)`,
       `sudo install -o root -g root -m 0644 ${stage} /etc/systemd/system/${f.unit}`,
     ),
-    step(
-      "install",
-      "mutate",
-      "daemon-reload",
-      "reload systemd",
-      "sudo systemctl daemon-reload",
-    ),
+    step("install", "mutate", "daemon-reload", "reload systemd", "sudo systemctl daemon-reload"),
     step(
       "install",
       "mutate",
       "enable-now",
-      install
-        ? "enable at boot and restart onto the pinned native artifact"
-        : "enable at boot and start",
+      install ? "enable at boot and restart onto the pinned native artifact" : "enable at boot and start",
       install
         ? `sudo systemctl enable ${f.unit} && sudo systemctl restart ${f.unit}`
         : `sudo systemctl enable --now ${f.unit}`,
     ),
   );
 
-  steps.push(
-    step(
-      "verify",
-      "check",
-      "active",
-      "the unit is active",
-      `systemctl is-active --quiet ${f.unit}`,
-    ),
-  );
+  steps.push(step("verify", "check", "active", "the unit is active", `systemctl is-active --quiet ${f.unit}`));
   if (port !== undefined) {
     steps.push(
       step(
@@ -666,15 +570,10 @@ function unitSteps(
       ),
     );
   }
-  if (
-    (mcp || (a2a && tokenFile) || (gateway && tokenFile)) &&
-    port !== undefined
-  ) {
+  if ((mcp || (a2a && tokenFile) || (gateway && tokenFile)) && port !== undefined) {
     const endpoint = `http://127.0.0.1:${port}/${mcp ? "mcp" : ""}`;
     const post = `curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}'`;
-    const authEndpoint = gateway
-      ? `http://127.0.0.1:${port}/v1/models`
-      : endpoint;
+    const authEndpoint = gateway ? `http://127.0.0.1:${port}/v1/models` : endpoint;
     const unauthRequest = gateway
       ? `curl -s -o /dev/null -m 5 -w '%{http_code}' ${authEndpoint}`
       : `${post} ${endpoint}`;
@@ -727,10 +626,7 @@ function unitSteps(
     }
   }
   if (mcp && port !== undefined) {
-    const script = readFileSync(
-      join(repoRoot, "scripts/tools/infra/mcp-tools-count.ts"),
-      "utf8",
-    );
+    const script = readFileSync(join(repoRoot, "scripts/aphrody/tools/infra/mcp-tools-count.ts"), "utf8");
     const expect = expectTools !== undefined ? ` --expect ${expectTools}` : "";
     const token = tokenFile
       ? `${MCP_TOKEN_ENV}="$(sudo -n sed -n 's/^${MCP_TOKEN_ENV}=//p' ${tokenFile} | tail -n 1)" `
@@ -748,13 +644,7 @@ function unitSteps(
     );
   }
   steps.push(
-    step(
-      "verify",
-      "info",
-      "journal",
-      "last log lines",
-      `journalctl -u ${f.unit} -n 15 --no-pager 2>&1; true`,
-    ),
+    step("verify", "info", "journal", "last log lines", `journalctl -u ${f.unit} -n 15 --no-pager 2>&1; true`),
     step(
       "rollback",
       "mutate",
@@ -768,11 +658,9 @@ function unitSteps(
     ),
   );
   if (mcp && f.targetHost === "dbfr" && relays.length) {
-    const root = join(repoRoot, "tools/config/host");
+    const root = join(repoRoot, "infra/config/host");
     const tunnel = loadTunnel(root);
-    const service = tunnel.services.find(
-      (candidate) => candidate.unit === f.service,
-    );
+    const service = tunnel.services.find(candidate => candidate.unit === f.service);
     if (!service) throw new Error(`${f.unit}: declared private proxy missing`);
     steps.push(
       step(
@@ -785,10 +673,7 @@ function unitSteps(
     );
     for (const extension of ["socket", "service"] as const) {
       const unit = `aphrody-wg-proxy@.${extension}`;
-      const desired = composeUnit(unit, root).replaceAll(
-        tunnel.hub.address,
-        service.address,
-      );
+      const desired = composeUnit(unit, root).replaceAll(tunnel.hub.address, service.address);
       const path = `/etc/systemd/system/${unit}`;
       steps.push(
         step(
@@ -806,7 +691,7 @@ function unitSteps(
         {
           root,
           catalog: loadCatalog(root),
-          compose: (unit) => composeUnit(unit, root),
+          compose: unit => composeUnit(unit, root),
         },
         service.id,
       ),
@@ -822,21 +707,13 @@ function unitSteps(
         `sudo -n sh -c ${sq(tracked.before)}`,
       ),
     );
-    const rollback = steps.find((candidate) => candidate.phase === "rollback")!;
+    const rollback = steps.find(candidate => candidate.phase === "rollback")!;
     rollback.run = `sudo -n sh -c ${sq(tracked.rollback)}; ${rollback.run}`;
     for (const proxy of tracked.steps) {
       if (!proxy.run || (proxy.kind !== "check" && proxy.kind !== "mutate"))
         throw new Error("Unsupported private proxy step");
       // Provision only after the native endpoint and its authentication checks passed.
-      steps.push(
-        step(
-          "verify",
-          proxy.kind,
-          `wireguard:${proxy.id}`,
-          proxy.note,
-          `sudo -n sh -c ${sq(proxy.run)}`,
-        ),
-      );
+      steps.push(step("verify", proxy.kind, `wireguard:${proxy.id}`, proxy.note, `sudo -n sh -c ${sq(proxy.run)}`));
     }
     steps.push(
       step(
@@ -855,28 +732,25 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
   const root = options.root ?? hostRoot();
   const repoRoot = hostRepositoryRoot(root);
   const catalog = loadCatalog(root);
-  const entries = units.map((name) => {
-    const entry = catalog.units.find(
-      (u) => u.unit === name || u.service === name,
-    );
+  const entries = units.map(name => {
+    const entry = catalog.units.find(u => u.unit === name || u.service === name);
     if (!entry) throw new Error(`unknown unit: ${name}`);
-    if (!entry.unit.endsWith(".service"))
-      throw new Error(`${entry.unit}: only .service units are planned`);
+    if (!entry.unit.endsWith(".service")) throw new Error(`${entry.unit}: only .service units are planned`);
     return entry;
   });
   // MCP consumes the A2A environment file; provision and activate its owner first.
-  const mcpAt = entries.findIndex((entry) => isMcp(entry.service));
-  const a2aAt = entries.findIndex((entry) => entry.service === "aphrody-a2a");
+  const mcpAt = entries.findIndex(entry => isMcp(entry.service));
+  const a2aAt = entries.findIndex(entry => entry.service === "aphrody-a2a");
   if (mcpAt >= 0 && a2aAt > mcpAt) {
     const [a2aEntry] = entries.splice(a2aAt, 1);
     entries.splice(mcpAt, 0, a2aEntry!);
   }
-  const targets = new Set(entries.map((e) => e.targetHost));
+  const targets = new Set(entries.map(e => e.targetHost));
   const target = options.target ?? [...targets][0];
   if (!target || targets.size > 1 || !targets.has(target)) {
     throw new Error(`units target ${[...targets].join(", ")}, not ${target}`);
   }
-  const steps = entries.flatMap((entry) =>
+  const steps = entries.flatMap(entry =>
     unitSteps(
       entry,
       composeUnit(entry.unit, root),
@@ -885,16 +759,11 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
       options.binary,
     ),
   );
-  return { target, units: entries.map((e) => e.unit), steps };
+  return { target, units: entries.map(e => e.unit), steps };
 }
 
-export function renderPlan(
-  plan: Plan,
-  observed?: Map<string, { ok: boolean; out: string }>,
-): string {
-  const lines = [
-    `host-plan target=${plan.target} units=${plan.units.join(",")} steps=${plan.steps.length}`,
-  ];
+export function renderPlan(plan: Plan, observed?: Map<string, { ok: boolean; out: string }>): string {
+  const lines = [`host-plan target=${plan.target} units=${plan.units.join(",")} steps=${plan.steps.length}`];
   let phase = "";
   for (const s of plan.steps) {
     const head = `${s.unit} ${s.phase}`;
@@ -914,16 +783,14 @@ export function renderPlan(
           : "info  ";
     lines.push(`- [${mark}] ${s.id}: ${s.note}`);
     if (!seen || s.kind !== "mutate")
-      lines.push(
-        `    $ ${s.run.length > 200 ? `${s.run.slice(0, 160)}... (${s.run.length} chars)` : s.run}`,
-      );
+      lines.push(`    $ ${s.run.length > 200 ? `${s.run.slice(0, 160)}... (${s.run.length} chars)` : s.run}`);
     if (seen?.out.trim())
       lines.push(
         ...seen.out
           .trim()
           .split("\n")
           .slice(0, 6)
-          .map((l) => `    > ${l}`),
+          .map(l => `    > ${l}`),
       );
   }
   return lines.join("\n");
@@ -931,15 +798,12 @@ export function renderPlan(
 
 /** Default runner: `aphrody infra ssh exec` (the Rust SSH operator), one finite deadline per command. */
 export const sshRunner: Runner = async (host, command) => {
-  const proc = Bun.spawn(
-    ["aphrody", "infra", "ssh", "exec", "--host", host, "--", command],
-    {
-      windowsHide: true,
-      env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "180" },
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const proc = Bun.spawn(["aphrody", "infra", "ssh", "exec", "--host", host, "--", command], {
+    windowsHide: true,
+    env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "180" },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -951,7 +815,7 @@ export const sshRunner: Runner = async (host, command) => {
 /** Run only the read-only preflight steps and report what the host says. Mutates nothing. */
 export async function observePlan(plan: Plan, run: Runner = sshRunner) {
   const seen = new Map<string, { ok: boolean; out: string }>();
-  for (const s of plan.steps.filter((x) => x.phase === "preflight")) {
+  for (const s of plan.steps.filter(x => x.phase === "preflight")) {
     const r = await run(plan.target, s.run);
     seen.set(s.id, { ok: r.code === 0, out: `${r.stdout}${r.stderr}` });
   }
@@ -968,7 +832,7 @@ export async function applyPlan(
   log: (line: string) => void = console.log,
 ): Promise<string[]> {
   for (const unit of plan.units) {
-    const mine = plan.steps.filter((s) => s.unit === unit);
+    const mine = plan.steps.filter(s => s.unit === unit);
     const exec = async (s: PlanStep) => {
       const r = await run(plan.target, s.run);
       log(
@@ -976,19 +840,13 @@ export async function applyPlan(
       );
       return r.code === 0 || s.kind === "info";
     };
-    for (const s of mine.filter((x) => x.phase === "preflight")) {
+    for (const s of mine.filter(x => x.phase === "preflight")) {
       if (!(await exec(s))) return [s.id];
     }
-    const rollback = mine.find((x) => x.phase === "rollback");
+    const rollback = mine.find(x => x.phase === "rollback");
     let installed = false;
-    for (const s of mine.filter(
-      (x) =>
-        x.phase === "provision" ||
-        x.phase === "install" ||
-        x.phase === "verify",
-    )) {
-      if (s.id.endsWith("/install") || s.id.endsWith("/install-binary"))
-        installed = true;
+    for (const s of mine.filter(x => x.phase === "provision" || x.phase === "install" || x.phase === "verify")) {
+      if (s.id.endsWith("/install") || s.id.endsWith("/install-binary")) installed = true;
       if (!(await exec(s))) {
         if (installed && rollback) await exec(rollback);
         return [s.id];

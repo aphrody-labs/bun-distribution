@@ -14,18 +14,18 @@ function fixture() {
   const root = join(directory, "iecode");
   const shared = join(directory, "aphrody");
   mkdirSync(root);
-  mkdirSync(join(shared, "packages/infra/workspace/src"), { recursive: true });
+  mkdirSync(join(shared, "packages/bun-workspace/src/automation"), { recursive: true });
   writeFileSync(
     join(root, "workspace.manifest.json"),
     JSON.stringify({
       operations: {
-        source: "../aphrody/packages/infra/workspace",
-        authority: "@aphrody/workspace",
+        source: "../aphrody/packages/bun-workspace",
+        authority: "@aphrody/bun-workspace",
       },
     }),
   );
-  writeFileSync(join(shared, "packages/infra/workspace/package.json"), '{"name":"@aphrody/workspace"}');
-  writeFileSync(join(shared, "packages/infra/workspace/src/ops.ts"), "");
+  writeFileSync(join(shared, "packages/bun-workspace/package.json"), '{"name":"@aphrody/bun-workspace"}');
+  writeFileSync(join(shared, "packages/bun-workspace/src/automation/ops.ts"), "");
   return { root, shared, directory };
 }
 test("uses the declared sibling independently of the caller working directory", () => {
@@ -56,17 +56,17 @@ test("rejects conflicting aliases while allowing two names for the same checkout
 });
 test("checks the selected package identity before executing its code", () => {
   const { root, shared } = fixture();
-  writeFileSync(join(shared, "packages/infra/workspace/package.json"), '{"name":"foreign-owner"}');
+  writeFileSync(join(shared, "packages/bun-workspace/package.json"), '{"name":"foreign-owner"}');
   expect(() => operationsContext(root, {})).toThrow("Unexpected operations owner");
 });
 
 test("installed registry operations work without a sibling and explicit checkouts retain precedence", () => {
   const { root, shared } = fixture();
-  const installed = join(root, "node_modules/@aphrody/workspace");
+  const installed = join(root, "node_modules/@aphrody/bun-workspace");
   mkdirSync(installed, { recursive: true });
   writeFileSync(
     join(installed, "package.json"),
-    JSON.stringify({ name: "@aphrody/workspace", exports: { "./ops": "./ops.ts" } }),
+    JSON.stringify({ name: "@aphrody/bun-workspace", exports: { "./automation/ops.ts": "./ops.ts" } }),
   );
   writeFileSync(join(installed, "ops.ts"), "");
   expect(operationsContext(root, {}).entry).toBe(join(installed, "ops.ts"));
@@ -76,7 +76,7 @@ test("installed registry operations work without a sibling and explicit checkout
   expect(operationsContext(root, {}).entry).toBe(join(installed, "ops.ts"));
   writeFileSync(
     join(installed, "package.json"),
-    JSON.stringify({ name: "foreign-owner", exports: { "./ops": "./ops.ts" } }),
+    JSON.stringify({ name: "foreign-owner", exports: { "./automation/ops.ts": "./ops.ts" } }),
   );
   expect(() => operationsContext(root, {})).toThrow("Unexpected operations owner");
 });

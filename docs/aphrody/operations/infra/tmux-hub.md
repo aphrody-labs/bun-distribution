@@ -11,9 +11,9 @@ s'attache à la session tmux `main` du VPS. Sa fenêtre `dbfr` rejoint la
 session `main` de dbfr par le maître multiplexé du VPS et se reconnecte en
 boucle. `ssh dbfr-t` s'attache directement à dbfr.
 
-Sources : [`aphrody-tmux-main`](../../../../tools/aphrody/config/host/tmux/aphrody-tmux-main),
-[service](../../../../tools/aphrody/config/host/tmux/aphrody-tmux.service) et
-[timer](../../../../tools/aphrody/config/host/tmux/aphrody-tmux.timer). Installation
+Sources : [`aphrody-tmux-main`](../../../../infra/config/host/tmux/aphrody-tmux-main),
+[service](../../../../infra/config/host/tmux/aphrody-tmux.service) et
+[timer](../../../../infra/config/host/tmux/aphrody-tmux.timer). Installation
 utilisateur (linger actif) : script dans `~/.local/bin`, unités dans
 `~/.config/systemd/user`, `systemctl --user enable --now aphrody-tmux.timer`.
 Les pairs sont listés dans `~/.config/aphrody/tmux-peers` (vps : `dbfr`).

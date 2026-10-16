@@ -36,7 +36,7 @@ aphrody-infra validate --json
 The Rust `status` command reports target/matrix state using its live target
 adapter (service counts/failures and selected host details); it is distinct
 from the catalog service query. The `service` commands query workloads declared in root
-[`tools/config/service-catalog.json`](../../../../tools/aphrody/config/service-catalog.json); they do
+[`tools/config/service-catalog.json`](../../../../infra/config/service-catalog.json); they do
 not discover arbitrary systemd units. Use a dated host observation when
 reporting complete unit inventory. `validate` checks the current service,
 route and port-policy catalogues; it is not a runtime health probe.

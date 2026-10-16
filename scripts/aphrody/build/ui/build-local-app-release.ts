@@ -4,7 +4,7 @@
 // Run through Workspace build-factory; build an isolated, pinned application release.
 import { cp, mkdir, copyFile, readFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
-import { buildDependencies } from "@aphrody/workspace/src/bun-dependency-builds.ts";
+import { buildDependencies } from "@aphrody/bun-workspace/automation/bun-dependency-builds.ts";
 
 const root = resolve(import.meta.dir, "../../../../docs/aphrody");
 if (Bun.env.APHRODY_BUILD_HOST !== "vps") {

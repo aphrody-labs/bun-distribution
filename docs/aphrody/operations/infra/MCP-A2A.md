@@ -25,8 +25,8 @@ restent sur loopback, sans publication nginx. `aphrody-mcp` est le serveur MCP
 canonique ; aucune configuration cliente nouvelle n'utilise les anciens alias
 `aphrody-mcp`.
 
-Les sources de référence sont les [unités et leur catalogue](../../../../tools/aphrody/config/host/catalog.json),
-la [déclaration de flotte](../../../../tools/aphrody/config/host/agent-fleet.json), le
+Les sources de référence sont les [unités et leur catalogue](../../../../infra/config/host/catalog.json),
+la [déclaration de flotte](../../../../infra/config/host/agent-fleet.json), le
 [plan d'installation Infra](../../../../packages/yolo-core/src/host/plan.ts) et le
 [contrat A2A natif](../../../../crates/aphrody-a2a-coord/README.md).
 
@@ -183,7 +183,7 @@ machine ; un transport MCP commun ne synchronise pas leur mémoire interne ni
 leurs poids de modèle.
 
 Les clients Windows natifs Codex 0.158 et Claude ont été configurés depuis leurs
-CLI avec la [déclaration Windows](../../../../tools/aphrody/config/host/agent-fleet-mcp-windows.json).
+CLI avec la [déclaration Windows](../../../../infra/config/host/agent-fleet-mcp-windows.json).
 Le transport qualifié utilise `C:/Windows/System32/wsl.exe --exec /usr/bin/ssh`
 et l'alias strict `aphrody-vps-wg` ; WSL et cet alias doivent rester disponibles.
 Deux connexions ont initialisé le serveur, lu ses 364 outils uniques et fermé
@@ -396,7 +396,7 @@ Les 18 tests de plan hôte et les contrôles TypeScript/lint/format passent.
 Historique : `aphrody-drive-sync.service` et son timer sont retirés du catalogue
 depuis le 2026-10-09 ; leurs unités ont été supprimées du dépôt.
 
-Le [worker VPS](../../../../tools/aphrody/config/host/agent-sync-vps.json) utilise le propriétaire
+Le [worker VPS](../../../../infra/config/host/agent-sync-vps.json) utilise le propriétaire
 Yolo Google et le pipeline agent home natif. Le timer
 `aphrody-drive-sync.timer` est `active/waiting` et `enabled`. Son service
 `aphrody-drive-sync.service` est un oneshot : il revient à `inactive/dead`

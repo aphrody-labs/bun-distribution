@@ -181,7 +181,7 @@ if [[ "$mode" = full ]]; then
 fi
 grep -Eq '^APHRODY_MCP_DATABASE_URL=' "$env_dir/aphrody-ai-http.env" || { echo 'missing APHRODY_MCP_DATABASE_URL in aphrody-ai-http.env' >&2; exit 2; }
 [[ "$mode" != full ]] || grep -Eq '^APHRODY_SHENRON_API_TOKEN=' "$env_dir/aphrody-ai-http.env" || { echo 'missing APHRODY_SHENRON_API_TOKEN in aphrody-ai-http.env' >&2; exit 2; }
-# Canonical APHRODY_AI_* names (tools/config/local-ai.json) first, then the legacy
+# Canonical APHRODY_AI_* names (tools/aphrody/config/local-ai.json) first, then the legacy
 # alias; both present with different values is ambiguous and refused.
 ai_value() {
   local file="$env_dir/aphrody-ai-http.env" value='' found='' key candidate

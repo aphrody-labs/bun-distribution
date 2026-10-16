@@ -5,12 +5,12 @@ import { join, resolve } from "node:path";
 import { checkCatalog } from "@aphrody/yolo-core/host";
 
 const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const host = join(root, "tools/config/host");
+const host = join(root, "infra/config/host");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 test("the host catalog stays consistent with the self-update units", () => {
   expect(checkCatalog(host)).toEqual([]);
-  const catalog = JSON.parse(read("tools/config/host/catalog.json")) as {
+  const catalog = JSON.parse(read("infra/config/host/catalog.json")) as {
     units: { unit: string; targetHost: string; pairs?: string }[];
     scheduledTasks: {
       task: string;
@@ -24,26 +24,18 @@ test("the host catalog stays consistent with the self-update units", () => {
     ["", "vps"],
     ["-dbfr", "dbfr"],
   ] as const) {
-    const service = catalog.units.find(
-      (u) => u.unit === `aphrody-self-update${suffix}.service`,
-    );
-    const timer = catalog.units.find(
-      (u) => u.unit === `aphrody-self-update${suffix}.timer`,
-    );
+    const service = catalog.units.find(u => u.unit === `aphrody-self-update${suffix}.service`);
+    const timer = catalog.units.find(u => u.unit === `aphrody-self-update${suffix}.timer`);
     expect(service?.targetHost).toBe(target);
     expect(timer?.pairs).toBe(`aphrody-self-update${suffix}.service`);
-    expect(
-      read(
-        `tools/config/host/systemd/aphrody/aphrody-self-update${suffix}.service`,
-      ),
-    ).toContain("aphrody self update");
+    expect(read(`infra/config/host/systemd/aphrody/aphrody-self-update${suffix}.service`)).toContain(
+      "aphrody self update",
+    );
   }
-  const task = catalog.scheduledTasks.find(
-    (t) => t.task === "Aphrody self update",
-  );
+  const task = catalog.scheduledTasks.find(t => t.task === "Aphrody self update");
   expect(task?.command).toBe("aphrody self update");
   // Registered by `aphrody infra boot apply` from the boot catalog entry (hidden S4U task).
-  const boot = JSON.parse(read("tools/config/service-catalog.json")) as {
+  const boot = JSON.parse(read("infra/config/service-catalog.json")) as {
     boot: {
       entries: {
         host: string;
@@ -53,9 +45,7 @@ test("the host catalog stays consistent with the self-update units", () => {
       }[];
     };
   };
-  const entry = boot.boot.entries.find(
-    (e) => `${e.host}:${e.name}` === task!.bootEntry,
-  );
+  const entry = boot.boot.entries.find(e => `${e.host}:${e.name}` === task!.bootEntry);
   expect(`aphrody ${entry?.arguments}`).toBe(task!.command);
   expect(entry?.triggers).toContain(`every:${task!.intervalMinutes}m`);
 });
@@ -73,17 +63,14 @@ test("release-main.yml has gates, a build matrix, publication and host deploymen
     "cancel-in-progress: false",
   ])
     expect(workflow).toContain(needle);
-  expect(workflow).not.toMatch(
-    /(ghp_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9]{20})/,
-  );
+  expect(workflow).not.toMatch(/(ghp_|github_pat_|BEGIN [A-Z ]*PRIVATE KEY|sk-[A-Za-z0-9]{20})/);
   // every credential comes from the secrets / vars context
   expect(workflow).toContain("secrets.RELEASE_SSH_KEY");
 });
 
 test("auto-release.sh is the downloads:publish chain, locked and revision-checked", () => {
   const script = read("scripts/release/auto-release.sh");
-  for (const step of ["plan", "build", "release", "verify"])
-    expect(script).toContain(`downloads:publish ${step}`);
+  for (const step of ["plan", "build", "release", "verify"]) expect(script).toContain(`downloads:publish ${step}`);
   expect(script).toContain("flock");
   expect(script).toContain("set -euo pipefail");
 });

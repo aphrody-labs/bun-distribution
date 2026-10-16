@@ -41,7 +41,7 @@ if(-not $Apply){return}
 New-Item -ItemType Directory -Force -Path (Join-Path $deploymentRoot 'tools/config')|Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ovh-protected.ps1') -Destination (Join-Path $deploymentRoot 'ovh-protected.ps1')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ovh-protected-dbfr.ps1') -Destination (Join-Path $deploymentRoot 'ovh-protected-dbfr.ps1')
-Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/config/ovh-automation.json') -Destination (Join-Path $deploymentRoot 'tools/config/service-catalog.json')
+Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/config/ovh-automation.json') -Destination (Join-Path $deploymentRoot 'infra/config/service-catalog.json')
 $logon=New-ScheduledTaskTrigger -AtLogOn -User $user
 $principal=New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
 $settings=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew

@@ -108,7 +108,7 @@ pub(crate) async fn index_document(
 async fn embed(text: &str, kind: &str) -> Option<Vec<f64>> {
     // The shenron vector table is a fixed embedding space (384-dim
     // `multilingual-e5-small`, `indexes.shenron-rag` in
-    // `tools/config/local-ai.json`): the configured model must be
+    // `tools/aphrody/config/local-ai.json`): the configured model must be
     // exactly `MODEL`, resolved through the canonical `APHRODY_AI_EMBED_MODEL`
     // (and its legacy `APHRODY_SHENRON_EMBED_MODEL` / `APHRODY_RAG_EMBED_MODEL`
     // aliases) so an operator setting either name gets this recall — never a

@@ -20,7 +20,7 @@
 //!
 //! - [`ai_env`] — the canonical `APHRODY_AI_*` environment variable names (and their
 //!   legacy aliases) that name aphrody's local/open-source AI stack; mirrors
-//!   `tools/config/local-ai.json`.
+//!   `tools/aphrody/config/local-ai.json`.
 //! - [`wire_api`] / [`policy`] — the small serde enums (`WireApi`, `AskForApproval`,
 //!   `SandboxMode`).
 //! - [`provider`] — [`provider::ModelProviderInfo`] and the built-in provider catalog

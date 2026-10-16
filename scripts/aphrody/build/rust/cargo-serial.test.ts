@@ -20,12 +20,12 @@ async function run(
   const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-routing-"));
   fixtures.push(root);
   const wrapper = join(root, "scripts/build/rust/cargo-serial.sh");
-  const factory = join(root, "packages/infra/workspace/src/build-factory.ts");
+  const factory = join(root, "packages/bun-workspace/src/automation/build-factory.ts");
   const bin = join(root, "bin");
   for (const dir of [
     join(root, "scripts/build/rust"),
     join(root, "tools", "config"),
-    join(root, "packages/infra/workspace/src"),
+    join(root, "packages/bun-workspace/src"),
     bin,
   ]) {
     mkdirSync(dir, { recursive: true });
@@ -37,7 +37,7 @@ async function run(
   await Bun.write(join(root, "tools/config/build-factory.json"), "{}");
   await Bun.write(factory, 'console.log("factory");\n');
   await Bun.write(
-    join(root, "packages/infra/workspace/src/build-factory-cleanup.ts"),
+    join(root, "packages/bun-workspace/src/automation/build-factory-cleanup.ts"),
     `
 if (Bun.argv[2] === "--held") process.exit(${held ? 0 : 1});
 if (Bun.argv[2] === "--sccache") { console.log("fixture-shared-cache-prewarm"); process.exit(0); }

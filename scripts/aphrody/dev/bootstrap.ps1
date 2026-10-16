@@ -30,7 +30,7 @@ foreach ($path in @("$env:USERPROFILE\.cargo\bin", "$env:USERPROFILE\.bun\bin", 
   if (Test-Path $path) { $env:PATH = "$path;$env:PATH" }
 }
 Require-Command git; Require-Command rustup; Require-Command uv
-$packagePins = Get-Content (Join-Path $root 'tools/config/system-packages.json') -Raw | ConvertFrom-Json
+$packagePins = Get-Content (Join-Path $root 'infra/config/system-packages.json') -Raw | ConvertFrom-Json
 $bunPin = $packagePins.toolchains.bun.version
 $haveBun = if (Get-Command bun -ErrorAction SilentlyContinue) { (bun --version).Trim() } else { '' }
 if ($haveBun -ne $bunPin) {

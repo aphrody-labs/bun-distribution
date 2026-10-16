@@ -3,32 +3,21 @@
 // Source-only Gitea browser sign-in for the trusted WireGuard tunnel.
 // Usage: bun scripts/tools/infra/source-tunnel-auth.ts [plan|--apply acme-challenge|auth-proxy|gitea-auth]
 const root = `${import.meta.dir}/../../..`;
-const sourceConf = await Bun.file(
-  `${root}/tools/config/host/nginx/aphrody/control.aphrody.app.conf`,
-).text();
-const expectedMap = await Bun.file(
-  `${root}/tools/config/host/nginx/shared/source-tunnel-auth.conf`,
-).text();
-const expectedSnippet = await Bun.file(
-  `${root}/tools/config/host/nginx/snippets/source-tunnel-auth.inc`,
-).text();
+const sourceConf = await Bun.file(`${root}/infra/config/host/nginx/aphrody/control.aphrody.app.conf`).text();
+const expectedMap = await Bun.file(`${root}/infra/config/host/nginx/shared/source-tunnel-auth.conf`).text();
+const expectedSnippet = await Bun.file(`${root}/infra/config/host/nginx/snippets/source-tunnel-auth.inc`).text();
 const args = process.argv.slice(2);
 const apply = args[0] === "--apply";
 const phase = apply ? (args[1] ?? "") : "plan";
 const phases = ["plan", "acme-challenge", "auth-proxy", "gitea-auth"];
 if (!phases.includes(phase) || (apply && args.length !== 2)) {
-  console.error(
-    `usage: bun ${import.meta.file} [plan|--apply acme-challenge|auth-proxy|gitea-auth]`,
-  );
+  console.error(`usage: bun ${import.meta.file} [plan|--apply acme-challenge|auth-proxy|gitea-auth]`);
   process.exit(2);
 }
 
-function serverBlock(
-  text: string,
-  marker: string,
-): { start: number; end: number; lines: string[]; text: string } {
+function serverBlock(text: string, marker: string): { start: number; end: number; lines: string[]; text: string } {
   const lines = text.split(/\r?\n/);
-  const match = lines.findIndex((line) => line.trim() === marker);
+  const match = lines.findIndex(line => line.trim() === marker);
   if (match < 0) throw new Error(`server marker missing: ${marker}`);
   let start = match;
   while (start >= 0 && lines[start]?.trim() !== "server {") start--;
@@ -45,20 +34,12 @@ function serverBlock(
   return { start, end, lines, text: lines.slice(start, end + 1).join("\n") };
 }
 
-const canonicalSource = serverBlock(
-  sourceConf,
-  "server_name source.aphrody.app;",
-).text;
+const canonicalSource = serverBlock(sourceConf, "server_name source.aphrody.app;").text;
 if (!canonicalSource.includes("include snippets/source-tunnel-auth.inc;"))
   throw new Error("Source auth header include is missing");
 if (!canonicalSource.includes("include snippets/bun-os-product-api.inc;"))
-  throw new Error(
-    "Source product route was unexpectedly removed from the canonical model",
-  );
-const sourceBlockForLive = canonicalSource.replace(
-  "    include snippets/bun-os-product-api.inc;\n",
-  "",
-);
+  throw new Error("Source product route was unexpectedly removed from the canonical model");
+const sourceBlockForLive = canonicalSource.replace("    include snippets/bun-os-product-api.inc;\n", "");
 if (sourceBlockForLive.includes("bun-os-product-api.inc"))
   throw new Error("unqualified product route would enter the live patch");
 
@@ -71,10 +52,8 @@ if (!apply) {
       mappedUser: "aphrody-dev",
       trustedBackend: "172.18.0.1/32",
       sourceCertificate: "/etc/letsencrypt/live/source.aphrody.app",
-      liveCompose:
-        "/home/ubuntu/apps/gitea/compose.yaml (selected env keys only)",
-      liveNginx:
-        "/etc/nginx/sites-available/control.aphrody.app.conf (forge blocks only)",
+      liveCompose: "/home/ubuntu/apps/gitea/compose.yaml (selected env keys only)",
+      liveNginx: "/etc/nginx/sites-available/control.aphrody.app.conf (forge blocks only)",
       productRoutesApplied: false,
     }),
   );
@@ -327,9 +306,7 @@ const [stdout, stderr, exitCode] = await Promise.all([
   sshProc.exited,
 ]);
 if (exitCode !== 0) {
-  console.error(
-    `Source tunnel auth ${phase} failed (${exitCode}); remote diagnostics suppressed.`,
-  );
+  console.error(`Source tunnel auth ${phase} failed (${exitCode}); remote diagnostics suppressed.`);
   if (stderr.includes("Permission denied") || stderr.includes("timed out"))
     console.error("SSH or operation boundary rejected or timed out.");
   process.exit(1);

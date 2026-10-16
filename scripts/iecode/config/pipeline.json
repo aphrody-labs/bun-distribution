@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "iecode-monorepo-validation",
-  "authority": "@aphrody/workspace",
+  "authority": "@aphrody/bun-workspace",
   "workspaceRoot": "..",
   "stages": [
     {

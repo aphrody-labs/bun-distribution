@@ -40,7 +40,7 @@ installés hors du graphe Cargo de ce dépôt par
 `scripts/dev/setup.nu` avec
 `--developer-cli` (inspection) ou `--developer-cli --apply` (installation et
 enregistrement des plugins). La liste maintenue est dans
-[`developer-cli-tools.json`](../../../../tools/aphrody/config/developer-cli-tools.json).
+[`developer-cli-tools.json`](../../../../infra/config/developer-cli-tools.json).
 
 ## Moteur `aphrody-nu`
 

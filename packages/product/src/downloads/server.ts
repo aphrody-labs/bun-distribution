@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Aphrody download server: a read-only Bun.serve app behind nginx (tools/config/host/nginx/aphrody/
+ * Aphrody download server: a read-only Bun.serve app behind nginx (infra/config/host/nginx/aphrody/
  * downloads.aphrody.com.conf). It serves one published release tree and never mutates anything.
  *
  *   <root>/latest.json        manifest: artifacts with name, version, platform, url, sha256, size
@@ -19,43 +19,20 @@
  * packages/web/site/publish.ts. Paths missing from it fall back to the download routes above.
  * Deployed alone as /home/ubuntu/apps/downloads/app/server.ts: no relative imports.
  */
-import {
-  existsSync,
-  lstatSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-} from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import {
-  basename,
-  dirname,
-  extname,
-  isAbsolute,
-  join,
-  resolve,
-  sep,
-} from "node:path";
-import type {
-  PublicIndexSearch,
-  PublicIndexSdkOptions,
-} from "./public-index.ts";
+import { basename, dirname, extname, isAbsolute, join, resolve, sep } from "node:path";
+import type { PublicIndexSearch, PublicIndexSdkOptions } from "./public-index.ts";
 
 /** Resolve a deployment without assuming a VPS layout or a fixed ingress port. */
-export function serverOptions(
-  env: Record<string, string | undefined> = process.env,
-) {
+export function serverOptions(env: Record<string, string | undefined> = process.env) {
   const value = env.DOWNLOADS_PORT?.trim() || env.PORT?.trim() || "8797";
   if (!/^\d{1,5}$/.test(value) || Number(value) > 65535)
     throw new Error("DOWNLOADS_PORT/PORT must be an integer from 0 to 65535");
   return {
     root: resolve(
       env.DOWNLOADS_ROOT?.trim() ||
-        join(
-          env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"),
-          "downloads",
-          "current",
-        ),
+        join(env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "downloads", "current"),
     ),
     port: Number(value),
     hostname: env.DOWNLOADS_HOST?.trim() || env.HOST?.trim() || "127.0.0.1",
@@ -101,8 +78,7 @@ const TEXT_TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
-const escapeHtml = (value: string): string =>
-  value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
 export function formatSize(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
@@ -113,12 +89,11 @@ export function formatSize(bytes: number): string {
 
 // The Aphrody pet, idle track of crates/ui/identity (atlas row 0, six timed cells), drawn by CSS
 // at half scale from /pet.webp so the page carries no script for it.
-const PET: { cell: [number, number]; atlas: [number, number]; idle: number[] } =
-  {
-    cell: [192, 208],
-    atlas: [1536, 2288],
-    idle: [280, 110, 110, 140, 140, 320],
-  };
+const PET: { cell: [number, number]; atlas: [number, number]; idle: number[] } = {
+  cell: [192, 208],
+  atlas: [1536, 2288],
+  idle: [280, 110, 110, 140, 140, 320],
+};
 const petKeyframes = (): string => {
   const total = PET.idle.reduce((a, b) => a + b, 0);
   let at = 0;
@@ -136,9 +111,7 @@ const cmd = (label: string, text: string) =>
 
 export function renderIndex(manifest: Manifest | null): string {
   const base = escapeHtml(manifest?.baseUrl ?? "https://downloads.aphrody.com");
-  const desktop = (manifest?.artifacts ?? []).find(
-    (a) => a.kind === "desktop" || /desktop|studio/i.test(a.name),
-  );
+  const desktop = (manifest?.artifacts ?? []).find(a => a.kind === "desktop" || /desktop|studio/i.test(a.name));
   const button = desktop
     ? `<a class="btn" href="${escapeHtml(desktop.url)}">Download Aphrody</a>`
     : `<span class="btn off" aria-disabled="true">Download Aphrody</span>`;
@@ -189,11 +162,7 @@ const PUBLIC_ASSETS = new Set([
   "icon.svg",
 ]);
 
-function resolveContainedFile(
-  root: string,
-  directory: string,
-  name: string,
-): string | null {
+function resolveContainedFile(root: string, directory: string, name: string): string | null {
   if (!name || /[\\/\0\r\n]/.test(name) || name.startsWith(".")) return null;
   // Release trees must never expose credentials, databases or model stores.
   const protectedName =
@@ -202,8 +171,7 @@ function resolveContainedFile(
   try {
     const realRoot = realpathSync(root);
     const realBase = realpathSync(join(root, directory));
-    if (realBase !== realRoot && !realBase.startsWith(realRoot + sep))
-      return null;
+    if (realBase !== realRoot && !realBase.startsWith(realRoot + sep)) return null;
     const real = realpathSync(join(realBase, name));
     return real.startsWith(realBase + sep) &&
       !protectedName.test(basename(real)) &&
@@ -227,18 +195,13 @@ function resolveRelease(root: string, id: string): string | null {
     const releases = realpathSync(join(dirname(root), "releases"));
     if (releases !== join(parent, "releases")) return null;
     const release = realpathSync(join(releases, id));
-    return release === join(releases, id) && statSync(release).isDirectory()
-      ? release
-      : null;
+    return release === join(releases, id) && statSync(release).isDirectory() ? release : null;
   } catch {
     return null;
   }
 }
 
-function parseRange(
-  header: string | null,
-  size: number,
-): [number, number] | "invalid" | null {
+function parseRange(header: string | null, size: number): [number, number] | "invalid" | null {
   if (header === null) return null;
   const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
   if (!match) return "invalid";
@@ -313,31 +276,20 @@ function declaredAppUiRoot(downloadsRoot: string): string | undefined {
     )
       throw invalidAppUiDeclaration();
     const value: unknown = JSON.parse(readFileSync(realDeclaration, "utf8"));
-    if (typeof value !== "object" || value === null || Array.isArray(value))
-      throw invalidAppUiDeclaration();
+    if (typeof value !== "object" || value === null || Array.isArray(value)) throw invalidAppUiDeclaration();
     const record = value as Record<string, unknown>;
-    if (
-      Object.keys(record).length !== 2 ||
-      record.schemaVersion !== 1 ||
-      record.root !== "current"
-    )
+    if (Object.keys(record).length !== 2 || record.schemaVersion !== 1 || record.root !== "current")
       throw invalidAppUiDeclaration();
     const root = realpathSync(join(realDirectory, "current"));
-    if (!root.startsWith(realDirectory + sep) || !statSync(root).isDirectory())
-      throw invalidAppUiDeclaration();
+    if (!root.startsWith(realDirectory + sep) || !statSync(root).isDirectory()) throw invalidAppUiDeclaration();
     return root;
   } catch {
     throw invalidAppUiDeclaration();
   }
 }
 
-export function siteOptions(
-  downloadsRoot: string,
-  env: Record<string, string | undefined> = process.env,
-): SiteOptions {
-  const appUiRoot = env.APP_UI_ROOT?.trim()
-    ? resolve(env.APP_UI_ROOT.trim())
-    : declaredAppUiRoot(downloadsRoot);
+export function siteOptions(downloadsRoot: string, env: Record<string, string | undefined> = process.env): SiteOptions {
+  const appUiRoot = env.APP_UI_ROOT?.trim() ? resolve(env.APP_UI_ROOT.trim()) : declaredAppUiRoot(downloadsRoot);
   if (
     appUiRoot &&
     [
@@ -346,24 +298,19 @@ export function siteOptions(
       "public-docs.json",
       "app.js",
       "app.css",
-      ...APP_UI_ARTICLE_IDS.map((id) => `public-docs/${id}.html`),
-    ].some((name) => !resolveSiteFile(appUiRoot, "/" + name))
+      ...APP_UI_ARTICLE_IDS.map(id => `public-docs/${id}.html`),
+    ].some(name => !resolveSiteFile(appUiRoot, "/" + name))
   ) {
-    throw new Error(
-      "APP_UI_ROOT must contain a complete canonical app-ui build including public-home.html",
-    );
+    throw new Error("APP_UI_ROOT must contain a complete canonical app-ui build including public-home.html");
   }
   if (appUiRoot) artifactAssetsBase(appUiRoot);
   return {
     appUiRoot,
-    root: resolve(
-      env.SITE_ROOT?.trim() ||
-        join(dirname(resolve(downloadsRoot)), "site", "current"),
-    ),
+    root: resolve(env.SITE_ROOT?.trim() || join(dirname(resolve(downloadsRoot)), "site", "current")),
     hosts: new Set(
       (env.SITE_HOSTS ?? "aphrody.com,www.aphrody.com")
         .split(",")
-        .map((h) => h.trim().toLowerCase())
+        .map(h => h.trim().toLowerCase())
         .filter(Boolean),
     ),
   };
@@ -399,24 +346,14 @@ const PUBLIC_ASSETS_ORIGIN = "https://assets.aphrody.app";
 function artifactAssetsBase(root: string): string | undefined {
   const file = resolveSiteFile(root, "/public-assets.json");
   if (!file) return undefined;
-  const value = JSON.parse(readFileSync(file, "utf8")) as Record<
-    string,
-    unknown
-  >;
-  if (
-    value.schemaVersion !== 1 ||
-    value.baseUrl !== PUBLIC_ASSETS_ORIGIN ||
-    Object.keys(value).length !== 2
-  )
+  const value = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+  if (value.schemaVersion !== 1 || value.baseUrl !== PUBLIC_ASSETS_ORIGIN || Object.keys(value).length !== 2)
     throw new Error("Unqualified app-ui public asset origin");
   return PUBLIC_ASSETS_ORIGIN;
 }
 
 /** `/docs/x` -> `<site>/docs/x`, `<site>/docs/x/index.html` or `<site>/docs/x.html`, contained in the site. */
-export function resolveSiteFile(
-  siteRoot: string,
-  pathname: string,
-): string | null {
+export function resolveSiteFile(siteRoot: string, pathname: string): string | null {
   let decoded: string;
   try {
     decoded = decodeURIComponent(pathname);
@@ -425,7 +362,7 @@ export function resolveSiteFile(
   }
   if (/[\\\0\r\n]/.test(decoded)) return null;
   const parts = decoded.split("/").filter(Boolean);
-  if (parts.some((p) => p === ".." || p.startsWith("."))) return null;
+  if (parts.some(p => p === ".." || p.startsWith("."))) return null;
   let realRoot: string;
   try {
     realRoot = realpathSync(siteRoot);
@@ -433,24 +370,18 @@ export function resolveSiteFile(
     return null;
   }
   const base = join(realRoot, ...parts);
-  const candidates = parts.length
-    ? [base, join(base, "index.html"), `${base}.html`]
-    : [join(realRoot, "index.html")];
+  const candidates = parts.length ? [base, join(base, "index.html"), `${base}.html`] : [join(realRoot, "index.html")];
   for (const candidate of candidates) {
     try {
       const real = realpathSync(candidate);
-      if (real.startsWith(realRoot + sep) && statSync(real).isFile())
-        return real;
+      if (real.startsWith(realRoot + sep) && statSync(real).isFile()) return real;
     } catch {}
   }
   return null;
 }
 
 /** Add public document summaries without modifying the mirrored source tree. */
-export async function documentSeo(
-  html: string,
-  pathname: string,
-): Promise<string> {
+export async function documentSeo(html: string, pathname: string): Promise<string> {
   if (!pathname.startsWith("/docs/")) return html;
   let descriptionPresent = false;
   const paragraphs: string[] = [];
@@ -483,17 +414,13 @@ export async function documentSeo(
     hellip: "…",
   };
   const summary = paragraphs
-    .map((text) =>
+    .map(text =>
       text
         .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (original, entity: string) => {
           if (!entity.startsWith("#")) return entities[entity] ?? original;
           const point =
-            entity[1]?.toLowerCase() === "x"
-              ? Number.parseInt(entity.slice(2), 16)
-              : Number(entity.slice(1));
-          return point > 0 &&
-            point <= 0x10ffff &&
-            !(point >= 0xd800 && point <= 0xdfff)
+            entity[1]?.toLowerCase() === "x" ? Number.parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+          return point > 0 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
             ? String.fromCodePoint(point)
             : original;
         })
@@ -501,22 +428,17 @@ export async function documentSeo(
         .trim(),
     )
     .find(Boolean);
-  const description =
-    summary &&
-    (summary.length > 160
-      ? `${summary.slice(0, 157).replace(/\s+\S*$/, "")}…`
-      : summary);
+  const description = summary && (summary.length > 160 ? `${summary.slice(0, 157).replace(/\s+\S*$/, "")}…` : summary);
   // Preserve each source title while giving independently addressable docs a
   // route context (cookies, contributing and plugin docs have duplicate titles).
   const context = pathname
     .slice(6)
     .split("/")
-    .map((part) => part.replaceAll("-", " "))
+    .map(part => part.replaceAll("-", " "))
     .join(" / ");
   const contextualTitle = html.replace(
     /<title>([\s\S]*?)<\/title>/i,
-    (_match, title: string) =>
-      `<title>${title} · ${escapeHtml(context)}</title>`,
+    (_match, title: string) => `<title>${title} · ${escapeHtml(context)}</title>`,
   );
   if (descriptionPresent || !description) return contextualTitle;
   return new HTMLRewriter()
@@ -527,29 +449,19 @@ export async function documentSeo(
     })
     .on("head", {
       element(element) {
-        element.append(
-          `<meta name="description" content="${escapeHtml(description)}">`,
-          {
-            html: true,
-          },
-        );
+        element.append(`<meta name="description" content="${escapeHtml(description)}">`, {
+          html: true,
+        });
       },
     })
     .transform(new Response(contextualTitle))
     .text();
 }
 
-async function siteResponse(
-  request: Request,
-  file: string,
-  status = 200,
-): Promise<Response> {
+async function siteResponse(request: Request, file: string, status = 200): Promise<Response> {
   const ext = extname(file);
   const type =
-    SITE_TYPES[ext] ??
-    (basename(file) === "install"
-      ? "text/plain; charset=utf-8"
-      : "application/octet-stream");
+    SITE_TYPES[ext] ?? (basename(file) === "install" ? "text/plain; charset=utf-8" : "application/octet-stream");
   const cache = /^(\.(html|md|txt|json|xml|sh|ps1))?$/.test(ext)
     ? "public, max-age=300"
     : ext === ".css" || ext === ".js"
@@ -564,24 +476,14 @@ async function siteResponse(
   });
   if (ext !== ".html") headers.set("access-control-allow-origin", "*");
   let body: Blob = Bun.file(file);
-  if (
-    ext === ".html" &&
-    new URL(request.url).pathname.startsWith("/docs/") &&
-    status === 200
-  ) {
-    const html = await documentSeo(
-      await body.text(),
-      new URL(request.url).pathname,
-    );
+  if (ext === ".html" && new URL(request.url).pathname.startsWith("/docs/") && status === 200) {
+    const html = await documentSeo(await body.text(), new URL(request.url).pathname);
     return new Response(request.method === "HEAD" ? null : html, {
       status,
       headers,
     });
   }
-  if (
-    /\bgzip\b/.test(request.headers.get("accept-encoding") ?? "") &&
-    existsSync(`${file}.gz`)
-  ) {
+  if (/\bgzip\b/.test(request.headers.get("accept-encoding") ?? "") && existsSync(`${file}.gz`)) {
     body = Bun.file(`${file}.gz`);
     headers.set("content-encoding", "gzip");
   }
@@ -635,7 +537,7 @@ export const APP_UI_ROUTES = new Set([
     "system",
     "brands",
     "adaptive",
-  ].flatMap((page) => [`/material-3/${page}`, `/showcase/${page}`]),
+  ].flatMap(page => [`/material-3/${page}`, `/showcase/${page}`]),
 ]);
 /** Metadata for explicit public preview routes; native capabilities remain installation-dependent. */
 export function publicRouteSeo(pathname: string) {
@@ -643,10 +545,10 @@ export function publicRouteSeo(pathname: string) {
   const context = path
     .slice(1)
     .split("/")
-    .map((part) =>
+    .map(part =>
       part
         .split("-")
-        .map((word) => word[0]?.toUpperCase() + word.slice(1))
+        .map(word => word[0]?.toUpperCase() + word.slice(1))
         .join(" "),
     )
     .join(" — ");
@@ -672,10 +574,7 @@ export function publicRouteSeo(pathname: string) {
     canonical: `https://aphrody.com${path === "/index.html" ? "/" : path}`,
   };
 }
-async function appUiResponse(
-  request: Request,
-  root: string,
-): Promise<Response | null> {
+async function appUiResponse(request: Request, root: string): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
   const home = pathname === "/" || pathname === "/index.html";
   const seo = publicRouteSeo(pathname);
@@ -684,19 +583,12 @@ async function appUiResponse(
   if (!home && !shell && !asset) return null;
   const file = resolveSiteFile(
     root,
-    home
-      ? "/public-home.html"
-      : shell
-        ? "/index.html"
-        : pathname.slice("/_app-ui".length),
+    home ? "/public-home.html" : shell ? "/index.html" : pathname.slice("/_app-ui".length),
   );
   const headers = withHeaders({
     "content-security-policy": `default-src 'self'; img-src 'self' data: ${PUBLIC_ASSETS_ORIGIN}; style-src 'self' 'unsafe-inline'; font-src 'self' ${PUBLIC_ASSETS_ORIGIN}; script-src 'self'; connect-src 'self' ${PUBLIC_ASSETS_ORIGIN}; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`,
-    "content-type": file
-      ? (SITE_TYPES[extname(file)] ?? "application/octet-stream")
-      : "text/plain; charset=utf-8",
-    "cache-control":
-      home || shell ? "public, max-age=60" : "public, max-age=3600",
+    "content-type": file ? (SITE_TYPES[extname(file)] ?? "application/octet-stream") : "text/plain; charset=utf-8",
+    "cache-control": home || shell ? "public, max-age=60" : "public, max-age=3600",
     "referrer-policy": "strict-origin-when-cross-origin",
   });
   if (!file)
@@ -728,12 +620,9 @@ async function appUiResponse(
           });
           const assetsBase = artifactAssetsBase(root);
           if (assetsBase)
-            element.append(
-              `<meta name="aphrody-assets-base" content="${assetsBase}">`,
-              {
-                html: true,
-              },
-            );
+            element.append(`<meta name="aphrody-assets-base" content="${assetsBase}">`, {
+              html: true,
+            });
           if (!home)
             element.append(
               `<title>${seo.title}</title><meta name="description" content="${seo.description.replaceAll("&", "&amp;").replaceAll('"', "&quot;")}"><link rel="canonical" href="${seo.canonical}">`,
@@ -751,20 +640,12 @@ async function appUiResponse(
 }
 
 /** Explicit source-owned catalogue and five product articles; never a catch-all SPA route. */
-async function appUiDocsResponse(
-  request: Request,
-  root: string,
-): Promise<Response | null> {
+async function appUiDocsResponse(request: Request, root: string): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
-  const id = pathname.startsWith("/docs/")
-    ? pathname.slice("/docs/".length)
-    : "";
+  const id = pathname.startsWith("/docs/") ? pathname.slice("/docs/".length) : "";
   const api = pathname === "/api/docs";
   if (!api && !APP_UI_ARTICLE_IDS.includes(id)) return null;
-  const file = resolveSiteFile(
-    root,
-    api ? "/public-docs.json" : `/public-docs/${id}.html`,
-  );
+  const file = resolveSiteFile(root, api ? "/public-docs.json" : `/public-docs/${id}.html`);
   if (!file) return null;
   const response = await siteResponse(request, file);
   if (api || request.method === "HEAD") return response;
@@ -777,10 +658,7 @@ async function appUiDocsResponse(
     .transform(response)
     .text();
   const headers = new Headers(response.headers);
-  headers.set(
-    "content-security-policy",
-    SITE_CSP.replace("base-uri 'none'", "base-uri 'self'"),
-  );
+  headers.set("content-security-policy", SITE_CSP.replace("base-uri 'none'", "base-uri 'self'"));
   return new Response(html, { headers });
 }
 
@@ -800,9 +678,7 @@ let publicSearchOwner: Promise<PublicSearch> | undefined;
 async function defaultPublicSearch(): Promise<PublicSearch> {
   publicSearchOwner ??= (async () => {
     // Standalone deployments install the SDK or configure its canonical source module explicitly.
-    const sdk = await import(
-      process.env.GOOGLE_SEARCH_SDK_MODULE || "@aphrody/bun-google/search"
-    );
+    const sdk = await import(process.env.GOOGLE_SEARCH_SDK_MODULE || "@aphrody/bun-google/search");
     return sdk.createGooglePublicSearch({
       executable: process.env.GOOGLE_SEARCH_OWNER || "aphrody",
     }) as PublicSearch;
@@ -821,10 +697,7 @@ export async function publicSearchResponse(
 ): Promise<Response> {
   const headers = { ...SECURITY_HEADERS, "cache-control": "no-store" };
   if (request.method !== "GET")
-    return Response.json(
-      { error: "method not allowed" },
-      { status: 405, headers: { ...headers, allow: "GET" } },
-    );
+    return Response.json({ error: "method not allowed" }, { status: 405, headers: { ...headers, allow: "GET" } });
   const params = new URL(request.url).searchParams;
   const allowed = new Set(["query", "vertical", "hl", "safe", "start", "num"]);
   const query = params.get("query")?.trim() ?? "";
@@ -832,14 +705,10 @@ export async function publicSearchResponse(
   const start = params.get("start") ?? "0";
   const num = params.get("num") ?? "10";
   if (
-    [...params.keys()].some(
-      (key) => !allowed.has(key) || params.getAll(key).length !== 1,
-    ) ||
+    [...params.keys()].some(key => !allowed.has(key) || params.getAll(key).length !== 1) ||
     !query ||
     new TextEncoder().encode(query).byteLength > 4096 ||
-    Array.from(query).some(
-      (char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127,
-    ) ||
+    Array.from(query).some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) ||
     (params.get("vertical") ?? "web") !== "web" ||
     (params.get("safe") ?? "active") !== "active" ||
     !/^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(hl) ||
@@ -849,10 +718,7 @@ export async function publicSearchResponse(
     Number(num) < 1 ||
     Number(num) > 20
   )
-    return Response.json(
-      { error: "invalid public search request" },
-      { status: 400, headers },
-    );
+    return Response.json({ error: "invalid public search request" }, { status: 400, headers });
   try {
     const backend = env.PUBLIC_SEARCH_BACKEND?.trim() || "google";
     if (backend === "public-index") {
@@ -875,8 +741,7 @@ export async function publicSearchResponse(
         indexSearch,
       );
     }
-    if (backend !== "google")
-      throw new Error("Unsupported public search backend");
+    if (backend !== "google") throw new Error("Unsupported public search backend");
     const owner = search ?? (await defaultPublicSearch());
     const result = await owner(
       {
@@ -891,15 +756,11 @@ export async function publicSearchResponse(
     );
     return Response.json(result, { headers });
   } catch {
-    return Response.json(
-      { error: "Search is unavailable. Please try again." },
-      { status: 503, headers },
-    );
+    return Response.json({ error: "Search is unavailable. Please try again." }, { status: 503, headers });
   }
 }
 
-let publicIndexOwner:
-  { key: string; search: Promise<PublicIndexSearch> } | undefined;
+let publicIndexOwner: { key: string; search: Promise<PublicIndexSearch> } | undefined;
 
 /** Import only an explicitly configured public SDK. Type-only imports keep this server standalone. */
 export async function configuredPublicIndexSearch(
@@ -918,14 +779,8 @@ export async function configuredPublicIndexSearch(
     encoded.length > 16384
   )
     throw new Error("Public index is not configured");
-  const collections = JSON.parse(
-    encoded,
-  ) as PublicIndexSdkOptions["collections"];
-  if (
-    !collections ||
-    typeof collections !== "object" ||
-    Array.isArray(collections)
-  )
+  const collections = JSON.parse(encoded) as PublicIndexSdkOptions["collections"];
+  if (!collections || typeof collections !== "object" || Array.isArray(collections))
     throw new Error("Invalid public index configuration");
   const entries = Object.entries(collections);
   if (
@@ -940,9 +795,7 @@ export async function configuredPublicIndexSearch(
         !Array.isArray(policy.hosts) ||
         !policy.hosts.length ||
         policy.hosts.length > 32 ||
-        policy.hosts.some(
-          (host) => typeof host !== "string" || !/^[a-z0-9.-]+$/.test(host),
-        ) ||
+        policy.hosts.some(host => typeof host !== "string" || !/^[a-z0-9.-]+$/.test(host)) ||
         typeof policy.policySha256 !== "string" ||
         !/^[a-f0-9]{64}$/.test(policy.policySha256) ||
         typeof policy.owner !== "string" ||
@@ -955,14 +808,12 @@ export async function configuredPublicIndexSearch(
   if (!publicIndexOwner || publicIndexOwner.key !== key) {
     const search = (async () => {
       const sdk = await import(module);
-      if (typeof sdk.createPublicIndexSearch !== "function")
-        throw new Error("Public index SDK unavailable");
+      if (typeof sdk.createPublicIndexSearch !== "function") throw new Error("Public index SDK unavailable");
       const owner: unknown = sdk.createPublicIndexSearch({
         root,
         collections,
       } satisfies PublicIndexSdkOptions);
-      if (typeof owner !== "function")
-        throw new Error("Public index SDK unavailable");
+      if (typeof owner !== "function") throw new Error("Public index SDK unavailable");
       return owner as PublicIndexSearch;
     })();
     publicIndexOwner = { key, search };
@@ -974,10 +825,7 @@ export async function configuredPublicIndexSearch(
 }
 
 /** Public projection only; the SDK owns bounded cache, hashes, collection isolation and FTS. */
-export async function publicIndexResponse(
-  request: Request,
-  search?: PublicIndexSearch,
-): Promise<Response> {
+export async function publicIndexResponse(request: Request, search?: PublicIndexSearch): Promise<Response> {
   const headers = { ...SECURITY_HEADERS, "cache-control": "no-store" };
   if (request.method !== "GET")
     return Response.json(
@@ -995,15 +843,10 @@ export async function publicIndexResponse(
   const start = params.get("start") ?? "0";
   const allowed = new Set(["query", "collection", "num", "start"]);
   if (
-    [...params.keys()].some(
-      (key) => !allowed.has(key) || params.getAll(key).length !== 1,
-    ) ||
+    [...params.keys()].some(key => !allowed.has(key) || params.getAll(key).length !== 1) ||
     !query ||
     new TextEncoder().encode(rawQuery).byteLength > 4096 ||
-    Array.from(rawQuery).some(
-      (character) =>
-        character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
-    ) ||
+    Array.from(rawQuery).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127) ||
     !/^[a-z0-9][a-z0-9-]{0,63}$/.test(collection) ||
     !/^\d{1,2}$/.test(num) ||
     Number(num) < 1 ||
@@ -1011,18 +854,12 @@ export async function publicIndexResponse(
     !/^\d{1,4}$/.test(start) ||
     Number(start) > 1000
   )
-    return Response.json(
-      { error: "invalid public index request" },
-      { status: 400, headers },
-    );
+    return Response.json({ error: "invalid public index request" }, { status: 400, headers });
   try {
     request.signal.throwIfAborted();
     const owner = search ?? (await configuredPublicIndexSearch());
     request.signal.throwIfAborted();
-    const result = await owner(
-      { query, collection, num: Number(num), start: Number(start) },
-      request.signal,
-    );
+    const result = await owner({ query, collection, num: Number(num), start: Number(start) }, request.signal);
     request.signal.throwIfAborted();
     const body = result?.body;
     if (
@@ -1031,9 +868,7 @@ export async function publicIndexResponse(
       body.collection !== collection ||
       body.source !== "public-crawl-cache" ||
       typeof body.generatedAt !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
-        body.generatedAt,
-      ) ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(body.generatedAt) ||
       !Number.isFinite(Date.parse(body.generatedAt)) ||
       !Array.isArray(body.organic) ||
       body.organic.length > Number(num) ||
@@ -1041,7 +876,7 @@ export async function publicIndexResponse(
       !["hit", "miss"].includes(result.cache)
     )
       throw new Error("Invalid public index response");
-    const organic = body.organic.map((hit) => {
+    const organic = body.organic.map(hit => {
       if (
         !hit ||
         typeof hit.title !== "string" ||
@@ -1053,11 +888,7 @@ export async function publicIndexResponse(
       )
         throw new Error("Invalid public index response");
       const url = new URL(hit.url);
-      if (
-        !["https:", "http:"].includes(url.protocol) ||
-        url.username ||
-        url.password
-      )
+      if (!["https:", "http:"].includes(url.protocol) || url.username || url.password)
         throw new Error("Invalid public index response");
       return { title: hit.title, url: hit.url, snippet: hit.snippet };
     });
@@ -1070,12 +901,8 @@ export async function publicIndexResponse(
     const conditional = request.headers
       .get("if-none-match")
       ?.split(",")
-      .map((value) => value.trim().replace(/^W\//, ""));
-    if (
-      conditional?.some(
-        (value) => value === "*" || value === result.etag.replace(/^W\//, ""),
-      )
-    )
+      .map(value => value.trim().replace(/^W\//, ""));
+    if (conditional?.some(value => value === "*" || value === result.etag.replace(/^W\//, "")))
       return new Response(null, { status: 304, headers: successHeaders });
     return Response.json(
       {
@@ -1088,10 +915,7 @@ export async function publicIndexResponse(
       { headers: successHeaders },
     );
   } catch {
-    return Response.json(
-      { error: "Public index is unavailable. Please try again." },
-      { status: 503, headers },
-    );
+    return Response.json({ error: "Public index is unavailable. Please try again." }, { status: 503, headers });
   }
 }
 
@@ -1103,18 +927,12 @@ export function createHandler(
 ): (request: Request) => Promise<Response> {
   const downloads = downloadsHandler(resolve(rootInput));
   if (!site) return downloads;
-  return async (request) => {
+  return async request => {
     const url = new URL(request.url);
     const { pathname } = url;
-    if (
-      pathname === "/api/index/search" &&
-      site.hosts.has(url.hostname.toLowerCase())
-    )
+    if (pathname === "/api/index/search" && site.hosts.has(url.hostname.toLowerCase()))
       return publicIndexResponse(request, indexSearch);
-    if (
-      pathname === "/api/search" &&
-      site.hosts.has(url.hostname.toLowerCase())
-    )
+    if (pathname === "/api/search" && site.hosts.has(url.hostname.toLowerCase()))
       return publicSearchResponse(request, search, indexSearch);
     if (
       !site.hosts.has(url.hostname.toLowerCase()) ||
@@ -1123,12 +941,7 @@ export function createHandler(
       (request.method !== "GET" && request.method !== "HEAD")
     )
       return downloads(request);
-    if (
-      site.appUiRoot &&
-      (pathname === "/" ||
-        pathname === "/index.html" ||
-        pathname.startsWith("/_app-ui/"))
-    ) {
+    if (site.appUiRoot && (pathname === "/" || pathname === "/index.html" || pathname.startsWith("/_app-ui/"))) {
       const appUi = await appUiResponse(request, site.appUiRoot);
       if (appUi) return appUi;
     }
@@ -1149,10 +962,8 @@ export function createHandler(
   };
 }
 
-function downloadsHandler(
-  root: string,
-): (request: Request) => Promise<Response> {
-  return async (request) => {
+function downloadsHandler(root: string): (request: Request) => Promise<Response> {
+  return async request => {
     const url = new URL(request.url);
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response("method not allowed", {
@@ -1225,9 +1036,7 @@ function downloadsHandler(
       return new Response(head ? null : file, {
         headers: withHeaders({
           "content-type": TEXT_TYPES[ext] ?? "text/plain; charset=utf-8",
-          "cache-control": immutable
-            ? "public, max-age=31536000, immutable"
-            : "public, max-age=60",
+          "cache-control": immutable ? "public, max-age=31536000, immutable" : "public, max-age=60",
           "access-control-allow-origin": "*",
         }),
       });
@@ -1251,9 +1060,7 @@ function downloadsHandler(
         });
       const file = Bun.file(real);
       const size = file.size;
-      const type =
-        TEXT_TYPES[name.slice(name.lastIndexOf("."))] ??
-        "application/octet-stream";
+      const type = TEXT_TYPES[name.slice(name.lastIndexOf("."))] ?? "application/octet-stream";
       const headers = withHeaders({
         "content-type": type,
         "accept-ranges": "bytes",
@@ -1282,9 +1089,7 @@ function downloadsHandler(
   };
 }
 
-export function startPublicServer(
-  env: Record<string, string | undefined> = process.env,
-) {
+export function startPublicServer(env: Record<string, string | undefined> = process.env) {
   const { root, port, hostname } = serverOptions(env);
   const handler = createHandler(root, siteOptions(root, env));
   return Bun.serve({ port, hostname, idleTimeout: 120, fetch: handler });
@@ -1292,7 +1097,5 @@ export function startPublicServer(
 
 if (import.meta.main) {
   const server = startPublicServer();
-  console.log(
-    `Aphrody public listening on http://${server.hostname}:${server.port}`,
-  );
+  console.log(`Aphrody public listening on http://${server.hostname}:${server.port}`);
 }

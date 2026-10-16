@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Local port-forwards to aphrody-infra catalog services, grouped per SSH alias.
 //!
-//! `aphrody ssh tunnel` reads `tools/config/service-catalog.json` (auto-discovered, or given
+//! `aphrody ssh tunnel` reads `infra/config/service-catalog.json` (auto-discovered, or given
 //! explicitly) and opens one `ssh -N -L ...` process per SSH alias covering every requested
 //! service, so application repositories stop hand-rolling their own `ssh -L` invocations.
 
@@ -18,7 +18,7 @@ use tokio::{process::Command, task::JoinSet};
 use crate::Error;
 
 /// Relative path of the service catalog inside an aphrody-infra checkout.
-pub const CATALOG_RELATIVE_PATH: &str = "tools/config/service-catalog.json";
+pub const CATALOG_RELATIVE_PATH: &str = "infra/config/service-catalog.json";
 
 /// Default local-port offset applied to a service's remote port.
 pub const DEFAULT_OFFSET: u16 = 10_000;
@@ -739,7 +739,7 @@ mod tests {
     fn automatic_catalog_requires_current_monorepo_layout() {
         let root = std::env::temp_dir().join(format!("ssh-catalog-layout-{}", std::process::id()));
         std::fs::create_dir_all(root.join("aphrody-infra/tools/config")).unwrap();
-        std::fs::write(root.join("aphrody-infra/tools/config/service-catalog.json"), "{}").unwrap();
+        std::fs::write(root.join("aphrody-infra/infra/config/service-catalog.json"), "{}").unwrap();
         assert_eq!(find_workspace_catalog(&root), None);
         assert_eq!(find_workspace_catalog(&root.join("aphrody-infra")), None);
         std::fs::create_dir_all(root.join("tools").join("config")).unwrap();

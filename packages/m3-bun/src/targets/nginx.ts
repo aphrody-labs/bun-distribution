@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// nginx: a vhost in the shape of the yolo vhosts (`tools/config/host/nginx/<ns>/*.conf`: an `upstream` with keepalive,
+// nginx: a vhost in the shape of the yolo vhosts (`infra/config/host/nginx/<ns>/*.conf`: an `upstream` with keepalive,
 // ACME and redirect on :80, TLS on :443, `include snippets/proxy-client-ip.inc`), proxying everything to the one
 // Bun process; an HTTP-only variant for a loopback test; and the `routes.json` entry of yolo's route catalog.
 // Static files and API share the upstream: the app server already sets cache headers and compresses.
@@ -66,10 +66,7 @@ export const vhostModel = (c: TargetContext): NginxModel => {
       ? {
           ssl_certificate: `/etc/letsencrypt/live/${host}/fullchain.pem`,
           ssl_certificate_key: `/etc/letsencrypt/live/${host}/privkey.pem`,
-          custom: [
-            "include /etc/letsencrypt/options-ssl-nginx.conf",
-            "ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem",
-          ],
+          custom: ["include /etc/letsencrypt/options-ssl-nginx.conf", "ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem"],
         }
       : {
           ssl_certificate: c.tls.cert,
@@ -86,11 +83,7 @@ export const vhostModel = (c: TargetContext): NginxModel => {
         locations: [
           {
             path: "^~ /.well-known/acme-challenge/",
-            custom_directives: [
-              "root /var/www/letsencrypt",
-              "default_type text/plain",
-              "try_files $uri =404",
-            ],
+            custom_directives: ["root /var/www/letsencrypt", "default_type text/plain", "try_files $uri =404"],
           },
           {
             path: "/",
@@ -116,10 +109,7 @@ export const vhostModel = (c: TargetContext): NginxModel => {
 };
 
 /** Same proxy on a loopback HTTP port, for a smoke test with no certificate. */
-export const httpVhostModel = (
-  c: TargetContext,
-  listen = 8080,
-): NginxModel => ({
+export const httpVhostModel = (c: TargetContext, listen = 8080): NginxModel => ({
   upstreams: [upstream(c)],
   servers: [
     {
@@ -139,7 +129,7 @@ export function nginxRenderer(): string[] | undefined {
   const aphrody = Bun.which("aphrody");
   if (aphrody) candidates.push([aphrody, "infra", "nginx", "render"]);
   return candidates.find(
-    (argv) =>
+    argv =>
       Bun.spawnSync([...argv, "--help"], {
         windowsHide: true,
         stdout: "ignore",
@@ -149,27 +139,19 @@ export function nginxRenderer(): string[] | undefined {
 }
 
 /** Renders a model through `aphrody infra nginx render`. */
-export async function renderNginx(
-  renderer: string[],
-  model: NginxModel,
-  comments: string[],
-): Promise<string> {
-  const proc = Bun.spawn(
-    [...renderer, ...comments.flatMap((line) => ["--comment", line]), "-"],
-    {
-      windowsHide: true,
-      stdin: new TextEncoder().encode(JSON.stringify(model)),
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+export async function renderNginx(renderer: string[], model: NginxModel, comments: string[]): Promise<string> {
+  const proc = Bun.spawn([...renderer, ...comments.flatMap(line => ["--comment", line]), "-"], {
+    windowsHide: true,
+    stdin: new TextEncoder().encode(JSON.stringify(model)),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     Bun.readableStreamToText(proc.stdout),
     Bun.readableStreamToText(proc.stderr),
     proc.exited,
   ]);
-  if (code !== 0)
-    throw new Error(`${renderer.join(" ")} failed (${code}): ${stderr.trim()}`);
+  if (code !== 0) throw new Error(`${renderer.join(" ")} failed (${code}): ${stderr.trim()}`);
   return stdout;
 }
 
@@ -199,7 +181,7 @@ export const nginx: Target = {
         comment: `${c.name}: HTTP-only variant for local tests.`,
       },
     ];
-    const files: GeneratedFile[] = variants.map((v) => ({
+    const files: GeneratedFile[] = variants.map(v => ({
       path: v.file.replace(/\.conf$/, ".nginx.json"),
       content: `${JSON.stringify(v.model, null, 2)}\n`,
     }));
@@ -209,10 +191,7 @@ export const nginx: Target = {
         if (renderer) {
           return {
             path: v.file,
-            content: await renderNginx(renderer, v.model, [
-              GENERATED_NOTE,
-              v.comment,
-            ]),
+            content: await renderNginx(renderer, v.model, [GENERATED_NOTE, v.comment]),
           };
         }
         const json = v.file.replace(/\.conf$/, ".nginx.json");

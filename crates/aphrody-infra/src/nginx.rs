@@ -512,7 +512,7 @@ fn check_files(
 /// in a disposable `image` container, on any host with Docker and without a local nginx.
 /// Nothing is bind-mounted (no Docker file sharing needed): the file, its includes found in
 /// the parent of its directory (the repository mirror of `/etc/nginx`, e.g.
-/// `tools/config/host/nginx/snippets/`) and the [`letsencrypt_stand_ins`] reach the container
+/// `infra/config/host/nginx/snippets/`) and the [`letsencrypt_stand_ins`] reach the container
 /// as a tar stream on stdin. Returns the nginx report.
 pub fn test_in_container(candidate: &Path, image: &str) -> Result<String, String> {
     use std::io::Write as _;
@@ -693,7 +693,7 @@ mod tests {
     #[ignore = "needs Docker and the nginx:alpine image"]
     fn repository_apex_passes_nginx_in_a_container() {
         let apex = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tools/aphrody/config/host/nginx/aphrody/aphrody-apex.conf");
+            .join("../../infra/config/host/nginx/aphrody/aphrody-apex.conf");
         let report = test_in_container(&apex, "nginx:alpine").unwrap();
         assert!(report.contains("test is successful"), "{report}");
         let broken = tempfile::tempdir().unwrap();

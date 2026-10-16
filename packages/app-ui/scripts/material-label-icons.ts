@@ -17,7 +17,7 @@ const APP = resolve(import.meta.dir, "..");
 const SRC = join(APP, "src");
 const REPO = resolve(APP, "../../..");
 const ts: typeof import("typescript") = createRequire(
-  join(REPO, "packages/infra/workspace/package.json"),
+  join(REPO, "packages/bun-workspace/package.json"),
 )("@typescript/typescript6");
 const MANIFEST = join(import.meta.dir, "material-label-icons.manifest.json");
 const CATALOGUE = join(

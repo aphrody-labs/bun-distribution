@@ -13,8 +13,8 @@
 The VPS combines PostgreSQL (primary relational store), Redis (in-memory cache) and embedded
 SQLite files (bounded local caches and crawl indexes). Policy: PostgreSQL is primary, SQLite is a
 bounded local cache (`deduplication.database` in
-[`tools/config/application-contracts.json`](../../../../../tools/aphrody/config/application-contracts.json)). Ports and
-private paths are declared in [`tools/config/production-topology.json`](../../../../../tools/aphrody/config/production-topology.json)
+[`tools/config/application-contracts.json`](../../../../../infra/config/application-contracts.json)). Ports and
+private paths are declared in [`tools/config/production-topology.json`](../../../../../infra/config/production-topology.json)
 and the catalog; connection strings are operator secrets and never appear in this repository.
 Restored from the retired `aphrody` monolith (`docs/reference/infra/vps/DATABASES.md`); the remote database host
 it used to print was removed.

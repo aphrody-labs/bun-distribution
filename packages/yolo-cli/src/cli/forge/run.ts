@@ -15,8 +15,8 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { withFactoryResource } from "@aphrody/workspace/src/build-factory-cleanup.ts";
-import { readFactoryConfig } from "@aphrody/workspace/src/build-factory.ts";
+import { withFactoryResource } from "@aphrody/bun-workspace/automation/build-factory-cleanup.ts";
+import { readFactoryConfig } from "@aphrody/bun-workspace/automation/build-factory.ts";
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";

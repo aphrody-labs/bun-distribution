@@ -8,8 +8,7 @@
  * them from the Aphrody checkout at run time.
  */
 import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { findCheckout, isCompiled } from "./home";
 
@@ -48,15 +47,13 @@ export const M3_TOOLS = {
   bun: {
     module: "../material/packages/m3-bun/src/cli.ts",
     run: "runCli",
-    summary:
-      "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
+    summary: "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
     keepAlive: true,
   },
   "os-themes": {
     module: "../material/packages/m3-os-themes/src/cli.ts",
     run: "runOsThemes",
-    summary:
-      "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
+    summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
   },
   "next-migrate": {
     module: "../material/packages/m3-next-migrate/src/cli.ts",
@@ -67,55 +64,46 @@ export const M3_TOOLS = {
   "svg-to-ico": {
     module: "../material/packages/material-design-icons/scripts/svg-to-ico.ts",
     run: "runSvgToIco",
-    summary:
-      "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
+    summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
   "web-to-tauri": {
-    module:
-      "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
+    module: "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
     run: "runWebToTauri",
-    summary:
-      "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
+    summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
   scaffold: {
     module: "../material/packages/m3/packages/scaffold/src/cli.ts",
     run: "runScaffold",
     script: true,
-    summary:
-      "The single project scaffolder: list | example | new [aphrody-scaffold]",
+    summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
   },
 } as const satisfies Record<string, PackageRunner>;
 
 export const PACKAGE_COMMANDS = {
   ops: {
-    module: "packages/infra/workspace/src/ops.ts",
+    module: "packages/bun-workspace/src/automation/ops.ts",
     run: "runOps",
-    summary:
-      "Workspace operations (gates, docs, build factory, audits); other commands go to aphrody-infra",
+    summary: "Workspace operations (gates, docs, build factory, audits); other commands go to aphrody-infra",
   },
   workspace: {
-    module: "packages/infra/workspace/src/cli.ts",
+    module: "packages/bun-workspace/src/automation/cli.ts",
     run: "runWorkspace",
-    summary:
-      "optimize | plugins | code-edit; other commands go to aphrody-infra unchanged",
+    summary: "optimize | plugins | code-edit; other commands go to aphrody-infra unchanged",
   },
   optimize: {
-    module: "packages/infra/workspace/src/optimize.ts",
+    module: "packages/bun-workspace/src/automation/optimize.ts",
     run: "runOptimize",
-    summary:
-      "Run the optimize-workspace skill through `aphrody exec` (--print previews it)",
+    summary: "Run the optimize-workspace skill through `aphrody exec` (--print previews it)",
   },
   update: {
     module: "packages/infra/update/src/cli.ts",
     run: "runUpdate",
-    summary:
-      "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
+    summary: "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
   },
   google: {
     module: "../bun/packages/bun-google/aphrody/packages/google/src/cli.ts",
     run: "runGoogle",
-    summary:
-      "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
+    summary: "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
   },
   "doc-ai": {
     module: "packages/ai/doc-ai/src/cli.ts",
@@ -130,15 +118,13 @@ export const PACKAGE_COMMANDS = {
   forge: {
     module: "packages/engine/yolo/src/cli/forge/main.ts",
     run: "runForge",
-    summary:
-      "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
+    summary: "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
     keepAlive: true,
   },
   m3: {
     module: "../material/packages/m3/packages/m3/src/cli.ts",
     run: "runCli",
-    summary:
-      "M3 framework CLI (dev, build, compile, desktop, tokens, check, new) and the m3 package tools",
+    summary: "M3 framework CLI (dev, build, compile, desktop, tokens, check, new) and the m3 package tools",
     keepAlive: true,
     tools: M3_TOOLS,
   },
@@ -160,33 +146,37 @@ export interface ResolvedPackageCommand extends PackageRunner {
 }
 
 /** The runner `yolo <name> ...args` reaches: a tool when the first argument names one, else the command's own. */
-export function resolvePackageCommand(
-  name: string,
-  args: readonly string[],
-): ResolvedPackageCommand | undefined {
+export function resolvePackageCommand(name: string, args: readonly string[]): ResolvedPackageCommand | undefined {
   if (!isPackageCommand(name)) return undefined;
   const command: PackageCommand = PACKAGE_COMMANDS[name];
   const [first, ...rest] = args;
-  if (
-    command.tools &&
-    first !== undefined &&
-    Object.hasOwn(command.tools, first)
-  ) {
+  if (command.tools && first !== undefined && Object.hasOwn(command.tools, first)) {
     return { ...command.tools[first]!, label: `${name} ${first}`, args: rest };
   }
   return { ...command, label: name, args: [...args] };
 }
 
 /**
- * The checkout that holds the owner packages: this source tree when yolo runs from source; for a compiled yolo,
- * the checkout enclosing the working directory, else `YOLO_APHRODY_ROOT` (default `~/aphrody`).
+ * Resolve the selected Bun OS checkout before explicit compatibility owners.
  */
 export function packageRoot(cwd: string = process.cwd()): string {
-  if (!isCompiled()) return resolve(import.meta.dir, "../../../docs/aphrody");
-  return (
-    findCheckout(cwd) ??
-    resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "aphrody"))
-  );
+  if (process.env.BUN_OS_ROOT?.trim()) return resolve(process.env.BUN_OS_ROOT);
+  let candidate = resolve(cwd);
+  for (;;) {
+    if (
+      existsSync(join(candidate, "sources.lock.json")) &&
+      existsSync(join(candidate, "packages/bun-workspace/src/automation/ops.ts"))
+    )
+      return candidate;
+    const parent = dirname(candidate);
+    if (parent === candidate) break;
+    candidate = parent;
+  }
+  if (!isCompiled()) return resolve(import.meta.dir, "../../..");
+  const legacy = process.env.YOLO_APHRODY_ROOT?.trim();
+  const owner = legacy ? resolve(legacy) : findCheckout(cwd);
+  if (owner) return owner;
+  throw new Error("Bun OS workspace not found; configure BUN_OS_ROOT explicitly");
 }
 
 type NativeJobTransport = (
@@ -198,10 +188,7 @@ type NativeJobTransport = (
   },
   options: { timeoutMs: number; signal?: AbortSignal },
 ) => Promise<unknown>;
-type Runner = (
-  argv: string[],
-  ports?: { nativeJobTransport: NativeJobTransport },
-) => number | Promise<number>;
+type Runner = (argv: string[], ports?: { nativeJobTransport: NativeJobTransport }) => number | Promise<number>;
 
 /** Resolve the native owner only when qualification is explicitly applied. */
 async function nativeJobPort(root: string): Promise<{
@@ -216,19 +203,13 @@ async function nativeJobPort(root: string): Promise<{
   const engine = (await import(pathToFileURL(enginePath).href)) as {
     close?: () => void;
   };
-  if (
-    typeof pipeline.mcpTool !== "function" ||
-    typeof engine.close !== "function"
-  )
-    throw new Error(
-      "Native jobs qualification requires the canonical pipeline SDK",
-    );
+  if (typeof pipeline.mcpTool !== "function" || typeof engine.close !== "function")
+    throw new Error("Native jobs qualification requires the canonical pipeline SDK");
   return { nativeJobTransport: pipeline.mcpTool, close: engine.close };
 }
 
 const isHelpRequest = (args: readonly string[]): boolean =>
-  args.length === 0 ||
-  (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
+  args.length === 0 || (args.length === 1 && ["help", "--help", "-h"].includes(args[0]!));
 
 /** Runs `yolo <name> ...args` in-process and returns the exit status. */
 export async function runPackageCommand(
@@ -257,9 +238,7 @@ export async function runPackageCommand(
     }).exited;
   }
   const owner = (
-    name === "forge"
-      ? await import("./cli/forge/main.ts")
-      : await import(pathToFileURL(path).href)
+    name === "forge" ? await import("./cli/forge/main.ts") : await import(pathToFileURL(path).href)
   ) as Record<string, unknown>;
   const runner = owner[run];
   if (typeof runner !== "function") {
@@ -271,8 +250,7 @@ export async function runPackageCommand(
   try {
     const rootOption = resolved.args.indexOf("--root");
     const updateArgs = resolved.args.filter(
-      (arg, index) =>
-        !(arg === "--root" || (rootOption >= 0 && index === rootOption + 1)),
+      (arg, index) => !(arg === "--root" || (rootOption >= 0 && index === rootOption + 1)),
     );
     if (
       name === "update" &&
@@ -285,17 +263,14 @@ export async function runPackageCommand(
     const returned = await (runner as Runner)(resolved.args, native);
     status = typeof returned === "number" ? returned : 0;
   } catch (error) {
-    console.error(
-      `yolo ${label}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`yolo ${label}: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   } finally {
     native?.close();
   }
   if (status === 0 && tools && isHelpRequest(resolved.args)) {
     console.log(`\nTools (yolo ${name} <tool> ...):`);
-    for (const [tool, { summary }] of Object.entries(tools))
-      console.log(`  ${tool.padEnd(14)} ${summary}`);
+    for (const [tool, { summary }] of Object.entries(tools)) console.log(`  ${tool.padEnd(14)} ${summary}`);
   }
   return status;
 }

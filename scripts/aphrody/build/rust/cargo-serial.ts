@@ -229,7 +229,7 @@ export function admitCargoJobs(
 function factoryRoute(env: Env): "factory" | "local" {
   const owner = join(
     sourceRoot,
-    "packages/infra/workspace/src/build-factory.ts",
+    "packages/bun-workspace/src/automation/build-factory.ts",
   );
   if (
     !existsSync(join(sourceRoot, "tools/config/build-factory.json")) ||

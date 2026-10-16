@@ -4,13 +4,21 @@
 
 - Owner update: absorb and update Aphrody Infra and Workspace as Bun OS
   capabilities, superseding their earlier separate Aphrody ownership.
-- Migrate clean tracked Infra catalogs into the root Infra owner without moving
-  protected state or changing host permissions, services or credentials.
-- Merge the imported Workspace automation implementation into the existing
-  `packages/bun-workspace` owner, then migrate commands, dependencies, tests and
-  source references together. Preserve histories and licenses.
-- Qualify source paths, installed dependency resolution and read-only commands;
-  native compilation and host activation remain separate gates.
+- [x] Move 263 tracked Infra configuration files into `infra/config`, updating
+      source consumers and preserving host permissions and protected stores.
+- [x] Merge 109 automation modules and 73 tests into `packages/bun-workspace`,
+      migrating consumers, exports and the shared lock. Preserve Apache notices.
+- [x] Add root `infra`, `ops` and Workspace automation dispatch and the native
+      `bunos-infra` source target. Types pass on 339 files; targeted tests,
+      metadata and the real frozen installation pass.
+- [x] Remove obsolete product-layer splits from current documentation and
+      source metadata; AI, Infra and Workspace belong to the same Bun OS product.
+- [ ] Compile and qualify the new native Infra binary. The installed binary
+      still identifies its previous build; the active Android build remains intact.
+- [ ] Resolve remaining historical host-path declarations and full-product lint
+      diagnostics. Native declaration emission needs the newer Bun source build.
+- [ ] Retire the old generated Workspace installation. Automatic approval review
+      rejected removal with `blocked by policy`; its 25 dependency files remain.
 
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
 

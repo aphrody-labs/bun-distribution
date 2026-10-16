@@ -5,7 +5,7 @@ Le propriétaire a demandé l'orchestration parallèle des travaux critiques Bun
 Aphrody avec une échéance d'une heure. Les observations ci-dessous couvrent la
 fabrique SSH ; elles ne constituent pas une clôture de tous les plans.
 Les règles et allocations viennent du [contexte](windows-native.md), de
-[vps-cargo.json](../../../../tools/aphrody/config/host/vps-cargo.json) et du
+[vps-cargo.json](../../../../infra/config/host/vps-cargo.json) et du
 [catalogue de fabrique](../../../../tools/aphrody/config/build-factory.json).
 
 Les appels distants passent par `infra_exec` du MCP Aphrody local canonique.

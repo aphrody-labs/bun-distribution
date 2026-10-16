@@ -339,7 +339,7 @@ mod tests {
         std::fs::create_dir_all(root.path().join("tools").join("config"))
             .expect("fixture config directory");
         std::fs::write(
-            root.path().join("tools/config/service-catalog.json"),
+            root.path().join("infra/config/service-catalog.json"),
             r#"{ "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
                  "services": [{ "id": "creator", "kind": "nginx-static", "runtime": "none" }] }"#,
         )
@@ -368,9 +368,9 @@ mod tests {
     #[test]
     fn listing_keeps_live_services_of_the_target_host() {
         let root = tempfile::tempdir().expect("fixture directory");
-        std::fs::create_dir_all(root.path().join("tools/config")).expect("fixture config");
+        std::fs::create_dir_all(root.path().join("infra/config")).expect("fixture config");
         std::fs::write(
-            root.path().join("tools/config/service-catalog.json"),
+            root.path().join("infra/config/service-catalog.json"),
             r#"{ "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
                  "services": [
                    { "id": "old", "kind": "x", "runtime": "bun", "unit": "old.service", "host": "dbfr",

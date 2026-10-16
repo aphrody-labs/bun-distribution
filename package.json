@@ -170,7 +170,6 @@
     "packages/update",
     "packages/web-to-tauri",
     "packages/winclean",
-    "packages/workspace",
     "packages/yolo-cli",
     "packages/yolo-core",
     "toolchains/bun/packages/bun-google",

@@ -13,7 +13,7 @@ import {
   readFactoryConfig,
   routeHeavyBuild,
   type BuildFactoryStatus,
-} from "../../../../../packages/infra/workspace/src/build-factory";
+} from "../../../../../packages/bun-workspace/src/automation/build-factory";
 
 export const SHOWCASE_ROOT = resolve(import.meta.dir, "..");
 export const APHRODY_ROOT = resolve(SHOWCASE_ROOT, "../../../..");

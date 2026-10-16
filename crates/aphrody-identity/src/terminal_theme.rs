@@ -38,7 +38,7 @@ pub const WT_SCHEME_LIGHT: &str = "Aphrody M3 Light";
 pub const RIO_THEME_DARK: &str = "aphrody-m3";
 /// Rio theme file stem of the light mode.
 pub const RIO_THEME_LIGHT: &str = "aphrody-m3-light";
-/// Generated files, relative to `tools/config/host/windows/terminal/`.
+/// Generated files, relative to `infra/config/host/windows/terminal/`.
 pub const FILES: [&str; 5] = [
     "aphrody-m3.wt-scheme.json",
     "rio/themes/aphrody-m3.toml",
@@ -47,7 +47,7 @@ pub const FILES: [&str; 5] = [
     "aphrody-m3.prompt.json",
 ];
 /// Directory of the versioned terminal configuration, relative to the repository root.
-pub const CONFIG_DIR: &str = "tools/config/host/windows/terminal";
+pub const CONFIG_DIR: &str = "infra/config/host/windows/terminal";
 
 const GENERATED_BY: &str = "aphrody identity terminal-theme";
 

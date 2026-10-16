@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Aphrody commands whose owners are Bun packages, served by the single `aphrody` binary.
 //!
-//! The former `yolo` Bun CLI (`packages/engine/yolo/src/index.ts`) dispatches the commands owned by
+//! The product dispatcher (`packages/yolo-cli/src/index.ts`) dispatches the commands owned by
 //! TypeScript packages that depend on Bun itself (`Bun.serve`, in-process package runners, m3, forge,
 //! the build factory). `aphrody <name> …` runs `bun <dispatcher> <command> …` from the checkout, so
 //! there is one command line while the owners keep their code. Commands with a Rust owner never come
@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Dispatcher of the Bun-owned commands, relative to the checkout root.
-pub(crate) const DISPATCHER: &str = "packages/engine/yolo/src/index.ts";
+pub(crate) const DISPATCHER: &str = "packages/yolo-cli/src/index.ts";
 
 /// `aphrody <name>` → `bun <dispatcher> <command>`.
 pub(crate) const ROUTES: &[(&str, &str)] = &[
@@ -44,7 +44,7 @@ pub(crate) const ROUTES: &[(&str, &str)] = &[
     // Build factory and its git hooks.
     ("ship", "ship"),
     ("hooks", "hooks"),
-    // Workspace owners (packages/infra/workspace, packages/infra/update).
+    // Unified workspace automation and the update owner.
     ("ops", "ops"),
     ("workspace", "workspace"),
     ("optimize", "optimize"),
@@ -62,13 +62,19 @@ pub(crate) const ROUTES: &[(&str, &str)] = &[
 ];
 
 /// Former top-level names kept with a deprecation note on stderr: (name, replacement).
-const DEPRECATED: &[(&str, &str)] =
-    &[("doc-ai", "aphrody ai doc-ai"), ("python", "aphrody py"), ("serve", "aphrody api")];
+const DEPRECATED: &[(&str, &str)] = &[
+    ("doc-ai", "aphrody ai doc-ai"),
+    ("python", "aphrody py"),
+    ("serve", "aphrody api"),
+];
 
 /// Multi-call entry: `args[0]` is the route name (the tool has no former binary name).
 pub(crate) fn entry(args: Vec<OsString>) -> i32 {
     let mut args = args.into_iter();
-    let name = args.next().and_then(|name| name.into_string().ok()).unwrap_or_default();
+    let name = args
+        .next()
+        .and_then(|name| name.into_string().ok())
+        .unwrap_or_default();
     let Some(&(_, command)) = ROUTES.iter().find(|(route, _)| *route == name) else {
         eprintln!("aphrody: `{name}` is not a Bun-owned command");
         return 2;
@@ -89,13 +95,15 @@ pub(crate) fn google(args: Vec<OsString>) -> i32 {
 pub(crate) fn dispatch(command: &str, args: impl IntoIterator<Item = OsString>) -> i32 {
     let Some(root) = checkout_root() else {
         eprintln!(
-            "aphrody {command}: this command runs from an Aphrody checkout ({DISPATCHER}); set APHRODY_ROOT \
+            "aphrody {command}: this command runs from a Bun OS checkout ({DISPATCHER}); set BUN_OS_ROOT \
              or run it inside the checkout"
         );
         return 127;
     };
     let mut child = Command::new(bun()).no_window();
     child.arg(root.join(DISPATCHER)).arg(command).args(args);
+    child.env("BUN_OS_ROOT", &root);
+    child.env("APHRODY_WORKSPACE_ROOT", &root);
     child.env("APHRODY_ROOT", &root);
     // The TypeScript owners call `aphrody` back (resolveAphrody): keep them on this binary.
     if std::env::var_os("APHRODY_BIN").is_none()
@@ -108,7 +116,7 @@ pub(crate) fn dispatch(command: &str, args: impl IntoIterator<Item = OsString>) 
         Err(err) => {
             eprintln!("aphrody {command}: cannot start bun: {err}");
             127
-        },
+        }
     }
 }
 
@@ -124,15 +132,24 @@ fn is_checkout(dir: &Path) -> bool {
     dir.join(DISPATCHER).is_file()
 }
 
-/// `APHRODY_ROOT`, then the ancestors of the binary (`target/<profile>/aphrody`) and of the working
+/// Explicit product roots, then compatibility roots, then the ancestors of the binary and working
 /// directory. No machine-specific checkout fallback creates an execution context.
 pub(crate) fn checkout_root() -> Option<PathBuf> {
-    let env_dir = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty()).map(PathBuf::from);
-    if let Some(dir) = env_dir("APHRODY_ROOT")
-        .filter(|dir| is_checkout(dir))
-        .or_else(|| env_dir("APHRODY_WORKSPACE").filter(|dir| is_checkout(dir)))
-    {
-        return Some(dir);
+    let env_dir = |name: &str| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
+    for name in [
+        "BUN_OS_ROOT",
+        "APHRODY_WORKSPACE_ROOT",
+        "APHRODY_ROOT",
+        "APHRODY_WORKSPACE",
+    ] {
+        if let Some(dir) = env_dir(name) {
+            // An invalid explicit owner must not silently execute from another checkout.
+            return is_checkout(&dir).then_some(dir);
+        }
     }
     let from_exe = std::env::current_exe().ok();
     let from_cwd = std::env::current_dir().ok();
@@ -177,7 +194,9 @@ mod tests {
     const Z1_BUN: &[&str] = &["create"];
 
     fn dispatcher_cases() -> Option<Vec<String>> {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../apps/aphrody/crates/infra").join(DISPATCHER);
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(DISPATCHER);
         let source = std::fs::read_to_string(path).ok()?;
         Some(
             source
@@ -190,8 +209,13 @@ mod tests {
 
     #[test]
     fn every_dispatcher_command_has_one_destination() {
-        let Some(cases) = dispatcher_cases() else { return };
-        assert!(cases.len() > 20, "the dispatcher scan found {} cases", cases.len());
+        let cases =
+            dispatcher_cases().expect("the Bun OS dispatcher must exist in the source checkout");
+        assert!(
+            cases.len() > 20,
+            "the dispatcher scan found {} cases",
+            cases.len()
+        );
         let routed: Vec<&str> = ROUTES.iter().map(|(_, command)| *command).collect();
         for case in &cases {
             let homes = [
@@ -227,9 +251,7 @@ mod tests {
 
     #[test]
     fn the_repository_is_a_checkout() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../apps/aphrody/crates/infra");
-        if root.join(DISPATCHER).exists() {
-            assert!(is_checkout(&root));
-        }
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        assert!(is_checkout(&root));
     }
 }

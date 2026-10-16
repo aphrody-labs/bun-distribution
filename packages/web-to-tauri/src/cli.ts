@@ -6,14 +6,7 @@ import { bridgeDriver, cdpDriver, runParity } from "./drivers.ts";
 import { generateProject } from "./generate.ts";
 import { planConversion } from "./plan.ts";
 import { probeDirectory, probeUrl } from "./probe.ts";
-import type {
-  ConversionPlan,
-  ExternalLinks,
-  PlanOptions,
-  Probe,
-  WrapEngine,
-  WrapMode,
-} from "./types.ts";
+import type { ConversionPlan, ExternalLinks, PlanOptions, Probe, WrapEngine, WrapMode } from "./types.ts";
 
 const HELP = `web-to-tauri: convert a website, web app or built bundle into a native Tauri 3 app.
 
@@ -33,7 +26,7 @@ OPTIONS
   --user-agent <text>      fixed user agent
   --backend <origin>       backend of a bundle: its API routes are proxied
   --port <n>               fixed sidecar port (keeps OAuth callbacks valid)
-  --wrap-crate <dir>       aphrody-tauri-wrap crate (default crates/ui/tauri-wrap)
+  --wrap-crate <dir>       tauri-plugin-aphrody crate (default packages/bun-tauri/crates/tauri-plugin-aphrody)
   --no-lock                do not copy the repository Cargo.lock
   --force                  write into a non-empty directory (never overwrites a file)
   --strict                 exit 2 when the plan needs review
@@ -48,14 +41,7 @@ interface Args {
   bool: Set<string>;
 }
 
-const BOOLEAN = new Set([
-  "json",
-  "strict",
-  "force",
-  "no-lock",
-  "help",
-  "bridge",
-]);
+const BOOLEAN = new Set(["json", "strict", "force", "no-lock", "help", "bridge"]);
 
 function parseArgs(argv: string[]): Args {
   const [command = "help", ...rest] = argv;
@@ -72,11 +58,7 @@ function parseArgs(argv: string[]): Args {
     if (BOOLEAN.has(key)) {
       bool.add(key);
       // `--bridge [exe]`: an optional value that does not start with a dash.
-      if (
-        key === "bridge" &&
-        rest[index + 1] &&
-        !rest[index + 1]!.startsWith("--")
-      ) {
+      if (key === "bridge" && rest[index + 1] && !rest[index + 1]!.startsWith("--")) {
         flags.set(key, [...(flags.get(key) ?? []), rest[(index += 1)]!]);
       }
       continue;
@@ -96,12 +78,9 @@ function planOptions(args: Args): PlanOptions {
   const mode = one(args, "mode") as WrapMode | "auto" | undefined;
   const engine = one(args, "engine") as WrapEngine | "auto" | undefined;
   const external = one(args, "external") as ExternalLinks | undefined;
-  if (mode && !["auto", "remote", "bundle", "sidecar"].includes(mode))
-    throw new Error(`unknown mode ${mode}`);
-  if (engine && !["auto", "wry", "cef"].includes(engine))
-    throw new Error(`unknown engine ${engine}`);
-  if (external && !["system", "inapp", "deny"].includes(external))
-    throw new Error(`unknown --external ${external}`);
+  if (mode && !["auto", "remote", "bundle", "sidecar"].includes(mode)) throw new Error(`unknown mode ${mode}`);
+  if (engine && !["auto", "wry", "cef"].includes(engine)) throw new Error(`unknown engine ${engine}`);
+  if (external && !["system", "inapp", "deny"].includes(external)) throw new Error(`unknown --external ${external}`);
   const port = one(args, "port");
   return {
     name: one(args, "name"),
@@ -116,23 +95,17 @@ function planOptions(args: Args): PlanOptions {
 }
 
 async function probe(target: string): Promise<Probe> {
-  if (existsSync(target) && statSync(target).isDirectory())
-    return probeDirectory(resolve(target));
+  if (existsSync(target) && statSync(target).isDirectory()) return probeDirectory(resolve(target));
   return probeUrl(target);
 }
 
 function printPlan(plan: ConversionPlan): void {
   const { config } = plan;
-  console.log(
-    `${config.name}: mode ${config.mode}, engine ${config.engine}, verdict ${plan.verdict}`,
-  );
+  console.log(`${config.name}: mode ${config.mode}, engine ${config.engine}, verdict ${plan.verdict}`);
   for (const reason of plan.reasons) console.log(`  - ${reason}`);
   console.log(`start: ${config.start}`);
-  console.log(
-    `in-app origins: ${config.origins.app.join(", ") || "(loopback only)"}`,
-  );
-  if (config.origins.auth.length > 0)
-    console.log(`sign-in origins: ${config.origins.auth.join(", ")}`);
+  console.log(`in-app origins: ${config.origins.app.join(", ") || "(loopback only)"}`);
+  if (config.origins.auth.length > 0) console.log(`sign-in origins: ${config.origins.auth.join(", ")}`);
   console.log("risks:");
   for (const risk of plan.risks)
     console.log(
@@ -174,9 +147,7 @@ async function main(): Promise<number> {
     else {
       printPlan(plan);
       if (result) {
-        console.log(
-          `generated ${result.files.length} files in ${result.outDir}`,
-        );
+        console.log(`generated ${result.files.length} files in ${result.outDir}`);
         for (const note of result.notes) console.log(`  note: ${note}`);
       }
     }
@@ -185,21 +156,13 @@ async function main(): Promise<number> {
 
   if (args.command === "parity") {
     const project = args.positional[0];
-    if (!project)
-      throw new Error("parity needs the generated project directory");
-    const plan = JSON.parse(
-      await Bun.file(resolve(project, "wrap-plan.json")).text(),
-    ) as ConversionPlan;
-    const referenceEndpoint =
-      one(args, "reference-cdp") ?? process.env.APHRODY_BROWSER_CDP_URL;
-    const reference = referenceEndpoint
-      ? await cdpDriver(referenceEndpoint, "reference")
-      : null;
+    if (!project) throw new Error("parity needs the generated project directory");
+    const plan = JSON.parse(await Bun.file(resolve(project, "wrap-plan.json")).text()) as ConversionPlan;
+    const referenceEndpoint = one(args, "reference-cdp") ?? process.env.APHRODY_BROWSER_CDP_URL;
+    const reference = referenceEndpoint ? await cdpDriver(referenceEndpoint, "reference") : null;
     let wrapped = null;
-    if (args.bool.has("bridge"))
-      wrapped = await bridgeDriver(one(args, "bridge"));
-    else if (one(args, "app-cdp"))
-      wrapped = await cdpDriver(one(args, "app-cdp"), "app-cdp");
+    if (args.bool.has("bridge")) wrapped = await bridgeDriver(one(args, "bridge"));
+    else if (one(args, "app-cdp")) wrapped = await cdpDriver(one(args, "app-cdp"), "app-cdp");
     try {
       const report = await runParity(plan, {
         reference,
@@ -214,15 +177,9 @@ async function main(): Promise<number> {
           console.log(
             `  ${entry.status.padEnd(7)} ${entry.path}${entry.textSimilarity === null ? "" : ` (text ${entry.textSimilarity.toFixed(3)})`}`,
           );
-        for (const finding of [
-          ...report.policy,
-          ...report.paths.flatMap((entry) => entry.findings),
-        ])
-          console.log(
-            `  [${finding.severity}] ${finding.check}: ${finding.message}`,
-          );
-        for (const reason of report.skipped)
-          console.log(`  skipped: ${reason}`);
+        for (const finding of [...report.policy, ...report.paths.flatMap(entry => entry.findings)])
+          console.log(`  [${finding.severity}] ${finding.check}: ${finding.message}`);
+        for (const reason of report.skipped) console.log(`  skipped: ${reason}`);
       }
       return report.verdict === "pass" ? 0 : report.verdict === "fail" ? 2 : 3;
     } finally {
@@ -237,11 +194,9 @@ async function main(): Promise<number> {
 }
 
 main().then(
-  (code) => process.exit(code),
-  (error) => {
-    console.error(
-      `web-to-tauri: ${error instanceof Error ? error.message : error}`,
-    );
+  code => process.exit(code),
+  error => {
+    console.error(`web-to-tauri: ${error instanceof Error ? error.message : error}`);
     process.exit(1);
   },
 );

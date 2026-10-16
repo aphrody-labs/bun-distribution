@@ -19,8 +19,8 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 const MAX_METADATA: u64 = 2 * 1024 * 1024;
-const UNIT_TEMPLATE: &str = "tools/config/host/systemd/aphrody/aphrody-app@.service";
-const ROUTE_MODEL: &str = "tools/config/host/nginx/aphrody/control.aphrody.app.json";
+const UNIT_TEMPLATE: &str = "infra/config/host/systemd/aphrody/aphrody-app@.service";
+const ROUTE_MODEL: &str = "infra/config/host/nginx/aphrody/control.aphrody.app.json";
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -285,7 +285,7 @@ fn sudo(root: &Path, program: &str, args: &[String]) -> Result<String> {
 
 fn route(root: &Path, hostname: &str, port: u16) -> Result<(NginxConfig, String)> {
     let routes: Value =
-        serde_json::from_str(&text(&root.join("tools/config/host/nginx/routes.json"))?)?;
+        serde_json::from_str(&text(&root.join("infra/config/host/nginx/routes.json"))?)?;
     let views = routes["routes"].as_array().context("Invalid canonical ingress views")?;
     let service = views
         .iter()
@@ -340,7 +340,7 @@ fn activate_catalog(
     model: &NginxConfig,
     rendered: &str,
 ) -> Result<()> {
-    let catalog_path = root.join("tools/config/service-catalog.json");
+    let catalog_path = root.join("infra/config/service-catalog.json");
     let mut catalog: Value = serde_json::from_str(&text(&catalog_path)?)?;
     let selected = catalog["services"]
         .as_array_mut()
@@ -357,7 +357,7 @@ fn activate_catalog(
         "Verified standalone artifact {}; activation owned by Aphrody Infra.",
         plan.artifact.sha256
     ));
-    let routes_path = root.join("tools/config/host/nginx/routes.json");
+    let routes_path = root.join("infra/config/host/nginx/routes.json");
     let mut routes: Value = serde_json::from_str(&text(&routes_path)?)?;
     let views = routes["routes"].as_array_mut().context("Invalid canonical ingress views")?;
     let mut matched = false;
@@ -371,7 +371,7 @@ fn activate_catalog(
     atomic_file(&routes_path, &serde_json::to_vec_pretty(&routes)?)?;
     atomic_file(&root.join(ROUTE_MODEL), &serde_json::to_vec_pretty(model)?)?;
     atomic_file(
-        &root.join("tools/config/host/nginx/aphrody/control.aphrody.app.conf"),
+        &root.join("infra/config/host/nginx/aphrody/control.aphrody.app.conf"),
         rendered.as_bytes(),
     )?;
     Ok(())
@@ -398,7 +398,7 @@ pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDepl
         "The artifact does not provide the catalog capability"
     );
     let port = declared.effective_port().context("The application listener is not declared")?;
-    let policy = text(&root.join("tools/config/host/host-policy.toml"))?;
+    let policy = text(&root.join("infra/config/host/host-policy.toml"))?;
     let layout = HostLayout::parse(&policy, None)?;
     let home = std::env::var("HOME").context("The target home is unavailable")?;
     ensure!(

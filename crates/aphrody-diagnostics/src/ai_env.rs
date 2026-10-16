@@ -2,7 +2,7 @@
 //! Resolve this machine's local AI environment and publish it under the
 //! canonical `APHRODY_AI_*` names ([`aphrody_config::ai_env`]).
 //!
-//! Writer side of the root `tools/config/local-ai.json` contract: never
+//! Writer side of the root `tools/aphrody/config/local-ai.json` contract: never
 //! an alias and never a secret value.
 
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ fn plain(canonical: CanonicalEnv, value: Option<String>) -> ResolvedVar {
 /// The binary reachable from this running process: an explicit env override,
 /// else the executable currently running (for [`ai_env::BIN`]) or a same-named
 /// sibling of it (for [`ai_env::MCP_BIN`]), else `PATH` — the lookup order
-/// `tools/config/local-ai.json`'s `binaries.*.lookup` documents.
+/// `tools/aphrody/config/local-ai.json`'s `binaries.*.lookup` documents.
 fn resolve_binary(
     canonical: CanonicalEnv,
     sibling_name: &str,
@@ -335,7 +335,7 @@ mod tests {
     }
 
     /// Cross-checks the emitted names against the repository's canonical
-    /// `tools/config/local-ai.json` contract.
+    /// `tools/aphrody/config/local-ai.json` contract.
     #[test]
     fn matches_the_root_local_ai_contract() {
         let candidate = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

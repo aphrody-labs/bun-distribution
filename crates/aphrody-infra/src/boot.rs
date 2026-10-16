@@ -2,7 +2,7 @@
 //! Persistence at boot: one declarative desired state for systemd units, Docker containers,
 //! Windows scheduled tasks and Windows services (`aphrody infra boot plan|apply|audit`).
 //!
-//! Desired state = non-retired `services` of `tools/config/service-catalog.json` (unit or container
+//! Desired state = non-retired `services` of `infra/config/service-catalog.json` (unit or container
 //! plus `host`) merged with its `boot.entries` section (timers, sockets, scheduled tasks, services).
 //! `audit` reads the real state, `plan` lists the corrections, `apply` performs them.
 //!
@@ -128,7 +128,7 @@ impl BootEntry {
 pub fn load_entries(root: &Path) -> Result<Vec<BootEntry>> {
     let catalog = load_service_catalog(root)?;
     let raw: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join("tools/config/service-catalog.json"),
+        root.join("infra/config/service-catalog.json"),
     )?)?;
     let explicit: Vec<BootEntry> = match raw.pointer("/boot/entries") {
         Some(v) => serde_json::from_value(v.clone()).context("boot.entries invalide")?,
@@ -1110,7 +1110,7 @@ mod tests {
     #[cfg(windows)]
     #[test]
     fn local_windows_entries_are_readable() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let entries = load_entries(&root).unwrap();
         let (checked, findings) = audit_host(&entries, "local").unwrap();
         assert!(checked >= entries.iter().filter(|e| e.host == "local").count());
@@ -1122,7 +1122,7 @@ mod tests {
     /// Every declared Windows trigger is in the native vocabulary.
     #[test]
     fn catalog_task_triggers_parse() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         for entry in load_entries(&root).unwrap() {
             if let BootKind::ScheduledTask { triggers, .. } = &entry.kind {
                 for t in triggers {

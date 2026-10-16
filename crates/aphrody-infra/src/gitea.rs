@@ -160,7 +160,7 @@ pub struct MirrorReport {
 
 /// Plan by default; `--apply` creates and verifies one explicitly admitted batch.
 pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
-    let config = root.join("tools/config/host/apps/vps/gitea/aphrody-labs-mirrors.json");
+    let config = root.join("infra/config/host/apps/vps/gitea/aphrody-labs-mirrors.json");
     let catalog: MirrorCatalog = serde_json::from_slice(
         &fs::read(&config).with_context(|| format!("lecture {}", config.display()))?,
     )?;

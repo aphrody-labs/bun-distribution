@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Pipeline execution engine for the active Aphrody monorepo.
 //!
-//! Orchestrates declared Rust and Bun validation stages from tools/config/pipeline.json.
+//! Orchestrates declared Rust and Bun validation stages from infra/config/pipeline.json.
 
 use anyhow::{Context, Result, bail};
 use aphrody_proc::NoWindow as _;
@@ -143,7 +143,7 @@ pub struct StageExecutionResult {
 }
 
 pub fn load_pipeline_config(root: &Path) -> Result<PipelineConfig> {
-    let path = root.join("tools/config/pipeline.json");
+    let path = root.join("infra/config/pipeline.json");
     let content =
         fs::read_to_string(&path).with_context(|| format!("lecture {}", path.display()))?;
     serde_json::from_str(&content).with_context(|| format!("désérialisation {}", path.display()))
@@ -334,8 +334,8 @@ mod tests {
 
     #[test]
     fn repository_pipeline_is_well_formed() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates");
-        let config = load_pipeline_config(&root).expect("tools/config/pipeline.json");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let config = load_pipeline_config(&root).expect("infra/config/pipeline.json");
         assert_eq!(check_pipeline(&config), Vec::<String>::new());
         assert!(
             config

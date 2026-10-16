@@ -49,5 +49,5 @@
     }
   ],
   "integrationScope": ["bun-libraries", "aphrody", "android", "iecode"],
-  "excludedRepositories": ["apt", "material"]
+  "externalSourceRepositories": ["apt", "material"]
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Host disposition: ONE home per host (vps, dbfr), no `/srv`, no `/opt`. Read from the `[layout]` table of
-//! `tools/config/host/host-policy.toml`, the single source of truth (TypeScript: `packages/engine/core/src/host/layout.ts`).
+//! `infra/config/host/host-policy.toml`, the single source of truth (TypeScript: `packages/engine/core/src/host/layout.ts`).
 
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
@@ -8,7 +8,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 /// The shipped policy, embedded so a compiled binary needs no checkout.
-pub const POLICY: &str = include_str!("../../../tools/aphrody/config/host/host-policy.toml");
+pub const POLICY: &str = include_str!("../../../infra/config/host/host-policy.toml");
 
 #[derive(Debug, Deserialize)]
 struct PolicyFile {
@@ -96,7 +96,7 @@ impl HostLayout {
 
 /// The shipped layout.
 pub static HOST_LAYOUT: LazyLock<HostLayout> = LazyLock::new(|| {
-    HostLayout::parse(POLICY, None).expect("tools/config/host/host-policy.toml: invalid [layout]")
+    HostLayout::parse(POLICY, None).expect("infra/config/host/host-policy.toml: invalid [layout]")
 });
 
 #[cfg(test)]

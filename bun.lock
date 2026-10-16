@@ -827,6 +827,20 @@
     "packages/bun-workspace": {
       "name": "@aphrody/bun-workspace",
       "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/a2a": "workspace:*",
+        "@aphrody/os": "workspace:*",
+        "@aphrody/paths": "workspace:*",
+        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+        "@aphrody/timeline": "workspace:*",
+        "@aphrody/update": "workspace:*",
+        "@aphrody/web-source": "workspace:*",
+        "@aphrody/yolo-core": "workspace:*",
+        "ts-morph": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/yolo-cli": "workspace:*",
+      },
       "bin": {
         "aphrody-bun": "./src/cli.ts",
       },
@@ -2086,24 +2100,6 @@
         "@aphrody/os": "workspace:*",
       },
     },
-    "packages/workspace": {
-      "name": "@aphrody/workspace",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/a2a": "workspace:*",
-        "@aphrody/os": "workspace:*",
-        "@aphrody/paths": "workspace:*",
-        "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
-        "@aphrody/timeline": "workspace:*",
-        "@aphrody/update": "workspace:*",
-        "@aphrody/web-source": "workspace:*",
-        "@aphrody/yolo-core": "workspace:*",
-        "ts-morph": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/yolo-cli": "workspace:*",
-      },
-    },
     "packages/yolo-cli": {
       "name": "@aphrody/yolo-cli",
       "version": "1.4.4",
@@ -2112,7 +2108,7 @@
       },
       "dependencies": {
         "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
-        "@aphrody/workspace": "workspace:*",
+        "@aphrody/bun-workspace": "workspace:*",
         "@aphrody/yolo-core": "workspace:*",
       },
     },
@@ -2930,8 +2926,6 @@
     "@aphrody/webos-wasm": ["@aphrody/webos-wasm@workspace:toolchains/bun/packages/web/rust/packages/webos-wasm"],
 
     "@aphrody/winclean": ["@aphrody/winclean@workspace:packages/winclean"],
-
-    "@aphrody/workspace": ["@aphrody/workspace@workspace:packages/workspace"],
 
     "@aphrody/x": ["@aphrody/x@workspace:toolchains/bun/packages/web/rust/packages/x"],
 

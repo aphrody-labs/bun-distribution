@@ -54,7 +54,7 @@ os.replace(temporary, root / 'auth.json')
 PY
 # The checked-in unit describes aphro's workstation; render its socket group
 # for the invoking owner when installed on another WSL account.
-sed "s/^Group=aphro$/Group=$owner_group/;s/chgrp aphro /chgrp $owner_group /" "${YOLO_ROOT:-$HOME/src/aphrody}/tools/config/host/systemd/aphrody/aphrody-privileged-kernel.service" | sudo tee /etc/systemd/system/aphrody-privileged-kernel.service >/dev/null
+sed "s/^Group=aphro$/Group=$owner_group/;s/chgrp aphro /chgrp $owner_group /" "${YOLO_ROOT:-$HOME/src/aphrody}/infra/config/host/systemd/aphrody/aphrody-privileged-kernel.service" | sudo tee /etc/systemd/system/aphrody-privileged-kernel.service >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable aphrody-privileged-kernel.service
 sudo systemctl restart aphrody-privileged-kernel.service

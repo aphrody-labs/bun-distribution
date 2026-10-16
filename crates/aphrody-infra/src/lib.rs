@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Unified Aphrody Infrastructure Library.
+//! Bun OS infrastructure library, shared by the native and multicall entrypoints.
 //!
 //! Provides core domain models, observability, lifecycle management,
 //! cross-catalog validation, pipeline orchestration, remote SSH operations,

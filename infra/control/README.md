@@ -1,20 +1,21 @@
 # Aphrody / Bun control
 
-The canonical deployment owner is Aphrody Infra. Its service, port and route
+The canonical deployment owner is Bun OS Infra. Its service, port and route
 catalogs own the desired state; this directory contains no host registry or
 copied Compose files.
 
-Resolve the Aphrody checkout from workspace configuration, then use
-`aphrody infra --root <checkout>`. The current native owner remains available;
-the requested `workspace/config` relocation is not yet present.
+Use `bun src/cli.ts infra <command>` from the selected Bun OS checkout. The
+existing native capability owner receives that checkout explicitly. Native
+binaries must be qualified against the migrated catalogs before applying host
+operations; an older installed binary may still expect the previous layout.
 
-Source configuration lives in the Aphrody repository:
+Source configuration lives in this repository under `infra/config`:
 
-- `tools/config/service-catalog.json`: services and capability reservations.
-- `tools/config/production-topology.json`: host port allocation.
-- `tools/config/host/apps/vps`: the single Compose project and its app includes.
-- `tools/config/host/nginx/routes.json`: public routes.
-- `tools/config/host/nginx/aphrody/control.aphrody.app.json`: typed ingress.
+- `infra/config/service-catalog.json`: services and capability reservations.
+- `infra/config/host/host-policy.toml`: host layout and allocation policy.
+- `infra/config/host/apps/vps`: the single Compose project and its app includes.
+- `infra/config/host/nginx/routes.json`: public routes.
+- `infra/config/host/nginx/aphrody/control.aphrody.app.json`: typed ingress.
 
 See [control plane](../../docs/control-plane.md) for qualification and limits.
 The [qualification receipt](qualification.json) contains sanitized live CI and

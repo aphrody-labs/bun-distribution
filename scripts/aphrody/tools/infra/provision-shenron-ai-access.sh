@@ -5,7 +5,7 @@ umask 077
 [[ "$(id -u)" = 0 ]] || { echo 'run as root' >&2; exit 2; }
 ai_env=/etc/aphrody/aphrody-ai-http.env
 client_env=/etc/aphrody/shenron-compute-client.env
-# aphrody-ai-http origin; must match tools/config/service-catalog.json and tools/config/local-ai.json.
+# aphrody-ai-http origin; must match infra/config/service-catalog.json and tools/aphrody/config/local-ai.json.
 ai_url=http://127.0.0.1:8789
 [[ -f "$ai_env" && "$(stat -c %a "$ai_env")" = 600 ]] || { echo 'Aphrody AI env file must exist with mode 0600' >&2; exit 2; }
 grep -q '^APHRODY_MCP_DATABASE_URL=' "$ai_env" || { echo 'Aphrody AI database is not configured' >&2; exit 2; }
@@ -44,7 +44,7 @@ if [[ -z "$token" ]]; then
 fi
 changed=yes
 temp="$(mktemp /etc/aphrody/.shenron-compute-client.XXXXXX)"
-# Canonical names (tools/config/local-ai.json) first; the legacy names stay until
+# Canonical names (tools/aphrody/config/local-ai.json) first; the legacy names stay until
 # every consumer reads the canonical ones.
 {
     printf 'APHRODY_AI_HTTP_URL=%s\nAPHRODY_AI_HTTP_TOKEN=%s\n' "$ai_url" "$token"

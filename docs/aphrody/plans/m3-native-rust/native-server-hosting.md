@@ -33,8 +33,8 @@ network endpoint is not an expanded resource or deployment permission.
 
 Templates awaiting Infra rendering and host qualification:
 
-- [systemd unit](../../../../tools/aphrody/config/host/systemd/aphrody/aphrody-site.service.example)
-- [nginx route](../../../../tools/aphrody/config/host/nginx/aphrody/aphrody-native-site.conf.example)
+- [systemd unit](../../../../infra/config/host/systemd/aphrody/aphrody-site.service.example)
+- [nginx route](../../../../infra/config/host/nginx/aphrody/aphrody-native-site.conf.example)
 
 The `.example` suffix intentionally prevents them from being installed as live
 units/routes. Infra must render `__PLACEHOLDER__` tokens from the selected host's

@@ -208,5 +208,5 @@ Root a observé à 15 h 25 min 08 s `projected=3966`, `changed=241`,
 éditoriale. Ces deux cycles ne sont pas des compteurs cumulatifs de pages.
 Aucun nouveau tome complet n'est démontré. L'observation expurgée et les SHA
 des preuves sont dans
-[l'inventaire daté](../../../../tools/aphrody/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
+[l'inventaire daté](../../../../infra/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
 Ce lot documentaire ne change ni unité, catalogue, service, données ni namespace.

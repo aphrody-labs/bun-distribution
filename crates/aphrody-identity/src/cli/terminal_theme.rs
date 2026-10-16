@@ -3,7 +3,7 @@
 //! terminal configuration, and checks that the versioned copies are current.
 //!
 //! ```text
-//! aphrody identity terminal-theme                    # write into <root>/tools/config/host/windows/terminal
+//! aphrody identity terminal-theme                    # write into <root>/infra/config/host/windows/terminal
 //! aphrody identity terminal-theme --out <dir>        # write into <dir>
 //! aphrody identity terminal-theme --check            # exit 1 when a versioned file differs
 //! aphrody identity terminal-theme --print <wt|rio|rio-light|nushell|prompt>

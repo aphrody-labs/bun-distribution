@@ -379,7 +379,7 @@ export async function runPythonCommand(
       return 3;
     }
     const { runPythonWorkspace } =
-      await import("@aphrody/workspace/src/python-workspace.ts");
+      await import("@aphrody/bun-workspace/automation/python-workspace.ts");
     const rest: string[] = [];
     for (let index = 0; index < args.length; index++) {
       const arg = args[index]!;

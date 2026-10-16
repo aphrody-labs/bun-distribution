@@ -155,7 +155,7 @@ binaires directement ; `bunx` ne reste utile que pour un outil absent de cette l
 
 ## Inventaire des exécutables
 
-Sources : [manifest développeur](../../../tools/config/developer-cli-tools.json),
+Sources : [manifest développeur](../../infra/config/developer-cli-tools.json),
 [catalogue canonique](../../../tools/config/cli-catalog.json), résolution du PATH et
 `--version` exécuté avec délai borné. Les plugins sont vérifiés via `plugin list`.
 `bottom` est le nom du package, son exécutable est `btm` ; `yazi-cli` fournit

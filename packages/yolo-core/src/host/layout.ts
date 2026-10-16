@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Host disposition: ONE home per host (vps, dbfr), no /srv, no /opt. Read from the [layout] table of
-// tools/config/host/host-policy.toml, the single source of truth (Rust: aphrody_infra::layout).
+// infra/config/host/host-policy.toml, the single source of truth (Rust: aphrody_infra::layout).
 import {
   existsSync,
   lchownSync,
@@ -14,18 +14,10 @@ import {
 } from "node:fs";
 import { join, posix, resolve } from "node:path";
 
-const sourcePolicy = resolve(
-  import.meta.dir,
-  "../../../../tools/aphrody/config/host/host-policy.toml",
-);
+const sourcePolicy = resolve(import.meta.dir, "../../../../infra/config/host/host-policy.toml");
 const policy = existsSync(sourcePolicy)
   ? Bun.TOML.parse(readFileSync(sourcePolicy, "utf8"))
-  : JSON.parse(
-      readFileSync(
-        resolve(import.meta.dir, "../../data/host-layout.json"),
-        "utf8",
-      ),
-    );
+  : JSON.parse(readFileSync(resolve(import.meta.dir, "../../data/host-layout.json"), "utf8"));
 
 export type LayoutRoot = "src" | "apps" | "build" | "archive" | "state";
 
@@ -48,27 +40,17 @@ const table = ((policy as Json)["layout"] ?? {}) as Json;
 
 /** `~` and `~/x` against `home`; anything else unchanged. */
 export const expandHome = (path: string, home: string): string =>
-  path === "~"
-    ? home
-    : path.startsWith("~/")
-      ? `${home}${path.slice(1)}`
-      : path;
+  path === "~" ? home : path.startsWith("~/") ? `${home}${path.slice(1)}` : path;
 
 /** The layout with every `~` expanded against `home` (default: the declared host home). */
 export function hostLayout(home = String(table["home"])): HostLayout {
   const at = (key: string): string => {
     const value = table[key];
-    if (typeof value !== "string")
-      throw new Error(`host-policy.toml: [layout].${key} missing`);
+    if (typeof value !== "string") throw new Error(`host-policy.toml: [layout].${key} missing`);
     return expandHome(value, home);
   };
-  const retired = Object.entries(
-    (table["retired"] ?? {}) as Record<string, string>,
-  )
-    .map(([from, to]): [string, string] => [
-      expandHome(from, home),
-      expandHome(to, home),
-    ])
+  const retired = Object.entries((table["retired"] ?? {}) as Record<string, string>)
+    .map(([from, to]): [string, string] => [expandHome(from, home), expandHome(to, home)])
     .toSorted((a, b) => b[0].length - a[0].length);
   return {
     home,
@@ -87,16 +69,11 @@ export function hostLayout(home = String(table["home"])): HostLayout {
 export const HOST_LAYOUT: HostLayout = hostLayout();
 
 /** `<root>/<parts...>` on the host, e.g. hostPath("apps", "shenron", "shared"). */
-export const hostPath = (root: LayoutRoot, ...parts: string[]): string =>
-  posix.join(HOST_LAYOUT[root], ...parts);
+export const hostPath = (root: LayoutRoot, ...parts: string[]): string => posix.join(HOST_LAYOUT[root], ...parts);
 
 /** The retired prefix `path` starts with (path-boundary aware), or null. */
-export function retiredPrefix(
-  path: string,
-  layout = HOST_LAYOUT,
-): string | null {
-  for (const [from] of layout.retired)
-    if (path === from || path.startsWith(`${from}/`)) return from;
+export function retiredPrefix(path: string, layout = HOST_LAYOUT): string | null {
+  for (const [from] of layout.retired) if (path === from || path.startsWith(`${from}/`)) return from;
   return null;
 }
 
@@ -118,10 +95,7 @@ export interface RetiredLink {
  * Absolute symlinks under `roots` whose target is a retired location (`current -> /srv/<app>/releases/x`), with their
  * replacement. Symlinks are not followed and the walk stays on the filesystem of each root.
  */
-export function retiredLinks(
-  roots: readonly string[],
-  layout = HOST_LAYOUT,
-): RetiredLink[] {
+export function retiredLinks(roots: readonly string[], layout = HOST_LAYOUT): RetiredLink[] {
   const found: RetiredLink[] = [];
   const walk = (dir: string, dev: number) => {
     let entries: Dirent[];
@@ -136,12 +110,10 @@ export function retiredLinks(
         const target = readlinkSync(path);
         const replacement = migratePath(target, layout);
         if (replacement !== target) found.push({ path, target, replacement });
-      } else if (entry.isDirectory() && lstatSync(path).dev === dev)
-        walk(path, dev);
+      } else if (entry.isDirectory() && lstatSync(path).dev === dev) walk(path, dev);
     }
   };
-  for (const root of roots)
-    if (existsSync(root)) walk(root, lstatSync(root).dev);
+  for (const root of roots) if (existsSync(root)) walk(root, lstatSync(root).dev);
   return found;
 }
 

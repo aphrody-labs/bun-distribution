@@ -46,7 +46,7 @@ export interface TauriShellOptions {
   /** `serde` and `serde_json` for the commands the app adds later. */
   serde?: boolean;
   /**
-   * A runtime plugin crate (`aphrody-tauri-wrap`): `init` is the Rust expression that builds it.
+   * A runtime plugin crate (`tauri-plugin-aphrody`): `init` is the Rust expression that builds it.
    * `features` selects its Cargo features: absent, the crate's defaults (`bundle`: the loopback
    * server of the bundle mode); an array, `default-features = false` plus those features, so a
    * remote or sidecar app does not compile the HTTP stack of the bundle server.
@@ -58,8 +58,8 @@ export interface TauriShellOptions {
     features?: string[];
   };
   /**
-   * Optional `debug-bridge` feature (wry only) for parity checks, hosted by `aphrody-tauri-wrap`
-   * (`aphrody_tauri_wrap::debug`). `true` reuses the `aphrody-tauri-wrap` runtime plugin; `{ path }`
+   * Optional `debug-bridge` feature (wry only) for parity checks, hosted by `tauri-plugin-aphrody`
+   * (`tauri_plugin_aphrody::wrap::debug`). `true` reuses the `tauri-plugin-aphrody` runtime plugin; `{ path }`
    * (the wrap crate directory) is for a shell that has no such runtime plugin and adds the crate as
    * an optional dependency without its default features.
    */
@@ -77,22 +77,19 @@ function posix(path: string): string {
   return path.replaceAll("\\", "/");
 }
 
-/** Crate that hosts the debug bridge (`aphrody_tauri_wrap::debug`); it was `aphrody-tauri-debug`. */
-const DEBUG_HOST_CRATE = "aphrody-tauri-wrap";
+/** Crate that hosts the debug bridge (`tauri_plugin_aphrody::wrap::debug`); it was `aphrody-tauri-debug`. */
+const DEBUG_HOST_CRATE = "tauri-plugin-aphrody";
 
 function features(list: readonly string[]): string {
-  return `[${list.map((feature) => `"${feature}"`).join(", ")}]`;
+  return `[${list.map(feature => `"${feature}"`).join(", ")}]`;
 }
 
 /** The runtime plugin's dependency line: crate defaults unless `features` is set. */
-function runtimePluginLine(
-  plugin: NonNullable<TauriShellOptions["runtimePlugin"]>,
-): string {
+function runtimePluginLine(plugin: NonNullable<TauriShellOptions["runtimePlugin"]>): string {
   const parts = [`path = "${posix(plugin.path)}"`];
   if (plugin.features) {
     parts.push("default-features = false");
-    if (plugin.features.length > 0)
-      parts.push(`features = ${features(plugin.features)}`);
+    if (plugin.features.length > 0) parts.push(`features = ${features(plugin.features)}`);
   }
   return `${plugin.crate} = { ${parts.join(", ")} }`;
 }
@@ -101,28 +98,21 @@ function runtimePluginLine(
  * How the app depends on the debug bridge: through the wrap runtime plugin it already has (the
  * feature only forwards), or through an optional dependency on the wrap crate.
  */
-function debugBridgeMode(
-  options: TauriShellOptions,
-): { kind: "runtime" } | { kind: "optional"; path: string } | null {
+function debugBridgeMode(options: TauriShellOptions): { kind: "runtime" } | { kind: "optional"; path: string } | null {
   if ((options.engine ?? "wry") !== "wry" || !options.debugBridge) return null;
-  if (options.runtimePlugin?.crate === DEBUG_HOST_CRATE)
-    return { kind: "runtime" };
+  if (options.runtimePlugin?.crate === DEBUG_HOST_CRATE) return { kind: "runtime" };
   if (typeof options.debugBridge === "object") {
     return { kind: "optional", path: options.debugBridge.path };
   }
-  throw new Error(
-    `debugBridge: true needs the ${DEBUG_HOST_CRATE} runtime plugin; pass { path } to the crate instead`,
-  );
+  throw new Error(`debugBridge: true needs the ${DEBUG_HOST_CRATE} runtime plugin; pass { path } to the crate instead`);
 }
 
 export function tauriConf(options: TauriShellOptions): Record<string, unknown> {
   const window = options.window ?? { mode: "runtime" };
   const build: Record<string, string> = {};
-  if (options.build.beforeDevCommand)
-    build.beforeDevCommand = options.build.beforeDevCommand;
+  if (options.build.beforeDevCommand) build.beforeDevCommand = options.build.beforeDevCommand;
   if (options.build.devUrl) build.devUrl = options.build.devUrl;
-  if (options.build.beforeBuildCommand)
-    build.beforeBuildCommand = options.build.beforeBuildCommand;
+  if (options.build.beforeBuildCommand) build.beforeBuildCommand = options.build.beforeBuildCommand;
   build.frontendDist = options.build.frontendDist;
   return {
     $schema: tauriSchemaUrl(),
@@ -188,8 +178,8 @@ export function cargoToml(options: TauriShellOptions): string {
     lines.push(
       "# Debug bridge used by the parity check (wry only): APHRODY_TAURI_DEBUG=1 cargo run --features debug-bridge",
       debug.kind === "runtime"
-        ? `debug-bridge = ["${DEBUG_HOST_CRATE}/debug-bridge"]`
-        : `debug-bridge = ["dep:${DEBUG_HOST_CRATE}", "${DEBUG_HOST_CRATE}/debug-bridge"]`,
+        ? `debug-bridge = ["${DEBUG_HOST_CRATE}/wrap-debug-bridge"]`
+        : `debug-bridge = ["dep:${DEBUG_HOST_CRATE}", "${DEBUG_HOST_CRATE}/wrap-debug-bridge"]`,
     );
   }
   lines.push(
@@ -201,19 +191,11 @@ export function cargoToml(options: TauriShellOptions): string {
     `tauri = { version = "=${TAURI_3.tauri}", default-features = false, features = ["compression"] }`,
     runtime,
   );
-  if (options.openerPlugin)
-    lines.push(`tauri-plugin-opener = "=${TAURI_3.pluginOpener}"`);
-  if (options.runtimePlugin)
-    lines.push(runtimePluginLine(options.runtimePlugin));
+  if (options.openerPlugin) lines.push(`tauri-plugin-opener = "=${TAURI_3.pluginOpener}"`);
+  if (options.runtimePlugin) lines.push(runtimePluginLine(options.runtimePlugin));
   if (debug?.kind === "optional")
-    lines.push(
-      `${DEBUG_HOST_CRATE} = { path = "${posix(debug.path)}", default-features = false, optional = true }`,
-    );
-  if (options.serde)
-    lines.push(
-      'serde = { version = "1.0", features = ["derive"] }',
-      'serde_json = "1.0"',
-    );
+    lines.push(`${DEBUG_HOST_CRATE} = { path = "${posix(debug.path)}", default-features = false, optional = true }`);
+  if (options.serde) lines.push('serde = { version = "1.0", features = ["derive"] }', 'serde_json = "1.0"');
   lines.push(
     "",
     "[profile.release]",
@@ -242,13 +224,11 @@ fn main() {
     ...(options.openerPlugin ? ["tauri_plugin_opener::init()"] : []),
     ...(options.runtimePlugin ? [options.runtimePlugin.init] : []),
   ];
-  const pluginLines = plugins
-    .map((plugin) => `        .plugin(${plugin})\n`)
-    .join("");
+  const pluginLines = plugins.map(plugin => `        .plugin(${plugin})\n`).join("");
   const chain = [
     "tauri::Builder::default()",
     ".runtime(Wry::default())",
-    ...plugins.map((plugin) => `.plugin(${plugin})`),
+    ...plugins.map(plugin => `.plugin(${plugin})`),
   ].join("\n        ");
   const header =
     '// Prevents additional console window on Windows in release\n#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]\n';
@@ -278,7 +258,7 @@ ${pluginLines}        .run(tauri::generate_context!())
   }
   const bridge = debugBridgeMode(options)
     ? `    #[cfg(feature = "debug-bridge")]
-    let builder = builder.plugin(aphrody_tauri_wrap::debug::init());
+    let builder = builder.plugin(tauri_plugin_aphrody::wrap::debug::init());
 `
     : "";
   return `${header}
@@ -293,21 +273,12 @@ ${bridge}    builder
 `;
 }
 
-export function capability(
-  options: TauriShellOptions,
-): Record<string, unknown> {
-  const permissions = options.permissions ?? [
-    "core:default",
-    ...(options.openerPlugin ? ["opener:default"] : []),
-  ];
+export function capability(options: TauriShellOptions): Record<string, unknown> {
+  const permissions = options.permissions ?? ["core:default", ...(options.openerPlugin ? ["opener:default"] : [])];
   return {
-    ...(options.capabilitySchema
-      ? { $schema: "../gen/schemas/desktop-schema.json" }
-      : {}),
+    ...(options.capabilitySchema ? { $schema: "../gen/schemas/desktop-schema.json" } : {}),
     identifier: "default",
-    description:
-      options.capabilityDescription ??
-      "Default capabilities for the desktop app",
+    description: options.capabilityDescription ?? "Default capabilities for the desktop app",
     windows: ["main"],
     permissions,
   };
@@ -315,17 +286,13 @@ export function capability(
 
 /** Mobile and desktop share one lifecycle entry point; binaries call this library. */
 export function libRs(options: TauriShellOptions): string {
-  if ((options.engine ?? "wry") !== "wry")
-    throw new Error("Tauri mobile requires the wry host");
+  if ((options.engine ?? "wry") !== "wry") throw new Error("Tauri mobile requires the wry host");
   return mainRs({ ...options, mobile: false })
     .replace(
       /\/\/ Prevents additional console window on Windows in release\n#!\[cfg_attr\(not\(debug_assertions\), windows_subsystem = "windows"\)\]\n/,
       "// SPDX-License-Identifier: Apache-2.0\n",
     )
-    .replace(
-      "fn main()",
-      "#[cfg_attr(mobile, tauri::mobile_entry_point)]\npub fn run()",
-    );
+    .replace("fn main()", "#[cfg_attr(mobile, tauri::mobile_entry_point)]\npub fn run()");
 }
 
 /** `src-tauri/**` files of the shell. Paths are relative to the project root. */

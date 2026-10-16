@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Declared private tunnel (`tools/config/host/wireguard/aphrody-tunnel.json`): hub, peers,
+//! Declared private tunnel (`infra/config/host/wireguard/aphrody-tunnel.json`): hub, peers,
 //! services and grants. Renders the `wg-quick` configuration of any member; private keys never
 //! leave their host, so they are injected at apply time.
 
@@ -13,12 +13,12 @@ use crate::conf::{Config, Interface, Peer};
 use crate::{Error, Key, Result};
 
 /// Relative location of the declared tunnel in the Aphrody repository.
-pub const INVENTORY_PATH: &str = "tools/config/host/wireguard/aphrody-tunnel.json";
+pub const INVENTORY_PATH: &str = "infra/config/host/wireguard/aphrody-tunnel.json";
 
 /// The declared tunnel compiled into the binary, used when no checkout is at hand (an operator
 /// PC running only the installed `aphrody`).
 pub const EMBEDDED: &str =
-    include_str!("../../../tools/aphrody/config/host/wireguard/aphrody-tunnel.json");
+    include_str!("../../../infra/config/host/wireguard/aphrody-tunnel.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

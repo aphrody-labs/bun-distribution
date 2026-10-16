@@ -105,8 +105,8 @@ aphrody infra deploy --help
 aphrody infra service --help
 ```
 
-The [service catalogue](../../../../tools/aphrody/config/service-catalog.json) selects the
-service and host. Its [systemd units](../../../../tools/aphrody/config/host/systemd/aphrody)
+The [service catalogue](../../../../infra/config/service-catalog.json) selects the
+service and host. Its [systemd units](../../../../infra/config/host/systemd/aphrody)
 are the versioned templates.
 
 ### Serving React / SPA Web App

@@ -79,8 +79,8 @@ respect runtime threading and lifetime rules.
 
 ## Infrastructure, data and provenance
 
-Infra configuration is canonical: [services](../../../../tools/aphrody/config/service-catalog.json),
-[topology](../../../../tools/aphrody/config/production-topology.json),
+Infra configuration is canonical: [services](../../../../infra/config/service-catalog.json),
+[topology](../../../../infra/config/production-topology.json),
 `tools/config/host/nginx/routes.json` and
 [local AI](../../../../tools/aphrody/config/local-ai.json). Current release records and live
 probes establish deployed state; manifests and historical catalogues do not.
@@ -100,7 +100,7 @@ Packaging copies need consumer and license verification before deduplication.
 
 Qualification proceeds from contracts/native/compat, through interop and CLI,
 OS/shell/Infra, UI and AI/Web, then RG and other consumers, to Shenron as the
-final product gate. The [generated pipeline](../../../../tools/aphrody/config/pipeline.json)
+final product gate. The [generated pipeline](../../../../infra/config/pipeline.json)
 records declared commands; actual exit codes, logs and coverage establish
 passing gates. Missing qualification scripts need real checks.
 

@@ -12,7 +12,7 @@ CAS et sauvegardes des deux fichiers, puis le seul service
 documents ; le cycle suivant relu ne présente aucun changement ni candidat
 émis. Aucune publication de pages ou complétude de tome n'est établie.
 Voir les [preuves datées du pool](../../operations/infra/SHENRON-MANGA-WORKERS.md#rechargement-des-sources-vérifié-le-15-octobre-2026-à-15-h-30-utc)
-et l'[inventaire expurgé](../../../../tools/aphrody/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
+et l'[inventaire expurgé](../../../../infra/config/host/inventory/shenron-manga-workers-source-reload-2026-10-15.json).
 
 ## 2026-10-13 — Accès SSH Windows persistant
 

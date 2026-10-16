@@ -4,7 +4,7 @@
 //! Single source of truth for the canonical environment variable names that
 //! name aphrody's local/open-source AI stack (binaries, the `aphrody-ai-http`
 //! gateway, chat/code/reasoning/small, vision, OCR, STT, embed, rerank). This
-//! mirrors `tools/config/local-ai.json` (owned by `aphrody-infra`;
+//! mirrors `tools/aphrody/config/local-ai.json` (owned by `aphrody-infra`;
 //! that file's `modelAuthority` names this repository, and this module, as
 //! the source). A rename or a new alias is a one-file change here rather than
 //! a private literal drifting in each consumer (CLAUDE.md: "a tool that
@@ -225,7 +225,7 @@ pub const RERANK_MODEL: CanonicalEnv = CanonicalEnv {
     aliases: &["APHRODY_RAG_RERANK_MODEL"],
 };
 
-/// Every canonical variable, in the order `tools/config/local-ai.json`
+/// Every canonical variable, in the order `tools/aphrody/config/local-ai.json`
 /// lists its `binaries` / `gateways` / `capabilities` sections. `aphrody ai
 /// env` writes exactly these names, and only these.
 pub const ALL: [CanonicalEnv; 19] = [
