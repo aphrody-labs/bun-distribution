@@ -93,3 +93,40 @@ export function render(
   else args.push("--render-frame", String(opts.frame ?? 1));
   return runBlender(args, 3_600_000);
 }
+
+/**
+ * Persistent headless Blender session serving the `blender_mcp` add-on bridge (no window).
+ * The add-on comes from the Blender build (core add-on) or BLENDER_MCP_ADDON (directory holding `blender_mcp`).
+ */
+export async function serveHeadless(
+  blend?: string,
+  port = Number(Bun.env.BLENDER_MCP_PORT ?? 9876),
+  verbose = false,
+): Promise<Bun.Subprocess> {
+  const { executable } = await requireBlender();
+  const addonDir = Bun.env.BLENDER_MCP_ADDON ?? "";
+  const code = `import sys, importlib
+if ${JSON.stringify(addonDir)}: sys.path.insert(0, ${JSON.stringify(addonDir)})
+mod = importlib.import_module("blender_mcp")
+try:
+    mod.register()
+except ValueError:
+    pass
+mod.BlenderMCPServer(port=${port}).serve_forever()`;
+  return Bun.spawn(
+    [
+      executable,
+      "--background",
+      "--factory-startup",
+      ...(blend ? [blend] : []),
+      "--python-expr",
+      code,
+    ],
+    {
+      // stdout stays off the MCP stdio channel unless asked (CLI serve).
+      stdout: verbose ? "inherit" : "ignore",
+      stderr: "inherit",
+      env: { ...Bun.env, PYTHONUNBUFFERED: "1" },
+    },
+  );
+}

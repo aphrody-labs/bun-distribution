@@ -1,7 +1,32 @@
 #!/usr/bin/env bun
 // Minimal MCP (JSON-RPC 2.0 over stdio, newline-delimited) server exposing Blender.
+import { liveAvailable, sendLive } from "./bridge.ts";
 import { findBlender } from "./discover.ts";
-import { evalPython, info, jsonPython, render } from "./headless.ts";
+import {
+  evalPython,
+  info,
+  jsonPython,
+  render,
+  serveHeadless,
+} from "./headless.ts";
+
+let session: Bun.Subprocess | undefined;
+
+/** Reuse a running Blender bridge (GUI or headless), else start a headless session. */
+async function ensureLive(blend?: string): Promise<void> {
+  if (await liveAvailable()) return;
+  session?.kill();
+  session = await serveHeadless(blend);
+  for (let i = 0; i < 120; i++) {
+    await Bun.sleep(500);
+    if (await liveAvailable()) return;
+  }
+  throw new Error(
+    "headless Blender bridge did not start (blender_mcp add-on missing? set BLENDER_MCP_ADDON)",
+  );
+}
+
+process.on("exit", () => session?.kill());
 
 type Json = Record<string, unknown>;
 
@@ -81,6 +106,99 @@ const tools = [
   },
 ];
 
+// Tools bridged to a running Blender session through the `blender_mcp` add-on socket
+// (commands of aphrody-labs/mcp-for-blender, MIT).
+const obj = (properties: Json = {}, required: string[] = []) => ({
+  type: "object",
+  properties,
+  required,
+});
+const LIVE: Record<
+  string,
+  { command: string; description: string; inputSchema: Json }
+> = {
+  blender_live_ping: {
+    command: "ping",
+    description: "Check the live Blender add-on connection.",
+    inputSchema: obj(),
+  },
+  blender_live_scene: {
+    command: "get_scene_info",
+    description: "Live session: current scene summary.",
+    inputSchema: obj(),
+  },
+  blender_live_object: {
+    command: "get_object_info",
+    description: "Live session: details of one object.",
+    inputSchema: obj({ name: str("Object name") }, ["name"]),
+  },
+  blender_live_list: {
+    command: "list_scene_items",
+    description:
+      "Live session: search objects, materials and other datablocks.",
+    inputSchema: obj({ query: str("Name filter"), limit: { type: "integer" } }),
+  },
+  blender_live_execute: {
+    command: "execute_code",
+    description:
+      "Live session: run Python (bpy) in the open Blender, returns captured stdout.",
+    inputSchema: obj({ code: str("Python source") }, ["code"]),
+  },
+  blender_live_screenshot: {
+    command: "get_viewport_screenshot",
+    description: "Live session: save a viewport screenshot to filepath.",
+    inputSchema: obj(
+      {
+        filepath: str("Output image path"),
+        max_size: { type: "integer" },
+        format: str("png or jpg"),
+      },
+      ["filepath"],
+    ),
+  },
+  blender_live_export: {
+    command: "export_scene",
+    description:
+      "Live session: export the scene or named objects (glb, gltf, fbx, obj, usd, stl, ply).",
+    inputSchema: obj(
+      {
+        filepath: str("Output path"),
+        format: str("glb, gltf, fbx, obj, usd, stl, ply"),
+        object_names: { type: "array", items: { type: "string" } },
+        selection_only: { type: "boolean" },
+      },
+      ["filepath"],
+    ),
+  },
+  blender_live_node_type: {
+    command: "describe_node_type",
+    description: "Live session: describe a node type's sockets and properties.",
+    inputSchema: obj(
+      { bl_idname: str("Node bl_idname, e.g. ShaderNodeBsdfPrincipled") },
+      ["bl_idname"],
+    ),
+  },
+  blender_live_api: {
+    command: "bpy_api_lookup",
+    description:
+      "Live session: look up bpy API (types, operators, properties).",
+    inputSchema: obj({ query: str("e.g. bpy.types.Object.location") }, [
+      "query",
+    ]),
+  },
+  blender_live_command: {
+    command: "",
+    description:
+      "Live session: send any blender_mcp add-on command (type + params).",
+    inputSchema: obj(
+      { type: str("Add-on command type"), params: { type: "object" } },
+      ["type"],
+    ),
+  },
+};
+for (const [name, { description, inputSchema }] of Object.entries(LIVE))
+  tools.push({ name, description, inputSchema } as (typeof tools)[number]);
+
 const PY_IO = `
 import bpy, os
 def _ext(p): return os.path.splitext(p)[1].lower().lstrip(".")
@@ -137,8 +255,15 @@ EXPORT[_ext(${py(a.output)})](${py(a.output)})
 ${jsonPython(`{"exported": ${py(a.output)}}`)}`;
       return evalPython(code, blend);
     }
-    default:
-      throw new Error(`unknown tool ${name}`);
+    default: {
+      const live = LIVE[name];
+      if (!live) throw new Error(`unknown tool ${name}`);
+      await ensureLive(blend);
+      if (name === "blender_live_command")
+        return sendLive(a.type as string, (a.params ?? {}) as Json);
+      const { blend: _blend, ...params } = a;
+      return sendLive(live.command, params);
+    }
   }
 }
 

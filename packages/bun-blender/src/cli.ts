@@ -1,14 +1,15 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
 import { findBlender } from "./discover.ts";
-import { info, render, runScript } from "./headless.ts";
+import { info, render, runScript, serveHeadless } from "./headless.ts";
 import type { RunResult } from "./types.ts";
 
 const USAGE = `Usage: bun-blender <command>
   where                         Show the discovered Blender install
   info [file.blend]             Print scenes and objects as JSON
   render <file.blend> [-o out] [-f frame] [--anim] [-e engine] [--format PNG]
-  run <script.py> [--blend file] [-- args]`;
+  run <script.py> [--blend file] [-- args]
+  serve [file.blend]            Headless Blender session serving the blender_mcp bridge`;
 
 const { positionals, values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -41,6 +42,8 @@ switch (values.help ? undefined : cmd) {
   case "where":
     console.log(JSON.stringify(await findBlender(), null, 2));
     break;
+  case "serve":
+    process.exit(await (await serveHeadless(target, undefined, true)).exited);
   case "info":
     console.log(JSON.stringify(await info(target), null, 2));
     break;
