@@ -19,7 +19,7 @@ import { api } from "@aphrody/admin-ui/client";
 import { RoleBadge } from "@aphrody/admin-ui/components/admin/RoleSelect";
 import { RolePicker } from "@aphrody/admin-ui/components/admin/RolePicker";
 import { cn } from "@shenron/ui/lib/utils";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 import { formatZeni } from "@/lib/zeni";
 
 export interface ShopItem {

@@ -4628,7 +4628,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 6,
+    "exports": 7,
     "bin": [
       "m3-next"
     ]
@@ -4718,10 +4718,10 @@
   {
     "name": "@aphrody/m3-showcase",
     "version": "1.4.4",
-    "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
+    "description": "Adaptive Bun OS M3 showcase for mobile, desktop and TV, with one Bun UI/API sidecar reused by the existing desktop owner.",
     "dir": "apps/m3-showcase",
     "kind": "app",
-    "workspace": false,
+    "workspace": true,
     "private": true,
     "exports": 0,
     "bin": []

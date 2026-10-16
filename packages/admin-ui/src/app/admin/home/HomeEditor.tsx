@@ -48,7 +48,7 @@ import {
   type HomeSectionConfig,
   type PlayCard,
 } from "@/lib/home-scenes";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 import { errorMessageFromBody, seedConfig } from "./home-config-client";
 
 interface LoadResponse {

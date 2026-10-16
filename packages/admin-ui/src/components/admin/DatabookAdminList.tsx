@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LienExterne } from "@shenron/ui/icones";
 import { DbRowActions } from "@aphrody/admin-ui/components/admin/DbCrud";
 import { assetCdnUrl } from "@aphrody/admin-ui/app/admin/db-universe/_lib";
-import { toMillis } from "@/lib/epoch";
+import { toMillis } from "../../lib/epoch";
 
 const TABLE = "db_databooks";
 const PAGE_SIZE = 40;

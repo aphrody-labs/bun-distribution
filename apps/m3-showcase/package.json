@@ -2,7 +2,7 @@
   "name": "@aphrody/m3-showcase",
   "version": "1.4.4",
   "private": true,
-  "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
+  "description": "Adaptive Bun OS M3 showcase for mobile, desktop and TV, with one Bun UI/API sidecar reused by the existing desktop owner.",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
@@ -50,12 +50,12 @@
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.31.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:"
   },
   "devDependencies": {
+    "@aphrody/bun-types": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "playwright-core": "catalog:"

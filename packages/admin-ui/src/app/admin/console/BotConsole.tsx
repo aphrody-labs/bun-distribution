@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Diese, Envoyer, Rafraichir } from "@shenron/ui/icones";
 import { api, ApiError } from "@aphrody/admin-ui/client";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 
 /**
  * Console bots (admin) : voir les messages récents d'un salon Discord et y

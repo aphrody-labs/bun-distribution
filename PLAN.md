@@ -1,6 +1,32 @@
 # Integration plan
 
-## Unified product stabilization — 2026-10-16
+## Current integration checkpoint — 2026-10-16
+
+- Root Bun membership is 560; only Admin UI remains a physical declaration
+  gap. Both generated inventories agree on 545 physical entries. Native
+  offline frozen installation passes without unrelated dependency upgrades.
+- M3 Showcase uses the canonical design tool table and the existing desktop
+  adapter, not a second generated Rust shell. Its browser source build passes.
+  API/navigation/product-input tests pass (17 tests, 110 assertions); the
+  explicit M3 Next source export passes its separate regression contract.
+- Strict Showcase checking remains red: 568 diagnostics in 90 files, down
+  from 767. Nested explorer dependencies and Material Web source remain
+  unqualified; successful browser bundling does not qualify those types.
+- Identity generators resolve the selected checkout and flat identity crate.
+  The staged atlas matches its canonical SHA-256; 16 tests and 131 assertions
+  pass. Generated animation data is unchanged.
+- Admin UI historical pure contracts reduce diagnostics from 470 to 435;
+  four tests and 47 assertions pass. Original provenance is retained without
+  inventing license coverage for the historical site files. Server contracts
+  remain missing and Admin UI is not admitted.
+- Release publisher paths and source guards use the actual flat owners;
+  17 fixture tests and 118 assertions pass. No publication was performed.
+- M3 Next emits four JavaScript outputs but no declaration outputs with the
+  installed runtime. Its default distribution remains unqualified until a
+  rebuilt runtime validates the existing declaration-emission source fix.
+  Active native compilation is preserved; no overlapping build was started.
+
+## Earlier stabilization checkpoints — 2026-10-16
 
 - [x] Qualify the shared native Cargo admission adapter: 11 tests and 72
       assertions pass; root native type checking covers 327 files.

@@ -15,6 +15,7 @@
     "apps/m3-web",
     "apps/m3-next-example",
     "apps/m3-next-tauri-example",
+    "apps/m3-showcase",
     "apps/rg-bot",
     "apps/rg-website",
     "packages/a2a",

@@ -38,7 +38,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TranscriptionTexte } from "@/components/databooks/TranscriptionTexte";
 import { assetUrl } from "@/lib/assets";
 import { aBesoinDeNettoyage, diagnostiquerPlanche, nettoyerOcr } from "@/lib/databooks-format";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../editor/PlainField";
 
 export interface PlancheRelecture {
   numero: number;

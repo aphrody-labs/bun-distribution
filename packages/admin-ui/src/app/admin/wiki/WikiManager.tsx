@@ -11,7 +11,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Document, FlecheDroite, Historique, IllustrationAbsente, Oeil, Plus, Presse } from "@shenron/ui/icones";
-import { TABLE_LABELS } from "@/lib/db-labels";
+import { TABLE_LABELS } from "../../../lib/db-labels";
 import { isStudioTable } from "@/lib/wiki-fields";
 
 type PageNode = { id: string; title: string; slug: string };

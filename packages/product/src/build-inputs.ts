@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
-import {
-  checkoutRoot as resolveCheckoutRoot,
-  findWorkspaceRoot,
-} from "@aphrody/paths";
-const sha = (bytes: Uint8Array) =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+import { checkoutRoot as resolveCheckoutRoot, findWorkspaceRoot } from "@aphrody/paths";
+const sha = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
 /** Resolve product inputs from the selected execution context, independent of UI package location. */
 export function productBuildContext(env: NodeJS.ProcessEnv = process.env) {
@@ -14,23 +10,18 @@ export function productBuildContext(env: NodeJS.ProcessEnv = process.env) {
   return {
     workspaceRoot,
     bunCheckout: resolveCheckoutRoot("bun", env),
-    uiDist: join(workspaceRoot, "crates/ui/app/ui-dist"),
-    publicAssets: join(workspaceRoot, "tools/config/public-assets.json"),
+    uiDist: join(workspaceRoot, "apps/aphrody-app/ui-dist"),
+    publicAssets: join(workspaceRoot, "tools/aphrody/config/public-assets.json"),
   };
 }
 
 export function canonicalBunInputs(checkout: string, revision: string) {
-  if (!/^[a-f0-9]{40}$/.test(revision))
-    throw new Error("Exact Bun source revision required");
+  if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
   const checkoutRoot = realpathSync(checkout);
   const ownedFile = (path: string) => {
     const file = join(checkoutRoot, path);
     const inside = relative(checkoutRoot, realpathSync(file));
-    if (
-      inside.startsWith(".." + sep) ||
-      isAbsolute(inside) ||
-      !lstatSync(file).isFile()
-    )
+    if (inside.startsWith(".." + sep) || isAbsolute(inside) || !lstatSync(file).isFile())
       throw new Error("Canonical Bun source file escapes the checkout");
     return file;
   };
@@ -42,8 +33,7 @@ export function canonicalBunInputs(checkout: string, revision: string) {
       timeout: 10_000,
       maxBuffer: 4 * 1024 * 1024,
     });
-    if (result.exitCode !== 0)
-      throw new Error("Canonical Bun Git source qualification failed");
+    if (result.exitCode !== 0) throw new Error("Canonical Bun Git source qualification failed");
     return result.stdout;
   };
   if (git("rev-parse", "HEAD").toString().trim() !== revision)
@@ -57,9 +47,7 @@ export function canonicalBunInputs(checkout: string, revision: string) {
     const bytes = readFileSync(file);
     const sha256 = sha(git("cat-file", "blob", object));
     if (bytes.length !== size || sha(bytes) !== sha256)
-      throw new Error(
-        "Canonical Bun build input differs from its pinned Git blob",
-      );
+      throw new Error("Canonical Bun build input differs from its pinned Git blob");
     return {
       file,
       path,
@@ -74,16 +62,13 @@ export function canonicalBunInputs(checkout: string, revision: string) {
     sourceCommit: string;
     files: { source: string; destination: string; sha256: string }[];
   };
-  const entry = receipt.files.find(
-    (file) => file.source === "crates/web/site/data/docs.json",
-  );
+  const entry = receipt.files.find(file => file.source === "crates/web/site/data/docs.json");
   if (
     receipt.schemaVersion !== 1 ||
     !entry ||
-    ![
-      "packages/bun-aphrody-web/crates/site/data/docs.json",
-      "packages/web/rust/crates/site/data/docs.json",
-    ].includes(entry.destination) ||
+    !["packages/bun-aphrody-web/crates/site/data/docs.json", "packages/web/rust/crates/site/data/docs.json"].includes(
+      entry.destination,
+    ) ||
     !/^[a-f0-9]{64}$/.test(entry.sha256) ||
     !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
   )

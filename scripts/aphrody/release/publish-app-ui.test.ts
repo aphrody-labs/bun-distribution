@@ -31,6 +31,11 @@ import {
   backendActivationCommand,
   type BackendConfig,
   type ReleaseConfig,
+  repository,
+  serverSource,
+  downloadsConfig,
+  uiSourcePaths,
+  releaseBunCheckout,
 } from "./publish-app-ui";
 const nativeShell =
   process.platform === "win32"
@@ -68,11 +73,7 @@ const backendOwnerConfig: ReleaseConfig = {
   },
 };
 test("backend-only plan isolates SDK/env/server from UI and preserves Google configuration", () => {
-  const plan = backendReleasePlan(
-    backendOwnerConfig,
-    "a".repeat(40),
-    backendConfig,
-  );
+  const plan = backendReleasePlan(backendOwnerConfig, "a".repeat(40), backendConfig);
   expect(plan.base).toBe("/home/ubuntu/apps/downloads/backend");
   expect(plan.module).toBe(plan.base + "/current/public-index.ts");
   expect(plan.uiCurrent).toBe("/home/ubuntu/apps/downloads/app-ui/current");
@@ -133,10 +134,7 @@ test("backend plans reject implicit/private stores, policy drift and unpinned mo
     },
     { ...backendConfig, credentials: "forbidden" } as BackendConfig,
   ];
-  for (const invalid of cases)
-    expect(() =>
-      backendReleasePlan(backendOwnerConfig, "a".repeat(40), invalid),
-    ).toThrow();
+  for (const invalid of cases) expect(() => backendReleasePlan(backendOwnerConfig, "a".repeat(40), invalid)).toThrow();
   expect(() =>
     backendReleasePlan(
       {
@@ -151,11 +149,7 @@ test("backend plans reject implicit/private stores, policy drift and unpinned mo
 test("backend artifacts verify SDK/server/env bytes and reject extra files or symlink metadata", () => {
   const root = mkdtempSync(join(tmpdir(), "backend-manifest-"));
   try {
-    const plan = backendReleasePlan(
-      backendOwnerConfig,
-      "a".repeat(40),
-      backendConfig,
-    );
+    const plan = backendReleasePlan(backendOwnerConfig, "a".repeat(40), backendConfig);
     const server = "export const server = 1;";
     const serverSha = createHash("sha256").update(server).digest("hex");
     writeFileSync(join(root, "server.ts"), server);
@@ -165,38 +159,23 @@ test("backend artifacts verify SDK/server/env bytes and reject extra files or sy
     expect(manifest.files).toHaveLength(3);
     expect(manifest.bun).toBe(backendConfig.module.revision);
     expect(manifest.files[1]!.sha256).toBe(backendConfig.module.sha256);
-    writeFileSync(
-      join(root, "public-index.env"),
-      backendEnvironment(plan) + "SECRET=forbidden\n",
-    );
-    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow(
-      "checksum",
-    );
+    writeFileSync(join(root, "public-index.env"), backendEnvironment(plan) + "SECRET=forbidden\n");
+    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow("checksum");
     writeFileSync(join(root, "public-index.env"), backendEnvironment(plan));
     writeFileSync(join(root, "public-index.ts"), "tampered");
-    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow(
-      "checksum",
-    );
+    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow("checksum");
     writeFileSync(join(root, "public-index.ts"), "export {};");
     writeFileSync(join(root, "unexpected.json"), "{}");
-    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow(
-      "declared",
-    );
+    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow("declared");
     rmSync(join(root, "unexpected.json"));
     symlinkSync(root, join(root, "release-manifest.json"), "junction");
-    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow(
-      "Unsafe",
-    );
+    expect(() => backendArtifactManifest(root, plan, serverSha)).toThrow("Unsafe");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 test("backend activation is guarded, rollback-aware and native-shell syntax-valid", () => {
-  const plan = backendReleasePlan(
-    backendOwnerConfig,
-    "a".repeat(40),
-    backendConfig,
-  );
+  const plan = backendReleasePlan(backendOwnerConfig, "a".repeat(40), backendConfig);
   const command = backendActivationCommand(plan, {
     archiveSha256: "d".repeat(64),
     serverSha256: "e".repeat(64),
@@ -204,25 +183,15 @@ test("backend activation is guarded, rollback-aware and native-shell syntax-vali
     expectedCurrent: "absent",
     expectedEnvironmentSha256: "absent",
   });
-  expect(command).toContain(
-    "Foreign server change preserved; rollback refused",
-  );
+  expect(command).toContain("Foreign server change preserved; rollback refused");
   expect(command).toContain("EnvironmentFile=-" + plan.environmentFile);
   expect(command).toContain("createPublicIndexSearch");
   expect(command).toContain("127.0.0.1:8797/api/index/search");
-  expect(command.indexOf("trap 'status=$?")).toBeLessThan(
-    command.indexOf(plan.server + ".pending'; mv"),
-  );
+  expect(command.indexOf("trap 'status=$?")).toBeLessThan(command.indexOf(plan.server + ".pending'; mv"));
   expect(command).not.toContain("reload nginx");
   expect(command).not.toContain("daemon-reload");
   expect(command).not.toContain("ln -s 'releases/app-ui-");
-  const previous =
-    "releases/backend-" +
-    "1".repeat(40) +
-    "-" +
-    "2".repeat(12) +
-    "-" +
-    "3".repeat(12);
+  const previous = "releases/backend-" + "1".repeat(40) + "-" + "2".repeat(12) + "-" + "3".repeat(12);
   const restoreCommand = backendActivationCommand(plan, {
     archiveSha256: "d".repeat(64),
     serverSha256: "e".repeat(64),
@@ -230,12 +199,8 @@ test("backend activation is guarded, rollback-aware and native-shell syntax-vali
     expectedCurrent: previous,
     expectedEnvironmentSha256: "9".repeat(64),
   });
-  expect(restoreCommand).toContain(
-    "realpath -m -- '" + plan.base + "/" + previous + "'",
-  );
-  expect(restoreCommand).toContain(
-    "public-index.env' | sha256sum -c - || return 2",
-  );
+  expect(restoreCommand).toContain("realpath -m -- '" + plan.base + "/" + previous + "'");
+  expect(restoreCommand).toContain("public-index.env' | sha256sum -c - || return 2");
   expect(() =>
     backendActivationCommand(plan, {
       archiveSha256: "d".repeat(64),
@@ -262,14 +227,8 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
   "backend filesystem transaction rolls back failed HTTP smoke with mocked service/runtime",
   async () => {
     const root = mkdtempSync(join(tmpdir(), "backend-rollback-"));
-    const path = root
-      .replaceAll("\\", "/")
-      .replace(/^([A-Za-z]):/, (_, drive: string) => "/" + drive.toLowerCase());
-    const owner = backendReleasePlan(
-      backendOwnerConfig,
-      "a".repeat(40),
-      backendConfig,
-    );
+    const path = root.replaceAll("\\", "/").replace(/^([A-Za-z]):/, (_, drive: string) => "/" + drive.toLowerCase());
+    const owner = backendReleasePlan(backendOwnerConfig, "a".repeat(40), backendConfig);
     const plan = {
       ...owner,
       base: path + "/backend",
@@ -291,52 +250,29 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
         "artifact",
       ])
         mkdirSync(join(root, directory), { recursive: true });
-      symlinkSync(
-        join(root, "app-ui/releases/old"),
-        join(root, "app-ui/current"),
-        "junction",
-      );
-      writeFileSync(
-        join(root, "app-ui/current/google-search.env"),
-        "GOOGLE_SEARCH_OWNER=original\n",
-      );
+      symlinkSync(join(root, "app-ui/releases/old"), join(root, "app-ui/current"), "junction");
+      writeFileSync(join(root, "app-ui/current/google-search.env"), "GOOGLE_SEARCH_OWNER=original\n");
       const originalUi = readlinkSync(join(root, "app-ui/current"));
-      const originalEnv = readFileSync(
-        join(root, "app-ui/current/google-search.env"),
-        "utf8",
-      );
+      const originalEnv = readFileSync(join(root, "app-ui/current/google-search.env"), "utf8");
       const oldServer = "old-server";
       writeFileSync(join(root, "app/server.ts"), oldServer);
       writeFileSync(join(root, "artifact/server.ts"), "new-server");
       writeFileSync(join(root, "artifact/public-index.ts"), "export {};");
-      writeFileSync(
-        join(root, "artifact/public-index.env"),
-        backendEnvironment(plan),
-      );
-      const newServerSha = createHash("sha256")
-        .update("new-server")
-        .digest("hex");
-      const files = backendArtifactManifest(
-        join(root, "artifact"),
-        plan,
-        newServerSha,
-      ).files;
+      writeFileSync(join(root, "artifact/public-index.env"), backendEnvironment(plan));
+      const newServerSha = createHash("sha256").update("new-server").digest("hex");
+      const files = backendArtifactManifest(join(root, "artifact"), plan, newServerSha).files;
       writeFileSync(
         join(root, "artifact/SHA256SUMS"),
-        files.map((file) => file.sha256 + "  " + file.path).join("\n") + "\n",
+        files.map(file => file.sha256 + "  " + file.path).join("\n") + "\n",
       );
       const archive = join(root, "backend", plan.id + ".tar.gz.pending");
       await run(["tar", "-czf", archive, "-C", join(root, "artifact"), "."]);
       const script = join(root, "rollback.sh");
       const mock = `systemctl() { if test "$1" = cat; then printf '%s\\n' 'EnvironmentFile=-${plan.environmentFile}' 'ExecStart=/home/ubuntu/.bun/bin/bun ${plan.server}'; fi; }\nsudo() { "$@"; }\ncurl() { case "$*" in *api/index/search?*) printf 503;; *api/index/search*) printf 404;; *) return 0;; esac; }\n`;
       const command = backendActivationCommand(plan, {
-        archiveSha256: createHash("sha256")
-          .update(readFileSync(archive))
-          .digest("hex"),
+        archiveSha256: createHash("sha256").update(readFileSync(archive)).digest("hex"),
         serverSha256: newServerSha,
-        expectedServerSha256: createHash("sha256")
-          .update(oldServer)
-          .digest("hex"),
+        expectedServerSha256: createHash("sha256").update(oldServer).digest("hex"),
         expectedCurrent: "absent",
         expectedEnvironmentSha256: "absent",
       }).replace("'/home/ubuntu/.bun/bin/bun' -e", "true -e");
@@ -346,24 +282,14 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
         stdout: "pipe",
         stderr: "pipe",
       });
-      const [code, stderr] = await Promise.all([
-        child.exited,
-        new Response(child.stderr).text(),
-      ]);
+      const [code, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
       expect(stderr).not.toContain("syntax error");
       expect(code).not.toBe(0);
       expect(readFileSync(join(root, "app/server.ts"), "utf8")).toBe(oldServer);
-      expect(
-        readFileSync(
-          join(root, "backend/backups", plan.id, "server.ts"),
-          "utf8",
-        ),
-      ).toBe(oldServer);
+      expect(readFileSync(join(root, "backend/backups", plan.id, "server.ts"), "utf8")).toBe(oldServer);
       expect(existsSync(join(root, "backend/current"))).toBe(false);
       expect(readlinkSync(join(root, "app-ui/current"))).toBe(originalUi);
-      expect(
-        readFileSync(join(root, "app-ui/current/google-search.env"), "utf8"),
-      ).toBe(originalEnv);
+      expect(readFileSync(join(root, "app-ui/current/google-search.env"), "utf8")).toBe(originalEnv);
       // The module and service/HTTP calls above are deliberately mocked. This
       // qualifies filesystem rollback, not live SDK/Google/host activation.
     } finally {
@@ -372,61 +298,26 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
   },
   30_000,
 );
-test("the canonical Tauri builder emits strict declarations for explicit TypeScript imports", async () => {
-  const root = mkdtempSync(join(tmpdir(), "app-ui-tauri-declarations-"));
-  try {
-    mkdirSync(join(root, "src"));
-    writeFileSync(
-      join(root, "package.json"),
-      JSON.stringify({ name: "declaration-fixture" }),
-    );
-    writeFileSync(
-      join(root, "tsconfig.json"),
-      JSON.stringify({
-        compilerOptions: {
-          strict: true,
-          noEmit: true,
-          target: "ESNext",
-          module: "ESNext",
-          moduleResolution: "Bundler",
-          skipLibCheck: true,
-        },
-      }),
-    );
-    writeFileSync(
-      join(root, "src/index.ts"),
-      'export { value } from "./value.ts";\n',
-    );
-    writeFileSync(
-      join(root, "src/value.ts"),
-      "export const value: number = 42;\n",
-    );
-    await run(
-      ["bun", join(import.meta.dir, "../../crates/tauri/build-js.ts")],
-      root,
-    );
-    expect(readFileSync(join(root, "dist/index.d.ts"), "utf8")).toContain(
-      "./value.ts",
-    );
-    expect(readFileSync(join(root, "dist/value.d.ts"), "utf8")).toContain(
-      "value: number",
-    );
-    expect(existsSync(join(root, "dist/index.js"))).toBe(true);
-    expect(existsSync(join(root, "dist/index.cjs"))).toBe(true);
-    writeFileSync(
-      join(root, "src/value.ts"),
-      'export const value: number = "invalid";\n',
-    );
-    await expect(
-      run(
-        ["bun", join(import.meta.dir, "../../crates/tauri/build-js.ts")],
-        root,
-      ),
-    ).rejects.toThrow("TS2322");
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-}, 30_000);
+test("canonical Tauri exports typed sources directly without obsolete generation", async () => {
+  const manifest = await Bun.file(join(repository, "packages/bun-tauri/package.json")).json();
+  expect(manifest.exports["./api"]).toBe("./js/api/index.ts");
+  expect(Bun.resolveSync("@aphrody/tauri/api", repository)).toBe(
+    join(repository, "packages/bun-tauri/js/api/index.ts"),
+  );
+  expect(Bun.resolveSync("@aphrody/tauri/plugins/dialog", repository)).toBe(
+    join(repository, "packages/bun-tauri/js/plugins/dialog.ts"),
+  );
+  expect(prerequisiteCommands().flat()).not.toContain("../build-js.ts");
+});
+
+test("release source gates cover existing flat owners and canonical runtime overrides", () => {
+  for (const path of [...uiSourcePaths, serverSource]) expect(existsSync(join(repository, path))).toBe(true);
+  expect(downloadsConfig).toBe("tools/aphrody/config/downloads.json");
+  expect(releaseBunCheckout(repository, {})).toBe(join(repository, "toolchains/bun"));
+  expect(releaseBunCheckout(repository, { APHRODY_BUN_CHECKOUT: repository })).toBe(repository);
+  expect(uiSourcePaths).toContain("packages");
+  expect(uiSourcePaths).toContain("apps/aphrody-app");
+});
 test("failed build commands retain bounded stdout and stderr compiler diagnostics", async () => {
   await expect(
     run([
@@ -460,43 +351,21 @@ test("Bun prerequisites and builds execute the exact selected runtime without ch
     executable: process.execPath,
     version: Bun.version,
   });
-  for (const prerequisite of prerequisiteCommands())
-    expect(runtimeCommand(prerequisite)[0]).toBe(process.execPath);
+  for (const prerequisite of prerequisiteCommands()) expect(runtimeCommand(prerequisite)[0]).toBe(process.execPath);
   expect(runtimeCommand(buildCommand("C:/artifact"))).toEqual([
     process.execPath,
-    "../material/packages/app-ui/build.ts",
+    "packages/app-ui/build.ts",
     "--out",
     "C:/artifact",
   ]);
-  expect(runtimeCommand(["git", "rev-parse", "HEAD"])).toEqual([
-    "git",
-    "rev-parse",
-    "HEAD",
-  ]);
-  expect(runtimeCommand(["aphrody", "infra", "ssh", "exec"])).toEqual([
-    "aphrody",
-    "infra",
-    "ssh",
-    "exec",
-  ]);
+  expect(runtimeCommand(["git", "rev-parse", "HEAD"])).toEqual(["git", "rev-parse", "HEAD"]);
+  expect(runtimeCommand(["aphrody", "infra", "ssh", "exec"])).toEqual(["aphrody", "infra", "ssh", "exec"]);
 });
 test("clean builds prepare identity through its canonical owner, without setup hooks", () => {
   expect(prerequisiteCommands()).toEqual([
-    ["bun", "--cwd", "crates/tauri/aphrody-tauri-api", "../build-js.ts"],
-    [
-      "bun",
-      "--cwd",
-      "crates/tauri/aphrody-tauri-plugin-dialog",
-      "../build-js.ts",
-    ],
-    ["bun", "../material/packages/m3/scripts/fonts-sync.ts", "--quiet"],
-    [
-      "bun",
-      "../material/packages/m3/scripts/fonts-sync.ts",
-      "--check",
-      "--quiet",
-    ],
-    ["bun", "--cwd", "../material/packages/identity", "scripts/sprite.ts"],
+    ["bun", "scripts/m3/fonts-sync.ts", "--quiet"],
+    ["bun", "scripts/m3/fonts-sync.ts", "--check", "--quiet"],
+    ["bun", "--cwd", "packages/identity", "scripts/sprite.ts"],
   ]);
   expect(prerequisiteCommands().flat()).not.toContain("install");
 });
@@ -505,14 +374,11 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
   async () => {
     const root = mkdtempSync(join(tmpdir(), "app-ui-declaration-test-"));
     try {
-      const process = Bun.spawn(
-        [nativeShell!, "-c", declarationCommand("deployment.json")],
-        {
-          cwd: root,
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      );
+      const process = Bun.spawn([nativeShell!, "-c", declarationCommand("deployment.json")], {
+        cwd: root,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       expect(await process.exited).toBe(0);
       const bytes = readFileSync(join(root, "deployment.json"), "utf8");
       expect(bytes).toBe('{"schemaVersion":1,"root":"current"}\n');
@@ -523,9 +389,7 @@ test.skipIf(!nativeShell || !existsSync(nativeShell))(
   },
 );
 test("remote declaration emits one printf escape and health checks precede trap dismissal", () => {
-  const command = declarationCommand(
-    "/home/ubuntu/apps/downloads/app-ui/deployment.json.pending",
-  );
+  const command = declarationCommand("/home/ubuntu/apps/downloads/app-ui/deployment.json.pending");
   expect(command).toContain("printf '%s" + String.fromCharCode(92) + "n'");
   expect(command).not.toContain("%s" + String.fromCharCode(92, 92) + "n");
   expect(command).toContain('{"schemaVersion":1,"root":"current"}');
@@ -550,7 +414,7 @@ const config: ReleaseConfig = {
 test("public assets flag reaches the real owner build and binds artifact provenance", () => {
   expect(buildCommand("C:/artifact", true)).toEqual([
     "bun",
-    "../material/packages/app-ui/build.ts",
+    "packages/app-ui/build.ts",
     "--out",
     "C:/artifact",
     "--public-assets",
@@ -561,9 +425,7 @@ test("public assets flag reaches the real owner build and binds artifact provena
     publicAssets: true,
     files: [{ path: "app.js", sha256: "abc" }],
   };
-  expect(() =>
-    verifyArtifactProvenance(original, { ...original, publicAssets: false }),
-  ).toThrow("provenance");
+  expect(() => verifyArtifactProvenance(original, { ...original, publicAssets: false })).toThrow("provenance");
   expect(() =>
     verifyArtifactProvenance(original, {
       ...original,
@@ -574,53 +436,34 @@ test("public assets flag reaches the real owner build and binds artifact provena
 });
 test("dry-run plan stays in the declared downloads service and refuses proxy/host drift", () => {
   const plan = releasePlan(config, revision);
-  expect(plan.release).toBe(
-    "/home/ubuntu/apps/downloads/app-ui/releases/app-ui-" + revision,
-  );
-  expect(plan.restart).toContain(
-    "sudo systemctl restart 'aphrody-downloads.service'",
-  );
+  expect(plan.release).toBe("/home/ubuntu/apps/downloads/app-ui/releases/app-ui-" + revision);
+  expect(plan.restart).toContain("sudo systemctl restart 'aphrody-downloads.service'");
   expect(plan.restart).toContain("systemctl is-active --quiet");
   expect(plan.nativeRpc).toBe(false);
   expect(() => releasePlan(config, "main")).toThrow("exact");
+  expect(() => releasePlan({ ...config, host: { ...config.host, root: "/" } }, revision)).toThrow("catalog");
   expect(() =>
-    releasePlan({ ...config, host: { ...config.host, root: "/" } }, revision),
-  ).toThrow("catalog");
-  expect(() =>
-    releasePlan(
-      { ...config, site: { appUi: { ...config.site.appUi, nativeRpc: true } } },
-      revision,
-    ),
+    releasePlan({ ...config, site: { appUi: { ...config.site.appUi, nativeRpc: true } } }, revision),
   ).toThrow("isolation");
 });
 test("manifest verifies completeness and records changed bytes with exact source provenance", () => {
   const root = mkdtempSync(join(tmpdir(), "app-ui-manifest-test-"));
   try {
     expect(() => artifactManifest(root, revision)).toThrow("Incomplete");
-    for (const name of [
-      "index.html",
-      "public-home.html",
-      "app.js",
-      "app.css",
-      "public-docs.json",
-    ])
+    for (const name of ["index.html", "public-home.html", "app.js", "app.css", "public-docs.json"])
       writeFileSync(join(root, name), name);
     mkdirSync(join(root, "fonts"));
     writeFileSync(join(root, "fonts/font.woff2"), "font");
     const before = artifactManifest(root, revision);
     expect(before.revision).toBe(revision);
     expect(before.files).toHaveLength(6);
-    expect(() => artifactManifest(root, revision, true)).toThrow(
-      "public assets declaration",
-    );
+    expect(() => artifactManifest(root, revision, true)).toThrow("public assets declaration");
     writeFileSync(join(root, "public-assets.json"), '{"schemaVersion":1}');
     expect(artifactManifest(root, revision, true).publicAssets).toBe(true);
     writeFileSync(join(root, "app.js"), "changed");
-    expect(
-      artifactManifest(root, revision).files.find(
-        (file) => file.path === "app.js",
-      )?.sha256,
-    ).not.toBe(before.files.find((file) => file.path === "app.js")?.sha256);
+    expect(artifactManifest(root, revision).files.find(file => file.path === "app.js")?.sha256).not.toBe(
+      before.files.find(file => file.path === "app.js")?.sha256,
+    );
     symlinkSync(root, join(root, "escape"), "junction");
     expect(() => artifactManifest(root, revision)).toThrow("unsafe");
   } finally {
@@ -643,23 +486,16 @@ test("Google deployment binds the SDK and environment to the same rollback symli
     },
   };
   const plan = releasePlan(withSearch, revision);
-  expect(plan.search?.environmentFile).toBe(
-    plan.base + "/current/google-search.env",
-  );
+  expect(plan.search?.environmentFile).toBe(plan.base + "/current/google-search.env");
   expect(searchEnvironment(plan.search!.module, plan.search!.owner)).toBe(
     "GOOGLE_SEARCH_SDK_MODULE=" +
       plan.base +
       "/current/google-search.ts\nGOOGLE_SEARCH_OWNER=/home/ubuntu/.local/bin/aphrody\n",
   );
-  expect(() =>
-    searchEnvironment("/tmp/foreign.ts", plan.search!.owner),
-  ).toThrow("owner");
-  expect(() =>
-    releasePlan(
-      { ...withSearch, host: { ...config.host, service: "foreign" } },
-      revision,
-    ),
-  ).toThrow("service");
+  expect(() => searchEnvironment("/tmp/foreign.ts", plan.search!.owner)).toThrow("owner");
+  expect(() => releasePlan({ ...withSearch, host: { ...config.host, service: "foreign" } }, revision)).toThrow(
+    "service",
+  );
 });
 
 test("Bun transferred docs and packaged Google source require verified checksums", () => {
@@ -670,14 +506,8 @@ test("Bun transferred docs and packaged Google source require verified checksums
       recursive: true,
     });
     mkdirSync(join(root, "packages/bun-google/src"), { recursive: true });
-    writeFileSync(
-      join(root, "packages/web/rust/crates/site/data/docs.json"),
-      "[]",
-    );
-    writeFileSync(
-      join(root, "packages/bun-google/src/search.ts"),
-      "export {};",
-    );
+    writeFileSync(join(root, "packages/web/rust/crates/site/data/docs.json"), "[]");
+    writeFileSync(join(root, "packages/bun-google/src/search.ts"), "export {};");
     const hash = createHash("sha256").update("[]").digest("hex");
     writeFileSync(
       join(root, "packages/web/rust/transfer-receipt.json"),
@@ -693,7 +523,25 @@ test("Bun transferred docs and packaged Google source require verified checksums
         ],
       }),
     );
-    const inputs = canonicalBunInputs(root, revision);
+    const git = (...args: string[]) => {
+      const result = Bun.spawnSync(["git", ...args], { cwd: root, timeout: 10_000 });
+      if (result.exitCode !== 0) throw new Error("Fixture Git operation failed");
+      return result.stdout.toString().trim();
+    };
+    git("init", "--quiet");
+    git("add", ".");
+    git(
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "commit",
+      "--quiet",
+      "-m",
+      "fixture inputs",
+    );
+    const pinnedRevision = git("rev-parse", "HEAD");
+    const inputs = canonicalBunInputs(root, pinnedRevision);
     expect(inputs.docs.sha256).toBe(hash);
     expect(inputs.search.path).toBe("packages/bun-google/src/search.ts");
     const artifact = join(root, "artifact");
@@ -708,16 +556,12 @@ test("Bun transferred docs and packaged Google source require verified checksums
     ])
       writeFileSync(join(artifact, name), "fixture");
     writeFileSync(join(artifact, "google-search.ts"), "export {};");
-    expect(
-      artifactManifest(artifact, revision, false, inputs).sources?.bun,
-    ).toBe(revision);
+    expect(artifactManifest(artifact, pinnedRevision, false, inputs).sources?.bun).toBe(pinnedRevision);
     writeFileSync(join(artifact, "google-search.ts"), "altered");
-    expect(() => artifactManifest(artifact, revision, false, inputs)).toThrow(
-      "search source checksum",
-    );
+    expect(() => artifactManifest(artifact, revision, false, inputs)).toThrow("search source checksum");
     expect(() => canonicalBunInputs(root, "main")).toThrow("revision");
     writeFileSync(join(root, destination), "changed");
-    expect(() => canonicalBunInputs(root, revision)).toThrow("checksum");
+    expect(() => canonicalBunInputs(root, pinnedRevision)).toThrow("pinned Git blob");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

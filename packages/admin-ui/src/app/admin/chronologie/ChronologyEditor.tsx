@@ -50,7 +50,7 @@ import {
   type TimelineItem,
   type ResolvedTimelineItem,
 } from "@/lib/chronology";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 
 interface LoadResponse {
   config: ChronologyConfig;

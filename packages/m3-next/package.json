@@ -23,6 +23,7 @@
   },
   "files": [
     "dist",
+    "src",
     "bin",
     "m3.css"
   ],
@@ -37,6 +38,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./source": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./server": {
       "types": "./dist/server.d.ts",

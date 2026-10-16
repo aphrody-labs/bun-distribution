@@ -1,16 +1,22 @@
 import { expect, test } from "bun:test";
-import {
-  mkdtempSync,
-  mkdirSync,
-  writeFileSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  unlinkSync,
-} from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { canonicalBunInputs } from "./build-inputs";
+import { dirname, join, resolve } from "node:path";
+import { canonicalBunInputs, productBuildContext } from "./build-inputs";
+
+test("selected product inputs point to the existing desktop and public asset owners", async () => {
+  const root = resolve(import.meta.dir, "../../..");
+  const inputs = productBuildContext({
+    NODE_ENV: "test",
+    APHRODY_WORKSPACE_ROOT: root,
+    APHRODY_BUN_CHECKOUT: join(root, "toolchains/bun"),
+  });
+  expect(inputs.workspaceRoot).toBe(root);
+  expect(inputs.uiDist).toBe(join(root, "apps/aphrody-app/ui-dist"));
+  expect(await Bun.file(join(inputs.uiDist, "index.html")).exists()).toBe(true);
+  expect(inputs.publicAssets).toBe(join(root, "tools/aphrody/config/public-assets.json"));
+  expect((await Bun.file(inputs.publicAssets).json()).schemaVersion).toBe(1);
+});
 
 test("current committed build inputs retain immutable historical transfer provenance", () => {
   const root = mkdtempSync(join(tmpdir(), "bun-product-inputs-"));
@@ -50,16 +56,7 @@ test("current committed build inputs retain immutable historical transfer proven
     );
     git("init", "--quiet");
     git("add", ".");
-    git(
-      "-c",
-      "user.name=Fixture",
-      "-c",
-      "user.email=fixture@localhost",
-      "commit",
-      "--quiet",
-      "-m",
-      "pinned inputs",
-    );
+    git("-c", "user.name=Fixture", "-c", "user.email=fixture@localhost", "commit", "--quiet", "-m", "pinned inputs");
     const revision = git("rev-parse", "HEAD");
     const receiptBefore = readFileSync(join(root, receipt), "utf8");
     const input = canonicalBunInputs(root, revision);
@@ -68,9 +65,7 @@ test("current committed build inputs retain immutable historical transfer proven
     expect(input.docs.gitBlob).toBe(git("rev-parse", `${revision}:${docs}`));
     expect(input.docs.path).toBe(docs);
     expect(readFileSync(join(root, receipt), "utf8")).toBe(receiptBefore);
-    expect(() => canonicalBunInputs(root, "c".repeat(40))).toThrow(
-      "revision mismatch",
-    );
+    expect(() => canonicalBunInputs(root, "c".repeat(40))).toThrow("revision mismatch");
     put(docs, "uncommitted replacement");
     expect(() => canonicalBunInputs(root, revision)).toThrow("pinned Git blob");
     put(docs, '{"current":"committed documentation after transfer"}');
@@ -80,9 +75,7 @@ test("current committed build inputs retain immutable historical transfer proven
     unlinkSync(join(root, docs));
     writeFileSync(join(outside, "docs.json"), "private unrelated file");
     symlinkSync(join(outside, "docs.json"), join(root, docs));
-    expect(() => canonicalBunInputs(root, revision)).toThrow(
-      "escapes the checkout",
-    );
+    expect(() => canonicalBunInputs(root, revision)).toThrow("escapes the checkout");
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

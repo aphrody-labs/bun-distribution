@@ -19,7 +19,7 @@ import {
 import type { JSONContent } from "@tiptap/react";
 
 import { ShenronEditor } from "@/components/editor";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 import { Badge } from "@shenron/ui/badge";
 import { Button } from "@shenron/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@shenron/ui/card";

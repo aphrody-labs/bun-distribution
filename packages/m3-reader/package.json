@@ -47,7 +47,7 @@
     "swiper": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "3.3.11"
+    "@aphrody/m3-config": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

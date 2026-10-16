@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 export const SHOWCASE_ROOT = resolve(import.meta.dir, "..");
 export const APHRODY_ROOT = resolve(SHOWCASE_ROOT, "../..");
-export const TAURI_ROOT = resolve(APHRODY_ROOT, "crates/ui/m3-showcase");
+export const TAURI_ROOT = resolve(APHRODY_ROOT, "apps/aphrody-app");
 /** Canonical Aphrody artwork stays in its protected identity owner; generated icons are ignored. */
 export const ICON_SOURCE = resolve(APHRODY_ROOT, "crates/aphrody-identity/assets/brand/icon.svg");
 

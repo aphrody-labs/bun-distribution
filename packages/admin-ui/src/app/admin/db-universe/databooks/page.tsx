@@ -4,7 +4,7 @@ import { AdminHeader } from "../_Header";
 import { DbAddButton } from "@aphrody/admin-ui/components/admin/DbCrud";
 import { DatabookAdminList } from "@aphrody/admin-ui/components/admin/DatabookAdminList";
 import { listWikiSnake } from "@/lib/wiki-admin";
-import { toMillis } from "@/lib/epoch";
+import { toMillis } from "../../../../lib/epoch";
 
 export const dynamic = "force-dynamic";
 

@@ -3,7 +3,7 @@ import { CocheCercle, Document, FlecheGauche, IllustrationAbsente, OeilBarre, Pr
 import { StatTiles } from "@/components/kit";
 import { listIncompleteContent, type IncompleteGroup, type IncompleteRow } from "@/lib/wiki-admin";
 import { assetUrl } from "@/lib/db-universe";
-import { TABLE_LABELS } from "@/lib/db-labels";
+import { TABLE_LABELS } from "../../../../lib/db-labels";
 import { GAP_LABELS } from "@/lib/wiki-gaps";
 import { isStudioTable } from "@/lib/wiki-fields";
 

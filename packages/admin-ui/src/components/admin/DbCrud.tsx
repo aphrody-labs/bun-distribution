@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { Alerte, Corbeille, Crayon, Croix, Enregistrer, Plus } from "@shenron/ui/icones";
 import { SmartField } from "@aphrody/admin-ui/components/admin/SmartField";
 import { api, apiAt } from "@aphrody/admin-ui/client";
-import { colLabel } from "@/lib/db-labels";
+import { colLabel } from "../../lib/db-labels";
 import { buildSubmitBody, isStudioTable } from "@/lib/wiki-fields";
 import { WIKI_TABLE_SPECS, crudBase, isWikiTable } from "@/lib/wiki-tables";
 

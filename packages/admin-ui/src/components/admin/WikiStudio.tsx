@@ -21,7 +21,7 @@ import { GameMediaPanel } from "@aphrody/admin-ui/components/admin/GameMediaPane
 import { CharacterStatsPanel } from "@aphrody/admin-ui/components/admin/CharacterStatsPanel";
 import { TransformationsPanel } from "@aphrody/admin-ui/components/admin/TransformationsPanel";
 import { apiAt } from "@aphrody/admin-ui/client";
-import { colLabel, TABLE_LABELS } from "@/lib/db-labels";
+import { colLabel, TABLE_LABELS } from "../../lib/db-labels";
 import { buildSubmitBody, entityRelations, isStudioTable, publicEntityUrl, sectionEntityType } from "@/lib/wiki-fields";
 import { crudBase, WIKI_TABLE_SPECS } from "@/lib/wiki-tables";
 

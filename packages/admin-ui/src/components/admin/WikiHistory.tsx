@@ -27,7 +27,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { apiAt } from "@aphrody/admin-ui/client";
-import { TABLE_LABELS, colLabel } from "@/lib/db-labels";
+import { TABLE_LABELS, colLabel } from "../../lib/db-labels";
 import { isStudioTable } from "@/lib/wiki-fields";
 
 interface Revision {
@@ -45,10 +45,7 @@ interface Revision {
 
 const client = apiAt("/api/wiki-history");
 
-const ACTION_META: Record<
-  string,
-  { label: string; cls: string; icon: React.ReactNode }
-> = {
+const ACTION_META: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
   create: {
     label: "Création",
     cls: "border-green-500/40 text-green-300 bg-green-500/10",
@@ -76,14 +73,7 @@ const ACTION_META: Record<
   },
 };
 
-const ACTION_FILTERS = [
-  "",
-  "create",
-  "update",
-  "delete",
-  "visibility",
-  "revert",
-] as const;
+const ACTION_FILTERS = ["", "create", "update", "delete", "visibility", "revert"] as const;
 
 function relTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -105,15 +95,7 @@ function short(v: unknown): string {
   return s.length > 90 ? `${s.slice(0, 90)}…` : s;
 }
 
-export function WikiHistory({
-  table,
-  rowId,
-  compact = false,
-}: {
-  table?: string;
-  rowId?: string;
-  compact?: boolean;
-}) {
+export function WikiHistory({ table, rowId, compact = false }: { table?: string; rowId?: string; compact?: boolean }) {
   const qc = useQueryClient();
   const scoped = !!(table && rowId);
   const [action, setAction] = useState<string>("");
@@ -136,21 +118,15 @@ export function WikiHistory({
 
   const query = useQuery({
     queryKey: ["wiki-history", table ?? "*", rowId ?? "*", action, page],
-    queryFn: () =>
-      client.get<{ rows: Revision[]; total: number }>(`?${qs.toString()}`),
+    queryFn: () => client.get<{ rows: Revision[]; total: number }>(`?${qs.toString()}`),
   });
 
   const revert = useMutation({
-    mutationFn: (id: string) =>
-      client.post<{ ok: boolean; mode: string }>("", { id }),
-    onSuccess: (res) => {
+    mutationFn: (id: string) => client.post<{ ok: boolean; mode: string }>("", { id }),
+    onSuccess: res => {
       setConfirmId(null);
       const modeLabel =
-        res.mode === "delete"
-          ? "supprimée"
-          : res.mode === "reinsert"
-            ? "restaurée (ré-insérée)"
-            : "restaurée";
+        res.mode === "delete" ? "supprimée" : res.mode === "reinsert" ? "restaurée (ré-insérée)" : "restaurée";
       setToast({ type: "success", msg: `Entrée ${modeLabel}.` });
       qc.invalidateQueries({ queryKey: ["wiki-history"] });
       qc.invalidateQueries({ queryKey: ["wiki-studio"] });
@@ -189,7 +165,7 @@ export function WikiHistory({
       {/* Filtres par type d'action (mode global uniquement) */}
       {!scoped && (
         <div className="flex flex-wrap gap-2">
-          {ACTION_FILTERS.map((a) => (
+          {ACTION_FILTERS.map(a => (
             <button
               key={a || "all"}
               type="button"
@@ -223,7 +199,7 @@ export function WikiHistory({
         </div>
       ) : (
         <ul className="space-y-2">
-          {rows.map((r) => {
+          {rows.map(r => {
             const meta = ACTION_META[r.action] ?? {
               label: r.action,
               cls: "border-white/20 text-white/60 bg-white/5",
@@ -231,12 +207,9 @@ export function WikiHistory({
             };
             const tableLabel = TABLE_LABELS[r.tableName] ?? r.tableName;
             const isOpen = expanded[r.id];
-            const canStudio =
-              isStudioTable(r.tableName) && !r.rowId.includes(":");
+            const canStudio = isStudioTable(r.tableName) && !r.rowId.includes(":");
             const canRevert = r.action !== "revert";
-            const diffKeys = r.changedKeys.length
-              ? r.changedKeys
-              : Object.keys({ ...r.before, ...r.after });
+            const diffKeys = r.changedKeys.length ? r.changedKeys : Object.keys({ ...r.before, ...r.after });
             return (
               <li key={r.id} className="dbz-panel overflow-hidden">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 p-3">
@@ -255,9 +228,7 @@ export function WikiHistory({
                         {r.label || `#${r.rowId}`}
                       </Link>
                     ) : (
-                      <span className="font-semibold text-white">
-                        {r.label || `#${r.rowId}`}
-                      </span>
+                      <span className="font-semibold text-white">{r.label || `#${r.rowId}`}</span>
                     )}
                     <span className="ml-2 text-[11px] text-white/50">
                       {tableLabel} · {r.rowId}
@@ -274,15 +245,11 @@ export function WikiHistory({
                   {diffKeys.length > 0 && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))
-                      }
+                      onClick={() => setExpanded(e => ({ ...e, [r.id]: !e[r.id] }))}
                       className="inline-flex items-center gap-1 rounded border border-dbz-border px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white/50 hover:border-dbz-orange/50 hover:text-white"
                     >
                       {diffKeys.length} champ{diffKeys.length > 1 ? "s" : ""}
-                      <ChevronDown
-                        className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                      />
+                      <ChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                   )}
                   {canRevert && (
@@ -302,7 +269,7 @@ export function WikiHistory({
                   <div className="border-t border-dbz-border/40 bg-dbz-bg/40 p-3">
                     <table className="w-full text-xs">
                       <tbody className="divide-y divide-dbz-border/30">
-                        {diffKeys.map((k) => (
+                        {diffKeys.map(k => (
                           <tr key={k} className="align-top">
                             <td className="w-40 py-1.5 pr-3 font-mono text-[11px] text-dbz-blue-light">
                               {colLabel(k)}
@@ -310,9 +277,7 @@ export function WikiHistory({
                             <td className="py-1.5 pr-3 text-white/50 line-through decoration-red-400/40">
                               {short(r.before?.[k])}
                             </td>
-                            <td className="py-1.5 text-white/85">
-                              {short(r.after?.[k])}
-                            </td>
+                            <td className="py-1.5 text-white/85">{short(r.after?.[k])}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -323,10 +288,8 @@ export function WikiHistory({
                 {confirmId === r.id && (
                   <div className="border-t border-purple-400/30 bg-purple-500/5 p-3">
                     <p className="mb-2 text-xs text-white/70">
-                      Revenir à l'état{" "}
-                      <strong className="text-white">avant</strong> cette{" "}
-                      {meta.label.toLowerCase()} ? Une nouvelle révision «
-                      retour arrière » sera enregistrée (rien n'est perdu).
+                      Revenir à l'état <strong className="text-white">avant</strong> cette {meta.label.toLowerCase()} ?
+                      Une nouvelle révision « retour arrière » sera enregistrée (rien n'est perdu).
                     </p>
                     <div className="flex justify-end gap-2">
                       <button
@@ -344,9 +307,7 @@ export function WikiHistory({
                         className="btn btn-primary h-8 text-xs"
                       >
                         <Undo2 className="h-3 w-3" />
-                        {revert.isPending
-                          ? "Restauration…"
-                          : "Confirmer le retour arrière"}
+                        {revert.isPending ? "Restauration…" : "Confirmer le retour arrière"}
                       </button>
                     </div>
                   </div>
@@ -362,7 +323,7 @@ export function WikiHistory({
         <div className="flex items-center justify-between text-xs text-white/50">
           <button
             type="button"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
             className="btn btn-ghost h-8 text-xs"
           >
@@ -373,7 +334,7 @@ export function WikiHistory({
           </span>
           <button
             type="button"
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPage(p => p + 1)}
             disabled={offset + limit >= total}
             className="btn btn-ghost h-8 text-xs"
           >

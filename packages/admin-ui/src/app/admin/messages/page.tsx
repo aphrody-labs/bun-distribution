@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alimentation, Enregistrer, Oeil, Reinitialiser } from "@shenron/ui/icones";
 import { useEffect, useState } from "react";
 import { api } from "@aphrody/admin-ui/client";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 
 interface EventVariable {
   name: string;

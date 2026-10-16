@@ -16,7 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Chargement, Coche, Croix, LienExterne } from "@shenron/ui/icones";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../../components/editor/PlainField";
 import { ContributionRightsPanel } from "@aphrody/admin-ui/components/admin/ContributionRightsPanel";
 import {
   CONTRIBUTABLE_COLUMNS,

@@ -28,7 +28,7 @@ import {
   isRichTextColumn,
   uploadSubdir,
 } from "@/lib/wiki-fields";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../editor/PlainField";
 
 interface Props {
   table: string;
@@ -56,21 +56,11 @@ function dateInputToEpoch(dateStr: string, original: string): string {
 
 export function SmartField({ table, col, value, onChange, original }: Props) {
   if (isImageColumn(table, col)) {
-    return (
-      <ImageField
-        value={value}
-        onChange={onChange}
-        subdir={uploadSubdir(table)}
-        column={col}
-      />
-    );
+    return <ImageField value={value} onChange={onChange} subdir={uploadSubdir(table)} column={col} />;
   }
 
   const fk = fkTarget(col);
-  if (fk)
-    return (
-      <EntityPicker refTable={fk.table} value={value} onChange={onChange} />
-    );
+  if (fk) return <EntityPicker refTable={fk.table} value={value} onChange={onChange} />;
 
   if (isBoolColumn(col)) {
     const on = value === "true" || value === "1";
@@ -90,14 +80,10 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
     if (en.strict) {
       const known = en.options.includes(value);
       return (
-        <select
-          className="input"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
+        <select className="input" value={value} onChange={e => onChange(e.target.value)}>
           <option value="">— Aucun —</option>
           {value && !known && <option value={value}>{value}</option>}
-          {en.options.map((o) => (
+          {en.options.map(o => (
             <option key={o} value={o}>
               {o}
             </option>
@@ -112,10 +98,10 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
           className="input font-mono text-sm"
           list={listId}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
         />
         <datalist id={listId}>
-          {en.options.map((o) => (
+          {en.options.map(o => (
             <option key={o} value={o} />
           ))}
         </datalist>
@@ -129,7 +115,7 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
         type="date"
         className="input text-sm"
         value={epochToDateInput(value)}
-        onChange={(e) => onChange(dateInputToEpoch(e.target.value, value))}
+        onChange={e => onChange(dateInputToEpoch(e.target.value, value))}
       />
     );
   }
@@ -139,50 +125,23 @@ export function SmartField({ table, col, value, onChange, original }: Props) {
     // `buildSubmitBody` ne réécrit jamais ces colonnes → zéro corruption).
     return (
       <div className="space-y-1">
-        <PlainField
-          value={value}
-          readOnly
-          monospace
-          minRows={4}
-          spellCheck={false}
-        />
+        <PlainField value={value} readOnly monospace minRows={4} spellCheck={false} />
         <p className="text-[10px] text-white/50">
-          Champ JSON structuré — non éditable ici (édité via les scripts/outils
-          dédiés).
+          Champ JSON structuré — non éditable ici (édité via les scripts/outils dédiés).
         </p>
       </div>
     );
   }
 
   if (isRichTextColumn(table, col)) {
-    return (
-      <MarkdownField
-        value={value}
-        onChange={onChange}
-        subdir={uploadSubdir(table)}
-      />
-    );
+    return <MarkdownField value={value} onChange={onChange} subdir={uploadSubdir(table)} />;
   }
 
   if (isLongTextColumn(col)) {
-    return (
-      <PlainField
-        value={value}
-        onChange={onChange}
-        minRows={5}
-        maxRows={20}
-        placeholder="Texte libre…"
-      />
-    );
+    return <PlainField value={value} onChange={onChange} minRows={5} maxRows={20} placeholder="Texte libre…" />;
   }
 
-  return (
-    <input
-      className="input font-mono text-sm"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
+  return <input className="input font-mono text-sm" value={value} onChange={e => onChange(e.target.value)} />;
 }
 
 /**
@@ -213,25 +172,20 @@ function EntityPicker({
       <input
         className="input font-mono text-sm"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder="id (liste indisponible)"
       />
     );
   }
 
   const options = data?.options ?? [];
-  const inList = options.some((o) => o.value === value);
+  const inList = options.some(o => o.value === value);
 
   return (
-    <select
-      className="input"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={isLoading}
-    >
+    <select className="input" value={value} onChange={e => onChange(e.target.value)} disabled={isLoading}>
       <option value="">{isLoading ? "Chargement…" : "— Aucun —"}</option>
       {value && !inList && <option value={value}>Actuel : {value}</option>}
-      {options.map((o) => (
+      {options.map(o => (
         <option key={o.value} value={o.value}>
           {o.label} · #{o.value}
         </option>

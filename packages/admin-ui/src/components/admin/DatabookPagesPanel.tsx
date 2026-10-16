@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { apiAt } from "@aphrody/admin-ui/client";
 import { crudBase } from "@/lib/wiki-tables";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../editor/PlainField";
 
 export interface DatabookPageDraft {
   /** Clé React stable (jamais persistée). */

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Measures the web pet runtime: bundle size (raw, gzip, brotli) of <aphrody-pet> and of the clock
 // alone, import time in a fresh Bun process, cost of one tick. With `--wasm <file>` it measures
-// option A too (the crate's clock compiled to wasm32, crates/ui/identity/examples/pet_wasm.rs):
+// option A too (the crate's clock compiled to wasm32, crates/aphrody-identity/examples/pet_wasm.rs):
 // size, compile + instantiate time, tick cost, and parity on the crate fixture.
 //   bun scripts/measure.ts [--wasm path/to/pet_wasm.wasm] [--json]
 import { brotliCompressSync, constants } from "node:zlib";
@@ -12,9 +12,7 @@ import type { WebTrack } from "../src/runtime";
 
 const root = join(import.meta.dir, "..");
 const args = process.argv.slice(2);
-const wasmPath = args.includes("--wasm")
-  ? args[args.indexOf("--wasm") + 1]
-  : undefined;
+const wasmPath = args.includes("--wasm") ? args[args.indexOf("--wasm") + 1] : undefined;
 const asJson = args.includes("--json");
 
 const sizes = (bytes: Uint8Array<ArrayBuffer>) => ({
@@ -25,8 +23,7 @@ const sizes = (bytes: Uint8Array<ArrayBuffer>) => ({
   }).byteLength,
 });
 
-const median = (xs: number[]) =>
-  xs.toSorted((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
+const median = (xs: number[]) => xs.toSorted((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
 
 async function bundle(entry: string) {
   const t0 = performance.now();
@@ -65,17 +62,11 @@ const fixture: {
     ticks: [number, string, string | null, number | null, number | null][];
   }[];
 } = await Bun.file(
-  join(
-    findWorkspaceRoot(),
-    "crates/ui/identity/tests/fixtures/parite-web.json",
-  ),
+  join(findWorkspaceRoot(import.meta.dir), "crates/aphrody-identity/tests/fixtures/parite-web.json"),
 ).json();
 const aphrody = fixture.cases[0]!;
 
-function tickCost(
-  step: (name: string, t: number) => unknown,
-  n = 1_000_000,
-): number {
+function tickCost(step: (name: string, t: number) => unknown, n = 1_000_000): number {
   const names = Object.keys(aphrody.tracks);
   const t0 = performance.now();
   for (let i = 0; i < n; i++) step(names[i % names.length]!, (i * 37) % 20_000);
@@ -114,9 +105,7 @@ if (wasmPath) {
         return r.exitCode === 0 ? out : undefined;
       })()
     : undefined;
-  const bytes = optimised
-    ? new Uint8Array(await Bun.file(optimised).arrayBuffer())
-    : raw;
+  const bytes = optimised ? new Uint8Array(await Bun.file(optimised).arrayBuffer()) : raw;
   const compile: number[] = [];
   let instance: WebAssembly.Instance | undefined;
   for (let i = 0; i < 15; i++) {
@@ -125,8 +114,7 @@ if (wasmPath) {
     const module = await WebAssembly.compile(bytes);
     // wasm-bindgen markers pulled in by dependencies (never called by the clock): stubbed.
     const imports: Record<string, Record<string, () => number>> = {};
-    for (const imp of WebAssembly.Module.imports(module))
-      (imports[imp.module] ??= {})[imp.name] = () => 0;
+    for (const imp of WebAssembly.Module.imports(module)) (imports[imp.module] ??= {})[imp.name] = () => 0;
     // oxlint-disable-next-line no-await-in-loop -- mesure chronométrée : chaque instanciation doit être isolée, sans recouvrement
     instance = await WebAssembly.instantiate(module, imports);
     compile.push(performance.now() - t0);
@@ -147,21 +135,14 @@ if (wasmPath) {
     const sprite = x.pet_resolve(b.length, t);
     if (sprite < 0) return null;
     const q = x.pet_buffer(0);
-    const track = dec.decode(
-      new Uint8Array(x.memory.buffer, q, x.pet_track_len()),
-    );
+    const track = dec.decode(new Uint8Array(x.memory.buffer, q, x.pet_track_len()));
     const delay = x.pet_delay();
     return { track, sprite, delay: delay < 0 ? null : delay };
   };
   let mismatches = 0;
   for (const [t, name, track, sprite, delay] of aphrody.ticks) {
     const r = step(name, t);
-    if (
-      (r?.track ?? null) !== track ||
-      (r?.sprite ?? null) !== sprite ||
-      (r?.delay ?? null) !== delay
-    )
-      mismatches++;
+    if ((r?.track ?? null) !== track || (r?.sprite ?? null) !== sprite || (r?.delay ?? null) !== delay) mismatches++;
   }
   report.optionA = {
     wasm: { ...sizes(raw), wasmOpt: optimised ? sizes(bytes) : null },

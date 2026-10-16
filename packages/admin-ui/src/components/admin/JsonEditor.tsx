@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, Check, Code2 } from "lucide-react";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../editor/PlainField";
 
 /**
  * Éditeur JSON visuel : textarea monospace avec validation `JSON.parse` live,
@@ -82,13 +82,7 @@ export function JsonEditor({
         >
           <Code2 className="h-3 w-3" /> Prettify
         </button>
-        <button
-          type="button"
-          onClick={minify}
-          disabled={!!error}
-          className="btn btn-ghost px-2"
-          title="Minify"
-        >
+        <button type="button" onClick={minify} disabled={!!error} className="btn btn-ghost px-2" title="Minify">
           Minify
         </button>
       </div>

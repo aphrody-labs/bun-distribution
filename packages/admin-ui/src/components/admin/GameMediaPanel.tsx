@@ -19,7 +19,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageField } from "@aphrody/admin-ui/components/admin/ImageField";
 import { apiAt } from "@aphrody/admin-ui/client";
-import { extractYoutubeId, youtubeEmbedUrl, youtubeThumbUrl } from "@/lib/youtube";
+import { extractYoutubeId, youtubeEmbedUrl, youtubeThumbUrl } from "../../lib/youtube";
 import { crudBase } from "@/lib/wiki-tables";
 
 export type GameMediaDraft = {

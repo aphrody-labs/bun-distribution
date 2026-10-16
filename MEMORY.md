@@ -1,4 +1,25 @@
-## Unified product stabilization — 2026-10-16
+## Current integration checkpoint — 2026-10-16
+
+The root declares 560 Bun members; Admin UI is the remaining physical
+declaration gap. Offline frozen installation passes. Both inventories cover
+545 physical entries. Showcase browser source bundling now passes after using
+the canonical M3 source APIs and staging the existing identity atlas. It reuses
+the existing desktop adapter; no second Rust shell is generated.
+
+Qualification remains incomplete: Showcase strict checking reports 568
+diagnostics in 90 files, including nested explorer dependencies and Material
+Web source; Admin UI reports 435 diagnostics after historical pure contracts
+were restored (previously 470). Historical source provenance is retained and
+license coverage is not inferred. Native declarations remain absent with the
+installed runtime despite four emitted M3 Next JavaScript outputs. Neither
+native desktop execution nor release publication is claimed.
+
+Showcase/API/product-input checks pass 17 tests and 110 assertions. Identity
+checks pass 16 tests and 131 assertions; staged atlas bytes match the canonical
+source and generated animation data is unchanged. Release publisher fixture
+checks pass 17 tests and 118 assertions; they do not prove real activation.
+
+## Earlier stabilization checkpoint — 2026-10-16
 
 RG UI and Shenron UI are admitted: 559 root members, leaving only Admin UI and
 M3 showcase as physical declaration gaps. RG UI source was behind its installed

@@ -12,7 +12,7 @@ import { Baguette, Chargement, Etincelle, LienExterne, Plus } from "@shenron/ui/
 import { apiAt } from "@aphrody/admin-ui/client";
 import { sectionKeyFromLabel } from "@/lib/wiki-fields";
 import { crudBase } from "@/lib/wiki-tables";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../editor/PlainField";
 
 interface RagHit {
   title: string;

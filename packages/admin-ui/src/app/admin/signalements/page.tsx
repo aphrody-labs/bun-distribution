@@ -11,7 +11,7 @@ import { Bulle, Chargement, Corbeille, Drapeau } from "@shenron/ui/icones";
 import Link from "next/link";
 import { useState } from "react";
 import { reportCategoryLabel, REPORT_STATUSES, reportStatusLabel, type ReportRow } from "@/lib/report-types";
-import { PlainField } from "@/components/editor/PlainField";
+import { PlainField } from "../../../components/editor/PlainField";
 
 type ReportsResponse = {
   ok: true;

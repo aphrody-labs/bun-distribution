@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState } from "react";
-import { CollectionReader, MangaReader, CaptionedReader, type ReaderCollectionEdition } from "@aphrody/m3-reader";
+import {
+  CollectionReader,
+  MangaReader,
+  CaptionedReader,
+  type ReaderCollectionEdition,
+} from "@aphrody/m3-reader/source";
 // oxlint-disable-next-line import/no-unassigned-import -- reader styles provide the portable reader layout and reduced-motion rules
 import "@aphrody/m3-reader/styles.css";
 import { Card, Page, Section } from "../components/ui.tsx";

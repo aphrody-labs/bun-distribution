@@ -17,7 +17,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { SmartField } from "@aphrody/admin-ui/components/admin/SmartField";
 import { api, apiAt } from "@aphrody/admin-ui/client";
 import { assetUrl } from "@/lib/assets";
-import { TABLE_LABELS, colLabel } from "@/lib/db-labels";
+import { TABLE_LABELS, colLabel } from "../../../../lib/db-labels";
 import { WIKI_TABLE_SPECS, crudBase, isWikiTable } from "@/lib/wiki-tables";
 import { buildSubmitBody, IMAGE_COL_RE, isImageColumn, isStudioTable } from "@/lib/wiki-fields";
 
