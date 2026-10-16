@@ -2,18 +2,6 @@
 	path = toolchains/bun
 	url = https://github.com/aphrody-labs/bun.git
 	shallow = true
-[submodule "packages/paths"]
-	path = packages/paths
-	url = bun-forge:aphrody-dev/bun-package-paths.git
-	branch = os
-[submodule "packages/ovh"]
-	path = packages/ovh
-	url = bun-forge:aphrody-dev/bun-package-ovh.git
-	branch = os
-[submodule "packages/kernel-client"]
-	path = packages/kernel-client
-	url = bun-forge:aphrody-dev/bun-package-kernel-client.git
-	branch = os
 [submodule "vendor/cachyos-pkgbuilds"]
 	path = vendor/cachyos-pkgbuilds
 	url = https://github.com/aphrody-labs/cachyos-pkgbuilds.git

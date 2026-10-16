@@ -1,0 +1,17 @@
+{
+  "sourceRepository": "https://github.com/aphrody-labs/aphrody",
+  "visibility": "private",
+  "sourceRevision": "3187d795e84ff88da67f53f12be1add715ad73b2",
+  "sourcePrefix": "packages/infra/paths",
+  "sourceTree": "47c035a1098a724f274b09908dd2275229ad65ac",
+  "projectedHistoryHead": "3d0d9664a76aad2202fef3c69b69d9279257a685",
+  "projectedHistoryMethod": "git subtree split",
+  "earlierPathHistoryQualified": false,
+  "license": {
+    "declared": "Apache-2.0",
+    "textSource": "aphrody-labs/material",
+    "textRevision": "e858361dfd2597b067eea56d471ff4caab7442f8",
+    "textGitBlob": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  }
+}

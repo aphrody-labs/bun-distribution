@@ -39,3 +39,5 @@ secrets.toml
 twitch_secrets.toml
 /target-*/
 /vendor/msys2-source-metadata/graph.json
+/.coord/
+/vendor/msys2-source-metadata/

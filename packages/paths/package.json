@@ -1,0 +1,36 @@
+{
+  "name": "@aphrody/paths",
+  "version": "1.4.4",
+  "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "LICENSE-APACHE",
+    "SOURCE.json"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build.ts",
+    "prepack": "bun run build",
+    "lint": "bun lint src test",
+    "test": "bun test test",
+    "typecheck": "bun check -p ../../tsconfig.json --threads=2 --no-pretty"
+  },
+  "devDependencies": {
+    "@aphrody/bun-workspace": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

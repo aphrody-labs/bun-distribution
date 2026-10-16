@@ -1,0 +1,17 @@
+{
+  "sourceRepository": "https://github.com/aphrody-labs/aphrody",
+  "visibility": "private",
+  "sourceRevision": "3187d795e84ff88da67f53f12be1add715ad73b2",
+  "sourcePrefix": "packages/os/kernel-client",
+  "sourceTree": "686db4dbf229eaa6e84ca05b42ff95f89a746f23",
+  "projectedHistoryHead": "16c5c37b586e2b23068724269347a88df3beafe0",
+  "projectedHistoryMethod": "git subtree split",
+  "earlierPathHistoryQualified": false,
+  "license": {
+    "declared": "Apache-2.0",
+    "textSource": "aphrody-labs/material",
+    "textRevision": "e858361dfd2597b067eea56d471ff4caab7442f8",
+    "textGitBlob": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  }
+}
