@@ -15,7 +15,7 @@
     "typecheck": "bun check --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/ui": "npm:@aphrody/rg-ui@1.0.4",
+    "@rosegriffon/ui": "catalog:",
     "lucide-react": "catalog:",
     "next-themes": "catalog:"
   },
@@ -34,7 +34,7 @@
     "react-dom": "catalog:"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   },
   "license": "Apache-2.0",
   "files": [

@@ -142,9 +142,16 @@ print(json.dumps(dict(doc=ast.get_docstring(tree, clean=False), items=items)))
 `;
 
 function pythonCommand(): string[] {
-  if (process.env.PYTHON) return [process.env.PYTHON];
-  if (process.platform === "win32") return ["uv", "run", "python"];
-  return ["python3"];
+  return [
+    process.execPath,
+    "uv",
+    "run",
+    "--no-project",
+    "--offline",
+    "--no-python-downloads",
+    ...(process.env.PYTHON ? ["--python", process.env.PYTHON] : []),
+    "python",
+  ];
 }
 
 async function pythonReference(text: string): Promise<string> {
@@ -154,13 +161,14 @@ async function pythonReference(text: string): Promise<string> {
     stdout: "pipe",
     stderr: "pipe",
   });
+  const deadline = setTimeout(() => child.kill(), 30_000);
   child.stdin.write(text);
   void child.stdin.end();
   const [stdout, error, code] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
     child.exited,
-  ]);
+  ]).finally(() => clearTimeout(deadline));
   if (code !== 0) throw new Error(`Python AST extraction failed: ${error.trim()}`);
   const parsed = JSON.parse(stdout) as {
     doc: string | null;

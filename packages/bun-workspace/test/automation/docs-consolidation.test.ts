@@ -74,7 +74,7 @@ test("local link resolution ignores external, site and anchor-only destinations"
   expect(resolveLocalLink("a.md", "../../outside.md")).toBeNull();
 });
 
-test("relative destinations keep anchors, query strings and the .// style", () => {
+test("relative destinations keep anchors, query strings and the ./ style", () => {
   expect(relativeDestination("docs/x/y.md", "docs/m3/z.md", "./z.md#top")).toBe("../m3/z.md#top");
   expect(relativeDestination("docs/m3/y.md", "docs/m3/z.md", "./z.md")).toBe("./z.md");
   expect(relativeDestination("docs/m3/y.md", "docs/m3/a b (1).md", "a.md")).toBe("a%20b%20%281%29.md");

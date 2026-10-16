@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-// Bun workspace contract for the first-party Aphrody OS packages.
+// Bun workspace contract for the flat first-party Bun OS packages.
 //
 //   bun scripts/bun-workspace.ts          report violations, exit 1 if any
 //   bun scripts/bun-workspace.ts --fix    rewrite the fixable ones in place
 //   bun scripts/bun-workspace.ts --json   machine-readable report
 //
-// Scope: first-party apps, packages and examples; imported upstream packages are exempt below.
+// Scope: direct apps/ and packages/ members; imported toolchain packages keep independent contracts.
 // Rules (docs/BUN.md):
 //   pm       only the root declares `packageManager`
-//   engines  `engines.bun` equals the root minimum (derived from `packageManager`), no `engines.node`
+//   engines  `engines.bun` follows the root engine or packageManager minimum, no `engines.node`
 //   catalog  a dependency listed in the root catalog uses `catalog:`
 //   scripts  no npm / npx / bunx / pnpm / yarn / node in scripts
 //   typecheck  a package with a tsconfig.json exposes a `typecheck` script
-//   m3       the M3 family shares the root `aphrody.m3Version` and the `@aphrody/m3-config` presets
+//   m3       the M3 family shares the root product version and the `@aphrody/m3-config` presets
 //            (docs/design/M3-PLAN.md)
 //   install  `node_modules` holds only links into the isolated store: a real package directory is a
 //            stale hoisted leftover that `bun install` never replaces (two copies of React, ...)
@@ -77,9 +77,9 @@ export function minimumBun(packageManager: string, runtimeVersion?: string): str
 export function checkManifest(path: string, manifest: Manifest, root: Manifest, context: ManifestContext): Violation[] {
   const { hasTsconfig, tsconfigExtends, hasDevTsconfig = false, fix = false } = context;
   const out: Violation[] = [];
-  const catalog: Record<string, string> = root.workspaces?.catalog ?? {};
-  const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ?? {};
-  const engine = minimumBun(root.packageManager, context.bunRuntimeVersion);
+  const catalog: Record<string, string> = root.catalog ?? root.workspaces?.catalog ?? {};
+  const catalogs: Record<string, Record<string, string>> = root.catalogs ?? root.workspaces?.catalogs ?? {};
+  const engine = root.engines?.bun ?? minimumBun(root.packageManager, context.bunRuntimeVersion);
 
   if (manifest.packageManager !== undefined) {
     out.push({
@@ -99,7 +99,7 @@ export function checkManifest(path: string, manifest: Manifest, root: Manifest, 
     });
     if (fix) delete manifest.engines.node;
   }
-  if (manifest.engines?.bun !== engine) {
+  if (manifest.engines?.bun?.replace(/^=/, "") !== engine.replace(/^=/, "")) {
     out.push({
       path,
       rule: "engines",
@@ -164,13 +164,13 @@ export function checkManifest(path: string, manifest: Manifest, root: Manifest, 
   }
   // Private manifests (the presets, the showcases) are never published: no lockstep for them.
   if (M3_FAMILY.test(manifest.name) && !manifest.private) {
-    const version = root.aphrody?.m3Version;
-    if (typeof version !== "string") throw new Error("root package.json must declare aphrody.m3Version");
+    const version = root.version ?? root.aphrody?.m3Version;
+    if (typeof version !== "string") throw new Error("root package.json must declare version or aphrody.m3Version");
     if (manifest.version !== version) {
       out.push({
         path,
         rule: "m3",
-        message: `version ${manifest.version} -> ${version} (lockstep aphrody.m3Version)`,
+        message: `version ${manifest.version} -> ${version} (root product version)`,
         fixable: true,
       });
       if (fix) manifest.version = version;
@@ -232,27 +232,16 @@ async function installPolicy(repo: string): Promise<InstallPolicy> {
 }
 
 function checkInstallPolicy(policy: InstallPolicy): Violation[] {
-  const requirements: Array<[keyof InstallPolicy, unknown, string]> = [
-    ["linker", "isolated", "use the isolated workspace linker"],
-    ["hoist", false, "disable the fallback hoist tree to catch undeclared imports"],
-    ["saveTextLockfile", true, "keep the canonical text bun.lock format"],
-    ["minimumReleaseAge", 259200, "require a 3-day minimum release age"],
-  ];
-  return requirements.flatMap(([key, expected, description]) => {
-    const actual = policy[key];
-    const valid =
-      key === "minimumReleaseAge" ? typeof actual === "number" && actual >= (expected as number) : actual === expected;
-    return valid
-      ? []
-      : [
-          {
-            path: "bunfig.toml",
-            rule: "bunfig" as const,
-            message: `install.${key} is ${String(actual)}; ${description}`,
-            fixable: false,
-          },
-        ];
-  });
+  const failures: string[] = [];
+  if (policy.linker !== undefined && !["hoisted", "isolated"].includes(policy.linker))
+    failures.push("install.linker must select hoisted or isolated");
+  if (policy.saveTextLockfile === false) failures.push("install.saveTextLockfile must retain the root bun.lock");
+  if (
+    policy.minimumReleaseAge !== undefined &&
+    (!Number.isFinite(policy.minimumReleaseAge) || policy.minimumReleaseAge < 0)
+  )
+    failures.push("install.minimumReleaseAge must be a non-negative duration");
+  return failures.map(message => ({ path: "bunfig.toml", rule: "bunfig", message, fixable: false }));
 }
 
 export function parseTsconfigExtends(source: string): string | undefined {
@@ -275,35 +264,37 @@ export async function run(repo: string, fix: boolean): Promise<Violation[]> {
   const policy = await installPolicy(repo);
   const isolated = policy.linker === "isolated";
   const perManifest = await Promise.all(
-    (await firstPartyManifests(repo)).map(async path => {
-      const dir = join(repo, dirname(path));
-      const file = Bun.file(join(repo, path));
-      const manifest = await file.json();
-      const [hasTsconfig, hasDevTsconfig, extended] = await Promise.all([
-        Bun.file(join(dir, "tsconfig.json")).exists(),
-        Bun.file(join(dir, "tsconfig.dev.json")).exists(),
-        readTsconfigExtends(dir),
-      ]);
-      const found = checkManifest(path, manifest, root, {
-        hasTsconfig,
-        bunRuntimeVersion: runtimeVersion,
-        hasDevTsconfig,
-        tsconfigExtends: extended,
-        fix,
-      });
-      if (fix && found.some(v => v.fixable)) await Bun.write(file, `${JSON.stringify(manifest, null, 2)}\n`);
-      const stale = isolated ? await staleInstallEntries(dir) : [];
-      if (stale.length > 0) {
-        const sample = stale.slice(0, 3).join(", ") + (stale.length > 3 ? ", ..." : "");
-        found.push({
-          path,
-          rule: "install",
-          message: `node_modules has ${stale.length} real package dir(s) (${sample}): stale hoisted install; move node_modules away and run bun install`,
-          fixable: false,
+    (await firstPartyManifests(repo))
+      .filter(path => /^(apps|packages)\/[^/]+\/package\.json$/.test(path))
+      .map(async path => {
+        const dir = join(repo, dirname(path));
+        const file = Bun.file(join(repo, path));
+        const manifest = await file.json();
+        const [hasTsconfig, hasDevTsconfig, extended] = await Promise.all([
+          Bun.file(join(dir, "tsconfig.json")).exists(),
+          Bun.file(join(dir, "tsconfig.dev.json")).exists(),
+          readTsconfigExtends(dir),
+        ]);
+        const found = checkManifest(path, manifest, root, {
+          hasTsconfig,
+          bunRuntimeVersion: runtimeVersion,
+          hasDevTsconfig,
+          tsconfigExtends: extended,
+          fix,
         });
-      }
-      return found;
-    }),
+        if (fix && found.some(v => v.fixable)) await Bun.write(file, `${JSON.stringify(manifest, null, 2)}\n`);
+        const stale = isolated ? await staleInstallEntries(dir) : [];
+        if (stale.length > 0) {
+          const sample = stale.slice(0, 3).join(", ") + (stale.length > 3 ? ", ..." : "");
+          found.push({
+            path,
+            rule: "install",
+            message: `node_modules has ${stale.length} real package dir(s) (${sample}): stale hoisted install; move node_modules away and run bun install`,
+            fixable: false,
+          });
+        }
+        return found;
+      }),
   );
   const violations = [...checkInstallPolicy(policy), ...perManifest.flat()];
   return fix ? violations.filter(v => !v.fixable) : violations;

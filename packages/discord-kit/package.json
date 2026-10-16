@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@aphrody/bun": "workspace:*",
-    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/runtime-sdk": "catalog:",
     "@discordjs/rest": "catalog:",
     "discord-api-types": "catalog:",
     "discord.js": "catalog:",
@@ -63,6 +63,6 @@
     "@aphrody/bun-types": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

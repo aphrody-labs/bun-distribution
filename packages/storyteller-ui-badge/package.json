@@ -18,5 +18,8 @@
     "typecheck": "bun check -p tsconfig.lib.json --threads=2 --no-pretty",
     "lint": "bun lint src",
     "format": "bun fmt --write -c ../../../../../../bun-format.json src"
+  },
+  "engines": {
+    "bun": "=1.4.4"
   }
 }

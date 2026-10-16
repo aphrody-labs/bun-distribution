@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-next",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node; from @aphrody/next-bun).",
   "keywords": [
     "material-3",
@@ -66,7 +66,7 @@
     "@aphrody/m3-tailwind": "workspace:*",
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
-    "@aphrody/next-bun": "0.2.0-aphrody.1"
+    "@aphrody/next-bun": "catalog:"
   },
   "devDependencies": {
     "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
@@ -89,6 +89,6 @@
     }
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

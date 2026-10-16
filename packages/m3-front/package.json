@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-front",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -42,6 +42,6 @@
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

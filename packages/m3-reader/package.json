@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-reader",
-  "version": "3.3.12",
+  "version": "1.4.4",
   "description": "Material 3 manga and illustrated book readers for React",
   "license": "Apache-2.0",
   "files": [
@@ -40,9 +40,9 @@
     "typecheck:fast": "bun check --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "3.14.13",
-    "lucide-react": "1.49.0",
-    "swiper": "14.3.0"
+    "@tanstack/react-virtual": "catalog:",
+    "lucide-react": "catalog:",
+    "swiper": "catalog:"
   },
   "devDependencies": {
     "@aphrody/m3-config": "3.3.11"
@@ -53,6 +53,6 @@
     "tailwindcss": ">=4.1.0"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

@@ -24,6 +24,6 @@
     "test": "bun ../../scripts/cargo.ts exec -- test --locked -p tauri-plugin-aphrody"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

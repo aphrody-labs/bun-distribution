@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-os-themes",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -41,6 +41,6 @@
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

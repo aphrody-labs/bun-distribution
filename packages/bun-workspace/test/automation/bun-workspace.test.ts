@@ -86,6 +86,27 @@ describe("bun workspace contract", () => {
     ).toEqual([]);
   });
 
+  test("Bun OS root catalogs, exact engines and product version are authoritative", () => {
+    expect(
+      checkManifest(
+        "packages/m3/package.json",
+        {
+          name: "@aphrody/m3",
+          version: "1.4.4",
+          engines: { bun: "1.4.4" },
+          dependencies: { zod: "catalog:" },
+        },
+        {
+          version: "1.4.4",
+          packageManager: "bun@1.4.4",
+          engines: { bun: "=1.4.4" },
+          catalog: { zod: "^4.6.4" },
+        },
+        { hasTsconfig: false },
+      ),
+    ).toEqual([]);
+  });
+
   test("every rule fires and --fix repairs the fixable ones", () => {
     const manifest: Record<string, any> = {
       name: "@aphrody/os",

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-bun",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
   "keywords": [
     "bun",
@@ -96,9 +96,9 @@
     "@aphrody/m3-mcp": "workspace:*",
     "@aphrody/m3-next": "workspace:*",
     "@aphrody/m3-next-migrate": "workspace:*",
-    "@aphrody/next-bun": "0.2.0-aphrody.2",
+    "@aphrody/next-bun": "catalog:",
     "@aphrody/web-inspector-bun": "1.4.3-aphrody.1",
-    "oxlint": "1.87.0"
+    "oxlint": "catalog:"
   },
   "peerDependencies": {
     "@aphrody/bun-debug-adapter-protocol": "0.0.1-aphrody.1",
@@ -169,6 +169,6 @@
     }
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

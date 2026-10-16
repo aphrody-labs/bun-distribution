@@ -3,5 +3,8 @@
   "version": "1.4.4",
   "private": true,
   "license": "MIT",
-  "description": "Replica skill pack consumed by @aphrody/bun-engine"
+  "description": "Replica skill pack consumed by @aphrody/bun-engine",
+  "engines": {
+    "bun": "=1.4.4"
+  }
 }

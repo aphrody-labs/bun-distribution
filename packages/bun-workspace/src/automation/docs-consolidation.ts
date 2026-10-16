@@ -496,7 +496,7 @@ function encodeDestination(path: string): string {
 /** Destination text for `target` written from `fromFile`, keeping the original query/anchor and `./` style. */
 export function relativeDestination(fromFile: string, target: string, original: string): string {
   let destination = posix.relative(posix.dirname(fromFile), target) || ".";
-  if (original.startsWith(".//") && !destination.startsWith(".")) destination = `./${destination}`;
+  if (original.startsWith("./") && !destination.startsWith(".")) destination = `./${destination}`;
   const suffix = /[?#].*$/.exec(original)?.[0] ?? "";
   return `${encodeDestination(destination)}${suffix}`;
 }

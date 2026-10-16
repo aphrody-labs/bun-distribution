@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-fonts",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
   "keywords": [
     "aphrody",
@@ -42,6 +42,6 @@
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

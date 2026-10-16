@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-design",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Automated design engine for Material Design 3 and Google Design",
   "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-design#readme",
   "bugs": {
@@ -36,6 +36,6 @@
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

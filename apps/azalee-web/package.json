@@ -16,7 +16,8 @@
     "create-draft": "bun scripts/create-draft.ts",
     "backup:supabase": "bun scripts/ops/backup-supabase-to-sqlite.ts",
     "sync:supabase": "bun scripts/ops/sync-supabase-to-sqlite.ts",
-    "sync:full": "bun scripts/ops/sync-supabase-to-sqlite.ts --full --deletes"
+    "sync:full": "bun scripts/ops/sync-supabase-to-sqlite.ts --full --deletes",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@better-auth/agent-auth": "catalog:",
@@ -144,6 +145,6 @@
     "defaults and supports es6-module"
   ],
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

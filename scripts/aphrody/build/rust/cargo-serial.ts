@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Serialized Cargo for native Windows, the twin of cargo-serial.sh.
+ * Cargo adapter for the canonical Bun OS build owner.
  *
- * Heavy compilation waits on the shared `Local\AphrodyCargoBuild` kernel mutex (kernel32 through bun:ffi) and runs
- * with bounded rustc fan-out; fetch, metadata and lockfile commands rely on Cargo's own package-cache lock.
+ * Heavy compilation uses the root Workspace admission, process lifetime, toolchain and output policy.
+ * Fetch, metadata and lockfile commands rely on Cargo's own package-cache lock.
  * `--msvc` selects the native Windows build context: the newest Visual Studio MSVC x64 developer environment
  * (vswhere + VsDevCmd, captured without a console), build output off the checkout, native sccache and the private
- * Git SSH alias mapped to HTTPS. Elsewhere the Bash/flock wrapper owns serialization and this entry delegates to it.
+ * Git SSH alias mapped to HTTPS. Qualified Unix hosts use the same owner with native flock admission.
  *
  * Usage: bun scripts/build/rust/cargo-serial.ts [--msvc] <cargo arguments...>
  */
@@ -38,30 +38,22 @@ const HEAVY = new Set([
   "zigbuild",
 ]);
 /** Cargo global options that consume the following argument. */
-const VALUED_GLOBALS = new Set([
-  "--config",
-  "-Z",
-  "-C",
-  "--color",
-  "--explain",
-]);
-const MUTEX_NAME = "Local\\AphrodyCargoBuild";
-const sourceRoot = resolve(import.meta.dir, "../../../../docs/aphrody");
+const VALUED_GLOBALS = new Set(["--config", "-Z", "-C", "--color", "--explain"]);
+const sourceRoot = resolve(import.meta.dir, "../../../..");
 
 type Env = Record<string, string | undefined>;
+
+function environmentPath(env: Env): string {
+  return Object.entries(env).find(([key]) => key.toUpperCase() === "PATH")?.[1] ?? "";
+}
 
 export class UsageError extends Error {}
 
 /** Route only sccache through the Windows response-file adapter; preserve deliberate wrappers. */
-export function routeSccacheWrapper(
-  wrapper: string | undefined,
-  router: string,
-): string | undefined {
+export function routeSccacheWrapper(wrapper: string | undefined, router: string): string | undefined {
   if (!wrapper) return wrapper;
   const executable = wrapper.split(/[\\/]/).pop()?.toLowerCase();
-  return executable === "sccache" || executable === "sccache.exe"
-    ? router
-    : wrapper;
+  return executable === "sccache" || executable === "sccache.exe" ? router : wrapper;
 }
 
 /** The Cargo subcommand, skipping a `+toolchain` selector and global options. */
@@ -101,97 +93,67 @@ export interface CargoPlan {
 }
 
 /** Validate arguments and derive the Cargo environment; throws UsageError on a contract violation. */
-export function planCargo(
-  args: readonly string[],
-  msvc: boolean,
-  env: Env,
-): CargoPlan {
-  if (!args.length)
-    throw new UsageError(
-      "usage: cargo-serial.ts [--msvc] <cargo arguments...>",
-    );
+export function planCargo(args: readonly string[], msvc: boolean, env: Env): CargoPlan {
+  if (!args.length) throw new UsageError("usage: cargo-serial.ts [--msvc] <cargo arguments...>");
   const command = cargoSubcommand(args);
   const heavy = command !== undefined && HEAVY.has(command);
   const helpOnly = args.includes("--help") || args.includes("-h");
-  if (args.some((arg) => /^(-j\d*|--jobs(=.*)?)$/.test(arg)))
-    throw new UsageError(
-      "Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..1024 instead",
-    );
-  const jobsText =
-    env.APHRODY_CARGO_JOBS ?? (msvc ? (env.CARGO_BUILD_JOBS ?? "4") : "6");
+  if (args.some(arg => /^(-j\d*|--jobs(=.*)?)$/.test(arg)))
+    throw new UsageError("Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..1024 instead");
+  const jobsText = env.APHRODY_CARGO_JOBS ?? "1";
   if (!/^[1-9][0-9]{0,3}$/.test(jobsText) || Number(jobsText) > 1024)
-    throw new UsageError(
-      "APHRODY_CARGO_JOBS must be an integer from 1 through 1024",
-    );
+    throw new UsageError("APHRODY_CARGO_JOBS must be an integer from 1 through 1024");
   const waitText = env.APHRODY_CARGO_LOCK_TIMEOUT_SECS ?? "1800";
-  if (!/^\d+$/.test(waitText))
-    throw new UsageError("APHRODY_CARGO_LOCK_TIMEOUT_SECS must be an integer");
+  if (!/^\d+$/.test(waitText)) throw new UsageError("APHRODY_CARGO_LOCK_TIMEOUT_SECS must be an integer");
   const next: Env = { ...env };
   if (env.APHRODY_CARGO_TARGET_DIR) {
     if (!isAbsolute(env.APHRODY_CARGO_TARGET_DIR))
       throw new UsageError("APHRODY_CARGO_TARGET_DIR must be an absolute path");
-    if (
-      args.some(
-        (arg) => arg === "--target-dir" || arg.startsWith("--target-dir="),
-      )
-    )
-      throw new UsageError(
-        "Do not mix APHRODY_CARGO_TARGET_DIR with --target-dir",
-      );
+    if (args.some(arg => arg === "--target-dir" || arg.startsWith("--target-dir=")))
+      throw new UsageError("Do not mix APHRODY_CARGO_TARGET_DIR with --target-dir");
     next.CARGO_TARGET_DIR = env.APHRODY_CARGO_TARGET_DIR;
   }
   if (
     env.RUSTC_WRAPPER &&
     !existsSync(env.RUSTC_WRAPPER) &&
-    !Bun.which(env.RUSTC_WRAPPER, { PATH: env.PATH ?? "" })
+    !Bun.which(env.RUSTC_WRAPPER, { PATH: environmentPath(env) })
   )
-    throw new UsageError(
-      `RUSTC_WRAPPER is not available on this host: ${env.RUSTC_WRAPPER}`,
-    );
+    throw new UsageError(`RUSTC_WRAPPER is not available on this host: ${env.RUSTC_WRAPPER}`);
   // Preserve the operator's wrapper, including an explicit deliberate opt-out (empty value).
   if (env.RUSTC_WRAPPER === undefined) {
-    const sccache = Bun.which("sccache", { PATH: env.PATH ?? "" });
+    const sccache = Bun.which("sccache", { PATH: environmentPath(env) });
     if (sccache) next.RUSTC_WRAPPER = sccache;
   }
   if (process.platform === "win32" && env.USERPROFILE) {
     const router =
-      env.APHRODY_RUSTC_WRAPPER_ROUTER ??
-      join(env.USERPROFILE, ".cargo", "bin", "aphrody-rustc-router.exe");
+      env.APHRODY_RUSTC_WRAPPER_ROUTER ?? join(env.USERPROFILE, ".cargo", "bin", "aphrody-rustc-router.exe");
     if (existsSync(router)) {
       const cargoWrapper = next.CARGO_BUILD_RUSTC_WRAPPER;
       const rustcWrapper = next.RUSTC_WRAPPER;
       const routedCargoWrapper = routeSccacheWrapper(cargoWrapper, router);
       const routedRustcWrapper = routeSccacheWrapper(rustcWrapper, router);
-      if (routedCargoWrapper !== cargoWrapper)
-        next.CARGO_BUILD_RUSTC_WRAPPER = routedCargoWrapper;
-      if (routedRustcWrapper !== rustcWrapper)
-        next.RUSTC_WRAPPER = routedRustcWrapper;
+      if (routedCargoWrapper !== cargoWrapper) next.CARGO_BUILD_RUSTC_WRAPPER = routedCargoWrapper;
+      if (routedRustcWrapper !== rustcWrapper) next.RUSTC_WRAPPER = routedRustcWrapper;
 
       // Cargo's RUSTC_WRAPPER environment override wins when both variables are set.
       const selected = rustcWrapper !== undefined ? rustcWrapper : cargoWrapper;
-      if (
-        selected !== undefined &&
-        routeSccacheWrapper(selected, router) !== selected
-      ) {
+      if (selected !== undefined && routeSccacheWrapper(selected, router) !== selected) {
         next.APHRODY_SCCACHE_EXE =
           (isAbsolute(selected) && existsSync(selected)
             ? selected
-            : Bun.which(selected, { PATH: next.PATH ?? "" })) ?? selected;
+            : Bun.which(selected, { PATH: environmentPath(next) })) ?? selected;
       }
     }
   }
   if (msvc) {
-    if (!next.CARGO_TARGET_DIR && env.LOCALAPPDATA)
-      next.CARGO_TARGET_DIR = join(env.LOCALAPPDATA, "aphrody", "target");
+    next.CARGO_TARGET_DIR ??= join(sourceRoot, "target");
     if (next.CARGO_BUILD_RUSTC_WRAPPER === undefined && next.RUSTC_WRAPPER)
       next.CARGO_BUILD_RUSTC_WRAPPER = next.RUSTC_WRAPPER;
     next.SCCACHE_SERVER_PORT ??= "4227";
     next.CARGO_NET_GIT_FETCH_WITH_CLI = "true";
     next.GIT_TERMINAL_PROMPT = "0";
     // Append to any inherited process-local Git configuration instead of replacing it.
-    const count = /^\d+$/.test(env.GIT_CONFIG_COUNT ?? "")
-      ? Number(env.GIT_CONFIG_COUNT)
-      : 0;
+    const count = /^\d+$/.test(env.GIT_CONFIG_COUNT ?? "") ? Number(env.GIT_CONFIG_COUNT) : 0;
     next[`GIT_CONFIG_KEY_${count}`] = "url.https://github.com/.insteadOf";
     next[`GIT_CONFIG_VALUE_${count}`] = "ssh://git@github-dev/";
     next.GIT_CONFIG_COUNT = String(count + 1);
@@ -215,27 +177,15 @@ export function planCargo(
 }
 
 /** Call after acquiring the host's mutex, immediately before starting Cargo. */
-export function admitCargoJobs(
-  plan: CargoPlan,
-  cpus = availableParallelism(),
-): void {
+export function admitCargoJobs(plan: CargoPlan, cpus = availableParallelism()): void {
   if (!Number.isSafeInteger(cpus) || cpus < 1 || plan.jobs > cpus)
-    throw new UsageError(
-      "Cargo jobs exceed the executing host's available CPUs",
-    );
+    throw new UsageError("Cargo jobs exceed the executing host's available CPUs");
 }
 
 /** The Workspace build-factory owner decides whether heavy Cargo belongs to the factory. */
 function factoryRoute(env: Env): "factory" | "local" {
-  const owner = join(
-    sourceRoot,
-    "packages/bun-workspace/src/automation/build-factory.ts",
-  );
-  if (
-    !existsSync(join(sourceRoot, "tools/config/build-factory.json")) ||
-    !existsSync(owner)
-  )
-    return "local";
+  const owner = join(sourceRoot, "packages/bun-workspace/src/automation/build-factory.ts");
+  if (!existsSync(join(sourceRoot, "tools/aphrody/config/build-factory.json")) || !existsSync(owner)) return "local";
   const result = Bun.spawnSync([process.execPath, owner, "status", "--route"], {
     cwd: sourceRoot,
     env,
@@ -243,25 +193,16 @@ function factoryRoute(env: Env): "factory" | "local" {
     stderr: "inherit",
     windowsHide: true,
   });
-  if (result.exitCode !== 0)
-    throw new Error("build-factory status --route failed");
+  if (result.exitCode !== 0) throw new Error("build-factory status --route failed");
   return result.stdout.toString().trim() === "factory" ? "factory" : "local";
 }
 
 /** Environment of the newest Visual Studio installation carrying the MSVC x64 tools. */
 function msvcEnvironment(env: Env): Env {
-  const programFiles =
-    env["ProgramFiles(x86)"] ?? env.ProgramFiles ?? "C:\\Program Files (x86)";
-  const vswhere = join(
-    programFiles,
-    "Microsoft Visual Studio",
-    "Installer",
-    "vswhere.exe",
-  );
+  const programFiles = env["ProgramFiles(x86)"] ?? env.ProgramFiles ?? "C:\\Program Files (x86)";
+  const vswhere = join(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
   if (!existsSync(vswhere))
-    throw new UsageError(
-      "vswhere.exe not found: install Visual Studio Build Tools (yolo ops system-packages --host windows apply).",
-    );
+    throw new UsageError("vswhere.exe not found: install Visual Studio Build Tools through Bun OS system-packages.");
   const query = (all: boolean) =>
     Bun.spawnSync(
       [
@@ -280,13 +221,9 @@ function msvcEnvironment(env: Env): Env {
       .stdout.toString()
       .trim();
   const install = query(false) || query(true);
-  if (!install)
-    throw new UsageError(
-      "No Visual Studio installation with the MSVC x64 tools was found.",
-    );
+  if (!install) throw new UsageError("No Visual Studio installation with the MSVC x64 tools was found.");
   const devCmd = join(install, "Common7", "Tools", "VsDevCmd.bat");
-  if (!existsSync(devCmd))
-    throw new UsageError(`VsDevCmd.bat missing: ${devCmd}`);
+  if (!existsSync(devCmd)) throw new UsageError(`VsDevCmd.bat missing: ${devCmd}`);
   // A batch file avoids cmd.exe quoting rules; `set` then prints the resulting environment.
   const dir = mkdtempSync(join(tmpdir(), "aphrody-msvc-"));
   try {
@@ -295,27 +232,21 @@ function msvcEnvironment(env: Env): Env {
       script,
       `@echo off\r\nchcp 65001 >nul\r\ncall "${devCmd}" -arch=amd64 -host_arch=amd64 -no_logo >nul 2>&1\r\nif errorlevel 1 exit /b 1\r\nset\r\n`,
     );
-    const result = Bun.spawnSync(
-      [env.ComSpec ?? "cmd.exe", "/d", "/c", script],
-      {
-        cwd: env.SystemDrive ? `${env.SystemDrive}\\` : undefined,
-        env,
-        stdout: "pipe",
-        stderr: "pipe",
-        windowsHide: true,
-      },
-    );
+    const result = Bun.spawnSync([env.ComSpec ?? "cmd.exe", "/d", "/c", script], {
+      cwd: env.SystemDrive ? `${env.SystemDrive}\\` : undefined,
+      env,
+      stdout: "pipe",
+      stderr: "pipe",
+      windowsHide: true,
+    });
     if (result.exitCode !== 0)
-      throw new UsageError(
-        `VsDevCmd.bat failed (${result.exitCode}): ${result.stderr.toString()}`,
-      );
+      throw new UsageError(`VsDevCmd.bat failed (${result.exitCode}): ${result.stderr.toString()}`);
     const captured: Env = {};
     for (const line of result.stdout.toString().split(/\r?\n/)) {
       const equals = line.indexOf("=", 1);
       if (equals > 0) captured[line.slice(0, equals)] = line.slice(equals + 1);
     }
-    if (!captured.VCToolsInstallDir)
-      throw new UsageError("VsDevCmd.bat did not provide the MSVC environment");
+    if (!captured.VCToolsInstallDir) throw new UsageError("VsDevCmd.bat did not provide the MSVC environment");
     return captured;
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -324,9 +255,7 @@ function msvcEnvironment(env: Env): Env {
 
 /** Windows environment variable names are case-insensitive: merge on the canonical existing key. */
 function mergeEnv(base: Env, overlay: Env): Env {
-  const keys = new Map(
-    Object.keys(base).map((key) => [key.toUpperCase(), key]),
-  );
+  const keys = new Map(Object.keys(base).map(key => [key.toUpperCase(), key]));
   const merged: Env = { ...base };
   for (const [key, value] of Object.entries(overlay)) {
     const existing = keys.get(key.toUpperCase());
@@ -336,100 +265,16 @@ function mergeEnv(base: Env, overlay: Env): Env {
   return merged;
 }
 
-/** Hold the shared Windows Cargo mutex for the duration of `body`. */
-async function withWindowsMutex<T>(
-  waitSeconds: number,
-  body: () => Promise<T>,
-): Promise<T> {
-  const { dlopen, FFIType, ptr } = await import("bun:ffi");
-  const kernel32 = dlopen("kernel32.dll", {
-    CreateMutexW: {
-      args: [FFIType.ptr, FFIType.i32, FFIType.ptr],
-      returns: FFIType.ptr,
-    },
-    WaitForSingleObject: {
-      args: [FFIType.ptr, FFIType.u32],
-      returns: FFIType.u32,
-    },
-    ReleaseMutex: { args: [FFIType.ptr], returns: FFIType.i32 },
-    CloseHandle: { args: [FFIType.ptr], returns: FFIType.i32 },
-  });
-  const name = Buffer.from(`${MUTEX_NAME}\0`, "utf16le");
-  const handle = kernel32.symbols.CreateMutexW(null, 0, ptr(name));
-  if (!handle) throw new Error(`CreateMutexW(${MUTEX_NAME}) failed`);
-  const WAIT_OBJECT_0 = 0;
-  const WAIT_ABANDONED = 0x80;
-  const WAIT_TIMEOUT = 0x102;
-  try {
-    let state = kernel32.symbols.WaitForSingleObject(handle, 0);
-    if (state === WAIT_TIMEOUT) {
-      console.error(
-        `[cargo-serial] waiting for ${MUTEX_NAME} (timeout=${waitSeconds}s)`,
-      );
-      state = kernel32.symbols.WaitForSingleObject(
-        handle,
-        Math.min(waitSeconds * 1000, 0xfffffffe),
-      );
-    }
-    // An abandoned mutex (holder killed) is acquired by this waiter.
-    if (state !== WAIT_OBJECT_0 && state !== WAIT_ABANDONED) {
-      throw new Error(
-        state === WAIT_TIMEOUT
-          ? "Timed out waiting for the shared Windows Cargo build lock."
-          : `WaitForSingleObject(${MUTEX_NAME}) failed: ${state}`,
-      );
-    }
-    try {
-      return await body();
-    } finally {
-      kernel32.symbols.ReleaseMutex(handle);
-    }
-  } finally {
-    kernel32.symbols.CloseHandle(handle);
-    kernel32.close();
-  }
-}
-
-async function runCargo(args: readonly string[], env: Env): Promise<number> {
-  const cargo =
-    Bun.which("cargo", { PATH: env.PATH ?? env.Path ?? "" }) ?? "cargo";
-  const child = Bun.spawn([cargo, ...args], {
-    env,
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-    windowsHide: true,
-  });
-  return (await child.exited) ?? 1;
-}
-
-export async function main(
-  argv: readonly string[],
-  baseEnv: Env = process.env,
-): Promise<number> {
+export async function main(argv: readonly string[], baseEnv: Env = process.env): Promise<number> {
   const msvc = argv[0] === "--msvc";
   const args = msvc ? argv.slice(1) : [...argv];
-  if (process.platform !== "win32") {
-    if (msvc)
-      throw new UsageError("--msvc selects the native Windows MSVC context");
-    const child = Bun.spawn(
-      ["bash", join(import.meta.dir, "cargo-serial.sh"), ...args],
-      {
-        stdio: ["inherit", "inherit", "inherit"],
-      },
-    );
-    return await child.exited;
-  }
+  if (process.platform !== "win32" && msvc) throw new UsageError("--msvc selects the native Windows MSVC context");
   let env: Env = { ...baseEnv };
   if (msvc) {
     env = mergeEnv(env, msvcEnvironment(env));
     const cargoBin = join(env.USERPROFILE ?? "", ".cargo", "bin");
-    const pathKey =
-      Object.keys(env).find((key) => key.toUpperCase() === "PATH") ?? "PATH";
-    if (
-      env.USERPROFILE &&
-      !(env[pathKey] ?? "").toLowerCase().includes(cargoBin.toLowerCase())
-    )
+    const pathKey = Object.keys(env).find(key => key.toUpperCase() === "PATH") ?? "PATH";
+    if (env.USERPROFILE && !(env[pathKey] ?? "").toLowerCase().includes(cargoBin.toLowerCase()))
       env[pathKey] = `${env[pathKey] ?? ""};${cargoBin}`;
     if (pathKey !== "PATH") {
       env.PATH = env[pathKey];
@@ -437,9 +282,9 @@ export async function main(
     }
   }
   const plan = planCargo(args, msvc, env);
-  if (!plan.heavy) return runCargo(args, plan.env);
   // Native Windows builds selected with --msvc are an explicit build context; plain heavy Cargo honours the factory.
   if (
+    plan.heavy &&
     !msvc &&
     !plan.helpOnly &&
     env.APHRODY_BUILD_HOST !== "vps" &&
@@ -451,15 +296,21 @@ export async function main(
     console.error(
       "Heavy Cargo belongs to the build factory. Exact worktree state: bun scripts/build/rust/vps-cargo.ts run -- <arguments>; native Windows build context: bun scripts/build/rust/cargo-serial.ts --msvc <arguments>.",
     );
-    console.error(
-      "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.",
-    );
+    console.error("APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.");
     return 64;
   }
-  return withWindowsMutex(plan.waitSeconds, () => {
-    admitCargoJobs(plan);
-    return runCargo(args, plan.env);
+  const { loadConfig, runNativeResult } = await import("@aphrody/bun-workspace");
+  const cargo = Bun.which("cargo", { PATH: environmentPath(plan.env) });
+  if (!cargo) throw new UsageError("Native Cargo is missing from the selected build context.");
+  const result = await runNativeResult(await loadConfig(sourceRoot), [cargo, ...args], {
+    root: sourceRoot,
+    cwd: process.cwd(),
+    env: plan.env,
+    serialize: plan.heavy && !plan.helpOnly,
+    runtimePolicy: "development",
+    timeoutMs: 1_800_000,
   });
+  return result.code;
 }
 
 if (import.meta.main) {

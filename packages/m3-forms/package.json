@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-forms",
-  "version": "1.4.5",
+  "version": "1.4.4",
   "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
   "keywords": [
     "material-3",
@@ -53,6 +53,6 @@
     "tailwindcss": ">=4.1.0"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

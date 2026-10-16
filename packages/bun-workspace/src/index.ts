@@ -985,7 +985,7 @@ export async function inspectCargoWorkspace(
   const pinnedCrates = new Map<string, string>();
   for (const line of gitlinks.stdout.split("\n")) {
     const match = /^160000 ([0-9a-f]{40}) 0\t(crates\/[^/]+)$/.exec(line.trim());
-    if (match) pinnedCrates.set(match[2], match[1]);
+    if (match?.[1] && match[2]) pinnedCrates.set(match[2], match[1]);
   }
   const packageNames: string[] = [];
   for (const entry of value.packages) {

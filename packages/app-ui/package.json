@@ -106,7 +106,7 @@
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*",
     "@aphrody/product": "workspace:*",
-    "@types/bun": "npm:@aphrody/bun-types@1.4.4",
+    "@types/bun": "catalog:",
     "@types/d3": "catalog:",
     "@types/prismjs": "catalog:",
     "@types/react": "catalog:",
@@ -116,6 +116,6 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "bun": ">=1.4.4"
+    "bun": "=1.4.4"
   }
 }

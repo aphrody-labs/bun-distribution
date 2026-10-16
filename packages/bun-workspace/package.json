@@ -25,7 +25,7 @@
     "@aphrody/a2a": "workspace:*",
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
-    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/runtime-sdk": "catalog:",
     "@aphrody/timeline": "workspace:*",
     "@aphrody/update": "workspace:*",
     "@aphrody/web-source": "workspace:*",

@@ -13,7 +13,7 @@
     "lint": "bun lint app/src",
     "typecheck": "bun check -p tsconfig.json --threads=2 --no-pretty",
     "test": "bun test",
-    "format": "bun fmt --write -c ../../../../../bun-format.json app/src"
+    "format": "bun fmt --write --config ../../bun-format.json app/src"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.20",
@@ -34,7 +34,7 @@
     "dayjs": "catalog:",
     "deep-equal": "^2.2.3",
     "detect-gpu": "catalog:",
-    "http-proxy-middleware": "^3.0.0",
+    "http-proxy-middleware": "catalog:",
     "isbot": "^4.1.0",
     "konva": "catalog:",
     "lodash.debounce": "^4.0.8",
@@ -46,7 +46,7 @@
     "react-drag-drop-files": "catalog:",
     "react-helmet": "catalog:",
     "react-hot-toast": "catalog:",
-    "react-image-crop": "^11.0.5",
+    "react-image-crop": "catalog:",
     "react-konva": "catalog:",
     "react-resizable-panels": "catalog:",
     "react-router": "^6.26.1",
@@ -61,12 +61,11 @@
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "catalog:",
     "@types/react-helmet": "^6.1.11",
-    "@types/three": "^0.162.0",
+    "@types/three": "catalog:",
     "postcss": "catalog:",
     "tailwindcss": "catalog:"
   },
   "engines": {
     "bun": "1.4.4"
-  },
-  "packageManager": "bun@1.4.4"
+  }
 }

@@ -1,23 +1,15 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
-const INTERNAL_ROOTS = [
-  "apps/",
-  "examples/",
-  "packages/",
-  "drive/apps/",
-  "drive/packages/",
-  "m3/apps/",
-  "m3/packages/",
-  "crates/tauri/",
-];
-/** Canonical runtime/framework owners consumed from sibling package checkouts. */
-const EXTERNAL_PACKAGE_ROOTS = ["../bun/packages/", "../material/packages/"];
+const INTERNAL_ROOTS = ["apps/", "packages/"];
+/** Runtime-owned packages retain the pinned toolchain's independent source boundary. */
+const EXTERNAL_PACKAGE_ROOTS = ["toolchains/bun/packages/"];
 
 /** In-repository roots, or external owner packages without any further escape. */
 export function allowedWorkspace(root: string, workspacePath: string): boolean {
   const segments = workspacePath.split("/");
-  if (segments.some(segment => segment === "" || segment === ".")) return false;
+  if (workspacePath.includes("\\") || segments.some(segment => segment === "" || segment === "." || segment === ".."))
+    return false;
   const externalRoot = EXTERNAL_PACKAGE_ROOTS.find(prefix => workspacePath.startsWith(prefix));
   if (externalRoot) {
     const rest = workspacePath.slice(externalRoot.length);
@@ -26,7 +18,7 @@ export function allowedWorkspace(root: string, workspacePath: string): boolean {
     return rest.length > 0 && !rest.split("/").includes("..") && !!target && !target.startsWith("..");
   }
   return (
-    !segments.includes("..") &&
+    segments.length === 2 &&
     INTERNAL_ROOTS.some(prefix => workspacePath.startsWith(prefix)) &&
     !relative(root, resolve(root, workspacePath)).startsWith("..")
   );
@@ -42,7 +34,7 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     const arg = args[index];
     if (arg === "--root") root = args[++index] ?? "";
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: yolo ops workspace-layout [--root <repository>]");
+      console.log("Usage: bun src/cli.ts ops workspace-layout [--root <repository>]");
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
