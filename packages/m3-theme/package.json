@@ -59,10 +59,10 @@
     "access": "public"
   },
   "scripts": {
-    "generate": "bun run generate.ts && oxfmt tokens.css tailwind.css spaceui.css",
+    "generate": "bun run generate.ts && bun fmt tokens.css tailwind.css spaceui.css",
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "lint": "oxlint",
-    "fmt": "oxfmt .",
+    "lint": "bun lint",
+    "fmt": "bun fmt .",
     "typecheck": "bun check --noEmit",
     "typecheck:fast": "bun check --noEmit",
     "generate:fusion": "bun run generate",

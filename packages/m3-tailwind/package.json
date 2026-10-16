@@ -28,7 +28,7 @@
     "generate": "bun scripts/generate.ts",
     "test": "bun test ./test/",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "lint": "oxlint src test scripts"
+    "lint": "bun lint src test scripts"
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*"
@@ -37,8 +37,7 @@
     "@aphrody/bun": "^3.3.0",
     "@aphrody/m3-config": "workspace:*",
     "@tailwindcss/node": "catalog:",
-    "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "tailwindcss": "catalog:"
   },
   "peerDependencies": {
     "tailwindcss": "^4.0.0"

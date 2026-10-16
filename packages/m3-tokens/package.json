@@ -37,9 +37,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun build.ts && tsc -p tsconfig.build.json",
+    "build": "bun build.ts && bun check -p tsconfig.build.json",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "lint": "oxlint src test",
+    "lint": "bun lint src test",
     "test": "bun test test/",
     "demo": "bun run src/cli.ts",
     "generate:expressive": "bun scripts/generate-expressive.ts"
@@ -48,8 +48,7 @@
     "@material/material-color-utilities": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*",
-    "typescript": "catalog:"
+    "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"
