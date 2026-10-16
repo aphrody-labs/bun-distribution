@@ -9,6 +9,7 @@ members = [
   "crates/aphrody-wii-image",
   "crates/bun-engine-core",
   "crates/bun-engine-nds",
+  "crates/ghidra-decompiler",
   "crates/aphrody-sprite-sheet",
   "crates/aphrody-softraster",
   "crates/aphrody-render",
@@ -799,7 +800,7 @@ aphrody-wii = { path = "crates/aphrody-wii" }
 aphrody-wii-image = { path = "crates/aphrody-wii-image" }
 aphrody-switch = { path = "crates/aphrody-switch" }
 aphrody-aarch64 = { path = "crates/aphrody-aarch64" }
-ghidra-decompiler = { path = "vendor/ghidra-decompiler" }
+ghidra-decompiler = { path = "crates/ghidra-decompiler" }
 parking_lot = "0.12.3"
 proc-bitfield = { version = "0.5" }
 bitfield-struct = "0.12"

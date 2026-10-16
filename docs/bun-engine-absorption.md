@@ -22,7 +22,7 @@ Out of scope per owner direction: `bun-engine-android`, Shenron, and the Android
 
 Same URL and pinned commit, as `vendor/<name>` provenance submodules. Already present in bun-os with identical pin (skipped): melonds, dust, bevy, wgpu, winit, linux-cachyos, kernel-patches, proton-cachyos, wine-cachyos, chwd, pkg-manage-util, open-gpu-kernel-modules (`nvidia-open`), libctru, ctru-rs, wiki (`docs/vendor/cachyos`), bun (`bun-runtime`). `repo-manage-util` is deduplicated to `vendor/cachyos-repo-manage-util`.
 
-Added (36): ares, azahar, calico, citro2d, citro3d, cuda-cccl, cuda-samples, directx-compiler, directx-headers, directx-samples, dolphin, ghidra, ghidra-decompiler, gopher64, jgenesis, libnds, libogc, magika, mame, ntr-ghidra, omarchy-windows, open-agb-firm, retroarch, retroboy, rustboyadvance-ng, starpsx, steamcmd, steamcmd-api, steamos-nvidia-installer, tetanes, zakuro, cmake, llvm, make, qemu, vcpkg.
+Added (35): ares, azahar, calico, citro2d, citro3d, cuda-cccl, cuda-samples, directx-compiler, directx-headers, directx-samples, dolphin, ghidra, gopher64, jgenesis, libnds, libogc, magika, mame, ntr-ghidra, omarchy-windows, open-agb-firm, retroarch, retroboy, rustboyadvance-ng, starpsx, steamcmd, steamcmd-api, steamos-nvidia-installer, tetanes, zakuro, cmake, llvm, make, qemu, vcpkg.
 
 Licenses: GPL (aarch64, switch, wii, wii-image, nds), MIT/Apache (bun-engine core), upstream licenses stay inside each pinned tree.
 
@@ -35,5 +35,5 @@ Licenses: GPL (aarch64, switch, wii, wii-image, nds), MIT/Apache (bun-engine cor
 
 ## Remaining
 
-- `bun-engine-core` consumes `vendor/ghidra-decompiler` (aphrody-labs Rust crate, 20 MB) as a path dependency; inlining it into `crates/` is pending.
+- `ghidra-decompiler` (Apache-2.0, koute upstream) is inlined as `crates/ghidra-decompiler` (workspace member).
 - `aphrody-labs` Rust forks kept as vendor gitlinks (tetanes, retroboy, rustboyadvance-ng, gopher64, jgenesis, starpsx, zakuro, magika) until deliberate migration.

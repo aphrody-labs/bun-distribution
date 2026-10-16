@@ -32,7 +32,7 @@
     "render": ["vendor/wgpu", "vendor/bevy", "vendor/winit"],
     "fileTypeMl": "vendor/magika",
     "replicaSkills": "packages/bun-engine/src/core/replica",
-    "reverseEngineering": ["vendor/ghidra", "vendor/ghidra-decompiler", "vendor/ntr-ghidra"],
+    "reverseEngineering": ["vendor/ghidra", "crates/ghidra-decompiler", "vendor/ntr-ghidra"],
     "toolchains": ["vendor/llvm", "vendor/qemu", "vendor/cmake", "vendor/vcpkg", "vendor/make"]
   }
 }

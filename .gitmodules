@@ -358,9 +358,6 @@
 [submodule "vendor/ghidra"]
 	path = vendor/ghidra
 	url = https://github.com/aphrody-labs/ghidra.git
-[submodule "vendor/ghidra-decompiler"]
-	path = vendor/ghidra-decompiler
-	url = https://github.com/aphrody-labs/ghidra-decompiler.git
 [submodule "vendor/gopher64"]
 	path = vendor/gopher64
 	url = https://github.com/aphrody-labs/gopher64.git
