@@ -118,6 +118,38 @@ impl VpsHealthStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum NetbootMode {
+    Rescue,
+    Local,
+}
+
+impl NetbootMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NetbootMode::Rescue => "rescue",
+            NetbootMode::Local => "local",
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct VpsTask {
+    pub id: u64,
+    pub r#type: String,
+    pub state: String,
+    pub progress: u64,
+    pub date: String,
+}
+
+/// Hide the session token of a console URL: keep scheme, host and path, mask the query.
+pub fn redact_console_url(url: &str) -> String {
+    match url.split_once('?') {
+        Some((base, _)) => format!("{base}?<redacted>"),
+        None => url.to_owned(),
+    }
+}
+
 pub struct VpsManager<'a> {
     client: &'a OvhClient,
 }
@@ -246,6 +278,58 @@ impl<'a> VpsManager<'a> {
         Ok(id)
     }
 
+    /// KVM console URL (POST /vps/{serviceName}/getConsoleUrl). The URL embeds a session token.
+    pub async fn console_url(&self, service_name: &str) -> Result<String> {
+        let value: serde_json::Value =
+            self.client.post(&format!("/vps/{service_name}/getConsoleUrl"), None).await?;
+        match value {
+            serde_json::Value::String(url) => Ok(url),
+            other => other
+                .get("url")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned)
+                .ok_or_else(|| anyhow::anyhow!("getConsoleUrl: unexpected response shape")),
+        }
+    }
+
+    /// Set the netboot mode (`rescue` or `local`) through PUT /vps/{serviceName}.
+    pub async fn set_netboot(&self, service_name: &str, mode: NetbootMode) -> Result<()> {
+        let _: serde_json::Value = self
+            .client
+            .put(
+                &format!("/vps/{service_name}"),
+                Some(serde_json::json!({ "netbootMode": mode.as_str() })),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Current netboot mode (GET /vps/{serviceName}).
+    pub async fn netboot(&self, service_name: &str) -> Result<String> {
+        let info: serde_json::Value = self.client.get(&format!("/vps/{service_name}")).await?;
+        Ok(info.get("netbootMode").and_then(|v| v.as_str()).unwrap_or("unknown").to_owned())
+    }
+
+    /// Tasks of a VPS, newest first (GET /vps/{serviceName}/tasks then each task).
+    pub async fn tasks(&self, service_name: &str) -> Result<Vec<VpsTask>> {
+        let mut ids: Vec<u64> = self.client.get(&format!("/vps/{service_name}/tasks")).await?;
+        ids.sort_unstable_by(|a, b| b.cmp(a));
+        let mut tasks = Vec::with_capacity(ids.len().min(20));
+        for id in ids.iter().take(20) {
+            let t: serde_json::Value =
+                self.client.get(&format!("/vps/{service_name}/tasks/{id}")).await?;
+            let s = |k: &str| t.get(k).and_then(|v| v.as_str()).unwrap_or("-").to_owned();
+            tasks.push(VpsTask {
+                id: *id,
+                r#type: s("type"),
+                state: s("state"),
+                progress: t.get("progress").and_then(|v| v.as_u64()).unwrap_or(0),
+                date: s("date"),
+            });
+        }
+        Ok(tasks)
+    }
+
     /// Start a stopped VPS (POST /vps/{serviceName}/start).
     pub async fn start(&self, service_name: &str) -> Result<Option<u64>> {
         let task: serde_json::Value =
@@ -277,6 +361,15 @@ impl<'a> VpsManager<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn console_url_token_is_masked() {
+        assert_eq!(
+            redact_console_url("https://kvm.example/vnc_auto.html?token=SECRET"),
+            "https://kvm.example/vnc_auto.html?<redacted>"
+        );
+        assert_eq!(redact_console_url("https://kvm.example/x"), "https://kvm.example/x");
+    }
 
     #[test]
     fn healthy_vps_has_no_alerts() {

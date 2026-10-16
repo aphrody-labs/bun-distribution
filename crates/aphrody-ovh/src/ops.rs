@@ -28,6 +28,27 @@ pub fn client_for(profile: Option<&str>) -> Result<OvhClient> {
     OvhClient::new(load_profile_credentials(profile)?)
 }
 
+/// Client of the account that owns a VPS: the explicit profile, else the first known profile
+/// whose `/vps` list contains the service (each account only sees its own services, so the
+/// default `~/.ovh.conf` answers 404 for a VPS of another account).
+pub async fn client_for_vps(profile: Option<&str>, service: &str) -> Result<(OvhClient, String)> {
+    if let Some(p) = profile {
+        return Ok((client_for(Some(p))?, p.to_owned()));
+    }
+    let mut tried = Vec::new();
+    for info in crate::profile::known_profiles() {
+        let Ok(client) = client_for(Some(&info.id)) else {
+            continue;
+        };
+        match VpsManager::new(&client).list_vps().await {
+            Ok(list) if list.iter().any(|s| s == service) => return Ok((client, info.id)),
+            Ok(_) => tried.push(info.id),
+            Err(e) => tried.push(format!("{} ({e})", info.id)),
+        }
+    }
+    bail!("VPS {service} not found in any OVH profile (tried: {})", tried.join(", "))
+}
+
 fn is_forbidden(error: &anyhow::Error) -> bool {
     error.to_string().contains("HTTP 403")
 }

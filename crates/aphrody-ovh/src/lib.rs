@@ -2,6 +2,7 @@
 //! Aphrody OVH — Native in-process OVHcloud engine for Aphrody Infra.
 
 pub mod client;
+pub mod console;
 pub mod dns;
 pub mod domain;
 pub mod email;
@@ -326,6 +327,48 @@ pub enum OvhVpsSubcommand {
         #[arg(long)]
         profile: Option<String>,
     },
+    /// KVM console URL (noVNC). The session token stays masked without --show; --open drives it
+    /// in Bun.WebView and can type text (e.g. `--type "systemctl restart ssh" --enter`).
+    Console {
+        service_name: String,
+        #[arg(long)]
+        show: bool,
+        #[arg(long)]
+        open: bool,
+        #[arg(long, requires = "open")]
+        r#type: Option<String>,
+        #[arg(long, requires = "open")]
+        enter: bool,
+        #[arg(long, requires = "open")]
+        screenshot: Option<PathBuf>,
+        #[arg(long)]
+        profile: Option<String>,
+    },
+    /// Boot into OVH rescue: set netboot rescue then reboot (requires --apply).
+    Rescue {
+        service_name: String,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        profile: Option<String>,
+    },
+    /// Show or set the netboot mode; setting reboots the VPS (requires --apply).
+    Netboot {
+        service_name: String,
+        mode: Option<vps::NetbootMode>,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        profile: Option<String>,
+    },
+    /// Recent VPS tasks (reboot, netboot, console...).
+    Tasks {
+        service_name: String,
+        #[arg(long)]
+        json: bool,
+        #[arg(long)]
+        profile: Option<String>,
+    },
     /// Reboot a VPS (requires --apply).
     Reboot {
         service_name: String,
@@ -397,6 +440,29 @@ pub enum OvhEmailSubcommand {
         #[arg(long)]
         profile: Option<String>,
     },
+}
+
+async fn vps_netboot(
+    profile: Option<&str>,
+    service_name: &str,
+    mode: vps::NetbootMode,
+    apply: bool,
+) -> anyhow::Result<()> {
+    let (client, used) = ops::client_for_vps(profile, service_name).await?;
+    let manager = VpsManager::new(&client);
+    let current = manager.netboot(service_name).await?;
+    println!(
+        "VPS {service_name} (profil {used}): netboot {current} -> {}, puis redémarrage",
+        mode.as_str()
+    );
+    if !apply {
+        println!("[PLAN] Passez --apply pour confirmer.");
+        return Ok(());
+    }
+    manager.set_netboot(service_name, mode).await?;
+    let task = manager.reboot(service_name, true).await?;
+    println!("Netboot {} appliqué, redémarrage envoyé (Task ID: {task:?}).", mode.as_str());
+    Ok(())
 }
 
 impl OvhCommand {
@@ -661,6 +727,63 @@ impl OvhCommand {
                     println!("État: {}", status.state);
                     println!("Ping: {}", if status.ping { "OK" } else { "ÉCHEC" });
                     println!("Up: {}", if status.up { "OUI" } else { "NON" });
+                    Ok(())
+                },
+                OvhVpsSubcommand::Console {
+                    service_name,
+                    show,
+                    open,
+                    r#type,
+                    enter,
+                    screenshot,
+                    profile,
+                } => {
+                    let (client, used) =
+                        ops::client_for_vps(profile.as_deref(), service_name).await?;
+                    let url = VpsManager::new(&client).console_url(service_name).await?;
+                    let shown = if *show { url.clone() } else { vps::redact_console_url(&url) };
+                    println!("Console KVM {service_name} (profil {used}): {shown}");
+                    if *open {
+                        let input = console::ConsoleInput {
+                            text: r#type.clone(),
+                            enter: *enter,
+                            screenshot: screenshot.clone(),
+                        };
+                        println!("{}", console::open(&url, &input)?);
+                    }
+                    Ok(())
+                },
+                OvhVpsSubcommand::Rescue { service_name, apply, profile } => {
+                    vps_netboot(profile.as_deref(), service_name, vps::NetbootMode::Rescue, *apply)
+                        .await
+                },
+                OvhVpsSubcommand::Netboot { service_name, mode, apply, profile } => match mode {
+                    Some(mode) => {
+                        vps_netboot(profile.as_deref(), service_name, *mode, *apply).await
+                    },
+                    None => {
+                        let (client, used) =
+                            ops::client_for_vps(profile.as_deref(), service_name).await?;
+                        let mode = VpsManager::new(&client).netboot(service_name).await?;
+                        println!("VPS {service_name} (profil {used}): netboot {mode}");
+                        Ok(())
+                    },
+                },
+                OvhVpsSubcommand::Tasks { service_name, json, profile } => {
+                    let (client, used) =
+                        ops::client_for_vps(profile.as_deref(), service_name).await?;
+                    let tasks = VpsManager::new(&client).tasks(service_name).await?;
+                    if *json {
+                        println!("{}", serde_json::to_string_pretty(&tasks)?);
+                        return Ok(());
+                    }
+                    println!("Tâches VPS {service_name} (profil {used}): {}", tasks.len());
+                    for t in tasks {
+                        println!(
+                            "  {:<12} {:<24} {:<10} {:>3}%  {}",
+                            t.id, t.r#type, t.state, t.progress, t.date
+                        );
+                    }
                     Ok(())
                 },
                 OvhVpsSubcommand::Reboot { service_name, apply, profile } => {
@@ -1209,6 +1332,55 @@ consumer_key = ck_ini
         );
         assert!(Harness::try_parse_from(["ovh", "dns", "backup", "--dir", "/tmp/z"]).is_ok());
         assert!(Harness::try_parse_from(["ovh", "dns", "backup"]).is_err());
+    }
+
+    #[test]
+    fn console_rescue_netboot_tasks_parse() {
+        use clap::Parser;
+
+        let console = Harness::try_parse_from([
+            "ovh",
+            "vps",
+            "console",
+            "vps-1",
+            "--open",
+            "--type",
+            "systemctl restart ssh",
+            "--enter",
+        ])
+        .unwrap();
+        assert_matches!(
+            console.command,
+            OvhCommand::Vps { subcommand: OvhVpsSubcommand::Console { open: true, enter: true, show: false, ref r#type, .. } }
+                if r#type.as_deref() == Some("systemctl restart ssh")
+        );
+        // Typing needs a browser session.
+        assert!(
+            Harness::try_parse_from(["ovh", "vps", "console", "vps-1", "--type", "x"]).is_err()
+        );
+        let rescue = Harness::try_parse_from(["ovh", "vps", "rescue", "vps-1"]).unwrap();
+        assert_matches!(
+            rescue.command,
+            OvhCommand::Vps { subcommand: OvhVpsSubcommand::Rescue { apply: false, .. } }
+        );
+        let netboot =
+            Harness::try_parse_from(["ovh", "vps", "netboot", "vps-1", "local", "--apply"])
+                .unwrap();
+        assert_matches!(
+            netboot.command,
+            OvhCommand::Vps {
+                subcommand: OvhVpsSubcommand::Netboot {
+                    mode: Some(vps::NetbootMode::Local),
+                    apply: true,
+                    ..
+                }
+            }
+        );
+        let tasks = Harness::try_parse_from(["ovh", "vps", "tasks", "vps-1", "--json"]).unwrap();
+        assert_matches!(
+            tasks.command,
+            OvhCommand::Vps { subcommand: OvhVpsSubcommand::Tasks { json: true, .. } }
+        );
     }
 
     #[test]
