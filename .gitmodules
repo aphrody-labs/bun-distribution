@@ -294,3 +294,43 @@
 	path = vendor/fonts
 	url = https://github.com/aphrody-labs/fonts.git
 	shallow = true
+[submodule "vendor/cosmic-epoch"]
+	path = vendor/cosmic-epoch
+	url = https://github.com/aphrody-labs/cosmic-epoch.git
+	branch = master
+[submodule "vendor/brave-core"]
+	path = vendor/brave-core
+	url = https://github.com/aphrody-labs/brave-core.git
+	branch = master
+[submodule "vendor/tauri"]
+	path = vendor/tauri
+	url = https://github.com/aphrody-labs/tauri.git
+	branch = dev
+[submodule "vendor/obscura"]
+	path = vendor/obscura
+	url = https://github.com/aphrody-labs/obscura.git
+	branch = main
+[submodule "vendor/nushell"]
+	path = vendor/nushell
+	url = https://github.com/aphrody-labs/nushell.git
+	branch = main
+[submodule "vendor/eza"]
+	path = vendor/eza
+	url = https://github.com/aphrody-labs/eza.git
+	branch = main
+[submodule "vendor/sudo-rs"]
+	path = vendor/sudo-rs
+	url = https://github.com/aphrody-labs/sudo-rs.git
+	branch = main
+[submodule "vendor/uutils-coreutils"]
+	path = vendor/uutils-coreutils
+	url = https://github.com/aphrody-labs/uutils-coreutils.git
+	branch = main
+[submodule "vendor/uutils-diffutils"]
+	path = vendor/uutils-diffutils
+	url = https://github.com/aphrody-labs/uutils-diffutils.git
+	branch = main
+[submodule "vendor/uutils-findutils"]
+	path = vendor/uutils-findutils
+	url = https://github.com/aphrody-labs/uutils-findutils.git
+	branch = main
