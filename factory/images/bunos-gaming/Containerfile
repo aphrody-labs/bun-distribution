@@ -24,6 +24,9 @@ RUN set -e; pacman-key --init; pacman-key --populate archlinux \
   && ln -s /usr/share/omarchy /etc/skel/.local/share/omarchy \
   && echo "OMARCHY_VERSION=${OMARCHY_VERSION}" >/usr/share/bun-os/omarchy.version \
   && rm -rf /tmp/omarchy.tar.gz /var/cache/pacman/pkg/* /home/builder/.cache
+# Agent tooling (factory/images/manifest.json agentTooling): skills and MCP config in /etc/skel/.claude and .codex.
+COPY agent/ /usr/share/bun-os/agent/
+RUN bash /usr/share/bun-os/agent/install.sh && rm -rf /var/cache/pacman/pkg/*
 ENV XDG_SESSION_TYPE=wayland
 CMD ["/bin/bash"]
 

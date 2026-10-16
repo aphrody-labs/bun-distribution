@@ -10,8 +10,14 @@ import { planUsr } from "../usr/build.ts";
 const here = import.meta.dir;
 const sshOptions = ["-o", "ConnectTimeout=15", "-o", "BatchMode=yes"];
 type Kind = "image" | "rootfs";
+interface AgentTooling {
+  packages: string[];
+  skills: { name: string; source?: string; repo?: string; commit?: string; path?: string }[];
+  mcpServers: { name: string; command: string[]; source?: string; env?: Record<string, string> }[];
+}
 interface ImageSpec {
   usrComposition?: "server" | "cosmic" | "gaming";
+  agentTooling?: AgentTooling;
   platforms: string[];
   targets: Record<string, Kind>;
 }
@@ -104,6 +110,73 @@ export async function planImage(name: string) {
   };
 }
 
+const workspace = join(here, "../..");
+const quote = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`;
+
+/** Stage agentTooling: local skills and MCP sources, pinned clones, Claude Code and Codex configs for /etc/skel. */
+async function stageAgentTooling(dir: string, tooling: AgentTooling) {
+  await mkdir(join(dir, "skills"), { recursive: true });
+  const script = [
+    "#!/usr/bin/env bash",
+    "set -euo pipefail",
+    "a=/usr/share/bun-os/agent",
+    "s=/usr/share/bun-os/skills",
+    'install -d "$s"',
+  ];
+  for (const skill of tooling.skills) {
+    if (skill.source) {
+      await cp(join(workspace, skill.source), join(dir, "skills", skill.name), { recursive: true });
+      script.push(`cp -a "$a/skills/${skill.name}" "$s/${skill.name}"`);
+    } else if (skill.repo && skill.commit) {
+      const tmp = `/tmp/skill-${skill.name}`;
+      script.push(
+        `git init -q ${tmp} && git -C ${tmp} fetch -q --depth 1 ${quote(skill.repo)} ${skill.commit} && git -C ${tmp} checkout -q FETCH_HEAD`,
+        `install -d "$s/${skill.name}" && cp -a ${tmp}/${skill.path ?? "."}/. "$s/${skill.name}/"`,
+        `rm -rf "$s/${skill.name}/.git" ${tmp}`,
+      );
+    }
+  }
+  for (const server of tooling.mcpServers)
+    if (server.source) {
+      await cp(join(workspace, server.source), join(dir, server.name), {
+        recursive: true,
+        filter: src => !/node_modules/.test(src),
+      });
+      script.push(`cp -a "$a/${server.name}" /usr/share/bun-os/${server.source.split("/").pop()}`);
+    }
+  const mcpServers = Object.fromEntries(
+    tooling.mcpServers.map(({ name, command: [command, ...args], env }) => [
+      name,
+      { command, args, ...(env ? { env } : {}) },
+    ]),
+  );
+  await Bun.write(join(dir, "claude.json"), JSON.stringify({ mcpServers }, null, 2) + "\n");
+  const toml = (value: string) => JSON.stringify(value);
+  const codex = tooling.mcpServers.flatMap(({ name, command: [command, ...args], env }) => [
+    `[mcp_servers.${toml(name)}]`,
+    `command = ${toml(command!)}`,
+    `args = [${args.map(toml).join(", ")}]`,
+    ...(env
+      ? [
+          `env = { ${Object.entries(env)
+            .map(([k, v]) => `${k} = ${toml(v)}`)
+            .join(", ")} }`,
+        ]
+      : []),
+    "",
+  ]);
+  await Bun.write(join(dir, "codex.toml"), codex.join("\n"));
+  await Bun.write(join(dir, "agent.packages"), tooling.packages.join("\n") + "\nuv\n");
+  script.push(
+    'bunos-install-packages "$a/agent.packages"',
+    "install -d /etc/skel/.claude /etc/skel/.codex",
+    'cp -a "$s" /etc/skel/.claude/skills && cp -a "$s" /etc/skel/.codex/skills',
+    'install -m644 "$a/claude.json" /etc/skel/.claude.json && install -m644 "$a/claude.json" /etc/skel/.claude/mcp.json',
+    'install -m644 "$a/codex.toml" /etc/skel/.codex/config.toml',
+  );
+  await Bun.write(join(dir, "install.sh"), script.join("\n") + "\n");
+}
+
 async function sha256(path: string) {
   const hasher = new Bun.CryptoHasher("sha256");
   for await (const chunk of Bun.file(path).stream()) hasher.update(chunk);
@@ -177,6 +250,7 @@ async function build(name: string, host: string, only?: string) {
   const stage = await mkdtemp(join(tmpdir(), "bun-os-image-"));
   try {
     await cp(join(here, name), join(stage, "context"), { recursive: true });
+    if (image.agentTooling) await stageAgentTooling(join(stage, "context", "agent"), image.agentTooling);
     for (const [file, content] of Object.entries(extra.files ?? {}))
       await Bun.write(join(stage, "context", file), content);
     await Bun.write(join(stage, "build.sh"), remoteScript(name, image, targets, args));
