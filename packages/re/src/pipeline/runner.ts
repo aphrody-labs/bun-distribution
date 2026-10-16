@@ -33,6 +33,8 @@ export async function findBinary(): Promise<string> {
   const roots = [
     process.env.CARGO_TARGET_DIR,
     root && join(root, "target"),
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Aphrody", "cache", "cargo-target"),
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "aphrody", "target"),
   ].filter(Boolean) as string[];
   for (const base of roots) {
     for await (const hit of new Bun.Glob(`{release,debug}/${EXE}`).scan({
