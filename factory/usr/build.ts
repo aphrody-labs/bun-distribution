@@ -83,10 +83,29 @@ function localArtifacts(manifest: UsrManifest, composition: string, job: string)
 async function fetchArtifacts(manifest: UsrManifest, host: string, composition: string, job: string) {
   const local = localArtifacts(manifest, composition, job);
   await mkdir(local, { recursive: true });
-  await run(
-    ["scp", ...sshOptions, "-r", `${host}:${manifest.remoteRoot}/${job}/out/.`, local],
-    manifest.remoteTimeoutSeconds * 1000,
-  );
+  const out = `${manifest.remoteRoot}/${job}/out`;
+  const listing = Bun.spawn(["ssh", ...sshOptions, host, `cd ${out} && stat -c '%s %n' *`], {
+    stdout: "pipe",
+    stderr: "inherit",
+    timeout: 30_000,
+  });
+  const text = await new Response(listing.stdout).text();
+  if ((await listing.exited) !== 0) throw new Error("Cannot list remote artifacts");
+  // Per-file copies with size checks make an interrupted fetch resumable.
+  for (const line of text.trim().split("\n")) {
+    const [size, name] = line.split(" ", 2) as [string, string];
+    const target = join(local, name);
+    for (
+      let attempt = 1;
+      (await Bun.file(target).exists()) ? Bun.file(target).size !== Number(size) : true;
+      attempt++
+    ) {
+      if (attempt > 3) throw new Error(`Cannot fetch ${name}`);
+      await run(["scp", ...sshOptions, `${host}:${out}/${name}`, target], manifest.remoteTimeoutSeconds * 1000).catch(
+        error => console.error(String(error)),
+      );
+    }
+  }
   return local;
 }
 
