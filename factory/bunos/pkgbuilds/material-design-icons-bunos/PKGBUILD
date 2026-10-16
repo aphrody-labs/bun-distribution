@@ -5,6 +5,7 @@ pkgrel=1
 _commit=b45878038c54b89ec8405dce1da18aba6379f5df
 pkgdesc='Material Design icons and Material Symbols fonts for Bun OS'
 arch=('any')
+options=('!strip' '!debug')
 url='https://github.com/aphrody-labs/material-design-icons'
 license=('Apache-2.0')
 source=("mdi::git+https://github.com/aphrody-labs/material-design-icons.git#commit=${_commit}")

@@ -5,6 +5,7 @@ pkgrel=1
 _commit=9710da1eacb3be272583c3224dcb70f9da6eadbb
 pkgdesc='Bun OS fonts (aphrody-labs/fonts)'
 arch=('any')
+options=('!strip' '!debug')
 url='https://github.com/aphrody-labs/fonts'
 license=('OFL-1.1' 'Apache-2.0')
 source=("fonts::git+https://github.com/aphrody-labs/fonts.git#commit=${_commit}")
