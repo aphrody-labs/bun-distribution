@@ -97,9 +97,7 @@ function parseContent(content: any): ParsedEmblem[] {
 // Loaders
 // ============================================================================
 
-export async function loadEmblemConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedEmblem[] | null> {
+export async function loadEmblemConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedEmblem[] | null> {
   const filename = findConfigFile("menu", "emblem_resource");
   if (!filename) return null;
 

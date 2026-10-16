@@ -14,24 +14,15 @@ test("dependency bootstrap leaves sibling databases and optional game inputs iso
       join(import.meta.dir, "../validation/bun-runtime.ts"),
       join(root, "scripts/iecode/validation/bun-runtime.ts"),
     );
-    copyFileSync(
-      join(import.meta.dir, "../../../config/bun-runtime.json"),
-      join(root, "config/bun-runtime.json"),
-    );
+    copyFileSync(join(import.meta.dir, "../../../config/bun-runtime.json"), join(root, "config/bun-runtime.json"));
     const qualified = await Bun.file(join(root, "config/bun-runtime.json")).json();
-    writeFileSync(
-      join(root, "package.json"),
-      JSON.stringify({ packageManager: `bun@${qualified.version}` }),
-    );
+    writeFileSync(join(root, "package.json"), JSON.stringify({ packageManager: `bun@${qualified.version}` }));
     mkdirSync(join(temporary, "aphrody/var"), { recursive: true });
     writeFileSync(join(temporary, "aphrody/var/mirror.sqlite"), "isolated-fixture");
     writeFileSync(join(root, ".env.local"), "");
     writeFileSync(join(root, ".env"), "");
     copyFileSync(import.meta.dir + "/setup-fresh.ts", join(root, "scripts/iecode/tools/setup-fresh.ts"));
-    writeFileSync(
-      join(root, "config/bun-runtime.json"),
-      JSON.stringify({ ...qualified, revision: "0".repeat(40) }),
-    );
+    writeFileSync(join(root, "config/bun-runtime.json"), JSON.stringify({ ...qualified, revision: "0".repeat(40) }));
     const rejected = Bun.spawnSync(
       [
         process.execPath,

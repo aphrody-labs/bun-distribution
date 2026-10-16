@@ -5,23 +5,14 @@ import { $isListNode, ListNode } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $isHeadingNode } from "@lexical/rich-text";
 import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
-import {
-  $getSelection,
-  $isRangeSelection,
-  COMMAND_PRIORITY_CRITICAL,
-  SELECTION_CHANGE_COMMAND,
-} from "lexical";
+import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_CRITICAL, SELECTION_CHANGE_COMMAND } from "lexical";
 import { useCallback, useEffect, useState } from "react";
 
 import { ToolbarContext } from "@/components/editor/context/toolbar-context";
 import { useEditorModal } from "@/components/editor/editor-hooks/use-modal";
 import { getSelectedNode } from "@/components/editor/utils/get-selected-node";
 
-export function ToolbarPlugin({
-  children,
-}: {
-  children: (props: { blockType: string }) => React.ReactNode;
-}) {
+export function ToolbarPlugin({ children }: { children: (props: { blockType: string }) => React.ReactNode }) {
   const [editor] = useLexicalComposerContext();
 
   const [activeEditor, setActiveEditor] = useState(editor);
@@ -39,8 +30,7 @@ export function ToolbarPlugin({
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
-      const element =
-        anchorNode.getKey() === "root" ? anchorNode : anchorNode.getTopLevelElementOrThrow();
+      const element = anchorNode.getKey() === "root" ? anchorNode : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
       const elementDOM = activeEditor.getElementByKey(elementKey);
 

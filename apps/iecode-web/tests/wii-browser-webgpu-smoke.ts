@@ -20,7 +20,7 @@ for (const [offset, value] of [
 }
 type Report = { status?: number[]; width?: number; height?: number; error?: string };
 let resolveReport!: (report: Report) => void;
-const report = new Promise<Report>((resolve) => {
+const report = new Promise<Report>(resolve => {
   resolveReport = resolve;
 });
 const server = Bun.serve({
@@ -77,12 +77,7 @@ const child = Bun.spawn(
     "--enable-unsafe-webgpu",
     ...(process.platform === "win32"
       ? ["--use-angle=d3d11", "--use-webgpu-adapter=d3d12", "--force-high-performance-gpu"]
-      : [
-          "--enable-features=Vulkan",
-          "--use-angle=vulkan",
-          "--use-vulkan=swiftshader",
-          "--disable-vulkan-surface",
-        ]),
+      : ["--enable-features=Vulkan", "--use-angle=vulkan", "--use-vulkan=swiftshader", "--disable-vulkan-surface"]),
     "--disable-background-networking",
     String(server.url),
   ],
@@ -90,10 +85,7 @@ const child = Bun.spawn(
 );
 const diagnostics = new Response(child.stderr).text();
 try {
-  const result = await Promise.race([
-    report,
-    child.exited.then((code) => ({ error: `Browser exited: ${code}` })),
-  ]);
+  const result = await Promise.race([report, child.exited.then(code => ({ error: `Browser exited: ${code}` }))]);
   if (result.error) throw new Error(result.error);
   const resultStatus = (result as Report).status;
   if (
@@ -108,8 +100,7 @@ try {
   }
   console.log(
     JSON.stringify({
-      backend:
-        process.platform === "win32" ? "Chromium D3D12 WebGPU" : "Chromium SwiftShader WebGPU",
+      backend: process.platform === "win32" ? "Chromium D3D12 WebGPU" : "Chromium SwiftShader WebGPU",
       ...result,
     }),
   );

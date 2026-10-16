@@ -39,15 +39,11 @@ export function AuditTable({ logs, currentPage, totalPages, currentAction }: Aud
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <Link href="/dashboard/audit">
-          <Button
-            variant={!currentAction ? "default" : "outline"}
-            size="sm"
-            className="rounded-full text-xs font-bold"
-          >
+          <Button variant={!currentAction ? "default" : "outline"} size="sm" className="rounded-full text-xs font-bold">
             Tous
           </Button>
         </Link>
-        {ALL_ACTIONS.map((action) => (
+        {ALL_ACTIONS.map(action => (
           <Link key={action} href={`/dashboard/audit?action=${action}`}>
             <Button
               variant={currentAction === action ? "default" : "outline"}
@@ -119,10 +115,7 @@ export function AuditTable({ logs, currentPage, totalPages, currentAction }: Aud
               })}
               {logs.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-3 sm:px-6 py-12 text-center text-on-surface-variant text-sm"
-                  >
+                  <td colSpan={5} className="px-3 sm:px-6 py-12 text-center text-on-surface-variant text-sm">
                     Aucun événement trouvé
                   </td>
                 </tr>
@@ -140,29 +133,15 @@ export function AuditTable({ logs, currentPage, totalPages, currentAction }: Aud
           </p>
           <div className="flex gap-2">
             {currentPage > 1 && (
-              <Link
-                href={`/dashboard/audit?page=${currentPage - 1}${currentAction ? `&action=${currentAction}` : ""}`}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Page précédente"
-                  className="rounded-full"
-                >
+              <Link href={`/dashboard/audit?page=${currentPage - 1}${currentAction ? `&action=${currentAction}` : ""}`}>
+                <Button variant="outline" size="sm" aria-label="Page précédente" className="rounded-full">
                   <ChevronLeft className="size-4" />
                 </Button>
               </Link>
             )}
             {currentPage < totalPages && (
-              <Link
-                href={`/dashboard/audit?page=${currentPage + 1}${currentAction ? `&action=${currentAction}` : ""}`}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Page suivante"
-                  className="rounded-full"
-                >
+              <Link href={`/dashboard/audit?page=${currentPage + 1}${currentAction ? `&action=${currentAction}` : ""}`}>
+                <Button variant="outline" size="sm" aria-label="Page suivante" className="rounded-full">
                   <ChevronRight className="size-4" />
                 </Button>
               </Link>

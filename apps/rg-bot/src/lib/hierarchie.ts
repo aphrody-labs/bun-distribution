@@ -36,29 +36,27 @@ import { estDangereux, decoderPermissions } from "./discord-roles-catalogue";
 
 /** Ce qu'on sait d'un rôle visé, sans dépendre de `discord.js`. */
 export interface FaitsRoleVise {
-	id: string;
-	nom: string;
-	/** Position dans la hiérarchie du serveur. Plus haut = plus fort. */
-	position: number;
-	/** Bitfield des permissions, en décimal — la forme que rend l'API. */
-	permissions: string;
-	/** `role.managed` : rôle créé et tenu par une intégration. */
-	gereParIntegration: boolean;
-	/** Vrai pour `@everyone` (dont l'identifiant est celui de la guilde). */
-	estEveryone: boolean;
+  id: string;
+  nom: string;
+  /** Position dans la hiérarchie du serveur. Plus haut = plus fort. */
+  position: number;
+  /** Bitfield des permissions, en décimal — la forme que rend l'API. */
+  permissions: string;
+  /** `role.managed` : rôle créé et tenu par une intégration. */
+  gereParIntegration: boolean;
+  /** Vrai pour `@everyone` (dont l'identifiant est celui de la guilde). */
+  estEveryone: boolean;
 }
 
 /** Ce qu'on sait du bot dans cette guilde. */
 export interface FaitsBot {
-	/** Position de SON plus haut rôle. */
-	positionMax: number;
-	/** A-t-il la permission « Gérer les rôles » au niveau du serveur ? */
-	peutGererRoles: boolean;
+  /** Position de SON plus haut rôle. */
+  positionMax: number;
+  /** A-t-il la permission « Gérer les rôles » au niveau du serveur ? */
+  peutGererRoles: boolean;
 }
 
-export type Verdict =
-	| { ok: true; avertissements: string[] }
-	| { ok: false; motif: string };
+export type Verdict = { ok: true; avertissements: string[] } | { ok: false; motif: string };
 
 /**
  * Ce rôle peut-il être attribué AUTOMATIQUEMENT par le bot ?
@@ -66,51 +64,47 @@ export type Verdict =
  * C'est la seule fonction à appeler avant d'enregistrer une récompense de
  * niveau, et avant de la poser sur un membre.
  */
-export function verifierAttributionAutomatique(
-	role: FaitsRoleVise,
-	bot: FaitsBot
-): Verdict {
-	if (!bot.peutGererRoles) {
-		return {
-			motif:
-				"Le bot n'a pas la permission « Gérer les rôles » sur ce serveur : il ne peut attribuer aucun rôle.",
-			ok: false,
-		};
-	}
-	if (role.estEveryone) {
-		return {
-			motif: "`@everyone` n'est pas un rôle qui s'attribue : tout le monde l'a déjà.",
-			ok: false,
-		};
-	}
-	if (role.gereParIntegration) {
-		return {
-			motif:
-				`Le rôle « ${role.nom} » est géré par une intégration (bot, Patreon, boost Nitro). ` +
-				"Discord interdit de l'attribuer à la main — le réglage serait accepté et sans effet.",
-			ok: false,
-		};
-	}
-	if (role.position >= bot.positionMax) {
-		return {
-			motif:
-				`Le rôle « ${role.nom} » est en position ${role.position}, au niveau ou au-dessus du plus haut rôle du bot (${bot.positionMax}). ` +
-				"La hiérarchie Discord l'interdit : la récompense serait enregistrée et ne se poserait jamais. " +
-				"Remonte le rôle du bot au-dessus, ou choisis un rôle plus bas.",
-			ok: false,
-		};
-	}
-	if (estDangereux(role.permissions)) {
-		const nommees = decoderPermissions(role.permissions);
-		return {
-			motif:
-				`Le rôle « ${role.nom} » porte des permissions sensibles (${nommees.slice(0, 4).join(", ")}). ` +
-				"Une récompense de niveau s'attribue toute seule, sans qu'un humain regarde : " +
-				"ce serait donner de la modération à qui écrit assez de messages. Refusé.",
-			ok: false,
-		};
-	}
-	return { avertissements: [], ok: true };
+export function verifierAttributionAutomatique(role: FaitsRoleVise, bot: FaitsBot): Verdict {
+  if (!bot.peutGererRoles) {
+    return {
+      motif: "Le bot n'a pas la permission « Gérer les rôles » sur ce serveur : il ne peut attribuer aucun rôle.",
+      ok: false,
+    };
+  }
+  if (role.estEveryone) {
+    return {
+      motif: "`@everyone` n'est pas un rôle qui s'attribue : tout le monde l'a déjà.",
+      ok: false,
+    };
+  }
+  if (role.gereParIntegration) {
+    return {
+      motif:
+        `Le rôle « ${role.nom} » est géré par une intégration (bot, Patreon, boost Nitro). ` +
+        "Discord interdit de l'attribuer à la main — le réglage serait accepté et sans effet.",
+      ok: false,
+    };
+  }
+  if (role.position >= bot.positionMax) {
+    return {
+      motif:
+        `Le rôle « ${role.nom} » est en position ${role.position}, au niveau ou au-dessus du plus haut rôle du bot (${bot.positionMax}). ` +
+        "La hiérarchie Discord l'interdit : la récompense serait enregistrée et ne se poserait jamais. " +
+        "Remonte le rôle du bot au-dessus, ou choisis un rôle plus bas.",
+      ok: false,
+    };
+  }
+  if (estDangereux(role.permissions)) {
+    const nommees = decoderPermissions(role.permissions);
+    return {
+      motif:
+        `Le rôle « ${role.nom} » porte des permissions sensibles (${nommees.slice(0, 4).join(", ")}). ` +
+        "Une récompense de niveau s'attribue toute seule, sans qu'un humain regarde : " +
+        "ce serait donner de la modération à qui écrit assez de messages. Refusé.",
+      ok: false,
+    };
+  }
+  return { avertissements: [], ok: true };
 }
 
 /**
@@ -126,29 +120,29 @@ export function verifierAttributionAutomatique(
  *     plus privé », ce qui vide de sens la catégorie Signalement.
  */
 export function verifierRolePriseEnCharge(role: FaitsRoleVise): Verdict {
-	if (role.estEveryone) {
-		return {
-			motif:
-				"`@everyone` comme rôle de prise en charge rendrait chaque ticket visible de tout le serveur. " +
-				"C'est l'inverse de ce qu'un ticket protège.",
-			ok: false,
-		};
-	}
-	if (role.gereParIntegration) {
-		return {
-			motif:
-				`« ${role.nom} » est le rôle d'une intégration : aucun humain ne le porte, ` +
-				"donc aucun ticket ne trouverait de destinataire.",
-			ok: false,
-		};
-	}
-	const avertissements: string[] = [];
-	if (!estDangereux(role.permissions)) {
-		avertissements.push(
-			`« ${role.nom} » ne porte aucune permission de modération : vérifie que c'est bien un rôle de staff.`
-		);
-	}
-	return { avertissements, ok: true };
+  if (role.estEveryone) {
+    return {
+      motif:
+        "`@everyone` comme rôle de prise en charge rendrait chaque ticket visible de tout le serveur. " +
+        "C'est l'inverse de ce qu'un ticket protège.",
+      ok: false,
+    };
+  }
+  if (role.gereParIntegration) {
+    return {
+      motif:
+        `« ${role.nom} » est le rôle d'une intégration : aucun humain ne le porte, ` +
+        "donc aucun ticket ne trouverait de destinataire.",
+      ok: false,
+    };
+  }
+  const avertissements: string[] = [];
+  if (!estDangereux(role.permissions)) {
+    avertissements.push(
+      `« ${role.nom} » ne porte aucune permission de modération : vérifie que c'est bien un rôle de staff.`,
+    );
+  }
+  return { avertissements, ok: true };
 }
 
 /**
@@ -158,12 +152,8 @@ export function verifierRolePriseEnCharge(role: FaitsRoleVise): Verdict {
  * personne ne peut toucher un rôle situé au niveau ou au-dessus de son propre
  * plus haut rôle. Le propriétaire du serveur y échappe.
  */
-export function peutAgirSurRole(
-	positionMaxDuStaff: number,
-	positionDuRole: number,
-	estProprietaire = false
-): boolean {
-	return estProprietaire || positionDuRole < positionMaxDuStaff;
+export function peutAgirSurRole(positionMaxDuStaff: number, positionDuRole: number, estProprietaire = false): boolean {
+  return estProprietaire || positionDuRole < positionMaxDuStaff;
 }
 
 /**
@@ -175,27 +165,27 @@ export function peutAgirSurRole(
  * cherche pendant des semaines.
  */
 export function filtrerRecompenses<T extends { roleId: string }>(
-	recompenses: readonly T[],
-	faits: ReadonlyMap<string, FaitsRoleVise>,
-	bot: FaitsBot
+  recompenses: readonly T[],
+  faits: ReadonlyMap<string, FaitsRoleVise>,
+  bot: FaitsBot,
 ): { posables: T[]; bloquees: Array<{ recompense: T; motif: string }> } {
-	const posables: T[] = [];
-	const bloquees: Array<{ recompense: T; motif: string }> = [];
-	for (const recompense of recompenses) {
-		const role = faits.get(recompense.roleId);
-		if (!role) {
-			bloquees.push({
-				motif: `Le rôle \`${recompense.roleId}\` n'existe plus sur ce serveur.`,
-				recompense,
-			});
-			continue;
-		}
-		const verdict = verifierAttributionAutomatique(role, bot);
-		if (verdict.ok) {
-			posables.push(recompense);
-		} else {
-			bloquees.push({ motif: verdict.motif, recompense });
-		}
-	}
-	return { bloquees, posables };
+  const posables: T[] = [];
+  const bloquees: Array<{ recompense: T; motif: string }> = [];
+  for (const recompense of recompenses) {
+    const role = faits.get(recompense.roleId);
+    if (!role) {
+      bloquees.push({
+        motif: `Le rôle \`${recompense.roleId}\` n'existe plus sur ce serveur.`,
+        recompense,
+      });
+      continue;
+    }
+    const verdict = verifierAttributionAutomatique(role, bot);
+    if (verdict.ok) {
+      posables.push(recompense);
+    } else {
+      bloquees.push({ motif: verdict.motif, recompense });
+    }
+  }
+  return { bloquees, posables };
 }

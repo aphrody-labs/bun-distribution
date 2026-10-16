@@ -242,7 +242,7 @@ function pointsDeComposition(origine: string, base: string): number[] {
   }
   // Repli : un hashtag écrit tout en minuscules ne dit rien de sa composition.
   if (positions.size === 0 && base.length >= 6) return [];
-  return [...positions].filter((p) => p > 0 && p < base.length);
+  return [...positions].filter(p => p > 0 && p < base.length);
 }
 
 /** Ce qu'un post porte réellement, et à quel hashtag de campagne ça correspond. */
@@ -270,8 +270,8 @@ export function apparierHashtag(texte: string, hashtags: readonly string[]): App
   if (ecrits.length === 0 || hashtags.length === 0) return null;
 
   const cibles = hashtags
-    .map((h) => ({ declare: h, normalise: normaliserHashtag(h) }))
-    .filter((c) => c.normalise.length > 0);
+    .map(h => ({ declare: h, normalise: normaliserHashtag(h) }))
+    .filter(c => c.normalise.length > 0);
 
   let meilleur: Appariement | null = null;
 
@@ -306,11 +306,7 @@ export function apparierHashtag(texte: string, hashtags: readonly string[]): App
  * @param variantes graphies normalisées (sans croisillon)
  * @param suffixe   filtres à recoller à chaque requête (`-filter:replies since:…`)
  */
-export function requetesVariantes(
-  variantes: readonly string[],
-  suffixe = "",
-  longueurMax = 400,
-): string[] {
+export function requetesVariantes(variantes: readonly string[], suffixe = "", longueurMax = 400): string[] {
   const uniques = [...new Set(variantes.filter(Boolean))];
   if (uniques.length === 0) return [];
 
@@ -319,7 +315,7 @@ export function requetesVariantes(
 
   const vider = () => {
     if (lot.length === 0) return;
-    const groupe = lot.length === 1 ? `#${lot[0]}` : `(${lot.map((v) => `#${v}`).join(" OR ")})`;
+    const groupe = lot.length === 1 ? `#${lot[0]}` : `(${lot.map(v => `#${v}`).join(" OR ")})`;
     requetes.push(suffixe ? `${groupe} ${suffixe}`.trim() : groupe);
     lot = [];
   };

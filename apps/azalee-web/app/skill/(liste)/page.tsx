@@ -24,15 +24,13 @@ export async function generateMetadata({
   const filters: string[] = [];
 
   if (category) {
-    const catLabel = CATEGORY_FILTERS.find((c) => c.value === category)?.label;
+    const catLabel = CATEGORY_FILTERS.find(c => c.value === category)?.label;
     if (catLabel) {
       filters.push(catLabel);
     }
   }
   if (element) {
-    const elemLabel = ELEMENT_FILTERS.find(
-      (e) => e.value.toLowerCase() === element.toString().toLowerCase(),
-    )?.label;
+    const elemLabel = ELEMENT_FILTERS.find(e => e.value.toLowerCase() === element.toString().toLowerCase())?.label;
     if (elemLabel) {
       filters.push(elemLabel);
     }
@@ -85,18 +83,7 @@ export default async function SkillsPage({
 }) {
   const rawParams = await searchParams;
   const params = parseSearchParams(rawParams);
-  const {
-    q,
-    page,
-    type: category,
-    element,
-    has_video,
-    show_aura,
-    overdrive,
-    sort,
-    power_min,
-    power_max,
-  } = params;
+  const { q, page, type: category, element, has_video, show_aura, overdrive, sort, power_min, power_max } = params;
 
   const pageNumber = page ? Number.parseInt(page.toString(), 10) : 1;
 
@@ -116,8 +103,8 @@ export default async function SkillsPage({
   });
 
   // Re-map for UI
-  const categoryCounts = CATEGORY_FILTERS.map((f) => ({ ...f, count: 0 })); // Counts disabled for perf
-  const elementCounts = ELEMENT_FILTERS.map((f) => ({ ...f, count: 0 }));
+  const categoryCounts = CATEGORY_FILTERS.map(f => ({ ...f, count: 0 })); // Counts disabled for perf
+  const elementCounts = ELEMENT_FILTERS.map(f => ({ ...f, count: 0 }));
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
@@ -146,10 +133,7 @@ export default async function SkillsPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <WikiPageHeader
         icon="bolt"
         title="Techniques spéciales"

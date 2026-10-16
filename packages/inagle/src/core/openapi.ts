@@ -75,9 +75,7 @@ No authentication required for read operations.
   license: { name: "MIT", url: "https://opensource.org/licenses/MIT" },
 };
 
-const DEFAULT_SERVERS: OpenAPIServer[] = [
-  { url: "http://localhost:3000", description: "Local development" },
-];
+const DEFAULT_SERVERS: OpenAPIServer[] = [{ url: "http://localhost:3000", description: "Local development" }];
 
 // ============================================================================
 // Schema Converters
@@ -104,10 +102,7 @@ function zodToParameter(
 /**
  * Generate parameters from Zod object schema
  */
-function objectToParameters(
-  schema: z.ZodObject<z.ZodRawShape>,
-  location: "query" | "path",
-): object[] {
+function objectToParameters(schema: z.ZodObject<z.ZodRawShape>, location: "query" | "path"): object[] {
   const shape = schema.shape;
   const params: object[] = [];
 

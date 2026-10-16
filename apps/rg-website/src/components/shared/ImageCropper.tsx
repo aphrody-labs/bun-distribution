@@ -1,15 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Slider,
-} from "@rosegriffon/ui";
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Slider } from "@rosegriffon/ui";
 import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
@@ -91,7 +83,7 @@ export default function ImageCropper({
               min={1}
               max={3}
               step={0.1}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 const val = v[0];
                 if (val !== undefined) {
                   setZoom(val);
@@ -110,7 +102,7 @@ export default function ImageCropper({
               min={0}
               max={360}
               step={1}
-              onValueChange={(v) => {
+              onValueChange={v => {
                 const val = v[0];
                 if (val !== undefined) {
                   setRotation(val);
@@ -125,10 +117,7 @@ export default function ImageCropper({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-linear-to-r from-rg-rose to-rg-or hover:opacity-90 text-white"
-          >
+          <Button onClick={handleSave} className="bg-linear-to-r from-rg-rose to-rg-or hover:opacity-90 text-white">
             Valider
           </Button>
         </DialogFooter>

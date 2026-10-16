@@ -19,17 +19,17 @@ import { borner, creerEmbed, pied } from "./ui";
 
 /** Embed nu à la marque du profil, pied et horodatage compris. */
 export function rgEmbed(): EmbedBuilder {
-	return pied(creerEmbed());
+  return pied(creerEmbed());
 }
 
 /** @deprecated Utiliser `borner` de `lib/ui` — même comportement, nom français. */
 export function truncate(text: string | null | undefined, max = 200): string {
-	return borner(text, max);
+  return borner(text, max);
 }
 
 /** Lien absolu vers le site du profil actif. */
 export function rgUrl(path: string): string {
-	return `${RG_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${RG_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 /**
@@ -40,15 +40,15 @@ export function rgUrl(path: string): string {
  * l'historique du salon.
  */
 export function fmtDate(d: Date | string | null): string {
-	if (!d) return "—";
-	const date = typeof d === "string" ? new Date(d) : d;
-	return date.toLocaleDateString("fr-FR", {
-		day: "2-digit",
-		month: "long",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export const DAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];

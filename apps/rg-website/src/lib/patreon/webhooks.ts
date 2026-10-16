@@ -1,12 +1,7 @@
 import { verify as patreonVerify } from "@rosegriffon/patreon-bun";
 import { createPostgresClient } from "@rosegriffon/db/service";
 
-import type {
-  JsonApiResource,
-  PatreonAddressAttrs,
-  PatreonMemberAttrs,
-  PatreonTierAttrs,
-} from "./types";
+import type { JsonApiResource, PatreonAddressAttrs, PatreonMemberAttrs, PatreonTierAttrs } from "./types";
 
 /**
  * Tous les triggers Patreon v2 — référence officielle :
@@ -88,21 +83,17 @@ function parseTiers(
   const tierRel = member.relationships?.currently_entitled_tiers?.data;
   const refs = Array.isArray(tierRel) ? tierRel : tierRel ? [tierRel] : [];
   const tiers = refs
-    .map((r) =>
-      (included as unknown as JsonApiResource<PatreonTierAttrs>[]).find(
-        (i) => i.type === "tier" && i.id === r.id,
-      ),
+    .map(r =>
+      (included as unknown as JsonApiResource<PatreonTierAttrs>[]).find(i => i.type === "tier" && i.id === r.id),
     )
     .filter((t): t is JsonApiResource<PatreonTierAttrs> => Boolean(t));
 
   return {
-    discordRoleIds: tiers
-      .flatMap((t) => t.attributes.discord_role_ids ?? [])
-      .filter((s): s is string => Boolean(s)),
-    tierAmountsCents: tiers.map((t) => t.attributes.amount_cents ?? 0),
-    tierIds: tiers.map((t) => t.id),
-    tierRequiresShipping: tiers.map((t) => t.attributes.requires_shipping ?? false),
-    tierTitles: tiers.map((t) => t.attributes.title).filter((s): s is string => Boolean(s)),
+    discordRoleIds: tiers.flatMap(t => t.attributes.discord_role_ids ?? []).filter((s): s is string => Boolean(s)),
+    tierAmountsCents: tiers.map(t => t.attributes.amount_cents ?? 0),
+    tierIds: tiers.map(t => t.id),
+    tierRequiresShipping: tiers.map(t => t.attributes.requires_shipping ?? false),
+    tierTitles: tiers.map(t => t.attributes.title).filter((s): s is string => Boolean(s)),
   };
 }
 
@@ -119,7 +110,7 @@ function parseAddress(
     return null;
   }
   const addr = (included as unknown as JsonApiResource<PatreonAddressAttrs>[]).find(
-    (r) => r.type === "address" && r.id === id,
+    r => r.type === "address" && r.id === id,
   );
   return addr?.attributes ?? null;
 }
@@ -147,10 +138,7 @@ async function resolveRgUserId(
  * Dispatch sur le trigger Patreon. Tolère les types d'entités différents
  * (`member` vs `post`) : la lib Patreon n'envoie qu'une entité par event.
  */
-export async function processPatreonEvent(
-  payload: PatreonWebhookPayload,
-  trigger: PatreonTrigger,
-): Promise<void> {
+export async function processPatreonEvent(payload: PatreonWebhookPayload, trigger: PatreonTrigger): Promise<void> {
   const _supabase = createPostgresClient();
 
   if (trigger.startsWith("posts:")) {
@@ -164,10 +152,7 @@ export async function processPatreonEvent(
  * Trigger `posts:publish/update/delete` — stocke un audit dans
  * `patreon_post_events`. Utilisable par le digest hebdo + monitoring.
  */
-async function processPostEvent(
-  payload: PatreonWebhookPayload,
-  trigger: PatreonTrigger,
-): Promise<void> {
+async function processPostEvent(payload: PatreonWebhookPayload, trigger: PatreonTrigger): Promise<void> {
   const _supabase = createPostgresClient();
 
   const post = payload.data as JsonApiResource<PatreonPostAttrs>;
@@ -192,9 +177,7 @@ async function processPostEvent(
 
   const teaser =
     attrs.teaser_text ??
-    (typeof attrs.content === "string"
-      ? attrs.content.replaceAll(/<[^>]+>/g, "").slice(0, 300)
-      : null);
+    (typeof attrs.content === "string" ? attrs.content.replaceAll(/<[^>]+>/g, "").slice(0, 300) : null);
 
   await _supabase.from("patreon_post_events").upsert(
     {
@@ -218,10 +201,7 @@ async function processPostEvent(
 /**
  * Trigger `members:*` ou `members:pledge:*` — upsert legacy + live memberships.
  */
-async function processMemberEvent(
-  payload: PatreonWebhookPayload,
-  trigger: PatreonTrigger,
-): Promise<void> {
+async function processMemberEvent(payload: PatreonWebhookPayload, trigger: PatreonTrigger): Promise<void> {
   const _supabase = createPostgresClient();
 
   const member = payload.data as JsonApiResource<PatreonMemberAttrs>;
@@ -314,8 +294,7 @@ async function processMemberEvent(
         is_gifted: attrs.is_gifted ?? null,
         last_charge_date: attrs.last_charge_date ?? null,
         last_charge_status: attrs.last_charge_status ?? null,
-        lifetime_support_cents:
-          attrs.campaign_lifetime_support_cents ?? attrs.lifetime_support_cents ?? null,
+        lifetime_support_cents: attrs.campaign_lifetime_support_cents ?? attrs.lifetime_support_cents ?? null,
         member_email: attrs.email ?? null,
         next_charge_date: attrs.next_charge_date ?? null,
         note: attrs.note ?? null,

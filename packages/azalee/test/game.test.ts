@@ -30,12 +30,10 @@ const formation = FORMATIONS[0] as Formation;
 describe("formations — jeu de données embarqué", () => {
   test("les formations legacy gardent leurs identifiants persistés", () => {
     expect(FORMATIONS.length).toBe(8);
-    expect(FORMATIONS.every((f) => f.positions.find((p) => p.role === "GK")?.index === 10)).toBe(
-      true,
-    );
+    expect(FORMATIONS.every(f => f.positions.find(p => p.role === "GK")?.index === 10)).toBe(true);
     // Les legacy restent en tête : l'index 0 est un id historiquement persisté.
     expect(FORMATIONS[0]?.id).toBe("diamond442");
-    expect(new Set(FORMATIONS.map((f) => f.id)).size).toBe(FORMATIONS.length);
+    expect(new Set(FORMATIONS.map(f => f.id)).size).toBe(FORMATIONS.length);
   });
 
   test("chaque formation a 11 positions dont exactement un GK", () => {
@@ -43,11 +41,11 @@ describe("formations — jeu de données embarqué", () => {
       expect(f.positions).toHaveLength(11);
       expect(f.name.length).toBeGreaterThan(0);
       expect(f.label.length).toBeGreaterThan(0);
-      const gks = f.positions.filter((p) => p.role === "GK");
+      const gks = f.positions.filter(p => p.role === "GK");
       expect(gks).toHaveLength(1);
       expect(gks[0]?.index).toBe(10);
       // Index 0..10 uniques.
-      expect(new Set(f.positions.map((p) => p.index)).size).toBe(11);
+      expect(new Set(f.positions.map(p => p.index)).size).toBe(11);
       for (const p of f.positions) {
         expect(p.index).toBeGreaterThanOrEqual(0);
         expect(p.index).toBeLessThanOrEqual(10);
@@ -79,9 +77,9 @@ describe("team-rules — getPositionMatchFactor", () => {
   });
 
   test("MF est adjacent à FW et DF (0.85), et réciproquement", () => {
-    const slotFW = formation.positions.find((p) => p.role === "FW")!.index;
-    const slotMF = formation.positions.find((p) => p.role === "MF")!.index;
-    const slotDF = formation.positions.find((p) => p.role === "DF")!.index;
+    const slotFW = formation.positions.find(p => p.role === "FW")!.index;
+    const slotMF = formation.positions.find(p => p.role === "MF")!.index;
+    const slotDF = formation.positions.find(p => p.role === "DF")!.index;
     expect(getPositionMatchFactor("MF", `field-${slotFW}`, formation).status).toBe("adjacent");
     expect(getPositionMatchFactor("MF", `field-${slotFW}`, formation).factor).toBeCloseTo(0.85);
     expect(getPositionMatchFactor("MF", `field-${slotDF}`, formation).status).toBe("adjacent");
@@ -90,8 +88,8 @@ describe("team-rules — getPositionMatchFactor", () => {
   });
 
   test("FW↔DF et GK hors de son slot = mismatch (0.65)", () => {
-    const slotFW = formation.positions.find((p) => p.role === "FW")!.index;
-    const slotDF = formation.positions.find((p) => p.role === "DF")!.index;
+    const slotFW = formation.positions.find(p => p.role === "FW")!.index;
+    const slotDF = formation.positions.find(p => p.role === "DF")!.index;
     const res = getPositionMatchFactor("GK", `field-${slotFW}`, formation);
     expect(res.status).toBe("mismatch");
     expect(res.factor).toBeCloseTo(0.65);
@@ -162,25 +160,13 @@ describe("team-rules — recalculateMemberStats", () => {
   });
 
   test("un membre sans stats ne plante pas (tout à zéro)", () => {
-    const vide = recalculateMemberStats(
-      { element: "Fire", position: "FW" } as TeamMember,
-      99,
-      "field-0",
-      formation,
-    );
+    const vide = recalculateMemberStats({ element: "Fire", position: "FW" } as TeamMember, 99, "field-0", formation);
     expect(vide.combatPower).toBe(0);
   });
 
   test("combatPower = somme des 7 stats recalculées", () => {
     const res = recalculateMemberStats(membre(), 50, "field-0", formation);
-    const somme =
-      res.kick +
-      res.control +
-      res.technique +
-      res.pressure +
-      res.physical +
-      res.agility +
-      res.intelligence;
+    const somme = res.kick + res.control + res.technique + res.pressure + res.physical + res.agility + res.intelligence;
     expect(res.combatPower).toBe(somme);
   });
 });
@@ -223,8 +209,7 @@ describe("team-rules — calculateElementSynergies", () => {
 
   test("les remplaçants ne comptent pas dans la synergie de terrain", () => {
     const bench: Record<string, TeamMember> = {};
-    for (let i = 0; i < 6; i++)
-      bench[`reserve-${i}`] = { element: "Fire", position: "FW" } as TeamMember;
+    for (let i = 0; i < 6; i++) bench[`reserve-${i}`] = { element: "Fire", position: "FW" } as TeamMember;
     expect(calculateElementSynergies(bench, formation).dominantElement).toBeNull();
   });
 });

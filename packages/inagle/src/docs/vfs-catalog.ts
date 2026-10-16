@@ -5,12 +5,7 @@
  * directory topologies, and format signatures. Grounded in aphrody-nie-formats and IECODE.Core.
  */
 
-import type {
-  VfsCatalog,
-  VfsDirectoryCategory,
-  VfsFormatDescriptor,
-  VfsPackRule,
-} from "./types.js";
+import type { VfsCatalog, VfsDirectoryCategory, VfsFormatDescriptor, VfsPackRule } from "./types.js";
 
 /**
  * All 28 authoritative binary formats recognized by IECODE & NIE.
@@ -252,8 +247,7 @@ export const VFS_FORMATS: VfsFormatDescriptor[] = [
     magicHex: "0x4159414C",
     magicAscii: "LAYL",
     extension: ".crilayla",
-    description:
-      "CRI Layla Reverse-Bitstream LZSS Compressed Container (16-byte header + bitstream + 0x100 raw)",
+    description: "CRI Layla Reverse-Bitstream LZSS Compressed Container (16-byte header + bitstream + 0x100 raw)",
     isBigEndian: false,
     category: "container",
     encryptionSupported: false,
@@ -319,8 +313,7 @@ export const VFS_FORMATS: VfsFormatDescriptor[] = [
     magicHex: "0x9DCE66C3",
     magicAscii: "LIVE",
     extension: ".live",
-    description:
-      "Level-5 Lives Save Container (002AB8F4-* CRC32-keyed XOR stream cipher, 0xEEFF blobs)",
+    description: "Level-5 Lives Save Container (002AB8F4-* CRC32-keyed XOR stream cipher, 0xEEFF blobs)",
     isBigEndian: false,
     category: "system",
     encryptionSupported: true,
@@ -346,8 +339,7 @@ export const VFS_PACK_RULES: VfsPackRule[] = [
     filenameMask: "*menu*.cpk",
     keyDerivation: "filename-crc32",
     mountPriority: 90,
-    description:
-      "UI layouts, T2B menu settings, 200_icon sprites, portrait textures, and font atlases",
+    description: "UI layouts, T2B menu settings, 200_icon sprites, portrait textures, and font atlases",
     isCompressed: true,
   },
   {
@@ -355,8 +347,7 @@ export const VFS_PACK_RULES: VfsPackRule[] = [
     filenameMask: "*model*.cpk",
     keyDerivation: "filename-crc32",
     mountPriority: 80,
-    description:
-      "3D player models (G4MD), team kits, stadium geometries, and animation tracks (AGI)",
+    description: "3D player models (G4MD), team kits, stadium geometries, and animation tracks (AGI)",
     isCompressed: true,
   },
   {
@@ -380,8 +371,7 @@ export const VFS_PACK_RULES: VfsPackRule[] = [
     filenameMask: "*movie*.cpk",
     keyDerivation: "filename-crc32",
     mountPriority: 50,
-    description:
-      "Full-motion cutscenes, anime openings, and special moves (Hissatsu) USM video sequences",
+    description: "Full-motion cutscenes, anime openings, and special moves (Hissatsu) USM video sequences",
     isCompressed: false,
   },
   {
@@ -397,8 +387,7 @@ export const VFS_PACK_RULES: VfsPackRule[] = [
     filenameMask: "cpk_list.cfg.bin",
     keyDerivation: "viola-fixed",
     mountPriority: 1000,
-    description:
-      "Master VFS manifest mapping internal paths to CPK pack files. Encrypted with Viola key 0x1717E18E",
+    description: "Master VFS manifest mapping internal paths to CPK pack files. Encrypted with Viola key 0x1717E18E",
     isCompressed: false,
   },
 ];
@@ -431,8 +420,7 @@ export const VFS_DIRECTORIES: VfsDirectoryCategory[] = [
       "data/menu/ui/hud_match.cfg.bin",
       "data/menu/emblem/emblem_t001.g4tx",
     ],
-    description:
-      "User interface assets, HUD compositions, sprite sheets, font glyphs, and localized texture cards.",
+    description: "User interface assets, HUD compositions, sprite sheets, font glyphs, and localized texture cards.",
   },
   {
     path: "data/model/",
@@ -451,18 +439,13 @@ export const VFS_DIRECTORIES: VfsDirectoryCategory[] = [
     primaryExtension: ".mevbin",
     fileCountEstimate: 5173,
     sampleFiles: ["data/event/ch01/ev_01_001.mevbin", "data/event/ch01/ev_01_001.cfg.bin"],
-    description:
-      "Cinematic cutscenes, camera choreography, dialogue synchronizers, and story progression state trees.",
+    description: "Cinematic cutscenes, camera choreography, dialogue synchronizers, and story progression state trees.",
   },
   {
     path: "data/audio/",
     primaryExtension: ".acb",
     fileCountEstimate: 850,
-    sampleFiles: [
-      "data/audio/bgm/bgm_match_01.acb",
-      "data/audio/voice/v_c01000010.acb",
-      "data/audio/se/se_battle.acb",
-    ],
+    sampleFiles: ["data/audio/bgm/bgm_match_01.acb", "data/audio/voice/v_c01000010.acb", "data/audio/se/se_battle.acb"],
     description:
       "Criware CRI Atom Craft audio cue sheets, HCA stream banks, music loops, and synchronized voice tracks.",
   },
@@ -470,11 +453,7 @@ export const VFS_DIRECTORIES: VfsDirectoryCategory[] = [
     path: "data/saves/",
     primaryExtension: ".live",
     fileCountEstimate: 10,
-    sampleFiles: [
-      "data/saves/002AB8F4-SYSTEMLIVE",
-      "data/saves/002AB8F4-USERDATALIVE",
-      "data/saves/002AB8F4-AUTOSAVE",
-    ],
+    sampleFiles: ["data/saves/002AB8F4-SYSTEMLIVE", "data/saves/002AB8F4-USERDATALIVE", "data/saves/002AB8F4-AUTOSAVE"],
     description:
       "Player career saves, team rosters, gacha inventory, and trophy progress encrypted with CRC32 filename cipher.",
   },
@@ -501,13 +480,11 @@ export function getVfsCatalog(): VfsCatalog {
  */
 export function resolveFormat(magicOrExt: number | string): VfsFormatDescriptor | undefined {
   if (typeof magicOrExt === "number") {
-    return VFS_FORMATS.find((f) => parseInt(f.magicHex, 16) === magicOrExt);
+    return VFS_FORMATS.find(f => parseInt(f.magicHex, 16) === magicOrExt);
   }
   const needle = magicOrExt.trim().toLowerCase();
   // Rust detects the full eight-byte stream prefix; the retained descriptor
   // represents the four-byte LAYL segment rather than the stream start.
-  if (needle === "crilayla") return VFS_FORMATS.find((format) => format.id === 22);
-  return VFS_FORMATS.find(
-    (f) => f.extension.toLowerCase() === needle || f.magicAscii.trim().toLowerCase() === needle,
-  );
+  if (needle === "crilayla") return VFS_FORMATS.find(format => format.id === 22);
+  return VFS_FORMATS.find(f => f.extension.toLowerCase() === needle || f.magicAscii.trim().toLowerCase() === needle);
 }

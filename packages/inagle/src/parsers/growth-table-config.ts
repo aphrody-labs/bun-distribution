@@ -142,9 +142,7 @@ export async function loadGrowthTableConfigAsync(dataPath: string = DATA_ROOT) {
   return content ? parseContent(content) : null;
 }
 
-export async function buildGrowthTableDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<GrowthTableDatabase> {
+export async function buildGrowthTableDatabase(dataPath: string = DATA_ROOT): Promise<GrowthTableDatabase> {
   const result = await loadGrowthTableConfigAsync(dataPath);
   const lv1 = result?.lv1 || [];
   const lv30 = result?.lv30 || [];
@@ -157,8 +155,6 @@ export async function buildGrowthTableDatabase(
     main,
     sub,
     getLv1Stats: (mainPos, subPos, playStyle) =>
-      lv1.find(
-        (e) => e.mainPosition === mainPos && e.subPosition === subPos && e.playStyle === playStyle,
-      ) ?? null,
+      lv1.find(e => e.mainPosition === mainPos && e.subPosition === subPos && e.playStyle === playStyle) ?? null,
   };
 }

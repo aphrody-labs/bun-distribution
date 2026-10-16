@@ -58,12 +58,12 @@ const TYPES_PUBLICATION = new Set(["p", "reel", "reels", "tv"]);
 const SHORTCODE = /^[A-Za-z0-9_-]{5,30}$/;
 
 export interface PermalienInstagram {
-	/** L'identifiant de la publication chez Instagram — la clé de déduplication. */
-	shortcode: string;
-	/** Le permalien CANONIQUE, sans pseudo ni paramètre de traçage. */
-	permalien: string;
-	/** Le pseudo lu dans l'URL quand elle en porte un, sinon `null`. */
-	pseudo: string | null;
+  /** L'identifiant de la publication chez Instagram — la clé de déduplication. */
+  shortcode: string;
+  /** Le permalien CANONIQUE, sans pseudo ni paramètre de traçage. */
+  permalien: string;
+  /** Le pseudo lu dans l'URL quand elle en porte un, sinon `null`. */
+  pseudo: string | null;
 }
 
 /**
@@ -93,36 +93,36 @@ export interface PermalienInstagram {
  * vérification, puis une carte vide dans la galerie.
  */
 export function analyserPermalien(brut: string): PermalienInstagram | null {
-	const texte = (brut || "").trim();
-	if (!texte) return null;
+  const texte = (brut || "").trim();
+  if (!texte) return null;
 
-	let url: URL;
-	try {
-		// Un lien collé sans protocole reste un lien valide pour un humain.
-		url = new URL(/^https?:\/\//i.test(texte) ? texte : `https://${texte}`);
-	} catch {
-		return null;
-	}
+  let url: URL;
+  try {
+    // Un lien collé sans protocole reste un lien valide pour un humain.
+    url = new URL(/^https?:\/\//i.test(texte) ? texte : `https://${texte}`);
+  } catch {
+    return null;
+  }
 
-	const hote = url.hostname.toLowerCase().replace(/^www\./, "");
-	if (hote !== "instagram.com" && !hote.endsWith(".instagram.com")) return null;
+  const hote = url.hostname.toLowerCase().replace(/^www\./, "");
+  if (hote !== "instagram.com" && !hote.endsWith(".instagram.com")) return null;
 
-	const segments = url.pathname.split("/").filter(Boolean);
-	// `p/<code>` ou `<pseudo>/p/<code>` : on cherche le marqueur de type, où
-	// qu'il soit, plutôt que de tester deux gabarits de longueur.
-	const position = segments.findIndex((s) => TYPES_PUBLICATION.has(s.toLowerCase()));
-	if (position === -1) return null;
+  const segments = url.pathname.split("/").filter(Boolean);
+  // `p/<code>` ou `<pseudo>/p/<code>` : on cherche le marqueur de type, où
+  // qu'il soit, plutôt que de tester deux gabarits de longueur.
+  const position = segments.findIndex(s => TYPES_PUBLICATION.has(s.toLowerCase()));
+  if (position === -1) return null;
 
-	const shortcode = segments[position + 1];
-	if (!shortcode || !SHORTCODE.test(shortcode)) return null;
+  const shortcode = segments[position + 1];
+  if (!shortcode || !SHORTCODE.test(shortcode)) return null;
 
-	const pseudo = position > 0 ? (segments[position - 1] ?? null) : null;
+  const pseudo = position > 0 ? (segments[position - 1] ?? null) : null;
 
-	return {
-		permalien: permalienCanonique(shortcode),
-		pseudo: pseudo && /^[A-Za-z0-9._]{1,30}$/.test(pseudo) ? pseudo : null,
-		shortcode,
-	};
+  return {
+    permalien: permalienCanonique(shortcode),
+    pseudo: pseudo && /^[A-Za-z0-9._]{1,30}$/.test(pseudo) ? pseudo : null,
+    shortcode,
+  };
 }
 
 /**
@@ -133,7 +133,7 @@ export function analyserPermalien(brut: string): PermalienInstagram | null {
  * dépôt — sinon un lien accepté un jour serait « introuvable » le lendemain.
  */
 export function permalienCanonique(shortcode: string): string {
-	return `https://www.instagram.com/p/${shortcode}/`;
+  return `https://www.instagram.com/p/${shortcode}/`;
 }
 
 /**
@@ -145,13 +145,13 @@ export function permalienCanonique(shortcode: string): string {
  * galerie sait afficher « auteur inconnu ».
  */
 export function normaliserPseudo(brut: string | null | undefined): string | null {
-	if (typeof brut !== "string") return null;
-	const propre = brut
-		.trim()
-		.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-		.replace(/\/.*$/, "")
-		.replace(/^@+/, "");
-	return /^[A-Za-z0-9._]{1,30}$/.test(propre) ? propre : null;
+  if (typeof brut !== "string") return null;
+  const propre = brut
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/^@+/, "");
+  return /^[A-Za-z0-9._]{1,30}$/.test(propre) ? propre : null;
 }
 
 /**
@@ -164,26 +164,21 @@ export function normaliserPseudo(brut: string | null | undefined): string | null
  * après normalisation. La tolérance fine reste côté récolte, là où elle est
  * testée.
  */
-export function hashtagDansLegende(
-	legende: string,
-	hashtags: readonly string[]
-): string | null {
-	const normalise = (v: string) =>
-		v
-			.replace(/^#+/, "")
-			.normalize("NFD")
-			.replace(/\p{Diacritic}/gu, "")
-			.toLowerCase()
-			.replace(/[^a-z0-9]/g, "");
+export function hashtagDansLegende(legende: string, hashtags: readonly string[]): string | null {
+  const normalise = (v: string) =>
+    v
+      .replace(/^#+/, "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
 
-	const ecrits = new Set(
-		[...(legende || "").matchAll(/#([\p{L}\p{N}_]+)/gu)].map((m) => normalise(m[1] ?? ""))
-	);
-	for (const h of hashtags) {
-		const cible = normalise(h);
-		if (cible && ecrits.has(cible)) return h;
-	}
-	return null;
+  const ecrits = new Set([...(legende || "").matchAll(/#([\p{L}\p{N}_]+)/gu)].map(m => normalise(m[1] ?? "")));
+  for (const h of hashtags) {
+    const cible = normalise(h);
+    if (cible && ecrits.has(cible)) return h;
+  }
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -194,9 +189,9 @@ export function hashtagDansLegende(
 export type VerdictPublication = "publique" | "introuvable" | "indeterminee";
 
 export interface VerificationInstagram {
-	verdict: VerdictPublication;
-	/** Message destiné au déposant, en français, sans jargon d'API. */
-	message: string;
+  verdict: VerdictPublication;
+  /** Message destiné au déposant, en français, sans jargon d'API. */
+  message: string;
 }
 
 /** Point d'entrée oEmbed public de Meta — surchargeable (miroir, bouchon de test). */
@@ -217,40 +212,39 @@ export const OEMBED_INSTAGRAM = "https://graph.facebook.com/v23.0/instagram_oemb
  * rien non plus : une coupure de Meta viderait sinon la galerie d'un coup.
  */
 export function verdictDepuisReponse(statut: number, corps: unknown): VerificationInstagram {
-	if (statut === 200) {
-		return { message: "Publication vérifiée.", verdict: "publique" };
-	}
+  if (statut === 200) {
+    return { message: "Publication vérifiée.", verdict: "publique" };
+  }
 
-	// Meta encode la cause dans `error.code` / `error.error_subcode`. Le 400 seul
-	// ne suffit pas : il couvre aussi une URL mal formée de notre côté.
-	const erreur =
-		typeof corps === "object" && corps !== null
-			? ((corps as { error?: { code?: number; error_subcode?: number } }).error ?? {})
-			: {};
+  // Meta encode la cause dans `error.code` / `error.error_subcode`. Le 400 seul
+  // ne suffit pas : il couvre aussi une URL mal formée de notre côté.
+  const erreur =
+    typeof corps === "object" && corps !== null
+      ? ((corps as { error?: { code?: number; error_subcode?: number } }).error ?? {})
+      : {};
 
-	if (statut === 400 && (erreur.code === 24 || erreur.error_subcode === 2207045)) {
-		return {
-			message:
-				"Instagram ne trouve pas cette publication. Vérifie le lien, et que ton compte n'est pas en privé.",
-			verdict: "introuvable",
-		};
-	}
+  if (statut === 400 && (erreur.code === 24 || erreur.error_subcode === 2207045)) {
+    return {
+      message: "Instagram ne trouve pas cette publication. Vérifie le lien, et que ton compte n'est pas en privé.",
+      verdict: "introuvable",
+    };
+  }
 
-	if (statut === 400 || statut === 404) {
-		return { message: "Ce lien n'est pas une publication Instagram valide.", verdict: "introuvable" };
-	}
+  if (statut === 400 || statut === 404) {
+    return { message: "Ce lien n'est pas une publication Instagram valide.", verdict: "introuvable" };
+  }
 
-	return {
-		message: "Instagram n'a pas répondu ; ta création est enregistrée et sera vérifiée par l'équipe.",
-		verdict: "indeterminee",
-	};
+  return {
+    message: "Instagram n'a pas répondu ; ta création est enregistrée et sera vérifiée par l'équipe.",
+    verdict: "indeterminee",
+  };
 }
 
 export interface OptionsVerification {
-	/** Point d'entrée oEmbed. Défaut : `OEMBED_INSTAGRAM`. */
-	base?: string;
-	/** Au-delà, on ne bloque pas : on conclut « indéterminée ». Défaut : 5 s. */
-	delaiMs?: number;
+  /** Point d'entrée oEmbed. Défaut : `OEMBED_INSTAGRAM`. */
+  base?: string;
+  /** Au-delà, on ne bloque pas : on conclut « indéterminée ». Défaut : 5 s. */
+  delaiMs?: number;
 }
 
 /**
@@ -261,24 +255,23 @@ export interface OptionsVerification {
  * s'abstient de masquer.
  */
 export async function verifierPublication(
-	permalien: string,
-	options: OptionsVerification = {}
+  permalien: string,
+  options: OptionsVerification = {},
 ): Promise<VerificationInstagram> {
-	const url = new URL(options.base || OEMBED_INSTAGRAM);
-	url.searchParams.set("url", permalien);
-	// `omitscript` allège la réponse : on ne rend jamais le `html` de Meta au
-	// navigateur (il embarquerait un script tiers dans nos pages).
-	url.searchParams.set("omitscript", "true");
+  const url = new URL(options.base || OEMBED_INSTAGRAM);
+  url.searchParams.set("url", permalien);
+  // `omitscript` allège la réponse : on ne rend jamais le `html` de Meta au
+  // navigateur (il embarquerait un script tiers dans nos pages).
+  url.searchParams.set("omitscript", "true");
 
-	try {
-		const reponse = await fetch(url, { signal: AbortSignal.timeout(options.delaiMs ?? 5000) });
-		const corps = await reponse.json().catch(() => null);
-		return verdictDepuisReponse(reponse.status, corps);
-	} catch {
-		return {
-			message:
-				"Instagram n'a pas répondu ; ta création est enregistrée et sera vérifiée par l'équipe.",
-			verdict: "indeterminee",
-		};
-	}
+  try {
+    const reponse = await fetch(url, { signal: AbortSignal.timeout(options.delaiMs ?? 5000) });
+    const corps = await reponse.json().catch(() => null);
+    return verdictDepuisReponse(reponse.status, corps);
+  } catch {
+    return {
+      message: "Instagram n'a pas répondu ; ta création est enregistrée et sera vérifiée par l'équipe.",
+      verdict: "indeterminee",
+    };
+  }
 }

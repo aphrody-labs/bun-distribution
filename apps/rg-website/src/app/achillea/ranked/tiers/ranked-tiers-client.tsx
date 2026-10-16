@@ -9,11 +9,7 @@ import type { RankedTierInfo } from "@rosegriffon/achillea-types";
 import { Layers, ArrowLeft, Sparkles, TrendingUp } from "lucide-react";
 import { signalerException } from "@/lib/achillea/signaler";
 
-export default function RankedTiersPage({
-  initialTiers,
-}: {
-  initialTiers?: RankedTierInfo[] | null;
-}) {
+export default function RankedTiersPage({ initialTiers }: { initialTiers?: RankedTierInfo[] | null }) {
   const [mode, setMode] = useState<2 | 4>(2);
   const [tiers, setTiers] = useState<RankedTierInfo[]>(initialTiers ?? []);
   const [loading, setLoading] = useState<boolean>(initialTiers == null);
@@ -34,12 +30,12 @@ export default function RankedTiersPage({
 
     client.ranked
       .tiers(mode)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok) setTiers(res.value);
         else setError("Les paliers sont momentanément indisponibles.");
       })
-      .catch((cause) => {
+      .catch(cause => {
         signalerException("ranked/tiers", cause);
         if (!cancelled) setError("Les paliers sont momentanément indisponibles.");
       })
@@ -73,8 +69,7 @@ export default function RankedTiersPage({
             <h1 className="text-3xl font-bold tracking-tight">Paliers Compétitifs</h1>
           </div>
           <p className="text-lg text-muted-foreground">
-            Découvrez les 11 échelons du classement Achilléa, les seuils d'AP et la répartition des
-            compétiteurs.
+            Découvrez les 11 échelons du classement Achilléa, les seuils d'AP et la répartition des compétiteurs.
           </p>
         </div>
 
@@ -128,9 +123,7 @@ export default function RankedTiersPage({
           <TierDistribution tiers={tiers} />
         )}
         {error && tiers.length > 0 && (
-          <output className="text-lg text-amber-400">
-            {error} Les dernières données chargées restent affichées.
-          </output>
+          <output className="text-lg text-amber-400">{error} Les dernières données chargées restent affichées.</output>
         )}
       </div>
 
@@ -200,10 +193,9 @@ export default function RankedTiersPage({
           Règles du système d'AP (Achilléa Points)
         </h4>
         <p>
-          Le barème ELO utilise un coefficient K progressif et asymétrique : les premiers paliers
-          (Fer à Or) bénéficient d'un gain plus élevé (+20 AP) que de perte (-5 AP) pour encourager
-          la progression. À partir du palier Divin, les gains et pertes s'équilibrent de manière
-          symétrique (±16 AP) à niveau égal.
+          Le barème ELO utilise un coefficient K progressif et asymétrique : les premiers paliers (Fer à Or) bénéficient
+          d'un gain plus élevé (+20 AP) que de perte (-5 AP) pour encourager la progression. À partir du palier Divin,
+          les gains et pertes s'équilibrent de manière symétrique (±16 AP) à niveau égal.
         </p>
       </div>
     </div>

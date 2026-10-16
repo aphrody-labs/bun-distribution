@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { sharedAssetsDestDir } from "./cdn";
 
 describe("sharedAssetsDestDir", () => {
-	test("publie sous <racine statique>/rg/public sans doubler /static", () => {
-		expect(sharedAssetsDestDir("/var/www/cdn/static")).toBe(join("/var/www/cdn/static", "rg/public"));
-	});
+  test("publie sous <racine statique>/rg/public sans doubler /static", () => {
+    expect(sharedAssetsDestDir("/var/www/cdn/static")).toBe(join("/var/www/cdn/static", "rg/public"));
+  });
 });

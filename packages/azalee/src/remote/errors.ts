@@ -103,7 +103,5 @@ export function isAzaleeRetriable(value: unknown): boolean {
   if (!isAzaleeRemoteError(value)) return false;
   if (value.kind === "network" || value.kind === "timeout") return true;
   if (value.kind !== "http") return false;
-  return (
-    value.status === 408 || value.status === 425 || value.status === 429 || value.status >= 500
-  );
+  return value.status === 408 || value.status === 425 || value.status === 429 || value.status >= 500;
 }

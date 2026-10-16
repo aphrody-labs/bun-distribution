@@ -15,13 +15,7 @@ const SupabaseContext = createContext<SupabaseClient | null>(null);
  * the client uses it for authenticated requests (RLS).
  * Periodically refreshes the token from /api/supabase-token.
  */
-export function SupabaseProvider({
-  children,
-  initialToken,
-}: {
-  children: ReactNode;
-  initialToken?: string | null;
-}) {
+export function SupabaseProvider({ children, initialToken }: { children: ReactNode; initialToken?: string | null }) {
   const [token, setToken] = useState(initialToken || null);
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 

@@ -1,40 +1,26 @@
 "use client";
 
 import type { SessionUserDTO } from "@rosegriffon/achillea-types/domain/user";
-import {
-	createContext,
-	type ReactNode,
-	useCallback,
-	useContext,
-	useEffect,
-	useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { safeReturnUrl } from "./auth-session";
 import { failedIdentityStatus } from "./auth-status";
 import { createAchilleaClient } from "./client";
 
-export type AchilleaAuthStatus =
-	| "unknown"
-	| "loading"
-	| "authenticated"
-	| "anonymous"
-	| "error";
+export type AchilleaAuthStatus = "unknown" | "loading" | "authenticated" | "anonymous" | "error";
 
 export interface AchilleaAuthContextType {
-	user: SessionUserDTO | null;
-	status: AchilleaAuthStatus;
-	isLoading: boolean;
-	isAuthenticated: boolean;
-	/** Conduit à la connexion Rose Griffon — il n'y a plus de connexion Achilléa. */
-	login: (returnUrl?: string) => void;
-	logout: () => Promise<void>;
-	refreshUser: () => Promise<void>;
+  user: SessionUserDTO | null;
+  status: AchilleaAuthStatus;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  /** Conduit à la connexion Rose Griffon — il n'y a plus de connexion Achilléa. */
+  login: (returnUrl?: string) => void;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
-const AchilleaAuthContext = createContext<AchilleaAuthContextType | undefined>(
-	undefined,
-);
+const AchilleaAuthContext = createContext<AchilleaAuthContextType | undefined>(undefined);
 
 /**
  * Session Achilléa DÉRIVÉE de la session Rose Griffon.
@@ -60,147 +46,132 @@ const AchilleaAuthContext = createContext<AchilleaAuthContextType | undefined>(
  * `lib/achillea` — y compris des tests purs qui n'ont ni fenêtre ni URL de base.
  */
 export function AchilleaAuthProvider({ children }: { children: ReactNode }) {
-	const {
-		user: account,
-		isLoading: accountLoading,
-		logout: logoutAccount,
-	} = useAuth();
-	const [user, setUser] = useState<SessionUserDTO | null>(null);
-	const [status, setStatus] = useState<AchilleaAuthStatus>("unknown");
+  const { user: account, isLoading: accountLoading, logout: logoutAccount } = useAuth();
+  const [user, setUser] = useState<SessionUserDTO | null>(null);
+  const [status, setStatus] = useState<AchilleaAuthStatus>("unknown");
 
-	const lireSession = useCallback(
-		async (isCurrent: () => boolean = () => true): Promise<boolean> => {
-			const client = createAchilleaClient({ credentials: "include" });
-			const res = await client.auth.me();
-			if (!isCurrent()) return false;
-			if (res.ok && res.value?.id) {
-				setUser(res.value);
-				setStatus("authenticated");
-				return true;
-			}
-			setUser(null);
-			setStatus(failedIdentityStatus(res));
-			return false;
-		},
-		[],
-	);
+  const lireSession = useCallback(async (isCurrent: () => boolean = () => true): Promise<boolean> => {
+    const client = createAchilleaClient({ credentials: "include" });
+    const res = await client.auth.me();
+    if (!isCurrent()) return false;
+    if (res.ok && res.value?.id) {
+      setUser(res.value);
+      setStatus("authenticated");
+      return true;
+    }
+    setUser(null);
+    setStatus(failedIdentityStatus(res));
+    return false;
+  }, []);
 
-	const refreshUser = useCallback(async () => {
-		if (!account) {
-			setUser(null);
-			setStatus("anonymous");
-			return;
-		}
-		setStatus("loading");
-		try {
-			await lireSession();
-		} catch {
-			setUser(null);
-			setStatus("error");
-		}
-	}, [account, lireSession]);
+  const refreshUser = useCallback(async () => {
+    if (!account) {
+      setUser(null);
+      setStatus("anonymous");
+      return;
+    }
+    setStatus("loading");
+    try {
+      await lireSession();
+    } catch {
+      setUser(null);
+      setStatus("error");
+    }
+  }, [account, lireSession]);
 
-	useEffect(() => {
-		let annule = false;
-		if (accountLoading) return;
-		if (!account) {
-			setUser(null);
-			setStatus("anonymous");
-			return;
-		}
+  useEffect(() => {
+    let annule = false;
+    if (accountLoading) return;
+    if (!account) {
+      setUser(null);
+      setStatus("anonymous");
+      return;
+    }
 
-		const synchroniser = async () => {
-			setStatus("loading");
-			try {
-				// Toujours échanger l'identité RG avant de lire le cookie Achilléa :
-				// celui-ci peut encore appartenir au compte RG précédent.
-				// La passerelle répond `401`
-				// s'il n'y a pas de session Rose Griffon, `409` si aucun compte
-				// Discord n'y est lié — deux informations, pas des pannes. L'état
-				// reste `anonymous`.
-				const reponse = await fetch("/api/achillea/session", {
-					method: "POST",
-					// Explicite pour conserver la session RG quand le site est servi
-					// derrière un domaine parent/proxy ; le jeton HTTP-only est ensuite
-					// lu par ranked.rosegriffon.fr.
-					credentials: "include",
-					cache: "no-store",
-				});
-				if (annule) return;
-				if (!reponse.ok) {
-					setUser(null);
-					setStatus(reponse.status === 401 || reponse.status === 409 ? "anonymous" : "error");
-					return;
-				}
-				await lireSession(() => !annule);
-			} catch {
-				if (!annule) {
-					setUser(null);
-					setStatus("error");
-				}
-			}
-		};
+    const synchroniser = async () => {
+      setStatus("loading");
+      try {
+        // Toujours échanger l'identité RG avant de lire le cookie Achilléa :
+        // celui-ci peut encore appartenir au compte RG précédent.
+        // La passerelle répond `401`
+        // s'il n'y a pas de session Rose Griffon, `409` si aucun compte
+        // Discord n'y est lié — deux informations, pas des pannes. L'état
+        // reste `anonymous`.
+        const reponse = await fetch("/api/achillea/session", {
+          method: "POST",
+          // Explicite pour conserver la session RG quand le site est servi
+          // derrière un domaine parent/proxy ; le jeton HTTP-only est ensuite
+          // lu par ranked.rosegriffon.fr.
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (annule) return;
+        if (!reponse.ok) {
+          setUser(null);
+          setStatus(reponse.status === 401 || reponse.status === 409 ? "anonymous" : "error");
+          return;
+        }
+        await lireSession(() => !annule);
+      } catch {
+        if (!annule) {
+          setUser(null);
+          setStatus("error");
+        }
+      }
+    };
 
-		void synchroniser();
-		return () => {
-			annule = true;
-		};
-	}, [account?.id, accountLoading, lireSession]);
+    void synchroniser();
+    return () => {
+      annule = true;
+    };
+  }, [account?.id, accountLoading, lireSession]);
 
-	const login = useCallback(
-		(returnUrl = "/achillea") => {
-			if (account) {
-				window.location.assign("/settings?tab=connections");
-				return;
-			}
-			// Une seule porte d'entrée. `safeReturnUrl` reste indispensable : un
-			// chemin non validé (`//ailleurs.test`, `/\\ailleurs.test`) transforme le
-			// formulaire de connexion en redirection ouverte.
-			window.location.assign(
-				`/login?redirect=${encodeURIComponent(safeReturnUrl(returnUrl))}`,
-			);
-		},
-		[account],
-	);
+  const login = useCallback(
+    (returnUrl = "/achillea") => {
+      if (account) {
+        window.location.assign("/settings?tab=connections");
+        return;
+      }
+      // Une seule porte d'entrée. `safeReturnUrl` reste indispensable : un
+      // chemin non validé (`//ailleurs.test`, `/\\ailleurs.test`) transforme le
+      // formulaire de connexion en redirection ouverte.
+      window.location.assign(`/login?redirect=${encodeURIComponent(safeReturnUrl(returnUrl))}`);
+    },
+    [account],
+  );
 
-	const logout = useCallback(async () => {
-		try {
-			await fetch("/api/achillea/session", {
-				method: "DELETE",
-				credentials: "include",
-				cache: "no-store",
-			});
-		} finally {
-			setUser(null);
-			setStatus("anonymous");
-			await logoutAccount();
-			window.location.assign("/");
-		}
-	}, [logoutAccount]);
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/achillea/session", {
+        method: "DELETE",
+        credentials: "include",
+        cache: "no-store",
+      });
+    } finally {
+      setUser(null);
+      setStatus("anonymous");
+      await logoutAccount();
+      window.location.assign("/");
+    }
+  }, [logoutAccount]);
 
-	const value: AchilleaAuthContextType = {
-		user,
-		status,
-		isLoading: accountLoading || status === "loading" || status === "unknown",
-		isAuthenticated: status === "authenticated" && user !== null,
-		login,
-		logout,
-		refreshUser,
-	};
+  const value: AchilleaAuthContextType = {
+    user,
+    status,
+    isLoading: accountLoading || status === "loading" || status === "unknown",
+    isAuthenticated: status === "authenticated" && user !== null,
+    login,
+    logout,
+    refreshUser,
+  };
 
-	return (
-		<AchilleaAuthContext.Provider value={value}>
-			{children}
-		</AchilleaAuthContext.Provider>
-	);
+  return <AchilleaAuthContext.Provider value={value}>{children}</AchilleaAuthContext.Provider>;
 }
 
 export function useAchilleaAuth(): AchilleaAuthContextType {
-	const context = useContext(AchilleaAuthContext);
-	if (!context) {
-		throw new Error(
-			"useAchilleaAuth doit être utilisé dans un AchilleaAuthProvider",
-		);
-	}
-	return context;
+  const context = useContext(AchilleaAuthContext);
+  if (!context) {
+    throw new Error("useAchilleaAuth doit être utilisé dans un AchilleaAuthProvider");
+  }
+  return context;
 }

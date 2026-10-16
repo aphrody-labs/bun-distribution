@@ -40,28 +40,28 @@ import { twoFactor } from "better-auth/plugins";
  *   Griffon », « Azalée ») — c'est ce que l'utilisateur lira à côté du code.
  */
 export function deuxFacteurs(issuer: string) {
-	return twoFactor({
-		issuer,
-		// Comptes OAuth sans mot de passe : voir l'en-tête.
-		allowPasswordless: true,
-		schema: {
-			// `twoFactorEnabled` est ajouté au modèle user par le plugin lui-même. Better Auth
-			// fusionne ce schéma après `commonAuthOptions.user.fields` : le mapping doit donc
-			// aussi être déclaré ici, sinon l'adaptateur SQL cherche une colonne camelCase.
-			user: {
-				fields: {
-					twoFactorEnabled: "two_factor_enabled",
-				},
-			},
-			twoFactor: {
-				modelName: "two_factor",
-				fields: {
-					userId: "user_id",
-					backupCodes: "backup_codes",
-					failedVerificationCount: "failed_verification_count",
-					lockedUntil: "locked_until",
-				},
-			},
-		},
-	});
+  return twoFactor({
+    issuer,
+    // Comptes OAuth sans mot de passe : voir l'en-tête.
+    allowPasswordless: true,
+    schema: {
+      // `twoFactorEnabled` est ajouté au modèle user par le plugin lui-même. Better Auth
+      // fusionne ce schéma après `commonAuthOptions.user.fields` : le mapping doit donc
+      // aussi être déclaré ici, sinon l'adaptateur SQL cherche une colonne camelCase.
+      user: {
+        fields: {
+          twoFactorEnabled: "two_factor_enabled",
+        },
+      },
+      twoFactor: {
+        modelName: "two_factor",
+        fields: {
+          userId: "user_id",
+          backupCodes: "backup_codes",
+          failedVerificationCount: "failed_verification_count",
+          lockedUntil: "locked_until",
+        },
+      },
+    },
+  });
 }

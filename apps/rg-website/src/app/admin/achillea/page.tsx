@@ -10,15 +10,7 @@ import {
   Layers,
   Radio,
 } from "lucide-react";
-import {
-  AdminPageHeader,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Badge,
-  Button,
-} from "@rosegriffon/ui";
+import { AdminPageHeader, Card, CardHeader, CardTitle, CardContent, Badge, Button } from "@rosegriffon/ui";
 import { recouperComptes, schemaAchilleaPresent, volumesAchillea } from "@/lib/achillea/admin-db";
 
 export const dynamic = "force-dynamic";
@@ -93,9 +85,7 @@ export default async function AdminAchilleaPage() {
             <Card className="border-border/60 bg-card/60">
               <CardContent className="p-5 space-y-1">
                 <div className="text-lg text-muted-foreground">Profils Rose Griffon</div>
-                <div className="text-2xl font-black font-mono">
-                  {comptes.profilsRg.toLocaleString("fr-FR")}
-                </div>
+                <div className="text-2xl font-black font-mono">{comptes.profilsRg.toLocaleString("fr-FR")}</div>
                 <div className="text-lg text-muted-foreground">Base locale RG</div>
               </CardContent>
             </Card>
@@ -118,10 +108,7 @@ export default async function AdminAchilleaPage() {
                 </div>
                 <div className="text-lg text-muted-foreground">
                   Discord ID apparié (
-                  {comptes.profilsRg > 0
-                    ? Math.round((comptes.communs / comptes.profilsRg) * 100)
-                    : 0}
-                  % de RG)
+                  {comptes.profilsRg > 0 ? Math.round((comptes.communs / comptes.profilsRg) * 100) : 0}% de RG)
                 </div>
               </CardContent>
             </Card>
@@ -165,9 +152,7 @@ export default async function AdminAchilleaPage() {
             <Card className="border-border/60 bg-card/60">
               <CardContent className="p-4 space-y-1">
                 <div className="text-lg text-muted-foreground">Licences actives</div>
-                <div className="text-xl font-bold font-mono text-emerald-400">
-                  {volumes.licencesActives}
-                </div>
+                <div className="text-xl font-bold font-mono text-emerald-400">{volumes.licencesActives}</div>
                 <div className="text-lg text-muted-foreground">Joueurs officiels certifiés</div>
               </CardContent>
             </Card>
@@ -216,9 +201,7 @@ export default async function AdminAchilleaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-2 text-lg text-muted-foreground space-y-3">
-              <p>
-                Supervision des saisons, télémétrie bot, serveurs surveillés et état opérationnel.
-              </p>
+              <p>Supervision des saisons, télémétrie bot, serveurs surveillés et état opérationnel.</p>
               <Button asChild variant="outline" size="sm" className="w-full text-lg">
                 <Link href="/achillea/admins/dashboard">Accéder au dashboard</Link>
               </Button>
@@ -236,9 +219,7 @@ export default async function AdminAchilleaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-2 text-lg text-muted-foreground space-y-3">
-              <p>
-                Tranchage des contestations de scores, annulation de matchs et réajustement des AP.
-              </p>
+              <p>Tranchage des contestations de scores, annulation de matchs et réajustement des AP.</p>
               <Button asChild variant="outline" size="sm" className="w-full text-lg">
                 <Link href="/achillea/admins/ranked-disputes">Gérer les litiges</Link>
               </Button>
@@ -256,9 +237,7 @@ export default async function AdminAchilleaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-2 text-lg text-muted-foreground space-y-3">
-              <p>
-                Application d'avertissements, exclusions temporaires et bannissements du circuit.
-              </p>
+              <p>Application d'avertissements, exclusions temporaires et bannissements du circuit.</p>
               <Button asChild variant="outline" size="sm" className="w-full text-lg">
                 <Link href="/achillea/admins/sanctions">Voir les sanctions</Link>
               </Button>
@@ -276,9 +255,7 @@ export default async function AdminAchilleaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-2 text-lg text-muted-foreground space-y-3">
-              <p>
-                Examen et approbation des structures candidates pour l'organisation de tournois.
-              </p>
+              <p>Examen et approbation des structures candidates pour l'organisation de tournois.</p>
               <Button asChild variant="outline" size="sm" className="w-full text-lg">
                 <Link href="/achillea/organizations/validate">Valider les orgs</Link>
               </Button>

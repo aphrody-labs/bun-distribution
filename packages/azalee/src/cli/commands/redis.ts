@@ -68,11 +68,7 @@ export function registerRedisCommand(program: Command): void {
           );
         }
       } catch (e) {
-        reportError(
-          options.json,
-          errorMessage(e),
-          `${colors.red}Erreur Redis : ${errorMessage(e)}${colors.reset}`,
-        );
+        reportError(options.json, errorMessage(e), `${colors.red}Erreur Redis : ${errorMessage(e)}${colors.reset}`);
       } finally {
         exitUnlessRepl(0);
       }

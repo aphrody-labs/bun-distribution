@@ -19,7 +19,7 @@ function existsSync(p: string): boolean {
   }
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dir;
 const PACKAGE_ROOT = resolve(__dirname, "../..");
 
 /**
@@ -219,7 +219,7 @@ function versionSegments(filename: string): number[] {
   // Capture le dernier groupe `_<chiffres séparés par des points>` avant l'extension
   const m = filename.match(/_(\d+(?:\.\d+)*)\.cfg\.bin/);
   if (!m) return [];
-  return m[1].split(".").map((s) => Number.parseInt(s, 10));
+  return m[1].split(".").map(s => Number.parseInt(s, 10));
 }
 
 /** Tri numérique de versions (segment par segment), -1 / 0 / 1. */
@@ -258,7 +258,7 @@ export function resolveGameDataFile(relDir: string, baseName: string): string | 
         cwd: dir,
         onlyFiles: true,
       }),
-    ].filter((f) => versionedRe.test(f));
+    ].filter(f => versionedRe.test(f));
     if (matches.length > 0) {
       matches.sort(compareVersions);
       return join(dir, matches[matches.length - 1]);

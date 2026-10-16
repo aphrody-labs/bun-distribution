@@ -11,11 +11,7 @@ import "./atelier.css";
 type Viewer = HTMLElement & {
   exportScene: () => Promise<Blob>;
   /** Capture la vue courante sans recalculer son cadrage. */
-  toBlob: (options?: {
-    mimeType?: string;
-    qualityArgument?: number;
-    idealAspect?: boolean;
-  }) => Promise<Blob>;
+  toBlob: (options?: { mimeType?: string; qualityArgument?: number; idealAspect?: boolean }) => Promise<Blob>;
   updateFraming: () => void;
   updateComplete: Promise<boolean>;
 };
@@ -73,7 +69,7 @@ export function Modele3D({
         viewer.current = mv;
         setInstance(mv);
       })
-      .catch((e) => {
+      .catch(e => {
         if (!annule) setLoaderError(e instanceof Error ? e.message : "Visualiseur indisponible.");
       });
     return () => {
@@ -109,24 +105,19 @@ export function Modele3D({
     if (!instance || instance !== viewer.current) return;
     revision.current++;
     instance.setAttribute("orientation", `0deg 0deg ${transformation.rotation}deg`);
-    instance.setAttribute(
-      "scale",
-      `${transformation.echelle} ${transformation.echelle} ${transformation.echelle}`,
-    );
+    instance.setAttribute("scale", `${transformation.echelle} ${transformation.echelle} ${transformation.echelle}`);
   }, [instance, transformation.rotation, transformation.echelle]);
   return (
     <div className="atelier-visualiseur">
       <div ref={hote} className="atelier-visualiseur-hote" />
       <div className="atelier-visualiseur-outils">
-        <output className="mr-auto text-sm">
-          {erreur || (charge ? "Modèle prêt" : "Chargement du modèle…")}
-        </output>
+        <output className="mr-auto text-sm">{erreur || (charge ? "Modèle prêt" : "Chargement du modèle…")}</output>
         {erreur && (
           <Button
             variant="outline"
             onClick={() => {
               setCharge(false);
-              setTentative((t) => t + 1);
+              setTentative(t => t + 1);
             }}
           >
             Réessayer
@@ -156,11 +147,9 @@ export function Modele3D({
                   await mv.updateComplete;
                   if (viewer.current !== mv || revision.current !== version) return;
                   const blob = await mv.exportScene();
-                  if (viewer.current === mv && revision.current === version)
-                    telecharger(blob, "avatar.glb");
+                  if (viewer.current === mv && revision.current === version) telecharger(blob, "avatar.glb");
                 } catch {
-                  if (viewer.current === mv)
-                    setErreur("Export GLB impossible. Réessayez après le chargement complet.");
+                  if (viewer.current === mv) setErreur("Export GLB impossible. Réessayez après le chargement complet.");
                 } finally {
                   if (viewer.current === mv && exportToken.current === token) setExporte(false);
                 }
@@ -181,14 +170,12 @@ export function Modele3D({
                   await mv.updateComplete;
                   if (viewer.current !== mv || revision.current !== version) return;
                   const image = await mv.toBlob({ mimeType: "image/png", idealAspect: false });
-                  if (viewer.current === mv && revision.current === version)
-                    telecharger(image, "avatar.png");
+                  if (viewer.current === mv && revision.current === version) telecharger(image, "avatar.png");
                 } catch {
                   if (viewer.current === mv)
                     setErreur("Capture PNG impossible. Réessayez après le chargement complet.");
                 } finally {
-                  if (viewer.current === mv && captureToken.current === token)
-                    setCaptureEnCours(false);
+                  if (viewer.current === mv && captureToken.current === token) setCaptureEnCours(false);
                 }
               }}
             >
@@ -234,10 +221,10 @@ export function CurseurAtelier({
         max={max}
         step={step}
         value={[valeur]}
-        ref={(element) => {
+        ref={element => {
           element?.querySelector('[role="slider"]')?.setAttribute("aria-label", label);
         }}
-        onValueChange={(values) => {
+        onValueChange={values => {
           if (values[0] !== undefined) changer(values[0]);
         }}
       />

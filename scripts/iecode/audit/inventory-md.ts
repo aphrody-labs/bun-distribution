@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 const proc = Bun.spawnSync(["git", "ls-files", "*.md"]);
 const files = proc.stdout.toString().trim().split("\n").filter(Boolean);
@@ -16,7 +16,15 @@ const categories = {
 for (const f of files) {
   const stat = Bun.file(f);
   const item = { file: f, size: stat.size };
-  if (f.startsWith(".agents") || f.startsWith(".claude") || f.includes("AGENTS") || f.includes("CLAUDE") || f.includes("GEMINI") || f.includes("ai.json") || f.includes("A2A")) {
+  if (
+    f.startsWith(".agents") ||
+    f.startsWith(".claude") ||
+    f.includes("AGENTS") ||
+    f.includes("CLAUDE") ||
+    f.includes("GEMINI") ||
+    f.includes("ai.json") ||
+    f.includes("A2A")
+  ) {
     categories.ai.push(item);
   } else if (f.startsWith("docs/")) {
     categories.docs.push(item);

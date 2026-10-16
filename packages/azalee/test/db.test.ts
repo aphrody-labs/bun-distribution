@@ -56,17 +56,14 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
 
   test("eq filtre sur une valeur exacte", async () => {
     const data = await rows(
-      db
-        .from("inagle_characters")
-        .select("internal_code, name_fr")
-        .eq("internal_code", "c01000010"),
+      db.from("inagle_characters").select("internal_code, name_fr").eq("internal_code", "c01000010"),
     );
     expect(data.length).toBeGreaterThan(0);
     for (const row of data) {
       expect(row.internal_code).toBe("c01000010");
     }
     // Mark Evans = perso #0 du zukan, présent dans tous les snapshots.
-    expect(data.some((r) => typeof r.name_fr === "string" && r.name_fr.length > 0)).toBe(true);
+    expect(data.some(r => typeof r.name_fr === "string" && r.name_fr.length > 0)).toBe(true);
   });
 
   test("eq(col, null) émet IS NULL (et non `= NULL`)", async () => {
@@ -80,9 +77,7 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
   });
 
   test("ilike applique un LIKE (insensible à la casse ASCII)", async () => {
-    const data = await rows(
-      db.from("inagle_skills").select("name_fr").ilike("name_fr", "%feu%").limit(10),
-    );
+    const data = await rows(db.from("inagle_skills").select("name_fr").ilike("name_fr", "%feu%").limit(10));
     expect(data.length).toBeGreaterThan(0);
     for (const row of data) {
       expect(String(row.name_fr).toLowerCase()).toContain("feu");
@@ -108,16 +103,12 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
   test("or(...) préserve les valeurs multi-mots (pas de troncature à l'espace)", async () => {
     // Vérité terrain : on récupère un nom contenant un espace puis on le
     // recherche via `.or(col.eq.<valeur avec espaces>)`.
-    const [sample] = await rows(
-      db.from("inagle_skills").select("name_fr").ilike("name_fr", "% %").limit(1),
-    );
+    const [sample] = await rows(db.from("inagle_skills").select("name_fr").ilike("name_fr", "% %").limit(1));
     const name = String(sample?.name_fr);
     expect(name).toContain(" ");
-    const data = await rows(
-      db.from("inagle_skills").select("name_fr").or(`name_fr.eq.${name}`).limit(5),
-    );
+    const data = await rows(db.from("inagle_skills").select("name_fr").or(`name_fr.eq.${name}`).limit(5));
     expect(data.length).toBeGreaterThan(0);
-    expect(data.every((r) => r.name_fr === name)).toBe(true);
+    expect(data.every(r => r.name_fr === name)).toBe(true);
   });
 
   test("or(...) malformé matche RIEN (jamais toute la table)", async () => {
@@ -126,26 +117,18 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
   });
 
   test("in([]) vide matche RIEN, in([...]) filtre", async () => {
-    expect(
-      await rows(db.from("inagle_items").select("id").in("category", []).limit(5)),
-    ).toHaveLength(0);
-    const data = await rows(
-      db.from("inagle_items").select("id, category").in("category", ["shoes"]).limit(5),
-    );
+    expect(await rows(db.from("inagle_items").select("id").in("category", []).limit(5))).toHaveLength(0);
+    const data = await rows(db.from("inagle_items").select("id, category").in("category", ["shoes"]).limit(5));
     expect(data.length).toBeGreaterThan(0);
-    expect(data.every((r) => r.category === "shoes")).toBe(true);
+    expect(data.every(r => r.category === "shoes")).toBe(true);
   });
 
   test("not(col,'like',...) exclut le motif", async () => {
     const data = await rows(
-      db
-        .from("inagle_characters")
-        .select("internal_code")
-        .not("internal_code", "like", "c%")
-        .limit(20),
+      db.from("inagle_characters").select("internal_code").not("internal_code", "like", "c%").limit(20),
     );
     expect(data.length).toBeGreaterThan(0);
-    expect(data.every((r) => !String(r.internal_code).startsWith("c"))).toBe(true);
+    expect(data.every(r => !String(r.internal_code).startsWith("c"))).toBe(true);
   });
 
   test("range(from,to) pagine (LIMIT/OFFSET) sans altérer le count", async () => {
@@ -159,19 +142,15 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
     expect(page1).toHaveLength(5);
     expect((other.data as Row[]).length).toBe(5);
     // Pages disjointes.
-    const ids = new Set(page1.map((r) => r.id));
-    expect((other.data as Row[]).some((r) => ids.has(r.id))).toBe(false);
+    const ids = new Set(page1.map(r => r.id));
+    expect((other.data as Row[]).some(r => ids.has(r.id))).toBe(false);
     expect(other.count).toBeGreaterThan(1000);
   });
 
   test("order ascending/descending inverse bien le tri", async () => {
-    const asc = await rows(
-      db.from("inagle_items").select("id").order("id", { ascending: true }).limit(5),
-    );
-    const desc = await rows(
-      db.from("inagle_items").select("id").order("id", { ascending: false }).limit(5),
-    );
-    const ascIds = asc.map((r) => String(r.id));
+    const asc = await rows(db.from("inagle_items").select("id").order("id", { ascending: true }).limit(5));
+    const desc = await rows(db.from("inagle_items").select("id").order("id", { ascending: false }).limit(5));
+    const ascIds = asc.map(r => String(r.id));
     expect([...ascIds].sort()).toEqual(ascIds);
     expect(String(desc[0]?.id) > String(asc[0]?.id)).toBe(true);
   });
@@ -195,11 +174,7 @@ describe.skipIf(!hasMirror)("SqliteQueryBuilder — lectures réelles du miroir"
     expect(found.error).toBeNull();
     expect((found.data as Row | null)?.name_fr).toBe("Raimon");
 
-    const missing = await db
-      .from("inagle_teams")
-      .select("*")
-      .eq("id", "id-inexistant")
-      .maybeSingle();
+    const missing = await db.from("inagle_teams").select("*").eq("id", "id-inexistant").maybeSingle();
     expect(missing.error).toBeNull();
     expect(missing.data).toBeNull();
   });

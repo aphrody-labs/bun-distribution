@@ -21,9 +21,7 @@ export interface CrossVoiceClip {
  * @param characterCode Code du personnage (ex: "c00001001" ou format brut 1001)
  * @returns Tableau d'objets CrossVoiceClip contenant le nom de l'action/cue et son URL sur le CDN
  */
-export function getCrossCharacterVoices(
-  characterCode: string | number | undefined | null,
-): CrossVoiceClip[] {
+export function getCrossCharacterVoices(characterCode: string | number | undefined | null): CrossVoiceClip[] {
   if (!characterCode) return [];
 
   let formattedCode = characterCode.toString();
@@ -35,7 +33,7 @@ export function getCrossCharacterVoices(
   const cues = characters[formattedCode] as string[] | undefined;
   if (!cues) return [];
 
-  return cues.map((cue) => {
+  return cues.map(cue => {
     // cue est sous la forme "001_c00001001_GameStart"
     // Le fichier réel sur le CDN est "c00001001_<cue>.wav"
     const cleanCue = cue.replace(/;.*$/, "").trim(); // Nettoie les cue multiples séparés par des point-virgules
@@ -122,10 +120,7 @@ export function resolveCrossAssetUrl(address: string | undefined | null): string
     ];
     if (localUiTextures.includes(baseName)) {
       // On préfère les sprites pour l'UI, sinon textures
-      if (
-        cleanAddress.toLowerCase().includes("sprite") ||
-        cleanAddress.toLowerCase().includes("atlas")
-      ) {
+      if (cleanAddress.toLowerCase().includes("sprite") || cleanAddress.toLowerCase().includes("atlas")) {
         return getCrossLocalAssetUrl(`sprites/${baseName}`);
       }
       return getCrossLocalAssetUrl(`textures/${baseName}`);

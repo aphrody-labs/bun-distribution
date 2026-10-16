@@ -119,8 +119,7 @@ function extractResources(html: string, baseUrl: string): Map<string, ResourceKi
     else add(href, classifyByUrl(href));
   }
   // <script src=...>
-  for (const m of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi))
-    add(m[1], "script");
+  for (const m of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)) add(m[1], "script");
   // <img src / data-src / srcset>
   for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
     const tag = m[0];
@@ -143,8 +142,7 @@ function extractResources(html: string, baseUrl: string): Map<string, ResourceKi
     add(tag.match(/\bposter=["']([^"']+)["']/i)?.[1], "image");
   }
   // <iframe src>
-  for (const m of html.matchAll(/<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi))
-    add(m[1], "iframe");
+  for (const m of html.matchAll(/<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)) add(m[1], "iframe");
   // inline style url(...) et style="background:url(...)"
   for (const m of html.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi)) {
     const u = m[1];
@@ -216,10 +214,7 @@ export async function crawlWebRecon(opts: WebReconOptions): Promise<WebReconResu
   // l’inspection DNS restent explicitement non disponibles sur cette API.
   const frameworks = { source: "aphrody-web-crawl", detection: "not-available" };
   const zukanDetect = { source: "aphrody-web-crawl", detection: "not-available" };
-  await writeArtifact(
-    "detect.json",
-    JSON.stringify({ root: frameworks, "zukan.inazuma.jp": zukanDetect }, null, 2),
-  );
+  await writeArtifact("detect.json", JSON.stringify({ root: frameworks, "zukan.inazuma.jp": zukanDetect }, null, 2));
   await writeArtifact(
     "recon.md",
     `# Recon
@@ -299,7 +294,7 @@ Bounded rendered discovery through aphrody-web-crawl. DNS/framework detection is
       },
     );
     await writeArtifact("probes.json", JSON.stringify(probes, null, 2));
-    const byUrl = new Map(probes.pages.map((page) => [page.url, page]));
+    const byUrl = new Map(probes.pages.map(page => [page.url, page]));
     for (const [url, meta] of selected) {
       const page = byUrl.get(url);
       let kind = meta.kind;
@@ -347,7 +342,7 @@ Bounded rendered discovery through aphrody-web-crawl. DNS/framework detection is
 
   // --- 5. Agrégations ---
   endpoints.sort((a, b) => a.url.localeCompare(b.url));
-  const allUrls = endpoints.map((e) => e.url);
+  const allUrls = endpoints.map(e => e.url);
   const subdomains = [...new Set(allUrls.map(hostOf).filter((h): h is string => !!h))].sort();
   const cdnHosts = new Set([
     "iijcdn.jp",
@@ -360,22 +355,22 @@ Bounded rendered discovery through aphrody-web-crawl. DNS/framework detection is
     "ytimg.com",
   ]);
   const cdnUrls = allUrls
-    .filter((u) => {
+    .filter(u => {
       const h = hostOf(u);
-      return h ? [...cdnHosts].some((c) => h.endsWith(c)) : false;
+      return h ? [...cdnHosts].some(c => h.endsWith(c)) : false;
     })
     .sort();
   const images = endpoints
-    .filter((e) => e.kind === "image")
-    .map((e) => e.url)
+    .filter(e => e.kind === "image")
+    .map(e => e.url)
     .sort();
   const css = endpoints
-    .filter((e) => e.kind === "stylesheet")
-    .map((e) => e.url)
+    .filter(e => e.kind === "stylesheet")
+    .map(e => e.url)
     .sort();
   const js = endpoints
-    .filter((e) => e.kind === "script")
-    .map((e) => e.url)
+    .filter(e => e.kind === "script")
+    .map(e => e.url)
     .sort();
 
   await writeArtifact("endpoints.json", JSON.stringify(endpoints, null, 2));
@@ -505,15 +500,11 @@ function fmtDetect(d: any): string {
   for (const [key, label] of cats) {
     const arr = d[key];
     if (Array.isArray(arr) && arr.length) {
-      const names = arr
-        .map((x: any) => (typeof x === "string" ? x : x?.name || JSON.stringify(x)))
-        .join(", ");
+      const names = arr.map((x: any) => (typeof x === "string" ? x : x?.name || JSON.stringify(x))).join(", ");
       lines.push(`- **${label}**: ${names}`);
     }
   }
-  return lines.length
-    ? lines.join("\n")
-    : "_Aucun signal de framework détecté (site statique server-rendered)._";
+  return lines.length ? lines.join("\n") : "_Aucun signal de framework détecté (site statique server-rendered)._";
 }
 
 function buildFrameworksMd(root: any, zukan: any, subdomains: string[], cdnUrls: string[]): string {
@@ -544,11 +535,11 @@ Note : \`zukan\` est hébergé sur **AWS** (ELB \`*.ap-northeast-1.elb.amazonaws
 
 ## Sous-domaines / hôtes observés (${subdomains.length})
 
-${subdomains.map((s) => `- \`${s}\``).join("\n")}
+${subdomains.map(s => `- \`${s}\``).join("\n")}
 
 ## Hôtes CDN référencés (${
     new Set(
-      cdnUrls.map((u) => {
+      cdnUrls.map(u => {
         try {
           return new URL(u).hostname;
         } catch {
@@ -561,7 +552,7 @@ ${subdomains.map((s) => `- \`${s}\``).join("\n")}
 ${
   [
     ...new Set(
-      cdnUrls.map((u) => {
+      cdnUrls.map(u => {
         try {
           return new URL(u).hostname;
         } catch {
@@ -570,7 +561,7 @@ ${
       }),
     ),
   ]
-    .map((h) => `- \`${h}\``)
+    .map(h => `- \`${h}\``)
     .join("\n") || "_aucun_"
 }
 `;
@@ -591,13 +582,13 @@ function buildLlmsTxt(d: {
 }): string {
   const sections = [
     ...new Set(
-      d.pages.map((p) => {
+      d.pages.map(p => {
         const m = p.match(/\/victory-road\/fr\/([^/]+)/);
         return m ? m[1] : "(racine)";
       }),
     ),
   ].sort();
-  const byKind = (k: string) => d.endpoints.filter((e) => e.kind === k).length;
+  const byKind = (k: string) => d.endpoints.filter(e => e.kind === k).length;
   const statusCounts: Record<string, number> = {};
   for (const e of d.endpoints) {
     const key = e.status == null ? "non-sondé" : String(e.status);
@@ -631,15 +622,15 @@ function buildLlmsTxt(d: {
 
 ## Sous-domaines / hôtes
 
-${d.subdomains.map((s) => `- ${s}`).join("\n")}
+${d.subdomains.map(s => `- ${s}`).join("\n")}
 
 ## Sections du site (victory-road/fr)
 
-${sections.map((s) => `- /${s === "(racine)" ? "" : s + "/"}`).join("\n")}
+${sections.map(s => `- /${s === "(racine)" ? "" : s + "/"}`).join("\n")}
 
 ## Pages crawlées (${d.pages.length})
 
-${d.pages.map((p) => `- ${p}`).join("\n")}
+${d.pages.map(p => `- ${p}`).join("\n")}
 
 ## Répartition des endpoints
 
@@ -650,25 +641,21 @@ ${d.pages.map((p) => `- ${p}`).join("\n")}
 
 ## Feuilles de style (${d.css.length})
 
-${d.css.map((u) => `- ${u}`).join("\n")}
+${d.css.map(u => `- ${u}`).join("\n")}
 
 ## Bundles JS (${d.js.length})
 
-${d.js.map((u) => `- ${u}`).join("\n")}
+${d.js.map(u => `- ${u}`).join("\n")}
 
 ## Payloads JSON (${d.json.length})
 
-${d.json.length ? d.json.map((j) => `- ${j.url}`).join("\n") : "- (aucun payload JSON détecté — site sans API JSON publique sur ces pages)"}
+${d.json.length ? d.json.map(j => `- ${j.url}`).join("\n") : "- (aucun payload JSON détecté — site sans API JSON publique sur ces pages)"}
 
 ## Liens externes notables
 
 ${
-  [
-    ...new Set(
-      d.endpoints.filter((e) => e.kind === "link" || e.kind === "iframe").map((e) => e.url),
-    ),
-  ]
-    .filter((u) => {
+  [...new Set(d.endpoints.filter(e => e.kind === "link" || e.kind === "iframe").map(e => e.url))]
+    .filter(u => {
       try {
         return new URL(u).hostname !== "www.inazuma.jp";
       } catch {
@@ -676,7 +663,7 @@ ${
       }
     })
     .sort()
-    .map((u) => `- ${u}`)
+    .map(u => `- ${u}`)
     .join("\n") || "- (aucun)"
 }
 

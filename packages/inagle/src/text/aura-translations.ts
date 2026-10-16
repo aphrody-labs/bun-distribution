@@ -11,10 +11,7 @@ export function translatePassiveEffect(text: string): string {
   s = s.replace(/^On the opposition'?s? half of the pitch, /, "Camp adverse : ");
   s = s.replace(/^On your half of the pitch, /, "Camp allié : ");
   s = s.replace(/^When a player of the same element is nearby, /, "Même élément à proximité : ");
-  s = s.replace(
-    /^When a player of a different element is nearby, /,
-    "Élément différent à proximité : ",
-  );
+  s = s.replace(/^When a player of a different element is nearby, /, "Élément différent à proximité : ");
   s = s.replace(/^When making a pass, /, "Lors d'une passe : ");
   s = s.replace(/^When winning a Focus or Scramble Battle, /, "Victoire d'affrontement : ");
   s = s.replace(/^When outside the zone, /, "Hors zone : ");
@@ -34,10 +31,7 @@ export function translatePassiveEffect(text: string): string {
   s = s.replaceAll(/\bTension Breach Cost\b/g, "Coût tension brèche");
   s = s.replaceAll(/\bTension\b/g, "Tension");
   // Multiline
-  s = s.replace(
-    /Transforms into an ally player on the field.*/,
-    "Se transforme en joueur allié sur le terrain",
-  );
+  s = s.replace(/Transforms into an ally player on the field.*/, "Se transforme en joueur allié sur le terrain");
   return s;
 }
 

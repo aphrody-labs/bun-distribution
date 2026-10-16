@@ -79,7 +79,7 @@ export async function GET(request: Request) {
       .order("role");
 
     const baseUrl = getPublicOrigin();
-    const links = (users || []).map((u) => ({
+    const links = (users || []).map(u => ({
       full_name: u.full_name,
       magic_link: `${baseUrl}/api/auth/magic-login?secret=${encodeURIComponent(secret)}&user=${u.id}`,
       role: u.role,

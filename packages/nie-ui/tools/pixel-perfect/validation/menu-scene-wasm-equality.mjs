@@ -22,10 +22,7 @@ let layers = 0;
 let objects = 0;
 for (const path of paths) {
   const document = JSON.parse(readFileSync(path, "utf8"));
-  assert(
-    document.runtimeScenes && typeof document.runtimeScenes === "object",
-    "Missing native runtimeScenes",
-  );
+  assert(document.runtimeScenes && typeof document.runtimeScenes === "object", "Missing native runtimeScenes");
   const nativeScenes = Object.values(document.runtimeScenes);
   assert(nativeScenes.length > 0, "Native export contains no scenes");
   for (const scene of nativeScenes) {
@@ -49,17 +46,11 @@ for (const path of paths) {
     assert.deepStrictEqual(actual, scene, "Native and WebAssembly object state differs");
     scenes++;
     layers += Object.keys(actual.layers).length;
-    objects += Object.values(actual.layers).reduce(
-      (sum, layer) => sum + Object.keys(layer.objects).length,
-      0,
-    );
+    objects += Object.values(actual.layers).reduce((sum, layer) => sum + Object.keys(layer.objects).length, 0);
   }
 }
 for (const input of ["{}", "null", "invalid"]) {
-  assert.throws(
-    () => menu_runtime_scene_json(input),
-    "Invalid state must fail instead of producing an empty scene",
-  );
+  assert.throws(() => menu_runtime_scene_json(input), "Invalid state must fail instead of producing an empty scene");
 }
 assert(objects > 0, "At least one observed runtime object is required");
 console.log(

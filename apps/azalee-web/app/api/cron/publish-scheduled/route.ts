@@ -69,9 +69,7 @@ export async function POST(request: NextRequest) {
                   description: article.excerpt || "",
                   url: `https://azalee.rosegriffon.fr/news/${article.slug}`,
                   color: 0xf2a93b,
-                  image: article.featured_image_url
-                    ? { url: article.featured_image_url }
-                    : undefined,
+                  image: article.featured_image_url ? { url: article.featured_image_url } : undefined,
                   footer: { text: "Azalée — Rose Griffon" },
                 },
               ],
@@ -96,9 +94,6 @@ export async function POST(request: NextRequest) {
       published: articles.length,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur interne" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erreur interne" }, { status: 500 });
   }
 }

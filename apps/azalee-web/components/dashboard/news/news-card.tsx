@@ -15,8 +15,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
   const relativeDate = item.updated_at
     ? formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: fr })
     : null;
-  const href =
-    item.status === "published" ? `/news/${item.slug || item.id}` : `/dashboard/news/${item.id}`;
+  const href = item.status === "published" ? `/news/${item.slug || item.id}` : `/dashboard/news/${item.id}`;
 
   return (
     <div className="group flex flex-col">
@@ -44,11 +43,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
                       : "bg-primary-container text-on-primary-container"
                 }`}
               >
-                {item.status === "published"
-                  ? "Publié"
-                  : item.status === "archived"
-                    ? "Archivé"
-                    : "Brouillon"}
+                {item.status === "published" ? "Publié" : item.status === "archived" ? "Archivé" : "Brouillon"}
               </Badge>
             </div>
 
@@ -81,7 +76,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
             <div
               role="presentation"
               className="absolute bottom-4 right-4 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-[cubic-bezier(0.05,0.7,0.1,1)]"
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
@@ -107,24 +102,18 @@ export function NewsCard({ item }: { item: NewsItem }) {
           </h3>
         </Link>
         {item.excerpt && (
-          <p className="text-sm text-on-surface-variant/70 line-clamp-2 leading-relaxed">
-            {item.excerpt}
-          </p>
+          <p className="text-sm text-on-surface-variant/70 line-clamp-2 leading-relaxed">{item.excerpt}</p>
         )}
         <div className="flex items-center gap-3 text-sm text-on-surface-variant">
           <span
             className="flex items-center gap-1.5"
-            title={
-              item.updated_at ? new Date(item.updated_at).toLocaleDateString("fr-FR") : undefined
-            }
+            title={item.updated_at ? new Date(item.updated_at).toLocaleDateString("fr-FR") : undefined}
           >
             <Icon name="schedule" size={14} className="opacity-60" />
             <span className="text-xs">{relativeDate || "—"}</span>
           </span>
           <span className="size-1 rounded-full bg-outline-variant" />
-          <span className="font-medium text-on-surface text-sm truncate">
-            {item.author?.full_name || "Azalée"}
-          </span>
+          <span className="font-medium text-on-surface text-sm truncate">{item.author?.full_name || "Azalée"}</span>
         </div>
       </div>
     </div>

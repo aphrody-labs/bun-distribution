@@ -14,14 +14,7 @@ interface SpriteIconProps extends React.HTMLAttributes<HTMLDivElement> {
   scale?: number;
 }
 
-export const SpriteIcon = ({
-  name,
-  variant = "default",
-  scale = 1,
-  className,
-  style,
-  ...props
-}: SpriteIconProps) => {
+export const SpriteIcon = ({ name, variant = "default", scale = 1, className, style, ...props }: SpriteIconProps) => {
   const sprite = SPRITES[name];
 
   if (!sprite) {

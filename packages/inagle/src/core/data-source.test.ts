@@ -14,19 +14,12 @@ test("explicit adapters win over automatic availability", () => {
 
 test("invalid selection and disabled PostgreSQL fail before opening data", () => {
   expect(() => selectDataSource({ explicit: "foreign" })).toThrow("INAGLE_DATA_SOURCE");
-  expect(() => selectDataSource({ explicit: "postgres", postgresDisabled: true })).toThrow(
-    "disables it",
-  );
+  expect(() => selectDataSource({ explicit: "postgres", postgresDisabled: true })).toThrow("disables it");
 });
 
 test("PostgreSQL uses the Inagle profile and its historical alias without accepting an RG URL", () => {
-  const keys = [
-    "INAGLE_DATABASE_URL",
-    "NIE_PG_URL",
-    "DATABASE_URL",
-    "ACHILLEA_DATABASE_URL",
-  ] as const;
-  const original = new Map(keys.map((key) => [key, process.env[key]]));
+  const keys = ["INAGLE_DATABASE_URL", "NIE_PG_URL", "DATABASE_URL", "ACHILLEA_DATABASE_URL"] as const;
+  const original = new Map(keys.map(key => [key, process.env[key]]));
   try {
     delete process.env.INAGLE_DATABASE_URL;
     delete process.env.NIE_PG_URL;

@@ -106,13 +106,12 @@ function toHexId(n: number): string {
 /** Charge + indexe la table de croissance (1 fetch CDN, caché process-local). */
 async function loadGrowthIndex(): Promise<GrowthIndex | null> {
   if (growthCache) return growthCache;
-  const cfg = await fetchJson<{ lists?: Array<{ name: string; rows: unknown[] }> }>(
-    `${CDN}/${GROWTH_VFS}.json`,
-    { revalidate: 86400 },
-  );
+  const cfg = await fetchJson<{ lists?: Array<{ name: string; rows: unknown[] }> }>(`${CDN}/${GROWTH_VFS}.json`, {
+    revalidate: 86400,
+  });
   if (!cfg) return null;
   const lists = cfg.lists ?? [];
-  const findRows = (name: string) => (lists.find((l) => l.name === name)?.rows ?? []) as unknown[];
+  const findRows = (name: string) => (lists.find(l => l.name === name)?.rows ?? []) as unknown[];
 
   const main = new Map<string, GrowthMainRow>();
   for (const r of findRows("m_growthTableMainList") as GrowthMainRow[]) {
@@ -140,7 +139,7 @@ async function loadParamIndex(): Promise<ParamIndex | null> {
   }>(`${CDN}/${CHARA_PARAM_VFS}.json`, { revalidate: 86400 });
   if (!cfg) return null;
   const idx: ParamIndex = new Map();
-  const list = cfg.entries?.find((e) => e.name === "CHARA_PARAM_INFO_LIST_BEG");
+  const list = cfg.entries?.find(e => e.name === "CHARA_PARAM_INFO_LIST_BEG");
   for (const child of list?.children ?? []) {
     const vars = (child.variables ?? []) as Array<{ Int?: number }>;
     if (vars.length < 9) continue;
@@ -160,16 +159,9 @@ async function loadParamIndex(): Promise<ParamIndex | null> {
 }
 
 /** Pattern effectif : la table ne couvre que 0/1 → ≥2 retombe sur 1 puis 0. */
-function resolvePattern<T>(
-  table: Map<string, T>,
-  mainPos: number,
-  pattern: number,
-  rank: number,
-): T | undefined {
+function resolvePattern<T>(table: Map<string, T>, mainPos: number, pattern: number, rank: number): T | undefined {
   return (
-    table.get(`${mainPos}-${pattern}-${rank}`) ??
-    table.get(`${mainPos}-1-${rank}`) ??
-    table.get(`${mainPos}-0-${rank}`)
+    table.get(`${mainPos}-${pattern}-${rank}`) ?? table.get(`${mainPos}-1-${rank}`) ?? table.get(`${mainPos}-0-${rank}`)
   );
 }
 
@@ -204,8 +196,7 @@ export async function resolveCharaStats(
 
   // Lv1 : clé mainPos×subPos×playStyle (playStyle = growthPattern, capé 0..2).
   const playStyle = Math.min(pattern, 2);
-  const lv1Row =
-    growth.lv1.get(`${mainPos}-${subPos}-${playStyle}`) ?? growth.lv1.get(`${mainPos}-${subPos}-0`);
+  const lv1Row = growth.lv1.get(`${mainPos}-${subPos}-${playStyle}`) ?? growth.lv1.get(`${mainPos}-${subPos}-0`);
 
   const lv99: CharaStats = {
     kick: main.Kc_99,

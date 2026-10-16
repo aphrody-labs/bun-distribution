@@ -72,7 +72,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  return Object.keys(CATEGORIES).map((category) => ({ category }));
+  return Object.keys(CATEGORIES).map(category => ({ category }));
 }
 
 export default async function AuraCategoryPage({

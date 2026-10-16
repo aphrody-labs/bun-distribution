@@ -33,15 +33,13 @@ export function UserRoleManager({ users }: { users: UserProfile[] }) {
   const [, startTransition] = useTransition();
   const [localUsers, setLocalUsers] = useState(users);
 
-  const filtered = localUsers.filter((u) => {
+  const filtered = localUsers.filter(u => {
     if (!search) {
       return true;
     }
     const q = search.toLowerCase();
     return (
-      u.username?.toLowerCase().includes(q) ||
-      u.full_name?.toLowerCase().includes(q) ||
-      u.id.toLowerCase().includes(q)
+      u.username?.toLowerCase().includes(q) || u.full_name?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q)
     );
   });
 
@@ -54,16 +52,13 @@ export function UserRoleManager({ users }: { users: UserProfile[] }) {
     setUpdatingId(userId);
     startTransition(async () => {
       try {
-        const { error } = await supabase
-          .from("profiles")
-          .update({ role: newRole })
-          .eq("id", userId);
+        const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId);
 
         if (error) {
           throw error;
         }
 
-        setLocalUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+        setLocalUsers(prev => prev.map(u => (u.id === userId ? { ...u, role: newRole } : u)));
         toast.success(`Rôle mis à jour : ${newRole}`);
       } catch {
         toast.error("Erreur lors de la mise à jour du rôle");
@@ -82,7 +77,7 @@ export function UserRoleManager({ users }: { users: UserProfile[] }) {
           type="text"
           placeholder="Rechercher un utilisateur..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20
             text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-hidden focus:border-primary"
         />
@@ -95,7 +90,7 @@ export function UserRoleManager({ users }: { users: UserProfile[] }) {
 
       {/* User list */}
       <div className="space-y-2">
-        {filtered.map((user) => {
+        {filtered.map(user => {
           const isSelf = user.id === currentUser?.id;
           const isUpdating = updatingId === user.id;
 
@@ -128,20 +123,14 @@ export function UserRoleManager({ users }: { users: UserProfile[] }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-on-surface truncate">
                   {user.full_name || user.username || "Sans nom"}
-                  {isSelf && (
-                    <span className="text-xs font-normal text-on-surface-variant/50 ml-1">
-                      (toi)
-                    </span>
-                  )}
+                  {isSelf && <span className="text-xs font-normal text-on-surface-variant/50 ml-1">(toi)</span>}
                 </p>
-                <p className="text-xs text-on-surface-variant/50 truncate">
-                  @{user.username || user.id.slice(0, 8)}
-                </p>
+                <p className="text-xs text-on-surface-variant/50 truncate">@{user.username || user.id.slice(0, 8)}</p>
               </div>
 
               {/* Role selector */}
               <div className="flex items-center gap-1">
-                {ROLES.map((role) => {
+                {ROLES.map(role => {
                   const RoleIcon = role.icon;
                   const isActive = user.role === role.value;
                   return (

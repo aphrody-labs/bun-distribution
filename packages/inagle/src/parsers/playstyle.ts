@@ -77,11 +77,7 @@ export function parseAllPlaystyles(): PlaystyleEntry[] {
   const results: PlaystyleEntry[] = [];
 
   function traverse(node: ConfigNode) {
-    if (
-      node.name.startsWith("CHARA_PARAM_INFO_") &&
-      !node.name.includes("LIST") &&
-      !node.name.includes("BEG")
-    ) {
+    if (node.name.startsWith("CHARA_PARAM_INFO_") && !node.name.includes("LIST") && !node.name.includes("BEG")) {
       const parsed = parsePlaystyleNode(node);
       if (parsed) results.push(parsed);
     }

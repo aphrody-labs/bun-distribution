@@ -43,8 +43,7 @@ export function convertTableToHtml(data: string[][], title: string = "Tableau de
   }
 
   // Helper to escape HTML to prevent XSS (basic)
-  const escape = (str: string) =>
-    str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  const escape = (str: string) => str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
   let html = `
     <div class="my-8 w-full overflow-hidden rounded-[24px] border border-outline-variant/50 shadow-sm bg-surface">
@@ -58,7 +57,7 @@ export function convertTableToHtml(data: string[][], title: string = "Tableau de
   // Header (First row)
   const header = data[0];
   html += '<thead class="bg-surface-container-low text-on-surface-variant"><tr>';
-  header.forEach((cell) => {
+  header.forEach(cell => {
     html += `<th class="h-12 px-4 text-left align-middle font-medium border-b border-outline-variant/20 whitespace-nowrap">${escape(cell)}</th>`;
   });
   html += "</tr></thead>";
@@ -67,9 +66,8 @@ export function convertTableToHtml(data: string[][], title: string = "Tableau de
   html += "<tbody>";
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    html +=
-      '<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high/50 transition-colors">';
-    row.forEach((cell) => {
+    html += '<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high/50 transition-colors">';
+    row.forEach(cell => {
       html += `<td class="p-4 align-middle text-on-surface whitespace-nowrap">${escape(cell)}</td>`;
     });
     html += "</tr>";

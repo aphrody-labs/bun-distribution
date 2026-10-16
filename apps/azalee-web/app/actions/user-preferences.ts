@@ -39,9 +39,7 @@ export async function getPreferences(): Promise<Preferences> {
 
   const { data, error } = await client
     .from("user_preferences")
-    .select(
-      "font_size, reduced_motion, reading_mode, preferred_categories, email_notifications, push_notifications",
-    )
+    .select("font_size, reduced_motion, reading_mode, preferred_categories, email_notifications, push_notifications")
     .eq("user_id", session.user.id)
     .maybeSingle();
 
@@ -97,9 +95,7 @@ export async function updatePreferences(updates: Partial<Preferences>): Promise<
       },
       { onConflict: "user_id" },
     )
-    .select(
-      "font_size, reduced_motion, reading_mode, preferred_categories, email_notifications, push_notifications",
-    )
+    .select("font_size, reduced_motion, reading_mode, preferred_categories, email_notifications, push_notifications")
     .single();
 
   if (error || !data) {
@@ -148,8 +144,7 @@ export async function toggleReadingMode(): Promise<boolean> {
     .maybeSingle();
 
   const currentValue =
-    (existing as { reading_mode: boolean | null } | null)?.reading_mode ??
-    DEFAULT_PREFERENCES.reading_mode;
+    (existing as { reading_mode: boolean | null } | null)?.reading_mode ?? DEFAULT_PREFERENCES.reading_mode;
   const newValue = !currentValue;
 
   const { error } = await client.from("user_preferences").upsert(

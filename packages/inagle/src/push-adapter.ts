@@ -76,14 +76,14 @@ export class PostgresAdapter implements DataAdapter {
       rows.push(`(${rowParams.join(", ")})`);
     }
 
-    const updateSet = keys.map((k) => `"${k}" = EXCLUDED."${k}"`).join(", ");
+    const updateSet = keys.map(k => `"${k}" = EXCLUDED."${k}"`).join(", ");
 
     const conflictCols = onConflict
       .split(",")
-      .map((c) => `"${c.trim()}"`)
+      .map(c => `"${c.trim()}"`)
       .join(", ");
     const query = `
-            INSERT INTO "${table}" (${keys.map((k) => `"${k}"`).join(", ")})
+            INSERT INTO "${table}" (${keys.map(k => `"${k}"`).join(", ")})
             VALUES ${rows.join(", ")}
             ON CONFLICT (${conflictCols}) DO UPDATE SET ${updateSet}
         `;
@@ -116,7 +116,7 @@ export class PostgresAdapter implements DataAdapter {
     try {
       const cols = columns
         .split(",")
-        .map((c) => `"${c.trim()}"`)
+        .map(c => `"${c.trim()}"`)
         .join(", ");
       const res = await this.pool.query(`SELECT ${cols} FROM "${table}"`);
       return res.rows;

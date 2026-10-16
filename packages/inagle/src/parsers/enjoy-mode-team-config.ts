@@ -103,9 +103,7 @@ export async function loadEnjoyModeTeamConfigAsync(dataPath: string = DATA_ROOT)
   return parseEntries(content.entries);
 }
 
-export async function buildEnjoyModeTeamDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<EnjoyModeTeamDatabase> {
+export async function buildEnjoyModeTeamDatabase(dataPath: string = DATA_ROOT): Promise<EnjoyModeTeamDatabase> {
   const teams = (await loadEnjoyModeTeamConfigAsync(dataPath)) || [];
   const byTeamId = new Map<string, ParsedEnjoyModeTeam>();
   for (const t of teams) byTeamId.set(t.teamId, t);

@@ -97,11 +97,7 @@ export async function markAllAsRead(): Promise<void> {
 
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
-    .from("notifications")
-    .update({ read: true })
-    .eq("user_id", session.user.id)
-    .eq("read", false);
+  await (supabase as any).from("notifications").update({ read: true }).eq("user_id", session.user.id).eq("read", false);
 }
 
 export async function subscribeToPush(subscription: {
@@ -136,11 +132,7 @@ export async function unsubscribeFromPush(endpoint: string): Promise<void> {
 
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
-    .from("push_subscriptions")
-    .delete()
-    .eq("user_id", session.user.id)
-    .eq("endpoint", endpoint);
+  await (supabase as any).from("push_subscriptions").delete().eq("user_id", session.user.id).eq("endpoint", endpoint);
 }
 
 export async function sendPushToAll(
@@ -153,9 +145,7 @@ export async function sendPushToAll(
   const client = supabase as any;
 
   // Get all push subscriptions
-  const { data: subscriptions } = await client
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth_key, user_id");
+  const { data: subscriptions } = await client.from("push_subscriptions").select("endpoint, p256dh, auth_key, user_id");
 
   if (!subscriptions || subscriptions.length === 0) {
     return { failed: 0, sent: 0 };
@@ -163,7 +153,7 @@ export async function sendPushToAll(
 
   // Create in-app notifications for all unique users
   const userIds = [...new Set(subscriptions.map((s: { user_id: string }) => s.user_id))];
-  const notifications = userIds.map((userId) => ({
+  const notifications = userIds.map(userId => ({
     body,
     data,
     title,

@@ -49,14 +49,14 @@ export type Garde = { ok: true; userId: string; role: string | null } | { ok: fa
  * à ce qu'une action écrive un identifiant venu d'ailleurs que de la garde.
  */
 export async function exigerAdmin(): Promise<Garde> {
-	const user = await getServerUser();
-	if (!user) return { message: "Non authentifié", ok: false };
+  const user = await getServerUser();
+  if (!user) return { message: "Non authentifié", ok: false };
 
-	const profil = await resolveProfile(createPostgresClient(), user);
-	if (!profil || !isAdmin(profil.role)) {
-		return { message: "Permissions insuffisantes", ok: false };
-	}
-	return { ok: true, role: profil.role ?? null, userId: user.id };
+  const profil = await resolveProfile(createPostgresClient(), user);
+  if (!profil || !isAdmin(profil.role)) {
+    return { message: "Permissions insuffisantes", ok: false };
+  }
+  return { ok: true, role: profil.role ?? null, userId: user.id };
 }
 
 /**
@@ -68,6 +68,6 @@ export async function exigerAdmin(): Promise<Garde> {
  * pire.
  */
 export function revaliderCampagne(): void {
-	revalidatePath("/admin/iergday");
-	revalidatePath("/iergday");
+  revalidatePath("/admin/iergday");
+  revalidatePath("/iergday");
 }

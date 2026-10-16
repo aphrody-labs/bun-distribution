@@ -1,10 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import {
-	ACHILLEA_SESSION_COOKIE_NAME,
-	ACHILLEA_SESSION_TTL_SECONDS,
-} from "@rosegriffon/auth/achillea-session";
+import { ACHILLEA_SESSION_COOKIE_NAME, ACHILLEA_SESSION_TTL_SECONDS } from "@rosegriffon/auth/achillea-session";
 import { getServerSession } from "@/lib/auth-helpers";
 
 /**
@@ -45,60 +42,64 @@ import { getServerSession } from "@/lib/auth-helpers";
  * `ranked.rosegriffon.fr`, que le front appelle directement.
  */
 const COOKIE = {
-	domain: process.env.NODE_ENV === "production" ? ".rosegriffon.fr" : undefined,
-	httpOnly: true,
-	path: "/",
-	sameSite: "lax",
-	secure: process.env.NODE_ENV === "production",
+  domain: process.env.NODE_ENV === "production" ? ".rosegriffon.fr" : undefined,
+  httpOnly: true,
+  path: "/",
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
 } as const;
 
 export async function POST() {
-	const internalToken = process.env.API_ADMIN_TOKEN;
-	if (!internalToken) {
-		return NextResponse.json({ error: "passerelle_non_configuree" }, { status: 503 });
-	}
+  const internalToken = process.env.API_ADMIN_TOKEN;
+  if (!internalToken) {
+    return NextResponse.json({ error: "passerelle_non_configuree" }, { status: 503 });
+  }
 
-	const session = await getServerSession();
-	if (!session?.user) {
-		return NextResponse.json({ error: "non_authentifie" }, { status: 401 });
-	}
+  const session = await getServerSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: "non_authentifie" }, { status: 401 });
+  }
 
-	try {
-		const apiUrl = (process.env.ACHILLEA_API_URL ?? process.env.NEXT_PUBLIC_ACHILLEA_API_URL ?? "https://api.rosegriffon.fr").replace(/\/$/, "");
-		const exchange = await fetch(`${apiUrl}/v1/auth/session/exchange`, {
-			method: "POST",
-			headers: { authorization: `Bearer ${internalToken}`, "content-type": "application/json" },
-			body: JSON.stringify({ betterAuthUserId: session.user.id }),
-			cache: "no-store",
-		});
-		if (!exchange.ok) {
-			if (exchange.status === 409) {
-				const magasin = await cookies();
-				magasin.set(ACHILLEA_SESSION_COOKIE_NAME, "", { ...COOKIE, maxAge: 0 });
-				return NextResponse.json({ error: "discord_non_lie" }, { status: 409 });
-			}
-			console.error("[achillea/session] API exchange failed", exchange.status);
-			return NextResponse.json({ error: "api_unifiee_indisponible" }, { status: 503 });
-		}
-		const payload = (await exchange.json()) as { token?: string; user?: { id: string | null } };
-		if (!payload.token) return NextResponse.json({ error: "session_invalide" }, { status: 503 });
+  try {
+    const apiUrl = (
+      process.env.ACHILLEA_API_URL ??
+      process.env.NEXT_PUBLIC_ACHILLEA_API_URL ??
+      "https://api.rosegriffon.fr"
+    ).replace(/\/$/, "");
+    const exchange = await fetch(`${apiUrl}/v1/auth/session/exchange`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${internalToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ betterAuthUserId: session.user.id }),
+      cache: "no-store",
+    });
+    if (!exchange.ok) {
+      if (exchange.status === 409) {
+        const magasin = await cookies();
+        magasin.set(ACHILLEA_SESSION_COOKIE_NAME, "", { ...COOKIE, maxAge: 0 });
+        return NextResponse.json({ error: "discord_non_lie" }, { status: 409 });
+      }
+      console.error("[achillea/session] API exchange failed", exchange.status);
+      return NextResponse.json({ error: "api_unifiee_indisponible" }, { status: 503 });
+    }
+    const payload = (await exchange.json()) as { token?: string; user?: { id: string | null } };
+    if (!payload.token) return NextResponse.json({ error: "session_invalide" }, { status: 503 });
 
-		const magasin = await cookies();
-		magasin.set(ACHILLEA_SESSION_COOKIE_NAME, payload.token, {
-			...COOKIE,
-			maxAge: ACHILLEA_SESSION_TTL_SECONDS,
-		});
+    const magasin = await cookies();
+    magasin.set(ACHILLEA_SESSION_COOKIE_NAME, payload.token, {
+      ...COOKIE,
+      maxAge: ACHILLEA_SESSION_TTL_SECONDS,
+    });
 
-		return NextResponse.json(payload.user ?? { id: null });
-	} catch (error) {
-		console.error("[achillea/session] Erreur session Achilléa:", error);
-		return NextResponse.json({ error: "base_de_donnees_indisponible" }, { status: 503 });
-	}
+    return NextResponse.json(payload.user ?? { id: null });
+  } catch (error) {
+    console.error("[achillea/session] Erreur session Achilléa:", error);
+    return NextResponse.json({ error: "base_de_donnees_indisponible" }, { status: 503 });
+  }
 }
 
 /** Ferme la session Achilléa en même temps que celle de Rose Griffon. */
 export async function DELETE() {
-	const magasin = await cookies();
-	magasin.set(ACHILLEA_SESSION_COOKIE_NAME, "", { ...COOKIE, maxAge: 0 });
-	return NextResponse.json({ ok: true });
+  const magasin = await cookies();
+  magasin.set(ACHILLEA_SESSION_COOKIE_NAME, "", { ...COOKIE, maxAge: 0 });
+  return NextResponse.json({ ok: true });
 }

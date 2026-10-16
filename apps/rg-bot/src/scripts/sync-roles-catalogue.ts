@@ -37,70 +37,63 @@
  */
 import { RG_GUILD_ID, AZALEE_GUILD_ID } from "@rosegriffon/types/discord";
 
-import {
-	classifierRole,
-	decoderPermissions,
-	estDangereux,
-	type FaitsRole,
-} from "../lib/discord-roles-catalogue";
+import { classifierRole, decoderPermissions, estDangereux, type FaitsRole } from "../lib/discord-roles-catalogue";
 import { sql } from "../lib/db";
 import { litteralTexteArray } from "../services/tweets";
 
 /** Un rôle tel que rendu par `GET /guilds/{id}/roles`. */
 interface RoleAPI {
-	readonly id: string;
-	readonly name: string;
-	readonly position: number;
-	readonly permissions: string;
-	readonly managed: boolean;
-	readonly tags?: {
-		readonly bot_id?: string;
-		readonly premium_subscriber?: null;
-		readonly subscription_listing_id?: string;
-	};
+  readonly id: string;
+  readonly name: string;
+  readonly position: number;
+  readonly permissions: string;
+  readonly managed: boolean;
+  readonly tags?: {
+    readonly bot_id?: string;
+    readonly premium_subscriber?: null;
+    readonly subscription_listing_id?: string;
+  };
 }
 
 const GUILDES = [
-	{ guildId: RG_GUILD_ID, label: "Rose Griffon" },
-	{ guildId: AZALEE_GUILD_ID, label: "Azalée" },
+  { guildId: RG_GUILD_ID, label: "Rose Griffon" },
+  { guildId: AZALEE_GUILD_ID, label: "Azalée" },
 ] as const;
 
 const VARIABLES_JETON = ["DISCORD_BOT_TOKEN", "AZALEE_DISCORD_BOT_TOKEN"] as const;
 
 /** Récupère les rôles d'UNE guilde, en essayant chaque jeton candidat. */
-async function recupererRoles(
-	guildId: string
-): Promise<{ roles: RoleAPI[] } | { erreur: string }> {
-	const jetons = VARIABLES_JETON.map((nom) => ({ nom, valeur: Bun.env[nom] })).filter(
-		(j): j is { nom: (typeof VARIABLES_JETON)[number]; valeur: string } => Boolean(j.valeur)
-	);
-	if (jetons.length === 0) {
-		return { erreur: "aucun jeton de bot disponible dans l'environnement" };
-	}
+async function recupererRoles(guildId: string): Promise<{ roles: RoleAPI[] } | { erreur: string }> {
+  const jetons = VARIABLES_JETON.map(nom => ({ nom, valeur: Bun.env[nom] })).filter(
+    (j): j is { nom: (typeof VARIABLES_JETON)[number]; valeur: string } => Boolean(j.valeur),
+  );
+  if (jetons.length === 0) {
+    return { erreur: "aucun jeton de bot disponible dans l'environnement" };
+  }
 
-	const echecs: string[] = [];
-	for (const jeton of jetons) {
-		const reponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
-			headers: { Authorization: `Bot ${jeton.valeur}` },
-		});
-		if (reponse.ok) {
-			return { roles: (await reponse.json()) as RoleAPI[] };
-		}
-		const corps = await reponse.text();
-		echecs.push(`${jeton.nom} → ${reponse.status} ${corps}`);
-	}
-	return { erreur: echecs.join(" ; ") };
+  const echecs: string[] = [];
+  for (const jeton of jetons) {
+    const reponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+      headers: { Authorization: `Bot ${jeton.valeur}` },
+    });
+    if (reponse.ok) {
+      return { roles: (await reponse.json()) as RoleAPI[] };
+    }
+    const corps = await reponse.text();
+    echecs.push(`${jeton.nom} → ${reponse.status} ${corps}`);
+  }
+  return { erreur: echecs.join(" ; ") };
 }
 
 /** Membres actifs porteurs de chaque rôle — uniquement exact pour Rose Griffon. */
 async function compterPorteurs(guildId: string): Promise<Map<string, number>> {
-	const compte = new Map<string, number>();
-	if (guildId !== RG_GUILD_ID) {
-		// `discord_members` ne décrit que la guilde Rose Griffon (cf. en-tête) :
-		// pour toute autre guilde, on ne prétend pas savoir.
-		return compte;
-	}
-	const lignes = await sql<Array<{ role_id: string; porteurs: number }>>`
+  const compte = new Map<string, number>();
+  if (guildId !== RG_GUILD_ID) {
+    // `discord_members` ne décrit que la guilde Rose Griffon (cf. en-tête) :
+    // pour toute autre guilde, on ne prétend pas savoir.
+    return compte;
+  }
+  const lignes = await sql<Array<{ role_id: string; porteurs: number }>>`
 		SELECT r.role_id, count(m.discord_id)::int AS porteurs
 		FROM public.discord_roles r
 		LEFT JOIN public.discord_members m
@@ -108,39 +101,37 @@ async function compterPorteurs(guildId: string): Promise<Map<string, number>> {
 		WHERE r.guild_id = ${guildId}
 		GROUP BY r.role_id
 	`;
-	for (const ligne of lignes) {
-		compte.set(ligne.role_id, ligne.porteurs);
-	}
-	return compte;
+  for (const ligne of lignes) {
+    compte.set(ligne.role_id, ligne.porteurs);
+  }
+  return compte;
 }
 
 function faitsDepuisRole(role: RoleAPI, porteurs: number): FaitsRole {
-	return {
-		roleId: role.id,
-		nom: role.name,
-		position: role.position,
-		permissions: role.permissions,
-		gereParIntegration: role.managed,
-		tagBotId: role.tags?.bot_id ?? null,
-		tagAbonnement: Boolean(
-			role.tags && ("premium_subscriber" in role.tags || role.tags.subscription_listing_id)
-		),
-		porteurs,
-	};
+  return {
+    roleId: role.id,
+    nom: role.name,
+    position: role.position,
+    permissions: role.permissions,
+    gereParIntegration: role.managed,
+    tagBotId: role.tags?.bot_id ?? null,
+    tagAbonnement: Boolean(role.tags && ("premium_subscriber" in role.tags || role.tags.subscription_listing_id)),
+    porteurs,
+  };
 }
 
 /** Écrit une ligne du catalogue. Rend vrai si le rôle avait une catégorie connue. */
 async function upsertRole(guildId: string, role: RoleAPI, porteurs: number): Promise<boolean> {
-	const faits = faitsDepuisRole(role, porteurs);
-	// Bun.SQL sérialise un tableau JS en `a,b`, que Postgres rejette
-	// (« malformed array literal ») : littéral `{"a","b"}`, param lié — jamais
-	// de SQL concaténé (même piège que `synchroniser.ts`).
-	const permissionsLiteral = litteralTexteArray(decoderPermissions(role.permissions));
-	const dangereux = estDangereux(role.permissions);
-	const { categorie, utilite } = classifierRole(faits);
-	const typeIntegration = role.managed ? (faits.tagBotId ? "bot" : "abonnement") : null;
+  const faits = faitsDepuisRole(role, porteurs);
+  // Bun.SQL sérialise un tableau JS en `a,b`, que Postgres rejette
+  // (« malformed array literal ») : littéral `{"a","b"}`, param lié — jamais
+  // de SQL concaténé (même piège que `synchroniser.ts`).
+  const permissionsLiteral = litteralTexteArray(decoderPermissions(role.permissions));
+  const dangereux = estDangereux(role.permissions);
+  const { categorie, utilite } = classifierRole(faits);
+  const typeIntegration = role.managed ? (faits.tagBotId ? "bot" : "abonnement") : null;
 
-	await sql`
+  await sql`
 		INSERT INTO public.discord_roles_catalogue (
 			role_id, guild_id, permissions_decodees, permissions_dangereuses,
 			porteurs_count, categorie, utilite, gere_par_integration, type_integration, maj_le
@@ -159,29 +150,29 @@ async function upsertRole(guildId: string, role: RoleAPI, porteurs: number): Pro
 			type_integration = EXCLUDED.type_integration,
 			maj_le = NOW()
 	`;
-	return categorie !== null;
+  return categorie !== null;
 }
 
 async function synchroniserGuilde(guildId: string, label: string): Promise<void> {
-	const resultat = await recupererRoles(guildId);
-	if ("erreur" in resultat) {
-		console.warn(`⚠ ${label} (${guildId}) ignorée : ${resultat.erreur}`);
-		return;
-	}
+  const resultat = await recupererRoles(guildId);
+  if ("erreur" in resultat) {
+    console.warn(`⚠ ${label} (${guildId}) ignorée : ${resultat.erreur}`);
+    return;
+  }
 
-	const porteursParRole = await compterPorteurs(guildId);
-	let nonClasses = 0;
-	for (const role of resultat.roles) {
-		const classe = await upsertRole(guildId, role, porteursParRole.get(role.id) ?? 0);
-		if (!classe) nonClasses++;
-	}
+  const porteursParRole = await compterPorteurs(guildId);
+  let nonClasses = 0;
+  for (const role of resultat.roles) {
+    const classe = await upsertRole(guildId, role, porteursParRole.get(role.id) ?? 0);
+    if (!classe) nonClasses++;
+  }
 
-	const suffixe = nonClasses > 0 ? `, dont ${nonClasses} sans catégorie (à analyser)` : "";
-	console.log(`✓ ${label} (${guildId}) : ${resultat.roles.length} rôle(s) catalogué(s)${suffixe}`);
+  const suffixe = nonClasses > 0 ? `, dont ${nonClasses} sans catégorie (à analyser)` : "";
+  console.log(`✓ ${label} (${guildId}) : ${resultat.roles.length} rôle(s) catalogué(s)${suffixe}`);
 }
 
 for (const { guildId, label } of GUILDES) {
-	await synchroniserGuilde(guildId, label);
+  await synchroniserGuilde(guildId, label);
 }
 
 process.exit(0);

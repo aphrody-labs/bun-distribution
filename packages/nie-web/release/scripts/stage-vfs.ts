@@ -11,11 +11,7 @@ export function stageVfs(sourceDirectory: string, outputDirectory: string): numb
     schemaVersion: number;
     archives: Array<{ id: string; url: string; bytes: number; sha256: string; paths: string[] }>;
   };
-  if (
-    manifest.schemaVersion !== 1 ||
-    !Array.isArray(manifest.archives) ||
-    manifest.archives.length === 0
-  ) {
+  if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.archives) || manifest.archives.length === 0) {
     throw new Error("Invalid candidate VFS manifest");
   }
   const ids = new Set<string>();
@@ -38,7 +34,7 @@ export function stageVfs(sourceDirectory: string, outputDirectory: string): numb
         typeof path !== "string" ||
         !path.startsWith("data/") ||
         path.includes("\\") ||
-        path.split("/").some((segment) => !segment || segment === "." || segment === "..") ||
+        path.split("/").some(segment => !segment || segment === "." || segment === "..") ||
         paths.has(path)
       ) {
         throw new Error("Invalid or duplicated candidate VFS path");
@@ -46,20 +42,14 @@ export function stageVfs(sourceDirectory: string, outputDirectory: string): numb
       paths.add(path);
     }
     const bytes = readFileSync(join(sourceDirectory, basename(archive.url)));
-    if (
-      bytes.length !== archive.bytes ||
-      createHash("sha256").update(bytes).digest("hex") !== archive.sha256
-    ) {
+    if (bytes.length !== archive.bytes || createHash("sha256").update(bytes).digest("hex") !== archive.sha256) {
       throw new Error("Candidate VFS integrity mismatch");
     }
   }
   const destination = join(outputDirectory, "static/game/vfs");
   mkdirSync(destination, { recursive: true });
   for (const archive of manifest.archives) {
-    copyFileSync(
-      join(sourceDirectory, basename(archive.url)),
-      join(destination, basename(archive.url)),
-    );
+    copyFileSync(join(sourceDirectory, basename(archive.url)), join(destination, basename(archive.url)));
   }
   // The manifest is the commit point: never advertise a partially validated candidate.
   writeFileSync(join(destination, "manifest.json"), manifestBytes);

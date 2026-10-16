@@ -5,5 +5,5 @@
  * Désactivé pour une meilleure UX mobile
  */
 export default function MobileWatermark() {
-	return null;
+  return null;
 }

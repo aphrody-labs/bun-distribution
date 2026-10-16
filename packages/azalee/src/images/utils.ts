@@ -103,12 +103,8 @@ const CHARACTER_MODEL_CODES = new Set(ASSET_MANIFEST.characterModel as readonly 
  * sont qu'en `.g4mg` — pas encore assemblables côté serving → exclus du gate (pas de
  * bouton 3D mort). Régénérer le manifeste quand la couche serving gagne le support g4mg.
  */
-const KESHIN_MODEL_CODES = new Set(
-  (ASSET_MANIFEST.keshinModel as { keshin: readonly string[] }).keshin,
-);
-const ARMURE_MODEL_CODES = new Set(
-  (ASSET_MANIFEST.keshinModel as { armures: readonly string[] }).armures,
-);
+const KESHIN_MODEL_CODES = new Set((ASSET_MANIFEST.keshinModel as { keshin: readonly string[] }).keshin);
+const ARMURE_MODEL_CODES = new Set((ASSET_MANIFEST.keshinModel as { armures: readonly string[] }).armures);
 
 /**
  * Set EXHAUSTIF des codes uniforme PERSONNELS `u<NNNNNNNN>` (8 chiffres) qui possèdent
@@ -170,9 +166,7 @@ const LEGACY_STORAGE_PREFIX = "/storage/v1/object/public/menu/";
  * famille (`eq_ac` → `icon_item05_…`) qui supposait à la fois un nom de fichier de
  * dump et un dossier — tous deux faux.
  */
-export function resolveItemIcon(
-  internalCode: string,
-): { g4txPath: string; textureName: string } | null {
+export function resolveItemIcon(internalCode: string): { g4txPath: string; textureName: string } | null {
   const entry = ITEM_IMAGE_MANIFEST.items[internalCode];
   if (entry === undefined) {
     return null;
@@ -431,10 +425,7 @@ function characterFaceUrl(baseCode: string): string {
  * 5677/5677 présents dans les CPK) : un code sans visage rend `PLACEHOLDERS.character`
  * au lieu d'une URL qui déclencherait un 404 silencieux côté `<Image onError>`.
  */
-export function getCharacterFaceUrl(
-  charaId: string | undefined | null,
-  _unused?: string | null,
-): string {
+export function getCharacterFaceUrl(charaId: string | undefined | null, _unused?: string | null): string {
   if (!charaId) {
     return PLACEHOLDERS.character;
   }
@@ -509,10 +500,7 @@ export function getCharacterUniformUrl(charaId: string | undefined | null): stri
  * ⚠ L'ancienne allowlist codée en dur ne contenait que **16** codes : elle avait été
  * établie sur un dump partiel (310 PNG) et privait 842 techniques de leur bandeau.
  */
-export function getSkillImageUrl(
-  skillId: string | undefined | null,
-  _unused?: string | null,
-): string {
+export function getSkillImageUrl(skillId: string | undefined | null, _unused?: string | null): string {
   if (!skillId) {
     return "";
   }
@@ -922,11 +910,7 @@ export function resolveAuraTelopUrl(assetCode: string | undefined | null): strin
  * étant lui aussi gaté côté UI, ce résolveur n'est plus appelé pour produire une frame
  * en prod, mais le garde-fou évite tout 404 si quelqu'un l'invoque directement.
  */
-export function getCharacterModel360Url(
-  hash: string,
-  frame: number,
-  full: boolean = false,
-): string {
+export function getCharacterModel360Url(hash: string, frame: number, full: boolean = false): string {
   if (!ZUKAN_3D_MIRROR_AVAILABLE) {
     return PLACEHOLDERS.character;
   }
@@ -1005,9 +989,7 @@ export function getCharacterModelFullGlbUrl(code: string | undefined | null): st
  * le chemin de l'icône (`200_icon/10_icon_chr/aura_fs/k<NNNNNN>_l_…`) ou la colonne `data`.
  * Renvoie `null` si aucun `k<6 chiffres>` n'est trouvé.
  */
-export function extractKeshinModelCode(
-  ...sources: Array<string | null | undefined>
-): string | null {
+export function extractKeshinModelCode(...sources: Array<string | null | undefined>): string | null {
   for (const s of sources) {
     if (!s) continue;
     // `k` suivi d'exactement 6 chiffres, NON précédé d'un chiffre et NON suivi d'un
@@ -1075,10 +1057,7 @@ const CHR_MODEL_TEXTURES =
  * gardé sur le manifeste des codes réellement servis (gate anti-404). Renvoie `null` si le
  * code n'a pas de paire g4md+g4mg assemblable.
  */
-export function getChrModelGlbUrl(
-  sub: ChrModelSub,
-  code: string | undefined | null,
-): string | null {
+export function getChrModelGlbUrl(sub: ChrModelSub, code: string | undefined | null): string | null {
   if (!code) return null;
   if (!CHR_MODEL_CODES[sub]?.has(code)) return null;
   return `${MODEL_CHR_GLB_BASE}/${sub}/${code}.glb?v=${MODEL_FULL_VERSION}`;
@@ -1101,10 +1080,7 @@ export function listServedChrModelCodes(sub: ChrModelSub): string[] {
  *
  * Variantes redimensionnées via `?w=&format=webp` (cdn-variants).
  */
-export function getChrModelTextureUrl(
-  sub: ChrModelSub,
-  code: string | undefined | null,
-): string | null {
+export function getChrModelTextureUrl(sub: ChrModelSub, code: string | undefined | null): string | null {
   if (!code || !CHR_MODEL_CODES[sub]?.has(code)) return null;
   const base = CHR_MODEL_TEXTURES[sub]?.[code];
   if (!base) return null;
@@ -1126,11 +1102,7 @@ export const PLACEHOLDERS = {
  * Image Optimization Helper
  * Uses Next.js optimization endpoint
  */
-export function getOptimizedImageUrl(
-  url: string | null | undefined,
-  width = 640,
-  quality = 80,
-): string {
+export function getOptimizedImageUrl(url: string | null | undefined, width = 640, quality = 80): string {
   if (!url) {
     return "";
   }

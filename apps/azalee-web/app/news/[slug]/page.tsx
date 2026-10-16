@@ -2,17 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import {
-  Calendar,
-  ChevronLeft,
-  Clock,
-  Eye,
-  Heart,
-  MessageCircle,
-  Share2,
-  Tag,
-  User,
-} from "lucide-react";
+import { Calendar, ChevronLeft, Clock, Eye, Heart, MessageCircle, Share2, Tag, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,8 +45,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function estimateReadTime(content: string): number {
   try {
-    const parsed =
-      typeof content === "string" && content.startsWith("{") ? JSON.parse(content) : null;
+    const parsed = typeof content === "string" && content.startsWith("{") ? JSON.parse(content) : null;
     if (parsed?.root) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const extractText = (node: any): string => {
@@ -159,7 +148,7 @@ async function getNews(slug: string, isPreview = false) {
           [profileIds],
         );
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const byId = new Map<string, any>(linked.map((p) => [p.id, p]));
+        const byId = new Map<string, any>(linked.map(p => [p.id, p]));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         news.co_authors = co.map((c: any) => {
           const p = c?.profile_id ? byId.get(c.profile_id) : null;
@@ -217,10 +206,9 @@ async function getNewsMeta(slug: string, isPreview = false) {
 
   if (news.author_id) {
     try {
-      const { rows: profileRows } = await pool.query(
-        "SELECT full_name FROM profiles WHERE id = $1 LIMIT 1",
-        [news.author_id],
-      );
+      const { rows: profileRows } = await pool.query("SELECT full_name FROM profiles WHERE id = $1 LIMIT 1", [
+        news.author_id,
+      ]);
       news.author = profileRows[0] || null;
     } catch (error) {
       console.error(`Error fetching author meta for article ${slug}:`, error);
@@ -279,9 +267,7 @@ export async function generateMetadata({ params, searchParams }: ArticlePageProp
 
   const seoTitle = news.meta_title || news.title;
   const seoDescription =
-    news.meta_description ||
-    news.excerpt ||
-    `${news.title} - Actualites Inazuma Eleven Victory Road`;
+    news.meta_description || news.excerpt || `${news.title} - Actualites Inazuma Eleven Victory Road`;
   const publishedDate = news.published_at || news.created_at;
   const modifiedDate = news.updated_at || publishedDate;
   const canonicalUrl = `https://azalee.rosegriffon.fr/news/${slug}`;
@@ -338,14 +324,13 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   const canonicalUrl = `https://azalee.rosegriffon.fr/news/${slug}`;
   const tocItems = extractTableOfContents(news.content || "");
 
-  const [relatedArticles, allReactions, bookmarkStates, commentCount, seriesData] =
-    await Promise.all([
-      getRelatedArticles(news.id, news.category, news.tags),
-      getAllReactionCounts(news.id),
-      getBookmarkStates([news.id]),
-      getCommentCount(news.id),
-      getArticleSeries(news.id),
-    ]);
+  const [relatedArticles, allReactions, bookmarkStates, commentCount, seriesData] = await Promise.all([
+    getRelatedArticles(news.id, news.category, news.tags),
+    getAllReactionCounts(news.id),
+    getBookmarkStates([news.id]),
+    getCommentCount(news.id),
+    getArticleSeries(news.id),
+  ]);
 
   const isBookmarked = bookmarkStates[news.id] || false;
   const totalReactions = Object.values(allReactions).reduce((sum, r) => sum + r.count, 0);
@@ -391,8 +376,8 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   };
 
   const faqItems = tocItems
-    .filter((item) => item.text.endsWith("?"))
-    .map((item) => ({
+    .filter(item => item.text.endsWith("?"))
+    .map(item => ({
       "@type": "Question",
       acceptedAnswer: {
         "@type": "Answer",
@@ -412,19 +397,10 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   return (
     <>
       {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       {faqJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       )}
 
       {/* Bandeau de prévisualisation pour les articles non publiés */}
@@ -432,16 +408,8 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
         <div className="sticky top-0 z-50 bg-amber-500 text-amber-950 px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-3">
           <Eye className="size-4" />
           Mode prévisualisation — cet article est en statut «{" "}
-          {news.status === "draft"
-            ? "brouillon"
-            : news.status === "scheduled"
-              ? "programmé"
-              : news.status}{" "}
-          »
-          <Link
-            href={`/dashboard/news/${news.id}`}
-            className="ml-2 underline hover:no-underline font-bold"
-          >
+          {news.status === "draft" ? "brouillon" : news.status === "scheduled" ? "programmé" : news.status} »
+          <Link href={`/dashboard/news/${news.id}`} className="ml-2 underline hover:no-underline font-bold">
             Modifier
           </Link>
         </div>
@@ -747,9 +715,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Eye className="size-3.5" /> Vues
                     </span>
-                    <span className="text-on-surface text-xs font-medium">
-                      {news.view_count || 0}
-                    </span>
+                    <span className="text-on-surface text-xs font-medium">{news.view_count || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
@@ -767,9 +733,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Share2 className="size-3.5" /> Partages
                     </span>
-                    <span className="text-on-surface text-xs font-medium">
-                      {news.share_count || 0}
-                    </span>
+                    <span className="text-on-surface text-xs font-medium">{news.share_count || 0}</span>
                   </div>
                 </div>
               </div>
@@ -779,9 +743,7 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                 <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10">
                   <div className="flex items-center gap-2 mb-3">
                     <Tag className="size-3.5 text-on-surface-variant/50" />
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">
-                      Tags
-                    </h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">Tags</h3>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {news.tags.map((tag: string) => (

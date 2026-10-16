@@ -13,14 +13,14 @@ import type { ImageLoaderProps } from "next/image";
  *        Pré-générer les tailles multiples côté build si besoin.
  */
 export default function cdnLoader({ src, width, quality }: ImageLoaderProps): string {
-	const cdn = process.env.NEXT_PUBLIC_CDN_URL;
-	if (!cdn) {
-		return src;
-	}
-	if (/^https?:\/\//i.test(src)) {
-		return src;
-	}
-	const path = src.startsWith("/") ? src : `/${src}`;
-	const q = quality ?? 75;
-	return `${cdn}/public${path}?w=${width}&q=${q}`;
+  const cdn = process.env.NEXT_PUBLIC_CDN_URL;
+  if (!cdn) {
+    return src;
+  }
+  if (/^https?:\/\//i.test(src)) {
+    return src;
+  }
+  const path = src.startsWith("/") ? src : `/${src}`;
+  const q = quality ?? 75;
+  return `${cdn}/public${path}?w=${width}&q=${q}`;
 }

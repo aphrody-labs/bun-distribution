@@ -31,15 +31,7 @@ export default function robots(): MetadataRoute.Robots {
         // du remplissage générique, et le revenu s'effondre sans message d'erreur.
         // Mêmes exclusions que la règle générique : rien de privé ne s'ouvre ici.
         allow: "/",
-        disallow: [
-          "/dashboard/",
-          "/api/",
-          "/auth/",
-          "/login",
-          "/settings",
-          "/profil/",
-          "/maintenance",
-        ],
+        disallow: ["/dashboard/", "/api/", "/auth/", "/login", "/settings", "/profil/", "/maintenance"],
         userAgent: "Mediapartners-Google",
       },
       {

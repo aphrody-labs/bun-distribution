@@ -82,10 +82,10 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
         // Déduplication par identifiant : le tri par pertinence de la
         // recherche VRoid Hub n'est pas stable dans le temps, et un curseur
         // repris peut ramener un modèle déjà affiché (cf. `rechercherModeles`).
-        setModeles((precedents) => {
+        setModeles(precedents => {
           if (!suite) return recus;
-          const vus = new Set(precedents.map((modele) => modele.id));
-          return [...precedents, ...recus.filter((modele) => !vus.has(modele.id))];
+          const vus = new Set(precedents.map(modele => modele.id));
+          return [...precedents, ...recus.filter(modele => !vus.has(modele.id))];
         });
         setCurseur(charge.curseurSuivant ?? null);
         if (!suite) setSelection(recus[0] ?? null);
@@ -124,7 +124,7 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        {ONGLETS.map((onglet) => {
+        {ONGLETS.map(onglet => {
           const indisponible = onglet.connexionRequise && !connecte;
           return (
             <button
@@ -148,14 +148,14 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
       {source === "recherche" && (
         <form
           className="flex flex-wrap items-center gap-2"
-          onSubmit={(evenement) => {
+          onSubmit={evenement => {
             evenement.preventDefault();
             setMotCleActif(motCle);
           }}
         >
           <input
             className="min-w-0 flex-1 rounded-full border border-outline-variant/40 bg-surface-container-low px-4 py-2 text-sm text-on-surface outline-none focus:border-primary"
-            onChange={(evenement) => setMotCle(evenement.target.value)}
+            onChange={evenement => setMotCle(evenement.target.value)}
             placeholder="Chercher un modèle sur VRoid Hub…"
             type="search"
             value={motCle}
@@ -173,11 +173,10 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
         <input
           checked={telechargeablesSeulement}
           className="size-4 accent-[color:var(--color-primary)]"
-          onChange={(evenement) => setTelechargeablesSeulement(evenement.target.checked)}
+          onChange={evenement => setTelechargeablesSeulement(evenement.target.checked)}
           type="checkbox"
         />
-        N&apos;afficher que les modèles affichables en 3D (téléchargement autorisé par
-        l&apos;auteur)
+        N&apos;afficher que les modèles affichables en 3D (téléchargement autorisé par l&apos;auteur)
       </label>
 
       {erreur && (
@@ -196,7 +195,7 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
             </p>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-              {(emptySearch ? [] : modeles).map((modele) => (
+              {(emptySearch ? [] : modeles).map(modele => (
                 <CarteModele
                   actif={selection?.id === modele.id}
                   key={modele.id}
@@ -238,18 +237,8 @@ export function GalerieVroid({ pageInitiale, erreurInitiale = null, connecte }: 
 }
 
 /** Vignette cliquable d'un modèle dans la grille. */
-function CarteModele({
-  modele,
-  actif,
-  onSelection,
-}: {
-  modele: ModeleVroid;
-  actif: boolean;
-  onSelection: () => void;
-}) {
-  const vignette = urlVignette(
-    modele.portrait_image?.sq300?.url ?? modele.portrait_image?.original?.url,
-  );
+function CarteModele({ modele, actif, onSelection }: { modele: ModeleVroid; actif: boolean; onSelection: () => void }) {
+  const vignette = urlVignette(modele.portrait_image?.sq300?.url ?? modele.portrait_image?.original?.url);
   const nom = nomModele(modele);
 
   return (
@@ -284,8 +273,7 @@ function CarteModele({
           <p className="truncate text-sm font-medium text-on-surface">{nom}</p>
           <p className="truncate text-xs text-on-surface-variant">{modele.character?.user?.name}</p>
           <p className="text-xs text-on-surface-variant">
-            {modele.heart_count.toLocaleString("fr")} ❤ · {modele.view_count.toLocaleString("fr")}{" "}
-            vues
+            {modele.heart_count.toLocaleString("fr")} ❤ · {modele.view_count.toLocaleString("fr")} vues
           </p>
         </div>
       </button>
@@ -301,15 +289,14 @@ function FicheModele({ modele }: { modele: ModeleVroid }) {
     <div className="space-y-2 rounded-2xl border border-outline-variant/40 bg-surface-container-low p-4">
       <h2 className="text-base font-semibold text-on-surface">{nomModele(modele)}</h2>
       <p className="text-sm text-on-surface-variant">
-        Par <span className="font-medium text-on-surface">{modele.character?.user?.name}</span> — le
-        crédit de l&apos;auteur suit le modèle.
+        Par <span className="font-medium text-on-surface">{modele.character?.user?.name}</span> — le crédit de
+        l&apos;auteur suit le modèle.
       </p>
 
       {version && (
         <p className="text-xs text-on-surface-variant">
-          {version.triangle_count.toLocaleString("fr")} triangles ·{" "}
-          {version.material_count.toLocaleString("fr")} matériaux ·{" "}
-          {version.joint_count.toLocaleString("fr")} os
+          {version.triangle_count.toLocaleString("fr")} triangles · {version.material_count.toLocaleString("fr")}{" "}
+          matériaux · {version.joint_count.toLocaleString("fr")} os
         </p>
       )}
 

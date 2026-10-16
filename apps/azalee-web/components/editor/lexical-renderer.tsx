@@ -69,7 +69,7 @@ function parseStyle(style: string | undefined): Record<string, string> | undefin
   }
   const out: Record<string, string> = {};
   for (const decl of style.split(";")) {
-    const [k, v] = decl.split(":").map((s) => s.trim());
+    const [k, v] = decl.split(":").map(s => s.trim());
     if (k && v) {
       out[toCamel(k)] = v;
     }
@@ -150,8 +150,7 @@ function renderNode(node: LexicalNode, key: string | number, ctx: SlugContext): 
       const tag = (node.tag as string) || "h2";
       const Tag = tag as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
       const text = extractText(node).trim();
-      const id =
-        (tag === "h2" || tag === "h3") && text ? uniqueSlug(ctx, slugify(text)) : undefined;
+      const id = (tag === "h2" || tag === "h3") && text ? uniqueSlug(ctx, slugify(text)) : undefined;
       return (
         <Tag key={key} id={id}>
           {renderChildren(node.children, ctx)}
@@ -170,12 +169,7 @@ function renderNode(node: LexicalNode, key: string | number, ctx: SlugContext): 
     }
     case "link": {
       return (
-        <a
-          key={key}
-          href={node.url ?? "#"}
-          target={node.target ?? undefined}
-          rel={node.rel ?? "noopener noreferrer"}
-        >
+        <a key={key} href={node.url ?? "#"} target={node.target ?? undefined} rel={node.rel ?? "noopener noreferrer"}>
           {renderChildren(node.children, ctx)}
         </a>
       );
@@ -276,12 +270,7 @@ export function LexicalRenderer({ content, className }: LexicalRendererProps) {
   }
 
   if (legacyHtml) {
-    return (
-      <div
-        className={className}
-        dangerouslySetInnerHTML={{ __html: injectHeadingIds(legacyHtml) }}
-      />
-    );
+    return <div className={className} dangerouslySetInnerHTML={{ __html: injectHeadingIds(legacyHtml) }} />;
   }
 
   return null;

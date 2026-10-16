@@ -47,8 +47,7 @@ export function shouldUseWebGpu(forceFallback: boolean, hasGpu: boolean): boolea
   return hasGpu;
 }
 
-const hasWebGpu = (): boolean =>
-  typeof navigator !== "undefined" && Boolean((navigator as Navigator).gpu);
+const hasWebGpu = (): boolean => typeof navigator !== "undefined" && Boolean((navigator as Navigator).gpu);
 
 /**
  * Renderer WebGPU du menu, avec fallback DOM `<GameMenu>`.
@@ -101,7 +100,7 @@ export function GameMenuGpu(props: GameMenuGpuProps): ReactNode {
     };
 
     WebGpuMenuRenderer.create(canvas, layout, assetBase)
-      .then((renderer) => {
+      .then(renderer => {
         if (disposed) {
           renderer.destroy();
           return;
@@ -160,15 +159,7 @@ export function GameMenuGpu(props: GameMenuGpuProps): ReactNode {
 
   // Fallback DOM : même contrat layout/overrides.
   if (!useGpu) {
-    return (
-      <GameMenu
-        layout={layout}
-        assetBase={assetBase}
-        overrides={overrides}
-        className={className}
-        style={style}
-      />
-    );
+    return <GameMenu layout={layout} assetBase={assetBase} overrides={overrides} className={className} style={style} />;
   }
 
   return (

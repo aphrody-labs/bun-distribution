@@ -37,36 +37,35 @@ const INTERNAL_URL = "http://127.0.0.1:8800";
  * qui était mauvais.
  */
 function origineDeRepli(): string {
-	return "location" in globalThis
-		? (globalThis as unknown as { location: { origin: string } }).location.origin
-		: INTERNAL_URL;
+  return "location" in globalThis
+    ? (globalThis as unknown as { location: { origin: string } }).location.origin
+    : INTERNAL_URL;
 }
 // Valeurs vides, littéraux "undefined"/"null" et blobs dotenvx scellés (`eyJ2Ijo…`)
 // sont rejetés par le prédicat partagé `@aphrody/sql/env` (ADR sql-convergence D7).
 function isValidHttpUrl(value: string | undefined | null): value is string {
-	return isUsableEnvValue(value) && value.startsWith("http");
+  return isUsableEnvValue(value) && value.startsWith("http");
 }
 
 function isValidKey(value: string | undefined | null): value is string {
-	return isUsableEnvValue(value) && !value.startsWith("{");
+  return isUsableEnvValue(value) && !value.startsWith("{");
 }
 
 /** True pendant un prerender de build, sans variables d'environnement runtime. */
 export function isBuildPhase(): boolean {
-	return (
-		process.env.NEXT_PHASE === "phase-production-build" ||
-		(process.env.NODE_ENV === "production" &&
-			!isValidKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null))
-	);
+  return (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    (process.env.NODE_ENV === "production" && !isValidKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? null))
+  );
 }
 
 export function getSupabaseUrl(preferInternal = false): string {
-	const url = preferInternal
-		? (process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL)
-		: process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = preferInternal
+    ? (process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL)
+    : process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-	if (isValidHttpUrl(url)) return url;
-	return origineDeRepli();
+  if (isValidHttpUrl(url)) return url;
+  return origineDeRepli();
 }
 
 /**
@@ -80,28 +79,27 @@ export function getSupabaseUrl(preferInternal = false): string {
  * parts; got 1)`, et toute lecture navigateur échoue.
  */
 function estJwt(value: string | undefined | null): value is string {
-	return isValidKey(value) && value.split(".").length === 3;
+  return isValidKey(value) && value.split(".").length === 3;
 }
 
 /** Cloud opaque keys require the Cloud gateway; the retained PostgREST gateway uses anon JWTs. */
 export function getSupabasePublishableKey(): string {
-	const publiable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-	if (isValidKey(publiable) && publiable.startsWith("sb_publishable_")) {
-		const endpoint = new URL(getSupabaseUrl());
-		if (endpoint.protocol === "https:" && endpoint.hostname.endsWith(".supabase.co"))
-			return publiable;
-	}
-	if (estJwt(publiable)) return publiable;
+  const publiable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (isValidKey(publiable) && publiable.startsWith("sb_publishable_")) {
+    const endpoint = new URL(getSupabaseUrl());
+    if (endpoint.protocol === "https:" && endpoint.hostname.endsWith(".supabase.co")) return publiable;
+  }
+  if (estJwt(publiable)) return publiable;
 
-	const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-	if (estJwt(anon)) return anon;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (estJwt(anon)) return anon;
 
-	throw new Error("A Supabase Cloud publishable key or legacy RG anon JWT is required");
+  throw new Error("A Supabase Cloud publishable key or legacy RG anon JWT is required");
 }
 
 export function getSupabaseServiceRoleKey(): string | null {
-	const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-	if (isValidKey(key)) return key;
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (isValidKey(key)) return key;
 
-	return null;
+  return null;
 }

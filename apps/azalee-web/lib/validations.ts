@@ -10,13 +10,13 @@ export const searchParamsSchema = z.object({
   overdrive: z.string().optional(),
   page: z
     .string()
-    .transform((val) => Math.max(1, parseInt(val, 10)))
+    .transform(val => Math.max(1, parseInt(val, 10)))
     .optional()
     .default(1),
   pcat: z.string().optional(),
   perPage: z
     .string()
-    .transform((val) => {
+    .transform(val => {
       const n = parseInt(val, 10);
       return [10, 20, 50, 200].includes(n) ? n : 20;
     })

@@ -22,36 +22,36 @@ import { documentDepuisPost, Visionneuse } from "./Visionneuse";
 const CARTES_PRIORITAIRES = 4;
 
 export function CampagneGalerie({ posts }: { posts: PostCampagne[] }) {
-	const [indexOuvert, setIndexOuvert] = useState<number | null>(null);
-	// La visionneuse est générique (elle montre aussi l'affiche et la carte des
-	// règles) : c'est ici qu'une publication devient un document visionnable.
-	const documents = useMemo(() => posts.map(documentDepuisPost), [posts]);
+  const [indexOuvert, setIndexOuvert] = useState<number | null>(null);
+  // La visionneuse est générique (elle montre aussi l'affiche et la carte des
+  // règles) : c'est ici qu'une publication devient un document visionnable.
+  const documents = useMemo(() => posts.map(documentDepuisPost), [posts]);
 
-	if (posts.length === 0) {
-		return null;
-	}
+  if (posts.length === 0) {
+    return null;
+  }
 
-	return (
-		<>
-			{/* 320 px → 1 colonne, 375 px → 2, 1024 px → 3, 1280 px → 4. */}
-			<ul className="grid list-none grid-cols-1 gap-4 p-0 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-				{posts.map((post, position) => (
-					<li key={clePost(post)} className="flex">
-						<PostCarte
-							post={post}
-							priorite={position < CARTES_PRIORITAIRES}
-							onOuvrir={() => setIndexOuvert(position)}
-						/>
-					</li>
-				))}
-			</ul>
+  return (
+    <>
+      {/* 320 px → 1 colonne, 375 px → 2, 1024 px → 3, 1280 px → 4. */}
+      <ul className="grid list-none grid-cols-1 gap-4 p-0 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {posts.map((post, position) => (
+          <li key={clePost(post)} className="flex">
+            <PostCarte
+              post={post}
+              priorite={position < CARTES_PRIORITAIRES}
+              onOuvrir={() => setIndexOuvert(position)}
+            />
+          </li>
+        ))}
+      </ul>
 
-			<Visionneuse
-				documents={documents}
-				index={indexOuvert}
-				onFermer={() => setIndexOuvert(null)}
-				onNaviguer={setIndexOuvert}
-			/>
-		</>
-	);
+      <Visionneuse
+        documents={documents}
+        index={indexOuvert}
+        onFermer={() => setIndexOuvert(null)}
+        onNaviguer={setIndexOuvert}
+      />
+    </>
+  );
 }

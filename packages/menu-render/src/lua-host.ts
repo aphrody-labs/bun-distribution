@@ -34,11 +34,7 @@ export interface RunLuaOptions {
 export interface LuaRuntimeAdapter {
   createHost(): LuaGameHost;
   createGameHost(names: Map<number, string>): MenuGameHost;
-  runLuaSource(
-    source: string,
-    host: LuaGameHost,
-    options: RunLuaOptions,
-  ): LuaLayerState | null | undefined;
+  runLuaSource(source: string, host: LuaGameHost, options: RunLuaOptions): LuaLayerState | null | undefined;
   loadHashDictionary?(entries: Record<string, string>): void;
   loadMenuCommandNames?(json: unknown): Map<number, string>;
 }
@@ -48,7 +44,7 @@ export class LuaScreenHost {
   protected readonly includes = new Map<string, string>();
   constructor(public readonly host: LuaGameHost) {
     const fallback = host.include.bind(host);
-    host.include = (name) => this.includes.get(name) ?? fallback(name);
+    host.include = name => this.includes.get(name) ?? fallback(name);
   }
   get state(): LuaLayerState {
     return this.host.state;
@@ -84,17 +80,12 @@ export interface MenuObjectOverride {
   number?: number | undefined;
 }
 function requireRuntime(runtime: LuaRuntimeAdapter | undefined): LuaRuntimeAdapter {
-  if (!runtime)
-    throw new Error("Menu execution requires a caller-supplied Lua runtime adapter and game host.");
+  if (!runtime) throw new Error("Menu execution requires a caller-supplied Lua runtime adapter and game host.");
   return runtime;
 }
-function prepareHashes(
-  runtime: LuaRuntimeAdapter,
-  entries: Record<string, string> | undefined,
-): void {
+function prepareHashes(runtime: LuaRuntimeAdapter, entries: Record<string, string> | undefined): void {
   if (!entries) return;
-  if (!runtime.loadHashDictionary)
-    throw new Error("The supplied Lua runtime does not support hash dictionaries.");
+  if (!runtime.loadHashDictionary) throw new Error("The supplied Lua runtime does not support hash dictionaries.");
   runtime.loadHashDictionary(entries);
 }
 function registerIncludes(host: LuaScreenHost, includes: Record<string, string> | undefined): void {
@@ -112,23 +103,14 @@ export function runMenuScreenState(
   source: string,
   options: RunMenuStateOptions = {},
 ): { layerState: LuaLayerState; menuState: MenuState } {
-  const {
-    runtime: supplied,
-    includes,
-    hashEntries,
-    menuCommandNames,
-    funcluaJson,
-    ...runOptions
-  } = options;
+  const { runtime: supplied, includes, hashEntries, menuCommandNames, funcluaJson, ...runOptions } = options;
   const runtime = requireRuntime(supplied);
   prepareHashes(runtime, hashEntries);
   if (funcluaJson !== undefined && !menuCommandNames && !runtime.loadMenuCommandNames)
     throw new Error("The supplied Lua runtime does not support menu command-name loading.");
   const names =
     menuCommandNames ??
-    (funcluaJson !== undefined
-      ? runtime.loadMenuCommandNames!(funcluaJson)
-      : new Map<number, string>());
+    (funcluaJson !== undefined ? runtime.loadMenuCommandNames!(funcluaJson) : new Map<number, string>());
   const screen = new GameScreenHost(runtime.createGameHost(names));
   registerIncludes(screen, includes);
   const layerState = runtime.runLuaSource(source, screen.host, runOptions) ?? screen.state;

@@ -196,9 +196,7 @@ export function nettoyerMessage(message: string): string {
  */
 export function bornerTexte(valeur: string, limite: number): string {
   const propre = valeur.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
-  return propre.length <= limite
-    ? propre
-    : `${propre.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
+  return propre.length <= limite ? propre : `${propre.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
 }
 
 /** Ramène un entier dans `[min, max]`, avec repli sur `defaut` si absent/illisible. */
@@ -213,14 +211,7 @@ export function bornerEntier(valeur: unknown, defaut: number, min: number, max: 
 // ─── Validation des entrées ──────────────────────────────────────────────────
 
 /** Hôtes bouclés ou réservés, refusés quelle que soit la casse. */
-const HOTES_INTERDITS = new Set([
-  "localhost",
-  "127.0.0.1",
-  "0.0.0.0",
-  "::1",
-  "[::1]",
-  "metadata.google.internal",
-]);
+const HOTES_INTERDITS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]", "metadata.google.internal"]);
 
 function estAdressePrivee(hote: string): boolean {
   const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hote);
@@ -255,28 +246,14 @@ export function validerUrl(brut: unknown): URL {
   try {
     url = new URL(texte);
   } catch {
-    throw new ErreurScrape(
-      "requete_invalide",
-      `« ${bornerTexte(texte, 80)} » n'est pas une URL valide.`,
-    );
+    throw new ErreurScrape("requete_invalide", `« ${bornerTexte(texte, 80)} » n'est pas une URL valide.`);
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new ErreurScrape(
-      "requete_invalide",
-      "Seules les adresses http:// et https:// sont acceptées.",
-    );
+    throw new ErreurScrape("requete_invalide", "Seules les adresses http:// et https:// sont acceptées.");
   }
   const hote = url.hostname.toLowerCase();
-  if (
-    HOTES_INTERDITS.has(hote) ||
-    hote.endsWith(".localhost") ||
-    hote.endsWith(".local") ||
-    estAdressePrivee(hote)
-  ) {
-    throw new ErreurScrape(
-      "requete_invalide",
-      "Cette adresse vise le réseau interne du serveur : refusée.",
-    );
+  if (HOTES_INTERDITS.has(hote) || hote.endsWith(".localhost") || hote.endsWith(".local") || estAdressePrivee(hote)) {
+    throw new ErreurScrape("requete_invalide", "Cette adresse vise le réseau interne du serveur : refusée.");
   }
   return url;
 }
@@ -288,10 +265,7 @@ export function validerRequete(brut: unknown, minimum = 2): string {
   }
   const texte = brut.trim();
   if (texte.length < minimum) {
-    throw new ErreurScrape(
-      "requete_invalide",
-      `La requête doit faire au moins ${minimum} caractères.`,
-    );
+    throw new ErreurScrape("requete_invalide", `La requête doit faire au moins ${minimum} caractères.`);
   }
   return bornerTexte(texte, 200);
 }
@@ -334,12 +308,7 @@ export class LimiteurDebit {
   #horodatages: number[] = [];
   readonly #maintenant: () => number;
 
-  constructor(
-    nom: string,
-    maxSimultane: number,
-    maxParMinute: number,
-    maintenant: () => number = Date.now,
-  ) {
+  constructor(nom: string, maxSimultane: number, maxParMinute: number, maintenant: () => number = Date.now) {
     this.nom = nom;
     this.maxSimultane = maxSimultane;
     this.maxParMinute = maxParMinute;
@@ -358,7 +327,7 @@ export class LimiteurDebit {
 
   #purger(): void {
     const limite = this.#maintenant() - 60_000;
-    this.#horodatages = this.#horodatages.filter((t) => t > limite);
+    this.#horodatages = this.#horodatages.filter(t => t > limite);
   }
 
   /** Réserve un jeton ou lève. À libérer systématiquement par `liberer()`. */
@@ -431,12 +400,7 @@ async function avecDelai<T>(promesse: Promise<T>, delaiMs: number, quoi: string)
       new Promise<never>((_, rejeter) => {
         minuteur = setTimeout(
           () =>
-            rejeter(
-              new ErreurScrape(
-                "delai_depasse",
-                `${quoi} n'a pas répondu en ${Math.round(delaiMs / 1000)} s.`,
-              ),
-            ),
+            rejeter(new ErreurScrape("delai_depasse", `${quoi} n'a pas répondu en ${Math.round(delaiMs / 1000)} s.`)),
           delaiMs,
         );
       }),
@@ -725,7 +689,7 @@ export function extraireLiens(html: string, base: string): ResumeLiens {
     total: vus.size,
     internes,
     externes,
-    exemples: [...vus].slice(0, LIMITE_LIENS_EXEMPLES).map((u) => bornerTexte(u, 180)),
+    exemples: [...vus].slice(0, LIMITE_LIENS_EXEMPLES).map(u => bornerTexte(u, 180)),
   };
 }
 
@@ -785,9 +749,7 @@ const ENTITES_NOMMEES: Record<string, string> = {
 function decoderEntites(texte: string): string {
   return texte
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) =>
-      String.fromCodePoint(Number.parseInt(code, 16)),
-    )
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)))
     .replace(/&([a-z]+);/gi, (entier, nom: string) => ENTITES_NOMMEES[nom.toLowerCase()] ?? entier)
     .replace(/&amp;/g, "&");
 }
@@ -906,9 +868,7 @@ export function ficheDepuisResultatX(resultat: unknown, pseudoDemande: string): 
   const avatarObjet = (brut.avatar ?? {}) as Record<string, unknown>;
 
   const id =
-    (typeof brut.rest_id === "string" && brut.rest_id) ||
-    (typeof legacy.id_str === "string" && legacy.id_str) ||
-    "";
+    (typeof brut.rest_id === "string" && brut.rest_id) || (typeof legacy.id_str === "string" && legacy.id_str) || "";
   const pseudo =
     (typeof core.screen_name === "string" && core.screen_name) ||
     (typeof legacy.screen_name === "string" && legacy.screen_name) ||
@@ -917,9 +877,7 @@ export function ficheDepuisResultatX(resultat: unknown, pseudoDemande: string): 
     return null;
   }
   const nom =
-    (typeof core.name === "string" && core.name) ||
-    (typeof legacy.name === "string" && legacy.name) ||
-    pseudo;
+    (typeof core.name === "string" && core.name) || (typeof legacy.name === "string" && legacy.name) || pseudo;
   const avatar =
     (typeof legacy.profile_image_url_https === "string" && legacy.profile_image_url_https) ||
     (typeof avatarObjet.image_url === "string" && avatarObjet.image_url) ||
@@ -929,10 +887,7 @@ export function ficheDepuisResultatX(resultat: unknown, pseudoDemande: string): 
     pseudo,
     id,
     nom,
-    description: bornerTexte(
-      typeof legacy.description === "string" ? legacy.description : "",
-      LIMITE_DESCRIPTION,
-    ),
+    description: bornerTexte(typeof legacy.description === "string" ? legacy.description : "", LIMITE_DESCRIPTION),
     abonnes: typeof legacy.followers_count === "number" ? legacy.followers_count : null,
     abonnements: typeof legacy.friends_count === "number" ? legacy.friends_count : null,
     certifie: brut.is_blue_verified === true,
@@ -968,9 +923,7 @@ export function bornerPostX(brut: unknown, pseudoParDefaut: string): PostX | nul
   }
   const auteurObjet = (tweet.author ?? {}) as Record<string, unknown>;
   const auteur =
-    typeof auteurObjet.username === "string" && auteurObjet.username
-      ? auteurObjet.username
-      : pseudoParDefaut;
+    typeof auteurObjet.username === "string" && auteurObjet.username ? auteurObjet.username : pseudoParDefaut;
   const medias = Array.isArray(tweet.media) ? tweet.media.length : 0;
   return {
     id,
@@ -1087,10 +1040,7 @@ async function verbeScrapeGoogle(requete: Record<string, unknown>): Promise<Repo
   const moteur = "duckduckgo";
   const resultats = await chercherDuckDuckGo(texte, limite);
   if (resultats.length === 0) {
-    throw new ErreurScrape(
-      "moteur_indisponible",
-      "Aucun moteur de recherche n'a répondu depuis ce serveur.",
-    );
+    throw new ErreurScrape("moteur_indisponible", "Aucun moteur de recherche n'a répondu depuis ce serveur.");
   }
 
   return {
@@ -1197,7 +1147,7 @@ async function verbeXPosts(requete: Record<string, unknown>): Promise<ReponseScr
   // puis on borne, sinon `limite: 3` peut ne rendre qu'un post original.
   const page = await client.userTweets(identifiant, Math.max(limite * 3, 20));
   const posts = page.tweets
-    .map((tweet) => bornerPostX(tweet, pseudo))
+    .map(tweet => bornerPostX(tweet, pseudo))
     .filter((post): post is PostX => post !== null)
     .slice(0, limite);
 
@@ -1212,7 +1162,7 @@ async function verbeXRecherche(requete: Record<string, unknown>): Promise<Repons
 
   const page = await client.search(texte, Math.max(limite * 2, 20), undefined, "Latest");
   const posts = page.tweets
-    .map((tweet) => bornerPostX(tweet, ""))
+    .map(tweet => bornerPostX(tweet, ""))
     .filter((post): post is PostX => post !== null && post.auteur.length > 0)
     .slice(0, limite);
 
@@ -1224,10 +1174,7 @@ async function verbeXRecherche(requete: Record<string, unknown>): Promise<Repons
   };
 }
 
-const IMPLEMENTATIONS: Record<
-  string,
-  (requete: Record<string, unknown>) => Promise<ReponseScrape>
-> = {
+const IMPLEMENTATIONS: Record<string, (requete: Record<string, unknown>) => Promise<ReponseScrape>> = {
   "scrape.page": verbeScrapePage,
   "scrape.google": verbeScrapeGoogle,
   "scrape.recon": verbeScrapeRecon,
@@ -1243,10 +1190,7 @@ const IMPLEMENTATIONS: Record<
  * de délai, ressort en `{ success: false, error, code }`. C'est la promesse
  * faite au démon — un scraping ne doit pas pouvoir arrêter `rg-cron`.
  */
-export async function servirVerbeScrape(
-  verbe: string,
-  requete: Record<string, unknown>,
-): Promise<ReponseScrape> {
+export async function servirVerbeScrape(verbe: string, requete: Record<string, unknown>): Promise<ReponseScrape> {
   const implementation = IMPLEMENTATIONS[verbe];
   const limiteur = LIMITEURS[verbe];
   if (!implementation || !limiteur) {
@@ -1270,11 +1214,7 @@ export async function servirVerbeScrape(
   }
 
   try {
-    return await avecDelai(
-      implementation(requete),
-      DELAIS_MS[verbe] ?? 30_000,
-      `Le verbe « ${verbe} »`,
-    );
+    return await avecDelai(implementation(requete), DELAIS_MS[verbe] ?? 30_000, `Le verbe « ${verbe} »`);
   } catch (err) {
     return enReponse(err);
   } finally {

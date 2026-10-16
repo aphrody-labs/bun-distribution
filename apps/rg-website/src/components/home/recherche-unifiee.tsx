@@ -16,10 +16,10 @@ import { UnifiedSearchBar } from "@rosegriffon/app-shell";
  */
 
 export function RechercheUnifiee() {
-	return (
-		<UnifiedSearchBar
-			placeholder="Chercher un joueur, une technique, un clan, un article…"
-			className="h-11 max-w-none bg-surface-container-high/90"
-		/>
-	);
+  return (
+    <UnifiedSearchBar
+      placeholder="Chercher un joueur, une technique, un clan, un article…"
+      className="h-11 max-w-none bg-surface-container-high/90"
+    />
+  );
 }

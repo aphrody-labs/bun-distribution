@@ -7,7 +7,7 @@ import { CATEGORIES } from "@/components/dashboard/news-editor/constants";
 
 const ALL_FILTERS = [
   { label: "Tout", value: "" },
-  ...CATEGORIES.map((c) => ({ label: c.label, value: c.value })),
+  ...CATEGORIES.map(c => ({ label: c.label, value: c.value })),
   { label: "Tweets", value: "Tweet" },
 ] as const;
 
@@ -17,7 +17,7 @@ export function CategoryChips() {
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-      {ALL_FILTERS.map((filter) => {
+      {ALL_FILTERS.map(filter => {
         const isActive = activeCategory === filter.value;
         const href = filter.value ? `/news?category=${filter.value}` : "/news";
 

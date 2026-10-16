@@ -157,9 +157,7 @@ export function parseRdbnHeader(buffer: ArrayBuffer | Uint8Array): RdbnHeaderInf
 
   const magic = view.getUint32(0, true);
   if (magic !== RDBN_MAGIC) {
-    throw new Error(
-      `Invalid RDBN magic: expected 0x${RDBN_MAGIC.toString(16)}, got 0x${magic.toString(16)}`,
-    );
+    throw new Error(`Invalid RDBN magic: expected 0x${RDBN_MAGIC.toString(16)}, got 0x${magic.toString(16)}`);
   }
 
   const headerSize = view.getUint16(0x04, true);
@@ -214,9 +212,7 @@ export function parseG4txHeader(buffer: ArrayBuffer | Uint8Array): G4txHeaderInf
 
   const magic = view.getUint32(0, true);
   if (magic !== G4TX_MAGIC) {
-    throw new Error(
-      `Invalid G4TX magic: expected 0x${G4TX_MAGIC.toString(16)}, got 0x${magic.toString(16)}`,
-    );
+    throw new Error(`Invalid G4TX magic: expected 0x${G4TX_MAGIC.toString(16)}, got 0x${magic.toString(16)}`);
   }
 
   const headerSize = view.getUint32(0x04, true);
@@ -407,9 +403,7 @@ class BitReader {
 export function decompressCrilayla(buffer: ArrayBuffer | Uint8Array): Uint8Array {
   const input = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   if (input.length < CRILAYLA_MIN_FILE_SIZE) {
-    throw new Error(
-      `CRILAYLA buffer too small: expected >= ${CRILAYLA_MIN_FILE_SIZE} bytes, got ${input.length}`,
-    );
+    throw new Error(`CRILAYLA buffer too small: expected >= ${CRILAYLA_MIN_FILE_SIZE} bytes, got ${input.length}`);
   }
   if (!isCrilayla(input)) {
     throw new Error("Invalid CRILAYLA magic");
@@ -527,12 +521,7 @@ function computeXorByte(crc: number, position: number): number {
 export function decryptCpkBlock(buffer: Uint8Array, key: number, fileOffset: number = 0): void {
   if (buffer.length === 0) return;
 
-  const k = new Uint8Array([
-    key & 0xff,
-    (key >>> 8) & 0xff,
-    (key >>> 16) & 0xff,
-    (key >>> 24) & 0xff,
-  ]);
+  const k = new Uint8Array([key & 0xff, (key >>> 8) & 0xff, (key >>> 16) & 0xff, (key >>> 24) & 0xff]);
 
   const length = buffer.length;
   let i = 0;

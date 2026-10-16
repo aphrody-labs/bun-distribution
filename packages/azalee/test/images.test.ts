@@ -72,9 +72,7 @@ describe("getAuraImageUrl — routage dossier + base famille", () => {
   });
 
   test("suffixe de variante (_st0701, _1, _b1) ignoré, base conservée", () => {
-    expect(getAuraImageUrl("wks02060_st0901")).toBe(
-      `${CHR}/aura_fs/k002060_l.g4tx/k002060_l00.png`,
-    );
+    expect(getAuraImageUrl("wks02060_st0901")).toBe(`${CHR}/aura_fs/k002060_l.g4tx/k002060_l00.png`);
     expect(getAuraImageUrl("wad00720_1")).toBe(`${CHR}/aura_fs/k000720_l.g4tx/k000720_l00.png`);
   });
 
@@ -110,22 +108,18 @@ describe("resolveAssetUrl — mapping image_url legacy webp → chemin CPK réel
   });
 
   test("forme legacy /menu/…webp (emblèmes em*) → fichier 1:1 CPK", () => {
-    expect(resolveAssetUrl("/menu/200_icon/01_icon_emblem/em0001.webp")).toBe(
-      `${EMBLEM_CDN}/em0001.png`,
-    );
+    expect(resolveAssetUrl("/menu/200_icon/01_icon_emblem/em0001.webp")).toBe(`${EMBLEM_CDN}/em0001.png`);
   });
 
   test("telop legacy `<code>_0.webp` → fichier 1:1 CPK sans suffixe", () => {
-    expect(
-      resolveAssetUrl("/storage/v1/object/public/menu/220_img/telop_waza/fr/whd00030_0.webp"),
-    ).toBe(`${TELOP_FR}/whd00030.png`);
+    expect(resolveAssetUrl("/storage/v1/object/public/menu/220_img/telop_waza/fr/whd00030_0.webp")).toBe(
+      `${TELOP_FR}/whd00030.png`,
+    );
   });
 
   test("item legacy : le dossier écrit en base est ignoré au profit du manifeste", () => {
     // `em040022` est déclaré dans `02_icon_item` mais vit dans `01_icon_emblem`.
-    expect(resolveAssetUrl("200_icon/02_icon_item/em040022.webp")).toBe(
-      `${EMBLEM_CDN}/em040022.g4tx/em040022.png`,
-    );
+    expect(resolveAssetUrl("200_icon/02_icon_item/em040022.webp")).toBe(`${EMBLEM_CDN}/em040022.g4tx/em040022.png`);
     // `coa_animal_an000100` vit dans `22_icon_town/icon_animal.g4tx`.
     expect(resolveAssetUrl("200_icon/02_icon_item/coa_animal_an000100.webp")).toBe(
       `${MENU}/200_icon/22_icon_town/icon_animal.g4tx/coa_animal_an000100.png`,
@@ -144,9 +138,9 @@ describe("resolveAssetUrl — mapping image_url legacy webp → chemin CPK réel
   });
 
   test("emblem_url d'équipe en `0x<CRC>.webp` → placeholder (trou de données, 0/208)", () => {
-    expect(
-      resolveAssetUrl("/storage/v1/object/public/menu/200_icon/01_icon_emblem/0x4DC11E01.webp"),
-    ).toBe(PLACEHOLDERS.item);
+    expect(resolveAssetUrl("/storage/v1/object/public/menu/200_icon/01_icon_emblem/0x4DC11E01.webp")).toBe(
+      PLACEHOLDERS.item,
+    );
   });
 
   test("URL absolue ou racine inchangée", () => {
@@ -189,9 +183,7 @@ describe("getMiximaxIconUrl — icon_code/asset_code → code icône réel (ca/c
 describe("items — résolution par manifeste (conteneur + texture réels)", () => {
   test("gd120001 garde son icône réelle, les autres gd120* sont un trou de données", () => {
     expect(getItemImageUrl("gd120001")).toBe(`${ITEM_CDN}/icon_item01.g4tx/gd120001.png`);
-    expect(resolveAssetUrl("200_icon/02_icon_item/gd120001.webp")).toBe(
-      `${ITEM_CDN}/icon_item01.g4tx/gd120001.png`,
-    );
+    expect(resolveAssetUrl("200_icon/02_icon_item/gd120001.webp")).toBe(`${ITEM_CDN}/icon_item01.g4tx/gd120001.png`);
     for (const code of ["gd120002", "gd120030", "gd120059", "gd120066", "gd120091"]) {
       expect(resolveItemIcon(code)).toBeNull();
       expect(getItemImageUrl(code)).toBe(PLACEHOLDERS.item);
@@ -206,9 +198,7 @@ describe("items — résolution par manifeste (conteneur + texture réels)", () 
 
   test("le dossier écrit en base est FAUX pour 522 objets : le manifeste tranche", () => {
     expect(resolveItemIcon("em040022")?.g4txPath).toBe("200_icon/01_icon_emblem/em040022.g4tx");
-    expect(resolveItemIcon("coa_animal_an000100")?.g4txPath).toBe(
-      "200_icon/22_icon_town/icon_animal.g4tx",
-    );
+    expect(resolveItemIcon("coa_animal_an000100")?.g4txPath).toBe("200_icon/22_icon_town/icon_animal.g4tx");
     expect(resolveItemIcon("ds01014")?.g4txPath).toBe("200_icon/20_icon_deco/icon_deco.g4tx");
     // Plaque de nom : la texture ne porte PAS le nom de l'objet (`_01` suffixé).
     expect(resolveItemIcon("nm00001")).toEqual({
@@ -250,9 +240,7 @@ describe("techniques — telop 1:1 (fr puis en), gate sur les fichiers réels", 
 
 describe("uniformes — texture `_1` nommée (le `_2` est un masque d'emblème, pas un dos)", () => {
   test("perso doté d'un uniforme personnel → `<code>_l.g4tx/<code>_1.png`", () => {
-    expect(getCharacterUniformUrl("c11010010")).toBe(
-      `${CHR}/uniform/u11010010_l.g4tx/u11010010_1.png`,
-    );
+    expect(getCharacterUniformUrl("c11010010")).toBe(`${CHR}/uniform/u11010010_l.g4tx/u11010010_1.png`);
     // Le suffixe de variante est retiré avant la dérivation `c` → `u`.
     expect(getCharacterUniformUrl("c11010010_5000")).toBe(getCharacterUniformUrl("c11010010"));
   });
@@ -269,9 +257,7 @@ describe("uniformes — texture `_1` nommée (le `_2` est un masque d'emblème, 
 
 describe("URLs CDN — visages, emblèmes, illustrations", () => {
   test("getCharacterFaceUrl : texture nommée `_1_l00` (le 1:1 servirait `_2_l00`)", () => {
-    expect(getCharacterFaceUrl("c01000010")).toBe(
-      `${CHR}/face/c01000010_l.g4tx/c01000010_1_l00.png`,
-    );
+    expect(getCharacterFaceUrl("c01000010")).toBe(`${CHR}/face/c01000010_l.g4tx/c01000010_1_l00.png`);
     // Le suffixe de variante (_5000/_5100…) est retiré : le dump n'a que la base.
     expect(getCharacterFaceUrl("c01000010_5000")).toBe(getCharacterFaceUrl("c01000010"));
     // Code absent du manifeste des faces servies → placeholder, pas un 404 forgé.
@@ -313,9 +299,7 @@ describe("URLs CDN — visages, emblèmes, illustrations", () => {
     expect(galleryVariantUrl("/local.png", 400)).toBe("/local.png");
     expect(galleryVariantUrl(null, 400)).toBeNull();
     // Toutes les largeurs whitelistées produisent une variante distincte.
-    const urls = GALLERY_VARIANT_WIDTHS.map((w) =>
-      galleryVariantUrl("https://cdn.rosegriffon.fr/dx11/a.png", w),
-    );
+    const urls = GALLERY_VARIANT_WIDTHS.map(w => galleryVariantUrl("https://cdn.rosegriffon.fr/dx11/a.png", w));
     expect(new Set(urls).size).toBe(GALLERY_VARIANT_WIDTHS.length);
   });
 });
@@ -329,15 +313,11 @@ describe("URLs CDN — modèles 3D (gate manifeste + cache-buster)", () => {
     expect(getCharacterModelFullGlbUrl("c99999999")).toBeNull();
     expect(getCharacterModelFullGlbUrl(null)).toBeNull();
     // Keshins/armures ne sont pas gatés sur le manifeste des faces.
-    expect(getCharacterModelFullGlbUrl("k000010")).toStartWith(
-      "https://cdn.rosegriffon.fr/model-full/k000010.glb?v=",
-    );
+    expect(getCharacterModelFullGlbUrl("k000010")).toStartWith("https://cdn.rosegriffon.fr/model-full/k000010.glb?v=");
   });
 
   test("getCharacterModelGlbUrl / hasCharacterModelGlb sont cohérents", () => {
-    expect(getCharacterModelGlbUrl("c01000010")).toBe(
-      "https://cdn.rosegriffon.fr/model/c01000010.glb",
-    );
+    expect(getCharacterModelGlbUrl("c01000010")).toBe("https://cdn.rosegriffon.fr/model/c01000010.glb");
     expect(hasCharacterModelGlb("c01000010")).toBe(true);
     expect(getCharacterModelGlbUrl("c99999999")).toBeNull();
     expect(hasCharacterModelGlb("c99999999")).toBe(false);
@@ -352,23 +332,17 @@ describe("URLs CDN — modèles 3D (gate manifeste + cache-buster)", () => {
     expect([...keshins].sort()).toEqual(keshins);
     expect(new Set(armures).size).toBe(armures.length);
     for (const code of keshins) {
-      expect(getKeshinModelGlbUrl(code)).toStartWith(
-        `https://cdn.rosegriffon.fr/model-full/${code}.glb?v=`,
-      );
+      expect(getKeshinModelGlbUrl(code)).toStartWith(`https://cdn.rosegriffon.fr/model-full/${code}.glb?v=`);
     }
     for (const code of armures) {
-      expect(getArmureModelGlbUrl(code)).toStartWith(
-        `https://cdn.rosegriffon.fr/model-full/${code}.glb?v=`,
-      );
+      expect(getArmureModelGlbUrl(code)).toStartWith(`https://cdn.rosegriffon.fr/model-full/${code}.glb?v=`);
     }
     expect(getKeshinModelGlbUrl("k999999")).toBeNull();
     expect(getArmureModelGlbUrl("ka999999")).toBeNull();
   });
 
   test("extractKeshinModelCode retrouve `kNNNNNN` dans un chemin d'icône", () => {
-    expect(
-      extractKeshinModelCode("200_icon/10_icon_chr/aura_fs/k000010_l.g4tx/k000010_l00.png"),
-    ).toBe("k000010");
+    expect(extractKeshinModelCode("200_icon/10_icon_chr/aura_fs/k000010_l.g4tx/k000010_l00.png")).toBe("k000010");
     expect(extractKeshinModelCode(null, undefined, "aura_fs/k002020_l")).toBe("k002020");
     expect(extractKeshinModelCode("aucun-code-ici")).toBeNull();
     expect(extractKeshinModelCode()).toBeNull();

@@ -15,12 +15,7 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import {
-  configureAzalee,
-  hasPostgresConfiguration,
-  resetAzaleeConfig,
-  resolveMirrorPath,
-} from "../src/config";
+import { configureAzalee, hasPostgresConfiguration, resetAzaleeConfig, resolveMirrorPath } from "../src/config";
 import { createAzaleeData, inspectLocalData } from "../src/server/source";
 import { setDatabaseProvider } from "../src/db/provider";
 import type { AzaleeTeamList } from "../src/remote/index";
@@ -98,29 +93,18 @@ describe("createAzaleeData — données locales présentes", () => {
     expect(data.isDegraded()).toBe(false);
   });
 
-  test.skipIf(!hasPostgres)(
-    "le préfixe de chemin de la base distante est retiré côté local",
-    async () => {
-      // `https://api.example.test/azalee` → la passerelle retire `/azalee` ;
-      // sans ce retrait, la route locale cherchée serait `/azalee/api/teams`.
-      const data = createAzaleeData({ mode: "local", baseUrl: REMOTE, fetch: forbiddenFetch });
-      const teams = await data.teams();
-      expect(Array.isArray(teams)).toBe(true);
-      expect(teams.length).toBeGreaterThan(100);
-    },
-  );
+  test.skipIf(!hasPostgres)("le préfixe de chemin de la base distante est retiré côté local", async () => {
+    // `https://api.example.test/azalee` → la passerelle retire `/azalee` ;
+    // sans ce retrait, la route locale cherchée serait `/azalee/api/teams`.
+    const data = createAzaleeData({ mode: "local", baseUrl: REMOTE, fetch: forbiddenFetch });
+    const teams = await data.teams();
+    expect(Array.isArray(teams)).toBe(true);
+    expect(teams.length).toBeGreaterThan(100);
+  });
 
   test.skipIf(!hasPostgres)("la surface de lecture est celle du client distant", () => {
     const data = createAzaleeData({ mode: "local" });
-    for (const method of [
-      "characters",
-      "skills",
-      "teams",
-      "cpkList",
-      "text",
-      "search",
-      "health",
-    ] as const) {
+    for (const method of ["characters", "skills", "teams", "cpkList", "text", "search", "health"] as const) {
       expect(typeof data[method]).toBe("function");
     }
     expect(data.baseUrl).toBeString();

@@ -7,8 +7,7 @@ import { execSync } from "node:child_process";
 import { SHARED_ASSETS_PATH } from "@rosegriffon/assets";
 
 const SOURCE_DIR =
-  process.env.RG_ASSETS_SOURCE_DIR ??
-  fileURLToPath(new URL("../../../assets/public/", import.meta.url));
+  process.env.RG_ASSETS_SOURCE_DIR ?? fileURLToPath(new URL("../../../assets/public/", import.meta.url));
 const CDN_STATIC_ROOT = process.env.CDN_STATIC_ROOT ?? "/var/www/cdn/static";
 const DEST_DIR = sharedAssetsDestDir(CDN_STATIC_ROOT);
 
@@ -32,9 +31,7 @@ export async function syncCdnAssets(): Promise<{ success: boolean; error?: strin
     // Utilise l'implémentation native ultra-rapide de Glob de Bun
     const glob = new Glob("**/*");
     const files = Array.from(glob.scanSync({ cwd: SOURCE_DIR, onlyFiles: true }));
-    console.log(
-      `[Cron CDN] ${files.length} assets trouvés pour la synchronisation vers ${DEST_DIR}.`,
-    );
+    console.log(`[Cron CDN] ${files.length} assets trouvés pour la synchronisation vers ${DEST_DIR}.`);
 
     let copyCount = 0;
     let skipCount = 0;
@@ -69,17 +66,7 @@ export async function syncCdnAssets(): Promise<{ success: boolean; error?: strin
 
         // Pré-compression pour les fichiers texte, SVG, polices, etc.
         const ext = destPath.split(".").pop()?.toLowerCase();
-        const compressibleExtensions = [
-          "js",
-          "css",
-          "html",
-          "svg",
-          "json",
-          "txt",
-          "ttf",
-          "xml",
-          "webmanifest",
-        ];
+        const compressibleExtensions = ["js", "css", "html", "svg", "json", "txt", "ttf", "xml", "webmanifest"];
         if (ext && compressibleExtensions.includes(ext)) {
           try {
             // Gzip (niveau 9)
@@ -94,19 +81,14 @@ export async function syncCdnAssets(): Promise<{ success: boolean; error?: strin
             });
             await writeFile(`${destPath}.br`, brContent);
           } catch (compressErr) {
-            console.warn(
-              `[Cron CDN] Warning: Impossible de pré-compresser ${relPath}:`,
-              compressErr,
-            );
+            console.warn(`[Cron CDN] Warning: Impossible de pré-compresser ${relPath}:`, compressErr);
           }
         }
       } else {
         skipCount++;
       }
     }
-    console.log(
-      `[Cron CDN] Synchronisation terminée. ${copyCount} fichiers copiés, ${skipCount} ignorés.`,
-    );
+    console.log(`[Cron CDN] Synchronisation terminée. ${copyCount} fichiers copiés, ${skipCount} ignorés.`);
 
     if (copyCount > 0) {
       console.log("[Cron CDN] Nouveaux fichiers copiés. Invalidation du cache CDN...");

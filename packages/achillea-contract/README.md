@@ -3,12 +3,12 @@
 Exporte le contrat Achilléa **hors de TypeScript**. Lit les sources de
 `@rosegriffon/achillea-types` et produit, dans `generated/` :
 
-| Fichier                 | Cible                        | Usage                                          |
-| ----------------------- | ---------------------------- | ---------------------------------------------- |
-| `achillea.schema.json`  | JSON Schema 2020-12          | Pivot vers tout générateur (Go, C#, Dart, …)   |
-| `achillea.rs`           | Rust + `serde`               | Client de jeu ou service Rust                  |
-| `Achillea.swift`        | Swift `Codable`              | App iOS native                                 |
-| `Achillea.kt`           | Kotlin `kotlinx.serialization` | App Android native                            |
+| Fichier                | Cible                          | Usage                                        |
+| ---------------------- | ------------------------------ | -------------------------------------------- |
+| `achillea.schema.json` | JSON Schema 2020-12            | Pivot vers tout générateur (Go, C#, Dart, …) |
+| `achillea.rs`          | Rust + `serde`                 | Client de jeu ou service Rust                |
+| `Achillea.swift`       | Swift `Codable`                | App iOS native                               |
+| `Achillea.kt`          | Kotlin `kotlinx.serialization` | App Android native                           |
 
 C'est la pièce qui rend la frontière réelle : le jour où une cible quitte
 TypeScript, les 159 formes du domaine ne sont pas réécrites à la main.
@@ -47,16 +47,16 @@ Ajouter un langage = ajouter un émetteur qui ne connaît que l'IR.
 
 ## Conventions de traduction
 
-| TypeScript                 | JSON Schema                       | Rust                          | Swift             | Kotlin              |
-| -------------------------- | --------------------------------- | ----------------------------- | ----------------- | ------------------- |
-| `interface`                | `object` + `required`             | `struct`                      | `struct: Codable` | `data class`        |
-| `enum` (chaînes)           | `enum` de valeurs                 | `enum` + `serde(rename)`      | `enum: String`    | `enum class`        |
-| `enum` (nombres)           | `enum` de valeurs                 | `enum` + `serde_repr`         | `enum: Int`       | `enum class`        |
-| `champ?`                   | absent de `required`              | `Option<T>` + `skip_serializing_if` | `T?`        | `T? = null`         |
-| `Date`                     | `string` / `date-time`            | `Timestamp` (alias `String`)  | `String`          | `String`            |
-| `Record<string, T>`        | `additionalProperties`            | `HashMap<String, T>`          | `[String: T]`     | `Map<String, T>`    |
-| `A & { … }`                | propriétés fusionnées             | `serde(flatten)`              | champs aplatis    | champs aplatis      |
-| `extends`                  | propriétés fusionnées             | champs aplatis                | champs aplatis    | champs aplatis      |
+| TypeScript          | JSON Schema            | Rust                                | Swift             | Kotlin           |
+| ------------------- | ---------------------- | ----------------------------------- | ----------------- | ---------------- |
+| `interface`         | `object` + `required`  | `struct`                            | `struct: Codable` | `data class`     |
+| `enum` (chaînes)    | `enum` de valeurs      | `enum` + `serde(rename)`            | `enum: String`    | `enum class`     |
+| `enum` (nombres)    | `enum` de valeurs      | `enum` + `serde_repr`               | `enum: Int`       | `enum class`     |
+| `champ?`            | absent de `required`   | `Option<T>` + `skip_serializing_if` | `T?`              | `T? = null`      |
+| `Date`              | `string` / `date-time` | `Timestamp` (alias `String`)        | `String`          | `String`         |
+| `Record<string, T>` | `additionalProperties` | `HashMap<String, T>`                | `[String: T]`     | `Map<String, T>` |
+| `A & { … }`         | propriétés fusionnées  | `serde(flatten)`                    | champs aplatis    | champs aplatis   |
+| `extends`           | propriétés fusionnées  | champs aplatis                      | champs aplatis    | champs aplatis   |
 
 Les noms de champs sont convertis en `snake_case` (Rust) / `camelCase`
 (Swift, Kotlin) avec un `rename` explicite dès que le nom du fil diffère — les
@@ -70,8 +70,8 @@ champ dans `@rosegriffon/achillea-types` :
 
 ```ts
 export interface Exemple {
-	/** Nombre de participants. @integer */
-	participantsNumber: number;
+  /** Nombre de participants. @integer */
+  participantsNumber: number;
 }
 ```
 

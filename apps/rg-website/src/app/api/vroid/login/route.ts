@@ -18,28 +18,25 @@ export const dynamic = "force-dynamic";
 
 /** Ne garde qu'un chemin interne : un `retour` absolu serait une redirection ouverte. */
 function retourSur(brut: string | null): string {
-	if (!brut || !brut.startsWith("/") || brut.startsWith("//")) return "/vroid";
-	return brut;
+  if (!brut || !brut.startsWith("/") || brut.startsWith("//")) return "/vroid";
+  return brut;
 }
 
 export async function GET(requete: Request): Promise<Response> {
-	const config = lireConfigVroid();
-	if (!config) {
-		return NextResponse.json(
-			{ erreur: "VRoid Hub n'est pas configuré sur cette instance." },
-			{ status: 503 }
-		);
-	}
+  const config = lireConfigVroid();
+  if (!config) {
+    return NextResponse.json({ erreur: "VRoid Hub n'est pas configuré sur cette instance." }, { status: 503 });
+  }
 
-	const url = new URL(requete.url);
-	const codeVerifier = genererCodeVerifier();
-	const state = genererState();
+  const url = new URL(requete.url);
+  const codeVerifier = genererCodeVerifier();
+  const state = genererState();
 
-	await poserFluxAutorisation({
-		state,
-		codeVerifier,
-		retourVers: retourSur(url.searchParams.get("retour")),
-	});
+  await poserFluxAutorisation({
+    state,
+    codeVerifier,
+    retourVers: retourSur(url.searchParams.get("retour")),
+  });
 
-	return NextResponse.redirect(urlAutorisation(config, state, await genererCodeChallenge(codeVerifier)));
+  return NextResponse.redirect(urlAutorisation(config, state, await genererCodeChallenge(codeVerifier)));
 }

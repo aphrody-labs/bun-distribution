@@ -351,9 +351,7 @@ export function Carousel({
             type="button"
             aria-label={`Aller à l'élément ${i + 1}`}
             onClick={() => scrollToIndex(i)}
-            className={`h-2 rounded-full transition-all ${
-              i === active ? "w-6 bg-primary" : "w-2 bg-outline-variant"
-            }`}
+            className={`h-2 rounded-full transition-all ${i === active ? "w-6 bg-primary" : "w-2 bg-outline-variant"}`}
           />
         ))}
       </div>

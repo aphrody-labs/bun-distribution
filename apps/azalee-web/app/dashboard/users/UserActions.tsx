@@ -96,10 +96,7 @@ export function UserActions({ profile }: UserActionsProps) {
             <MoreVertical size={20} aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          className="rounded-2xl border-none shadow-2xl p-2 min-w-[180px]"
-        >
+        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl p-2 min-w-[180px]">
           <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant px-3 py-2">
             Modération
           </DropdownMenuLabel>
@@ -191,8 +188,8 @@ export function UserActions({ profile }: UserActionsProps) {
               Bannir {profile.username || "cet utilisateur"} ?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-on-surface-variant text-sm">
-              Cette action changera le rôle de l&apos;utilisateur en &quot;banned&quot;. Il ne
-              pourra plus accéder aux fonctionnalités du site.
+              Cette action changera le rôle de l&apos;utilisateur en &quot;banned&quot;. Il ne pourra plus accéder aux
+              fonctionnalités du site.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 justify-center sm:justify-center">

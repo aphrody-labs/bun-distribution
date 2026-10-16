@@ -80,9 +80,7 @@ function LoginPageContent() {
                 />
               </Link>
               <h1 className="text-2xl font-bold">Rose Griffon</h1>
-              <CardDescription>
-                Connecte-toi avec Discord, Google, Patreon ou ton adresse e-mail.
-              </CardDescription>
+              <CardDescription>Connecte-toi avec Discord, Google, Patreon ou ton adresse e-mail.</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
@@ -109,13 +107,7 @@ function LoginPageContent() {
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   {SOCIAL_LINKS.map(({ label, href, Icon }) => (
-                    <Button
-                      key={label}
-                      variant="outline"
-                      size="icon"
-                      asChild
-                      className="size-10 rounded-full"
-                    >
+                    <Button key={label} variant="outline" size="icon" asChild className="size-10 rounded-full">
                       <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
                         <Icon className="size-4" />
                       </a>
@@ -157,8 +149,7 @@ function LoginPageContent() {
               <div className="space-y-3">
                 <h2 className="text-2xl font-bold tracking-tight">Personnalise ton identité</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Compose ta photo de profil avec un cadre Rose Griffon, puis pose-la sur ton
-                  compte.
+                  Compose ta photo de profil avec un cadre Rose Griffon, puis pose-la sur ton compte.
                 </p>
               </div>
 

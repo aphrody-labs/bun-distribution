@@ -32,27 +32,27 @@
  *     sondage par `HEAD` doit donc toujours pouvoir retomber sur un `GET`.
  */
 import {
-	cpkAssetUrl,
-	cpkAudioUrl,
-	cpkCfgUrl,
-	cpkPreviewKind,
-	cpkRawUrl,
-	cpkThumbUrl,
-	cpkVideoUrl,
-	previewKindLabel,
-	segLabel,
-	topLabel,
-	type CpkDir,
-	type CpkFile,
-	type CpkPreviewKind,
+  cpkAssetUrl,
+  cpkAudioUrl,
+  cpkCfgUrl,
+  cpkPreviewKind,
+  cpkRawUrl,
+  cpkThumbUrl,
+  cpkVideoUrl,
+  previewKindLabel,
+  segLabel,
+  topLabel,
+  type CpkDir,
+  type CpkFile,
+  type CpkPreviewKind,
 } from "@rosegriffon/azalee/cpk/shared";
 
 import { entierLisible as entierLisibleUi, formaterOctets } from "./ui/nombres";
 import {
-	MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
-	decoderEtat,
-	encoderEtat,
-	nombreDePages as nombreDePagesUi,
+  MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
+  decoderEtat,
+  encoderEtat,
+  nombreDePages as nombreDePagesUi,
 } from "./ui/etat";
 
 export type { CpkDir, CpkFile, CpkPreviewKind };
@@ -126,38 +126,38 @@ export const RACINE_CPK = "data";
  * fichiers.
  */
 export function normaliserChemin(saisie: string): string {
-	const segments = saisie
-		.replaceAll("\\", "/")
-		.split("/")
-		.map((s) => s.trim())
-		.filter((s) => s.length > 0 && s !== "." && s !== "..");
-	if (segments.length === 0) {
-		return "";
-	}
-	if (segments[0] !== RACINE_CPK) {
-		segments.unshift(RACINE_CPK);
-	}
-	return segments.join("/").slice(0, 240);
+  const segments = saisie
+    .replaceAll("\\", "/")
+    .split("/")
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && s !== "." && s !== "..");
+  if (segments.length === 0) {
+    return "";
+  }
+  if (segments[0] !== RACINE_CPK) {
+    segments.unshift(RACINE_CPK);
+  }
+  return segments.join("/").slice(0, 240);
 }
 
 /** Vrai si le chemin désigne la racine de l'index. */
 export function estRacine(chemin: string): boolean {
-	return chemin === "" || chemin === RACINE_CPK;
+  return chemin === "" || chemin === RACINE_CPK;
 }
 
 /** Chemin du dossier parent, `""` à la racine. */
 export function cheminParent(chemin: string): string {
-	const propre = normaliserChemin(chemin);
-	const coupe = propre.lastIndexOf("/");
-	return coupe <= 0 ? "" : propre.slice(0, coupe);
+  const propre = normaliserChemin(chemin);
+  const coupe = propre.lastIndexOf("/");
+  return coupe <= 0 ? "" : propre.slice(0, coupe);
 }
 
 /** Une étape du fil d'Ariane. */
 export interface EtapeAriane {
-	/** Libellé humain (traduit quand le segment est connu). */
-	libelle: string;
-	/** Chemin complet de l'étape, utilisable tel quel par `/cpk parcourir`. */
-	chemin: string;
+  /** Libellé humain (traduit quand le segment est connu). */
+  libelle: string;
+  /** Chemin complet de l'étape, utilisable tel quel par `/cpk parcourir`. */
+  chemin: string;
 }
 
 /**
@@ -166,26 +166,26 @@ export interface EtapeAriane {
  * (`menu` → « Menus », `_waza` → « Techniques (waza) »).
  */
 export function filAriane(chemin: string): EtapeAriane[] {
-	const propre = normaliserChemin(chemin);
-	if (propre === "") {
-		return [{ libelle: RACINE_CPK, chemin: RACINE_CPK }];
-	}
-	const segments = propre.split("/");
-	const etapes: EtapeAriane[] = [];
-	let cumul = "";
-	for (const [index, segment] of segments.entries()) {
-		cumul = cumul === "" ? segment : `${cumul}/${segment}`;
-		const libelle = index === 0 ? segment : index === 1 ? topLabel(segment) : segLabel(segment);
-		etapes.push({ libelle, chemin: cumul });
-	}
-	return etapes;
+  const propre = normaliserChemin(chemin);
+  if (propre === "") {
+    return [{ libelle: RACINE_CPK, chemin: RACINE_CPK }];
+  }
+  const segments = propre.split("/");
+  const etapes: EtapeAriane[] = [];
+  let cumul = "";
+  for (const [index, segment] of segments.entries()) {
+    cumul = cumul === "" ? segment : `${cumul}/${segment}`;
+    const libelle = index === 0 ? segment : index === 1 ? topLabel(segment) : segLabel(segment);
+    etapes.push({ libelle, chemin: cumul });
+  }
+  return etapes;
 }
 
 /** Fil d'Ariane rendu en une ligne. */
 export function ligneAriane(chemin: string): string {
-	return filAriane(chemin)
-		.map((e) => e.libelle)
-		.join(" › ");
+  return filAriane(chemin)
+    .map(e => e.libelle)
+    .join(" › ");
 }
 
 /**
@@ -197,18 +197,18 @@ export function ligneAriane(chemin: string): string {
  * `/cpk/dx11/menu/220_img/telop_waza/a000010.g4tx` → 200.
  */
 export function cheminWiki(chemin: string): string {
-	const relatif = normaliserChemin(chemin).replace(/^data\/?/, "");
-	if (relatif === "") {
-		return "/cpk";
-	}
-	return `/cpk/${relatif.split("/").map(encodeURIComponent).join("/")}`;
+  const relatif = normaliserChemin(chemin).replace(/^data\/?/, "");
+  if (relatif === "") {
+    return "/cpk";
+  }
+  return `/cpk/${relatif.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 /** Nombre de pages nécessaires pour `total` entrées. */
 export function nombreDePages(total: number, parPage: number): number {
-	return nombreDePagesUi(total, parPage);
+  return nombreDePagesUi(total, parPage);
 }
 
 /**
@@ -219,32 +219,32 @@ export function nombreDePages(total: number, parPage: number): number {
  * membre conclut que le dossier s'est vidé.
  */
 export function bornerOffset(offset: number, total: number, parPage: number): number {
-	if (!Number.isFinite(offset) || parPage <= 0) {
-		return 0;
-	}
-	const dernier = (nombreDePages(total, parPage) - 1) * parPage;
-	const aligne = Math.floor(Math.max(0, Math.trunc(offset)) / parPage) * parPage;
-	return Math.min(aligne, Math.max(0, dernier));
+  if (!Number.isFinite(offset) || parPage <= 0) {
+    return 0;
+  }
+  const dernier = (nombreDePages(total, parPage) - 1) * parPage;
+  const aligne = Math.floor(Math.max(0, Math.trunc(offset)) / parPage) * parPage;
+  return Math.min(aligne, Math.max(0, dernier));
 }
 
 /** Numéro de page (1-indexé) correspondant à un décalage. */
 export function numeroPage(offset: number, parPage: number): number {
-	if (parPage <= 0) {
-		return 1;
-	}
-	return Math.floor(Math.max(0, offset) / parPage) + 1;
+  if (parPage <= 0) {
+    return 1;
+  }
+  return Math.floor(Math.max(0, offset) / parPage) + 1;
 }
 
 /** Découpe d'une page mixte « dossiers puis fichiers ». */
 export interface TranchePage {
-	/** Premier sous-dossier de la page (index dans la liste complète des dossiers). */
-	debutDossiers: number;
-	/** Sous-dossier suivant le dernier de la page. */
-	finDossiers: number;
-	/** `offset` à passer à `/api/cpk` pour la part fichiers de la page. */
-	offsetFichiers: number;
-	/** `limit` à passer à `/api/cpk` ; `0` = la page ne contient aucun fichier. */
-	limiteFichiers: number;
+  /** Premier sous-dossier de la page (index dans la liste complète des dossiers). */
+  debutDossiers: number;
+  /** Sous-dossier suivant le dernier de la page. */
+  finDossiers: number;
+  /** `offset` à passer à `/api/cpk` pour la part fichiers de la page. */
+  offsetFichiers: number;
+  /** `limit` à passer à `/api/cpk` ; `0` = la page ne contient aucun fichier. */
+  limiteFichiers: number;
 }
 
 /**
@@ -256,21 +256,15 @@ export interface TranchePage {
  * bien plus que ce qu'un embed peut porter. On pagine donc sur la concaténation
  * des deux, ce qui reste cohérent avec l'ordre affiché.
  */
-export function tranchePage(
-	nbDossiers: number,
-	nbFichiers: number,
-	offset: number,
-	parPage: number
-): TranchePage {
-	const total = Math.max(0, nbDossiers) + Math.max(0, nbFichiers);
-	const debut = bornerOffset(offset, total, parPage);
-	const debutDossiers = Math.min(debut, Math.max(0, nbDossiers));
-	const finDossiers = Math.min(debut + parPage, Math.max(0, nbDossiers));
-	const prisDossiers = Math.max(0, finDossiers - debutDossiers);
-	const offsetFichiers = Math.max(0, debut - Math.max(0, nbDossiers));
-	const limiteFichiers =
-		offsetFichiers >= Math.max(0, nbFichiers) ? 0 : Math.max(0, parPage - prisDossiers);
-	return { debutDossiers, finDossiers, offsetFichiers, limiteFichiers };
+export function tranchePage(nbDossiers: number, nbFichiers: number, offset: number, parPage: number): TranchePage {
+  const total = Math.max(0, nbDossiers) + Math.max(0, nbFichiers);
+  const debut = bornerOffset(offset, total, parPage);
+  const debutDossiers = Math.min(debut, Math.max(0, nbDossiers));
+  const finDossiers = Math.min(debut + parPage, Math.max(0, nbDossiers));
+  const prisDossiers = Math.max(0, finDossiers - debutDossiers);
+  const offsetFichiers = Math.max(0, debut - Math.max(0, nbDossiers));
+  const limiteFichiers = offsetFichiers >= Math.max(0, nbFichiers) ? 0 : Math.max(0, parPage - prisDossiers);
+  return { debutDossiers, finDossiers, offsetFichiers, limiteFichiers };
 }
 
 // ─── État transporté par les boutons ────────────────────────────────────────
@@ -282,13 +276,13 @@ export const PREFIXE_BOUTON_PARCOURS = "cpkd";
 export const PREFIXE_BOUTON_RECHERCHE = "cpkq";
 
 export interface EtatParcours {
-	chemin: string;
-	offset: number;
+  chemin: string;
+  offset: number;
 }
 
 export interface EtatRecherche {
-	motif: string;
-	offset: number;
+  motif: string;
+  offset: number;
 }
 
 /**
@@ -299,49 +293,49 @@ export interface EtatRecherche {
  * reste néanmoins possible : le membre peut taper un chemin plus long.
  */
 export function encoderParcours(etat: EtatParcours): string | null {
-	return encoderEtat(PREFIXE_BOUTON_PARCOURS, [Math.max(0, Math.trunc(etat.offset)), etat.chemin]);
+  return encoderEtat(PREFIXE_BOUTON_PARCOURS, [Math.max(0, Math.trunc(etat.offset)), etat.chemin]);
 }
 
 /** Décode un `customId` produit par `encoderParcours`. `null` si ce n'en est pas un. */
 export function decoderParcours(customId: string): EtatParcours | null {
-	const champs = decoderEtat(PREFIXE_BOUTON_PARCOURS, customId, 2);
-	if (!champs) {
-		return null;
-	}
-	const offset = Number.parseInt(champs[0] ?? "", 10);
-	if (!Number.isFinite(offset) || offset < 0) {
-		return null;
-	}
-	return { offset, chemin: champs[1] ?? "" };
+  const champs = decoderEtat(PREFIXE_BOUTON_PARCOURS, customId, 2);
+  if (!champs) {
+    return null;
+  }
+  const offset = Number.parseInt(champs[0] ?? "", 10);
+  if (!Number.isFinite(offset) || offset < 0) {
+    return null;
+  }
+  return { offset, chemin: champs[1] ?? "" };
 }
 
 /** Encode l'état d'une recherche dans un `customId` (`null` si le motif est trop long). */
 export function encoderRecherche(etat: EtatRecherche): string | null {
-	return encoderEtat(PREFIXE_BOUTON_RECHERCHE, [Math.max(0, Math.trunc(etat.offset)), etat.motif]);
+  return encoderEtat(PREFIXE_BOUTON_RECHERCHE, [Math.max(0, Math.trunc(etat.offset)), etat.motif]);
 }
 
 /** Décode un `customId` produit par `encoderRecherche`. */
 export function decoderRecherche(customId: string): EtatRecherche | null {
-	const champs = decoderEtat(PREFIXE_BOUTON_RECHERCHE, customId, 2);
-	if (!champs) {
-		return null;
-	}
-	const offset = Number.parseInt(champs[0] ?? "", 10);
-	const motif = champs[1] ?? "";
-	if (!Number.isFinite(offset) || offset < 0 || motif.length < MOTIF_MINIMUM) {
-		return null;
-	}
-	return { offset, motif };
+  const champs = decoderEtat(PREFIXE_BOUTON_RECHERCHE, customId, 2);
+  if (!champs) {
+    return null;
+  }
+  const offset = Number.parseInt(champs[0] ?? "", 10);
+  const motif = champs[1] ?? "";
+  if (!Number.isFinite(offset) || offset < 0 || motif.length < MOTIF_MINIMUM) {
+    return null;
+  }
+  return { offset, motif };
 }
 
 // ─── Découpe d'une saisie de dossier (autocomplétion) ───────────────────────
 
 /** Ce qu'il faut interroger pour suggérer des dossiers à partir d'une saisie. */
 export interface SaisieDossier {
-	/** Dossier à lister via `/api/cpk`. */
-	parent: string;
-	/** Préfixe à filtrer parmi ses sous-dossiers (casse ignorée). */
-	filtre: string;
+  /** Dossier à lister via `/api/cpk`. */
+  parent: string;
+  /** Préfixe à filtrer parmi ses sous-dossiers (casse ignorée). */
+  filtre: string;
 }
 
 /**
@@ -352,28 +346,28 @@ export interface SaisieDossier {
  * frères commençant par dx11 ». On le lit donc avant de normaliser.
  */
 export function decouperSaisieDossier(saisie: string): SaisieDossier {
-	const brut = saisie.replaceAll("\\", "/").trimEnd();
-	const propre = normaliserChemin(brut);
-	if (propre === "") {
-		return { parent: "", filtre: "" };
-	}
-	if (brut.endsWith("/")) {
-		return { parent: propre, filtre: "" };
-	}
-	const coupe = propre.lastIndexOf("/");
-	if (coupe <= 0) {
-		// `data` seul : rien à filtrer, on propose les racines.
-		return { parent: "", filtre: "" };
-	}
-	return { parent: propre.slice(0, coupe), filtre: propre.slice(coupe + 1) };
+  const brut = saisie.replaceAll("\\", "/").trimEnd();
+  const propre = normaliserChemin(brut);
+  if (propre === "") {
+    return { parent: "", filtre: "" };
+  }
+  if (brut.endsWith("/")) {
+    return { parent: propre, filtre: "" };
+  }
+  const coupe = propre.lastIndexOf("/");
+  if (coupe <= 0) {
+    // `data` seul : rien à filtrer, on propose les racines.
+    return { parent: "", filtre: "" };
+  }
+  return { parent: propre.slice(0, coupe), filtre: propre.slice(coupe + 1) };
 }
 
 /** Compare un nom à un préfixe, casse et accents de bord ignorés. */
 export function correspondPrefixe(nom: string, filtre: string): boolean {
-	if (filtre === "") {
-		return true;
-	}
-	return nom.toLowerCase().startsWith(filtre.toLowerCase());
+  if (filtre === "") {
+    return true;
+  }
+  return nom.toLowerCase().startsWith(filtre.toLowerCase());
 }
 
 // ─── Formats lisibles ───────────────────────────────────────────────────────
@@ -385,17 +379,17 @@ export function correspondPrefixe(nom: string, filtre: string): boolean {
  * rendent toute assertion de test fragile ; on formate donc à la main.
  */
 export function entierLisible(valeur: number): string {
-	return entierLisibleUi(valeur);
+  return entierLisibleUi(valeur);
 }
 
 /** Taille en octets rendue lisible (`12 Mo`, `171 Ko`, `7,3 Ko`). */
 export function octetsLisibles(octets: number | null | undefined): string {
-	return formaterOctets(octets, "taille inconnue");
+  return formaterOctets(octets, "taille inconnue");
 }
 
 /** Vrai si un contenu de cette taille peut partir en pièce jointe Discord. */
 export function tientEnPieceJointe(octets: number | null | undefined): boolean {
-	return typeof octets === "number" && octets > 0 && octets <= SEUIL_PIECE_JOINTE_OCTETS;
+  return typeof octets === "number" && octets > 0 && octets <= SEUIL_PIECE_JOINTE_OCTETS;
 }
 
 /**
@@ -414,60 +408,60 @@ export function tientEnPieceJointe(octets: number | null | undefined): boolean {
  * dont on relâche le corps.
  */
 export function methodeRefusee(statut: number): boolean {
-	return statut === 405 || statut === 501;
+  return statut === 405 || statut === 501;
 }
 
 /** Nom de fichier d'une pièce jointe, dérivé d'une URL de contenu. */
 export function nomPieceJointe(url: string, repli: string): string {
-	const sansRequete = url.split("?")[0] ?? url;
-	const dernier = sansRequete.split("/").pop() ?? "";
-	return dernier.length > 0 ? dernier : repli;
+  const sansRequete = url.split("?")[0] ?? url;
+  const dernier = sansRequete.split("/").pop() ?? "";
+  return dernier.length > 0 ? dernier : repli;
 }
 
 // ─── Rendu des lignes ───────────────────────────────────────────────────────
 
 /** Ligne de liste d'un sous-dossier. */
 export function ligneDossier(dossier: CpkDir): string {
-	const traduit = segLabel(dossier.name);
-	const suffixe = traduit === dossier.name ? "" : ` *(${traduit})*`;
-	const compte = entierLisible(dossier.count);
-	return `📁 \`${dossier.name}/\`${suffixe} — ${compte} fichier${dossier.count > 1 ? "s" : ""}`;
+  const traduit = segLabel(dossier.name);
+  const suffixe = traduit === dossier.name ? "" : ` *(${traduit})*`;
+  const compte = entierLisible(dossier.count);
+  return `📁 \`${dossier.name}/\`${suffixe} — ${compte} fichier${dossier.count > 1 ? "s" : ""}`;
 }
 
 /** Ligne de liste d'un fichier (nom + famille d'aperçu). */
 export function ligneFichier(fichier: CpkFile): string {
-	return `📄 \`${fichier.name}\` — ${previewKindLabel(cpkPreviewKind(fichier.ext))}`;
+  return `📄 \`${fichier.name}\` — ${previewKindLabel(cpkPreviewKind(fichier.ext))}`;
 }
 
 /** Ligne de résultat de recherche : le chemin complet, la famille en second. */
 export function ligneResultat(fichier: CpkFile): string {
-	return `\`${fichier.path}\`\n↳ ${previewKindLabel(cpkPreviewKind(fichier.ext))}`;
+  return `\`${fichier.path}\`\n↳ ${previewKindLabel(cpkPreviewKind(fichier.ext))}`;
 }
 
 // ─── Aperçu ─────────────────────────────────────────────────────────────────
 
 /** Ce que la fiche d'un fichier peut montrer, décidé sur la seule extension. */
 export interface ApercuCpk {
-	/** Famille de preview (`image`, `model`, `config`, `sound`, `movie`, `package`, `text`, `raw`). */
-	famille: CpkPreviewKind;
-	/** Libellé humain de la famille. */
-	libelle: string;
-	/** Image bornée à poser dans l'embed (`?w=800&format=webp`), ou `null`. */
-	image: string | null;
-	/** URL du contenu décodé (PNG pleine résolution, GLB, JSON, WAV, MP4…). */
-	contenu: string;
-	/** URL des octets bruts décompressés — toujours disponible. */
-	brut: string;
-	/** Vrai si `contenu` est un JSON dont on peut extraire un aperçu textuel. */
-	configJson: boolean;
-	/** Vrai si `contenu` est un GLB, donc soumis à la limite de pièce jointe. */
-	modele3d: boolean;
+  /** Famille de preview (`image`, `model`, `config`, `sound`, `movie`, `package`, `text`, `raw`). */
+  famille: CpkPreviewKind;
+  /** Libellé humain de la famille. */
+  libelle: string;
+  /** Image bornée à poser dans l'embed (`?w=800&format=webp`), ou `null`. */
+  image: string | null;
+  /** URL du contenu décodé (PNG pleine résolution, GLB, JSON, WAV, MP4…). */
+  contenu: string;
+  /** URL des octets bruts décompressés — toujours disponible. */
+  brut: string;
+  /** Vrai si `contenu` est un JSON dont on peut extraire un aperçu textuel. */
+  configJson: boolean;
+  /** Vrai si `contenu` est un GLB, donc soumis à la limite de pièce jointe. */
+  modele3d: boolean;
 }
 
 /** Ce dont `apercuCpk` a besoin — le sous-ensemble utile de `CpkFileMeta`. */
 export interface EntreeApercu {
-	path: string;
-	ext: string;
+  path: string;
+  ext: string;
 }
 
 /**
@@ -478,39 +472,39 @@ export interface EntreeApercu {
  * wiki.
  */
 export function apercuCpk(entree: EntreeApercu): ApercuCpk {
-	const famille = cpkPreviewKind(entree.ext);
-	const brut = cpkRawUrl(entree.path);
-	const base: Omit<ApercuCpk, "contenu" | "image"> = {
-		famille,
-		libelle: previewKindLabel(famille),
-		brut,
-		configJson: famille === "config",
-		modele3d: famille === "model",
-	};
+  const famille = cpkPreviewKind(entree.ext);
+  const brut = cpkRawUrl(entree.path);
+  const base: Omit<ApercuCpk, "contenu" | "image"> = {
+    famille,
+    libelle: previewKindLabel(famille),
+    brut,
+    configJson: famille === "config",
+    modele3d: famille === "model",
+  };
 
-	if (famille === "image") {
-		return {
-			...base,
-			// Le PNG pleine résolution reste le lien « original » ; l'embed, lui,
-			// ne porte QUE la variante bornée (12 Mo mesurés sur une illustration
-			// de galerie contre 80 Ko en `?w=800&format=webp`).
-			contenu: cpkAssetUrl(entree.path, entree.ext) ?? brut,
-			image: cpkThumbUrl(entree.path, entree.ext, LARGEUR_APERCU),
-		};
-	}
-	if (famille === "model") {
-		return { ...base, contenu: cpkAssetUrl(entree.path, entree.ext) ?? brut, image: null };
-	}
-	if (famille === "config") {
-		return { ...base, contenu: cpkCfgUrl(entree.path), image: null };
-	}
-	if (famille === "sound") {
-		return { ...base, contenu: cpkAudioUrl(entree.path), image: null };
-	}
-	if (famille === "movie") {
-		return { ...base, contenu: cpkVideoUrl(entree.path), image: null };
-	}
-	return { ...base, contenu: brut, image: null };
+  if (famille === "image") {
+    return {
+      ...base,
+      // Le PNG pleine résolution reste le lien « original » ; l'embed, lui,
+      // ne porte QUE la variante bornée (12 Mo mesurés sur une illustration
+      // de galerie contre 80 Ko en `?w=800&format=webp`).
+      contenu: cpkAssetUrl(entree.path, entree.ext) ?? brut,
+      image: cpkThumbUrl(entree.path, entree.ext, LARGEUR_APERCU),
+    };
+  }
+  if (famille === "model") {
+    return { ...base, contenu: cpkAssetUrl(entree.path, entree.ext) ?? brut, image: null };
+  }
+  if (famille === "config") {
+    return { ...base, contenu: cpkCfgUrl(entree.path), image: null };
+  }
+  if (famille === "sound") {
+    return { ...base, contenu: cpkAudioUrl(entree.path), image: null };
+  }
+  if (famille === "movie") {
+    return { ...base, contenu: cpkVideoUrl(entree.path), image: null };
+  }
+  return { ...base, contenu: brut, image: null };
 }
 
 /**
@@ -522,16 +516,16 @@ export function apercuCpk(entree: EntreeApercu): ApercuCpk {
  * croire à deux ressources, dont une « décodée » qui n'existe pas.
  */
 export function liensContenu(apercu: ApercuCpk): string {
-	if (apercu.contenu === apercu.brut) {
-		return [
-			`[Octets bruts du CPK](${apercu.brut})`,
-			"Aucun décodeur du CDN ne couvre ce format : le fichier est servi tel qu'il sort de l'archive.",
-		].join("\n");
-	}
-	return [
-		`[${apercu.libelle} — décodage à la demande](${apercu.contenu})`,
-		`[Octets bruts du CPK](${apercu.brut})`,
-	].join("\n");
+  if (apercu.contenu === apercu.brut) {
+    return [
+      `[Octets bruts du CPK](${apercu.brut})`,
+      "Aucun décodeur du CDN ne couvre ce format : le fichier est servi tel qu'il sort de l'archive.",
+    ].join("\n");
+  }
+  return [
+    `[${apercu.libelle} — décodage à la demande](${apercu.contenu})`,
+    `[Octets bruts du CPK](${apercu.brut})`,
+  ].join("\n");
 }
 
 // ─── Configs binaires décodées ──────────────────────────────────────────────
@@ -545,45 +539,45 @@ export function liensContenu(apercu: ApercuCpk): string {
  * Toute autre forme retombe sur `null` : on n'invente pas un résumé.
  */
 export function resumerConfig(valeur: unknown): string | null {
-	if (typeof valeur !== "object" || valeur === null) {
-		return null;
-	}
-	const objet = valeur as { format?: unknown; lists?: unknown; entries?: unknown };
-	const format = typeof objet.format === "string" ? objet.format : null;
+  if (typeof valeur !== "object" || valeur === null) {
+    return null;
+  }
+  const objet = valeur as { format?: unknown; lists?: unknown; entries?: unknown };
+  const format = typeof objet.format === "string" ? objet.format : null;
 
-	if (Array.isArray(objet.lists)) {
-		const listes = objet.lists as Array<{ name?: unknown; count?: unknown }>;
-		const lignes = listes
-			.slice(0, 8)
-			.map((liste) => {
-				const nom = typeof liste.name === "string" ? liste.name : "(sans nom)";
-				const compte = typeof liste.count === "number" ? liste.count : 0;
-				return `• \`${nom}\` — ${entierLisible(compte)} ligne${compte > 1 ? "s" : ""}`;
-			})
-			.join("\n");
-		const reste = listes.length > 8 ? `\n… et ${listes.length - 8} autres listes` : "";
-		return `Format **${format ?? "rdbn"}** · ${entierLisible(listes.length)} liste${
-			listes.length > 1 ? "s" : ""
-		}\n${lignes}${reste}`;
-	}
+  if (Array.isArray(objet.lists)) {
+    const listes = objet.lists as Array<{ name?: unknown; count?: unknown }>;
+    const lignes = listes
+      .slice(0, 8)
+      .map(liste => {
+        const nom = typeof liste.name === "string" ? liste.name : "(sans nom)";
+        const compte = typeof liste.count === "number" ? liste.count : 0;
+        return `• \`${nom}\` — ${entierLisible(compte)} ligne${compte > 1 ? "s" : ""}`;
+      })
+      .join("\n");
+    const reste = listes.length > 8 ? `\n… et ${listes.length - 8} autres listes` : "";
+    return `Format **${format ?? "rdbn"}** · ${entierLisible(listes.length)} liste${
+      listes.length > 1 ? "s" : ""
+    }\n${lignes}${reste}`;
+  }
 
-	if (Array.isArray(objet.entries)) {
-		const entrees = objet.entries as Array<{ name?: unknown; children?: unknown }>;
-		const lignes = entrees
-			.slice(0, 8)
-			.map((entree) => {
-				const nom = typeof entree.name === "string" ? entree.name : "(sans nom)";
-				const enfants = Array.isArray(entree.children) ? entree.children.length : 0;
-				return `• \`${nom}\` — ${entierLisible(enfants)} enfant${enfants > 1 ? "s" : ""}`;
-			})
-			.join("\n");
-		const reste = entrees.length > 8 ? `\n… et ${entrees.length - 8} autres blocs` : "";
-		return `Format **${format ?? "T2b"}** · ${entierLisible(entrees.length)} bloc${
-			entrees.length > 1 ? "s" : ""
-		} racine\n${lignes}${reste}`;
-	}
+  if (Array.isArray(objet.entries)) {
+    const entrees = objet.entries as Array<{ name?: unknown; children?: unknown }>;
+    const lignes = entrees
+      .slice(0, 8)
+      .map(entree => {
+        const nom = typeof entree.name === "string" ? entree.name : "(sans nom)";
+        const enfants = Array.isArray(entree.children) ? entree.children.length : 0;
+        return `• \`${nom}\` — ${entierLisible(enfants)} enfant${enfants > 1 ? "s" : ""}`;
+      })
+      .join("\n");
+    const reste = entrees.length > 8 ? `\n… et ${entrees.length - 8} autres blocs` : "";
+    return `Format **${format ?? "T2b"}** · ${entierLisible(entrees.length)} bloc${
+      entrees.length > 1 ? "s" : ""
+    } racine\n${lignes}${reste}`;
+  }
 
-	return format === null ? null : `Format **${format}**`;
+  return format === null ? null : `Format **${format}**`;
 }
 
 /**
@@ -593,12 +587,11 @@ export function resumerConfig(valeur: unknown): string | null {
  * reste de l'embed en code et rend la fiche illisible.
  */
 export function blocCode(texte: string, langage = "", maxContenu = CARACTERES_EXTRAIT): string {
-	const ouverture = `\`\`\`${langage}\n`;
-	const fermeture = "\n```";
-	const propre = texte.replaceAll("```", "'''");
-	const contenu =
-		propre.length > maxContenu ? `${propre.slice(0, Math.max(0, maxContenu - 1))}…` : propre;
-	return `${ouverture}${contenu}${fermeture}`;
+  const ouverture = `\`\`\`${langage}\n`;
+  const fermeture = "\n```";
+  const propre = texte.replaceAll("```", "'''");
+  const contenu = propre.length > maxContenu ? `${propre.slice(0, Math.max(0, maxContenu - 1))}…` : propre;
+  return `${ouverture}${contenu}${fermeture}`;
 }
 
 /**
@@ -609,12 +602,12 @@ export function blocCode(texte: string, langage = "", maxContenu = CARACTERES_EX
  * JSON tronqué est impossible, et prétendre le contraire serait un mensonge).
  */
 export function extraitConfig(texte: string, complet: boolean): string {
-	if (complet) {
-		try {
-			return blocCode(JSON.stringify(JSON.parse(texte), null, 1), "json");
-		} catch {
-			// Corps illisible : on le montre brut plutôt que de masquer le problème.
-		}
-	}
-	return blocCode(texte, "json");
+  if (complet) {
+    try {
+      return blocCode(JSON.stringify(JSON.parse(texte), null, 1), "json");
+    } catch {
+      // Corps illisible : on le montre brut plutôt que de masquer le problème.
+    }
+  }
+  return blocCode(texte, "json");
 }

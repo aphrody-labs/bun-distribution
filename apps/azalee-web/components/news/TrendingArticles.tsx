@@ -29,20 +29,12 @@ export function TrendingArticles({ articles }: TrendingArticlesProps) {
     <div className="p-5 rounded-2xl bg-surface-container-low border border-outline-variant/10">
       <div className="flex items-center gap-2 mb-4">
         <Flame className="size-4 text-primary" />
-        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">
-          Tendances
-        </h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">Tendances</h3>
       </div>
       <div className="space-y-3">
         {displayed.map((article, index) => (
-          <Link
-            key={article.id}
-            href={`/news/${article.slug}`}
-            className="flex items-start gap-3 group"
-          >
-            <span className="text-lg font-black text-on-surface-variant/20 w-6 shrink-0 tabular-nums">
-              {index + 1}
-            </span>
+          <Link key={article.id} href={`/news/${article.slug}`} className="flex items-start gap-3 group">
+            <span className="text-lg font-black text-on-surface-variant/20 w-6 shrink-0 tabular-nums">{index + 1}</span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-on-surface line-clamp-2 group-hover:text-primary transition-colors">
                 {article.title}

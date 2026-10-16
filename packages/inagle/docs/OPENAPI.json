@@ -874,16 +874,7 @@
           },
           "category": {
             "type": "string",
-            "enum": [
-              "texture",
-              "model",
-              "config",
-              "audio",
-              "video",
-              "container",
-              "script",
-              "system"
-            ]
+            "enum": ["texture", "model", "config", "audio", "video", "container", "script", "system"]
           },
           "encryptionSupported": {
             "type": "boolean",

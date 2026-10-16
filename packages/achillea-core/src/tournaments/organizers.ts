@@ -10,19 +10,19 @@
 import { UserRole } from "@rosegriffon/achillea-types";
 
 export interface OrganizerActor {
-	id?: string | null;
-	role?: number | null;
+  id?: string | null;
+  role?: number | null;
 }
 
 export interface OrganizerScope {
-	organization?: {
-		owner?: string | { id?: string | null } | null;
-		managers?: Array<{
-			user?: { id?: string | null } | null;
-			id?: string | null;
-		} | null> | null;
-	} | null;
-	managers?: Array<{ id?: string | null } | null> | null;
+  organization?: {
+    owner?: string | { id?: string | null } | null;
+    managers?: Array<{
+      user?: { id?: string | null } | null;
+      id?: string | null;
+    } | null> | null;
+  } | null;
+  managers?: Array<{ id?: string | null } | null> | null;
 }
 
 /**
@@ -36,26 +36,26 @@ export interface OrganizerScope {
  * `if (!userId) return false` en tête.
  */
 export function isTournamentOrganizer(
-	user: OrganizerActor | null | undefined,
-	tournament: OrganizerScope | null | undefined
+  user: OrganizerActor | null | undefined,
+  tournament: OrganizerScope | null | undefined,
 ): boolean {
-	const userId = user?.id;
-	if (!userId) return false;
+  const userId = user?.id;
+  if (!userId) return false;
 
-	if ((user?.role ?? 0) >= UserRole.SuperAdministrator) return true;
+  if ((user?.role ?? 0) >= UserRole.SuperAdministrator) return true;
 
-	const owner = tournament?.organization?.owner;
-	const ownerId = typeof owner === "string" ? owner : owner?.id;
-	if (ownerId && ownerId === userId) return true;
+  const owner = tournament?.organization?.owner;
+  const ownerId = typeof owner === "string" ? owner : owner?.id;
+  if (ownerId && ownerId === userId) return true;
 
-	const orgManagers = tournament?.organization?.managers;
-	if (orgManagers?.some((manager) => manager?.user?.id === userId)) return true;
+  const orgManagers = tournament?.organization?.managers;
+  if (orgManagers?.some(manager => manager?.user?.id === userId)) return true;
 
-	const tournamentManagers = tournament?.managers;
-	return Boolean(tournamentManagers?.some((manager) => manager?.id === userId));
+  const tournamentManagers = tournament?.managers;
+  return Boolean(tournamentManagers?.some(manager => manager?.id === userId));
 }
 
 /** Formats éligibles au bonus AP podium (élimination uniquement). */
 export function isPlacementPrizeEligible(tournamentType: string | null | undefined): boolean {
-	return tournamentType === "single_elimination" || tournamentType === "double_elimination";
+  return tournamentType === "single_elimination" || tournamentType === "double_elimination";
 }

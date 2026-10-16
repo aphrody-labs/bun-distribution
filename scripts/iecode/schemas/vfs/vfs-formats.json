@@ -19,12 +19,48 @@
       "compressionSupported": true,
       "description": "Level-5 Texture Container packing DDS BCn textures and sprite atlas subregions",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4TX' (0x58543447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "header_size", "description": "Size of primary header" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "texture_count", "description": "Number of contained texture records" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "atlas_subregions_count", "description": "Number of atlas subrectangles" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "data_offset", "description": "Byte offset to raw DDS payload" },
-        { "offsetHex": "0x14", "offsetDec": 20, "type": "uint32_le", "name": "data_size", "description": "Length of texture data payload" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4TX' (0x58543447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "header_size",
+          "description": "Size of primary header"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "texture_count",
+          "description": "Number of contained texture records"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "atlas_subregions_count",
+          "description": "Number of atlas subrectangles"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "uint32_le",
+          "name": "data_offset",
+          "description": "Byte offset to raw DDS payload"
+        },
+        {
+          "offsetHex": "0x14",
+          "offsetDec": 20,
+          "type": "uint32_le",
+          "name": "data_size",
+          "description": "Length of texture data payload"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4tx::G4txContainer",
@@ -49,11 +85,41 @@
       "compressionSupported": true,
       "description": "Level-5 3D Model Metadata (submeshes, vertex buffer layouts, bone bindings)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MD' (0x444D3447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "version", "description": "Model format revision" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "submesh_count", "description": "Count of submeshes in model" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "material_count", "description": "Count of referenced materials" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "mesh_table_offset", "description": "Offset to mesh descriptors" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4MD' (0x444D3447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "version",
+          "description": "Model format revision"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "submesh_count",
+          "description": "Count of submeshes in model"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "material_count",
+          "description": "Count of referenced materials"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "uint32_le",
+          "name": "mesh_table_offset",
+          "description": "Offset to mesh descriptors"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4md::G4md",
@@ -78,10 +144,34 @@
       "compressionSupported": true,
       "description": "Level-5 Model Geometry (vertex positions, normals, UVs, and index buffers)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MG' (0x474D3447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "vertex_count", "description": "Total vertex elements" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "index_count", "description": "Total index elements" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "stride", "description": "Vertex byte stride" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4MG' (0x474D3447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "vertex_count",
+          "description": "Total vertex elements"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "index_count",
+          "description": "Total index elements"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "stride",
+          "description": "Vertex byte stride"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4mg::G4mg",
@@ -106,8 +196,20 @@
       "compressionSupported": false,
       "description": "Level-5 Material Properties (shaders, blend states, diffuse/specular parameters)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4MT' (0x544D3447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "material_count", "description": "Number of material entries" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4MT' (0x544D3447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "material_count",
+          "description": "Number of material entries"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4mt::G4mt",
@@ -132,9 +234,27 @@
       "compressionSupported": false,
       "description": "Level-5 Skeleton & Bone Hierarchy (quaternions, bind poses, transform trees)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4SK' (0x4B533447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "bone_count", "description": "Number of bones in skeleton" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "bone_table_offset", "description": "Offset to bone transforms" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4SK' (0x4B533447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "bone_count",
+          "description": "Number of bones in skeleton"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "bone_table_offset",
+          "description": "Offset to bone transforms"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4sk::G4sk",
@@ -159,9 +279,27 @@
       "compressionSupported": true,
       "description": "Level-5 Package Container (multi-resource bundle for characters and animations)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4PK' (0x4B503447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_count", "description": "Contained resource files count" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "toc_offset", "description": "Offset to table of contents" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4PK' (0x4B503447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "file_count",
+          "description": "Contained resource files count"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "toc_offset",
+          "description": "Offset to table of contents"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4pk::G4pk",
@@ -186,8 +324,20 @@
       "compressionSupported": true,
       "description": "Level-5 Resource Archive (compact asset bundle indexed in nie.exe)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4RA' (0x41523447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "entry_count", "description": "Resource entries count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4RA' (0x41523447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "entry_count",
+          "description": "Resource entries count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4ra::G4ra",
@@ -212,8 +362,20 @@
       "compressionSupported": true,
       "description": "Level-5 Animation Graphic Interface (timeline tracks and animation nodes)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'AGI ' (0x20494741)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "frame_count", "description": "Animation total frame count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'AGI ' (0x20494741)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "frame_count",
+          "description": "Animation total frame count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::FileFormat::Agi",
@@ -238,8 +400,20 @@
       "compressionSupported": true,
       "description": "Level-5 Object Binary (scene layout descriptors and actor placements)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'OBJB' (0x424A424F)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "object_count", "description": "Actor entries count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'OBJB' (0x424A424F)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "object_count",
+          "description": "Actor entries count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::objbin::Objb",
@@ -264,8 +438,20 @@
       "compressionSupported": false,
       "description": "Level-5 Pixel Collision & Physics Hull (hitboxes and boundary colliders)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'PXCL' (0x4C435850)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "hull_count", "description": "Number of collision volumes" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'PXCL' (0x4C435850)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "hull_count",
+          "description": "Number of collision volumes"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::col::Pxcl",
@@ -290,14 +476,62 @@
       "compressionSupported": true,
       "description": "Level-5 Relational Database Binary (T2B structured binary data sheets)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'RDBN' (0x4E424452)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint16_le", "name": "header_size", "description": "Header length (0x50 = 80 bytes)" },
-        { "offsetHex": "0x06", "offsetDec": 6, "type": "uint16_le", "name": "version", "description": "Schema version (0x01)" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "table_count", "description": "Number of contained tables" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "string_pool_offset", "description": "Offset to UTF-8 strings" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "string_pool_size", "description": "Length of string pool" },
-        { "offsetHex": "0x14", "offsetDec": 20, "type": "uint32_le", "name": "data_offset", "description": "Offset to row vectors" },
-        { "offsetHex": "0x18", "offsetDec": 24, "type": "uint32_le", "name": "data_size", "description": "Length of row data section" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'RDBN' (0x4E424452)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint16_le",
+          "name": "header_size",
+          "description": "Header length (0x50 = 80 bytes)"
+        },
+        {
+          "offsetHex": "0x06",
+          "offsetDec": 6,
+          "type": "uint16_le",
+          "name": "version",
+          "description": "Schema version (0x01)"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "table_count",
+          "description": "Number of contained tables"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "string_pool_offset",
+          "description": "Offset to UTF-8 strings"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "uint32_le",
+          "name": "string_pool_size",
+          "description": "Length of string pool"
+        },
+        {
+          "offsetHex": "0x14",
+          "offsetDec": 20,
+          "type": "uint32_le",
+          "name": "data_offset",
+          "description": "Offset to row vectors"
+        },
+        {
+          "offsetHex": "0x18",
+          "offsetDec": 24,
+          "type": "uint32_le",
+          "name": "data_size",
+          "description": "Length of row data section"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::cfgbin::Rdbn",
@@ -322,8 +556,20 @@
       "compressionSupported": true,
       "description": "Level-5 Motion Event Script (choreographed cutscenes, camera paths, audio cues)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'MEVS' (0x5346454D)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "track_count", "description": "Number of choreography tracks" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'MEVS' (0x5346454D)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "track_count",
+          "description": "Number of choreography tracks"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::mevbin::Mevbin",
@@ -348,8 +594,20 @@
       "compressionSupported": false,
       "description": "Level-5 Camera Track & Spline Path (cinematic parameters, FOV transitions)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'G4CM' (0x4D433447)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "keyframe_count", "description": "Camera spline keyframes" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'G4CM' (0x4D433447)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "keyframe_count",
+          "description": "Camera spline keyframes"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4cm::G4cm",
@@ -374,10 +632,34 @@
       "compressionSupported": true,
       "description": "CRI Middleware File Package (TOC, ITOC, ETOC, @UTF directory descriptors)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII 'CPK ' (0x43504B20 BE)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "update_flag", "description": "CRI revision flags" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint64_be", "name": "utf_table_size", "description": "Length of embedded @UTF header table" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "bytes", "name": "utf_header", "description": "Start of @UTF table descriptor" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_be",
+          "name": "magic",
+          "description": "ASCII 'CPK ' (0x43504B20 BE)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_be",
+          "name": "update_flag",
+          "description": "CRI revision flags"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint64_be",
+          "name": "utf_table_size",
+          "description": "Length of embedded @UTF header table"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "bytes",
+          "name": "utf_header",
+          "description": "Start of @UTF table descriptor"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::cpk::CpkReader",
@@ -402,9 +684,27 @@
       "compressionSupported": false,
       "description": "Criware Audio Archive (AWB wavebank containers)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'AFS2' (0x32534641)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "version", "description": "AWB version byte array" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "wave_count", "description": "Count of contained audio streams" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'AFS2' (0x32534641)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "version",
+          "description": "AWB version byte array"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "wave_count",
+          "description": "Count of contained audio streams"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::cri_audio::Awb",
@@ -429,11 +729,41 @@
       "compressionSupported": false,
       "description": "CRI Universal Table Format (schema, column flags, string pools, row vectors)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII '@UTF' (0x40555446 BE)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "table_size", "description": "Total table byte length" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_be", "name": "rows_offset", "description": "Offset to row array" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_be", "name": "strings_offset", "description": "Offset to string pool" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_be", "name": "data_offset", "description": "Offset to binary payloads" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_be",
+          "name": "magic",
+          "description": "ASCII '@UTF' (0x40555446 BE)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_be",
+          "name": "table_size",
+          "description": "Total table byte length"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_be",
+          "name": "rows_offset",
+          "description": "Offset to row array"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_be",
+          "name": "strings_offset",
+          "description": "Offset to string pool"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "uint32_be",
+          "name": "data_offset",
+          "description": "Offset to binary payloads"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::cpk::UtfTable",
@@ -458,11 +788,41 @@
       "compressionSupported": false,
       "description": "DirectDraw Surface (raw BC1/BC2/BC3/BC4/BC5/BC7 compressed texture payload)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'DDS ' (0x20534444)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "size", "description": "Header size (0x7C = 124 bytes)" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "flags", "description": "Surface capability flags" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "height", "description": "Texture height in pixels" },
-        { "offsetHex": "0x10", "offsetDec": 16, "type": "uint32_le", "name": "width", "description": "Texture width in pixels" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'DDS ' (0x20534444)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "size",
+          "description": "Header size (0x7C = 124 bytes)"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "flags",
+          "description": "Surface capability flags"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "height",
+          "description": "Texture height in pixels"
+        },
+        {
+          "offsetHex": "0x10",
+          "offsetDec": 16,
+          "type": "uint32_le",
+          "name": "width",
+          "description": "Texture width in pixels"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::g4tx::DdsHeader",
@@ -487,7 +847,13 @@
       "compressionSupported": true,
       "description": "Portable Network Graphics (decoded atlas glyphs, UI elements, web exports)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "bytes", "name": "signature", "description": "Standard 8-byte PNG signature: 89 50 4E 47 0D 0A 1A 0A" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "bytes",
+          "name": "signature",
+          "description": "Standard 8-byte PNG signature: 89 50 4E 47 0D 0A 1A 0A"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::image_out::PngImage",
@@ -512,8 +878,20 @@
       "compressionSupported": false,
       "description": "Resource Interchange File Format (PCM and ADPCM audio tracks)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'RIFF' (0x46464952)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_size", "description": "Total length minus 8" },
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'RIFF' (0x46464952)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "file_size",
+          "description": "Total length minus 8"
+        },
         { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "format", "description": "ASCII 'WAVE'" }
       ],
       "crossLanguageTypes": {
@@ -539,8 +917,20 @@
       "compressionSupported": true,
       "description": "Level-5 XPCK Package (legacy DS/3DS/Switch container format)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'XPCK' (0x4B435058)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "file_count", "description": "Contained records count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'XPCK' (0x4B435058)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "file_count",
+          "description": "Contained records count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::FileFormat::Xpck",
@@ -565,8 +955,20 @@
       "compressionSupported": true,
       "description": "Level-5 XFSA Archive (file system archive with hash-addressed records)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'XFSA' (0x41534658)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "record_count", "description": "Indexed records count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'XFSA' (0x41534658)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "record_count",
+          "description": "Indexed records count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::FileFormat::Xfsa",
@@ -591,9 +993,27 @@
       "compressionSupported": true,
       "description": "CRI Layla Reverse-Bitstream LZSS Compressed Container (16-byte header + bitstream + 0x100 raw)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "bytes", "name": "magic", "description": "ASCII 'CRILAYLA' (8 bytes)" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "uncompressed_size", "description": "Expected uncompressed byte size" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "compressed_size", "description": "Compressed payload byte length" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "bytes",
+          "name": "magic",
+          "description": "ASCII 'CRILAYLA' (8 bytes)"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "uncompressed_size",
+          "description": "Expected uncompressed byte size"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "compressed_size",
+          "description": "Compressed payload byte length"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::crilayla::CriLayla",
@@ -618,8 +1038,20 @@
       "compressionSupported": false,
       "description": "Criware Audio Cue Sheet (cue mappings, sound triggers, DSP effects)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII '@ACB' (0x40414342 BE)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "table_size", "description": "CRI cue sheet length" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_be",
+          "name": "magic",
+          "description": "ASCII '@ACB' (0x40414342 BE)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_be",
+          "name": "table_size",
+          "description": "CRI cue sheet length"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::cri_audio::Acb",
@@ -644,8 +1076,20 @@
       "compressionSupported": false,
       "description": "CRI Movie 2 Container (video stream, multi-track audio, subtitle packets)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_be", "name": "magic", "description": "ASCII 'CRID' (0x43524944 BE)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_be", "name": "header_size", "description": "Sofdec2 container header length" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_be",
+          "name": "magic",
+          "description": "ASCII 'CRID' (0x43524944 BE)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_be",
+          "name": "header_size",
+          "description": "Sofdec2 container header length"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::usm::UsmReader",
@@ -670,8 +1114,20 @@
       "compressionSupported": false,
       "description": "Level-5 Navigation Mesh (stadium and field locomotion polygons, magic NAVM)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'NAVM' (0x4D56414E)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "polygon_count", "description": "Navmesh polygon nodes" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'NAVM' (0x4D56414E)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "polygon_count",
+          "description": "Navmesh polygon nodes"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::navm::Navm",
@@ -696,8 +1152,20 @@
       "compressionSupported": false,
       "description": "Level-5 Collision mesh data",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'COL\0' (0x004C4F43)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "vertex_count", "description": "Collision vertices count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'COL\0' (0x004C4F43)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "vertex_count",
+          "description": "Collision vertices count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::col::Col",
@@ -722,8 +1190,20 @@
       "compressionSupported": false,
       "description": "Level-5 Collision Set (stadium boundaries, goal posts, ball bouncing volumes)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "ASCII 'COLS' (0x534C4F43)" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "volume_count", "description": "Bounding box volumes count" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "ASCII 'COLS' (0x534C4F43)"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "volume_count",
+          "description": "Bounding box volumes count"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_formats::col::Cols",
@@ -748,10 +1228,34 @@
       "compressionSupported": false,
       "description": "Level-5 Lives Save Container (002AB8F4-* CRC32-keyed XOR stream cipher, 0xEEFF blobs)",
       "headerLayout": [
-        { "offsetHex": "0x00", "offsetDec": 0, "type": "uint32_le", "name": "magic", "description": "Magic sentinel 0x9DCE66C3" },
-        { "offsetHex": "0x04", "offsetDec": 4, "type": "uint32_le", "name": "save_version", "description": "Save format version" },
-        { "offsetHex": "0x08", "offsetDec": 8, "type": "uint32_le", "name": "const2", "description": "Sentinel 0x2EC3031F (1F 03 C3 2E)" },
-        { "offsetHex": "0x0C", "offsetDec": 12, "type": "uint32_le", "name": "blob_count", "description": "Number of concatenated 0xEEFF blobs" }
+        {
+          "offsetHex": "0x00",
+          "offsetDec": 0,
+          "type": "uint32_le",
+          "name": "magic",
+          "description": "Magic sentinel 0x9DCE66C3"
+        },
+        {
+          "offsetHex": "0x04",
+          "offsetDec": 4,
+          "type": "uint32_le",
+          "name": "save_version",
+          "description": "Save format version"
+        },
+        {
+          "offsetHex": "0x08",
+          "offsetDec": 8,
+          "type": "uint32_le",
+          "name": "const2",
+          "description": "Sentinel 0x2EC3031F (1F 03 C3 2E)"
+        },
+        {
+          "offsetHex": "0x0C",
+          "offsetDec": 12,
+          "type": "uint32_le",
+          "name": "blob_count",
+          "description": "Number of concatenated 0xEEFF blobs"
+        }
       ],
       "crossLanguageTypes": {
         "rust": "aphrody_nie_save::LivesContainer",

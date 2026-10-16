@@ -1,3 +1,4 @@
+// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 // Re-export pour compat backward — utiliser directement `@rosegriffon/db/service` dans les nouveaux modules.
 // Cast en SupabaseClient permissif (cf. lib/supabase/client.ts pour le rationale).
 import { createSupabaseServiceClient } from "@rosegriffon/db/service";

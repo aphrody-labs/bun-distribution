@@ -23,12 +23,7 @@ import { toast } from "sonner";
 
 import { createTeamMember, updateTeamMember, uploadTeamMemberImage } from "./actions";
 import type { TeamMember } from "./actions";
-import {
-  messagesParChamp,
-  schemaMembre,
-  TYPES_IMAGE_ACCEPTES,
-  validerFichierImage,
-} from "./staff-schema";
+import { messagesParChamp, schemaMembre, TYPES_IMAGE_ACCEPTES, validerFichierImage } from "./staff-schema";
 import { EQUIPES } from "./teams";
 
 interface TeamMemberDialogProps {
@@ -105,8 +100,8 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
   }, [apercu]);
 
   const modifier = <C extends keyof Formulaire>(champ: C, valeur: Formulaire[C]) => {
-    setFormulaire((precedent) => ({ ...precedent, [champ]: valeur }));
-    setErreurs((precedent) => {
+    setFormulaire(precedent => ({ ...precedent, [champ]: valeur }));
+    setErreurs(precedent => {
       const reste = { ...precedent };
       delete reste[champ];
       return reste;
@@ -181,9 +176,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
         team_id: formulaire.team_id,
       };
 
-      const { error } = member
-        ? await updateTeamMember(member.id, donnees)
-        : await createTeamMember(donnees);
+      const { error } = member ? await updateTeamMember(member.id, donnees) : await createTeamMember(donnees);
 
       if (error) {
         toast.error(member ? "Erreur lors de la mise à jour" : "Erreur lors de la création", {
@@ -192,9 +185,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
         return;
       }
 
-      toast.success(
-        member ? `${formulaire.name} a été mis à jour` : `${formulaire.name} a été créé`,
-      );
+      toast.success(member ? `${formulaire.name} a été mis à jour` : `${formulaire.name} a été créé`);
       onSuccess();
       onOpenChange(false);
     } catch (erreur) {
@@ -225,7 +216,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
       description="Renseignez les informations du membre. Les champs marqués d'un astérisque sont obligatoires."
     >
       <form onSubmit={enregistrer} className="p-1" noValidate>
-        <Tabs value={onglet} onValueChange={(valeur) => setOnglet(valeur as "general" | "details")}>
+        <Tabs value={onglet} onValueChange={valeur => setOnglet(valeur as "general" | "details")}>
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="general">Informations générales</TabsTrigger>
             <TabsTrigger value="details">Photo et détails</TabsTrigger>
@@ -237,15 +228,12 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
                 Équipe <span aria-hidden="true">*</span>
                 <span className="sr-only">(obligatoire)</span>
               </Label>
-              <Select
-                value={formulaire.team_id}
-                onValueChange={(valeur) => modifier("team_id", valeur)}
-              >
+              <Select value={formulaire.team_id} onValueChange={valeur => modifier("team_id", valeur)}>
                 <SelectTrigger id="team_id" {...proprietesChamp("team_id")}>
                   <SelectValue placeholder="Sélectionnez une équipe" />
                 </SelectTrigger>
                 <SelectContent>
-                  {EQUIPES.map((equipe) => (
+                  {EQUIPES.map(equipe => (
                     <SelectItem key={equipe.id} value={equipe.id}>
                       {equipe.libelle}
                     </SelectItem>
@@ -263,7 +251,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
               <Input
                 id="name"
                 value={formulaire.name}
-                onChange={(evenement) => modifier("name", evenement.target.value)}
+                onChange={evenement => modifier("name", evenement.target.value)}
                 placeholder="Ex. : Jean Dupont"
                 maxLength={80}
                 {...proprietesChamp("name")}
@@ -279,7 +267,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
               <Input
                 id="role"
                 value={formulaire.role}
-                onChange={(evenement) => modifier("role", evenement.target.value)}
+                onChange={evenement => modifier("role", evenement.target.value)}
                 placeholder="Ex. : Développeur, Dessinateur…"
                 maxLength={80}
                 {...proprietesChamp("role")}
@@ -291,7 +279,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
               <Switch
                 id="is_active"
                 checked={formulaire.is_active}
-                onCheckedChange={(coche) => modifier("is_active", coche)}
+                onCheckedChange={coche => modifier("is_active", coche)}
               />
               <Label htmlFor="is_active">Membre actif (visible sur le site public)</Label>
             </div>
@@ -353,7 +341,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
                   min={0}
                   max={32767}
                   value={formulaire.display_index}
-                  onChange={(evenement) => modifier("display_index", evenement.target.value)}
+                  onChange={evenement => modifier("display_index", evenement.target.value)}
                   placeholder="1"
                   {...proprietesChamp("display_index")}
                 />
@@ -365,7 +353,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
                   id="discord_user_id"
                   inputMode="numeric"
                   value={formulaire.discord_user_id}
-                  onChange={(evenement) => modifier("discord_user_id", evenement.target.value)}
+                  onChange={evenement => modifier("discord_user_id", evenement.target.value)}
                   placeholder="123456789012345678"
                   {...proprietesChamp("discord_user_id")}
                 />
@@ -379,7 +367,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
                 id="member_link"
                 type="url"
                 value={formulaire.member_link}
-                onChange={(evenement) => modifier("member_link", evenement.target.value)}
+                onChange={evenement => modifier("member_link", evenement.target.value)}
                 placeholder="https://…"
                 {...proprietesChamp("member_link")}
               />
@@ -389,12 +377,7 @@ export function TeamMemberDialog({ open, onOpenChange, member, onSuccess }: Team
         </Tabs>
 
         <div className="mt-6 flex flex-col justify-end gap-2 xs:flex-row">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={enregistrement}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={enregistrement}>
             Annuler
           </Button>
           <Button type="submit" disabled={enregistrement}>

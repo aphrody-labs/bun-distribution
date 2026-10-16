@@ -60,12 +60,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   }, [pulling, pullDistance, router]);
 
   return (
-    <div
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      className="relative"
-    >
+    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} className="relative">
       {/* Pull indicator */}
       <div
         className={cn(
@@ -80,9 +75,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
             isRefreshing && "animate-spin",
           )}
           style={{
-            transform: isRefreshing
-              ? undefined
-              : `rotate(${Math.min(pullDistance / THRESHOLD, 1) * 360}deg)`,
+            transform: isRefreshing ? undefined : `rotate(${Math.min(pullDistance / THRESHOLD, 1) * 360}deg)`,
           }}
         />
       </div>

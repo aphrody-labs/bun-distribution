@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import {
-  DashboardStatsCard as DashboardMetricCard,
-  AdminPageHeader as DashboardPageHeader,
-} from "@rosegriffon/ui";
+import { DashboardStatsCard as DashboardMetricCard, AdminPageHeader as DashboardPageHeader } from "@rosegriffon/ui";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { createClient } from "@/lib/supabase/server";
 import { ZukanReviewClient } from "./ZukanReviewClient";
@@ -34,29 +31,19 @@ export default async function ZukanReviewPage() {
     zukanCatalogModule,
   ] = await Promise.all([
     client.from("inagle_characters").select("*", { count: "exact", head: true }),
-    client
-      .from("inagle_characters")
-      .select("*", { count: "exact", head: true })
-      .not("zukan_hash", "is", null),
-    client
-      .from("inagle_characters")
-      .select("*", { count: "exact", head: true })
-      .is("zukan_hash", null),
+    client.from("inagle_characters").select("*", { count: "exact", head: true }).not("zukan_hash", "is", null),
+    client.from("inagle_characters").select("*", { count: "exact", head: true }).is("zukan_hash", null),
     client.from("inagle_characters").select("series, zukan_hash").not("series", "is", null),
     client
       .from("inagle_characters")
-      .select(
-        "id, name_en, name_fr, name_ja, series, rarity_label, element, position, internal_code",
-      )
+      .select("id, name_en, name_fr, name_ja, series, rarity_label, element, position, internal_code")
       .is("zukan_hash", null)
       .not("internal_code", "like", "%_5000")
       .not("internal_code", "like", "%×%")
       .order("series", { ascending: true })
       .limit(200),
-    import("@/data/zukan-audit.json").then((m) => m.default).catch(() => null),
-    import("@/data/zukan/param_en.json")
-      .then((m) => m.default as ZukanCandidate[])
-      .catch(() => [] as ZukanCandidate[]),
+    import("@/data/zukan-audit.json").then(m => m.default).catch(() => null),
+    import("@/data/zukan/param_en.json").then(m => m.default as ZukanCandidate[]).catch(() => [] as ZukanCandidate[]),
   ]);
 
   const total = totalCharacters || 0;
@@ -109,11 +96,7 @@ export default async function ZukanReviewPage() {
 
       {/* Live metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <DashboardMetricCard
-          label="Personnages"
-          value={total}
-          icon={<Icon name="group" size={20} />}
-        />
+        <DashboardMetricCard label="Personnages" value={total} icon={<Icon name="group" size={20} />} />
         <DashboardMetricCard
           label="Avec image Zukan"
           value={matched}
@@ -146,7 +129,7 @@ export default async function ZukanReviewPage() {
           Couverture par série
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {seriesCoverage.map((s) => (
+          {seriesCoverage.map(s => (
             <div
               key={s.series}
               className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-low border border-outline-variant/10"
@@ -156,11 +139,7 @@ export default async function ZukanReviewPage() {
                   <span className="text-sm font-medium text-on-surface truncate">{s.series}</span>
                   <span
                     className={`text-xs font-bold ${
-                      s.coverage >= 95
-                        ? "text-green-600"
-                        : s.coverage >= 80
-                          ? "text-amber-600"
-                          : "text-red-500"
+                      s.coverage >= 95 ? "text-green-600" : s.coverage >= 80 ? "text-amber-600" : "text-red-500"
                     }`}
                   >
                     {s.coverage}%
@@ -169,11 +148,7 @@ export default async function ZukanReviewPage() {
                 <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      s.coverage >= 95
-                        ? "bg-green-500"
-                        : s.coverage >= 80
-                          ? "bg-amber-500"
-                          : "bg-red-500"
+                      s.coverage >= 95 ? "bg-green-500" : s.coverage >= 80 ? "bg-amber-500" : "bg-red-500"
                     }`}
                     style={{ width: `${s.coverage}%` }}
                   />

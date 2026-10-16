@@ -61,8 +61,7 @@ function parseEntries(entries: ConfigNode[]): NfcLottery[] {
 
     for (const lotteryNode of children) {
       if (!lotteryNode.name.match(/^NFC_LOTTERY_INFO_\d+$/)) continue;
-      const lotteryId =
-        lotteryNode.variables.length > 0 ? parseIntVar(lotteryNode.variables[0]) : 0;
+      const lotteryId = lotteryNode.variables.length > 0 ? parseIntVar(lotteryNode.variables[0]) : 0;
 
       const tables: NfcLotteryTable[] = [];
 
@@ -71,10 +70,7 @@ function parseEntries(entries: ConfigNode[]): NfcLottery[] {
 
         for (const tableNode of tableListNode.children || []) {
           if (!tableNode.name.match(/^NFC_LOTTERY_INFO_TABLE_\d+$/)) continue;
-          const tableId =
-            tableNode.variables.length > 0
-              ? toHex(parseIntVar(tableNode.variables[0]))
-              : "0x00000000";
+          const tableId = tableNode.variables.length > 0 ? toHex(parseIntVar(tableNode.variables[0])) : "0x00000000";
 
           const items: NfcLotteryItem[] = [];
 
@@ -113,9 +109,7 @@ export async function loadNfcLotteryConfigAsync(dataPath: string = DATA_ROOT) {
   return parseEntries(content.entries);
 }
 
-export async function buildNfcLotteryDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<NfcLotteryDatabase> {
+export async function buildNfcLotteryDatabase(dataPath: string = DATA_ROOT): Promise<NfcLotteryDatabase> {
   const lotteries = (await loadNfcLotteryConfigAsync(dataPath)) || [];
   const byLotteryId = new Map<number, NfcLottery>();
   for (const l of lotteries) byLotteryId.set(l.lotteryId, l);

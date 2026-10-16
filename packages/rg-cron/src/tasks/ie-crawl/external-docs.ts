@@ -63,16 +63,11 @@ status: "stable"
 ---
 
 `;
-    await writeFile(
-      join(REFERENCE_DIR, "awesome-markdown.md"),
-      awesomeFrontmatter + awesomeContent,
-    );
+    await writeFile(join(REFERENCE_DIR, "awesome-markdown.md"), awesomeFrontmatter + awesomeContent);
     console.log("[Crawl External Docs] Fichier awesome-markdown.md enregistré.");
 
     // 2. Fetch Bun markdown docs (MDX)
-    const bunRes = await fetchReference(
-      "https://raw.githubusercontent.com/oven-sh/bun/main/docs/runtime/markdown.mdx",
-    );
+    const bunRes = await fetchReference("https://raw.githubusercontent.com/oven-sh/bun/main/docs/runtime/markdown.mdx");
     if (!bunRes.ok) {
       throw new Error(`Failed to fetch Bun markdown docs (status ${bunRes.status})`);
     }
@@ -99,10 +94,7 @@ status: "stable"
           parsed += '\nstatus: "stable"';
         }
         // Remplacer le titre générique par un titre plus explicite
-        parsed = parsed.replace(
-          /^title:\s*["']?Markdown["']?/m,
-          'title: "Bun Markdown Runtime API"',
-        );
+        parsed = parsed.replace(/^title:\s*["']?Markdown["']?/m, 'title: "Bun Markdown Runtime API"');
         return `---\n${parsed.trim()}\n---`;
       });
     }
@@ -159,9 +151,7 @@ status: "stable"
     // 5. Fetch Inazuma Index README
     try {
       console.log("[Crawl External Docs] Fetching Inazuma Index README...");
-      const indexRes = await fetchReference(
-        "https://raw.githubusercontent.com/realt0w/inazuma-index/main/README.md",
-      );
+      const indexRes = await fetchReference("https://raw.githubusercontent.com/realt0w/inazuma-index/main/README.md");
       if (indexRes.ok) {
         const content = await indexRes.text();
         const frontmatter = `---
@@ -182,9 +172,7 @@ status: "stable"
     // 6. Fetch Secteur V README
     try {
       console.log("[Crawl External Docs] Fetching Secteur V README...");
-      const secteurRes = await fetchReference(
-        "https://raw.githubusercontent.com/killian1307/secteur-v/main/README.md",
-      );
+      const secteurRes = await fetchReference("https://raw.githubusercontent.com/killian1307/secteur-v/main/README.md");
       if (secteurRes.ok) {
         const content = await secteurRes.text();
         const frontmatter = `---
@@ -205,9 +193,7 @@ status: "stable"
     // 8. Fetch Turborepo README
     try {
       console.log("[Crawl External Docs] Fetching Turborepo README...");
-      const turboRes = await fetchReference(
-        "https://raw.githubusercontent.com/vercel/turborepo/main/README.md",
-      );
+      const turboRes = await fetchReference("https://raw.githubusercontent.com/vercel/turborepo/main/README.md");
       if (turboRes.ok) {
         const content = await turboRes.text();
         const frontmatter = `---

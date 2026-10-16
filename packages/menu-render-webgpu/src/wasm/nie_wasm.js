@@ -5,7 +5,7 @@ import { __wbg_set_wasm } from "./nie_wasm_bg.js";
 let wasm = wasm_module;
 if (typeof wasm === "string" || (wasm && wasm.default && typeof wasm.default === "string")) {
   const wasmPath = typeof wasm === "string" ? wasm : wasm.default;
-  const fs = require("fs");
+  const fs = require("node:fs");
   const bytes = fs.readFileSync(wasmPath);
   const mod = new WebAssembly.Module(bytes);
   const instance = new WebAssembly.Instance(mod, {

@@ -35,16 +35,16 @@ import { Discord, Slash, SlashGroup } from "discordx";
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 
 import {
-	accorderSoutiens,
-	agregerPaliers,
-	compterParStatut,
-	formaterDateFr,
-	lignePalier,
-	resumerAdhesion,
-	URL_PATREON,
-	type AdhesionPatreon,
-	type PalierAgrege,
-	type StatutPatron,
+  accorderSoutiens,
+  agregerPaliers,
+  compterParStatut,
+  formaterDateFr,
+  lignePalier,
+  resumerAdhesion,
+  URL_PATREON,
+  type AdhesionPatreon,
+  type PalierAgrege,
+  type StatutPatron,
 } from "../lib/boutique-format";
 import { cached } from "../lib/cache";
 import { sql } from "../lib/db";
@@ -59,11 +59,11 @@ const MAX_DESCRIPTION = 4096;
 const TTL_ETAT_MS = 5 * 60_000;
 
 interface EtatPatreon {
-	paliers: PalierAgrege[];
-	statuts: Record<StatutPatron, number>;
-	total: number;
-	/** Dernière remontée depuis l'API Patreon, en ISO (le cache sérialise en JSON). */
-	derniereSynchro: string | null;
+  paliers: PalierAgrege[];
+  statuts: Record<StatutPatron, number>;
+  total: number;
+  /** Dernière remontée depuis l'API Patreon, en ISO (le cache sérialise en JSON). */
+  derniereSynchro: string | null;
 }
 
 /**
@@ -71,135 +71,132 @@ interface EtatPatreon {
  * la garantie structurelle que cette commande publique ne peut rien divulguer.
  */
 async function lireEtat(): Promise<EtatPatreon> {
-	const lignes = await sql<
-		Array<{
-			patron_status: string | null;
-			tier_titles: string[] | null;
-			tier_amounts_cents: Array<number | string> | null;
-			fetched_at: Date | string | null;
-		}>
-	>`
+  const lignes = await sql<
+    Array<{
+      patron_status: string | null;
+      tier_titles: string[] | null;
+      tier_amounts_cents: Array<number | string> | null;
+      fetched_at: Date | string | null;
+    }>
+  >`
     SELECT patron_status, tier_titles, tier_amounts_cents, fetched_at
     FROM patreon_memberships
   `;
 
-	const adhesions = lignes.map(
-		(ligne): AdhesionPatreon => ({
-			currently_entitled_cents: null,
-			is_free_trial: null,
-			is_gifted: null,
-			last_charge_date: null,
-			last_charge_status: null,
-			lifetime_support_cents: null,
-			next_charge_date: null,
-			patron_status: ligne.patron_status,
-			pledge_cadence: null,
-			pledge_start: null,
-			tier_amounts_cents: ligne.tier_amounts_cents,
-			tier_titles: ligne.tier_titles,
-		})
-	);
+  const adhesions = lignes.map((ligne): AdhesionPatreon => ({
+    currently_entitled_cents: null,
+    is_free_trial: null,
+    is_gifted: null,
+    last_charge_date: null,
+    last_charge_status: null,
+    lifetime_support_cents: null,
+    next_charge_date: null,
+    patron_status: ligne.patron_status,
+    pledge_cadence: null,
+    pledge_start: null,
+    tier_amounts_cents: ligne.tier_amounts_cents,
+    tier_titles: ligne.tier_titles,
+  }));
 
-	let derniere = 0;
-	for (const ligne of lignes) {
-		const date =
-			ligne.fetched_at instanceof Date ? ligne.fetched_at : new Date(ligne.fetched_at ?? "");
-		const temps = date.getTime();
-		if (Number.isFinite(temps) && temps > derniere) derniere = temps;
-	}
+  let derniere = 0;
+  for (const ligne of lignes) {
+    const date = ligne.fetched_at instanceof Date ? ligne.fetched_at : new Date(ligne.fetched_at ?? "");
+    const temps = date.getTime();
+    if (Number.isFinite(temps) && temps > derniere) derniere = temps;
+  }
 
-	return {
-		derniereSynchro: derniere > 0 ? new Date(derniere).toISOString() : null,
-		paliers: agregerPaliers(adhesions),
-		statuts: compterParStatut(adhesions),
-		total: adhesions.length,
-	};
+  return {
+    derniereSynchro: derniere > 0 ? new Date(derniere).toISOString() : null,
+    paliers: agregerPaliers(adhesions),
+    statuts: compterParStatut(adhesions),
+    total: adhesions.length,
+  };
 }
 
 @Discord()
 @SlashGroup({
-	description: "Le soutien Patreon à Rose Griffon : paliers, décomptes et statut personnel",
-	name: "patreon",
+  description: "Le soutien Patreon à Rose Griffon : paliers, décomptes et statut personnel",
+  name: "patreon",
 })
 @SlashGroup("patreon")
 export class CommandesPatreon {
-	@Slash({
-		description: "Combien de soutiens par palier, agrégé — aucune identité n'est affichée",
-		name: "etat",
-	})
-	async etat(interaction: ChatInputCommandInteraction): Promise<void> {
-		await interaction.deferReply();
+  @Slash({
+    description: "Combien de soutiens par palier, agrégé — aucune identité n'est affichée",
+    name: "etat",
+  })
+  async etat(interaction: ChatInputCommandInteraction): Promise<void> {
+    await interaction.deferReply();
 
-		let etat: EtatPatreon;
-		try {
-			etat = await cached("boutique:patreon:etat", TTL_ETAT_MS, lireEtat);
-		} catch {
-			await interaction.editReply({
-				content: "❌ Impossible de lire les soutiens Patreon pour le moment. Réessaie plus tard.",
-			});
-			return;
-		}
+    let etat: EtatPatreon;
+    try {
+      etat = await cached("boutique:patreon:etat", TTL_ETAT_MS, lireEtat);
+    } catch {
+      await interaction.editReply({
+        content: "❌ Impossible de lire les soutiens Patreon pour le moment. Réessaie plus tard.",
+      });
+      return;
+    }
 
-		const resume =
-			etat.paliers.length > 0
-				? `${accorderSoutiens(etat.statuts.actif)} actif${etat.statuts.actif > 1 ? "s" : ""} sur ${etat.paliers.length} palier${etat.paliers.length > 1 ? "s" : ""}.`
-				: "Aucun soutien actif pour l'instant.";
+    const resume =
+      etat.paliers.length > 0
+        ? `${accorderSoutiens(etat.statuts.actif)} actif${etat.statuts.actif > 1 ? "s" : ""} sur ${etat.paliers.length} palier${etat.paliers.length > 1 ? "s" : ""}.`
+        : "Aucun soutien actif pour l'instant.";
 
-		const embed = rgEmbed()
-			.setTitle("Soutien Patreon — Rose Griffon")
-			.setURL(URL_PATREON)
-			.setDescription(truncate(`${resume} Rejoindre : ${URL_PATREON}`, MAX_DESCRIPTION));
+    const embed = rgEmbed()
+      .setTitle("Soutien Patreon — Rose Griffon")
+      .setURL(URL_PATREON)
+      .setDescription(truncate(`${resume} Rejoindre : ${URL_PATREON}`, MAX_DESCRIPTION));
 
-		embed.addFields({
-			name: "Paliers actifs",
-			value: truncate(
-				etat.paliers.length > 0
-					? etat.paliers
-							.slice(0, MAX_CHAMPS)
-							.map((palier) => lignePalier(palier))
-							.join("\n")
-					: "Aucun soutien actif pour l'instant.",
-				MAX_VALEUR_CHAMP
-			),
-		});
+    embed.addFields({
+      name: "Paliers actifs",
+      value: truncate(
+        etat.paliers.length > 0
+          ? etat.paliers
+              .slice(0, MAX_CHAMPS)
+              .map(palier => lignePalier(palier))
+              .join("\n")
+          : "Aucun soutien actif pour l'instant.",
+        MAX_VALEUR_CHAMP,
+      ),
+    });
 
-		embed.addFields({
-			name: "Communauté Patreon",
-			value: truncate(
-				[
-					`Soutiens actifs : **${etat.statuts.actif}**`,
-					etat.statuts.refuse > 0 ? `Paiements refusés : **${etat.statuts.refuse}**` : null,
-					`Anciens soutiens : **${etat.statuts.ancien}**`,
-					`Abonnés sans engagement : **${etat.statuts.abonne}**`,
-					`Total suivi : **${etat.total}**`,
-				]
-					.filter((ligne): ligne is string => typeof ligne === "string")
-					.join("\n"),
-				MAX_VALEUR_CHAMP
-			),
-		});
+    embed.addFields({
+      name: "Communauté Patreon",
+      value: truncate(
+        [
+          `Soutiens actifs : **${etat.statuts.actif}**`,
+          etat.statuts.refuse > 0 ? `Paiements refusés : **${etat.statuts.refuse}**` : null,
+          `Anciens soutiens : **${etat.statuts.ancien}**`,
+          `Abonnés sans engagement : **${etat.statuts.abonne}**`,
+          `Total suivi : **${etat.total}**`,
+        ]
+          .filter((ligne): ligne is string => typeof ligne === "string")
+          .join("\n"),
+        MAX_VALEUR_CHAMP,
+      ),
+    });
 
-		const synchro = formaterDateFr(etat.derniereSynchro);
-		if (synchro) {
-			embed.addFields({ name: "Dernière synchronisation", value: synchro });
-		}
+    const synchro = formaterDateFr(etat.derniereSynchro);
+    if (synchro) {
+      embed.addFields({ name: "Dernière synchronisation", value: synchro });
+    }
 
-		await interaction.editReply({ embeds: [embed] });
-	}
+    await interaction.editReply({ embeds: [embed] });
+  }
 
-	@Slash({
-		description: "Ton propre statut de soutien — visible de toi seul",
-		name: "moi",
-	})
-	async moi(interaction: ChatInputCommandInteraction): Promise<void> {
-		// Éphémère dès l'accusé de réception : un `deferReply()` public ne peut plus
-		// être rendu privé ensuite, et cette réponse ne regarde que son destinataire.
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  @Slash({
+    description: "Ton propre statut de soutien — visible de toi seul",
+    name: "moi",
+  })
+  async moi(interaction: ChatInputCommandInteraction): Promise<void> {
+    // Éphémère dès l'accusé de réception : un `deferReply()` public ne peut plus
+    // être rendu privé ensuite, et cette réponse ne regarde que son destinataire.
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-		const identifiant = interaction.user.id;
-		let adhesion: AdhesionPatreon | undefined;
-		try {
-			const lignes = await sql<AdhesionPatreon[]>`
+    const identifiant = interaction.user.id;
+    let adhesion: AdhesionPatreon | undefined;
+    try {
+      const lignes = await sql<AdhesionPatreon[]>`
         SELECT m.patron_status,
                m.tier_titles,
                m.tier_amounts_cents,
@@ -222,38 +219,38 @@ export class CommandesPatreon {
                  m.updated_at DESC NULLS LAST
         LIMIT 1
       `;
-			adhesion = lignes[0];
-		} catch {
-			await interaction.editReply({
-				content: "❌ Impossible de lire ton soutien Patreon pour le moment. Réessaie plus tard.",
-			});
-			return;
-		}
+      adhesion = lignes[0];
+    } catch {
+      await interaction.editReply({
+        content: "❌ Impossible de lire ton soutien Patreon pour le moment. Réessaie plus tard.",
+      });
+      return;
+    }
 
-		if (!adhesion) {
-			await interaction.editReply({
-				content: [
-					"Aucun soutien Patreon n'est rattaché à ce compte Discord.",
-					"Si tu soutiens déjà Rose Griffon, connecte-toi sur rosegriffon.fr avec Discord puis relie ton compte Patreon — la liaison se fera à la prochaine synchronisation.",
-					`Pour nous soutenir : ${URL_PATREON}`,
-				].join("\n"),
-			});
-			return;
-		}
+    if (!adhesion) {
+      await interaction.editReply({
+        content: [
+          "Aucun soutien Patreon n'est rattaché à ce compte Discord.",
+          "Si tu soutiens déjà Rose Griffon, connecte-toi sur rosegriffon.fr avec Discord puis relie ton compte Patreon — la liaison se fera à la prochaine synchronisation.",
+          `Pour nous soutenir : ${URL_PATREON}`,
+        ].join("\n"),
+      });
+      return;
+    }
 
-		const embed = rgEmbed()
-			.setTitle("Ton soutien Patreon")
-			.setURL(URL_PATREON)
-			.setDescription("Ces informations ne sont visibles que par toi.");
+    const embed = rgEmbed()
+      .setTitle("Ton soutien Patreon")
+      .setURL(URL_PATREON)
+      .setDescription("Ces informations ne sont visibles que par toi.");
 
-		for (const champ of resumerAdhesion(adhesion).slice(0, MAX_CHAMPS)) {
-			embed.addFields({
-				inline: true,
-				name: champ.nom,
-				value: truncate(champ.valeur, MAX_VALEUR_CHAMP),
-			});
-		}
+    for (const champ of resumerAdhesion(adhesion).slice(0, MAX_CHAMPS)) {
+      embed.addFields({
+        inline: true,
+        name: champ.nom,
+        value: truncate(champ.valeur, MAX_VALEUR_CHAMP),
+      });
+    }
 
-		await interaction.editReply({ embeds: [embed] });
-	}
+    await interaction.editReply({ embeds: [embed] });
+  }
 }

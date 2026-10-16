@@ -5,16 +5,7 @@ import Link from "next/link";
 import { formatAchCurrency } from "@/lib/achillea";
 import type { WalletBalance } from "@rosegriffon/achillea-types/domain/wallet";
 import { WalletTransactionDirection } from "@rosegriffon/achillea-types/enums/wallet";
-import {
-  Wallet,
-  ArrowLeft,
-  ShieldAlert,
-  Coins,
-  Loader2,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Info,
-} from "lucide-react";
+import { Wallet, ArrowLeft, ShieldAlert, Coins, Loader2, ArrowUpRight, ArrowDownLeft, Info } from "lucide-react";
 import { signalerException } from "@/lib/achillea/signaler";
 
 type TransactionWebsite = {
@@ -38,7 +29,7 @@ export default function WalletPage() {
     let cancelled = false;
 
     fetch("/api/achillea/wallet", { credentials: "same-origin" })
-      .then(async (reponse) => {
+      .then(async reponse => {
         if (cancelled) return;
         if (reponse.status === 401) {
           setEtatAcces("non_connecte");
@@ -57,7 +48,7 @@ export default function WalletPage() {
         setTransactions(donnees.transactions);
         setEtatAcces("connecte");
       })
-      .catch((cause) => {
+      .catch(cause => {
         if (!cancelled) setEtatAcces("indisponible");
         signalerException("wallet", cause);
       })
@@ -139,8 +130,7 @@ export default function WalletPage() {
           <h1 className="text-3xl font-bold tracking-tight">Portefeuille Virtuel (ACH)</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Consultez votre réserve d'Achilléa Points (AP/ACH), vos gains de tournois et votre relevé
-          d'opérations.
+          Consultez votre réserve d'Achilléa Points (AP/ACH), vos gains de tournois et votre relevé d'opérations.
         </p>
       </div>
 
@@ -163,9 +153,7 @@ export default function WalletPage() {
               <div className="text-4xl md:text-5xl font-black text-amber-400 font-mono tracking-tight">
                 {formatAchCurrency(currentAmount)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Crédits cumulés utilisables lors des évènements Achilléa.
-              </p>
+              <p className="text-xs text-muted-foreground">Crédits cumulés utilisables lors des évènements Achilléa.</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-background/80 border border-border text-xs space-y-2 max-w-sm">
@@ -174,8 +162,7 @@ export default function WalletPage() {
                 Usage de la monnaie ACH
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Les points sont crédités automatiquement lors des victoires de tournois et paliers
-                classés franchis.
+                Les points sont crédités automatiquement lors des victoires de tournois et paliers classés franchis.
               </p>
             </div>
           </div>
@@ -194,7 +181,7 @@ export default function WalletPage() {
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                {transactions.map((tx) => {
+                {transactions.map(tx => {
                   const isCredit = tx.direction === WalletTransactionDirection.In;
                   return (
                     <div
@@ -209,11 +196,7 @@ export default function WalletPage() {
                               : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                           }`}
                         >
-                          {isCredit ? (
-                            <ArrowDownLeft className="w-4 h-4" />
-                          ) : (
-                            <ArrowUpRight className="w-4 h-4" />
-                          )}
+                          {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                         </div>
 
                         <div>
@@ -232,11 +215,7 @@ export default function WalletPage() {
                         </div>
                       </div>
 
-                      <div
-                        className={`font-mono font-bold text-sm ${
-                          isCredit ? "text-emerald-400" : "text-rose-400"
-                        }`}
-                      >
+                      <div className={`font-mono font-bold text-sm ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
                         {isCredit ? "+" : "-"}
                         {formatAchCurrency(tx.amount)}
                       </div>

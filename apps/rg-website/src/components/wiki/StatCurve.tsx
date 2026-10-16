@@ -81,10 +81,10 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
   // Paliers réellement présents (avec un StatBlock non-null).
   const presentLevels = useMemo(
     () =>
-      LEVELS.filter((l) => {
+      LEVELS.filter(l => {
         const block = curves[l.key];
         return block != null;
-      }).map((l) => ({ ...l, block: curves[l.key] as StatBlock })),
+      }).map(l => ({ ...l, block: curves[l.key] as StatBlock })),
     [curves],
   );
 
@@ -115,9 +115,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
         )}
         style={{ minHeight: height }}
       >
-        <span className="type-title-small text-on-surface-variant">
-          Courbes de stats indisponibles
-        </span>
+        <span className="type-title-small text-on-surface-variant">Courbes de stats indisponibles</span>
         <span className="type-body-small text-on-surface-variant/70">
           Les progressions Niv. 50 → 200 du Zukan arrivent bientôt.
         </span>
@@ -137,24 +135,19 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
 
   // X : position d'un palier (réparti uniformément sur les paliers présents).
   const xAt = (index: number) =>
-    presentLevels.length === 1
-      ? padLeft + plotW / 2
-      : padLeft + (plotW * index) / (presentLevels.length - 1);
+    presentLevels.length === 1 ? padLeft + plotW / 2 : padLeft + (plotW * index) / (presentLevels.length - 1);
 
   // Y : valeur → pixel (inversé, 0 en bas).
   const yAt = (value: number) => padTop + plotH * (1 - value / maxValue);
 
   // 4 graduations Y.
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(t => ({
     value: Math.round(maxValue * t),
     y: padTop + plotH * (1 - t),
   }));
 
   return (
-    <figure
-      className={cn("w-full", className)}
-      aria-label={`Courbes de stats de ${name ?? "personnage"}`}
-    >
+    <figure className={cn("w-full", className)} aria-label={`Courbes de stats de ${name ?? "personnage"}`}>
       <svg
         viewBox={`0 0 ${VB_W} ${VB_H}`}
         width="100%"
@@ -182,7 +175,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
         />
 
         {/* Graduations Y + labels */}
-        {yTicks.map((tick) => (
+        {yTicks.map(tick => (
           <g key={tick.value}>
             <line
               x1={padLeft}
@@ -217,7 +210,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
         ))}
 
         {/* Une polyligne par stat (ou points isolés si 1 seul palier) */}
-        {STAT_SERIES.map((serie) => {
+        {STAT_SERIES.map(serie => {
           const dimmed = isolated !== null && isolated !== serie.key;
           const points = presentLevels.map((lvl, i) => ({
             x: xAt(i),
@@ -225,7 +218,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
             v: lvl.block[serie.key],
             level: lvl.level,
           }));
-          const path = points.map((p) => `${p.x},${p.y}`).join(" ");
+          const path = points.map(p => `${p.x},${p.y}`).join(" ");
 
           return (
             <g key={serie.key} opacity={dimmed ? 0.12 : 1} className="transition-opacity">
@@ -240,7 +233,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
                   strokeLinecap="round"
                 />
               )}
-              {points.map((p) => (
+              {points.map(p => (
                 <circle
                   key={p.level}
                   cx={p.x}
@@ -260,13 +253,13 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
 
       {/* Légende cliquable (isole une stat) */}
       <figcaption className="mt-3 flex flex-wrap justify-center gap-1.5">
-        {STAT_SERIES.map((serie) => {
+        {STAT_SERIES.map(serie => {
           const active = isolated === serie.key;
           return (
             <button
               key={serie.key}
               type="button"
-              onClick={() => setIsolated((cur) => (cur === serie.key ? null : serie.key))}
+              onClick={() => setIsolated(cur => (cur === serie.key ? null : serie.key))}
               aria-pressed={active}
               className={cn(
                 `
@@ -278,11 +271,7 @@ export function StatCurve({ curves, name, className, height = 220 }: StatCurvePr
                   : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high",
               )}
             >
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: serie.color }}
-                aria-hidden="true"
-              />
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: serie.color }} aria-hidden="true" />
               {serie.label}
             </button>
           );

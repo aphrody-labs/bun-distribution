@@ -66,14 +66,7 @@ export function EventParticipantsTable({
 
   // Action confirmation modal state
   const [confirmAction, setConfirmAction] = useState<
-    | "seedRanked"
-    | "seedRandom"
-    | "clearSeeds"
-    | "remove"
-    | "disqualify"
-    | "reinstate"
-    | "promote"
-    | null
+    "seedRanked" | "seedRandom" | "clearSeeds" | "remove" | "disqualify" | "reinstate" | "promote" | null
   >(null);
   const [targetParticipant, setTargetParticipant] = useState<ParticipantDTO | null>(null);
   const [disqualifyReason, setDisqualifyReason] = useState("");
@@ -85,20 +78,16 @@ export function EventParticipantsTable({
   const dqCount = useMemo(() => disqualifiedCount(participants), [participants]);
 
   const canManageSeeding =
-    canManage &&
-    (internalState === TournamentState.PREREGISTERING ||
-      internalState === TournamentState.PREPARING);
+    canManage && (internalState === TournamentState.PREREGISTERING || internalState === TournamentState.PREPARING);
 
   const canDisqualify =
-    canManage &&
-    internalState !== TournamentState.FINISHED &&
-    internalState !== TournamentState.CANCELED;
+    canManage && internalState !== TournamentState.FINISHED && internalState !== TournamentState.CANCELED;
 
   const filteredParticipants = useMemo(() => {
     const sorted = sortBySeed(participants);
     if (!searchQuery.trim()) return sorted;
     const q = searchQuery.toLowerCase().trim();
-    return sorted.filter((p) => p.user?.username?.toLowerCase().includes(q));
+    return sorted.filter(p => p.user?.username?.toLowerCase().includes(q));
   }, [participants, searchQuery]);
 
   const handleSaveSeed = async (p: ParticipantDTO) => {
@@ -185,10 +174,7 @@ export function EventParticipantsTable({
             {active.length} / {participantsCount} inscrits
           </Badge>
           {waiting.length > 0 && (
-            <Badge
-              variant="outline"
-              className="text-lg font-semibold text-amber-400 border-amber-500/30"
-            >
+            <Badge variant="outline" className="text-lg font-semibold text-amber-400 border-amber-500/30">
               {waiting.length} en attente
             </Badge>
           )}
@@ -241,15 +227,12 @@ export function EventParticipantsTable({
         <label htmlFor="participant-search" className="block mb-2 text-lg font-semibold">
           Rechercher un joueur
         </label>
-        <Search
-          aria-hidden="true"
-          className="absolute left-3 bottom-3 size-5 text-muted-foreground"
-        />
+        <Search aria-hidden="true" className="absolute left-3 bottom-3 size-5 text-muted-foreground" />
         <input
           id="participant-search"
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
           placeholder="Rechercher un joueur..."
           className="w-full pl-9 pr-3 min-h-11 py-2 text-lg rounded-xl border border-border/60 bg-muted/20 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary"
         />
@@ -261,9 +244,7 @@ export function EventParticipantsTable({
           <Users className="size-8 text-muted-foreground mx-auto" />
           <div className="font-semibold text-lg">Aucun participant trouvé</div>
           <p className="text-lg text-muted-foreground">
-            {searchQuery
-              ? "Modifie tes critères de recherche."
-              : "Les inscriptions sont encore ouvertes."}
+            {searchQuery ? "Modifie tes critères de recherche." : "Les inscriptions sont encore ouvertes."}
           </p>
         </div>
       ) : (
@@ -283,7 +264,7 @@ export function EventParticipantsTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {filteredParticipants.map((p) => {
+              {filteredParticipants.map(p => {
                 const st = participantStatus(p);
                 const isEditingThisSeed = editingParticipantId === p.id;
                 const elo = p.user?.soloRank?.elo ?? 0;
@@ -301,7 +282,7 @@ export function EventParticipantsTable({
                             max={participantsCount}
                             value={editingSeedValue}
                             aria-label={`Seed de ${p.user?.username ?? "ce participant"}`}
-                            onChange={(e) => setEditingSeedValue(Number(e.target.value))}
+                            onChange={e => setEditingSeedValue(Number(e.target.value))}
                             className="w-20 min-h-11 p-1 text-lg font-mono font-bold rounded border border-primary bg-background text-center"
                           />
                           <Button
@@ -312,11 +293,7 @@ export function EventParticipantsTable({
                             onClick={() => handleSaveSeed(p)}
                             disabled={savingSeed}
                           >
-                            {savingSeed ? (
-                              <Loader2 className="size-3 animate-spin" />
-                            ) : (
-                              <Check className="size-3.5" />
-                            )}
+                            {savingSeed ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3.5" />}
                           </Button>
                           <Button
                             variant="ghost"
@@ -330,11 +307,7 @@ export function EventParticipantsTable({
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
-                          <span
-                            className={`font-mono font-bold ${
-                              p.seed ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          >
+                          <span className={`font-mono font-bold ${p.seed ? "text-primary" : "text-muted-foreground"}`}>
                             {p.seed ? `#${p.seed}` : "—"}
                           </span>
                           {canManageSeeding && (
@@ -376,14 +349,9 @@ export function EventParticipantsTable({
                     </td>
 
                     {/* ELO Column */}
-                    <td
-                      aria-label={`Classement : ${elo > 0 ? `${elo} ELO` : "Placement"}, ${rankKey}`}
-                      className="p-3"
-                    >
+                    <td aria-label={`Classement : ${elo > 0 ? `${elo} ELO` : "Placement"}, ${rankKey}`} className="p-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-lg">
-                          {elo > 0 ? `${elo} ELO` : "Placement"}
-                        </span>
+                        <span className="font-mono font-bold text-lg">{elo > 0 ? `${elo} ELO` : "Placement"}</span>
                         <Badge variant="outline" className="text-lg font-normal">
                           {rankKey}
                         </Badge>
@@ -397,17 +365,11 @@ export function EventParticipantsTable({
                           Disqualifié
                         </Badge>
                       ) : st === ParticipantStatus.WAITLISTED ? (
-                        <Badge
-                          variant="outline"
-                          className="text-lg text-amber-400 border-amber-500/30"
-                        >
+                        <Badge variant="outline" className="text-lg text-amber-400 border-amber-500/30">
                           Attente #{p.waitlistPosition ?? "—"}
                         </Badge>
                       ) : (
-                        <Badge
-                          variant="secondary"
-                          className="text-lg font-semibold text-emerald-400"
-                        >
+                        <Badge variant="secondary" className="text-lg font-semibold text-emerald-400">
                           Inscrit
                         </Badge>
                       )}
@@ -490,7 +452,7 @@ export function EventParticipantsTable({
       )}
 
       {/* Confirm Action Dialog */}
-      <Dialog open={confirmAction !== null} onOpenChange={(o) => !o && setConfirmAction(null)}>
+      <Dialog open={confirmAction !== null} onOpenChange={o => !o && setConfirmAction(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -507,8 +469,7 @@ export function EventParticipantsTable({
                 "Les participants seront classés de la seed #1 à la plus basse selon leur ELO en match classé."}
               {confirmAction === "seedRandom" &&
                 "Toutes les seeds actuelles seront écrasées par un tirage au sort déterministe."}
-              {confirmAction === "clearSeeds" &&
-                "Toutes les attributions de seeds seront effacées pour ce tournoi."}
+              {confirmAction === "clearSeeds" && "Toutes les attributions de seeds seront effacées pour ce tournoi."}
               {confirmAction === "remove" &&
                 `Es-tu sûr de vouloir retirer ${targetParticipant?.user?.username} du tournoi ${eventName} ?`}
               {confirmAction === "disqualify" &&
@@ -529,7 +490,7 @@ export function EventParticipantsTable({
                 id="disqualify-reason"
                 rows={3}
                 value={disqualifyReason}
-                onChange={(e) => setDisqualifyReason(e.target.value)}
+                onChange={e => setDisqualifyReason(e.target.value)}
                 placeholder="Ex: Absence répétée au check-in, triche avérée, forfait..."
                 className="w-full p-2.5 rounded-xl border border-border/60 bg-muted/20 text-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-destructive"
               />
@@ -547,18 +508,13 @@ export function EventParticipantsTable({
             </Button>
             <Button
               variant={
-                confirmAction === "disqualify" ||
-                confirmAction === "remove" ||
-                confirmAction === "clearSeeds"
+                confirmAction === "disqualify" || confirmAction === "remove" || confirmAction === "clearSeeds"
                   ? "destructive"
                   : "default"
               }
               onClick={executeConfirmedAction}
               className="min-h-11 text-lg"
-              disabled={
-                bulkLoading ||
-                (confirmAction === "disqualify" && disqualifyReason.trim().length < 3)
-              }
+              disabled={bulkLoading || (confirmAction === "disqualify" && disqualifyReason.trim().length < 3)}
             >
               {bulkLoading ? "Traitement..." : "Confirmer l'action"}
             </Button>

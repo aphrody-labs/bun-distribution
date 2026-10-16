@@ -15,16 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@rosegriffon/ui";
-import {
-  ShieldAlert,
-  ArrowLeft,
-  Plus,
-  RefreshCw,
-  Loader2,
-  CheckCircle2,
-  Ban,
-  Undo2,
-} from "lucide-react";
+import { ShieldAlert, ArrowLeft, Plus, RefreshCw, Loader2, CheckCircle2, Ban, Undo2 } from "lucide-react";
 
 export default function AchilleaAdminSanctionsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAchilleaAuth();
@@ -61,7 +52,7 @@ export default function AchilleaAdminSanctionsPage() {
         active: activeOnly ? true : undefined,
         pageSize: 50,
       })
-      .then((res) => {
+      .then(res => {
         if (res.ok && res.value?.data) {
           setSanctions(res.value.data);
         }
@@ -112,10 +103,7 @@ export default function AchilleaAdminSanctionsPage() {
     if (!selectedSanction) return;
     setRevoking(true);
     try {
-      const res = await client.sanctions.revoke(
-        selectedSanction.id,
-        revokeReason.trim() || undefined,
-      );
+      const res = await client.sanctions.revoke(selectedSanction.id, revokeReason.trim() || undefined);
       if (res.ok) {
         setRevokeOpen(false);
         setSelectedSanction(null);
@@ -172,9 +160,7 @@ export default function AchilleaAdminSanctionsPage() {
             <span className="p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20">
               <ShieldAlert className="size-5" />
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Registre des Sanctions
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Registre des Sanctions</h1>
           </div>
           <p className="text-xs text-muted-foreground">
             Avertissements, exclusions temporaires de ranked et bannissements définitifs.
@@ -246,7 +232,7 @@ export default function AchilleaAdminSanctionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {sanctions.map((s) => {
+                {sanctions.map(s => {
                   const isRevoked = !!s.revokedAt;
                   const isExpired = s.expiresAt && new Date(s.expiresAt).getTime() < clockTime;
                   const isActive = !isRevoked && !isExpired;
@@ -254,10 +240,7 @@ export default function AchilleaAdminSanctionsPage() {
                   return (
                     <tr key={s.id} className="hover:bg-muted/20">
                       <td className="px-4 py-3 font-mono text-xs font-semibold">
-                        <Link
-                          href={`/achillea/users/${s.userId}`}
-                          className="hover:text-primary transition underline"
-                        >
+                        <Link href={`/achillea/users/${s.userId}`} className="hover:text-primary transition underline">
                           {s.userId}
                         </Link>
                       </td>
@@ -341,7 +324,7 @@ export default function AchilleaAdminSanctionsPage() {
                 id="userId"
                 type="text"
                 value={targetUserId}
-                onChange={(e) => setTargetUserId(e.target.value)}
+                onChange={e => setTargetUserId(e.target.value)}
                 placeholder="ex: 123456789012345678"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
               />
@@ -354,7 +337,7 @@ export default function AchilleaAdminSanctionsPage() {
               <select
                 id="sanctionType"
                 value={sanctionType}
-                onChange={(e) => setSanctionType(e.target.value)}
+                onChange={e => setSanctionType(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="warn">Avertissement (Warn)</option>
@@ -372,7 +355,7 @@ export default function AchilleaAdminSanctionsPage() {
                 id="duration"
                 type="number"
                 value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
+                onChange={e => setDurationMinutes(e.target.value)}
                 placeholder="ex: 1440 pour 24 heures"
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
@@ -386,7 +369,7 @@ export default function AchilleaAdminSanctionsPage() {
                 id="reason"
                 rows={3}
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                onChange={e => setReason(e.target.value)}
                 placeholder="Préciser l'infraction constatée..."
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
@@ -414,17 +397,13 @@ export default function AchilleaAdminSanctionsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Révoquer la Sanction</DialogTitle>
-            <DialogDescription>
-              L&apos;utilisateur recouvrera ses droits d&apos;accès immédiatement.
-            </DialogDescription>
+            <DialogDescription>L&apos;utilisateur recouvrera ses droits d&apos;accès immédiatement.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-sm">
             <p className="text-xs text-muted-foreground">
               Sanction #{selectedSanction?.id} sur le compte{" "}
-              <span className="font-mono text-foreground font-semibold">
-                {selectedSanction?.userId}
-              </span>
+              <span className="font-mono text-foreground font-semibold">{selectedSanction?.userId}</span>
             </p>
 
             <div className="space-y-1.5">
@@ -435,7 +414,7 @@ export default function AchilleaAdminSanctionsPage() {
                 id="revokeReason"
                 rows={3}
                 value={revokeReason}
-                onChange={(e) => setRevokeReason(e.target.value)}
+                onChange={e => setRevokeReason(e.target.value)}
                 placeholder="ex: Appel accepté, erreur d'identification..."
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />

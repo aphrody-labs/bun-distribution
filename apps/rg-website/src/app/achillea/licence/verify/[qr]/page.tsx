@@ -11,17 +11,13 @@ import LicenceVerifyClient from "./licence-verify-client";
  * raison — aucune de ces URL ne doit finir dans un index.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Vérification de licence",
-	description: "Contrôle de validité d'une licence compétiteur Achilléa.",
-	chemin: null,
-	indexable: false,
+  titre: "Vérification de licence",
+  description: "Contrôle de validité d'une licence compétiteur Achilléa.",
+  chemin: null,
+  indexable: false,
 });
 
-export default async function LicenceVerifyPage({
-	params,
-}: {
-	params: Promise<{ qr: string }>;
-}) {
-	const { qr } = await params;
-	return <LicenceVerifyClient qr={qr} />;
+export default async function LicenceVerifyPage({ params }: { params: Promise<{ qr: string }> }) {
+  const { qr } = await params;
+  return <LicenceVerifyClient qr={qr} />;
 }

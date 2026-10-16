@@ -120,8 +120,7 @@ export function computeNieCrc32(input: string | Uint8Array): number {
  * @param filename - CPK filename (basename, e.g. "1d08dda99e8549431c6c7b459ed8deab.cpk")
  */
 export function deriveCpkKeyFromFilename(filename: string): number {
-  const base =
-    filename.includes("/") || filename.includes("\\") ? filename.split(/[/\\]/).pop()! : filename;
+  const base = filename.includes("/") || filename.includes("\\") ? filename.split(/[/\\]/).pop()! : filename;
   return computeLevel5Crc32(base);
 }
 

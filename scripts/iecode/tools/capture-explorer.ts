@@ -45,12 +45,12 @@ async function trouverCible(): Promise<Cible> {
   const r = await fetch(`http://127.0.0.1:${PORT}/json/list`);
   if (!r.ok) throw new Error(`CDP injoignable sur ${PORT} : HTTP ${r.status}`);
   const cibles = (await r.json()) as Cible[];
-  const pages = cibles.filter((c) => c.type === "page" && !c.url.startsWith("devtools://"));
+  const pages = cibles.filter(c => c.type === "page" && !c.url.startsWith("devtools://"));
   // Une WebView de BUILD sert `tauri.localhost` (front embarqué), une WebView de DÉVELOPPEMENT
   // sert `localhost:1420` (Vite). Quand les deux cibles traînent sur le même port de débogage,
   // prendre la première revient à vérifier la mauvaise application — vécu : le script décrivait
   // l'ancienne instance de dev pendant que le build tournait à côté.
-  const page = pages.find((c) => c.url.includes("tauri.localhost")) ?? pages[0];
+  const page = pages.find(c => c.url.includes("tauri.localhost")) ?? pages[0];
   if (!page) {
     throw new Error(
       `aucune page dans ${cibles.length} cible(s). L'application a-t-elle été lancée avec ` +
@@ -71,7 +71,7 @@ class Cdp {
 
   private constructor(ws: WebSocket) {
     this.ws = ws;
-    this.ws.addEventListener("message", (ev) => {
+    this.ws.addEventListener("message", ev => {
       const msg = JSON.parse(String(ev.data)) as {
         id?: number;
         method?: string;
@@ -105,10 +105,10 @@ class Cdp {
             // React formate ses avertissements en `%s`/`%o` + arguments : sans lire aussi la
             // `preview` des objets, le journal ne rendait que « ERROR %o », donc rien.
             const texte = p.args
-              .map((a) => {
+              .map(a => {
                 if (a.value !== undefined) return String(a.value);
                 if (a.description) return a.description;
-                const props = a.preview?.properties?.map((x) => `${x.name}=${x.value}`).join(", ");
+                const props = a.preview?.properties?.map(x => `${x.name}=${x.value}`).join(", ");
                 return a.preview?.description ?? (props ? `{${props}}` : "");
               })
               .join(" ");
@@ -147,10 +147,11 @@ class Cdp {
 
   /** Évalue du JS DANS la page et rend la valeur (sérialisable). */
   async evaluer<T>(expression: string): Promise<T> {
-    const r = await this.envoyer<{ result: { value: T }; exceptionDetails?: { text: string } }>(
-      "Runtime.evaluate",
-      { expression, awaitPromise: true, returnByValue: true },
-    );
+    const r = await this.envoyer<{ result: { value: T }; exceptionDetails?: { text: string } }>("Runtime.evaluate", {
+      expression,
+      awaitPromise: true,
+      returnByValue: true,
+    });
     if (r.exceptionDetails) throw new Error(`JS : ${r.exceptionDetails.text}`);
     return r.result.value;
   }
@@ -236,7 +237,13 @@ await Bun.sleep(attente);
 if (args.includes("--texte")) {
   const texte = await cdp.evaluer<string>(`document.body.innerText`);
   console.log("─── texte visible ───");
-  console.log(texte.split("\n").filter((l) => l.trim()).slice(0, 120).join("\n"));
+  console.log(
+    texte
+      .split("\n")
+      .filter(l => l.trim())
+      .slice(0, 120)
+      .join("\n"),
+  );
 }
 
 if (cdp.journalEvenements.length) {

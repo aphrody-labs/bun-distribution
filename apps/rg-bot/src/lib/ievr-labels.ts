@@ -42,117 +42,112 @@ export type RareteFr = (typeof RARETES_FR)[number];
  * « Forêt », « FORET » et « forêt » convergent donc vers la même clé.
  */
 export function normaliserLibelle(valeur: string): string {
-	return valeur
-		.normalize("NFD")
-		.replaceAll(/[\u0300-\u036f]/g, "")
-		.toLowerCase()
-		.trim();
+  return valeur
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 /** Construit une table de synonymes déjà normalisés. */
 function tableSynonymes<T extends string>(entrees: Record<string, T>): Map<string, T> {
-	const table = new Map<string, T>();
-	for (const [clef, valeur] of Object.entries(entrees)) {
-		table.set(normaliserLibelle(clef), valeur);
-	}
-	return table;
+  const table = new Map<string, T>();
+  for (const [clef, valeur] of Object.entries(entrees)) {
+    table.set(normaliserLibelle(clef), valeur);
+  }
+  return table;
 }
 
 const SYNONYMES_ELEMENT = tableSynonymes<ElementFr>({
-	// Français (valeurs réelles de la colonne `element`)
-	Feu: "Feu",
-	Vent: "Vent",
-	Forêt: "Forêt",
-	Montagne: "Montagne",
-	Néant: "Néant",
-	// `Aucun` est une seconde écriture du néant en base (9 lignes) : même sens.
-	Aucun: "Néant",
-	// Anglais (ce que renvoie l'API dans `elementName.en`)
-	Fire: "Feu",
-	Wind: "Vent",
-	Forest: "Forêt",
-	Mountain: "Montagne",
-	Void: "Néant",
-	None: "Néant",
-	// Japonais (`elementName.ja`)
-	火: "Feu",
-	風: "Vent",
-	林: "Forêt",
-	山: "Montagne",
-	無: "Néant",
+  // Français (valeurs réelles de la colonne `element`)
+  Feu: "Feu",
+  Vent: "Vent",
+  Forêt: "Forêt",
+  Montagne: "Montagne",
+  Néant: "Néant",
+  // `Aucun` est une seconde écriture du néant en base (9 lignes) : même sens.
+  Aucun: "Néant",
+  // Anglais (ce que renvoie l'API dans `elementName.en`)
+  Fire: "Feu",
+  Wind: "Vent",
+  Forest: "Forêt",
+  Mountain: "Montagne",
+  Void: "Néant",
+  None: "Néant",
+  // Japonais (`elementName.ja`)
+  火: "Feu",
+  風: "Vent",
+  林: "Forêt",
+  山: "Montagne",
+  無: "Néant",
 });
 
 const SYNONYMES_CATEGORIE = tableSynonymes<CategorieTechniqueFr>({
-	Tir: "Tir",
-	Dribble: "Dribble",
-	Défense: "Défense",
-	Arrêt: "Arrêt",
-	Shoot: "Tir",
-	Block: "Défense",
-	Catch: "Arrêt",
-	Save: "Arrêt",
-	シュート: "Tir",
-	ドリブル: "Dribble",
-	ブロック: "Défense",
-	キャッチ: "Arrêt",
+  Tir: "Tir",
+  Dribble: "Dribble",
+  Défense: "Défense",
+  Arrêt: "Arrêt",
+  Shoot: "Tir",
+  Block: "Défense",
+  Catch: "Arrêt",
+  Save: "Arrêt",
+  シュート: "Tir",
+  ドリブル: "Dribble",
+  ブロック: "Défense",
+  キャッチ: "Arrêt",
 });
 
 const SYNONYMES_POSITION = tableSynonymes<PositionFr>({
-	Gardien: "Gardien",
-	Défenseur: "Défenseur",
-	Milieu: "Milieu",
-	Attaquant: "Attaquant",
-	// Codes du jeu, seuls acceptés par `getCharactersList` avant traduction.
-	GK: "Gardien",
-	DF: "Défenseur",
-	MF: "Milieu",
-	FW: "Attaquant",
-	Goalkeeper: "Gardien",
-	Defender: "Défenseur",
-	Midfielder: "Milieu",
-	Forward: "Attaquant",
+  Gardien: "Gardien",
+  Défenseur: "Défenseur",
+  Milieu: "Milieu",
+  Attaquant: "Attaquant",
+  // Codes du jeu, seuls acceptés par `getCharactersList` avant traduction.
+  GK: "Gardien",
+  DF: "Défenseur",
+  MF: "Milieu",
+  FW: "Attaquant",
+  Goalkeeper: "Gardien",
+  Defender: "Défenseur",
+  Midfielder: "Milieu",
+  Forward: "Attaquant",
 });
 
 const SYNONYMES_RARETE = tableSynonymes<RareteFr>({
-	Normal: "Normal",
-	Expérimenté: "Expérimenté",
-	Héros: "Héros",
-	BASARA: "BASARA",
-	Veteran: "Expérimenté",
-	Hero: "Héros",
-	Basara: "BASARA",
+  Normal: "Normal",
+  Expérimenté: "Expérimenté",
+  Héros: "Héros",
+  BASARA: "BASARA",
+  Veteran: "Expérimenté",
+  Hero: "Héros",
+  Basara: "BASARA",
 });
 
-function resoudre<T extends string>(
-	table: Map<string, T>,
-	saisie: string | null | undefined
-): T | null {
-	if (!saisie) {
-		return null;
-	}
-	return table.get(normaliserLibelle(saisie)) ?? null;
+function resoudre<T extends string>(table: Map<string, T>, saisie: string | null | undefined): T | null {
+  if (!saisie) {
+    return null;
+  }
+  return table.get(normaliserLibelle(saisie)) ?? null;
 }
 
 /** Élément canonique en français, ou `null` si la saisie n'en désigne aucun. */
 export function resoudreElement(saisie: string | null | undefined): ElementFr | null {
-	return resoudre(SYNONYMES_ELEMENT, saisie);
+  return resoudre(SYNONYMES_ELEMENT, saisie);
 }
 
 /** Catégorie de technique canonique en français. */
-export function resoudreCategorieTechnique(
-	saisie: string | null | undefined
-): CategorieTechniqueFr | null {
-	return resoudre(SYNONYMES_CATEGORIE, saisie);
+export function resoudreCategorieTechnique(saisie: string | null | undefined): CategorieTechniqueFr | null {
+  return resoudre(SYNONYMES_CATEGORIE, saisie);
 }
 
 /** Poste canonique en français. */
 export function resoudrePosition(saisie: string | null | undefined): PositionFr | null {
-	return resoudre(SYNONYMES_POSITION, saisie);
+  return resoudre(SYNONYMES_POSITION, saisie);
 }
 
 /** Rareté canonique en français. */
 export function resoudreRarete(saisie: string | null | undefined): RareteFr | null {
-	return resoudre(SYNONYMES_RARETE, saisie);
+  return resoudre(SYNONYMES_RARETE, saisie);
 }
 
 /**
@@ -166,7 +161,7 @@ export function resoudreRarete(saisie: string | null | undefined): RareteFr | nu
  * renvoyée telle quelle plutôt que masquée.
  */
 export function libelleCategorieObjet(categorie: string | null | undefined): string | null {
-	return getItemCategoryLabel(categorie) ?? null;
+  return getItemCategoryLabel(categorie) ?? null;
 }
 
 /**
@@ -179,19 +174,19 @@ export function libelleCategorieObjet(categorie: string | null | undefined): str
  * Le néant n'a pas d'icône : la fonction renvoie `null`, l'appelant n'affiche rien.
  */
 export function iconeElementUrl(element: string | null | undefined): string | null {
-	const canonique = resoudreElement(element);
-	const fichiers: Record<ElementFr, string | null> = {
-		Feu: "fire",
-		Vent: "wind",
-		Forêt: "forest",
-		Montagne: "mountain",
-		Néant: null,
-	};
-	if (!canonique) {
-		return null;
-	}
-	const fichier = fichiers[canonique];
-	return fichier ? `https://azalee.rosegriffon.fr/spirit_type/${fichier}.webp` : null;
+  const canonique = resoudreElement(element);
+  const fichiers: Record<ElementFr, string | null> = {
+    Feu: "fire",
+    Vent: "wind",
+    Forêt: "forest",
+    Montagne: "mountain",
+    Néant: null,
+  };
+  if (!canonique) {
+    return null;
+  }
+  const fichier = fichiers[canonique];
+  return fichier ? `https://azalee.rosegriffon.fr/spirit_type/${fichier}.webp` : null;
 }
 
 /**
@@ -201,24 +196,20 @@ export function iconeElementUrl(element: string | null | undefined): string | nu
  * contiennent seulement : taper « for » propose « Forêt » avant « Renfort ».
  * Discord plafonne à 25 propositions.
  */
-export function suggerer<T extends string>(
-	valeurs: readonly T[],
-	saisie: string | null | undefined,
-	max = 25
-): T[] {
-	const aiguille = normaliserLibelle(saisie ?? "");
-	if (aiguille.length === 0) {
-		return valeurs.slice(0, max);
-	}
-	const debuts: T[] = [];
-	const milieux: T[] = [];
-	for (const valeur of valeurs) {
-		const normalisee = normaliserLibelle(valeur);
-		if (normalisee.startsWith(aiguille)) {
-			debuts.push(valeur);
-		} else if (normalisee.includes(aiguille)) {
-			milieux.push(valeur);
-		}
-	}
-	return [...debuts, ...milieux].slice(0, max);
+export function suggerer<T extends string>(valeurs: readonly T[], saisie: string | null | undefined, max = 25): T[] {
+  const aiguille = normaliserLibelle(saisie ?? "");
+  if (aiguille.length === 0) {
+    return valeurs.slice(0, max);
+  }
+  const debuts: T[] = [];
+  const milieux: T[] = [];
+  for (const valeur of valeurs) {
+    const normalisee = normaliserLibelle(valeur);
+    if (normalisee.startsWith(aiguille)) {
+      debuts.push(valeur);
+    } else if (normalisee.includes(aiguille)) {
+      milieux.push(valeur);
+    }
+  }
+  return [...debuts, ...milieux].slice(0, max);
 }

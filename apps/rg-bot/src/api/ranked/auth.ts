@@ -29,9 +29,7 @@ export async function authFromAuthorization(header: string | null): Promise<Sess
 }
 
 function readField(value: unknown, name: string): unknown {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)[name]
-    : undefined;
+  return value !== null && typeof value === "object" ? (value as Record<string, unknown>)[name] : undefined;
 }
 
 function readHeader(headers: unknown, name: string): string | null {
@@ -44,10 +42,7 @@ function readHeader(headers: unknown, name: string): string | null {
 }
 
 /** Resolve Colyseus credentials in context, cookie, bearer, then options order. */
-export async function authFromColyseus(
-  options: unknown,
-  context: unknown,
-): Promise<SessionUser | null> {
+export async function authFromColyseus(options: unknown, context: unknown): Promise<SessionUser | null> {
   const ctxToken = readField(context, "token");
   if (typeof ctxToken === "string") {
     const user = await verifyAchilleaRealtimeToken(ctxToken, process.env.JWT_SECRET_KEY ?? "");

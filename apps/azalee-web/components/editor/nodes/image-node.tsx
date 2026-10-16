@@ -233,17 +233,7 @@ export function $createImageNode({
   key,
 }: ImagePayload): ImageNode {
   return $applyNodeReplacement(
-    new ImageNode(
-      src,
-      altText,
-      maxWidth,
-      width,
-      height,
-      showCaption,
-      caption,
-      captionsEnabled,
-      key,
-    ),
+    new ImageNode(src, altText, maxWidth, width, height, showCaption, caption, captionsEnabled, key),
   );
 }
 

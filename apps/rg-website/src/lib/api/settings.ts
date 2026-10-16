@@ -10,12 +10,12 @@ export const FEATURE_SHOW_DISCORD_EVENTS = "feature_show_discord_events";
  * Postgres directe restait fonctionnelle tout du long.
  */
 export async function getSetting<T = unknown>(key: string, defaultValue: T): Promise<T> {
-	try {
-		return await fetchSetting(key, defaultValue);
-	} catch (error) {
-		console.warn(`Error fetching setting ${key}:`, error);
-		return defaultValue;
-	}
+  try {
+    return await fetchSetting(key, defaultValue);
+  } catch (error) {
+    console.warn(`Error fetching setting ${key}:`, error);
+    return defaultValue;
+  }
 }
 
 /**
@@ -24,36 +24,33 @@ export async function getSetting<T = unknown>(key: string, defaultValue: T): Pro
  * variantes sont conservées pour préserver la signature/l'usage des appelants.
  */
 export async function getPublicSetting<T = unknown>(key: string, defaultValue: T): Promise<T> {
-	try {
-		return await fetchSetting(key, defaultValue);
-	} catch (error) {
-		console.warn(`Error fetching public setting ${key}:`, error);
-		return defaultValue;
-	}
+  try {
+    return await fetchSetting(key, defaultValue);
+  } catch (error) {
+    console.warn(`Error fetching public setting ${key}:`, error);
+    return defaultValue;
+  }
 }
 
 async function fetchSetting<T>(key: string, defaultValue: T): Promise<T> {
-	const pool = getPgPool();
-	const { rows } = await pool.query<{ value: unknown }>(
-		"SELECT value FROM settings WHERE key = $1 LIMIT 1",
-		[key]
-	);
+  const pool = getPgPool();
+  const { rows } = await pool.query<{ value: unknown }>("SELECT value FROM settings WHERE key = $1 LIMIT 1", [key]);
 
-	const row = rows[0];
-	if (!row) {
-		return defaultValue;
-	}
+  const row = rows[0];
+  if (!row) {
+    return defaultValue;
+  }
 
-	const { value } = row;
+  const { value } = row;
 
-	if (typeof defaultValue === "boolean" && typeof value === "string") {
-		if (value === "true") {
-			return true as unknown as T;
-		}
-		if (value === "false") {
-			return false as unknown as T;
-		}
-	}
+  if (typeof defaultValue === "boolean" && typeof value === "string") {
+    if (value === "true") {
+      return true as unknown as T;
+    }
+    if (value === "false") {
+      return false as unknown as T;
+    }
+  }
 
-	return value as T;
+  return value as T;
 }

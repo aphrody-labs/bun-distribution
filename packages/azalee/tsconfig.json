@@ -13,12 +13,6 @@
       "@rosegriffon/inagle/*": ["../inagle/src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "types/**/*.d.ts",
-    "../inagle/src/types/**/*.d.ts",
-    "test/**/*.ts",
-    "scripts/**/*.ts"
-  ],
+  "include": ["src/**/*.ts", "types/**/*.d.ts", "../inagle/src/types/**/*.d.ts", "test/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

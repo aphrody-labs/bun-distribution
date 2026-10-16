@@ -45,7 +45,7 @@ export function SearchResultRow({ result, query, onClick, compact }: SearchResul
             height={thumbSize}
             className={cn(thumbClass, "object-cover")}
             unoptimized
-            onError={(e) => {
+            onError={e => {
               const img = e.target as HTMLImageElement;
               img.style.display = "none";
               img.parentElement?.classList.add("search-img-fallback");
@@ -70,9 +70,7 @@ export function SearchResultRow({ result, query, onClick, compact }: SearchResul
           <span
             className={cn(
               "truncate",
-              compact
-                ? "font-medium text-sm text-[var(--md-sys-color-on-surface)]"
-                : "type-body-large text-on-surface",
+              compact ? "font-medium text-sm text-[var(--md-sys-color-on-surface)]" : "type-body-large text-on-surface",
             )}
           >
             <SearchResultHighlight text={result.title} query={query} />

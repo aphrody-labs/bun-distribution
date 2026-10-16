@@ -2,14 +2,7 @@
 
 import type { Command } from "commander";
 
-import {
-  colors,
-  errorMessage,
-  getOrReadInput,
-  reportError,
-  restoreLogs,
-  suppressLogs,
-} from "../context";
+import { colors, errorMessage, getOrReadInput, reportError, restoreLogs, suppressLogs } from "../context";
 import { createInagleService } from "../inagle";
 import type { SearchOptions } from "../types";
 

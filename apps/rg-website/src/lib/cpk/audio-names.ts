@@ -18,21 +18,21 @@ import { selectInagle } from "@rosegriffon/db/inagle";
 
 /** Ce qu'une banque sonorise, quand on sait le dire. */
 export interface BankOwner {
-	/** Nom affichable (français, repli anglais puis japonais). */
-	name: string;
-	/** Slug de la fiche personnage, pour lier vers elle. */
-	slug: string | null;
-	/** Code interne complet, ex. `c01000010_5000`. */
-	internalCode: string;
+  /** Nom affichable (français, repli anglais puis japonais). */
+  name: string;
+  /** Slug de la fiche personnage, pour lier vers elle. */
+  slug: string | null;
+  /** Code interne complet, ex. `c01000010_5000`. */
+  internalCode: string;
 }
 
 /** Ligne du miroir dont on a besoin. */
 interface CharaRow {
-	internal_code: string | null;
-	name_fr: string | null;
-	name_en: string | null;
-	name_ja: string | null;
-	slug: string | null;
+  internal_code: string | null;
+  name_fr: string | null;
+  name_en: string | null;
+  name_ja: string | null;
+  slug: string | null;
 }
 
 let _index: Promise<Map<string, BankOwner>> | null = null;
@@ -46,30 +46,30 @@ let _index: Promise<Map<string, BankOwner>> | null = null;
  * même requête au lieu de la lancer deux fois.
  */
 export function ownerIndex(): Promise<Map<string, BankOwner>> {
-	_index ??= (async () => {
-		const index = new Map<string, BankOwner>();
-		try {
-			const rows = await selectInagle<CharaRow>("inagle_characters", "internal_code,name_fr,name_en,name_ja,slug");
-			for (const row of rows) {
-				const code = row.internal_code?.split("_")[0]?.toLowerCase();
-				if (!code) continue;
-				const name = row.name_fr || row.name_en || row.name_ja;
-				if (!name) continue;
-				// Première variante rencontrée : les variantes d'un personnage partagent son nom.
-				if (!index.has(code)) {
-					index.set(code, { name, slug: row.slug, internalCode: row.internal_code ?? code });
-				}
-			}
-		} catch {
-			// Miroir absent (build fresh-checkout) : la galerie rend sans les noms, elle n'échoue pas.
-		}
-		return index;
-	})();
-	return _index;
+  _index ??= (async () => {
+    const index = new Map<string, BankOwner>();
+    try {
+      const rows = await selectInagle<CharaRow>("inagle_characters", "internal_code,name_fr,name_en,name_ja,slug");
+      for (const row of rows) {
+        const code = row.internal_code?.split("_")[0]?.toLowerCase();
+        if (!code) continue;
+        const name = row.name_fr || row.name_en || row.name_ja;
+        if (!name) continue;
+        // Première variante rencontrée : les variantes d'un personnage partagent son nom.
+        if (!index.has(code)) {
+          index.set(code, { name, slug: row.slug, internalCode: row.internal_code ?? code });
+        }
+      }
+    } catch {
+      // Miroir absent (build fresh-checkout) : la galerie rend sans les noms, elle n'échoue pas.
+    }
+    return index;
+  })();
+  return _index;
 }
 
 /** Le personnage que sonorise une banque, ou `null` si ce n'est pas une banque de voix connue. */
 export function bankOwner(index: Map<string, BankOwner>, path: string): BankOwner | null {
-	const code = voiceBankCharacterCode(path);
-	return code ? (index.get(code) ?? null) : null;
+  const code = voiceBankCharacterCode(path);
+  return code ? (index.get(code) ?? null) : null;
 }

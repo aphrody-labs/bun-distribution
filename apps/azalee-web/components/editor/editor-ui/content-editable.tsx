@@ -9,11 +9,7 @@ interface Props {
   placeholderClassName?: string;
 }
 
-export function ContentEditable({
-  placeholder,
-  className,
-  placeholderClassName,
-}: Props): JSX.Element {
+export function ContentEditable({ placeholder, className, placeholderClassName }: Props): JSX.Element {
   return (
     <LexicalContentEditable
       className={

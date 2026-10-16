@@ -22,10 +22,7 @@ export function workspacePackageManifests(directory: string, patterns: string[])
 
 /** Reusable source-backed Markdown inventory. No network, credentials or build outputs. */
 export function renderReadmeInventory(): string {
-  const result = Bun.spawnSync(
-    ["cargo", "metadata", "--no-deps", "--format-version", "1", "--locked"],
-    { cwd: root },
-  );
+  const result = Bun.spawnSync(["cargo", "metadata", "--no-deps", "--format-version", "1", "--locked"], { cwd: root });
   if (result.exitCode !== 0) throw new Error(result.stderr.toString());
   const cargo = JSON.parse(result.stdout.toString());
   const members = new Set(cargo.workspace_members);
@@ -42,10 +39,7 @@ export function renderReadmeInventory(): string {
   };
   const table = (header: string[], rows: string[][]) =>
     [header, header.map(() => "---"), ...rows]
-      .map(
-        (row) =>
-          `| ${row.map((cell) => cell.replaceAll("|", "\\|").replaceAll("\n", " ")).join(" | ")} |`,
-      )
+      .map(row => `| ${row.map(cell => cell.replaceAll("|", "\\|").replaceAll("\n", " ")).join(" | ")} |`)
       .join("\n");
   const tools = table(
     ["Surface", "Manifest contract", "Owner"],
@@ -121,7 +115,7 @@ export function checkReadmeInventory(write = false): void {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  if (args.some((arg) => !["--write", "--description"].includes(arg)))
+  if (args.some(arg => !["--write", "--description"].includes(arg)))
     throw new Error("Usage: bun scripts/iecode/tools/readme.ts [--write | --description]");
   if (args.includes("--description")) console.log(json("package.json").description);
   else {

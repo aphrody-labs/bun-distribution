@@ -11,9 +11,7 @@ import { cn } from "@/lib/utils";
 export function NotificationBell({ className }: { className?: string }) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState<Awaited<ReturnType<typeof getNotifications>>>(
-    [],
-  );
+  const [notifications, setNotifications] = useState<Awaited<ReturnType<typeof getNotifications>>>([]);
   const [open, setOpen] = useState(false);
   const mountedRef = useRef(false);
 
@@ -46,7 +44,7 @@ export function NotificationBell({ className }: { className?: string }) {
   const handleMarkAllRead = async () => {
     await markAllAsRead();
     setUnreadCount(0);
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   if (!user) {
@@ -71,10 +69,7 @@ export function NotificationBell({ className }: { className?: string }) {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-80 p-0 rounded-2xl bg-surface-container-high border-none shadow-xl"
-        align="end"
-      >
+      <PopoverContent className="w-80 p-0 rounded-2xl bg-surface-container-high border-none shadow-xl" align="end">
         <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/10">
           <h3 className="text-sm font-bold text-on-surface">Notifications</h3>
           {unreadCount > 0 && (
@@ -94,9 +89,7 @@ export function NotificationBell({ className }: { className?: string }) {
               <p className="text-sm text-on-surface-variant/50">Aucune notification</p>
             </div>
           ) : (
-            notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onRead={fetchUnread} />
-            ))
+            notifications.map(n => <NotificationItem key={n.id} notification={n} onRead={fetchUnread} />)
           )}
         </div>
       </PopoverContent>

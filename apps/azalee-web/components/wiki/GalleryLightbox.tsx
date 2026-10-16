@@ -171,11 +171,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
               "bg-primary text-on-primary hover:bg-primary/90 disabled:opacity-50",
             )}
           >
-            {downloading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
-            )}
+            {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
             <span className="hidden sm:inline">Télécharger</span>
           </button>
           <button
@@ -192,12 +188,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
 
       {/* Zone image : clic sur le backdrop ferme, clic sur l'image ne ferme pas. */}
       <div className="relative flex flex-1 cursor-zoom-out items-center justify-center overflow-hidden p-4 sm:p-8">
-        <button
-          type="button"
-          aria-label="Fermer"
-          onClick={onClose}
-          className="absolute inset-0 cursor-zoom-out"
-        />
+        <button type="button" aria-label="Fermer" onClick={onClose} className="absolute inset-0 cursor-zoom-out" />
         {item.full ? (
           <div className="relative flex size-full items-center justify-center">
             <Image

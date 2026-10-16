@@ -36,15 +36,11 @@ export function SeriesNavigation({ series, articles, currentIndex }: SeriesNavig
       <div className="p-4 border-b border-outline-variant/10">
         <div className="flex items-center gap-2 mb-1">
           <BookOpen className="size-4 text-primary shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">
-            Série
-          </span>
+          <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">Série</span>
         </div>
         <p className="text-sm font-bold text-on-surface leading-snug">{series.title}</p>
         {series.description && (
-          <p className="text-xs text-on-surface-variant/60 mt-1 line-clamp-2">
-            {series.description}
-          </p>
+          <p className="text-xs text-on-surface-variant/60 mt-1 line-clamp-2">{series.description}</p>
         )}
         <p className="text-xs text-on-surface-variant/50 mt-2">
           Article {currentIndex + 1} sur {total}
@@ -61,9 +57,7 @@ export function SeriesNavigation({ series, articles, currentIndex }: SeriesNavig
               href={`/news/${article.slug}`}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 transition-colors",
-                isCurrent
-                  ? "bg-primary/10 cursor-default pointer-events-none"
-                  : "hover:bg-surface-container",
+                isCurrent ? "bg-primary/10 cursor-default pointer-events-none" : "hover:bg-surface-container",
               )}
             >
               <span

@@ -35,14 +35,14 @@
  * sont gratuits.
  */
 export const HAUTEURS = {
-	/** Barre supérieure, bureau. Le rail s'y aligne. */
-	barreSuperieure: 3.5,
-	/** En-tête mobile, hors encoche. */
-	enteteMobile: 4,
-	/** Barre du bas, hors zone sûre. */
-	barreBasse: 4.5,
-	/** Sous-barre contextuelle d'une section (onglets de domaine). */
-	sousBarre: 2.75,
+  /** Barre supérieure, bureau. Le rail s'y aligne. */
+  barreSuperieure: 3.5,
+  /** En-tête mobile, hors encoche. */
+  enteteMobile: 4,
+  /** Barre du bas, hors zone sûre. */
+  barreBasse: 4.5,
+  /** Sous-barre contextuelle d'une section (onglets de domaine). */
+  sousBarre: 2.75,
 } as const;
 
 /**
@@ -53,21 +53,21 @@ export const HAUTEURS = {
  * intercaler sans tout renuméroter.
  */
 export const PLANS = {
-	/** Contenu de page. */
-	contenu: 0,
-	/** Sous-barre de section : au-dessus du contenu, sous la navigation. */
-	sousBarre: 30,
-	/** Barres de navigation permanentes. */
-	navigation: 40,
-	/** Rail et barre du bas : au-dessus des barres, sous les surfaces modales. */
-	navigationFixe: 50,
-	/** Tiroirs, dialogues, menus. */
-	surface: 60,
+  /** Contenu de page. */
+  contenu: 0,
+  /** Sous-barre de section : au-dessus du contenu, sous la navigation. */
+  sousBarre: 30,
+  /** Barres de navigation permanentes. */
+  navigation: 40,
+  /** Rail et barre du bas : au-dessus des barres, sous les surfaces modales. */
+  navigationFixe: 50,
+  /** Tiroirs, dialogues, menus. */
+  surface: 60,
 } as const;
 
 /** Hauteur d'une valeur de `HAUTEURS`, en chaîne CSS. */
 export function rem(valeur: number): string {
-	return `${valeur}rem`;
+  return `${valeur}rem`;
 }
 
 /**
@@ -77,16 +77,16 @@ export function rem(valeur: number): string {
  * branche bureau. Une barre ajoutée ou retirée demandait de penser aux deux.
  */
 export function decalageHaut(options: {
-	barreSuperieure?: boolean;
-	enteteMobile?: boolean;
-	sousBarre?: boolean;
+  barreSuperieure?: boolean;
+  enteteMobile?: boolean;
+  sousBarre?: boolean;
 }): string {
-	const parts: string[] = [];
-	if (options.barreSuperieure) parts.push(rem(HAUTEURS.barreSuperieure));
-	if (options.enteteMobile) parts.push(`calc(${rem(HAUTEURS.enteteMobile)} + env(safe-area-inset-top))`);
-	if (options.sousBarre) parts.push(rem(HAUTEURS.sousBarre));
-	if (parts.length === 0) return "0px";
-	return parts.length === 1 ? (parts[0] as string) : `calc(${parts.join(" + ")})`;
+  const parts: string[] = [];
+  if (options.barreSuperieure) parts.push(rem(HAUTEURS.barreSuperieure));
+  if (options.enteteMobile) parts.push(`calc(${rem(HAUTEURS.enteteMobile)} + env(safe-area-inset-top))`);
+  if (options.sousBarre) parts.push(rem(HAUTEURS.sousBarre));
+  if (parts.length === 0) return "0px";
+  return parts.length === 1 ? (parts[0] as string) : `calc(${parts.join(" + ")})`;
 }
 
 /**
@@ -97,9 +97,7 @@ export function decalageHaut(options: {
  * personne ne s'en aperçoit avant que le contenu n'ait plus de place.
  */
 export function coutChromeMobile(avecSousBarre = false): number {
-	return (
-		HAUTEURS.enteteMobile + HAUTEURS.barreBasse + (avecSousBarre ? HAUTEURS.sousBarre : 0)
-	);
+  return HAUTEURS.enteteMobile + HAUTEURS.barreBasse + (avecSousBarre ? HAUTEURS.sousBarre : 0);
 }
 
 /** Budget maximal admis pour le chrome mobile, en `rem` (soit 144 px). */

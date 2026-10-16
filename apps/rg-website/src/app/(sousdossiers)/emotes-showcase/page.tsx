@@ -19,18 +19,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import EmotePicker from "@/components/shared/emotes/EmotePicker";
-import EmoteRenderer, {
-  getTextWithoutEmotes,
-  stripEmotes,
-} from "@/components/shared/emotes/EmoteRenderer";
+import EmoteRenderer, { getTextWithoutEmotes, stripEmotes } from "@/components/shared/emotes/EmoteRenderer";
 import RgEmote, { RgEmoteGrid, RgEmoteLine } from "@/components/shared/emotes/RgEmote";
 
-import {
-  useEmoteHistory,
-  useEmoteRotation,
-  useEmoteValidation,
-  useEmotes,
-} from "@/hooks/useEmotes";
+import { useEmoteHistory, useEmoteRotation, useEmoteValidation, useEmotes } from "@/hooks/useEmotes";
 import type { EMOTES, Emote } from "@/lib/emotes";
 
 export default function EmotesShowcasePage() {
@@ -45,7 +37,7 @@ export default function EmotesShowcasePage() {
   const handleEmoteSelect = (emote: Emote) => {
     setSelectedEmote(emote);
     addToHistory(emote);
-    setText((prev) => `${prev} :${emote.name}:`);
+    setText(prev => `${prev} :${emote.name}:`);
     toast.success(`Emote ajoutée : ${emote.name}`);
   };
 
@@ -97,11 +89,7 @@ export default function EmotesShowcasePage() {
               {history.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium">Récemment utilisé</h3>
-                  <RgEmoteLine
-                    emotes={history.map((e) => e.name as keyof typeof EMOTES)}
-                    size={40}
-                    gap={12}
-                  />
+                  <RgEmoteLine emotes={history.map(e => e.name as keyof typeof EMOTES)} size={40} gap={12} />
                 </div>
               )}
             </CardContent>
@@ -113,9 +101,7 @@ export default function EmotesShowcasePage() {
           <Card>
             <CardHeader>
               <CardTitle>EmoteRenderer Component</CardTitle>
-              <CardDescription>
-                Convertit automatiquement :emote-name: en composants
-              </CardDescription>
+              <CardDescription>Convertit automatiquement :emote-name: en composants</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -125,7 +111,7 @@ export default function EmotesShowcasePage() {
                 <Textarea
                   id="route-emotes-showcase-page-tsx-1"
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={e => setText(e.target.value)}
                   rows={4}
                   placeholder="Tapez du texte avec des :emote-name: ..."
                 />
@@ -133,18 +119,14 @@ export default function EmotesShowcasePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setText("Bienvenue :gaelle-salut: sur Rose Griffon :roy-evil: !")
-                    }
+                    onClick={() => setText("Bienvenue :gaelle-salut: sur Rose Griffon :roy-evil: !")}
                   >
                     Exemple 1
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setText("Merci :gaelle-coeur: :roy-coeur: pour votre visite :rg-funny: !")
-                    }
+                    onClick={() => setText("Merci :gaelle-coeur: :roy-coeur: pour votre visite :rg-funny: !")}
                   >
                     Exemple 2
                   </Button>
@@ -207,7 +189,7 @@ export default function EmotesShowcasePage() {
                   <RgEmoteGrid
                     size={56}
                     columns={5}
-                    onEmoteClick={(emote) => {
+                    onEmoteClick={emote => {
                       toast.success(`Emote cliquée : ${emote.name}`);
                     }}
                   />
@@ -218,7 +200,7 @@ export default function EmotesShowcasePage() {
                     character="gaelle"
                     size={56}
                     columns={4}
-                    onEmoteClick={(emote) => {
+                    onEmoteClick={emote => {
                       toast.success(`Emote cliquée : ${emote.name}`);
                     }}
                   />
@@ -229,7 +211,7 @@ export default function EmotesShowcasePage() {
                     character="roy"
                     size={56}
                     columns={4}
-                    onEmoteClick={(emote) => {
+                    onEmoteClick={emote => {
                       toast.success(`Emote cliquée : ${emote.name}`);
                     }}
                   />
@@ -240,7 +222,7 @@ export default function EmotesShowcasePage() {
                     character="rg"
                     size={56}
                     columns={2}
-                    onEmoteClick={(emote) => {
+                    onEmoteClick={emote => {
                       toast.success(`Emote cliquée : ${emote.name}`);
                     }}
                   />
@@ -295,7 +277,7 @@ export default function EmotesShowcasePage() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Toutes les emotes de Gaëlle :</p>
                   <RgEmoteLine
-                    emotes={getByCharacter("gaelle").map((e) => e.name as keyof typeof EMOTES)}
+                    emotes={getByCharacter("gaelle").map(e => e.name as keyof typeof EMOTES)}
                     size={32}
                     gap={8}
                   />
@@ -304,7 +286,7 @@ export default function EmotesShowcasePage() {
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Toutes les emotes de Roy :</p>
                   <RgEmoteLine
-                    emotes={getByCharacter("roy").map((e) => e.name as keyof typeof EMOTES)}
+                    emotes={getByCharacter("roy").map(e => e.name as keyof typeof EMOTES)}
                     size={32}
                     gap={8}
                   />

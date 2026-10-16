@@ -47,7 +47,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
 
     client.organizations
       .get(orgId)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value?.data) {
           setOrg(res.value.data);
@@ -149,7 +149,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
                 src={org.logo}
                 alt={org.name}
                 className="w-16 h-16 rounded-xl object-cover bg-muted border border-border shrink-0 shadow-sm"
-                onError={(e) => {
+                onError={e => {
                   (e.target as HTMLElement).style.display = "none";
                 }}
               />
@@ -184,9 +184,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
             </div>
             <div className="p-3 rounded-xl bg-background border border-border">
               <div className="text-muted-foreground">Slug officiel</div>
-              <div className="font-bold font-mono text-foreground mt-0.5">
-                {org.normalizedName ?? orgId}
-              </div>
+              <div className="font-bold font-mono text-foreground mt-0.5">{org.normalizedName ?? orgId}</div>
             </div>
           </div>
 
@@ -245,11 +243,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
               disabled={actionRunning}
               className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50"
             >
-              {actionRunning ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
+              {actionRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Approuver et valider la structure
             </button>
           </div>
@@ -265,8 +259,8 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
               <span>Confirmer le rejet de l'organisation</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Êtes-vous sûr de vouloir rejeter cette demande ? L'organisation ne pourra pas héberger
-              de tournoi ni aligner d'équipe officielle.
+              Êtes-vous sûr de vouloir rejeter cette demande ? L'organisation ne pourra pas héberger de tournoi ni
+              aligner d'équipe officielle.
             </p>
 
             <div className="space-y-1 text-xs">
@@ -281,7 +275,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
                 rows={3}
                 placeholder="Précisez la raison (logo inapproprié, usurpation, informations erronées)..."
                 value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
+                onChange={e => setRejectReason(e.target.value)}
                 className="w-full px-3 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -300,11 +294,7 @@ export default function OrganizationValidationPage({ id }: { id: string }) {
                 disabled={actionRunning}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-destructive text-destructive-foreground font-bold text-xs rounded-xl hover:bg-destructive/90 transition shadow-sm disabled:opacity-50"
               >
-                {actionRunning ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <X className="w-3.5 h-3.5" />
-                )}
+                {actionRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
                 Confirmer le refus
               </button>
             </div>

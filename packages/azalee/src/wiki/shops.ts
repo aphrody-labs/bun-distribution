@@ -74,16 +74,7 @@ async function fetchAllShopRows(): Promise<RawShopRow[]> {
   try {
     return await sql
       .selectFrom("inagle_shops")
-      .select([
-        "shop_id",
-        "name_fr",
-        "name_en",
-        "name_ja",
-        "item_db_id",
-        "item_name_fr",
-        "item_name_en",
-        "slot_index",
-      ])
+      .select(["shop_id", "name_fr", "name_en", "name_ja", "item_db_id", "item_name_fr", "item_name_en", "slot_index"])
       .orderBy("shop_id", "asc")
       .orderBy("slot_index", "asc")
       .execute();
@@ -115,9 +106,7 @@ async function fetchItemsByIds(ids: string[]): Promise<Map<string, RawItemRow>> 
 /** Liste de toutes les boutiques avec compteurs + répartition par catégorie. */
 export async function getShopsList(): Promise<ShopSummary[]> {
   const rows = await fetchAllShopRows();
-  const itemIds = Array.from(
-    new Set(rows.map((r) => r.item_db_id).filter((v): v is string => !!v)),
-  );
+  const itemIds = Array.from(new Set(rows.map(r => r.item_db_id).filter((v): v is string => !!v)));
   const itemMap = await fetchItemsByIds(itemIds);
 
   const byShop = new Map<
@@ -173,16 +162,7 @@ export async function getShop(shopId: number | string): Promise<ShopDetail | nul
   try {
     rows = await sql
       .selectFrom("inagle_shops")
-      .select([
-        "shop_id",
-        "name_fr",
-        "name_en",
-        "name_ja",
-        "item_db_id",
-        "item_name_fr",
-        "item_name_en",
-        "slot_index",
-      ])
+      .select(["shop_id", "name_fr", "name_en", "name_ja", "item_db_id", "item_name_fr", "item_name_en", "slot_index"])
       .where("shop_id", "=", numId)
       .orderBy("slot_index", "asc")
       .execute();
@@ -192,9 +172,7 @@ export async function getShop(shopId: number | string): Promise<ShopDetail | nul
   }
   if (rows.length === 0) return null;
 
-  const itemIds = Array.from(
-    new Set(rows.map((r) => r.item_db_id).filter((v): v is string => !!v)),
-  );
+  const itemIds = Array.from(new Set(rows.map(r => r.item_db_id).filter((v): v is string => !!v)));
   const itemMap = await fetchItemsByIds(itemIds);
 
   const seen = new Set<string>();

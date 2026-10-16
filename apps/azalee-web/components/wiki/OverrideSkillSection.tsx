@@ -70,31 +70,17 @@ function SkillThumb({ skillId, name }: { skillId: string; name: string }) {
     );
   }
 
-  return (
-    <Image
-      src={url}
-      alt={name}
-      fill
-      className="object-contain p-1"
-      onError={() => setError(true)}
-    />
-  );
+  return <Image src={url} alt={name} fill className="object-contain p-1" onError={() => setError(true)} />;
 }
 
-function OverrideCard({
-  override,
-  currentSkillId,
-}: {
-  override: OverrideSkillData;
-  currentSkillId: string;
-}) {
+function OverrideCard({ override, currentSkillId }: { override: OverrideSkillData; currentSkillId: string }) {
   const isResult = override.id === currentSkillId;
   const elAccent = ELEMENT_ACCENT[override.element_id ?? 0] || "border-outline-variant/20";
   const elSprite = ELEMENT_SPRITE[override.element_id ?? 0];
   const elName = ELEMENT_FR[override.element_id ?? 0] || "Néant";
 
   // All required skills across all conditions
-  const requiredSkills = override.conditions.flatMap((c) => c.required_skills);
+  const requiredSkills = override.conditions.flatMap(c => c.required_skills);
 
   return (
     <div
@@ -141,9 +127,7 @@ function OverrideCard({
                 <div className="w-5 h-4 relative shrink-0">
                   <SkillThumb skillId={rs.skill_id} name={rs.name_fr || ""} />
                 </div>
-                <span className="truncate max-w-[120px]">
-                  {rs.name_fr || rs.name_en || rs.skill_id}
-                </span>
+                <span className="truncate max-w-[120px]">{rs.name_fr || rs.name_en || rs.skill_id}</span>
                 {rs.num > 1 && <span className="text-[10px] opacity-60">x{rs.num}</span>}
               </Link>
             </span>
@@ -164,8 +148,8 @@ export function OverrideSkillSection({ overrides, currentSkillId }: OverrideSkil
   }
 
   // Separate: overrides where this skill is the RESULT vs where it's an INGREDIENT
-  const asResult = overrides.filter((o) => o.id === currentSkillId);
-  const asIngredient = overrides.filter((o) => o.id !== currentSkillId);
+  const asResult = overrides.filter(o => o.id === currentSkillId);
+  const asIngredient = overrides.filter(o => o.id !== currentSkillId);
 
   return (
     <div className="space-y-3">
@@ -173,14 +157,12 @@ export function OverrideSkillSection({ overrides, currentSkillId }: OverrideSkil
         <Zap size={20} className="text-primary" />
         Overdrive
       </h3>
-      <p className="text-xs text-on-surface-variant px-1">
-        Combinaisons de techniques spéciales activables en match.
-      </p>
+      <p className="text-xs text-on-surface-variant px-1">Combinaisons de techniques spéciales activables en match.</p>
       <div className="space-y-2">
-        {asIngredient.map((o) => (
+        {asIngredient.map(o => (
           <OverrideCard key={o.id} override={o} currentSkillId={currentSkillId} />
         ))}
-        {asResult.map((o) => (
+        {asResult.map(o => (
           <OverrideCard key={`result-${o.id}`} override={o} currentSkillId={currentSkillId} />
         ))}
       </div>

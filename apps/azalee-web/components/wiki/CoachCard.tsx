@@ -85,10 +85,7 @@ export function CoachCard({
         ) : (
           <ClipboardList
             size={40}
-            className={cn(
-              "opacity-30 transition-transform duration-300 group-hover:scale-110",
-              accent,
-            )}
+            className={cn("opacity-30 transition-transform duration-300 group-hover:scale-110", accent)}
             aria-hidden="true"
           />
         )}
@@ -118,9 +115,7 @@ export function CoachCard({
             ) : null}
           </div>
         ) : (
-          <span className="mt-auto pt-1 text-xs italic text-on-surface-variant/50">
-            {elementFr ?? "—"}
-          </span>
+          <span className="mt-auto pt-1 text-xs italic text-on-surface-variant/50">{elementFr ?? "—"}</span>
         )}
       </div>
     </Link>

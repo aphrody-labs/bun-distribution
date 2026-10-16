@@ -49,7 +49,7 @@ function combineDateTime(date: Date | undefined, time: string): string {
   if (!date) {
     return "";
   }
-  const [hh, mm] = time.split(":").map((s) => Number.parseInt(s, 10) || 0);
+  const [hh, mm] = time.split(":").map(s => Number.parseInt(s, 10) || 0);
   const d = new Date(date);
   d.setHours(hh, mm, 0, 0);
   const off = d.getTimezoneOffset();
@@ -99,7 +99,7 @@ export function PublicationSection({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STATUS_OPTIONS.map((opt) => (
+            {STATUS_OPTIONS.map(opt => (
               <SelectItem key={opt.value} value={opt.value}>
                 <div className="flex items-center gap-2">
                   <div className={cn("size-2 rounded-full", opt.color)} aria-hidden="true" />
@@ -155,16 +155,12 @@ export function PublicationSection({
               type="time"
               aria-label="Heure de publication"
               value={time}
-              onChange={(e) => handleTimeChange(e.target.value)}
+              onChange={e => handleTimeChange(e.target.value)}
               className="h-10 w-24 rounded-xl border-none bg-surface-container-high text-xs"
             />
           </div>
 
-          {!scheduledAt && (
-            <p className="text-[10px] text-destructive">
-              Veuillez choisir une date de publication.
-            </p>
-          )}
+          {!scheduledAt && <p className="text-[10px] text-destructive">Veuillez choisir une date de publication.</p>}
           {scheduledAt && date && (
             <p className="text-[10px] text-blue-500">
               Sera publié le{" "}
@@ -194,7 +190,7 @@ export function PublicationSection({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((cat) => (
+            {CATEGORIES.map(cat => (
               <SelectItem key={cat.value} value={cat.value}>
                 <div className="flex items-center gap-2">
                   <div className={cn("size-2.5 rounded-full", cat.color)} aria-hidden="true" />

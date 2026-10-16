@@ -127,9 +127,7 @@ export function parseTelopWazaContent(content: any): ParsedTelopWaza[] {
 // Loaders
 // ============================================================================
 
-export async function loadTelopWazaConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedTelopWaza[] | null> {
+export async function loadTelopWazaConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedTelopWaza[] | null> {
   const filename = findConfigFile("skill", "skill_telop_info_config");
   if (!filename) return null;
 
@@ -138,9 +136,7 @@ export async function loadTelopWazaConfigAsync(
   return content ? parseTelopWazaContent(content) : null;
 }
 
-export async function buildTelopWazaDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<TelopWazaDatabase> {
+export async function buildTelopWazaDatabase(dataPath: string = DATA_ROOT): Promise<TelopWazaDatabase> {
   const telops = (await loadTelopWazaConfigAsync(dataPath)) || [];
   const byId = new Map<string, ParsedTelopWaza>();
   for (const t of telops) byId.set(t.skillId, t);

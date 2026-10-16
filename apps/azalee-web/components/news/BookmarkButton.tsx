@@ -13,11 +13,7 @@ interface BookmarkButtonProps {
   compact?: boolean;
 }
 
-export function BookmarkButton({
-  articleId,
-  initialBookmarked = false,
-  compact,
-}: BookmarkButtonProps) {
+export function BookmarkButton({ articleId, initialBookmarked = false, compact }: BookmarkButtonProps) {
   const { user } = useAuth();
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [isPending, startTransition] = useTransition();
@@ -45,7 +41,7 @@ export function BookmarkButton({
   if (compact) {
     return (
       <button
-        onClick={(e) => {
+        onClick={e => {
           e.preventDefault();
           e.stopPropagation();
           handleToggle();

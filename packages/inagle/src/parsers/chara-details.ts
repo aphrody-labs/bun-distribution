@@ -19,10 +19,7 @@ export function parseCharaDetails(): Map<string, ParsedCharaDetails> {
   }
 
   try {
-    const data = loadConfigData<{ lists?: { name: string; values?: any[] }[] }>(
-      "character",
-      filename,
-    );
+    const data = loadConfigData<{ lists?: { name: string; values?: any[] }[] }>("character", filename);
     if (!data) return map;
     const list = data.lists?.find((l: any) => l.name === "m_charaDetailsList");
     if (list?.values) {

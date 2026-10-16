@@ -1,13 +1,13 @@
 import "server-only";
 
 import {
-	PROFILS_BOT,
-	TOUS_LES_PROFILS_BOT,
-	type CommandeBot,
-	type EtatBot,
-	type EtatBotAgrege,
-	type NomProfilBot,
-	type ProfilBotPublic,
+  PROFILS_BOT,
+  TOUS_LES_PROFILS_BOT,
+  type CommandeBot,
+  type EtatBot,
+  type EtatBotAgrege,
+  type NomProfilBot,
+  type ProfilBotPublic,
 } from "@rosegriffon/types/bot";
 
 /**
@@ -32,8 +32,8 @@ const DELAI_MS = 3_000;
 
 /** Jeton partagé avec les deux services (`BOT_ADMIN_TOKEN` de leur unité). */
 function jeton(): string | null {
-	const brut = (process.env.BOT_ADMIN_TOKEN ?? "").trim();
-	return brut === "" ? null : brut;
+  const brut = (process.env.BOT_ADMIN_TOKEN ?? "").trim();
+  return brut === "" ? null : brut;
 }
 
 /**
@@ -44,23 +44,20 @@ function jeton(): string | null {
  * port en dur qui n'existe que sur une machine.
  */
 function base(profil: ProfilBotPublic): string {
-	const variable = `BOT_ADMIN_URL_${profil.nom.toUpperCase()}`;
-	const surcharge = (process.env[variable] ?? "").trim();
-	return (surcharge === "" ? `http://127.0.0.1:${profil.portAdmin}` : surcharge).replace(
-		/\/+$/,
-		""
-	);
+  const variable = `BOT_ADMIN_URL_${profil.nom.toUpperCase()}`;
+  const surcharge = (process.env[variable] ?? "").trim();
+  return (surcharge === "" ? `http://127.0.0.1:${profil.portAdmin}` : surcharge).replace(/\/+$/, "");
 }
 
 export class BotInjoignableError extends Error {
-	constructor(
-		readonly profil: NomProfilBot,
-		message: string,
-		readonly statut?: number
-	) {
-		super(message);
-		this.name = "BotInjoignableError";
-	}
+  constructor(
+    readonly profil: NomProfilBot,
+    message: string,
+    readonly statut?: number,
+  ) {
+    super(message);
+    this.name = "BotInjoignableError";
+  }
 }
 
 /**
@@ -70,79 +67,75 @@ export class BotInjoignableError extends Error {
  * tâche de fond — mieux vaut afficher « injoignable » en trois secondes que la
  * vérité en trente.
  */
-export async function appelerBot<T>(
-	profil: NomProfilBot,
-	chemin: string,
-	init: RequestInit = {}
-): Promise<T> {
-	const secret = jeton();
-	if (!secret) {
-		throw new BotInjoignableError(
-			profil,
-			"BOT_ADMIN_TOKEN absent côté site : le serveur d'administration des bots ne peut pas être interrogé."
-		);
-	}
-	const description = PROFILS_BOT[profil];
-	const url = `${base(description)}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
+export async function appelerBot<T>(profil: NomProfilBot, chemin: string, init: RequestInit = {}): Promise<T> {
+  const secret = jeton();
+  if (!secret) {
+    throw new BotInjoignableError(
+      profil,
+      "BOT_ADMIN_TOKEN absent côté site : le serveur d'administration des bots ne peut pas être interrogé.",
+    );
+  }
+  const description = PROFILS_BOT[profil];
+  const url = `${base(description)}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
 
-	let reponse: Response;
-	try {
-		reponse = await fetch(url, {
-			...init,
-			cache: "no-store",
-			headers: { ...init.headers, authorization: `Bearer ${secret}` },
-			signal: AbortSignal.timeout(DELAI_MS),
-		});
-	} catch (erreur) {
-		const raison =
-			erreur instanceof Error
-				? erreur.name === "TimeoutError"
-					? `aucune réponse en ${DELAI_MS} ms`
-					: erreur.message
-				: String(erreur);
-		throw new BotInjoignableError(
-			profil,
-			`${description.titre} est injoignable (unité \`${description.unite}\`) — ${raison}`
-		);
-	}
+  let reponse: Response;
+  try {
+    reponse = await fetch(url, {
+      ...init,
+      cache: "no-store",
+      headers: { ...init.headers, authorization: `Bearer ${secret}` },
+      signal: AbortSignal.timeout(DELAI_MS),
+    });
+  } catch (erreur) {
+    const raison =
+      erreur instanceof Error
+        ? erreur.name === "TimeoutError"
+          ? `aucune réponse en ${DELAI_MS} ms`
+          : erreur.message
+        : String(erreur);
+    throw new BotInjoignableError(
+      profil,
+      `${description.titre} est injoignable (unité \`${description.unite}\`) — ${raison}`,
+    );
+  }
 
-	if (!reponse.ok) {
-		throw new BotInjoignableError(
-			profil,
-			`${description.titre} a répondu ${reponse.status} (unité \`${description.unite}\`)`,
-			reponse.status
-		);
-	}
-	return (await reponse.json()) as T;
+  if (!reponse.ok) {
+    throw new BotInjoignableError(
+      profil,
+      `${description.titre} a répondu ${reponse.status} (unité \`${description.unite}\`)`,
+      reponse.status,
+    );
+  }
+  return (await reponse.json()) as T;
 }
 
 /** État d'un profil, erreur comprise — ne lève jamais. */
 export async function etatDuProfil(profil: NomProfilBot): Promise<EtatBotAgrege> {
-	const description = PROFILS_BOT[profil];
-	const debut = Date.now();
-	try {
-		const etat = await appelerBot<EtatBot>(profil, "/etat");
-		return {
-			profil: description,
-			joignable: true,
-			etat,
-			erreur: null,
-			latenceSondeMs: Date.now() - debut,
-		};
-	} catch (erreur) {
-		return {
-			profil: description,
-			joignable: false,
-			etat: null,
-			erreur: erreur instanceof Error ? erreur.message : String(erreur),
-			latenceSondeMs: Date.now() - debut,
-		};
-	}
+  const description = PROFILS_BOT[profil];
+  const debut = Date.now();
+  try {
+    const etat = await appelerBot<EtatBot>(profil, "/etat");
+    return {
+      profil: description,
+      joignable: true,
+      etat,
+      erreur: null,
+      latenceSondeMs: Date.now() - debut,
+    };
+  } catch (erreur) {
+    return {
+      profil: description,
+      joignable: false,
+      etat: null,
+      erreur: erreur instanceof Error ? erreur.message : String(erreur),
+      latenceSondeMs: Date.now() - debut,
+    };
+  }
 }
 
 /** État des deux profils, sondés en parallèle. */
 export async function etatDesBots(): Promise<EtatBotAgrege[]> {
-	return await Promise.all(TOUS_LES_PROFILS_BOT.map((p) => etatDuProfil(p.nom)));
+  return await Promise.all(TOUS_LES_PROFILS_BOT.map(p => etatDuProfil(p.nom)));
 }
 
 /**
@@ -154,48 +147,45 @@ export async function etatDesBots(): Promise<EtatBotAgrege[]> {
  * que de le masquer par une déduplication silencieuse.
  */
 export async function commandesDesBots(): Promise<{
-	commandes: CommandeBot[];
-	indisponibles: { profil: ProfilBotPublic; erreur: string }[];
+  commandes: CommandeBot[];
+  indisponibles: { profil: ProfilBotPublic; erreur: string }[];
 }> {
-	const commandes: CommandeBot[] = [];
-	const indisponibles: { profil: ProfilBotPublic; erreur: string }[] = [];
+  const commandes: CommandeBot[] = [];
+  const indisponibles: { profil: ProfilBotPublic; erreur: string }[] = [];
 
-	await Promise.all(
-		TOUS_LES_PROFILS_BOT.map(async (description) => {
-			try {
-				const charge = await appelerBot<{ commandes: CommandeBot[] }>(
-					description.nom,
-					"/commandes"
-				);
-				commandes.push(...charge.commandes);
-			} catch (erreur) {
-				indisponibles.push({
-					profil: description,
-					erreur: erreur instanceof Error ? erreur.message : String(erreur),
-				});
-			}
-		})
-	);
+  await Promise.all(
+    TOUS_LES_PROFILS_BOT.map(async description => {
+      try {
+        const charge = await appelerBot<{ commandes: CommandeBot[] }>(description.nom, "/commandes");
+        commandes.push(...charge.commandes);
+      } catch (erreur) {
+        indisponibles.push({
+          profil: description,
+          erreur: erreur instanceof Error ? erreur.message : String(erreur),
+        });
+      }
+    }),
+  );
 
-	commandes.sort((a, b) => a.chemin.localeCompare(b.chemin, "fr"));
-	return { commandes, indisponibles };
+  commandes.sort((a, b) => a.chemin.localeCompare(b.chemin, "fr"));
+  return { commandes, indisponibles };
 }
 
 export interface SalonGuilde {
-	id: string;
-	nom: string;
-	categorie: boolean;
-	parent: string | null;
-	position: number;
+  id: string;
+  nom: string;
+  categorie: boolean;
+  parent: string | null;
+  position: number;
 }
 
 export interface RoleGuilde {
-	id: string;
-	nom: string;
-	couleurHex: string;
-	position: number;
-	gereParIntegration: boolean;
-	membres: number;
+  id: string;
+  nom: string;
+  couleurHex: string;
+  position: number;
+  gereParIntegration: boolean;
+  membres: number;
 }
 
 /**
@@ -208,29 +198,29 @@ export interface RoleGuilde {
  * main, ce qui est précisément la manœuvre qui pose un rôle au mauvais endroit.
  */
 export async function annuaireGuilde(guildId: string): Promise<{
-	salons: SalonGuilde[];
-	roles: RoleGuilde[];
-	source: NomProfilBot | null;
-	erreur: string | null;
+  salons: SalonGuilde[];
+  roles: RoleGuilde[];
+  source: NomProfilBot | null;
+  erreur: string | null;
 }> {
-	let derniere: string | null = null;
-	for (const description of TOUS_LES_PROFILS_BOT) {
-		try {
-			const [salons, roles] = await Promise.all([
-				appelerBot<{ salons: SalonGuilde[] }>(description.nom, `/guildes/${guildId}/salons`),
-				appelerBot<{ roles: RoleGuilde[] }>(description.nom, `/guildes/${guildId}/roles`),
-			]);
-			return {
-				salons: salons.salons,
-				roles: roles.roles,
-				source: description.nom,
-				erreur: null,
-			};
-		} catch (erreur) {
-			derniere = erreur instanceof Error ? erreur.message : String(erreur);
-		}
-	}
-	return { salons: [], roles: [], source: null, erreur: derniere };
+  let derniere: string | null = null;
+  for (const description of TOUS_LES_PROFILS_BOT) {
+    try {
+      const [salons, roles] = await Promise.all([
+        appelerBot<{ salons: SalonGuilde[] }>(description.nom, `/guildes/${guildId}/salons`),
+        appelerBot<{ roles: RoleGuilde[] }>(description.nom, `/guildes/${guildId}/roles`),
+      ]);
+      return {
+        salons: salons.salons,
+        roles: roles.roles,
+        source: description.nom,
+        erreur: null,
+      };
+    } catch (erreur) {
+      derniere = erreur instanceof Error ? erreur.message : String(erreur);
+    }
+  }
+  return { salons: [], roles: [], source: null, erreur: derniere };
 }
 
 /**
@@ -245,16 +235,16 @@ export async function annuaireGuilde(guildId: string): Promise<{
  * l'interface puisse dire « le bot Azalée était arrêté » plutôt que de mentir.
  */
 export async function invaliderReglagesBots(guildId: string): Promise<NomProfilBot[]> {
-	const prevenus: NomProfilBot[] = [];
-	await Promise.all(
-		TOUS_LES_PROFILS_BOT.map(async (description) => {
-			try {
-				await appelerBot(description.nom, `/reglages/${guildId}/invalider`, { method: "POST" });
-				prevenus.push(description.nom);
-			} catch {
-				// Un bot arrêté n'a pas de cache à vider.
-			}
-		})
-	);
-	return prevenus;
+  const prevenus: NomProfilBot[] = [];
+  await Promise.all(
+    TOUS_LES_PROFILS_BOT.map(async description => {
+      try {
+        await appelerBot(description.nom, `/reglages/${guildId}/invalider`, { method: "POST" });
+        prevenus.push(description.nom);
+      } catch {
+        // Un bot arrêté n'a pas de cache à vider.
+      }
+    }),
+  );
+  return prevenus;
 }

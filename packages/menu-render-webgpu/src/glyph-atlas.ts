@@ -123,8 +123,7 @@ const sjisDecoder = new TextDecoder("shift_jis", { fatal: false });
  * pour ne pas créer d'entrée fantôme dans la map.
  */
 export function sjisCodeToUnicode(code: number): number | null {
-  const bytes =
-    code < 0x100 ? new Uint8Array([code]) : new Uint8Array([(code >> 8) & 0xff, code & 0xff]);
+  const bytes = code < 0x100 ? new Uint8Array([code]) : new Uint8Array([(code >> 8) & 0xff, code & 0xff]);
   const s = sjisDecoder.decode(bytes);
   if (s.length === 0) {
     return null;
@@ -147,7 +146,7 @@ export function sjisCodeToUnicode(code: number): number | null {
  * Pur et déterministe.
  */
 export function decodeFontMetrics(raw: RawFontMetrics): GlyphAtlas {
-  const inf = raw.Entries.find((e) => e.Name === "INF_0");
+  const inf = raw.Entries.find(e => e.Name === "INF_0");
   if (!inf) {
     throw new Error("font_metrics: entrée INF_0 absente");
   }

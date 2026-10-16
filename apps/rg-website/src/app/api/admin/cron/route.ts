@@ -14,19 +14,15 @@ export const dynamic = "force-dynamic";
  * information qui s'affiche sur la même page.
  */
 export async function GET() {
-	const garde = await requireApiAdmin();
-	if (!garde.ok) {
-		return garde.response;
-	}
+  const garde = await requireApiAdmin();
+  if (!garde.ok) {
+    return garde.response;
+  }
 
-	const [cron, telemetrie, historique] = await Promise.all([
-		etatDuCron(),
-		telemetrieDiscord(),
-		historiqueDuCron(),
-	]);
+  const [cron, telemetrie, historique] = await Promise.all([etatDuCron(), telemetrieDiscord(), historiqueDuCron()]);
 
-	return NextResponse.json(
-		{ cron, historique, telemetrie, role: garde.data.role },
-		{ headers: { "cache-control": "private, no-store" } }
-	);
+  return NextResponse.json(
+    { cron, historique, telemetrie, role: garde.data.role },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }

@@ -44,7 +44,7 @@ export function TournamentTable({ tournaments, loading = false, className }: Tou
   if (loading) {
     return (
       <output aria-label="Chargement des tournois" className="space-y-3">
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4].map(i => (
           <Skeleton key={i} className="h-24 w-full rounded-xl" />
         ))}
       </output>
@@ -63,17 +63,12 @@ export function TournamentTable({ tournaments, loading = false, className }: Tou
   return (
     <div className={className}>
       <ul className="grid gap-4 lg:hidden" aria-label="Tournois">
-        {tournaments.map((t) => (
-          <li
-            key={t.id}
-            className="rounded-2xl border border-outline/30 bg-surface p-4 text-lg text-on-surface"
-          >
+        {tournaments.map(t => (
+          <li key={t.id} className="rounded-2xl border border-outline/30 bg-surface p-4 text-lg text-on-surface">
             <h2 className="font-bold leading-snug">{t.name}</h2>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge
-                variant={
-                  t.status === "Finished" || t.status === "Canceled" ? "secondary" : "default"
-                }
+                variant={t.status === "Finished" || t.status === "Canceled" ? "secondary" : "default"}
                 className="text-lg"
               >
                 {statusLabel(t.status)}
@@ -121,7 +116,7 @@ export function TournamentTable({ tournaments, loading = false, className }: Tou
             </tr>
           </thead>
           <tbody className="divide-y divide-outline/20 text-on-surface">
-            {tournaments.map((t) => (
+            {tournaments.map(t => (
               <tr key={t.id} className="hover:bg-surface-variant/20">
                 <th scope="row" className="px-4 py-4 font-semibold">
                   <Link
@@ -133,15 +128,11 @@ export function TournamentTable({ tournaments, loading = false, className }: Tou
                   </Link>
                 </th>
                 <td className="px-4 py-4">{t.type === "TOURNAMENT" ? "Tournoi" : t.type}</td>
-                <td className="max-w-sm px-4 py-4 text-on-surface-variant">
-                  {summary(t.description)}
-                </td>
+                <td className="max-w-sm px-4 py-4 text-on-surface-variant">{summary(t.description)}</td>
                 <td className="px-4 py-4 whitespace-nowrap">{publicationDate(t.createdAt)}</td>
                 <td className="px-4 py-4">
                   <Badge
-                    variant={
-                      t.status === "Finished" || t.status === "Canceled" ? "secondary" : "default"
-                    }
+                    variant={t.status === "Finished" || t.status === "Canceled" ? "secondary" : "default"}
                     className="text-lg whitespace-nowrap"
                   >
                     {statusLabel(t.status)}

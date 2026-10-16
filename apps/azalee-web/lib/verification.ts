@@ -22,7 +22,7 @@ export const verifier = {
     // Let's mark it as issue.
     if (!char.descriptions?.fr) issues.push("Description française manquante");
 
-    const hasStats = char.variants.some((v) => v.stats?.lv99?.kick > 0);
+    const hasStats = char.variants.some(v => v.stats?.lv99?.kick > 0);
     if (!hasStats) issues.push("Statistiques manquantes");
 
     return { isValid: issues.length === 0, issues };

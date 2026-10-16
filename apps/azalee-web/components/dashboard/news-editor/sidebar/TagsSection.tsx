@@ -29,8 +29,8 @@ export function TagsSection({ tags, onTagsChange }: TagsSectionProps) {
         const { getPopularTags } = await import("@/app/actions/articles");
         const popular = await getPopularTags(50);
         const filtered = popular
-          .map((t) => t.tag)
-          .filter((t) => t.toLowerCase().includes(query.toLowerCase()) && !tags.includes(t))
+          .map(t => t.tag)
+          .filter(t => t.toLowerCase().includes(query.toLowerCase()) && !tags.includes(t))
           .slice(0, 5);
         setSuggestions(filtered);
       } catch {
@@ -73,7 +73,7 @@ export function TagsSection({ tags, onTagsChange }: TagsSectionProps) {
   };
 
   const removeTag = (tag: string) => {
-    onTagsChange(tags.filter((t) => t !== tag));
+    onTagsChange(tags.filter(t => t !== tag));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -93,7 +93,7 @@ export function TagsSection({ tags, onTagsChange }: TagsSectionProps) {
       {/* Tags chips */}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
+          {tags.map(tag => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary-container text-on-secondary-container text-xs font-medium"
@@ -118,7 +118,7 @@ export function TagsSection({ tags, onTagsChange }: TagsSectionProps) {
           <Input
             ref={inputRef}
             value={inputValue}
-            onChange={(e) => {
+            onChange={e => {
               setInputValue(e.target.value);
               setShowSuggestions(true);
             }}
@@ -135,7 +135,7 @@ export function TagsSection({ tags, onTagsChange }: TagsSectionProps) {
               ref={suggestionsRef}
               className="absolute z-10 top-full mt-1 w-full bg-surface-container-high rounded-xl shadow-lg border border-outline-variant/20 overflow-hidden"
             >
-              {suggestions.map((s) => (
+              {suggestions.map(s => (
                 <button
                   key={s}
                   type="button"

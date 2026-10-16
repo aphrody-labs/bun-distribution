@@ -156,7 +156,7 @@ export function useAuthForm(isSignUp: boolean = false) {
    * Marquer un champ comme "touché"
    */
   const handleBlur = useCallback((field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
+    setTouched(prev => ({ ...prev, [field]: true }));
   }, []);
 
   /**
@@ -172,10 +172,7 @@ export function useAuthForm(isSignUp: boolean = false) {
     setErrors({});
   }, []);
 
-  const passwordStrength = useMemo(
-    () => evaluatePasswordStrength(password),
-    [password, evaluatePasswordStrength],
-  );
+  const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password, evaluatePasswordStrength]);
 
   const isFormValid = useMemo(() => {
     const validation: FormValidation = {
@@ -184,12 +181,7 @@ export function useAuthForm(isSignUp: boolean = false) {
       password: password.length >= 8,
       passwordsMatch: isSignUp ? password === confirmPassword : true,
     };
-    return (
-      validation.email &&
-      validation.password &&
-      validation.confirmPassword &&
-      validation.passwordsMatch
-    );
+    return validation.email && validation.password && validation.confirmPassword && validation.passwordsMatch;
   }, [email, password, confirmPassword, isSignUp, validateEmail]);
 
   return {

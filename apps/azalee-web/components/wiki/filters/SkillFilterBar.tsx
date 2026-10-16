@@ -135,7 +135,7 @@ export function SkillFilterBar({
     <div className="space-y-4">
       {/* Category Chips */}
       <div className="flex flex-wrap gap-2">
-        {categories.map((f) => {
+        {categories.map(f => {
           const isActive = currentCategory === f.value;
           return (
             <button
@@ -241,7 +241,7 @@ export function SkillFilterBar({
 
         {/* Element Chips */}
         <div className="flex flex-wrap justify-end gap-2">
-          {elements.map((f) => {
+          {elements.map(f => {
             const isActive = currentElement === f.value;
             return (
               <button
@@ -287,13 +287,11 @@ export function SkillFilterBar({
             min={POWER_MIN}
             max={POWER_MAX}
             step={5}
-            onValueChange={(v) => setPowerRange(v as [number, number])}
+            onValueChange={v => setPowerRange(v as [number, number])}
             onValueCommit={commitPowerRange}
             className="flex-1"
           />
-          <span className="text-xs font-mono font-bold text-on-surface-variant tabular-nums w-8">
-            {powerRange[1]}
-          </span>
+          <span className="text-xs font-mono font-bold text-on-surface-variant tabular-nums w-8">{powerRange[1]}</span>
         </div>
 
         {isPowerFiltered && (

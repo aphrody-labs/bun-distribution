@@ -135,10 +135,7 @@ function parseContent(entries: ConfigNode[]): TeamBuildDatabase {
           currentInfo = { count: vars.length > 0 ? parseIntVar(vars[0]) : 0 };
         } else if (child.name.startsWith("TEAM_BUILD_EFFECT_INFO_REF_EFFECT_DATA_")) {
           if (currentInfo && child.variables.length >= 2) {
-            currentInfo.effectDataRef = [
-              parseIntVar(child.variables[0]),
-              parseIntVar(child.variables[1]),
-            ];
+            currentInfo.effectDataRef = [parseIntVar(child.variables[0]), parseIntVar(child.variables[1])];
           }
         }
       }
@@ -188,24 +185,15 @@ function parseContent(entries: ConfigNode[]): TeamBuildDatabase {
           };
         } else if (child.name.startsWith("TEAM_BUILD_INFO_REF_UP_DATA_")) {
           if (currentBuild && child.variables.length >= 2) {
-            currentBuild.upDataRef = [
-              parseIntVar(child.variables[0]),
-              parseIntVar(child.variables[1]),
-            ];
+            currentBuild.upDataRef = [parseIntVar(child.variables[0]), parseIntVar(child.variables[1])];
           }
         } else if (child.name.startsWith("TEAM_BUILD_INFO_REF_DOWN_DATA_")) {
           if (currentBuild && child.variables.length >= 2) {
-            currentBuild.downDataRef = [
-              parseIntVar(child.variables[0]),
-              parseIntVar(child.variables[1]),
-            ];
+            currentBuild.downDataRef = [parseIntVar(child.variables[0]), parseIntVar(child.variables[1])];
           }
         } else if (child.name.startsWith("TEAM_BUILD_INFO_REF_EFFECT_INFO_")) {
           if (currentBuild && child.variables.length >= 2) {
-            currentBuild.effectInfoRef = [
-              parseIntVar(child.variables[0]),
-              parseIntVar(child.variables[1]),
-            ];
+            currentBuild.effectInfoRef = [parseIntVar(child.variables[0]), parseIntVar(child.variables[1])];
           }
         }
       }
@@ -224,15 +212,13 @@ function findTeamBuildConfigFile(dir: string): string | null {
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir);
   const configFile = files
-    .filter((f) => f.startsWith("team_build_config_") && f.endsWith(".cfg.bin.json"))
+    .filter(f => f.startsWith("team_build_config_") && f.endsWith(".cfg.bin.json"))
     .sort()
     .pop();
   return configFile ? join(dir, configFile) : null;
 }
 
-export async function loadTeamBuildConfigAsync(
-  dataPath: string,
-): Promise<TeamBuildDatabase | null> {
+export async function loadTeamBuildConfigAsync(dataPath: string): Promise<TeamBuildDatabase | null> {
   const skillDir = join(dataPath, "common", "gamedata", "skill");
   const configPath = findTeamBuildConfigFile(skillDir);
 

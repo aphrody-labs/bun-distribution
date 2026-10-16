@@ -24,10 +24,7 @@ function fixture() {
       },
     }),
   );
-  writeFileSync(
-    join(shared, "packages/infra/workspace/package.json"),
-    '{"name":"@aphrody/workspace"}',
-  );
+  writeFileSync(join(shared, "packages/infra/workspace/package.json"), '{"name":"@aphrody/workspace"}');
   writeFileSync(join(shared, "packages/infra/workspace/src/ops.ts"), "");
   return { root, shared, directory };
 }

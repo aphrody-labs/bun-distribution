@@ -48,9 +48,9 @@ export type { RgAdmin };
  * de tout ça n'a à rester dans l'historique d'un salon.
  */
 export async function differerEnPrive(interaction: RepliableInteraction): Promise<void> {
-	if (!interaction.deferred && !interaction.replied) {
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-	}
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  }
 }
 
 /**
@@ -61,21 +61,19 @@ export async function differerEnPrive(interaction: RepliableInteraction): Promis
  *          revenir.
  */
 export async function exigerDroits(
-	interaction: RepliableInteraction,
-	options: { strict?: boolean } = {}
+  interaction: RepliableInteraction,
+  options: { strict?: boolean } = {},
 ): Promise<RgAdmin | null> {
-	try {
-		return options.strict
-			? await requireRgAdminStrict(interaction.user.id)
-			: await requireRgAdmin(interaction.user.id);
-	} catch (err) {
-		const message =
-			err instanceof NotAdminError
-				? err.message
-				: "Impossible de vérifier tes droits : la base des profils n'a pas répondu.";
-		await repondre(interaction, accesRefuse(message));
-		return null;
-	}
+  try {
+    return options.strict ? await requireRgAdminStrict(interaction.user.id) : await requireRgAdmin(interaction.user.id);
+  } catch (err) {
+    const message =
+      err instanceof NotAdminError
+        ? err.message
+        : "Impossible de vérifier tes droits : la base des profils n'a pas répondu.";
+    await repondre(interaction, accesRefuse(message));
+    return null;
+  }
 }
 
 /**
@@ -88,18 +86,18 @@ export async function exigerDroits(
  * l'autre fait perdre une demi-heure à qui diagnostique.
  */
 export function messagePanne(err: unknown): string {
-	if (err instanceof CronInjoignableError) {
-		return (
-			`Le démon de tâches est injoignable (socket \`${cheminSocketCron()}\`, unité ` +
-			"`rg-cron.service`). Ce n'est pas la cible qui est en panne : c'est notre pont. " +
-			"La socket n'existe qu'après un redémarrage du démon avec le pont branché — " +
-			"`sudo systemctl restart rg-cron.service`."
-		);
-	}
-	if (err instanceof ServiceIndisponibleError) {
-		return err.messageLisible;
-	}
-	return err instanceof Error ? err.message : String(err);
+  if (err instanceof CronInjoignableError) {
+    return (
+      `Le démon de tâches est injoignable (socket \`${cheminSocketCron()}\`, unité ` +
+      "`rg-cron.service`). Ce n'est pas la cible qui est en panne : c'est notre pont. " +
+      "La socket n'existe qu'après un redémarrage du démon avec le pont branché — " +
+      "`sudo systemctl restart rg-cron.service`."
+    );
+  }
+  if (err instanceof ServiceIndisponibleError) {
+    return err.messageLisible;
+  }
+  return err instanceof Error ? err.message : String(err);
 }
 
 /**
@@ -111,17 +109,17 @@ export function messagePanne(err: unknown): string {
  * plus tard, corriger sa saisie, ou renoncer parce que l'hôte ne peut pas.
  */
 export function expliquerRefusScrape(code: unknown, erreur: unknown): string {
-	const message = typeof erreur === "string" && erreur.length > 0 ? erreur : "Échec du scraping.";
-	const conseils: Record<string, string> = {
-		requete_invalide: "Corrige la saisie : l'adresse doit être publique, en http ou https.",
-		occupe: "Un scraping du même type est déjà en vol. Réessaie dans quelques secondes.",
-		trop_de_requetes: "Le plafond par minute est atteint. Réessaie dans une minute.",
-		delai_depasse: "La cible n'a pas rendu la main à temps.",
-		moteur_indisponible: "Le moteur nécessaire n'est pas exploitable depuis ce serveur.",
-		introuvable: "La ressource demandée n'existe pas.",
-		erreur_scraping: "",
-		verbe_inconnu: "Le démon ne connaît pas ce verbe : il tourne sur une version antérieure.",
-	};
-	const conseil = typeof code === "string" ? (conseils[code] ?? "") : "";
-	return conseil.length > 0 ? `${message}\n${conseil}` : message;
+  const message = typeof erreur === "string" && erreur.length > 0 ? erreur : "Échec du scraping.";
+  const conseils: Record<string, string> = {
+    requete_invalide: "Corrige la saisie : l'adresse doit être publique, en http ou https.",
+    occupe: "Un scraping du même type est déjà en vol. Réessaie dans quelques secondes.",
+    trop_de_requetes: "Le plafond par minute est atteint. Réessaie dans une minute.",
+    delai_depasse: "La cible n'a pas rendu la main à temps.",
+    moteur_indisponible: "Le moteur nécessaire n'est pas exploitable depuis ce serveur.",
+    introuvable: "La ressource demandée n'existe pas.",
+    erreur_scraping: "",
+    verbe_inconnu: "Le démon ne connaît pas ce verbe : il tourne sur une version antérieure.",
+  };
+  const conseil = typeof code === "string" ? (conseils[code] ?? "") : "";
+  return conseil.length > 0 ? `${message}\n${conseil}` : message;
 }

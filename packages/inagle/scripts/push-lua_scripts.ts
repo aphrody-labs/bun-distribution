@@ -12,7 +12,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importLuaScripts(null, db)
   .then(() => db.close())
-  .catch((err) => {
+  .catch(err => {
     console.error("Erreur fatale push-lua_scripts:", err);
     process.exit(1);
   });

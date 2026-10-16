@@ -44,13 +44,9 @@ export default async function CapsulePage({
   const typeFilter = Number.isFinite(rawType) ? rawType : undefined;
 
   const capsules =
-    tab === "capsules"
-      ? await getCapsuleList({ limit: ITEMS_PER_PAGE, page, pool: poolFilter, q })
-      : null;
+    tab === "capsules" ? await getCapsuleList({ limit: ITEMS_PER_PAGE, page, pool: poolFilter, q }) : null;
   const costumes =
-    tab === "costumes"
-      ? await getCostumeList({ limit: ITEMS_PER_PAGE, page, q, type: typeFilter })
-      : null;
+    tab === "costumes" ? await getCostumeList({ limit: ITEMS_PER_PAGE, page, q, type: typeFilter }) : null;
 
   const total = tab === "capsules" ? (capsules?.total ?? 0) : (costumes?.total ?? 0);
 
@@ -85,10 +81,7 @@ export default async function CapsulePage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
 
       {/* En-tête */}
       <div className="space-y-1">
@@ -131,11 +124,7 @@ export default async function CapsulePage({
       </div>
       {/* Recherche */}
       <WikiSearchToolbar
-        placeholder={
-          tab === "capsules"
-            ? "Rechercher un lot (hash)..."
-            : "Rechercher un costume (index/hash)..."
-        }
+        placeholder={tab === "capsules" ? "Rechercher un lot (hash)..." : "Rechercher un costume (index/hash)..."}
         showFilters={false}
       />
 
@@ -165,7 +154,7 @@ export default async function CapsulePage({
               >
                 Tous les pools
               </Link>
-              {capsules.pools.map((p) => (
+              {capsules.pools.map(p => (
                 <Link
                   key={p.ref}
                   href={tabHref("capsules", { pool: p.ref })}
@@ -185,7 +174,7 @@ export default async function CapsulePage({
 
           {capsules.data.length > 0 ? (
             <FadeInStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {capsules.data.map((prize) => (
+              {capsules.data.map(prize => (
                 <FadeInItem key={prize.id}>
                   <CapsuleCard prize={prize} />
                 </FadeInItem>
@@ -214,7 +203,7 @@ export default async function CapsulePage({
               >
                 Tous les types
               </Link>
-              {costumes.types.map((t) => (
+              {costumes.types.map(t => (
                 <Link
                   key={t.type}
                   href={tabHref("costumes", { type: String(t.type) })}
@@ -234,7 +223,7 @@ export default async function CapsulePage({
 
           {costumes.data.length > 0 ? (
             <FadeInStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {costumes.data.map((costume) => (
+              {costumes.data.map(costume => (
                 <FadeInItem key={costume.id}>
                   <CostumeCard costume={costume} />
                 </FadeInItem>
@@ -250,16 +239,13 @@ export default async function CapsulePage({
       <div className="flex items-start gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-3 text-xs text-on-surface-variant">
         <Info size={14} className="mt-0.5 shrink-0 opacity-60" aria-hidden="true" />
         <p>
-          Données extraites directement du jeu (config gacha & modèles de costumes). Les contenus de
-          lots et les modèles sont référencés par identifiants internes (hash) ; ils sont affichés
-          tels quels, sans interprétation inventée.
+          Données extraites directement du jeu (config gacha & modèles de costumes). Les contenus de lots et les modèles
+          sont référencés par identifiants internes (hash) ; ils sont affichés tels quels, sans interprétation inventée.
         </p>
       </div>
 
       {/* Pagination */}
-      {total > ITEMS_PER_PAGE && (
-        <WikiPagination currentPage={page} totalItems={total} itemsPerPage={ITEMS_PER_PAGE} />
-      )}
+      {total > ITEMS_PER_PAGE && <WikiPagination currentPage={page} totalItems={total} itemsPerPage={ITEMS_PER_PAGE} />}
     </div>
   );
 }
@@ -267,11 +253,7 @@ export default async function CapsulePage({
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="text-center py-16">
-      <SearchX
-        size={48}
-        className="text-on-surface-variant/30 mb-4 block mx-auto"
-        aria-hidden="true"
-      />
+      <SearchX size={48} className="text-on-surface-variant/30 mb-4 block mx-auto" aria-hidden="true" />
       <p className="text-on-surface-variant">{label}</p>
     </div>
   );

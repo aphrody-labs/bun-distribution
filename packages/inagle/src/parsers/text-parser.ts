@@ -165,10 +165,7 @@ export function loadTextFile(type: GameTextType, locale: Locale): Map<string, st
 
   for (const entry of data.entries) {
     // Support all TEXT_INFO_BEGIN_x and NOUN_INFO_BEGIN_x formats
-    if (
-      (entry.name.startsWith("TEXT_INFO_BEGIN_") || entry.name.startsWith("NOUN_INFO_BEGIN_")) &&
-      entry.children
-    ) {
+    if ((entry.name.startsWith("TEXT_INFO_BEGIN_") || entry.name.startsWith("NOUN_INFO_BEGIN_")) && entry.children) {
       for (const child of entry.children) {
         if (child.name.startsWith("TEXT_INFO_") || child.name.startsWith("NOUN_INFO_")) {
           const parsed = parseTextInfoNode(child);
@@ -201,10 +198,7 @@ export function loadTextList(type: GameTextType, locale: Locale): string[] {
   const list: string[] = [];
 
   for (const entry of data.entries) {
-    if (
-      (entry.name === "TEXT_INFO_BEGIN_0" || entry.name === "NOUN_INFO_BEGIN_0") &&
-      entry.children
-    ) {
+    if ((entry.name === "TEXT_INFO_BEGIN_0" || entry.name === "NOUN_INFO_BEGIN_0") && entry.children) {
       // Sort children by name suffix to ensure correct order?
       // Usually they are already sorted TEXT_INFO_0, TEXT_INFO_1...
       // But let's trust the array order for performance, or better:
@@ -269,10 +263,7 @@ export function buildTextMaps(type: GameTextType): LocalizedTextMaps {
 /**
  * Get localized text for a hash
  */
-export function getLocalizedText(
-  maps: LocalizedTextMaps,
-  hashId: string,
-): { en?: string; fr?: string; ja?: string } {
+export function getLocalizedText(maps: LocalizedTextMaps, hashId: string): { en?: string; fr?: string; ja?: string } {
   return {
     en: maps.maps.get("en")?.get(hashId),
     fr: maps.maps.get("fr")?.get(hashId),
@@ -322,10 +313,7 @@ export function buildTextDatabase(): TextDatabase {
 /**
  * Asynchronously load and parse a text file for a locale
  */
-export async function loadTextFileAsync(
-  type: GameTextType,
-  locale: Locale,
-): Promise<Map<string, string>> {
+export async function loadTextFileAsync(type: GameTextType, locale: Locale): Promise<Map<string, string>> {
   const textFileType = TEXT_FILE_NAMES[type];
   const filename = `${textFileType}.cfg.bin.json`;
   const filePath = join(DATA_ROOT, "common/text", locale, filename);
@@ -342,10 +330,7 @@ export function parseTextDocument(data: { entries: ConfigNode[] } | null): Map<s
   if (!data) return texts;
 
   for (const entry of data.entries) {
-    if (
-      (entry.name.startsWith("TEXT_INFO_BEGIN_") || entry.name.startsWith("NOUN_INFO_BEGIN_")) &&
-      entry.children
-    ) {
+    if ((entry.name.startsWith("TEXT_INFO_BEGIN_") || entry.name.startsWith("NOUN_INFO_BEGIN_")) && entry.children) {
       for (const child of entry.children) {
         if (child.name.startsWith("TEXT_INFO_") || child.name.startsWith("NOUN_INFO_")) {
           const parsed = parseTextInfoNode(child);
@@ -374,10 +359,7 @@ export async function loadTextListAsync(type: GameTextType, locale: Locale): Pro
   if (!data) return list;
 
   for (const entry of data.entries) {
-    if (
-      (entry.name === "TEXT_INFO_BEGIN_0" || entry.name === "NOUN_INFO_BEGIN_0") &&
-      entry.children
-    ) {
+    if ((entry.name === "TEXT_INFO_BEGIN_0" || entry.name === "NOUN_INFO_BEGIN_0") && entry.children) {
       for (const child of entry.children) {
         let text = "";
         let index = -1;
@@ -414,9 +396,7 @@ export async function buildTextMapsAsync(type: GameTextType): Promise<LocalizedT
   const maps = new Map<Locale, Map<string, string>>();
 
   // Load all in parallel
-  const results = await Promise.all(
-    locales.map(async (loc) => ({ loc, map: await loadTextFileAsync(type, loc) })),
-  );
+  const results = await Promise.all(locales.map(async loc => ({ loc, map: await loadTextFileAsync(type, loc) })));
 
   let totalEntries = 0;
   for (const { loc, map } of results) {

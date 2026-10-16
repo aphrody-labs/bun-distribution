@@ -10,25 +10,25 @@ import { getPgPool } from "@/lib/db/pg";
 // fonctionnelle tout du long.
 
 interface ProfileRow {
-	id: string;
-	username: string | null;
-	full_name: string | null;
-	avatar_url: string | null;
-	role: string | null;
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
 }
 
 interface ArticleRow {
-	id: string;
-	title: string;
-	slug: string;
-	excerpt: string | null;
-	created_at: string | null;
-	featured_image_url: string | null;
-	author_id: string | null;
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  created_at: string | null;
+  featured_image_url: string | null;
+  author_id: string | null;
 }
 
 interface ArticleRowWithCount extends ArticleRow {
-	full_count: string;
+  full_count: string;
 }
 
 /**
@@ -36,24 +36,24 @@ interface ArticleRowWithCount extends ArticleRow {
  * Utilise React Cache pour éviter les requêtes dupliquées.
  */
 export const getUserProfile = cache(async (userId: string) => {
-	try {
-		const pool = getPgPool();
-		const { rows } = await pool.query<ProfileRow>(
-			"SELECT id, username, full_name, avatar_url, role FROM profiles WHERE id = $1 LIMIT 1",
-			[userId]
-		);
+  try {
+    const pool = getPgPool();
+    const { rows } = await pool.query<ProfileRow>(
+      "SELECT id, username, full_name, avatar_url, role FROM profiles WHERE id = $1 LIMIT 1",
+      [userId],
+    );
 
-		const profile = rows[0];
-		if (rows.length !== 1 || !profile) {
-			console.error("Error fetching profile:", new Error("Profile not found"));
-			return null;
-		}
+    const profile = rows[0];
+    if (rows.length !== 1 || !profile) {
+      console.error("Error fetching profile:", new Error("Profile not found"));
+      return null;
+    }
 
-		return profile;
-	} catch (error) {
-		console.error("Error fetching profile:", error);
-		return null;
-	}
+    return profile;
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    return null;
+  }
 });
 
 /**
@@ -61,30 +61,30 @@ export const getUserProfile = cache(async (userId: string) => {
  * Optimisé pour ne récupérer que les champs nécessaires pour une liste.
  */
 export const getPublicArticles = async (page = 1, limit = 10) => {
-	const from = (page - 1) * limit;
+  const from = (page - 1) * limit;
 
-	try {
-		const pool = getPgPool();
-		const { rows } = await pool.query<ArticleRowWithCount>(
-			`SELECT id, title, slug, excerpt, created_at, featured_image_url, author_id,
+  try {
+    const pool = getPgPool();
+    const { rows } = await pool.query<ArticleRowWithCount>(
+      `SELECT id, title, slug, excerpt, created_at, featured_image_url, author_id,
 				count(*) OVER() AS full_count
 			FROM articles
 			WHERE status = $1 AND app = $2
 			ORDER BY created_at DESC
 			LIMIT $3 OFFSET $4`,
-			["published", "website", limit, from]
-		);
+      ["published", "website", limit, from],
+    );
 
-		if (rows.length === 0) {
-			return { count: 0, data: [] as ArticleRow[] };
-		}
+    if (rows.length === 0) {
+      return { count: 0, data: [] as ArticleRow[] };
+    }
 
-		const count = Number(rows[0]?.full_count ?? 0);
-		const data: ArticleRow[] = rows.map(({ full_count: _full_count, ...row }) => row);
+    const count = Number(rows[0]?.full_count ?? 0);
+    const data: ArticleRow[] = rows.map(({ full_count: _full_count, ...row }) => row);
 
-		return { count, data };
-	} catch (error) {
-		console.error("Error fetching articles:", error);
-		return { count: 0, data: [] as ArticleRow[] };
-	}
+    return { count, data };
+  } catch (error) {
+    console.error("Error fetching articles:", error);
+    return { count: 0, data: [] as ArticleRow[] };
+  }
 };

@@ -15,7 +15,9 @@ console.log(`Total skills enregistrés : ${totalSkills.count}`);
 console.log("Par catégorie :", categories);
 console.log("Par élément :", elements);
 
-const sampleSkills = db.query(
-  "SELECT id, internal_code, name_fr, name_ja, category, element, tp_cost, power_min, power_max, video_url FROM inagle_skills WHERE video_url IS NOT NULL LIMIT 5"
-).all();
+const sampleSkills = db
+  .query(
+    "SELECT id, internal_code, name_fr, name_ja, category, element, tp_cost, power_min, power_max, video_url FROM inagle_skills WHERE video_url IS NOT NULL LIMIT 5",
+  )
+  .all();
 console.log("\nExemples de skills avec vidéo :", sampleSkills);

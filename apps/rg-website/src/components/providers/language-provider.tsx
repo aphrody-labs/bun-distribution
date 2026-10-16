@@ -75,18 +75,18 @@ export function LanguageProvider({
 
     const controller = new AbortController();
     fetch(`/locales/${language}.json`, { signal: controller.signal })
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error(`Locale ${language}: HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         setDictionary({
           ...(frDictionary as Record<string, string>),
           ...(data as Record<string, string>),
         });
         setIsLoading(false);
       })
-      .catch((error) => {
+      .catch(error => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to load locale", error);
         setDictionary(frDictionary as Record<string, string>);

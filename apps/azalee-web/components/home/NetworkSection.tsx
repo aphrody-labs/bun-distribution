@@ -22,9 +22,8 @@ export function NetworkSection() {
           Le réseau Rose Griffon
         </h2>
         <p className="mt-2 text-sm md:text-base text-on-surface-variant max-w-2xl">
-          Azalée fait partie de Rose Griffon, l'association de la communauté Inazuma Eleven en
-          France. Découvrez le site de l'association et Achilléa, son pôle compétitif (clans,
-          tournois et matchs classés).
+          Azalée fait partie de Rose Griffon, l'association de la communauté Inazuma Eleven en France. Découvrez le site
+          de l'association et Achilléa, son pôle compétitif (clans, tournois et matchs classés).
         </p>
       </div>
 

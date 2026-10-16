@@ -18,5 +18,5 @@ export const PRECOMPRESSION_EXTENSIONS = [
 ] as const;
 
 export function isPrecompressionTarget(path: string): boolean {
-  return PRECOMPRESSION_EXTENSIONS.some((extension) => path.endsWith(extension));
+  return PRECOMPRESSION_EXTENSIONS.some(extension => path.endsWith(extension));
 }

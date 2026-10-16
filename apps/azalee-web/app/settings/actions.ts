@@ -25,9 +25,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // mérités et le refus des URL `javascript:`.
 const profileSchema = SchemaProfilPublic;
 
-export async function updateProfile(
-  values: z.input<typeof profileSchema>,
-): Promise<{ error?: string }> {
+export async function updateProfile(values: z.input<typeof profileSchema>): Promise<{ error?: string }> {
   const session = await getServerSession();
   if (!session?.user) {
     return { error: "Session expirée — reconnecte-toi." };

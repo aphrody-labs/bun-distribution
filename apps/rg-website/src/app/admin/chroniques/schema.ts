@@ -3,4 +3,3 @@ import type { ArticleInput as SharedArticleInput } from "@rosegriffon/types/sche
 
 export const ArticleSchema = articleSchema;
 export type ArticleInput = SharedArticleInput;
-

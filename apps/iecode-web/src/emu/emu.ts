@@ -32,13 +32,8 @@ class FpsLimiter {
 
     clearTimeout(this.timeoutId);
     this.timeout = limit === null ? 0 : 1000 / limit;
-    this.expectedTimeoutTime = limit
-      ? (this.expectedTimeoutTime || performance.now()) + this.timeout
-      : 0;
-    this.timeoutId = setTimeout(
-      this.handleTimeoutCallback,
-      Math.max(0, this.expectedTimeoutTime - performance.now()),
-    );
+    this.expectedTimeoutTime = limit ? (this.expectedTimeoutTime || performance.now()) + this.timeout : 0;
+    this.timeoutId = setTimeout(this.handleTimeoutCallback, Math.max(0, this.expectedTimeoutTime - performance.now()));
   }
 
   handleTimeout() {
@@ -196,11 +191,11 @@ class FpsLimiter {
   // Startup awaits the GPU adapter. Input/save/play messages must retain
   // their order and cannot enter Wasm while its async mutable borrow is live.
   let messageQueue = Promise.resolve();
-  self.onmessage = (event) => {
+  self.onmessage = event => {
     const message = event.data as UiToEmu.Message;
     messageQueue = messageQueue
       .then(() => handleMessage(message))
-      .catch((error) => {
+      .catch(error => {
         playing = false;
         console.error("Emulator worker failed", error);
       });

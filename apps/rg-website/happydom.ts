@@ -33,22 +33,22 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
  * happy-dom en a besoin pour ses propres formulaires (`new FormData(form)`).
  */
 const PRIMITIVES_RESEAU = [
-	"fetch",
-	"Headers",
-	"Request",
-	"Response",
-	// `AbortController`/`AbortSignal` font partie de la même famille : happy-dom les remplace
-	// aussi, et un signal happy-dom passé au `Request` NATIF est refusé — « Failed to construct
-	// 'Request': signal is not of type AbortSignal ». Le symptôme apparaissait loin de sa cause :
-	// six tests de `packages/azalee` échouaient sur un appel réseau bouchonné, jamais sur le DOM.
-	"AbortController",
-	"AbortSignal",
+  "fetch",
+  "Headers",
+  "Request",
+  "Response",
+  // `AbortController`/`AbortSignal` font partie de la même famille : happy-dom les remplace
+  // aussi, et un signal happy-dom passé au `Request` NATIF est refusé — « Failed to construct
+  // 'Request': signal is not of type AbortSignal ». Le symptôme apparaissait loin de sa cause :
+  // six tests de `packages/azalee` échouaient sur un appel réseau bouchonné, jamais sur le DOM.
+  "AbortController",
+  "AbortSignal",
 ] as const;
 
 const descripteursNatifs = new Map<string, PropertyDescriptor>();
 for (const nom of PRIMITIVES_RESEAU) {
-	const descripteur = Object.getOwnPropertyDescriptor(globalThis, nom);
-	if (descripteur) descripteursNatifs.set(nom, descripteur);
+  const descripteur = Object.getOwnPropertyDescriptor(globalThis, nom);
+  if (descripteur) descripteursNatifs.set(nom, descripteur);
 }
 
 /**
@@ -63,9 +63,9 @@ for (const nom of PRIMITIVES_RESEAU) {
  * — en suite complète uniquement, jamais isolément.
  */
 export function rendreReseauNatif(): void {
-	for (const [nom, descripteur] of descripteursNatifs) {
-		Object.defineProperty(globalThis, nom, { ...descripteur, configurable: true });
-	}
+  for (const [nom, descripteur] of descripteursNatifs) {
+    Object.defineProperty(globalThis, nom, { ...descripteur, configurable: true });
+  }
 }
 
 GlobalRegistrator.register();

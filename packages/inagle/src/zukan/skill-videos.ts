@@ -34,10 +34,7 @@ export function normalizeSkillName(name: string): string {
 }
 
 /** Récupère et parse une page de techniques. */
-export async function fetchZukanSkillPage(
-  locale: ZukanSkillLocale,
-  page: number,
-): Promise<ZukanSkill[]> {
+export async function fetchZukanSkillPage(locale: ZukanSkillLocale, page: number): Promise<ZukanSkill[]> {
   const url = zukanSkillPageUrl(locale, page);
   const service = await createZukanWebService();
   const html = await zukanResponseHtml(service, url, `zukan ${locale} page ${page}`);

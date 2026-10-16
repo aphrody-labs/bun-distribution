@@ -18,11 +18,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import * as cheerio from "cheerio";
 import type { Client } from "pg";
-import {
-  createPgClient,
-  getInagleDatabaseURL,
-  isInagleDatabaseConfigured,
-} from "@rosegriffon/db/pg";
+import { createPgClient, getInagleDatabaseURL, isInagleDatabaseConfigured } from "@rosegriffon/db/pg";
 
 const __dirname = import.meta.dir;
 const PACKAGE_ROOT = resolve(__dirname, "../../..");
@@ -89,7 +85,7 @@ interface AuditReport {
 
 // ─── Fetch + cache ────────────────────────────────────────────────────────────
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const HASH_RE = /cloudfront\.net\/1\/([^."]+)/;
 
 async function fetchPage(page: number, forceFresh: boolean): Promise<string> {
@@ -260,7 +256,7 @@ async function auditAgainstDB(characters: ZukanCharacter[], client: Client): Pro
         dbRow = candidates[0];
         matchMethod = "name";
       } else if (candidates.length > 1) {
-        const best = candidates.find((c) => c.series === zChar.primarySeries);
+        const best = candidates.find(c => c.series === zChar.primarySeries);
         if (best) {
           dbRow = best;
           matchMethod = "name";
@@ -309,7 +305,7 @@ async function auditAgainstDB(characters: ZukanCharacter[], client: Client): Pro
 // ─── Corrections BDD ──────────────────────────────────────────────────────────
 
 async function applyCorrections(report: AuditReport, client: Client): Promise<void> {
-  const toFix = report.anomalies.filter((a) => a.status === "wrong_series" && a.databaseId);
+  const toFix = report.anomalies.filter(a => a.status === "wrong_series" && a.databaseId);
   if (toFix.length === 0) {
     console.log("Aucune correction nécessaire.");
     return;
@@ -318,10 +314,7 @@ async function applyCorrections(report: AuditReport, client: Client): Promise<vo
   console.log(`\nCorrection de ${toFix.length} séries...`);
   let fixed = 0;
   for (const a of toFix) {
-    await client.query("UPDATE inagle_characters SET series = $1 WHERE id = $2", [
-      a.zukanSeries,
-      a.databaseId,
-    ]);
+    await client.query("UPDATE inagle_characters SET series = $1 WHERE id = $2", [a.zukanSeries, a.databaseId]);
     fixed++;
   }
   console.log(`  ✓ ${fixed} personnages corrigés.`);
@@ -340,9 +333,7 @@ async function main() {
   console.log("═════════════════════════════════════════════════════════════════");
   console.log("  Audit Zukan — Vérification des séries Azalee vs zukan.inazuma.jp");
   console.log("═════════════════════════════════════════════════════════════════");
-  console.log(
-    `Mode : ${forceFresh ? "crawl frais" : "cache"} | ${applyFix ? "correction BDD" : "rapport seul"}`,
-  );
+  console.log(`Mode : ${forceFresh ? "crawl frais" : "cache"} | ${applyFix ? "correction BDD" : "rapport seul"}`);
 
   const characters = await crawlAll(forceFresh);
 
@@ -350,8 +341,7 @@ async function main() {
   const dist = new Map<string, number>();
   for (const c of characters) dist.set(c.primarySeries, (dist.get(c.primarySeries) ?? 0) + 1);
   console.log("\nDistribution par série principale :");
-  for (const [s, n] of [...dist.entries()].sort((a, b) => b[1] - a[1]))
-    console.log(`  ${String(n).padStart(5)}  ${s}`);
+  for (const [s, n] of [...dist.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(5)}  ${s}`);
 
   if (!isInagleDatabaseConfigured()) {
     console.warn("\nNo valid INAGLE_DATABASE_URL/NIE_PG_URL — database audit skipped.");
@@ -365,15 +355,9 @@ async function main() {
 
   console.log("\n═════════════════════════════════════════════════════════════════");
   console.log(`Total crawlé  : ${report.totalCrawled}`);
-  console.log(
-    `Matchés OK    : ${report.totalMatched}  (${pct(report.totalMatched, report.totalCrawled)}%)`,
-  );
-  console.log(
-    `Série erronée : ${report.totalWrongSeries}  (${pct(report.totalWrongSeries, report.totalCrawled)}%)`,
-  );
-  console.log(
-    `Non trouvé    : ${report.totalNotFound}  (${pct(report.totalNotFound, report.totalCrawled)}%)`,
-  );
+  console.log(`Matchés OK    : ${report.totalMatched}  (${pct(report.totalMatched, report.totalCrawled)}%)`);
+  console.log(`Série erronée : ${report.totalWrongSeries}  (${pct(report.totalWrongSeries, report.totalCrawled)}%)`);
+  console.log(`Non trouvé    : ${report.totalNotFound}  (${pct(report.totalNotFound, report.totalCrawled)}%)`);
   console.log("─────────────────────────────────────────────────────────────────");
   console.log("Détail par série :");
   for (const [series, s] of Object.entries(report.bySeries)) {
@@ -387,19 +371,17 @@ async function main() {
   }
 
   if (report.anomalies.length) {
-    const wrongs = report.anomalies.filter((a) => a.status === "wrong_series");
-    const missing = report.anomalies.filter((a) => a.status === "not_found");
+    const wrongs = report.anomalies.filter(a => a.status === "wrong_series");
+    const missing = report.anomalies.filter(a => a.status === "not_found");
     if (wrongs.length) {
       console.log(`\n⚠ Exemples séries incorrectes :`);
-      wrongs.slice(0, 15).forEach((a) => {
-        console.log(
-          `  ✗ "${a.name}"  BDD="${a.databaseSeries}" → attendu="${a.zukanSeries}" [${a.matchMethod}]`,
-        );
+      wrongs.slice(0, 15).forEach(a => {
+        console.log(`  ✗ "${a.name}"  BDD="${a.databaseSeries}" → attendu="${a.zukanSeries}" [${a.matchMethod}]`);
       });
     }
     if (missing.length) {
       console.log(`\n○ Exemples non trouvés :`);
-      missing.slice(0, 10).forEach((a) => {
+      missing.slice(0, 10).forEach(a => {
         console.log(`  ? "${a.name}"  (${a.zukanSeries})`);
       });
     }

@@ -130,7 +130,7 @@ function DraggableCharaCard({
       {...attributes}
 
       aria-label={`${char.name} — ${PICKER_ROLE_LABELS[char.position] || char.position}, ${char.element}, ${char.rarity}${isPlaced ? " (déjà placé)" : ""}`}
-      onClick={(e) => {
+      onClick={e => {
         if (!isPlaced && onTap) {
           e.preventDefault();
           e.stopPropagation();
@@ -232,7 +232,7 @@ export function CharacterPicker({
         setFilterPosition("COORD");
       } else {
         // Clear filter if it was COACH or COORD
-        setFilterPosition((prev) => (prev === "COACH" || prev === "COORD" ? null : prev));
+        setFilterPosition(prev => (prev === "COACH" || prev === "COORD" ? null : prev));
       }
       setVisibleCount(PAGE_SIZE);
     }
@@ -243,31 +243,31 @@ export function CharacterPicker({
 
     if (activeSlotId) {
       if (activeSlotId.startsWith("manager-")) {
-        list = list.filter((c) => c.position === "COACH");
+        list = list.filter(c => c.position === "COACH");
       } else if (activeSlotId.startsWith("support-")) {
-        list = list.filter((c) => c.position === "COORD");
+        list = list.filter(c => c.position === "COORD");
       } else {
-        list = list.filter((c) => c.position !== "COACH" && c.position !== "COORD");
+        list = list.filter(c => c.position !== "COACH" && c.position !== "COORD");
       }
     } else {
       // By default, hide coach and coordinator from general player list unless explicitly filtered
       if (filterPosition !== "COACH" && filterPosition !== "COORD") {
-        list = list.filter((c) => c.position !== "COACH" && c.position !== "COORD");
+        list = list.filter(c => c.position !== "COACH" && c.position !== "COORD");
       }
     }
 
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q));
+      list = list.filter(c => c.name.toLowerCase().includes(q));
     }
     if (filterPosition) {
-      list = list.filter((c) => c.position === filterPosition);
+      list = list.filter(c => c.position === filterPosition);
     }
     if (filterElement) {
-      list = list.filter((c) => c.element === filterElement);
+      list = list.filter(c => c.element === filterElement);
     }
     if (filterRarity) {
-      list = list.filter((c) => c.rarity === filterRarity);
+      list = list.filter(c => c.rarity === filterRarity);
     }
     return list;
   }, [characters, search, filterPosition, filterElement, filterRarity, activeSlotId]);
@@ -280,7 +280,7 @@ export function CharacterPicker({
       return;
     }
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
-      setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
+      setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length));
     }
   }, [filtered.length]);
 
@@ -306,7 +306,7 @@ export function CharacterPicker({
           <input
             type="search"
             value={search}
-            onChange={(e) => {
+            onChange={e => {
               setSearch(e.target.value);
               setVisibleCount(PAGE_SIZE);
             }}
@@ -325,7 +325,7 @@ export function CharacterPicker({
             <button
               key={value}
               onClick={() => {
-                setFilterPosition((prev) => (prev === value ? null : value));
+                setFilterPosition(prev => (prev === value ? null : value));
                 setVisibleCount(PAGE_SIZE);
               }}
               aria-pressed={filterPosition === value}
@@ -336,11 +336,7 @@ export function CharacterPicker({
                   ? "text-white elevation-1"
                   : "border border-outline-variant/40 text-on-surface-variant hover:bg-on-surface/[0.06]",
               )}
-              style={
-                filterPosition === value
-                  ? { backgroundColor: PICKER_ROLE_COLORS[value] }
-                  : undefined
-              }
+              style={filterPosition === value ? { backgroundColor: PICKER_ROLE_COLORS[value] } : undefined}
             >
               {label}
             </button>
@@ -353,7 +349,7 @@ export function CharacterPicker({
             <button
               key={value}
               onClick={() => {
-                setFilterElement((prev) => (prev === value ? null : value));
+                setFilterElement(prev => (prev === value ? null : value));
                 setVisibleCount(PAGE_SIZE);
               }}
               aria-pressed={filterElement === value}
@@ -393,7 +389,7 @@ export function CharacterPicker({
             <button
               key={value}
               onClick={() => {
-                setFilterRarity((prev) => (prev === value ? null : value));
+                setFilterRarity(prev => (prev === value ? null : value));
                 setVisibleCount(PAGE_SIZE);
               }}
               className={cn(
@@ -425,17 +421,13 @@ export function CharacterPicker({
       </div>
 
       {/* Character Grid */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto px-3 pb-3"
-      >
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto px-3 pb-3">
         <ul
           className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-2"
 
           aria-label="Liste des joueurs disponibles"
         >
-          {visible.map((char) => (
+          {visible.map(char => (
             <DraggableCharaCard
               key={char.charaId}
               char={char}
@@ -447,7 +439,7 @@ export function CharacterPicker({
         </ul>
         {visibleCount < filtered.length && (
           <button
-            onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+            onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
             className="w-full mt-3 inline-flex items-center justify-center gap-1.5 min-h-11 text-sm text-on-secondary-container font-bold rounded-full bg-secondary-container hover:elevation-1 active:scale-[0.98] transition-all"
           >
             <Icon name="expand_more" size={18} />

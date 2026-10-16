@@ -92,11 +92,7 @@ export interface AzaleeClient extends AzaleeDataSource {
    * Appelle une route arbitraire. Échappatoire pour une route ajoutée au
    * serveur avant d'avoir sa méthode dédiée ici.
    */
-  request<T>(
-    path: string,
-    query?: Record<string, AzaleeQueryValue>,
-    options?: AzaleeRequestOptions,
-  ): Promise<T>;
+  request<T>(path: string, query?: Record<string, AzaleeQueryValue>, options?: AzaleeRequestOptions): Promise<T>;
 }
 
 /** Convertit des filtres de liste en chaîne de requête (les `undefined` sont omis). */
@@ -128,12 +124,11 @@ export function createAzaleeClient(options: AzaleeClientOptions = {}): AzaleeCli
     baseUrl: context.baseUrl,
     request: get,
 
-    index: (o) => get<AzaleeIndex>("/", undefined, o),
-    health: (o) => get<AzaleeHealth>("/health", undefined, o),
+    index: o => get<AzaleeIndex>("/", undefined, o),
+    health: o => get<AzaleeHealth>("/health", undefined, o),
 
     characters: (p, o) => get<AzaleeCharacterList>("/api/characters", listQuery(p), o),
-    character: (idOrSlug, o) =>
-      get<AzaleeCharacter>(`/api/characters/${seg(idOrSlug)}`, undefined, o),
+    character: (idOrSlug, o) => get<AzaleeCharacter>(`/api/characters/${seg(idOrSlug)}`, undefined, o),
     coordinators: (p, o) => get<AzaleeCharacterList>("/api/coordinators", listQuery(p), o),
 
     skills: (p, o) => get<AzaleeSkillList>("/api/skills", listQuery(p), o),
@@ -148,10 +143,10 @@ export function createAzaleeClient(options: AzaleeClientOptions = {}): AzaleeCli
     tactics: (p, o) => get<AzaleeTacticList>("/api/tactics", listQuery(p), o),
     tactic: (slug, o) => get<AzaleeTactic>(`/api/tactics/${seg(slug)}`, undefined, o),
 
-    teams: (o) => get<AzaleeTeamList>("/api/teams", undefined, o),
+    teams: o => get<AzaleeTeamList>("/api/teams", undefined, o),
     team: (id, o) => get<AzaleeTeamDetail>(`/api/teams/${seg(id)}`, undefined, o),
 
-    shops: (o) => get<AzaleeShopList>("/api/shops", undefined, o),
+    shops: o => get<AzaleeShopList>("/api/shops", undefined, o),
     shop: (id, o) => get<AzaleeShopDetail>(`/api/shops/${seg(id)}`, undefined, o),
 
     quests: (p: AzaleeQuestParams = {}, o) => get<AzaleeQuestList>("/api/quests", { ...p }, o),
@@ -160,39 +155,32 @@ export function createAzaleeClient(options: AzaleeClientOptions = {}): AzaleeCli
     coaches: (p: AzaleeSearchParams = {}, o) => get<AzaleeCoachList>("/api/coaches", { ...p }, o),
     coach: (id, o) => get<AzaleeCoach>(`/api/coaches/${seg(id)}`, undefined, o),
 
-    stadiums: (p: AzaleeSearchParams = {}, o) =>
-      get<AzaleeStadiumList>("/api/stadiums", { ...p }, o),
+    stadiums: (p: AzaleeSearchParams = {}, o) => get<AzaleeStadiumList>("/api/stadiums", { ...p }, o),
     stadium: (id, o) => get<AzaleeStadium>(`/api/stadiums/${seg(id)}`, undefined, o),
 
-    trophies: (p: AzaleeTrophyParams = {}, o) =>
-      get<AzaleeTrophyList>("/api/trophies", { ...p }, o),
+    trophies: (p: AzaleeTrophyParams = {}, o) => get<AzaleeTrophyList>("/api/trophies", { ...p }, o),
     trophy: (id, o) => get<AzaleeTrophy>(`/api/trophies/${seg(id)}`, undefined, o),
 
-    passives: (p: AzaleePassiveParams = {}, o) =>
-      get<AzaleePassiveList>("/api/passives", { ...p }, o),
+    passives: (p: AzaleePassiveParams = {}, o) => get<AzaleePassiveList>("/api/passives", { ...p }, o),
     passive: (id, o) => get<AzaleePassive>(`/api/passives/${seg(id)}`, undefined, o),
 
-    gallery: (p: AzaleeGalleryParams = {}, o) =>
-      get<AzaleeGalleryList>("/api/gallery", { ...p }, o),
+    gallery: (p: AzaleeGalleryParams = {}, o) => get<AzaleeGalleryList>("/api/gallery", { ...p }, o),
 
-    drops: (o) => get<AzaleeDrops>("/api/drops", undefined, o),
-    capsules: (p: AzaleeSearchParams = {}, o) =>
-      get<AzaleeCapsuleList>("/api/capsules", { ...p }, o),
-    costumes: (p: AzaleeSearchParams = {}, o) =>
-      get<AzaleeCostumeList>("/api/costumes", { ...p }, o),
-    invocation: (o) => get<AzaleeInvocation>("/api/invocation", undefined, o),
+    drops: o => get<AzaleeDrops>("/api/drops", undefined, o),
+    capsules: (p: AzaleeSearchParams = {}, o) => get<AzaleeCapsuleList>("/api/capsules", { ...p }, o),
+    costumes: (p: AzaleeSearchParams = {}, o) => get<AzaleeCostumeList>("/api/costumes", { ...p }, o),
+    invocation: o => get<AzaleeInvocation>("/api/invocation", undefined, o),
 
     cpkList: (p: AzaleeCpkListParams = {}, o) => get<AzaleeCpkListing>("/api/cpk", { ...p }, o),
-    cpkSearch: (p: AzaleeCpkSearchParams, o) =>
-      get<AzaleeCpkSearchResult>("/api/cpk/search", { ...p }, o),
+    cpkSearch: (p: AzaleeCpkSearchParams, o) => get<AzaleeCpkSearchResult>("/api/cpk/search", { ...p }, o),
     cpkFile: (path, o) => get<AzaleeCpkFileMeta>("/api/cpk/file", { path }, o),
 
     text: (p: AzaleeTextParams, o) => get<AzaleeTextResult>("/api/text", { ...p }, o),
     textEntry: (hashId, o) => get<AzaleeTextEntry>(`/api/text/${seg(hashId)}`, undefined, o),
-    textStats: (o) => get<AzaleeTextStats>("/api/text/stats", undefined, o),
+    textStats: o => get<AzaleeTextStats>("/api/text/stats", undefined, o),
 
-    crossTables: (o) => get<AzaleeCrossTables>("/api/cross/tables", undefined, o),
-    crossStats: (o) => get<AzaleeCrossStats>("/api/cross/stats", undefined, o),
+    crossTables: o => get<AzaleeCrossTables>("/api/cross/tables", undefined, o),
+    crossStats: o => get<AzaleeCrossStats>("/api/cross/stats", undefined, o),
 
     search: (p: AzaleeCrossSearchParams, o) => get<AzaleeSearchResult>("/api/search", { ...p }, o),
   };

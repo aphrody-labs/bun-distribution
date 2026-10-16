@@ -13,7 +13,7 @@ export const DEFAULT_BASE_RATING = 0;
 
 /** Score attendu d'un joueur face à un adversaire (probabilité de victoire, 0..1). */
 export function expectedScore(playerElo: number, opponentElo: number): number {
-	return 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+  return 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
 }
 
 /**
@@ -22,13 +22,8 @@ export function expectedScore(playerElo: number, opponentElo: number): number {
  * @param actual Résultat réel : 1 victoire, 0.5 nul, 0 défaite.
  * @param kFactor K-factor de la saison.
  */
-export function eloDelta(
-	playerElo: number,
-	opponentElo: number,
-	actual: number,
-	kFactor: number
-): number {
-	return Math.round(kFactor * (actual - expectedScore(playerElo, opponentElo)));
+export function eloDelta(playerElo: number, opponentElo: number, actual: number, kFactor: number): number {
+  return Math.round(kFactor * (actual - expectedScore(playerElo, opponentElo)));
 }
 
 /**
@@ -60,29 +55,29 @@ export function eloDelta(
  * progression voulu, pas un système Elo « pur » à somme nulle.
  */
 export interface TierEloFactors {
-	winK: number;
-	lossK: number;
+  winK: number;
+  lossK: number;
 }
 
 const TIER_ELO_FACTORS: readonly TierEloFactors[] = [
-	{ winK: 40, lossK: 10 }, // 0  Fer        +20 / -5
-	{ winK: 40, lossK: 12 }, // 1  Bronze     +20 / -6
-	{ winK: 38, lossK: 16 }, // 2  Argent     +19 / -8
-	{ winK: 38, lossK: 18 }, // 3  Or         +19 / -9
-	{ winK: 36, lossK: 20 }, // 4  Platine    +18 / -10
-	{ winK: 36, lossK: 24 }, // 5  Diamant    +18 / -12
-	{ winK: 34, lossK: 26 }, // 6  Émeraude   +17 / -13
-	{ winK: 34, lossK: 28 }, // 7  Rubis      +17 / -14
-	{ winK: 32, lossK: 32 }, // 8  Divin      +16 / -16 (équilibré)
-	{ winK: 32, lossK: 32 }, // 9  Supernova  +16 / -16
-	{ winK: 32, lossK: 32 }, // 10 Légendaire +16 / -16
+  { winK: 40, lossK: 10 }, // 0  Fer        +20 / -5
+  { winK: 40, lossK: 12 }, // 1  Bronze     +20 / -6
+  { winK: 38, lossK: 16 }, // 2  Argent     +19 / -8
+  { winK: 38, lossK: 18 }, // 3  Or         +19 / -9
+  { winK: 36, lossK: 20 }, // 4  Platine    +18 / -10
+  { winK: 36, lossK: 24 }, // 5  Diamant    +18 / -12
+  { winK: 34, lossK: 26 }, // 6  Émeraude   +17 / -13
+  { winK: 34, lossK: 28 }, // 7  Rubis      +17 / -14
+  { winK: 32, lossK: 32 }, // 8  Divin      +16 / -16 (équilibré)
+  { winK: 32, lossK: 32 }, // 9  Supernova  +16 / -16
+  { winK: 32, lossK: 32 }, // 10 Légendaire +16 / -16
 ];
 
 /** Facteurs (winK, lossK) du palier d'index donné (clampé aux bornes de la table). */
 export function tierEloFactors(tierIndex: number): TierEloFactors {
-	if (!Number.isFinite(tierIndex) || tierIndex <= 0) return TIER_ELO_FACTORS[0]!;
-	const i = Math.min(Math.floor(tierIndex), TIER_ELO_FACTORS.length - 1);
-	return TIER_ELO_FACTORS[i] ?? TIER_ELO_FACTORS[0]!;
+  if (!Number.isFinite(tierIndex) || tierIndex <= 0) return TIER_ELO_FACTORS[0]!;
+  const i = Math.min(Math.floor(tierIndex), TIER_ELO_FACTORS.length - 1);
+  return TIER_ELO_FACTORS[i] ?? TIER_ELO_FACTORS[0]!;
 }
 
 /**
@@ -97,16 +92,16 @@ export function tierEloFactors(tierIndex: number): TierEloFactors {
  * @param seasonK   Échelle globale de la saison (32 = barème nominal ci-dessus).
  */
 export function progressiveEloDelta(
-	playerElo: number,
-	opponentElo: number,
-	actual: number,
-	tierIndex: number,
-	seasonK: number = DEFAULT_K_FACTOR
+  playerElo: number,
+  opponentElo: number,
+  actual: number,
+  tierIndex: number,
+  seasonK: number = DEFAULT_K_FACTOR,
 ): number {
-	const { winK, lossK } = tierEloFactors(tierIndex);
-	const dirK = actual >= 1 ? winK : actual <= 0 ? lossK : (winK + lossK) / 2;
-	const scaled = dirK * (seasonK / DEFAULT_K_FACTOR);
-	return Math.round(scaled * (actual - expectedScore(playerElo, opponentElo)));
+  const { winK, lossK } = tierEloFactors(tierIndex);
+  const dirK = actual >= 1 ? winK : actual <= 0 ? lossK : (winK + lossK) / 2;
+  const scaled = dirK * (seasonK / DEFAULT_K_FACTOR);
+  return Math.round(scaled * (actual - expectedScore(playerElo, opponentElo)));
 }
 
 /**
@@ -114,19 +109,16 @@ export function progressiveEloDelta(
  *
  * @returns Nouveau rating et delta réellement appliqué (après clamp).
  */
-export function applyEloUpdate(
-	playerElo: number,
-	delta: number
-): { newElo: number; clampedDelta: number } {
-	const newElo = Math.max(0, playerElo + delta);
-	return { newElo, clampedDelta: newElo - playerElo };
+export function applyEloUpdate(playerElo: number, delta: number): { newElo: number; clampedDelta: number } {
+  const newElo = Math.max(0, playerElo + delta);
+  return { newElo, clampedDelta: newElo - playerElo };
 }
 
 /** Résultat d'un calcul Elo gagnant / perdant pour un match 1v1. */
 export interface EloMatchResult {
-	newWinner: number;
-	newLoser: number;
-	delta: number;
+  newWinner: number;
+  newLoser: number;
+  delta: number;
 }
 
 /**
@@ -136,21 +128,21 @@ export interface EloMatchResult {
  * le perdant perd l'équivalent (rating perdant borné à 0).
  */
 export function computeMatchElo(
-	winnerRating: number,
-	loserRating: number,
-	kFactor: number = DEFAULT_K_FACTOR
+  winnerRating: number,
+  loserRating: number,
+  kFactor: number = DEFAULT_K_FACTOR,
 ): EloMatchResult {
-	const expectedWinner = expectedScore(winnerRating, loserRating);
-	const expectedLoser = 1 - expectedWinner;
+  const expectedWinner = expectedScore(winnerRating, loserRating);
+  const expectedLoser = 1 - expectedWinner;
 
-	const delta = Math.round(kFactor * (1 - expectedWinner));
-	const deltaLoser = Math.round(kFactor * (0 - expectedLoser));
+  const delta = Math.round(kFactor * (1 - expectedWinner));
+  const deltaLoser = Math.round(kFactor * (0 - expectedLoser));
 
-	return {
-		newWinner: winnerRating + delta,
-		newLoser: Math.max(0, loserRating + deltaLoser),
-		delta,
-	};
+  return {
+    newWinner: winnerRating + delta,
+    newLoser: Math.max(0, loserRating + deltaLoser),
+    delta,
+  };
 }
 
 // ── Bonus podium tournoi (AP plats, hors match) ─────────────────────────────
@@ -163,12 +155,12 @@ export function computeMatchElo(
  * Pas de récompense au-delà des demi-finalistes (top 4).
  */
 export interface TournamentPlacementPrizeTable {
-	/** AP du vainqueur (rank 1). */
-	first: number;
-	/** AP du finaliste (rank 2). */
-	second: number;
-	/** AP de chaque demi-finaliste (rank 3 et 4). */
-	semi: number;
+  /** AP du vainqueur (rank 1). */
+  first: number;
+  /** AP du finaliste (rank 2). */
+  second: number;
+  /** AP de chaque demi-finaliste (rank 3 et 4). */
+  semi: number;
 }
 
 /**
@@ -176,13 +168,13 @@ export interface TournamentPlacementPrizeTable {
  * Bornes inclusives sur le max de la tranche.
  */
 export function prizeTableForTournamentSize(size: number): TournamentPlacementPrizeTable {
-	const n = Number.isFinite(size) ? Math.max(0, Math.floor(size)) : 0;
-	if (n <= 8) return { first: 25, second: 12, semi: 5 };
-	if (n <= 16) return { first: 35, second: 18, semi: 8 };
-	if (n <= 32) return { first: 50, second: 25, semi: 10 };
-	if (n <= 64) return { first: 80, second: 40, semi: 15 };
-	if (n <= 128) return { first: 120, second: 60, semi: 25 };
-	return { first: 180, second: 90, semi: 35 };
+  const n = Number.isFinite(size) ? Math.max(0, Math.floor(size)) : 0;
+  if (n <= 8) return { first: 25, second: 12, semi: 5 };
+  if (n <= 16) return { first: 35, second: 18, semi: 8 };
+  if (n <= 32) return { first: 50, second: 25, semi: 10 };
+  if (n <= 64) return { first: 80, second: 40, semi: 15 };
+  if (n <= 128) return { first: 120, second: 60, semi: 25 };
+  return { first: 180, second: 90, semi: 35 };
 }
 
 /**
@@ -193,10 +185,10 @@ export function prizeTableForTournamentSize(size: number): TournamentPlacementPr
  * @returns 0 si hors podium (rank > 4) ou rank invalide.
  */
 export function placementPrizeAp(tournamentSize: number, rank: number): number {
-	if (!Number.isFinite(rank) || rank < 1) return 0;
-	const table = prizeTableForTournamentSize(tournamentSize);
-	if (rank === 1) return table.first;
-	if (rank === 2) return table.second;
-	if (rank <= 4) return table.semi;
-	return 0;
+  if (!Number.isFinite(rank) || rank < 1) return 0;
+  const table = prizeTableForTournamentSize(tournamentSize);
+  if (rank === 1) return table.first;
+  if (rank === 2) return table.second;
+  if (rank <= 4) return table.semi;
+  return 0;
 }

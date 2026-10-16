@@ -31,10 +31,7 @@ function newExternalDirectory(path: string, repositories: string[]) {
   if (existsSync(output)) throw new Error("Output directory already exists");
   for (const repository of repositories) {
     const selected = relative(realpathSync(repository), output);
-    if (
-      !selected ||
-      (!selected.startsWith(`..${sep}`) && selected !== ".." && !isAbsolute(selected))
-    )
+    if (!selected || (!selected.startsWith(`..${sep}`) && selected !== ".." && !isAbsolute(selected)))
       throw new Error("Output directory must be outside the selected source repositories");
   }
   return output;
@@ -47,22 +44,12 @@ export async function exportForkCatalog(
   if (!isAbsolute(bunRoot)) throw new Error("Bun source must be an absolute checkout path");
   const root = realpathSync(bunRoot);
   const exporter = resolve(root, "scripts/aphrody/fork-capabilities.ts");
-  if (!existsSync(exporter))
-    throw new Error("The selected Bun checkout lacks its capability exporter");
+  if (!existsSync(exporter)) throw new Error("The selected Bun checkout lacks its capability exporter");
   const producerDocs = options.producerDocs
-    ? newExternalDirectory(options.producerDocs, [
-        root,
-        ...(options.consumerRoot ? [options.consumerRoot] : []),
-      ])
+    ? newExternalDirectory(options.producerDocs, [root, ...(options.consumerRoot ? [options.consumerRoot] : [])])
     : undefined;
   const child = Bun.spawn(
-    [
-      process.execPath,
-      exporter,
-      "--root",
-      root,
-      ...(producerDocs ? ["--graph-docs", producerDocs] : []),
-    ],
+    [process.execPath, exporter, "--root", root, ...(producerDocs ? ["--graph-docs", producerDocs] : [])],
     {
       cwd: root,
       stdout: "pipe",
@@ -101,8 +88,7 @@ export async function exportForkCatalog(
       child.exited,
     ]);
     if (timedOut) throw new Error("Bun capability exporter exceeded its 300-second deadline");
-    if (exitCode !== 0)
-      throw new Error(`Bun capability export failed (${exitCode}): ${stderr.trim()}`);
+    if (exitCode !== 0) throw new Error(`Bun capability export failed (${exitCode}): ${stderr.trim()}`);
     return parseForkCapabilityCatalog(JSON.parse(stdout));
   } finally {
     clearTimeout(deadline);
@@ -124,13 +110,8 @@ export async function inspectNativeEngine() {
     };
   const build = nie.nieBuildInfo();
   const expectedOs =
-    process.platform === "win32"
-      ? "windows"
-      : process.platform === "darwin"
-        ? "macos"
-        : process.platform;
-  const expectedArch =
-    process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : process.arch;
+    process.platform === "win32" ? "windows" : process.platform === "darwin" ? "macos" : process.platform;
+  const expectedArch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : process.arch;
   if (
     !build ||
     build.product !== "iecode" ||
@@ -155,15 +136,13 @@ export async function inspectNativeEngine() {
 }
 
 export async function inspectManagedNative(libraryPath?: string) {
-  const { NativeDotnetBridge, findNativeLibrary } =
-    await import("../../../packages/inagle/src/dotnet/native");
+  const { NativeDotnetBridge, findNativeLibrary } = await import("../../../packages/inagle/src/dotnet/native");
   const bridge = NativeDotnetBridge.tryLoad(libraryPath);
   if (!bridge)
     return {
       status: "unavailable" as const,
       path: libraryPath ?? findNativeLibrary(),
-      error:
-        "IECODE .NET NativeAOT library unavailable; no TypeScript fallback qualifies this gate",
+      error: "IECODE .NET NativeAOT library unavailable; no TypeScript fallback qualifies this gate",
     };
   if (bridge.status.mode !== "native-aot" || bridge.status.schema !== "iecode.ffi/v1")
     throw new Error("IECODE managed native schema witness failed");
@@ -182,23 +161,17 @@ export async function exportNativeAlias(
   outputDirectory: string,
   repositoryRoot: string,
 ) {
-  if (native.status !== "qualified")
-    throw new Error("A qualified IECODE native library is required before export");
+  if (native.status !== "qualified") throw new Error("A qualified IECODE native library is required before export");
   if (!isAbsolute(outputDirectory)) throw new Error("Native export directory must be absolute");
   const output = resolve(outputDirectory);
   const repoRelative = relative(realpathSync(repositoryRoot), output);
-  if (
-    !repoRelative ||
-    (!repoRelative.startsWith(`..${sep}`) && repoRelative !== ".." && !isAbsolute(repoRelative))
-  )
+  if (!repoRelative || (!repoRelative.startsWith(`..${sep}`) && repoRelative !== ".." && !isAbsolute(repoRelative)))
     throw new Error("Native artifacts must be exported outside the source repository");
   if (existsSync(output)) throw new Error("Native export directory already exists");
-  const fileName =
-    process.platform === "win32" ? "ie.dll" : process.platform === "darwin" ? "ie.dylib" : "ie.so";
+  const fileName = process.platform === "win32" ? "ie.dll" : process.platform === "darwin" ? "ie.dylib" : "ie.so";
   const bytes = await Bun.file(native.path).bytes();
   const sha256 = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  if (sha256 !== native.sha256)
-    throw new Error("The qualified native artifact changed before export");
+  if (sha256 !== native.sha256) throw new Error("The qualified native artifact changed before export");
   mkdirSync(output);
   writeFileSync(resolve(output, fileName), bytes, { flag: "wx" });
   const provenance = {
@@ -227,9 +200,7 @@ export async function qualifyForkRuntime(options: {
   const catalog = parseForkCapabilityCatalog(options.catalog);
   const runtime = await checkBunRuntime(options.iecodeRoot);
   const modules = options.inspectModules ? await inspectForkModules(catalog) : [];
-  const native = options.inspectNative
-    ? await inspectNativeEngine()
-    : { status: "not-run" as const };
+  const native = options.inspectNative ? await inspectNativeEngine() : { status: "not-run" as const };
   const managed = options.inspectNative
     ? await inspectManagedNative(options.managedLibrary)
     : { status: "not-run" as const };
@@ -243,8 +214,8 @@ export async function qualifyForkRuntime(options: {
       modules,
       native,
       managed,
-      importableModules: modules.filter((entry) => entry.status === "importable").length,
-      unavailableModules: modules.filter((entry) => entry.status === "unavailable").length,
+      importableModules: modules.filter(entry => entry.status === "importable").length,
+      unavailableModules: modules.filter(entry => entry.status === "unavailable").length,
       engineEmbeddedInNativeLibrary: false,
     },
   };
@@ -285,19 +256,12 @@ if (import.meta.main) {
       values["docs-out"],
       source.producerDocs,
     ])
-      if (path && !isAbsolute(path))
-        throw new Error("Catalog, artifact and receipt paths must be absolute");
+      if (path && !isAbsolute(path)) throw new Error("Catalog, artifact and receipt paths must be absolute");
     const iecodeRoot = resolve(import.meta.dir, "../../..");
     if (values["docs-out"])
-      newExternalDirectory(values["docs-out"], [
-        iecodeRoot,
-        ...(source.bunSource ? [source.bunSource] : []),
-      ]);
+      newExternalDirectory(values["docs-out"], [iecodeRoot, ...(source.bunSource ? [source.bunSource] : [])]);
     if (values["native-export"])
-      newExternalDirectory(values["native-export"], [
-        iecodeRoot,
-        ...(source.bunSource ? [source.bunSource] : []),
-      ]);
+      newExternalDirectory(values["native-export"], [iecodeRoot, ...(source.bunSource ? [source.bunSource] : [])]);
     await checkBunRuntime(iecodeRoot);
     const catalog = source.bunSource
       ? await exportForkCatalog(source.bunSource, {
@@ -317,9 +281,7 @@ if (import.meta.main) {
           root: realpathSync(source.bunSource),
           exporter: realpathSync(resolve(source.bunSource, "scripts/aphrody/fork-capabilities.ts")),
           docs: source.producerDocs ?? null,
-          evidence: source.producerDocs
-            ? await Bun.file(resolve(source.producerDocs, "evidence.json")).json()
-            : null,
+          evidence: source.producerDocs ? await Bun.file(resolve(source.producerDocs, "evidence.json")).json() : null,
         }
       : null;
     if (
@@ -368,18 +330,14 @@ if (import.meta.main) {
     ];
     const files: { path: string; content: string }[] = [];
     for (const selected of values["graph-source"] ?? []) {
-      if (
-        !/^(?:crates\/nie\/|packages\/inagle\/).+\.(?:rs|tsx?)$/.test(selected) ||
-        selected.split("/").includes("..")
-      )
+      if (!/^(?:crates\/nie\/|packages\/inagle\/).+\.(?:rs|tsx?)$/.test(selected) || selected.split("/").includes(".."))
         throw new Error("Select a portable NIE/Inagle source path for graph extraction");
       const path = realpathSync(resolve(iecodeRoot, selected));
       const actual = relative(realpathSync(iecodeRoot), path).replaceAll("\\", "/");
       if (!actual.startsWith("crates/nie/") && !actual.startsWith("packages/inagle/"))
         throw new Error("Selected graph source resolves outside its owning domain");
       const file = Bun.file(path);
-      if (file.size > 1024 * 1024)
-        throw new Error("Selected graph source exceeds its 1 MiB budget");
+      if (file.size > 1024 * 1024) throw new Error("Selected graph source exceeds its 1 MiB budget");
       files.push({ path: actual, content: await file.text() });
     }
     if (files.length && !values["graph-out"] && !values["docs-out"])
@@ -387,8 +345,7 @@ if (import.meta.main) {
     let graph: Awaited<ReturnType<typeof buildForkCapabilityGraph>> | undefined;
     if (values["graph-out"] || values["docs-out"]) {
       const revision = Bun.spawnSync(["git", "-C", iecodeRoot, "rev-parse", "HEAD"]);
-      if (revision.exitCode !== 0)
-        throw new Error("Cannot establish IECODE source revision for graph provenance");
+      if (revision.exitCode !== 0) throw new Error("Cannot establish IECODE source revision for graph provenance");
       graph = await buildForkCapabilityGraph(catalog, {
         files,
         artifacts,
@@ -405,9 +362,7 @@ if (import.meta.main) {
         !repoRelative ||
         (!repoRelative.startsWith(`..${sep}`) && repoRelative !== ".." && !isAbsolute(repoRelative))
       )
-        throw new Error(
-          "Documentation output must be a new directory outside the source repository",
-        );
+        throw new Error("Documentation output must be a new directory outside the source repository");
       const { exportDocsToDirectory } = await import("../../../packages/inagle/src/docs/index");
       await exportDocsToDirectory(output, {
         catalog,
@@ -418,8 +373,7 @@ if (import.meta.main) {
         producer,
       });
     }
-    if (values.out)
-      writeFileSync(values.out, `${JSON.stringify(receipt, null, 2)}\n`, { flag: "wx" });
+    if (values.out) writeFileSync(values.out, `${JSON.stringify(receipt, null, 2)}\n`, { flag: "wx" });
     console.log(
       JSON.stringify(
         {
@@ -452,8 +406,7 @@ if (import.meta.main) {
     );
     if (
       values["require-native"] &&
-      (receipt.qualification.native.status !== "qualified" ||
-        receipt.qualification.managed.status !== "qualified")
+      (receipt.qualification.native.status !== "qualified" || receipt.qualification.managed.status !== "qualified")
     )
       process.exitCode = 1;
   }

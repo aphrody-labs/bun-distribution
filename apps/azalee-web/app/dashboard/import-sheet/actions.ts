@@ -13,11 +13,7 @@ async function requireImportAdmin() {
   }
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
 
   if (!profile || !isAdminRole(profile.role)) {
     return { error: "Permissions insuffisantes" as const, user: null };

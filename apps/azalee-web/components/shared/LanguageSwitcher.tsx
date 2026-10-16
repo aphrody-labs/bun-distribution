@@ -21,10 +21,7 @@ const LANGUAGES = DEFAULT_LOCALE_REGISTRY.locales
 
 export function LanguageSwitcher() {
   const { language, setLanguage, t } = useLanguage();
-  const displayNames = useMemo(
-    () => new Intl.DisplayNames([language], { type: "language" }),
-    [language],
-  );
+  const displayNames = useMemo(() => new Intl.DisplayNames([language], { type: "language" }), [language]);
   const currentName = displayNames.of(language) ?? language;
 
   return (
@@ -43,7 +40,7 @@ export function LanguageSwitcher() {
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuLabel>{t("ui.language.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {LANGUAGES.map((locale) => {
+        {LANGUAGES.map(locale => {
           const isActive = locale === language;
           return (
             <DropdownMenuItem

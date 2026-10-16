@@ -26,11 +26,7 @@ interface BulkActionsBarProps {
   onBulkAction: (action: string, value?: string) => Promise<void>;
 }
 
-export function BulkActionsBar({
-  selectedCount,
-  onClearSelection,
-  onBulkAction,
-}: BulkActionsBarProps) {
+export function BulkActionsBar({ selectedCount, onClearSelection, onBulkAction }: BulkActionsBarProps) {
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -60,7 +56,7 @@ export function BulkActionsBar({
           <div className="h-5 w-px bg-inverse-on-surface/20" />
 
           {/* Status change */}
-          <Select onValueChange={(val) => handleAction("status", val)} disabled={loading}>
+          <Select onValueChange={val => handleAction("status", val)} disabled={loading}>
             <SelectTrigger className="h-8 w-auto gap-1.5 border-none bg-inverse-on-surface/10 text-inverse-on-surface text-xs rounded-full px-3">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
@@ -87,7 +83,7 @@ export function BulkActionsBar({
           </Select>
 
           {/* Category change */}
-          <Select onValueChange={(val) => handleAction("category", val)} disabled={loading}>
+          <Select onValueChange={val => handleAction("category", val)} disabled={loading}>
             <SelectTrigger className="h-8 w-auto gap-1.5 border-none bg-inverse-on-surface/10 text-inverse-on-surface text-xs rounded-full px-3">
               <SelectValue placeholder="Catégorie" />
             </SelectTrigger>
@@ -159,8 +155,7 @@ export function BulkActionsBar({
               Supprimer {selectedCount} article{selectedCount > 1 ? "s" : ""} ?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-on-surface-variant">
-              Cette action est irréversible. Les articles sélectionnés seront définitivement
-              supprimés.
+              Cette action est irréversible. Les articles sélectionnés seront définitivement supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

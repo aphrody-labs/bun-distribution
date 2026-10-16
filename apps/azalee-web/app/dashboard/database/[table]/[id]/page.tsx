@@ -4,11 +4,7 @@ import { Button } from "@rosegriffon/ui";
 import { createClient } from "@/lib/supabase/server";
 import { GenericEditorForm } from "./generic-editor-form";
 
-export default async function GenericRowPage({
-  params,
-}: {
-  params: Promise<{ table: string; id: string }>;
-}) {
+export default async function GenericRowPage({ params }: { params: Promise<{ table: string; id: string }> }) {
   const { table, id } = await params;
   const supabase = await createClient();
 

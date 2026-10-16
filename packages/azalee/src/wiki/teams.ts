@@ -144,10 +144,7 @@ export async function getTeamsList(): Promise<TeamListItem[]> {
     .execute();
 
   // Compte roster (personnages distincts) par team_id en une passe.
-  const charaRaw = await sql
-    .selectFrom("inagle_characters")
-    .select(["chara_id", "team_id"])
-    .execute();
+  const charaRaw = await sql.selectFrom("inagle_characters").select(["chara_id", "team_id"]).execute();
   const rosterByTeam = new Map<string, Set<string>>();
   for (const c of charaRaw) {
     if (!c.team_id) continue;
@@ -159,7 +156,7 @@ export async function getTeamsList(): Promise<TeamListItem[]> {
     if (c.chara_id) set.add(c.chara_id);
   }
 
-  const list: TeamListItem[] = rows.map((row) => {
+  const list: TeamListItem[] = rows.map(row => {
     const kits = parseJson<Record<string, string>>(row.kits) ?? {};
     return {
       id: row.id,
@@ -189,7 +186,7 @@ function mapUniformModels(modelsRaw: string | null): TeamKitModel[] {
     }>
   >(modelsRaw);
   if (!Array.isArray(models)) return [];
-  return models.map((m) => ({
+  return models.map(m => ({
     typeId: typeof m.typeId === "number" ? m.typeId : 0,
     uniformFielderModelIdCrc: m.uniformFielderModelIdCrc ?? "0x00000000",
     uniformKeeperModelIdCrc: m.uniformKeeperModelIdCrc ?? "0x00000000",
@@ -256,17 +253,7 @@ export async function getTeamDetail(id: string): Promise<TeamDetail | null> {
   // Roster : personnages liés (dédup par chara_id, image via internal_code).
   const charaRaw = await sql
     .selectFrom("inagle_characters")
-    .select([
-      "chara_id",
-      "name_fr",
-      "name_ja",
-      "base_slug",
-      "slug",
-      "internal_code",
-      "position",
-      "element",
-      "rarity",
-    ])
+    .select(["chara_id", "name_fr", "name_ja", "base_slug", "slug", "internal_code", "position", "element", "rarity"])
     .where("team_id", "=", id)
     .execute();
 
@@ -307,5 +294,5 @@ export async function getTeamDetail(id: string): Promise<TeamDetail | null> {
 export async function getAllTeamIds(): Promise<string[]> {
   await verifyInjectedProvider();
   const rows = await sql.selectFrom("inagle_teams").select("id").execute();
-  return rows.map((r) => r.id).filter(Boolean);
+  return rows.map(r => r.id).filter(Boolean);
 }

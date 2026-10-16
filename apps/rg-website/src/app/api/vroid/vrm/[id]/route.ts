@@ -30,86 +30,83 @@ import { jetonValide } from "@/lib/vroid/session";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(
-	_requete: Request,
-	{ params }: { params: Promise<{ id: string }> }
-): Promise<Response> {
-	const { id } = await params;
-	if (!/^\d+$/.test(id)) {
-		return NextResponse.json({ erreur: "Identifiant de modèle invalide." }, { status: 400 });
-	}
+export async function GET(_requete: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+  const { id } = await params;
+  if (!/^\d+$/.test(id)) {
+    return NextResponse.json({ erreur: "Identifiant de modèle invalide." }, { status: 400 });
+  }
 
-	const jeton = await jetonValide();
-	if (!jeton) {
-		return NextResponse.json(
-			{
-				erreur: "Le chargement d'un modèle VRoid Hub exige d'avoir lié son compte.",
-				connexionRequise: true,
-			},
-			{ status: 401 }
-		);
-	}
+  const jeton = await jetonValide();
+  if (!jeton) {
+    return NextResponse.json(
+      {
+        erreur: "Le chargement d'un modèle VRoid Hub exige d'avoir lié son compte.",
+        connexionRequise: true,
+      },
+      { status: 401 },
+    );
+  }
 
-	try {
-		const detail = await detailModele(id, { jeton });
-		const modele = detail.character_model;
+  try {
+    const detail = await detailModele(id, { jeton });
+    const modele = detail.character_model;
 
-		// Un modèle déposé par l'internaute lui-même reste chargeable même sans
-		// autorisation publique de téléchargement.
-		if (!modele.is_downloadable) {
-			return NextResponse.json(
-				{
-					erreur:
-						"L'auteur de ce modèle n'en autorise pas le téléchargement. Azalée n'est pas une application approuvée par VRoid Hub et ne peut donc pas le charger.",
-					motif: "non-telechargeable",
-				},
-				{ status: 403 }
-			);
-		}
+    // Un modèle déposé par l'internaute lui-même reste chargeable même sans
+    // autorisation publique de téléchargement.
+    if (!modele.is_downloadable) {
+      return NextResponse.json(
+        {
+          erreur:
+            "L'auteur de ce modèle n'en autorise pas le téléchargement. Azalée n'est pas une application approuvée par VRoid Hub et ne peut donc pas le charger.",
+          motif: "non-telechargeable",
+        },
+        { status: 403 },
+      );
+    }
 
-		const { url } = await resoudreVrm(jeton, id);
+    const { url } = await resoudreVrm(jeton, id);
 
-		const amont = await fetch(url, { cache: "no-store" });
-		if (!amont.ok || !amont.body) {
-			return NextResponse.json(
-				{ erreur: `Le fichier n'a pas pu être récupéré (statut ${amont.status}).` },
-				{ status: 502 }
-			);
-		}
+    const amont = await fetch(url, { cache: "no-store" });
+    if (!amont.ok || !amont.body) {
+      return NextResponse.json(
+        { erreur: `Le fichier n'a pas pu être récupéré (statut ${amont.status}).` },
+        { status: 502 },
+      );
+    }
 
-		const longueur = amont.headers.get("content-length");
+    const longueur = amont.headers.get("content-length");
 
-		return new Response(amont.body, {
-			headers: {
-				// Type officiel d'un VRM (glTF binaire) ; `three-vrm` lit le flux brut.
-				"content-type": "model/gltf-binary",
-				...(longueur ? { "content-length": longueur } : {}),
-				// Aucun cache, nulle part : ni navigateur, ni CDN, ni proxy.
-				"cache-control": "no-store, private",
-				"x-content-type-options": "nosniff",
-			},
-		});
-	} catch (erreur) {
-		if (estNonAutorise(erreur)) {
-			return NextResponse.json(
-				{
-					erreur:
-						"VRoid Hub a refusé la licence de téléchargement pour ce modèle (application non approuvée, ou autorisation retirée).",
-					motif: "licence-refusee",
-				},
-				{ status: 403 }
-			);
-		}
-		if (estQuotaDepasse(erreur)) {
-			return NextResponse.json(
-				{ erreur: "Quota d'appels VRoid Hub atteint, réessayez dans quelques minutes." },
-				{ status: 429 }
-			);
-		}
-		const statut = erreur instanceof ErreurVroid && erreur.statut >= 400 ? erreur.statut : 502;
-		return NextResponse.json(
-			{ erreur: erreur instanceof Error ? erreur.message : "Chargement du modèle en échec." },
-			{ status: statut }
-		);
-	}
+    return new Response(amont.body, {
+      headers: {
+        // Type officiel d'un VRM (glTF binaire) ; `three-vrm` lit le flux brut.
+        "content-type": "model/gltf-binary",
+        ...(longueur ? { "content-length": longueur } : {}),
+        // Aucun cache, nulle part : ni navigateur, ni CDN, ni proxy.
+        "cache-control": "no-store, private",
+        "x-content-type-options": "nosniff",
+      },
+    });
+  } catch (erreur) {
+    if (estNonAutorise(erreur)) {
+      return NextResponse.json(
+        {
+          erreur:
+            "VRoid Hub a refusé la licence de téléchargement pour ce modèle (application non approuvée, ou autorisation retirée).",
+          motif: "licence-refusee",
+        },
+        { status: 403 },
+      );
+    }
+    if (estQuotaDepasse(erreur)) {
+      return NextResponse.json(
+        { erreur: "Quota d'appels VRoid Hub atteint, réessayez dans quelques minutes." },
+        { status: 429 },
+      );
+    }
+    const statut = erreur instanceof ErreurVroid && erreur.statut >= 400 ? erreur.statut : 502;
+    return NextResponse.json(
+      { erreur: erreur instanceof Error ? erreur.message : "Chargement du modèle en échec." },
+      { status: statut },
+    );
+  }
 }

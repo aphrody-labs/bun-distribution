@@ -16,7 +16,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importSpecialTactics(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("❌ push:special_tactics échec :", e);
     process.exit(1);
   });

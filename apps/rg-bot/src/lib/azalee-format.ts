@@ -33,46 +33,38 @@
  * il n'y a pas d'image ».
  */
 import { corrigerNomDouble } from "./azalee";
-import {
-	formaterNombre as formaterNombreUi,
-	formaterPourcentage as formaterPourcentageUi,
-} from "./ui/nombres";
+import { formaterNombre as formaterNombreUi, formaterPourcentage as formaterPourcentageUi } from "./ui/nombres";
 import { joindre } from "./ui/texte";
-import {
-	normaliserLibelle,
-	resoudreCategorieTechnique,
-	resoudreElement,
-	resoudrePosition,
-} from "./ievr-labels";
+import { normaliserLibelle, resoudreCategorieTechnique, resoudreElement, resoudrePosition } from "./ievr-labels";
 
 /** Champ multilingue tel que servi par l'API (`names`, `descriptions`, …). */
 export interface Multilingue {
-	fr?: string | null;
-	en?: string | null;
-	ja?: string | null;
+  fr?: string | null;
+  en?: string | null;
+  ja?: string | null;
 }
 
 /** Les sept statistiques d'un joueur, telles que servies dans `stats.lv99`. */
 export interface Statistiques {
-	kick?: number | null;
-	control?: number | null;
-	technique?: number | null;
-	pressure?: number | null;
-	physical?: number | null;
-	agility?: number | null;
-	intelligence?: number | null;
+  kick?: number | null;
+  control?: number | null;
+  technique?: number | null;
+  pressure?: number | null;
+  physical?: number | null;
+  agility?: number | null;
+  intelligence?: number | null;
 }
 
 // --- Texte -----------------------------------------------------------------
 
 /** Réduit un champ multilingue à sa forme française, avec repli anglais puis japonais. */
 export function texteFr(valeur: Multilingue | null | undefined, repli = "Inconnu"): string {
-	for (const candidat of [valeur?.fr, valeur?.en, valeur?.ja]) {
-		if (typeof candidat === "string" && candidat.trim().length > 0) {
-			return candidat.trim();
-		}
-	}
-	return repli;
+  for (const candidat of [valeur?.fr, valeur?.en, valeur?.ja]) {
+    if (typeof candidat === "string" && candidat.trim().length > 0) {
+      return candidat.trim();
+    }
+  }
+  return repli;
 }
 
 /**
@@ -85,16 +77,16 @@ export function texteFr(valeur: Multilingue | null | undefined, repli = "Inconnu
  * retiré — l'API expose déjà `description` avec la valeur substituée.
  */
 export function nettoyerTexteJeu(texte: string | null | undefined, valeur?: number | null): string {
-	if (typeof texte !== "string") {
-		return "";
-	}
-	return texte
-		.replaceAll(/\[C[A-Z0-9_]*\]/g, "")
-		.replaceAll("<VALUE>", typeof valeur === "number" ? formaterNombre(valeur) : "")
-		.replaceAll("\\n", "\n")
-		.replaceAll(/[ \t]+/g, " ")
-		.replaceAll(/\n{3,}/g, "\n\n")
-		.trim();
+  if (typeof texte !== "string") {
+    return "";
+  }
+  return texte
+    .replaceAll(/\[C[A-Z0-9_]*\]/g, "")
+    .replaceAll("<VALUE>", typeof valeur === "number" ? formaterNombre(valeur) : "")
+    .replaceAll("\\n", "\n")
+    .replaceAll(/[ \t]+/g, " ")
+    .replaceAll(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**
@@ -104,10 +96,10 @@ export function nettoyerTexteJeu(texte: string | null | undefined, valeur?: numb
  * japonais d'un embed est illisible.
  */
 export function nettoyerRubis(texte: string | null | undefined): string {
-	if (typeof texte !== "string") {
-		return "";
-	}
-	return texte.replaceAll(/\[([^\][/]+)\/[^\][]*\]/g, "$1");
+  if (typeof texte !== "string") {
+    return "";
+  }
+  return texte.replaceAll(/\[([^\][/]+)\/[^\][]*\]/g, "$1");
 }
 
 /**
@@ -119,35 +111,35 @@ export { joindre };
 
 /** Nombre au format français, sans décimale superflue. */
 export function formaterNombre(valeur: number | null | undefined): string {
-	return formaterNombreUi(valeur, { decimales: 2 });
+  return formaterNombreUi(valeur, { decimales: 2 });
 }
 
 /** Pourcentage au format français (`0.4972…` → `0,5 %` pour 3 chiffres significatifs). */
 export function formaterPourcentage(valeur: number | null | undefined, decimales = 2): string {
-	return formaterPourcentageUi(valeur, { decimales });
+  return formaterPourcentageUi(valeur, { decimales });
 }
 
 /** Libellés français des sept statistiques, dans l'ordre d'affichage du wiki. */
 export const LIBELLES_STATS: ReadonlyArray<readonly [keyof Statistiques, string]> = [
-	["kick", "Frappe"],
-	["control", "Contrôle"],
-	["technique", "Technique"],
-	["pressure", "Pression"],
-	["physical", "Physique"],
-	["agility", "Agilité"],
-	["intelligence", "Intelligence"],
+  ["kick", "Frappe"],
+  ["control", "Contrôle"],
+  ["technique", "Technique"],
+  ["pressure", "Pression"],
+  ["physical", "Physique"],
+  ["agility", "Agilité"],
+  ["intelligence", "Intelligence"],
 ];
 
 /** Bloc `Frappe **133** · Contrôle **146** · …`, ou `null` si aucune valeur. */
 export function ligneStats(stats: Statistiques | null | undefined): string | null {
-	if (!stats) {
-		return null;
-	}
-	const morceaux = LIBELLES_STATS.map(([clef, libelle]) =>
-		typeof stats[clef] === "number" ? `${libelle} **${stats[clef]}**` : null
-	);
-	const ligne = joindre(morceaux);
-	return ligne.length > 0 ? ligne : null;
+  if (!stats) {
+    return null;
+  }
+  const morceaux = LIBELLES_STATS.map(([clef, libelle]) =>
+    typeof stats[clef] === "number" ? `${libelle} **${stats[clef]}**` : null,
+  );
+  const ligne = joindre(morceaux);
+  return ligne.length > 0 ? ligne : null;
 }
 
 /**
@@ -158,35 +150,34 @@ export function ligneStats(stats: Statistiques | null | undefined): string | nul
  * de faire échouer l'envoi.
  */
 export function decouperEnChamps(
-	lignes: readonly string[],
-	options: { maxParChamp?: number; maxChamps?: number } = {}
+  lignes: readonly string[],
+  options: { maxParChamp?: number; maxChamps?: number } = {},
 ): string[] {
-	const maxParChamp = Math.max(1, options.maxParChamp ?? 1024);
-	const maxChamps = Math.max(1, options.maxChamps ?? 25);
-	const blocs: string[] = [];
-	let courant = "";
+  const maxParChamp = Math.max(1, options.maxParChamp ?? 1024);
+  const maxChamps = Math.max(1, options.maxChamps ?? 25);
+  const blocs: string[] = [];
+  let courant = "";
 
-	for (const ligneBrute of lignes) {
-		if (blocs.length >= maxChamps) {
-			break;
-		}
-		const ligne =
-			ligneBrute.length > maxParChamp ? `${ligneBrute.slice(0, maxParChamp - 1)}…` : ligneBrute;
-		if (courant.length === 0) {
-			courant = ligne;
-			continue;
-		}
-		if (courant.length + 1 + ligne.length <= maxParChamp) {
-			courant = `${courant}\n${ligne}`;
-			continue;
-		}
-		blocs.push(courant);
-		courant = blocs.length >= maxChamps ? "" : ligne;
-	}
-	if (courant.length > 0 && blocs.length < maxChamps) {
-		blocs.push(courant);
-	}
-	return blocs;
+  for (const ligneBrute of lignes) {
+    if (blocs.length >= maxChamps) {
+      break;
+    }
+    const ligne = ligneBrute.length > maxParChamp ? `${ligneBrute.slice(0, maxParChamp - 1)}…` : ligneBrute;
+    if (courant.length === 0) {
+      courant = ligne;
+      continue;
+    }
+    if (courant.length + 1 + ligne.length <= maxParChamp) {
+      courant = `${courant}\n${ligne}`;
+      continue;
+    }
+    blocs.push(courant);
+    courant = blocs.length >= maxChamps ? "" : ligne;
+  }
+  if (courant.length > 0 && blocs.length < maxChamps) {
+    blocs.push(courant);
+  }
+  return blocs;
 }
 
 // --- Images ----------------------------------------------------------------
@@ -230,10 +221,10 @@ const PREFIXES_MORTS = ["/dx11/menu/icon_chr/"];
  * du segment `.g4tx/` qui désigne une texture nommée.
  */
 function estFormeDump(chemin: string): boolean {
-	if (chemin.startsWith("/dx11/menu/200_icon/02_icon_item/") && !chemin.includes(".g4tx/")) {
-		return true;
-	}
-	return /\/([A-Za-z0-9]+)_\1(?:_|\.)/.test(chemin);
+  if (chemin.startsWith("/dx11/menu/200_icon/02_icon_item/") && !chemin.includes(".g4tx/")) {
+    return true;
+  }
+  return /\/([A-Za-z0-9]+)_\1(?:_|\.)/.test(chemin);
 }
 
 /**
@@ -252,15 +243,14 @@ function estFormeDump(chemin: string): boolean {
  * deux formes rendent le même octet — la forme nommée est donc correcte partout.
  */
 export function corrigerCheminIconeChr(chemin: string): string {
-	if (!chemin.includes("/menu/icon_chr/")) {
-		return chemin;
-	}
-	const repare = chemin.replace("/menu/icon_chr/", "/menu/200_icon/10_icon_chr/");
-	return repare.replace(
-		/\/([A-Za-z0-9]+)_l_(\1(?:_\d+)?_l\d+)(\.[A-Za-z0-9]+)$/,
-		(_tout, base: string, texture: string, extension: string) =>
-			`/${base}_l.g4tx/${texture}${extension}`
-	);
+  if (!chemin.includes("/menu/icon_chr/")) {
+    return chemin;
+  }
+  const repare = chemin.replace("/menu/icon_chr/", "/menu/200_icon/10_icon_chr/");
+  return repare.replace(
+    /\/([A-Za-z0-9]+)_l_(\1(?:_\d+)?_l\d+)(\.[A-Za-z0-9]+)$/,
+    (_tout, base: string, texture: string, extension: string) => `/${base}_l.g4tx/${texture}${extension}`,
+  );
 }
 
 /**
@@ -273,41 +263,34 @@ export function corrigerCheminIconeChr(chemin: string): string {
  * `largeur` est indispensable sur les grandes illustrations : une planche
  * `gallery_img2` brute pèse jusqu'à 12 Mo, sa variante `w=400` ~13 Ko.
  */
-export function imageJeu(
-	url: string | null | undefined,
-	largeur?: 200 | 400 | 800 | 1600
-): string | null {
-	if (typeof url !== "string") {
-		return null;
-	}
-	const propre = url.trim();
-	if (!propre.startsWith("http://") && !propre.startsWith("https://")) {
-		return null;
-	}
-	let adresse: URL;
-	try {
-		adresse = new URL(propre);
-	} catch {
-		return null;
-	}
+export function imageJeu(url: string | null | undefined, largeur?: 200 | 400 | 800 | 1600): string | null {
+  if (typeof url !== "string") {
+    return null;
+  }
+  const propre = url.trim();
+  if (!propre.startsWith("http://") && !propre.startsWith("https://")) {
+    return null;
+  }
+  let adresse: URL;
+  try {
+    adresse = new URL(propre);
+  } catch {
+    return null;
+  }
 
-	adresse.pathname = corrigerNomDouble(corrigerCheminIconeChr(adresse.pathname));
+  adresse.pathname = corrigerNomDouble(corrigerCheminIconeChr(adresse.pathname));
 
-	if (
-		adresse.hostname === HOTE_CDN &&
-		(PREFIXES_MORTS.some((p) => adresse.pathname.startsWith(p)) || estFormeDump(adresse.pathname))
-	) {
-		return null;
-	}
-	if (
-		largeur &&
-		adresse.hostname === HOTE_CDN &&
-		PREFIXES_VARIANTES.some((p) => adresse.pathname.startsWith(p))
-	) {
-		adresse.searchParams.set("w", String(largeur));
-		adresse.searchParams.set("format", "webp");
-	}
-	return adresse.toString();
+  if (
+    adresse.hostname === HOTE_CDN &&
+    (PREFIXES_MORTS.some(p => adresse.pathname.startsWith(p)) || estFormeDump(adresse.pathname))
+  ) {
+    return null;
+  }
+  if (largeur && adresse.hostname === HOTE_CDN && PREFIXES_VARIANTES.some(p => adresse.pathname.startsWith(p))) {
+    adresse.searchParams.set("w", String(largeur));
+    adresse.searchParams.set("format", "webp");
+  }
+  return adresse.toString();
 }
 
 /**
@@ -322,23 +305,23 @@ export function imageJeu(
  * ce qui ne vient pas du décodage CPK.
  */
 export function cheminCpkDepuisUrl(url: string | null | undefined): string | null {
-	if (typeof url !== "string") {
-		return null;
-	}
-	let adresse: URL;
-	try {
-		adresse = new URL(url);
-	} catch {
-		return null;
-	}
-	if (adresse.hostname !== HOTE_CDN || !adresse.pathname.startsWith("/dx11/")) {
-		return null;
-	}
-	const sansExtension = adresse.pathname.replace(/\.(png|webp|jpg|jpeg)$/i, "");
-	if (sansExtension === adresse.pathname) {
-		return null;
-	}
-	return `data${sansExtension}.g4tx`;
+  if (typeof url !== "string") {
+    return null;
+  }
+  let adresse: URL;
+  try {
+    adresse = new URL(url);
+  } catch {
+    return null;
+  }
+  if (adresse.hostname !== HOTE_CDN || !adresse.pathname.startsWith("/dx11/")) {
+    return null;
+  }
+  const sansExtension = adresse.pathname.replace(/\.(png|webp|jpg|jpeg)$/i, "");
+  if (sansExtension === adresse.pathname) {
+    return null;
+  }
+  return `data${sansExtension}.g4tx`;
 }
 
 /**
@@ -354,14 +337,14 @@ export function cheminCpkDepuisUrl(url: string | null | undefined): string | nul
  * asset : seul le code de base porte un visage.
  */
 export function urlVisage(codeInterne: string | null | undefined): string | null {
-	if (typeof codeInterne !== "string") {
-		return null;
-	}
-	const base = codeInterne.trim().replace(/_\d{4}$/, "");
-	if (!/^[A-Za-z0-9]+$/.test(base) || base.length === 0) {
-		return null;
-	}
-	return `https://${HOTE_CDN}/dx11/menu/200_icon/10_icon_chr/face/${base}_l.png`;
+  if (typeof codeInterne !== "string") {
+    return null;
+  }
+  const base = codeInterne.trim().replace(/_\d{4}$/, "");
+  if (!/^[A-Za-z0-9]+$/.test(base) || base.length === 0) {
+    return null;
+  }
+  return `https://${HOTE_CDN}/dx11/menu/200_icon/10_icon_chr/face/${base}_l.png`;
 }
 
 /**
@@ -387,14 +370,14 @@ export function urlVisage(codeInterne: string | null | undefined): string | null
  * modèle réellement servi.
  */
 export function urlModele3d(code: string | null | undefined): string | null {
-	if (typeof code !== "string") {
-		return null;
-	}
-	const base = code.trim().replace(/_\d{4}$/, "");
-	if (!/^c\d{8}$/i.test(base)) {
-		return null;
-	}
-	return `https://${HOTE_CDN}/model-full/${base}.glb`;
+  if (typeof code !== "string") {
+    return null;
+  }
+  const base = code.trim().replace(/_\d{4}$/, "");
+  if (!/^c\d{8}$/i.test(base)) {
+    return null;
+  }
+  return `https://${HOTE_CDN}/model-full/${base}.glb`;
 }
 
 /**
@@ -407,14 +390,14 @@ export function urlModele3d(code: string | null | undefined): string | null {
  * (27 338 octets). 45 des 182 quêtes n'ont pas de code : on renvoie `null`.
  */
 export function urlIllustrationQuete(code: string | null | undefined): string | null {
-	if (typeof code !== "string") {
-		return null;
-	}
-	const propre = code.trim();
-	if (!/^[A-Za-z0-9_]+$/.test(propre) || propre.length === 0) {
-		return null;
-	}
-	return `https://${HOTE_CDN}/dx11/menu/220_img/quest_img/${propre}.png`;
+  if (typeof code !== "string") {
+    return null;
+  }
+  const propre = code.trim();
+  if (!/^[A-Za-z0-9_]+$/.test(propre) || propre.length === 0) {
+    return null;
+  }
+  return `https://${HOTE_CDN}/dx11/menu/220_img/quest_img/${propre}.png`;
 }
 
 // --- Familles d'auras ------------------------------------------------------
@@ -428,33 +411,33 @@ export function urlIllustrationQuete(code: string | null | undefined): string | 
  * cas mesuré avec `/api/auras/aura`, d'où la résolution stricte ci-dessous.
  */
 export const TYPES_AURA = [
-	{ slug: "esprits-guerriers", libelle: "Esprits guerriers" },
-	{ slug: "totems", libelle: "Totems" },
-	{ slug: "miximax", libelle: "Miximax" },
-	{ slug: "eveil", libelle: "Éveils" },
-	{ slug: "changement-mode", libelle: "Changements de mode" },
-	{ slug: "autres", libelle: "Autres auras" },
+  { slug: "esprits-guerriers", libelle: "Esprits guerriers" },
+  { slug: "totems", libelle: "Totems" },
+  { slug: "miximax", libelle: "Miximax" },
+  { slug: "eveil", libelle: "Éveils" },
+  { slug: "changement-mode", libelle: "Changements de mode" },
+  { slug: "autres", libelle: "Autres auras" },
 ] as const;
 
 export type SlugAura = (typeof TYPES_AURA)[number]["slug"];
 
 /** Libellé français d'une famille d'aura, ou le slug brut s'il est inconnu. */
 export function libelleTypeAura(slug: string | null | undefined): string {
-	return TYPES_AURA.find((t) => t.slug === slug)?.libelle ?? String(slug ?? "Aura");
+  return TYPES_AURA.find(t => t.slug === slug)?.libelle ?? String(slug ?? "Aura");
 }
 
 /** Slug de famille valide, ou `null` — jamais une valeur qui ferait répondre du vide. */
 export function resoudreTypeAura(saisie: string | null | undefined): SlugAura | null {
-	if (typeof saisie !== "string") {
-		return null;
-	}
-	const aiguille = normaliserLibelle(saisie);
-	const parSlug = TYPES_AURA.find((t) => t.slug === aiguille);
-	if (parSlug) {
-		return parSlug.slug;
-	}
-	const parLibelle = TYPES_AURA.find((t) => normaliserLibelle(t.libelle) === aiguille);
-	return parLibelle?.slug ?? null;
+  if (typeof saisie !== "string") {
+    return null;
+  }
+  const aiguille = normaliserLibelle(saisie);
+  const parSlug = TYPES_AURA.find(t => t.slug === aiguille);
+  if (parSlug) {
+    return parSlug.slug;
+  }
+  const parLibelle = TYPES_AURA.find(t => normaliserLibelle(t.libelle) === aiguille);
+  return parLibelle?.slug ?? null;
 }
 
 // --- Galerie ---------------------------------------------------------------
@@ -469,24 +452,22 @@ export function resoudreTypeAura(saisie: string | null | undefined): SlugAura | 
  * catégorie ne répond `{"data":[],"total":0}`.
  */
 export const CATEGORIES_GALERIE = [
-	{ valeur: "story", libelle: "Histoire", total: 242 },
-	{ valeur: "chronicle", libelle: "Chroniques", total: 29 },
-	{ valeur: "special", libelle: "Spéciales", total: 53 },
-	{ valeur: "kizuna", libelle: "Liens", total: 2 },
-	{ valeur: "other", libelle: "Autres", total: 34 },
-	{ valeur: "gallery_img2", libelle: "Galerie", total: 363 },
-	{ valeur: "ev_pic", libelle: "Événements", total: 70 },
-	{ valeur: "stadium", libelle: "Stades", total: 202 },
-	{ valeur: "vsroute_map", libelle: "Cartes route", total: 88 },
-	{ valeur: "hlp", libelle: "Aide", total: 306 },
-	{ valeur: "telop_waza", libelle: "Techniques", total: 1341 },
+  { valeur: "story", libelle: "Histoire", total: 242 },
+  { valeur: "chronicle", libelle: "Chroniques", total: 29 },
+  { valeur: "special", libelle: "Spéciales", total: 53 },
+  { valeur: "kizuna", libelle: "Liens", total: 2 },
+  { valeur: "other", libelle: "Autres", total: 34 },
+  { valeur: "gallery_img2", libelle: "Galerie", total: 363 },
+  { valeur: "ev_pic", libelle: "Événements", total: 70 },
+  { valeur: "stadium", libelle: "Stades", total: 202 },
+  { valeur: "vsroute_map", libelle: "Cartes route", total: 88 },
+  { valeur: "hlp", libelle: "Aide", total: 306 },
+  { valeur: "telop_waza", libelle: "Techniques", total: 1341 },
 ] as const;
 
 /** Libellé français d'une catégorie d'illustration, ou la valeur brute. */
 export function libelleCategorieGalerie(valeur: string | null | undefined): string {
-	return (
-		CATEGORIES_GALERIE.find((c) => c.valeur === valeur)?.libelle ?? String(valeur ?? "Illustration")
-	);
+  return CATEGORIES_GALERIE.find(c => c.valeur === valeur)?.libelle ?? String(valeur ?? "Illustration");
 }
 
 /**
@@ -496,27 +477,25 @@ export function libelleCategorieGalerie(valeur: string | null | undefined): stri
  * ignorer le filtre plutôt que rendre une liste vide sans explication.
  */
 export function resoudreCategorieGalerie(saisie: string | null | undefined): string | null {
-	if (typeof saisie !== "string") {
-		return null;
-	}
-	const aiguille = normaliserLibelle(saisie);
-	const trouvee = CATEGORIES_GALERIE.find(
-		(c) => c.valeur === aiguille || normaliserLibelle(c.libelle) === aiguille
-	);
-	return trouvee?.valeur ?? null;
+  if (typeof saisie !== "string") {
+    return null;
+  }
+  const aiguille = normaliserLibelle(saisie);
+  const trouvee = CATEGORIES_GALERIE.find(c => c.valeur === aiguille || normaliserLibelle(c.libelle) === aiguille);
+  return trouvee?.valeur ?? null;
 }
 
 // --- Quêtes et succès ------------------------------------------------------
 
 /** Libellé français du genre d'une quête (`kind` de `/api/quests` : 137 `main`, 45 `side`). */
 export function libelleGenreQuete(kind: string | null | undefined): string {
-	if (kind === "main") {
-		return "Quête principale";
-	}
-	if (kind === "side") {
-		return "Quête annexe";
-	}
-	return "Quête";
+  if (kind === "main") {
+    return "Quête principale";
+  }
+  if (kind === "side") {
+    return "Quête annexe";
+  }
+  return "Quête";
 }
 
 /**
@@ -525,13 +504,13 @@ export function libelleGenreQuete(kind: string | null | undefined): string {
  * Valeurs réelles de `/api/trophies` (228 lignes) : `trophy` 52, `activity` 176.
  */
 export function libelleCategorieSucces(categorie: string | null | undefined): string {
-	if (categorie === "trophy") {
-		return "Trophée";
-	}
-	if (categorie === "activity") {
-		return "Activité";
-	}
-	return String(categorie ?? "Succès");
+  if (categorie === "trophy") {
+    return "Trophée";
+  }
+  if (categorie === "activity") {
+    return "Activité";
+  }
+  return String(categorie ?? "Succès");
 }
 
 // --- Coordinateurs ---------------------------------------------------------
@@ -548,34 +527,34 @@ export function libelleCategorieSucces(categorie: string | null | undefined): st
  * français : c'est le choix du wiki, pas un oubli de traduction.
  */
 export function libelleRoleCoordinateur(role: string | null | undefined): string | null {
-	if (typeof role !== "string" || role.trim().length === 0) {
-		return null;
-	}
-	const roles: Record<string, string> = {
-		coach: "Coach",
-		coordinator: "Coordinateur",
-		manager: "Manager",
-	};
-	return roles[normaliserLibelle(role)] ?? role;
+  if (typeof role !== "string" || role.trim().length === 0) {
+    return null;
+  }
+  const roles: Record<string, string> = {
+    coach: "Coach",
+    coordinator: "Coordinateur",
+    manager: "Manager",
+  };
+  return roles[normaliserLibelle(role)] ?? role;
 }
 
 // --- Pagination ------------------------------------------------------------
 
 /** Nombre de pages pour un total et une taille de page donnés (au moins 1). */
 export function nombreDePages(total: number, parPage: number): number {
-	if (!Number.isFinite(total) || total <= 0 || parPage <= 0) {
-		return 1;
-	}
-	return Math.max(1, Math.ceil(total / parPage));
+  if (!Number.isFinite(total) || total <= 0 || parPage <= 0) {
+    return 1;
+  }
+  return Math.max(1, Math.ceil(total / parPage));
 }
 
 /** Ramène une page dans les bornes : une page hors limites ne doit pas répondre « vide ». */
 export function bornerPage(page: number, total: number, parPage: number): number {
-	const pages = nombreDePages(total, parPage);
-	if (!Number.isFinite(page)) {
-		return 1;
-	}
-	return Math.min(Math.max(1, Math.trunc(page)), pages);
+  const pages = nombreDePages(total, parPage);
+  if (!Number.isFinite(page)) {
+    return 1;
+  }
+  return Math.min(Math.max(1, Math.trunc(page)), pages);
 }
 
 /** Préfixe des boutons de pagination des listes de données de jeu. */
@@ -586,19 +565,19 @@ const MAX_CUSTOM_ID = 100;
 
 /** État d'une liste paginée, entièrement porté par le `customId` du bouton. */
 export interface EtatListeAzalee {
-	/** Vue concernée (`galerie`, `drops`, `coordinateur`, …). */
-	vue: string;
-	/** Page demandée, 1-based. */
-	page: number;
-	/** Filtre principal de la vue (catégorie, famille, rôle…), ou `null`. */
-	filtre: string | null;
-	/** Texte de recherche libre, ou `null`. */
-	recherche: string | null;
+  /** Vue concernée (`galerie`, `drops`, `coordinateur`, …). */
+  vue: string;
+  /** Page demandée, 1-based. */
+  page: number;
+  /** Filtre principal de la vue (catégorie, famille, rôle…), ou `null`. */
+  filtre: string | null;
+  /** Texte de recherche libre, ou `null`. */
+  recherche: string | null;
 }
 
 /** Retire le séparateur d'un fragment pour qu'il ne casse pas le décodage. */
 function sansSeparateur(valeur: string | null | undefined): string {
-	return typeof valeur === "string" ? valeur.replaceAll("|", " ").trim() : "";
+  return typeof valeur === "string" ? valeur.replaceAll("|", " ").trim() : "";
 }
 
 /**
@@ -610,33 +589,33 @@ function sansSeparateur(valeur: string | null | undefined): string {
  * bouton plutôt que d'envoyer un composant refusé.
  */
 export function encoderEtatListe(etat: EtatListeAzalee): string | null {
-	const identifiant = [
-		PREFIXE_BOUTON_AZALEE,
-		sansSeparateur(etat.vue),
-		String(Math.max(1, Math.trunc(etat.page))),
-		sansSeparateur(etat.filtre),
-		sansSeparateur(etat.recherche),
-	].join("|");
-	return identifiant.length <= MAX_CUSTOM_ID ? identifiant : null;
+  const identifiant = [
+    PREFIXE_BOUTON_AZALEE,
+    sansSeparateur(etat.vue),
+    String(Math.max(1, Math.trunc(etat.page))),
+    sansSeparateur(etat.filtre),
+    sansSeparateur(etat.recherche),
+  ].join("|");
+  return identifiant.length <= MAX_CUSTOM_ID ? identifiant : null;
 }
 
 /** Décode un `customId` produit par `encoderEtatListe`. `null` si ce n'en est pas un. */
 export function decoderEtatListe(customId: string): EtatListeAzalee | null {
-	const morceaux = customId.split("|");
-	if (morceaux.length !== 5 || morceaux[0] !== PREFIXE_BOUTON_AZALEE) {
-		return null;
-	}
-	const vue = morceaux[1] ?? "";
-	const page = Number.parseInt(morceaux[2] ?? "", 10);
-	if (vue.length === 0 || !Number.isFinite(page) || page < 1) {
-		return null;
-	}
-	return {
-		vue,
-		page,
-		filtre: morceaux[3] || null,
-		recherche: morceaux[4] || null,
-	};
+  const morceaux = customId.split("|");
+  if (morceaux.length !== 5 || morceaux[0] !== PREFIXE_BOUTON_AZALEE) {
+    return null;
+  }
+  const vue = morceaux[1] ?? "";
+  const page = Number.parseInt(morceaux[2] ?? "", 10);
+  if (vue.length === 0 || !Number.isFinite(page) || page < 1) {
+    return null;
+  }
+  return {
+    vue,
+    page,
+    filtre: morceaux[3] || null,
+    recherche: morceaux[4] || null,
+  };
 }
 
 // --- Divers ----------------------------------------------------------------
@@ -651,26 +630,26 @@ export function decoderEtatListe(customId: string): EtatListeAzalee | null {
  * La normalisation est celle de `ievr-labels`, sans accent ni casse.
  */
 export function classerPropositions<T>(
-	valeurs: readonly T[],
-	saisie: string | null | undefined,
-	etiquette: (valeur: T) => string,
-	max = 25
+  valeurs: readonly T[],
+  saisie: string | null | undefined,
+  etiquette: (valeur: T) => string,
+  max = 25,
 ): T[] {
-	const aiguille = normaliserLibelle(saisie ?? "");
-	if (aiguille.length === 0) {
-		return valeurs.slice(0, max);
-	}
-	const debuts: T[] = [];
-	const milieux: T[] = [];
-	for (const valeur of valeurs) {
-		const normalisee = normaliserLibelle(etiquette(valeur));
-		if (normalisee.startsWith(aiguille)) {
-			debuts.push(valeur);
-		} else if (normalisee.includes(aiguille)) {
-			milieux.push(valeur);
-		}
-	}
-	return [...debuts, ...milieux].slice(0, max);
+  const aiguille = normaliserLibelle(saisie ?? "");
+  if (aiguille.length === 0) {
+    return valeurs.slice(0, max);
+  }
+  const debuts: T[] = [];
+  const milieux: T[] = [];
+  for (const valeur of valeurs) {
+    const normalisee = normaliserLibelle(etiquette(valeur));
+    if (normalisee.startsWith(aiguille)) {
+      debuts.push(valeur);
+    } else if (normalisee.includes(aiguille)) {
+      milieux.push(valeur);
+    }
+  }
+  return [...debuts, ...milieux].slice(0, max);
 }
 
 // ─── Identité visuelle des fiches ───────────────────────────────────────────
@@ -685,17 +664,17 @@ export function classerPropositions<T>(
  * Azalée `#F89C5A`) déclinée par élément, et non des couleurs inventées.
  */
 export const COULEURS_ELEMENT: Readonly<Record<string, number>> = Object.freeze({
-	Feu: 0xa1_4b_3f,
-	Vent: 0x5b_8f_b9,
-	Forêt: 0x4c_8b_5a,
-	Montagne: 0xd4_af_37,
-	Néant: 0x0c_17_30,
+  Feu: 0xa1_4b_3f,
+  Vent: 0x5b_8f_b9,
+  Forêt: 0x4c_8b_5a,
+  Montagne: 0xd4_af_37,
+  Néant: 0x0c_17_30,
 });
 
 /** Couleur d'embed pour un élément, `null` si l'élément est inconnu. */
 export function couleurElement(element: string | null | undefined): number | null {
-	const canonique = resoudreElement(element);
-	return canonique ? (COULEURS_ELEMENT[canonique] ?? null) : null;
+  const canonique = resoudreElement(element);
+  return canonique ? (COULEURS_ELEMENT[canonique] ?? null) : null;
 }
 
 /**
@@ -706,42 +685,42 @@ export function couleurElement(element: string | null | undefined): number | nul
  * pas la permission « Utiliser des émojis externes ».
  */
 export const EMOJIS_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
-	Feu: "🔥",
-	Vent: "🌪️",
-	Forêt: "🌳",
-	Montagne: "⛰️",
-	Néant: "✨",
+  Feu: "🔥",
+  Vent: "🌪️",
+  Forêt: "🌳",
+  Montagne: "⛰️",
+  Néant: "✨",
 });
 
 export function emojiElement(element: string | null | undefined): string {
-	const canonique = resoudreElement(element);
-	return canonique ? (EMOJIS_ELEMENT[canonique] ?? "") : "";
+  const canonique = resoudreElement(element);
+  return canonique ? (EMOJIS_ELEMENT[canonique] ?? "") : "";
 }
 
 /** Émoji d'une catégorie de technique (tir, dribble, défense, arrêt). */
 export const EMOJIS_CATEGORIE: Readonly<Record<string, string>> = Object.freeze({
-	Tir: "⚽",
-	Dribble: "💨",
-	Défense: "🛡️",
-	Arrêt: "🧤",
+  Tir: "⚽",
+  Dribble: "💨",
+  Défense: "🛡️",
+  Arrêt: "🧤",
 });
 
 export function emojiCategorie(categorie: string | null | undefined): string {
-	const canonique = resoudreCategorieTechnique(categorie);
-	return canonique ? (EMOJIS_CATEGORIE[canonique] ?? "") : "";
+  const canonique = resoudreCategorieTechnique(categorie);
+  return canonique ? (EMOJIS_CATEGORIE[canonique] ?? "") : "";
 }
 
 /** Émoji d'une position de joueur. */
 export const EMOJIS_POSITION: Readonly<Record<string, string>> = Object.freeze({
-	Gardien: "🧤",
-	Défenseur: "🛡️",
-	Milieu: "🎯",
-	Attaquant: "⚽",
+  Gardien: "🧤",
+  Défenseur: "🛡️",
+  Milieu: "🎯",
+  Attaquant: "⚽",
 });
 
 export function emojiPosition(position: string | null | undefined): string {
-	const canonique = resoudrePosition(position);
-	return canonique ? (EMOJIS_POSITION[canonique] ?? "") : "";
+  const canonique = resoudrePosition(position);
+  return canonique ? (EMOJIS_POSITION[canonique] ?? "") : "";
 }
 
 /**
@@ -752,7 +731,7 @@ export function emojiPosition(position: string | null | undefined): string {
  * commence par une espace orpheline est pire que pas d'émoji du tout.
  */
 export function titreFiche(nom: string, emoji?: string | null, mention?: string | null): string {
-	const debut = emoji && emoji.length > 0 ? `${emoji} ${nom}` : nom;
-	const complet = mention && mention.length > 0 ? `${debut} — ${mention}` : debut;
-	return complet.length > 250 ? `${complet.slice(0, 249).trimEnd()}…` : complet;
+  const debut = emoji && emoji.length > 0 ? `${emoji} ${nom}` : nom;
+  const complet = mention && mention.length > 0 ? `${debut} — ${mention}` : debut;
+  return complet.length > 250 ? `${complet.slice(0, 249).trimEnd()}…` : complet;
 }

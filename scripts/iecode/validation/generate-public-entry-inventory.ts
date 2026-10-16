@@ -53,20 +53,13 @@ const cliHostRationale: Record<string, string> = {
 };
 const cliEvidence: Record<string, [string, string]> = {
   SeedUi: ["crates/nie/aphrody-nie-cli/src/main.rs", "seed_ui::run("],
-  MenuPredecode: [
-    "crates/nie/aphrody-nie-cli/src/menu_predecode.rs",
-    "let plan = plan(priority_paths,",
-  ],
+  MenuPredecode: ["crates/nie/aphrody-nie-cli/src/menu_predecode.rs", "let plan = plan(priority_paths,"],
   Avatar: ["crates/nie/aphrody-nie-cli/src/avatar_cmd.rs", "category_resource_prefix(cfg,"],
   Rebuild: ["crates/nie/aphrody-nie-cli/src/main.rs", "aphrody_nie_re::workflow::rebuild("],
-  Recover: [
-    "crates/nie/aphrody-nie-cli/src/main.rs",
-    "aphrody_nie_re::workflow::recover_with_observer(",
-  ],
+  Recover: ["crates/nie/aphrody-nie-cli/src/main.rs", "aphrody_nie_re::workflow::recover_with_observer("],
   Vn: ["crates/nie/aphrody-nie-cli/src/vn_cmd.rs", "casting_entries("],
 };
-const ownerNeedle = (owner: string) =>
-  owner.match(/\/(nie-[a-z0-9-]+)\//)?.[1].replaceAll("-", "_") ?? "";
+const ownerNeedle = (owner: string) => owner.match(/\/(nie-[a-z0-9-]+)\//)?.[1].replaceAll("-", "_") ?? "";
 const mapping = (
   surface: string,
   entry: string,
@@ -86,86 +79,56 @@ const mapping = (
 });
 
 const cliSource = await read("crates/nie/aphrody-nie-cli/src/main.rs");
-const cliModulePaths = await Array.fromAsync(
-  new Bun.Glob("*.rs").scan({ cwd: "crates/nie/aphrody-nie-cli/src" }),
-);
+const cliModulePaths = await Array.fromAsync(new Bun.Glob("*.rs").scan({ cwd: "crates/nie/aphrody-nie-cli/src" }));
 const cliAdapterSources = [
   "crates/nie/aphrody-nie-cli/src/main.rs",
-  ...cliModulePaths.map((path) => `crates/nie/aphrody-nie-cli/src/${path}`),
+  ...cliModulePaths.map(path => `crates/nie/aphrody-nie-cli/src/${path}`),
 ];
 const cliAdapterText = new Map(
-  await Promise.all(cliAdapterSources.map(async (path) => [path, await read(path)] as const)),
+  await Promise.all(cliAdapterSources.map(async path => [path, await read(path)] as const)),
 );
 const cliBlock = cliSource.match(/enum Cmd \{([\s\S]*?)\n\}/)?.[1] ?? "";
 const cli = [...cliBlock.matchAll(/^    (?:#\[[^\n]+\]\n    )*([A-Z][A-Za-z0-9_]*)/gm)]
-  .map((match) => match[1])
-  .filter((name) => name !== "Mcp")
-  .map((name) => {
+  .map(match => match[1])
+  .filter(name => name !== "Mcp")
+  .map(name => {
     const host = name in cliHostRationale;
     const owner = cliOwners[name] ?? "crates/nie/aphrody-nie-cli/src/main.rs";
     if (host) return mapping("cli", name, owner, "host_only", cliHostRationale[name]);
     const inferredNeedle = `${ownerNeedle(owner)}::`;
     const evidence = cliEvidence[name] ?? [
-      cliAdapterSources.find((path) => cliAdapterText.get(path)?.includes(inferredNeedle)) ?? "",
+      cliAdapterSources.find(path => cliAdapterText.get(path)?.includes(inferredNeedle)) ?? "",
       inferredNeedle,
     ];
     return {
-      ...mapping(
-        "cli",
-        name,
-        owner,
-        "portable",
-        `${name} delegates portable domain work to its named library owner.`,
-      ),
+      ...mapping("cli", name, owner, "portable", `${name} delegates portable domain work to its named library owner.`),
       sourceEvidence: evidence,
     };
   });
 
 const mcpSource = await read("crates/nie/aphrody-nie-cli/src/mcp.rs");
 const mcpOwners: Record<string, [string, string]> = {
-  vfs_list: [
-    "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
-    "aphrody_nie_explore::mcp_vfs::list(",
-  ],
-  vfs_search: [
-    "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
-    "aphrody_nie_explore::mcp_vfs::search(",
-  ],
-  vfs_stat: [
-    "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
-    "aphrody_nie_explore::mcp_vfs::stat(",
-  ],
+  vfs_list: ["crates/nie/aphrody-nie-explore/src/mcp_vfs.rs", "aphrody_nie_explore::mcp_vfs::list("],
+  vfs_search: ["crates/nie/aphrody-nie-explore/src/mcp_vfs.rs", "aphrody_nie_explore::mcp_vfs::search("],
+  vfs_stat: ["crates/nie/aphrody-nie-explore/src/mcp_vfs.rs", "aphrody_nie_explore::mcp_vfs::stat("],
   vfs_cat: ["crates/nie/aphrody-nie-explore/src/mcp_vfs.rs", "aphrody_nie_explore::mcp_vfs::cat("],
-  asset_get: [
-    "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
-    "aphrody_nie_explore::mcp_vfs::asset(",
-  ],
-  re_function: [
-    "crates/nie/aphrody-nie-wiki/src/query.rs",
-    "aphrody_nie_wiki::query::re_function_report(",
-  ],
-  re_coverage: [
-    "crates/nie/aphrody-nie-wiki/src/query.rs",
-    "aphrody_nie_wiki::query::re_coverage_report(",
-  ],
+  asset_get: ["crates/nie/aphrody-nie-explore/src/mcp_vfs.rs", "aphrody_nie_explore::mcp_vfs::asset("],
+  re_function: ["crates/nie/aphrody-nie-wiki/src/query.rs", "aphrody_nie_wiki::query::re_function_report("],
+  re_coverage: ["crates/nie/aphrody-nie-wiki/src/query.rs", "aphrody_nie_wiki::query::re_coverage_report("],
 };
-const mcp = [...mcpSource.matchAll(/#\[tool\([\s\S]*?name = "([^"]+)"[\s\S]*?\)\]/g)].map(
-  (match) => {
-    const evidence = mcpOwners[match[1]];
-    return {
-      ...mapping(
-        "mcp",
-        match[1],
-        evidence?.[0] ?? "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "transport",
-        `MCP tool ${match[1]} is an in-process transport adapter.`,
-      ),
-      ...(evidence
-        ? { sourceEvidence: ["crates/nie/aphrody-nie-cli/src/mcp.rs", evidence[1]] }
-        : {}),
-    };
-  },
-);
+const mcp = [...mcpSource.matchAll(/#\[tool\([\s\S]*?name = "([^"]+)"[\s\S]*?\)\]/g)].map(match => {
+  const evidence = mcpOwners[match[1]];
+  return {
+    ...mapping(
+      "mcp",
+      match[1],
+      evidence?.[0] ?? "crates/nie/aphrody-nie-cli/src/mcp.rs",
+      "transport",
+      `MCP tool ${match[1]} is an in-process transport adapter.`,
+    ),
+    ...(evidence ? { sourceEvidence: ["crates/nie/aphrody-nie-cli/src/mcp.rs", evidence[1]] } : {}),
+  };
+});
 
 const inventory = {
   schema: "nie.public-entry-inventory/v1",
@@ -178,8 +141,5 @@ const inventory = {
   },
   entries: [...cli, ...mcp],
 };
-await Bun.write(
-  "scripts/iecode/validation/public-entry-inventory.json",
-  `${JSON.stringify(inventory, null, 2)}\n`,
-);
+await Bun.write("scripts/iecode/validation/public-entry-inventory.json", `${JSON.stringify(inventory, null, 2)}\n`);
 console.log(JSON.stringify({ cli: cli.length, mcp: mcp.length }));

@@ -2,11 +2,11 @@ import { expect, test } from "bun:test";
 import { pathToFileURL } from "node:url";
 
 test("owned characters compose RG inventory with Neon catalog without a cross-store SQL join", async () => {
-	const child = Bun.spawn({
-		cmd: [
-			process.execPath,
-			"-e",
-			`
+  const child = Bun.spawn({
+    cmd: [
+      process.execPath,
+      "-e",
+      `
 		import { mock } from "bun:test";
 		const queries=[];
 		mock.module(${JSON.stringify(pathToFileURL(`${import.meta.dir}/../lib/db.ts`).href)},()=>({
@@ -19,30 +19,28 @@ test("owned characters compose RG inventory with Neon catalog without a cross-st
 		const rows = await personnagesPossedes("guild","member");
 		console.log(JSON.stringify({rows,queries}));
 	`,
-		],
-		cwd: import.meta.dir,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-	const result = JSON.parse(stdout);
-	expect(
-		result.rows.map((row: { id: string; obtenuLe: string }) => [row.id, row.obtenuLe]),
-	).toEqual([
-		["a", "2026-10-10"],
-		["a", "2026-10-08"],
-	]);
-	expect(result.rows[0].nom).toBe("Axel");
-	expect(result.queries.map((row: [string]) => row[0])).toEqual(["rg", "inagle"]);
-	expect(result.queries[0][1]).toContain("FROM bot_inventaire");
-	expect(result.queries[0][1]).not.toContain("inagle_");
-	expect(result.queries[1][1]).toContain("FROM inagle_characters");
-	expect(result.queries[1][1]).not.toContain("bot_inventaire");
-	expect(result.queries[1][2]).toEqual([["a", "missing", "a"]]);
-	expect(stderr).toBe("");
-	expect(exitCode).toBe(0);
+    ],
+    cwd: import.meta.dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  const result = JSON.parse(stdout);
+  expect(result.rows.map((row: { id: string; obtenuLe: string }) => [row.id, row.obtenuLe])).toEqual([
+    ["a", "2026-10-10"],
+    ["a", "2026-10-08"],
+  ]);
+  expect(result.rows[0].nom).toBe("Axel");
+  expect(result.queries.map((row: [string]) => row[0])).toEqual(["rg", "inagle"]);
+  expect(result.queries[0][1]).toContain("FROM bot_inventaire");
+  expect(result.queries[0][1]).not.toContain("inagle_");
+  expect(result.queries[1][1]).toContain("FROM inagle_characters");
+  expect(result.queries[1][1]).not.toContain("bot_inventaire");
+  expect(result.queries[1][2]).toEqual([["a", "missing", "a"]]);
+  expect(stderr).toBe("");
+  expect(exitCode).toBe(0);
 });

@@ -16,17 +16,9 @@ export function aura_lookup(aura_config_json, skill_config_json) {
   let deferred4_0;
   let deferred4_1;
   try {
-    const ptr0 = passStringToWasm0(
-      aura_config_json,
-      wasm.__wbindgen_malloc,
-      wasm.__wbindgen_realloc,
-    );
+    const ptr0 = passStringToWasm0(aura_config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(
-      skill_config_json,
-      wasm.__wbindgen_malloc,
-      wasm.__wbindgen_realloc,
-    );
+    const ptr1 = passStringToWasm0(skill_config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len1 = WASM_VECTOR_LEN;
     const ret = wasm.aura_lookup(ptr0, len0, ptr1, len1);
     var ptr3 = ret[0];
@@ -74,25 +66,11 @@ export function aura_lookup(aura_config_json, skill_config_json) {
  * @param {number} level
  * @returns {string}
  */
-export function calculate_stats(
-  main_position,
-  sub_position,
-  growth_pattern,
-  chara_rank,
-  play_style,
-  level,
-) {
+export function calculate_stats(main_position, sub_position, growth_pattern, chara_rank, play_style, level) {
   let deferred1_0;
   let deferred1_1;
   try {
-    const ret = wasm.calculate_stats(
-      main_position,
-      sub_position,
-      growth_pattern,
-      chara_rank,
-      play_style,
-      level,
-    );
+    const ret = wasm.calculate_stats(main_position, sub_position, growth_pattern, chara_rank, play_style, level);
     deferred1_0 = ret[0];
     deferred1_1 = ret[1];
     return getStringFromWasm0(ret[0], ret[1]);
@@ -328,11 +306,7 @@ export function item_lookup(item_config_json) {
   let deferred3_0;
   let deferred3_1;
   try {
-    const ptr0 = passStringToWasm0(
-      item_config_json,
-      wasm.__wbindgen_malloc,
-      wasm.__wbindgen_realloc,
-    );
+    const ptr0 = passStringToWasm0(item_config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.item_lookup(ptr0, len0);
     var ptr2 = ret[0];
@@ -434,17 +408,9 @@ export function skill_lookup(skill_config_json, skill_text_json) {
   let deferred4_0;
   let deferred4_1;
   try {
-    const ptr0 = passStringToWasm0(
-      skill_config_json,
-      wasm.__wbindgen_malloc,
-      wasm.__wbindgen_realloc,
-    );
+    const ptr0 = passStringToWasm0(skill_config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(
-      skill_text_json,
-      wasm.__wbindgen_malloc,
-      wasm.__wbindgen_realloc,
-    );
+    const ptr1 = passStringToWasm0(skill_text_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len1 = WASM_VECTOR_LEN;
     const ret = wasm.skill_lookup(ptr0, len0, ptr1, len1);
     var ptr3 = ret[0];
@@ -551,8 +517,7 @@ function getDataViewMemory0() {
   if (
     cachedDataViewMemory0 === null ||
     cachedDataViewMemory0.buffer.detached === true ||
-    (cachedDataViewMemory0.buffer.detached === undefined &&
-      cachedDataViewMemory0.buffer !== wasm.memory.buffer)
+    (cachedDataViewMemory0.buffer.detached === undefined && cachedDataViewMemory0.buffer !== wasm.memory.buffer)
   ) {
     cachedDataViewMemory0 = new DataView(wasm.memory.buffer);
   }

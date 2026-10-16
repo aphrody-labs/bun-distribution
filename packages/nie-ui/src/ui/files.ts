@@ -92,11 +92,7 @@ export class FileInput {
     for (let i = 0; i < data_.length; i++) {
       dataString += String.fromCharCode(data_[i]!);
     }
-    this.storeDataURLToStorage(
-      filename,
-      "data:application/octet-stream;base64," + btoa(dataString),
-      storageKey,
-    );
+    this.storeDataURLToStorage(filename, "data:application/octet-stream;base64," + btoa(dataString), storageKey);
   }
 }
 
@@ -113,29 +109,19 @@ export class FileInputWithIndicator extends FileInput {
     super(inputElement, loadCallback, storageKey);
     this.labelElement = this.inputElement.nextElementSibling as HTMLLabelElement;
     this.fileNameElement = this.labelElement.getElementsByClassName("file-name")[0] as HTMLElement;
-    this.loadIndicatorUse = this.labelElement.querySelector(
-      ".load-indicator > use",
-    ) as SVGUseElement;
+    this.loadIndicatorUse = this.labelElement.querySelector(".load-indicator > use") as SVGUseElement;
   }
 
   override load(name: string, buffer: ArrayBuffer) {
     super.load(name, buffer);
     this.fileNameElement.textContent = name;
-    this.loadIndicatorUse.setAttributeNS(
-      "http://www.w3.org/1999/xlink",
-      "xlink:href",
-      "file-check.svg#icon",
-    );
+    this.loadIndicatorUse.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "file-check.svg#icon");
   }
 
   override unload(): void {
     super.unload();
     this.fileNameElement.textContent = "";
-    this.loadIndicatorUse.setAttributeNS(
-      "http://www.w3.org/1999/xlink",
-      "xlink:href",
-      "file-cross.svg#icon",
-    );
+    this.loadIndicatorUse.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "file-cross.svg#icon");
   }
 }
 
@@ -187,8 +173,8 @@ export class Files {
     }
 
     fetch("resources/game_db.json")
-      .then((r) => r.text())
-      .then((db) => {
+      .then(r => r.text())
+      .then(db => {
         this.gameDb = JSON.parse(db);
         gameDbLoadedCallback();
       });

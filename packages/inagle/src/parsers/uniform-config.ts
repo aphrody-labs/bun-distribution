@@ -96,24 +96,16 @@ function parseContent(content: any) {
           uniformManagerModelIdCrc: val.uniformManagerModelIdCrc,
           uniformFielderShoulderBaringModelIdCrc: val.uniformFielderShoulderBaringModelIdCrc,
           uniformKeeperShoulderBaringModelIdCrc: val.uniformKeeperShoulderBaringModelIdCrc,
-          uniformFielderShortSleeveRollUpArmModelIdCrc:
-            val.uniformFielderShortSleeveRollUpArmModelIdCrc,
-          uniformKeeperShortSleeveRollUpArmModelIdCrc:
-            val.uniformKeeperShortSleeveRollUpArmModelIdCrc,
-          uniformFielderShoulderBaringPatternedModelIdCrc:
-            val.uniformFielderShoulderBaringPatternedModelIdCrc,
-          uniformKeeperShoulderBaringPatternedModelIdCrc:
-            val.uniformKeeperShoulderBaringPatternedModelIdCrc,
+          uniformFielderShortSleeveRollUpArmModelIdCrc: val.uniformFielderShortSleeveRollUpArmModelIdCrc,
+          uniformKeeperShortSleeveRollUpArmModelIdCrc: val.uniformKeeperShortSleeveRollUpArmModelIdCrc,
+          uniformFielderShoulderBaringPatternedModelIdCrc: val.uniformFielderShoulderBaringPatternedModelIdCrc,
+          uniformKeeperShoulderBaringPatternedModelIdCrc: val.uniformKeeperShoulderBaringPatternedModelIdCrc,
           uniformFielderHalfSleeveModelIdCrc: val.uniformFielderHalfSleeveModelIdCrc,
           uniformKeeperHalfSleeveModelIdCrc: val.uniformKeeperHalfSleeveModelIdCrc,
-          uniformFielderLongSleeveRollUpArmModelIdCrc:
-            val.uniformFielderLongSleeveRollUpArmModelIdCrc,
-          uniformKeeperLongSleeveRollUpArmModelIdCrc:
-            val.uniformKeeperLongSleeveRollUpArmModelIdCrc,
-          uniformFielderLongSleeveRollUpSleeveModelIdCrc:
-            val.uniformFielderLongSleeveRollUpSleeveModelIdCrc,
-          uniformKeeperLongSleeveRollUpSleeveModelIdCrc:
-            val.uniformKeeperLongSleeveRollUpSleeveModelIdCrc,
+          uniformFielderLongSleeveRollUpArmModelIdCrc: val.uniformFielderLongSleeveRollUpArmModelIdCrc,
+          uniformKeeperLongSleeveRollUpArmModelIdCrc: val.uniformKeeperLongSleeveRollUpArmModelIdCrc,
+          uniformFielderLongSleeveRollUpSleeveModelIdCrc: val.uniformFielderLongSleeveRollUpSleeveModelIdCrc,
+          uniformKeeperLongSleeveRollUpSleeveModelIdCrc: val.uniformKeeperLongSleeveRollUpSleeveModelIdCrc,
           uniformFielderNavelBaringModelIdCrc: val.uniformFielderNavelBaringModelIdCrc,
           uniformKeeperNavelBaringModelIdCrc: val.uniformKeeperNavelBaringModelIdCrc,
           shoesFielderModelIdCrc: val.shoesFielderModelIdCrc,

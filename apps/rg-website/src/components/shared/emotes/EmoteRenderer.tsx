@@ -47,10 +47,7 @@ export default function EmoteRenderer({
     let match: RegExpExecArray | null;
 
     // Reset regex state
-    const matcher = new RegExp(
-      pattern.source,
-      pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
-    );
+    const matcher = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`);
 
     while ((match = matcher.exec(text)) !== null) {
       const emoteName = match[1];
@@ -110,10 +107,7 @@ export function useEmotesFromText(text: string, pattern: RegExp = /:([a-z]+-?[a-
     let match: RegExpExecArray | null;
 
     // Reset regex state
-    const matcher = new RegExp(
-      pattern.source,
-      pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
-    );
+    const matcher = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`);
 
     while ((match = matcher.exec(text)) !== null) {
       const emoteName = match[1];
@@ -121,7 +115,7 @@ export function useEmotesFromText(text: string, pattern: RegExp = /:([a-z]+-?[a-
         continue;
       }
       const emote = EMOTES[emoteName as keyof typeof EMOTES];
-      if (emote && !foundEmotes.find((e) => e.name === emote.name)) {
+      if (emote && !foundEmotes.find(e => e.name === emote.name)) {
         foundEmotes.push(emote);
       }
     }
@@ -156,9 +150,6 @@ export function stripEmotes(text: string, pattern: RegExp = /:([a-z]+-?[a-z]+):/
  * // => "Hello  !"
  * ```
  */
-export function getTextWithoutEmotes(
-  text: string,
-  pattern: RegExp = /:([a-z]+-?[a-z]+):/g,
-): string {
+export function getTextWithoutEmotes(text: string, pattern: RegExp = /:([a-z]+-?[a-z]+):/g): string {
   return text.replace(pattern, "").trim();
 }

@@ -15,25 +15,25 @@ type Variant = "patron-link" | "creator-link" | "reactivate";
 // Les merge avec les scopes patron définis dans la config genericOAuth, donc
 // Pas besoin de redéclarer identity / identity.memberships ici.
 const CREATOR_EXTRA_SCOPES: string[] = [
-	PatreonOauthScope.Campaigns,
-	PatreonOauthScope.CampaignMembers,
-	PatreonOauthScope.CampaignMembersEmail,
-	PatreonOauthScope.CampaignMembersAdress,
-	PatreonOauthScope.CampaignPosts,
-	PatreonOauthScope.ManageCampaignWebhooks,
+  PatreonOauthScope.Campaigns,
+  PatreonOauthScope.CampaignMembers,
+  PatreonOauthScope.CampaignMembersEmail,
+  PatreonOauthScope.CampaignMembersAdress,
+  PatreonOauthScope.CampaignPosts,
+  PatreonOauthScope.ManageCampaignWebhooks,
 ];
 
 interface Props {
-	variant?: Variant;
-	redirect?: string;
-	className?: string;
-	label?: string;
+  variant?: Variant;
+  redirect?: string;
+  className?: string;
+  label?: string;
 }
 
 const LABELS: Record<Variant, string> = {
-	"creator-link": "Lier le compte créateur Patreon",
-	"patron-link": "Lier mon compte Patreon",
-	reactivate: "Réactiver mon soutien",
+  "creator-link": "Lier le compte créateur Patreon",
+  "patron-link": "Lier mon compte Patreon",
+  reactivate: "Réactiver mon soutien",
 };
 
 /**
@@ -44,53 +44,45 @@ const LABELS: Record<Variant, string> = {
  * définis dans la config). Patreon n'accordera ces scopes que si l'utilisateur
  * connecté est bien propriétaire de la campagne.
  */
-export function PatreonConnectButton({
-	variant = "patron-link",
-	redirect,
-	className,
-	label,
-}: Props) {
-	const [loading, setLoading] = useState(false);
+export function PatreonConnectButton({ variant = "patron-link", redirect, className, label }: Props) {
+  const [loading, setLoading] = useState(false);
 
-	const handleClick = async () => {
-		setLoading(true);
-		try {
-			const callbackURL = redirect ?? (variant === "creator-link" ? "/admin/patreon" : "/profil");
-			const res = await authClient.signIn.social({
-				callbackURL,
-				provider: "patreon",
-				...(variant === "creator-link" ? { scopes: CREATOR_EXTRA_SCOPES } : {}),
-			});
-			const err = (res as { error?: { message?: string } | null })?.error;
-			if (err) {
-				toast.error(err.message ?? "Erreur lors du link Patreon");
-				setLoading(false);
-			}
-		} catch (error) {
-			console.error("[PatreonConnectButton]", error);
-			toast.error("Erreur lors du link Patreon");
-			setLoading(false);
-		}
-	};
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const callbackURL = redirect ?? (variant === "creator-link" ? "/admin/patreon" : "/profil");
+      const res = await authClient.signIn.social({
+        callbackURL,
+        provider: "patreon",
+        ...(variant === "creator-link" ? { scopes: CREATOR_EXTRA_SCOPES } : {}),
+      });
+      const err = (res as { error?: { message?: string } | null })?.error;
+      if (err) {
+        toast.error(err.message ?? "Erreur lors du link Patreon");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("[PatreonConnectButton]", error);
+      toast.error("Erreur lors du link Patreon");
+      setLoading(false);
+    }
+  };
 
-	return (
-		<Button
-			onClick={handleClick}
-			disabled={loading}
-			size="lg"
-			className={cn(
-				"gap-2 bg-[#c9a958] text-[#0c1730] hover:bg-[#dab86a] font-semibold",
-				className
-			)}
-		>
-			{loading ? (
-				<Loader2 className="size-4 animate-spin" />
-			) : variant === "reactivate" ? (
-				<Heart className="size-4" />
-			) : (
-				<Link2 className="size-4" />
-			)}
-			{label ?? LABELS[variant]}
-		</Button>
-	);
+  return (
+    <Button
+      onClick={handleClick}
+      disabled={loading}
+      size="lg"
+      className={cn("gap-2 bg-[#c9a958] text-[#0c1730] hover:bg-[#dab86a] font-semibold", className)}
+    >
+      {loading ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : variant === "reactivate" ? (
+        <Heart className="size-4" />
+      ) : (
+        <Link2 className="size-4" />
+      )}
+      {label ?? LABELS[variant]}
+    </Button>
+  );
 }

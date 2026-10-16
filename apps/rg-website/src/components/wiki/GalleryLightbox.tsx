@@ -166,11 +166,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
               "bg-primary text-on-primary hover:bg-primary/90 disabled:opacity-50",
             )}
           >
-            {downloading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
-            )}
+            {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
             <span className="hidden sm:inline">Télécharger</span>
           </button>
           <button
@@ -193,10 +189,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
       >
         {item.full ? (
           /* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation pour ne pas fermer au clic sur l'image */
-          <div
-            className="relative flex size-full items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative flex size-full items-center justify-center" onClick={e => e.stopPropagation()}>
             <Image
               key={item.id}
               src={item.full}
@@ -222,7 +215,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
             type="button"
             tabIndex={0}
             aria-label="Illustration précédente"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onNavigate(index - 1);
             }}
@@ -239,7 +232,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
             type="button"
             tabIndex={0}
             aria-label="Illustration suivante"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onNavigate(index + 1);
             }}

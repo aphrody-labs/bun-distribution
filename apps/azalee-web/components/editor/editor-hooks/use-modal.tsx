@@ -63,11 +63,7 @@ export function useEditorModal(): [
   }, [modalContent, onClose]);
 
   const showModal = useCallback(
-    (
-      title: string,
-      getContent: (onClose: () => void) => JSX.Element,
-      closeOnClickOutside = false,
-    ) => {
+    (title: string, getContent: (onClose: () => void) => JSX.Element, closeOnClickOutside = false) => {
       setModalContent({
         closeOnClickOutside,
         content: getContent(onClose),

@@ -13,11 +13,7 @@ import type { SpriteCommonKey } from "@/config/sprites-common";
 import { formatDescription } from "@rosegriffon/azalee/text/format-description";
 import { isFemaleGender } from "@rosegriffon/azalee/game/gender";
 import type { GenderValue } from "@rosegriffon/azalee/game/gender";
-import {
-  getCharacterImageUrl,
-  getEmblemImageUrl,
-  getSkillCategoryIconUrl,
-} from "@rosegriffon/azalee/images";
+import { getCharacterImageUrl, getEmblemImageUrl, getSkillCategoryIconUrl } from "@rosegriffon/azalee/images";
 import { TEAM_EMBLEM_MAP } from "@rosegriffon/azalee/game/team-emblem-map";
 import { cn } from "@/lib/utils";
 import { CharacterStatsPopover } from "./CharacterStatsPopover";
@@ -127,28 +123,17 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
       <Table>
         <TableHeader>
           <TableRow className="bg-surface-container hover:bg-surface-container border-outline-variant">
-            <TableHead className="w-12 text-center text-on-surface-variant">
-              {t("wiki.table.headers.number")}
-            </TableHead>
-            <TableHead className="min-w-[200px] text-on-surface-variant">
-              {t("wiki.table.headers.name")}
-            </TableHead>
-            <TableHead className="w-20 text-center text-on-surface-variant">
-              {t("wiki.table.headers.gender")}
-            </TableHead>
+            <TableHead className="w-12 text-center text-on-surface-variant">{t("wiki.table.headers.number")}</TableHead>
+            <TableHead className="min-w-[200px] text-on-surface-variant">{t("wiki.table.headers.name")}</TableHead>
+            <TableHead className="w-20 text-center text-on-surface-variant">{t("wiki.table.headers.gender")}</TableHead>
             <TableHead className="w-24 text-center text-on-surface-variant">
               {t("wiki.table.headers.element")}
             </TableHead>
             <TableHead className="w-16 text-center text-on-surface-variant">
               {t("wiki.table.headers.position")}
             </TableHead>
-            <TableHead className="w-20 text-center text-on-surface-variant">
-              {t("wiki.table.headers.rarity")}
-            </TableHead>
-            <TableHead
-              className="w-12 text-center text-on-surface-variant"
-              title={t("wiki.table.headers.stats")}
-            >
+            <TableHead className="w-20 text-center text-on-surface-variant">{t("wiki.table.headers.rarity")}</TableHead>
+            <TableHead className="w-12 text-center text-on-surface-variant" title={t("wiki.table.headers.stats")}>
               {t("wiki.table.headers.stats")}
             </TableHead>
             <TableHead className="hidden lg:table-cell text-on-surface-variant">
@@ -170,11 +155,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
             const stats = character.stats || activeData.stats;
             // Localization logic for name/description
             const name =
-              (language === "ja"
-                ? character.names.ja
-                : language === "en"
-                  ? character.names.en
-                  : character.names.fr) ||
+              (language === "ja" ? character.names.ja : language === "en" ? character.names.en : character.names.fr) ||
               character.names.fr ||
               character.names.en ||
               character.names.ja ||
@@ -213,10 +194,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
               (language === "en" ? character.descriptions?.en : character.descriptions?.fr) ||
               character.descriptions?.fr ||
               "";
-            const description = formatDescription(
-              rawDescription,
-              language === "ja" ? "fr" : (language as "fr" | "en"),
-            );
+            const description = formatDescription(rawDescription, language === "ja" ? "fr" : (language as "fr" | "en"));
 
             const teams = character.teams || activeData.teams || [];
             const rawTeamName =
@@ -243,9 +221,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
                 className="border-outline-variant/50 hover:bg-surface-container-high/50 transition-colors"
               >
                 {/* N° */}
-                <TableCell className="text-center font-mono text-on-surface-variant">
-                  {startIndex + idx + 1}
-                </TableCell>
+                <TableCell className="text-center font-mono text-on-surface-variant">{startIndex + idx + 1}</TableCell>
 
                 {/* Nom avec image */}
                 <TableCell>
@@ -297,9 +273,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
                     ) : (
                       <CircleDot size={20} aria-hidden="true" className="text-on-surface-variant" />
                     )}
-                    <span className="text-xs text-on-surface-variant hidden sm:inline">
-                      {elementFr}
-                    </span>
+                    <span className="text-xs text-on-surface-variant hidden sm:inline">{elementFr}</span>
                   </div>
                 </TableCell>
 
@@ -307,20 +281,13 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
                   <div className="flex flex-col items-center gap-1">
                     {positionImage ? (
                       <div className="relative size-6" title={positionFr}>
-                        <Image
-                          src={positionImage}
-                          alt={positionFr}
-                          fill
-                          className="object-contain"
-                        />
+                        <Image src={positionImage} alt={positionFr} fill className="object-contain" />
                       </div>
                     ) : (
                       <span
                         className={cn(
                           "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                          position === "Coach"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-gray-100 text-gray-600",
+                          position === "Coach" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600",
                         )}
                       >
                         {positionFr}
@@ -329,12 +296,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
 
                     {subPositionImage && (
                       <div className="relative size-4 opacity-70" title={subPos || ""}>
-                        <Image
-                          src={subPositionImage}
-                          alt={subPos || ""}
-                          fill
-                          className="object-contain"
-                        />
+                        <Image src={subPositionImage} alt={subPos || ""} fill className="object-contain" />
                       </div>
                     )}
                   </div>
@@ -378,9 +340,7 @@ export function CharacterTable({ characters, startIndex = 0 }: CharacterTablePro
 
                 {/* Description */}
                 <TableCell className="hidden xl:table-cell max-w-[300px]">
-                  <p className="text-sm text-on-surface-variant line-clamp-2">
-                    {description || "—"}
-                  </p>
+                  <p className="text-sm text-on-surface-variant line-clamp-2">{description || "—"}</p>
                 </TableCell>
               </TableRow>
             );

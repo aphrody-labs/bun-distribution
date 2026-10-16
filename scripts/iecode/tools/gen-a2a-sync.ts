@@ -1,4 +1,4 @@
-import { writeFileSync } from "fs";
+import { writeFileSync } from "node:fs";
 
 const scriptContent = `#!/usr/bin/env bun
 /**

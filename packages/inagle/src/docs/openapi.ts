@@ -202,8 +202,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
     paths: {
       "/api/characters": {
         summary: "List characters",
-        description:
-          "Query characters with optional filtering by element, position, or name search.",
+        description: "Query characters with optional filtering by element, position, or name search.",
         get: {
           tags: ["Characters"],
           summary: "List characters",
@@ -379,8 +378,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/vfs/packs": {
         summary: "List VFS pack rules",
-        description:
-          "Lists all CRI CPK pack routing rules, priority orders, and decryption mechanisms.",
+        description: "Lists all CRI CPK pack routing rules, priority orders, and decryption mechanisms.",
         get: {
           tags: ["VFS"],
           summary: "List pack rules",
@@ -402,8 +400,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/vfs/files/{path}": {
         summary: "Read file from VFS",
-        description:
-          "Fetches a file by logical path, resolving through mounted CPKs or loose dump overlays.",
+        description: "Fetches a file by logical path, resolving through mounted CPKs or loose dump overlays.",
         get: {
           tags: ["VFS"],
           summary: "Read VFS file",
@@ -429,8 +426,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/nie/re/constants": {
         summary: "Get nie.exe cryptographic constants",
-        description:
-          "Returns verified cryptographic keys and polynomials reverse-engineered from nie.exe.",
+        description: "Returns verified cryptographic keys and polynomials reverse-engineered from nie.exe.",
         get: {
           tags: ["Reverse Engineering"],
           summary: "Get crypto constants",
@@ -452,8 +448,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/nie/re/offsets": {
         summary: "Get critical function offsets in nie.exe",
-        description:
-          "Returns disassembler anchors, function boundary addresses, and signatures in nie.exe.",
+        description: "Returns disassembler anchors, function boundary addresses, and signatures in nie.exe.",
         get: {
           tags: ["Reverse Engineering"],
           summary: "Get function offsets",
@@ -475,8 +470,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/nie/re/rtti": {
         summary: "Get reconstructed RTTI hierarchy",
-        description:
-          "Returns MSVC RTTI polymorphic classes and vtable offsets identified in nie.exe.",
+        description: "Returns MSVC RTTI polymorphic classes and vtable offsets identified in nie.exe.",
         get: {
           tags: ["Reverse Engineering"],
           summary: "Get RTTI classes",
@@ -498,8 +492,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
       },
       "/api/saves/decrypt": {
         summary: "Decrypt Lives save file",
-        description:
-          "Decrypts a Level-5 Lives save container (002AB8F4-*) using CRC32 filename stream cipher.",
+        description: "Decrypts a Level-5 Lives save container (002AB8F4-*) using CRC32 filename stream cipher.",
         post: {
           tags: ["Saves"],
           summary: "Decrypt save container",
@@ -563,11 +556,7 @@ export function generateOpenApiSpec(): OpenApiDocument {
  */
 export function generateOpenApiJson(pretty = true): string {
   const spec = generateOpenApiSpec();
-  return JSON.stringify(
-    spec,
-    (_key, value) => (typeof value === "bigint" ? value.toString() : value),
-    pretty ? 2 : 0,
-  );
+  return JSON.stringify(spec, (_key, value) => (typeof value === "bigint" ? value.toString() : value), pretty ? 2 : 0);
 }
 
 /**
@@ -592,7 +581,7 @@ export function toYaml(value: unknown, indentLevel = 0): string {
     if (value.includes("\n")) {
       const lines = value
         .split("\n")
-        .map((l) => `${indent}  ${l}`)
+        .map(l => `${indent}  ${l}`)
         .join("\n");
       return `|\n${lines}`;
     }
@@ -613,7 +602,7 @@ export function toYaml(value: unknown, indentLevel = 0): string {
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
     return value
-      .map((item) => {
+      .map(item => {
         if (typeof item === "object" && item !== null) {
           const itemYaml = toYaml(item, indentLevel + 1);
           const lines = itemYaml.split("\n");

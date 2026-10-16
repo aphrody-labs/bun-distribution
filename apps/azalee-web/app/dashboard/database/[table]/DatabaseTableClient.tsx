@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@rosegriffon/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rosegriffon/ui";
 import { Icon } from "@/components/ui/Icon";
 
 interface DatabaseTableClientProps {
@@ -47,10 +39,7 @@ function JsonPreview({ value }: { value: unknown }) {
       return (
         <span className="break-all">
           {expanded ? str : `${str.slice(0, 80)}…`}
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="ml-1 text-primary text-[10px] hover:underline"
-          >
+          <button onClick={() => setExpanded(!expanded)} className="ml-1 text-primary text-[10px] hover:underline">
             {expanded ? "réduire" : "voir plus"}
           </button>
         </span>
@@ -101,11 +90,11 @@ export function DatabaseTableClient({
 }: DatabaseTableClientProps) {
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
 
-  const visibleColumns = columns.filter((c) => !hiddenCols.has(c));
+  const visibleColumns = columns.filter(c => !hiddenCols.has(c));
   const hiddenCount = hiddenCols.size;
 
   function toggleColumn(col: string) {
-    setHiddenCols((prev) => {
+    setHiddenCols(prev => {
       const next = new Set(prev);
       if (next.has(col)) {
         next.delete(col);
@@ -147,19 +136,15 @@ export function DatabaseTableClient({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[50px] sticky left-0 bg-surface-container z-10">
-                  Action
-                </TableHead>
-                {visibleColumns.map((col) => (
+                <TableHead className="w-[50px] sticky left-0 bg-surface-container z-10">Action</TableHead>
+                {visibleColumns.map(col => (
                   <TableHead key={col} className="whitespace-nowrap group/th">
                     <div className="flex items-center gap-1">
                       <Link
                         href={buildSortHref(col)}
                         className="flex items-center gap-1 hover:text-on-surface transition-colors"
                       >
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                          {col}
-                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{col}</span>
                         {currentSort === col && (
                           <Icon
                             name={currentDir === "asc" ? "arrow_upward" : "arrow_downward"}
@@ -173,11 +158,7 @@ export function DatabaseTableClient({
                         className="opacity-0 group-hover/th:opacity-100 transition-opacity p-0.5 hover:bg-surface-container-highest rounded"
                         title={`Masquer ${col}`}
                       >
-                        <Icon
-                          name="visibility_off"
-                          size={12}
-                          className="text-on-surface-variant/40"
-                        />
+                        <Icon name="visibility_off" size={12} className="text-on-surface-variant/40" />
                       </button>
                     </div>
                   </TableHead>
@@ -197,7 +178,7 @@ export function DatabaseTableClient({
                         </Link>
                       </Button>
                     </TableCell>
-                    {visibleColumns.map((col) => (
+                    {visibleColumns.map(col => (
                       <TableCell key={col} className="max-w-[250px]">
                         {typeof row[col] === "object" && row[col] !== null ? (
                           <JsonPreview value={row[col]} />
@@ -223,9 +204,7 @@ export function DatabaseTableClient({
       <div className="flex justify-center gap-2">
         {pageNum > 1 && (
           <Button asChild variant="outline" className="rounded-full">
-            <Link
-              href={`?page=${pageNum - 1}${currentSort !== "id" ? `&sort=${currentSort}&dir=${currentDir}` : ""}`}
-            >
+            <Link href={`?page=${pageNum - 1}${currentSort !== "id" ? `&sort=${currentSort}&dir=${currentDir}` : ""}`}>
               <Icon name="arrow_back" size={16} className="mr-2" />
               Précédent
             </Link>
@@ -236,9 +215,7 @@ export function DatabaseTableClient({
         </span>
         {pageNum < totalPages && (
           <Button asChild variant="outline" className="rounded-full">
-            <Link
-              href={`?page=${pageNum + 1}${currentSort !== "id" ? `&sort=${currentSort}&dir=${currentDir}` : ""}`}
-            >
+            <Link href={`?page=${pageNum + 1}${currentSort !== "id" ? `&sort=${currentSort}&dir=${currentDir}` : ""}`}>
               Suivant
               <Icon name="arrow_forward" size={16} className="ml-2" />
             </Link>

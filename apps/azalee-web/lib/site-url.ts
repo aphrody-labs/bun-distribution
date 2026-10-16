@@ -45,9 +45,7 @@ function normalizeOrigin(value: string | undefined | null): string | null {
  */
 export function getPublicOrigin(): string {
   return (
-    normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ??
-    normalizeOrigin(process.env.BETTER_AUTH_URL) ??
-    FALLBACK_ORIGIN
+    normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ?? normalizeOrigin(process.env.BETTER_AUTH_URL) ?? FALLBACK_ORIGIN
   );
 }
 

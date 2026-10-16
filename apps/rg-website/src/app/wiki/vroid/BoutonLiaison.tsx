@@ -13,22 +13,22 @@
  */
 
 export interface BoutonLiaisonProps {
-	/** Chemin interne où revenir après l'autorisation (toujours relatif). */
-	retour?: string;
-	/** Libellé du bouton. */
-	libelle?: string;
+  /** Chemin interne où revenir après l'autorisation (toujours relatif). */
+  retour?: string;
+  /** Libellé du bouton. */
+  libelle?: string;
 }
 
 export function BoutonLiaison({ retour = "/vroid", libelle = "Lier mon compte VRoid Hub" }: BoutonLiaisonProps) {
-	return (
-		<form action="/api/vroid/login" method="get">
-			<input name="retour" type="hidden" value={retour} />
-			<button
-				className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition hover:opacity-90"
-				type="submit"
-			>
-				{libelle}
-			</button>
-		</form>
-	);
+  return (
+    <form action="/api/vroid/login" method="get">
+      <input name="retour" type="hidden" value={retour} />
+      <button
+        className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition hover:opacity-90"
+        type="submit"
+      >
+        {libelle}
+      </button>
+    </form>
+  );
 }

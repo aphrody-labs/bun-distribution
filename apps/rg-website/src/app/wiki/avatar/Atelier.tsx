@@ -4,25 +4,12 @@ import { useMemo, useReducer, useState } from "react";
 import { cdnOrigin } from "@rosegriffon/assets";
 import { Button } from "@rosegriffon/ui/button";
 import { Input } from "@rosegriffon/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@rosegriffon/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rosegriffon/ui/select";
 import { Modele3D, CurseurAtelier } from "./Modele3D";
 import { ImportAvatar } from "./ImportAvatar";
 import { Partage } from "./PanneauPartage";
 import { encoder, specDe, valeursDepuisChoix, verifierSpec } from "./partage";
-import {
-  lireProjet,
-  nouveauProjet,
-  reduireProjet,
-  telecharger,
-  type EtatAvatar,
-  type Projet,
-} from "./projet";
+import { lireProjet, nouveauProjet, reduireProjet, telecharger, type EtatAvatar, type Projet } from "./projet";
 import { iconePart, nomPart, NOMS_CATEGORIES } from "./liaisons";
 import type { Catalogue } from "./types";
 import "./atelier.css";
@@ -48,11 +35,7 @@ const CHAMPS_FICHE: Array<{ cle: string; libelle: string; exemple: string; long?
 ];
 
 /** Pose ou retire une valeur : une clé vide ne doit pas gonfler le JSON partagé. */
-function champsAvec(
-  champs: Record<string, string>,
-  cle: string,
-  valeur: string,
-): Record<string, string> {
+function champsAvec(champs: Record<string, string>, cle: string, valeur: string): Record<string, string> {
   const suite = { ...champs };
   if (valeur.trim()) suite[cle] = valeur;
   else delete suite[cle];
@@ -75,7 +58,7 @@ export function Atelier({
   cdn?: string;
   codeInitial?: string;
 }) {
-  const [h, dispatch] = useReducer(reduireProjet, avatar, (a) => ({
+  const [h, dispatch] = useReducer(reduireProjet, avatar, a => ({
     passes: [],
     present: nouveauProjet(a),
     futurs: [],
@@ -86,27 +69,20 @@ export function Atelier({
   const [importLocal, setImportLocal] = useState(false);
   const [partageOuvert, setPartageOuvert] = useState(codeInitial.length > 0);
   const p = h.present;
-  const categories = catalogue.categories.filter(
-    (c) => c.parts.length && !CATEGORIES_MASQUEES.has(c.faceSettingType),
-  );
-  const cat = categories.find((c) => c.faceSettingType === categorie) ?? categories[0];
+  const categories = catalogue.categories.filter(c => c.parts.length && !CATEGORIES_MASQUEES.has(c.faceSettingType));
+  const cat = categories.find(c => c.faceSettingType === categorie) ?? categories[0];
   const active = cat?.faceSettingType ?? categorie;
-  const origine =
-    cdn ??
-    (url?.includes("/model-avatar/") ? url.slice(0, url.indexOf("/model-avatar/")) : cdnOrigin());
-  const selection = cat?.parts.find((part) => part.id === p.avatar.choix[active]);
+  const origine = cdn ?? (url?.includes("/model-avatar/") ? url.slice(0, url.indexOf("/model-avatar/")) : cdnOrigin());
+  const selection = cat?.parts.find(part => part.id === p.avatar.choix[active]);
   const pieces =
     cat?.parts
       .map((part, index) => ({ part, nom: nomPart(part, index) }))
-      .filter(({ nom }) =>
-        nom.toLocaleLowerCase("fr").includes(recherche.toLocaleLowerCase("fr")),
-      ) ?? [];
+      .filter(({ nom }) => nom.toLocaleLowerCase("fr").includes(recherche.toLocaleLowerCase("fr"))) ?? [];
   const modifier = (projet: Projet) => {
     dispatch({ type: "modifier", projet });
     restaurer(projet.avatar);
   };
-  const changerAvatar = (suite: Partial<EtatAvatar>) =>
-    modifier({ ...p, avatar: { ...p.avatar, ...suite } });
+  const changerAvatar = (suite: Partial<EtatAvatar>) => modifier({ ...p, avatar: { ...p.avatar, ...suite } });
   const parcourir = (type: "annuler" | "retablir") => {
     const suite = reduireProjet(h, { type });
     dispatch({ type });
@@ -115,10 +91,7 @@ export function Atelier({
   const codePartage = useMemo(() => {
     const spec = specDe(catalogue);
     if (!spec || verifierSpec(spec) !== null) return null;
-    return encoder(
-      spec,
-      valeursDepuisChoix(catalogue, spec, p.avatar.choix, p.avatar.genre, p.avatar.morphologie),
-    );
+    return encoder(spec, valeursDepuisChoix(catalogue, spec, p.avatar.choix, p.avatar.genre, p.avatar.morphologie));
   }, [catalogue, p.avatar]);
   const restaurerSauvegarde = (suite: EtatAvatar) => {
     modifier({ ...p, avatar: suite });
@@ -136,18 +109,10 @@ export function Atelier({
           <Button variant="outline" onClick={() => setImportLocal(true)}>
             Importer 2D / 3D
           </Button>
-          <Button
-            variant="outline"
-            disabled={!h.passes.length}
-            onClick={() => parcourir("annuler")}
-          >
+          <Button variant="outline" disabled={!h.passes.length} onClick={() => parcourir("annuler")}>
             Annuler
           </Button>
-          <Button
-            variant="outline"
-            disabled={!h.futurs.length}
-            onClick={() => parcourir("retablir")}
-          >
+          <Button variant="outline" disabled={!h.futurs.length} onClick={() => parcourir("retablir")}>
             Rétablir
           </Button>
           <Button variant="outline" onClick={() => setPartageOuvert(true)}>
@@ -155,10 +120,7 @@ export function Atelier({
           </Button>
           <Button
             onClick={() => {
-              telecharger(
-                new Blob([JSON.stringify(p, null, 2)], { type: "application/json" }),
-                "avatar.nie.json",
-              );
+              telecharger(new Blob([JSON.stringify(p, null, 2)], { type: "application/json" }), "avatar.nie.json");
               setMessage("Projet exporté : conservez le fichier pour reprendre votre travail.");
             }}
           >
@@ -166,9 +128,7 @@ export function Atelier({
           </Button>
         </div>
       </header>
-      <output className="atelier-statut">
-        {message || "Le projet conserve vos pièces et vos transformations."}
-      </output>
+      <output className="atelier-statut">{message || "Le projet conserve vos pièces et vos transformations."}</output>
       <div className="atelier-espace">
         <aside className="atelier-bibliotheque atelier-panneau" aria-label="Bibliothèque de pièces">
           <div className="atelier-section-titre">
@@ -180,7 +140,7 @@ export function Atelier({
             <Select
               value={String(active)}
               disabled={!categories.length}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setCategorie(Number(value));
                 setRecherche("");
               }}
@@ -189,7 +149,7 @@ export function Atelier({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="atelier-menu">
-                {categories.map((c) => (
+                {categories.map(c => (
                   <SelectItem key={c.faceSettingType} value={String(c.faceSettingType)}>
                     {NOMS_CATEGORIES[c.faceSettingType] ?? `Pièces ${c.faceSettingType}`}
                   </SelectItem>
@@ -204,7 +164,7 @@ export function Atelier({
               type="search"
               placeholder="Nom de la pièce…"
               value={recherche}
-              onChange={(e) => setRecherche(e.target.value)}
+              onChange={e => setRecherche(e.target.value)}
             />
           </label>
           <div className="atelier-pieces" aria-label={NOMS_CATEGORIES[active] ?? "Pièces"}>
@@ -234,12 +194,9 @@ export function Atelier({
               );
             })}
           </div>
-          {!pieces.length && (
-            <p className="atelier-note">Aucune pièce ne correspond à cette recherche.</p>
-          )}
+          {!pieces.length && <p className="atelier-note">Aucune pièce ne correspond à cette recherche.</p>}
           <p className="atelier-note" data-unsupported-category="18">
-            Poitrine : réglage non pris en charge. Les préréglages de visage et de genre ne sont pas
-            proposés ici.
+            Poitrine : réglage non pris en charge. Les préréglages de visage et de genre ne sont pas proposés ici.
           </p>
         </aside>
         <div className="atelier-scene" aria-label="Scène 3D">
@@ -264,14 +221,14 @@ export function Atelier({
               id="route-avatar-Atelier-tsx-3"
               maxLength={120}
               value={p.nom}
-              onChange={(e) => modifier({ ...p, nom: e.target.value })}
+              onChange={e => modifier({ ...p, nom: e.target.value })}
             />
           </label>
           <label htmlFor="route-avatar-Atelier-tsx-4" className="atelier-champ">
             <span>Morphologie</span>
             <Select
               value={String(p.avatar.morphologie)}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 const choix = { ...p.avatar.choix };
                 delete choix[17];
                 const morphologie = Number(value);
@@ -306,7 +263,7 @@ export function Atelier({
                 <span>Couleur</span>
                 <Select
                   value={String(p.avatar.valeurs[`couleur.${active}`] ?? -1)}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     changerAvatar({
                       valeurs: { ...p.avatar.valeurs, [`couleur.${active}`]: Number(value) },
                     })
@@ -337,11 +294,9 @@ export function Atelier({
                 cle={`couleur.libre.${active}`}
                 libre={p.avatar.champs[`couleur.libre.${active}`] ?? ""}
                 palette={
-                  catalogue.couleursRgb?.[
-                    cat.couleurs[p.avatar.valeurs[`couleur.${active}`] ?? -1] ?? ""
-                  ]?.rgb ?? ""
+                  catalogue.couleursRgb?.[cat.couleurs[p.avatar.valeurs[`couleur.${active}`] ?? -1] ?? ""]?.rgb ?? ""
                 }
-                changer={(hex) =>
+                changer={hex =>
                   changerAvatar({
                     champs: champsAvec(p.avatar.champs, `couleur.libre.${active}`, hex),
                   })
@@ -358,9 +313,7 @@ export function Atelier({
               min={-180}
               max={180}
               step={5}
-              changer={(rotation) =>
-                modifier({ ...p, transformation: { ...p.transformation, rotation } })
-              }
+              changer={rotation => modifier({ ...p, transformation: { ...p.transformation, rotation } })}
             />
             <CurseurAtelier
               label="Échelle"
@@ -369,9 +322,7 @@ export function Atelier({
               min={0.25}
               max={4}
               step={0.05}
-              changer={(echelle) =>
-                modifier({ ...p, transformation: { ...p.transformation, echelle } })
-              }
+              changer={echelle => modifier({ ...p, transformation: { ...p.transformation, echelle } })}
             />
             <Button
               variant="outline"
@@ -381,15 +332,14 @@ export function Atelier({
               Réinitialiser les transformations
             </Button>
             <p className="atelier-note">
-              Glissez pour orbiter, utilisez la molette pour zoomer. Les transformations portent sur
-              l’objet entier.
+              Glissez pour orbiter, utilisez la molette pour zoomer. Les transformations portent sur l’objet entier.
             </p>
           </div>
           <div className="atelier-groupe">
             <h3>Fiche du personnage</h3>
             <p className="atelier-note">
-              Ces champs voyagent avec le projet. Ils ne changent pas la composition 3D : ils
-              décrivent le personnage original.
+              Ces champs voyagent avec le projet. Ils ne changent pas la composition 3D : ils décrivent le personnage
+              original.
             </p>
             {CHAMPS_FICHE.map(({ cle, libelle, exemple, long }) => (
               <label key={cle} className="atelier-champ">
@@ -401,18 +351,14 @@ export function Atelier({
                     maxLength={500}
                     placeholder={exemple}
                     value={p.avatar.champs[cle] ?? ""}
-                    onChange={(e) =>
-                      changerAvatar({ champs: champsAvec(p.avatar.champs, cle, e.target.value) })
-                    }
+                    onChange={e => changerAvatar({ champs: champsAvec(p.avatar.champs, cle, e.target.value) })}
                   />
                 ) : (
                   <Input
                     maxLength={500}
                     placeholder={exemple}
                     value={p.avatar.champs[cle] ?? ""}
-                    onChange={(e) =>
-                      changerAvatar({ champs: champsAvec(p.avatar.champs, cle, e.target.value) })
-                    }
+                    onChange={e => changerAvatar({ champs: champsAvec(p.avatar.champs, cle, e.target.value) })}
                   />
                 )}
               </label>
@@ -426,13 +372,12 @@ export function Atelier({
                 aria-label="Ouvrir un projet JSON"
                 type="file"
                 accept=".json,application/json"
-                onChange={async (e) => {
+                onChange={async e => {
                   const fichier = e.target.files?.[0];
                   e.target.value = "";
                   if (!fichier) return;
                   try {
-                    if (fichier.size > 100_000)
-                      throw new Error("Projet trop volumineux (100 Ko maximum).");
+                    if (fichier.size > 100_000) throw new Error("Projet trop volumineux (100 Ko maximum).");
                     modifier(lireProjet(await fichier.text(), catalogue));
                     setMessage("Projet ouvert. Annuler restaure le projet précédent.");
                   } catch (erreur) {
@@ -442,8 +387,7 @@ export function Atelier({
               />
             </label>
             <p className="atelier-note">
-              Le JSON conserve la recette éditable. Le GLB est un instantané 3D, pas une sauvegarde
-              du jeu.
+              Le JSON conserve la recette éditable. Le GLB est un instantané 3D, pas une sauvegarde du jeu.
             </p>
           </div>
         </aside>
@@ -490,7 +434,7 @@ function CouleurLibre({
           type="color"
           aria-label="Choisir une couleur libre"
           value={apercu}
-          onChange={(e) => {
+          onChange={e => {
             const hex = e.target.value.slice(1).toUpperCase();
             setSaisie(hex);
             changer(hex);
@@ -501,7 +445,7 @@ function CouleurLibre({
           maxLength={7}
           placeholder="#A9571F"
           value={saisie ? `#${saisie}` : ""}
-          onChange={(e) => {
+          onChange={e => {
             const hex = e.target.value
               .replace(/[^0-9A-Fa-f]/g, "")
               .slice(0, 6)
@@ -522,9 +466,7 @@ function CouleurLibre({
         </Button>
       </div>
       <p className="atelier-note">
-        {libre
-          ? "Cette teinte remplace la palette du jeu."
-          : "Aucune teinte libre : la palette du jeu décide."}
+        {libre ? "Cette teinte remplace la palette du jeu." : "Aucune teinte libre : la palette du jeu décide."}
       </p>
     </div>
   );
@@ -535,19 +477,9 @@ function VignettePiece({ url }: { url: string | null }) {
   return (
     <span className="atelier-vignette">
       {url && !erreur ? (
-        <img
-          src={url}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          width={88}
-          height={88}
-          onError={() => setErreur(true)}
-        />
+        <img src={url} alt="" loading="lazy" decoding="async" width={88} height={88} onError={() => setErreur(true)} />
       ) : (
-        <span className="atelier-vignette-absente">
-          Aperçu {erreur ? "indisponible" : "non fourni"}
-        </span>
+        <span className="atelier-vignette-absente">Aperçu {erreur ? "indisponible" : "non fourni"}</span>
       )}
     </span>
   );

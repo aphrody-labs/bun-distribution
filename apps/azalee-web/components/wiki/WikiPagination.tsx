@@ -20,12 +20,7 @@ interface WikiPaginationProps {
   perPageOptions?: number[];
 }
 
-export function WikiPagination({
-  totalItems,
-  itemsPerPage,
-  currentPage,
-  perPageOptions,
-}: WikiPaginationProps) {
+export function WikiPagination({ totalItems, itemsPerPage, currentPage, perPageOptions }: WikiPaginationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -84,7 +79,7 @@ export function WikiPagination({
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <span className="font-medium">Par page :</span>
           <div className="flex gap-1">
-            {perPageOptions.map((opt) => (
+            {perPageOptions.map(opt => (
               <Link
                 key={opt}
                 href={createPerPageUrl(opt)}

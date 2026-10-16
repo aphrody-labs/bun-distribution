@@ -11,12 +11,12 @@ import { useSidebar } from "@rosegriffon/ui";
  * ou navigue ailleurs, le cookie `sidebar:state` reprend le dessus.
  */
 export function CollapseSidebarOnMount() {
-	const { setOpen, isMobile } = useSidebar();
-	useEffect(() => {
-		if (isMobile) {
-			return;
-		}
-		setOpen(false);
-	}, [setOpen, isMobile]);
-	return null;
+  const { setOpen, isMobile } = useSidebar();
+  useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+    setOpen(false);
+  }, [setOpen, isMobile]);
+  return null;
 }

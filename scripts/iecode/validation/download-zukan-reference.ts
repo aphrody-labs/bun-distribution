@@ -16,10 +16,7 @@
 import { zukanReferenceFrame } from "../../../packages/inagle/src/zukan/reference-frame.ts";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  createZukanWebService,
-  zukanResponseHtml,
-} from "../../../packages/inagle/src/zukan/web-service.ts";
+import { createZukanWebService, zukanResponseHtml } from "../../../packages/inagle/src/zukan/web-service.ts";
 
 /** La racine du dépôt, déduite de l'emplacement de ce fichier — jamais du répertoire courant. */
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -48,8 +45,7 @@ const html = await zukanResponseHtml(service, pageUrl, "Page");
 const model = html.match(/const modelId = '([^']+)'/)?.[1];
 const count = Number(html.match(/const imageCount = (\d+)/)?.[1]);
 const base = html.match(/return `(https:\/\/[^`]+)` \+ `_r/)?.[1];
-if (!model || !base || !count || count > 100)
-  throw new Error("Configuration du visualiseur introuvable");
+if (!model || !base || !count || count > 100) throw new Error("Configuration du visualiseur introuvable");
 const root = `${RACINE}/var/outputs/zukan-reference/${model}`;
 await Bun.write(`${root}/source.html`, html);
 const frames: any[] = [];
@@ -72,17 +68,13 @@ for (const suffix of ["", "_fullbody"]) {
 }
 await Bun.write(
   `${root}/manifest.json`,
-  JSON.stringify(
-    { source: pageUrl, downloadedAt: new Date().toISOString(), model, frames },
-    null,
-    2,
-  ),
+  JSON.stringify({ source: pageUrl, downloadedAt: new Date().toISOString(), model, frames }, null, 2),
 );
 console.log(
   JSON.stringify({
     root,
     count: frames.length,
     bytes: frames.reduce((n, f) => n + f.bytes, 0),
-    sizes: [...new Set(frames.map((f) => `${f.view}: ${f.width}x${f.height}`))],
+    sizes: [...new Set(frames.map(f => `${f.view}: ${f.width}x${f.height}`))],
   }),
 );

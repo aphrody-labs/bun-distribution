@@ -39,11 +39,7 @@ async function token(exp = 2_000, tokenUse = "session", overrides: Record<string
     false,
     ["sign"],
   );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(`${header}.${payload}`),
-  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${header}.${payload}`));
   return `${header}.${payload}.${base64url(signature)}`;
 }
 
@@ -81,10 +77,8 @@ describe("purpose-bound realtime verification", () => {
     { sub: null },
     { exp: "2000" },
     { exp: null },
-  ])("rejects invalid realtime claims %j", async (claims) => {
-    expect(
-      await verifyAchilleaRealtimeToken(await token(2_000, "realtime", claims), secret, 1_000),
-    ).toBeNull();
+  ])("rejects invalid realtime claims %j", async claims => {
+    expect(await verifyAchilleaRealtimeToken(await token(2_000, "realtime", claims), secret, 1_000)).toBeNull();
   });
 
   test("requires valid signature, secret and unexpired token", async () => {
@@ -93,9 +87,7 @@ describe("purpose-bound realtime verification", () => {
     expect(await verifyAchilleaRealtimeToken(valid, "", 1_000)).toBeNull();
     expect(await verifyAchilleaRealtimeToken(valid, secret, 2_000)).toBeNull();
     const invalidResults = await Promise.all(
-      ["", "a.b", "a.b.c", `${valid}.extra`].map((malformed) =>
-        verifyAchilleaRealtimeToken(malformed, secret, 1_000),
-      ),
+      ["", "a.b", "a.b.c", `${valid}.extra`].map(malformed => verifyAchilleaRealtimeToken(malformed, secret, 1_000)),
     );
     expect(invalidResults).toEqual([null, null, null, null]);
   });

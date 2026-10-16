@@ -1,2891 +1,2859 @@
 {
-	"regularMatchdays": [
-		{
-			"matchday": 1,
-			"date": "2026-04-10",
-			"matches": [
-				{
-					"time": "18h",
-					"home": "LMS",
-					"away": "DR",
-					"homeScore": 0,
-					"awayScore": 3,
-					"date": "2026-04-10",
-					"matchday": 1,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Zerion",
-							"awayPlayer": "Shinji",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Saikyoo",
-							"awayPlayer": "Patachoo",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kakuszka",
-							"awayPlayer": "Astrokyo",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "DR"
-				},
-				{
-					"time": "19h",
-					"home": "ZOO",
-					"away": "GKO",
-					"homeScore": 0,
-					"awayScore": 3,
-					"date": "2026-04-10",
-					"matchday": 1,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "L'Éléphant",
-							"awayPlayer": "Woodzy",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "l'ornythorinque",
-							"awayPlayer": "gamewatch",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "SuperMouette",
-							"awayPlayer": "Tomus",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "20h",
-					"home": "OMP",
-					"away": "ASE",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-04-10",
-					"matchday": 1,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Opposing",
-							"awayPlayer": "R9",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Leo",
-							"awayPlayer": "Yahito",
-							"homeGoals": 6,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "WeezaR",
-							"awayPlayer": "Zen",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "OMP"
-				},
-				{
-					"time": "21h",
-					"home": "FGS",
-					"away": "KOM",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-04-10",
-					"matchday": 1,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Nathan",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Evo",
-							"awayPlayer": "Kappa",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Hakai",
-							"awayPlayer": "Volfe",
-							"homeGoals": 4,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Hakai",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 1,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": true,
-					"winnerId": "FGS"
-				}
-			]
-		},
-		{
-			"matchday": 2,
-			"date": "2026-04-17",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "FGS",
-					"away": "OMP",
-					"homeScore": 0,
-					"awayScore": 2,
-					"date": "2026-04-17",
-					"matchday": 2,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Kazemaru",
-							"awayPlayer": "Opposing",
-							"homeGoals": 3,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Hakai",
-							"awayPlayer": "Carillo",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Nathan",
-							"awayPlayer": "Sokkah",
-							"homeGoals": 2,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "OMP"
-				},
-				{
-					"time": "20h",
-					"home": "ASE",
-					"away": "KOM",
-					"homeScore": 3,
-					"awayScore": 0,
-					"date": "2026-04-17",
-					"matchday": 2,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Tiabox",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 3,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Karmaxe",
-							"awayPlayer": "Volfe",
-							"homeGoals": 4,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Eternity",
-							"awayPlayer": "Kappa",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "ASE"
-				},
-				{
-					"time": "21h",
-					"home": "ZOO",
-					"away": "LMS",
-					"homeScore": 0,
-					"awayScore": 3,
-					"date": "2026-04-17",
-					"matchday": 2,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "L'Éléphant",
-							"awayPlayer": "Zerion",
-							"homeGoals": 0,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "SuperMouette",
-							"awayPlayer": "Panda",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "LePelican",
-							"awayPlayer": "Kakuszka",
-							"homeGoals": 1,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "LMS"
-				},
-				{
-					"time": "22h",
-					"home": "DR",
-					"away": "GKO",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-04-17",
-					"matchday": 2,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Astrokyo",
-							"awayPlayer": "Kaelith",
-							"homeGoals": 3,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Rayuki (sub)",
-							"awayPlayer": "Fen",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Patachoo",
-							"awayPlayer": "Tomus",
-							"homeGoals": 1,
-							"awayGoals": 5,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "DR"
-				}
-			]
-		},
-		{
-			"matchday": 3,
-			"date": "2026-04-24",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "ASE",
-					"away": "FGS",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-04-24",
-					"matchday": 3,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Tiabox",
-							"awayPlayer": "Evo",
-							"homeGoals": 6,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Vince",
-							"awayPlayer": "Hakai",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Taiyo",
-							"awayPlayer": "Kazemaru",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Taiyo",
-							"awayPlayer": "Hakai",
-							"homeGoals": 1,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": true,
-					"winnerId": "ASE"
-				},
-				{
-					"time": "20h",
-					"home": "LMS",
-					"away": "GKO",
-					"homeScore": 1,
-					"awayScore": 1,
-					"date": "2026-04-24",
-					"matchday": 3,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Zerion",
-							"awayPlayer": "Tomus",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Gamidon",
-							"homePlayer": "Kakuszka",
-							"awayPlayer": "Fen",
-							"homeGoals": -1,
-							"awayGoals": -1,
-							"forfeitHome": true,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Saikyoo",
-							"awayPlayer": "Vype",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Zerion",
-							"awayPlayer": "Vype",
-							"homeGoals": 0,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": true,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "21h",
-					"home": "KOM",
-					"away": "OMP",
-					"homeScore": 0,
-					"awayScore": 2,
-					"date": "2026-04-24",
-					"matchday": 3,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Mathiuze",
-							"awayPlayer": "Carillo",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Volfe",
-							"awayPlayer": "Leo",
-							"homeGoals": 1,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Flavira",
-							"awayPlayer": "Sokkah",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "OMP"
-				},
-				{
-					"time": "22h",
-					"home": "DR",
-					"away": "ZOO",
-					"homeScore": 3,
-					"awayScore": 0,
-					"date": "2026-04-24",
-					"matchday": 3,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Astrokyo",
-							"awayPlayer": "SuperMouette",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Shinji",
-							"awayPlayer": "L'Éléphant",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Patachoo",
-							"awayPlayer": "LeScolopendre",
-							"homeGoals": 4,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "DR"
-				}
-			]
-		},
-		{
-			"matchday": 4,
-			"date": "2026-05-01",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "GKO",
-					"away": "KOM",
-					"homeScore": 2,
-					"awayScore": 0,
-					"date": "2026-05-01",
-					"matchday": 4,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Fen",
-							"awayPlayer": "Flavira",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Lotus",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 4,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Vype",
-							"awayPlayer": "Volfe",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "20h",
-					"home": "DR",
-					"away": "ASE",
-					"homeScore": 1,
-					"awayScore": 2,
-					"date": "2026-05-01",
-					"matchday": 4,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Rayuki",
-							"awayPlayer": "Vapo",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Patachoo",
-							"awayPlayer": "Eternity",
-							"homeGoals": 2,
-							"awayGoals": 5,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Shinji",
-							"awayPlayer": "Vince",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "ASE"
-				},
-				{
-					"time": "21h",
-					"home": "LMS",
-					"away": "OMP",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-01",
-					"matchday": 4,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Kakuszka",
-							"awayPlayer": "Opposing",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "Zerion",
-							"awayPlayer": "Zekw0n",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Eren",
-							"awayPlayer": "Sokkah",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "LMS"
-				},
-				{
-					"time": "22h",
-					"home": "ZOO",
-					"away": "FGS",
-					"homeScore": 0,
-					"awayScore": 3,
-					"date": "2026-05-01",
-					"matchday": 4,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "LeCxméléon",
-							"awayPlayer": "Nathan",
-							"homeGoals": 2,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Shakka",
-							"homePlayer": "SuperMxuette",
-							"awayPlayer": "Hakai",
-							"homeGoals": 1,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "LeScxlopendre",
-							"awayPlayer": "Evo",
-							"homeGoals": -1,
-							"awayGoals": 0,
-							"forfeitHome": true,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "FGS"
-				}
-			]
-		},
-		{
-			"matchday": 5,
-			"date": "2026-05-08",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "GKO",
-					"away": "FGS",
-					"homeScore": 3,
-					"awayScore": 0,
-					"date": "2026-05-08",
-					"matchday": 5,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Woodzy",
-							"awayPlayer": "Kazemaru",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Gamidon",
-							"homePlayer": "Vype",
-							"awayPlayer": "Nathan",
-							"homeGoals": 4,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kaelith",
-							"awayPlayer": "Hakai",
-							"homeGoals": 6,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "20h",
-					"home": "ZOO",
-					"away": "KOM",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-08",
-					"matchday": 5,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "LePxlican",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Gamidon",
-							"homePlayer": "LeLxopard",
-							"awayPlayer": "Kappa",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "SuperMxuette",
-							"awayPlayer": "Volfe",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "LeLxopard",
-							"awayPlayer": "Mathiuze",
-							"homeGoals": 1,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": true,
-					"winnerId": "ZOO"
-				},
-				{
-					"time": "21h",
-					"home": "DR",
-					"away": "OMP",
-					"homeScore": 0,
-					"awayScore": 2,
-					"date": "2026-05-08",
-					"matchday": 5,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Shinji",
-							"awayPlayer": "Opposing",
-							"homeGoals": 1,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Gamidon",
-							"homePlayer": "Rayuki",
-							"awayPlayer": "Carillo",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Astrokyo",
-							"awayPlayer": "Leo",
-							"homeGoals": 3,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "OMP"
-				},
-				{
-					"time": "22h",
-					"home": "LMS",
-					"away": "ASE",
-					"homeScore": 1,
-					"awayScore": 2,
-					"date": "2026-05-08",
-					"matchday": 5,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Zerion",
-							"awayPlayer": "Eternity",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": "Gamidon",
-							"homePlayer": "Eren",
-							"awayPlayer": "Razimi",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kakuszka",
-							"awayPlayer": "Vince",
-							"homeGoals": 1,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "ASE"
-				}
-			]
-		},
-		{
-			"matchday": 6,
-			"date": "2026-05-15",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "GKO",
-					"away": "ASE",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-15",
-					"matchday": 6,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Vype",
-							"awayPlayer": "Vince",
-							"homeGoals": 4,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Woodzy",
-							"awayPlayer": "Eternity",
-							"homeGoals": 3,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "gamewatch",
-							"awayPlayer": "Taiyo",
-							"homeGoals": 5,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "20h",
-					"home": "OMP",
-					"away": "ZOO",
-					"homeScore": 2,
-					"awayScore": 0,
-					"date": "2026-05-15",
-					"matchday": 6,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Oppo",
-							"awayPlayer": "LeLxopard",
-							"homeGoals": 2,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Zekwon",
-							"awayPlayer": "LaScxlopendre",
-							"homeGoals": 3,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Weezar",
-							"awayPlayer": "LePxlican",
-							"homeGoals": 3,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "OMP"
-				},
-				{
-					"time": "21h",
-					"home": "KOM",
-					"away": "DR",
-					"homeScore": 1,
-					"awayScore": 2,
-					"date": "2026-05-15",
-					"matchday": 6,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Mathiuze",
-							"awayPlayer": "AstroKyo",
-							"homeGoals": 2,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kappa",
-							"awayPlayer": "Shinji",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Volfe",
-							"awayPlayer": "Shozuma",
-							"homeGoals": 3,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "DR"
-				},
-				{
-					"time": "28.0",
-					"home": "FGS",
-					"away": "LMS",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-15",
-					"matchday": 6,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Hakai",
-							"awayPlayer": "Zerion",
-							"homeGoals": 1,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Nathan",
-							"awayPlayer": "Eren",
-							"homeGoals": 1,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kazemaru",
-							"awayPlayer": "Colombo",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Hakai",
-							"awayPlayer": "Eren",
-							"homeGoals": 1,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": true,
-					"winnerId": "FGS"
-				}
-			]
-		},
-		{
-			"matchday": 7,
-			"date": "2026-05-22",
-			"matches": [
-				{
-					"time": "19h",
-					"home": "FGS",
-					"away": "DR",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-22",
-					"matchday": 7,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Evo",
-							"awayPlayer": "Shinji",
-							"homeGoals": 2,
-							"awayGoals": 4,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Hakai",
-							"awayPlayer": "Astrokyo",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Nathan",
-							"awayPlayer": "Thunungu",
-							"homeGoals": 4,
-							"awayGoals": 0,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "FGS"
-				},
-				{
-					"time": "20h",
-					"home": "GKO",
-					"away": "OMP",
-					"homeScore": 2,
-					"awayScore": 1,
-					"date": "2026-05-22",
-					"matchday": 7,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Woodzy",
-							"awayPlayer": "Sokkah",
-							"homeGoals": 5,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Gamewatch",
-							"awayPlayer": "Carillo",
-							"homeGoals": 3,
-							"awayGoals": 2,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Kaelith",
-							"awayPlayer": "WeezaR",
-							"homeGoals": 1,
-							"awayGoals": 3,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "GKO"
-				},
-				{
-					"time": "21h",
-					"home": "KOM",
-					"away": "LMS",
-					"homeScore": 3,
-					"awayScore": 0,
-					"date": "2026-05-22",
-					"matchday": 7,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Volfe",
-							"awayPlayer": "Zerion",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Mathiuze",
-							"awayPlayer": "Eren",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Flavira",
-							"awayPlayer": "Colombo",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "KOM"
-				},
-				{
-					"time": "22h",
-					"home": "ASE",
-					"away": "ZOO",
-					"homeScore": 3,
-					"awayScore": 0,
-					"date": "2026-05-22",
-					"matchday": 7,
-					"games": [
-						{
-							"slotLabel": "Pseudo TO",
-							"homePlayer": "Razimi",
-							"awayPlayer": "LaScxlopendre",
-							"homeGoals": 0,
-							"awayGoals": -1,
-							"forfeitHome": false,
-							"forfeitAway": true
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Flamme",
-							"awayPlayer": "LePxlican",
-							"homeGoals": 2,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						},
-						{
-							"slotLabel": null,
-							"homePlayer": "Vapo",
-							"awayPlayer": "SuperMxuette",
-							"homeGoals": 4,
-							"awayGoals": 1,
-							"forfeitHome": false,
-							"forfeitAway": false
-						}
-					],
-					"phase": "regular",
-					"overtime": false,
-					"winnerId": "ASE"
-				}
-			]
-		}
-	],
-	"playoffMatches": [
-		{
-			"time": "20h",
-			"home": "OMP",
-			"away": "ASE",
-			"homeScore": 3,
-			"awayScore": 1,
-			"date": "2026-05-29",
-			"matchday": 1,
-			"games": [
-				{
-					"slotLabel": "Pseudo TO",
-					"homePlayer": "Leo",
-					"awayPlayer": "Vince",
-					"homeGoals": 2,
-					"awayGoals": 0,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Master",
-					"awayPlayer": "Flamme",
-					"homeGoals": 2,
-					"awayGoals": 3,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "WeezaR",
-					"awayPlayer": "Vapo",
-					"homeGoals": 3,
-					"awayGoals": 0,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Leo",
-					"awayPlayer": "Flamme",
-					"homeGoals": 3,
-					"awayGoals": 2,
-					"forfeitHome": false,
-					"forfeitAway": false
-				}
-			],
-			"label": "Demi 1",
-			"roundIndex": 0,
-			"phase": "playoff"
-		},
-		{
-			"time": "21h30",
-			"home": "GKO",
-			"away": "DR",
-			"homeScore": 3,
-			"awayScore": 0,
-			"date": "2026-05-29",
-			"matchday": 1,
-			"games": [
-				{
-					"slotLabel": "Pseudo TO",
-					"homePlayer": "Gamewatch",
-					"awayPlayer": "Astrokyo",
-					"homeGoals": 3,
-					"awayGoals": 0,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Woodzy",
-					"awayPlayer": "Thunungu",
-					"homeGoals": 6,
-					"awayGoals": 1,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Vype",
-					"awayPlayer": "Rayuki",
-					"homeGoals": 5,
-					"awayGoals": 2,
-					"forfeitHome": false,
-					"forfeitAway": false
-				}
-			],
-			"label": "Demi 2",
-			"roundIndex": 0,
-			"phase": "playoff"
-		},
-		{
-			"time": "20h",
-			"home": "GKO",
-			"away": "OMP",
-			"homeScore": 3,
-			"awayScore": 1,
-			"date": "2026-06-05",
-			"matchday": 2,
-			"games": [
-				{
-					"slotLabel": "Pseudo TO",
-					"homePlayer": "gamewatch",
-					"awayPlayer": "Opposing",
-					"homeGoals": 2,
-					"awayGoals": 0,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Woodzy",
-					"awayPlayer": "Leo",
-					"homeGoals": 0,
-					"awayGoals": 3,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Vype",
-					"awayPlayer": "WeezaR",
-					"homeGoals": 0,
-					"awayGoals": -1,
-					"forfeitHome": false,
-					"forfeitAway": true
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Vype",
-					"awayPlayer": "WeezaR",
-					"homeGoals": 3,
-					"awayGoals": 2,
-					"forfeitHome": false,
-					"forfeitAway": false
-				}
-			],
-			"label": "Finale winners",
-			"roundIndex": 1,
-			"phase": "playoff"
-		},
-		{
-			"time": "21h30",
-			"home": "ASE",
-			"away": "DR",
-			"homeScore": 3,
-			"awayScore": 0,
-			"date": "2026-06-05",
-			"matchday": 2,
-			"games": [
-				{
-					"slotLabel": "Pseudo TO",
-					"homePlayer": "Eternity",
-					"awayPlayer": "Rayuki",
-					"homeGoals": 2,
-					"awayGoals": 1,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Taiyo",
-					"awayPlayer": "Shinji",
-					"homeGoals": 3,
-					"awayGoals": 2,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Vapo",
-					"awayPlayer": "Thunungu",
-					"homeGoals": 3,
-					"awayGoals": 2,
-					"forfeitHome": false,
-					"forfeitAway": false
-				}
-			],
-			"label": "Demi losers",
-			"roundIndex": 1,
-			"phase": "playoff"
-		},
-		{
-			"time": "20h",
-			"home": "GKO",
-			"away": "OMP",
-			"homeScore": 3,
-			"awayScore": 0,
-			"date": "2026-06-06",
-			"matchday": 3,
-			"games": [
-				{
-					"slotLabel": "Pseudo TO",
-					"homePlayer": "gamewatch",
-					"awayPlayer": "Opposing",
-					"homeGoals": 1,
-					"awayGoals": 0,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Woodzy",
-					"awayPlayer": "Leo",
-					"homeGoals": 5,
-					"awayGoals": 4,
-					"forfeitHome": false,
-					"forfeitAway": false
-				},
-				{
-					"slotLabel": null,
-					"homePlayer": "Vype",
-					"awayPlayer": "WeezaR",
-					"homeGoals": 3,
-					"awayGoals": 1,
-					"forfeitHome": false,
-					"forfeitAway": false
-				}
-			],
-			"label": "Finale losers",
-			"roundIndex": 2,
-			"phase": "playoff"
-		}
-	],
-	"players": [
-		{
-			"name": "Vype",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 9,
-			"wins": 9,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 23,
-			"goalsAgainst": 11,
-			"goalDiff": 12,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 2,
-			"regularGames": 5,
-			"playoffGames": 4
-		},
-		{
-			"name": "gamewatch",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 6,
-			"wins": 6,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 14,
-			"goalsAgainst": 5,
-			"goalDiff": 9,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 3,
-			"playoffGames": 3
-		},
-		{
-			"name": "Hakai",
-			"teams": ["FGS"],
-			"primaryTeam": "FGS",
-			"games": 10,
-			"wins": 6,
-			"losses": 3,
-			"draws": 1,
-			"goalsFor": 17,
-			"goalsAgainst": 13,
-			"goalDiff": 4,
-			"winrate": 60.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 10,
-			"playoffGames": 0
-		},
-		{
-			"name": "Leo",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 7,
-			"wins": 5,
-			"losses": 1,
-			"draws": 1,
-			"goalsFor": 25,
-			"goalsAgainst": 14,
-			"goalDiff": 11,
-			"winrate": 71.4,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 4
-		},
-		{
-			"name": "Woodzy",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 7,
-			"wins": 5,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 25,
-			"goalsAgainst": 17,
-			"goalDiff": 8,
-			"winrate": 71.4,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 3
-		},
-		{
-			"name": "Zerion",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 8,
-			"wins": 4,
-			"losses": 3,
-			"draws": 1,
-			"goalsFor": 13,
-			"goalsAgainst": 7,
-			"goalDiff": 6,
-			"winrate": 50.0,
-			"forfeitsGiven": 2,
-			"forfeitsReceived": 0,
-			"regularGames": 8,
-			"playoffGames": 0
-		},
-		{
-			"name": "Eternity",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 5,
-			"wins": 4,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 15,
-			"goalsAgainst": 10,
-			"goalDiff": 5,
-			"winrate": 80.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 1
-		},
-		{
-			"name": "Astrokyo",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 7,
-			"wins": 4,
-			"losses": 2,
-			"draws": 1,
-			"goalsFor": 14,
-			"goalsAgainst": 13,
-			"goalDiff": 1,
-			"winrate": 57.1,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 6,
-			"playoffGames": 1
-		},
-		{
-			"name": "Shinji",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 7,
-			"wins": 4,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 11,
-			"goalsAgainst": 13,
-			"goalDiff": -2,
-			"winrate": 57.1,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 2,
-			"regularGames": 6,
-			"playoffGames": 1
-		},
-		{
-			"name": "WeezaR",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 7,
-			"wins": 3,
-			"losses": 4,
-			"draws": 0,
-			"goalsFor": 13,
-			"goalsAgainst": 10,
-			"goalDiff": 3,
-			"winrate": 42.9,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 4
-		},
-		{
-			"name": "Carillo",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 4,
-			"wins": 3,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 8,
-			"goalsAgainst": 5,
-			"goalDiff": 3,
-			"winrate": 75.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Opposing",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 6,
-			"wins": 3,
-			"losses": 2,
-			"draws": 1,
-			"goalsFor": 10,
-			"goalsAgainst": 8,
-			"goalDiff": 2,
-			"winrate": 50.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 4,
-			"playoffGames": 2
-		},
-		{
-			"name": "Tiabox",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 2,
-			"wins": 2,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 9,
-			"goalsAgainst": 0,
-			"goalDiff": 9,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 0
-		},
-		{
-			"name": "Tomus",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 3,
-			"wins": 2,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 10,
-			"goalsAgainst": 5,
-			"goalDiff": 5,
-			"winrate": 66.7,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "LeLxopard",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 3,
-			"wins": 2,
-			"losses": 0,
-			"draws": 1,
-			"goalsFor": 5,
-			"goalsAgainst": 3,
-			"goalDiff": 2,
-			"winrate": 66.7,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "Razimi",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 2,
-			"wins": 2,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 1,
-			"goalDiff": 2,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 2,
-			"playoffGames": 0
-		},
-		{
-			"name": "Nathan",
-			"teams": ["FGS"],
-			"primaryTeam": "FGS",
-			"games": 6,
-			"wins": 2,
-			"losses": 3,
-			"draws": 1,
-			"goalsFor": 14,
-			"goalsAgainst": 13,
-			"goalDiff": 1,
-			"winrate": 33.3,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 6,
-			"playoffGames": 0
-		},
-		{
-			"name": "Flamme",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 3,
-			"wins": 2,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 7,
-			"goalsAgainst": 6,
-			"goalDiff": 1,
-			"winrate": 66.7,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 2
-		},
-		{
-			"name": "Vince",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 5,
-			"wins": 2,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 11,
-			"goalsAgainst": 11,
-			"goalDiff": 0,
-			"winrate": 40.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 1
-		},
-		{
-			"name": "Taiyo",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 4,
-			"wins": 2,
-			"losses": 1,
-			"draws": 1,
-			"goalsFor": 9,
-			"goalsAgainst": 9,
-			"goalDiff": 0,
-			"winrate": 50.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 1
-		},
-		{
-			"name": "Vapo",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 4,
-			"wins": 2,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 9,
-			"goalsAgainst": 9,
-			"goalDiff": 0,
-			"winrate": 50.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 2
-		},
-		{
-			"name": "Eren",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 5,
-			"wins": 2,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 5,
-			"goalsAgainst": 6,
-			"goalDiff": -1,
-			"winrate": 40.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 5,
-			"playoffGames": 0
-		},
-		{
-			"name": "Patachoo",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 4,
-			"wins": 2,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 7,
-			"goalsAgainst": 11,
-			"goalDiff": -4,
-			"winrate": 50.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Volfe",
-			"teams": ["KOM"],
-			"primaryTeam": "KOM",
-			"games": 7,
-			"wins": 2,
-			"losses": 4,
-			"draws": 1,
-			"goalsFor": 10,
-			"goalsAgainst": 18,
-			"goalDiff": -8,
-			"winrate": 28.6,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 7,
-			"playoffGames": 0
-		},
-		{
-			"name": "Mathiuze",
-			"teams": ["KOM"],
-			"primaryTeam": "KOM",
-			"games": 9,
-			"wins": 2,
-			"losses": 6,
-			"draws": 1,
-			"goalsFor": 10,
-			"goalsAgainst": 19,
-			"goalDiff": -9,
-			"winrate": 22.2,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 9,
-			"playoffGames": 0
-		},
-		{
-			"name": "Karmaxe",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 4,
-			"goalsAgainst": 1,
-			"goalDiff": 3,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Lotus",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 4,
-			"goalsAgainst": 2,
-			"goalDiff": 2,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Panda",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 1,
-			"goalDiff": 2,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Zekwon",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 1,
-			"goalDiff": 2,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Zen",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 1,
-			"goalDiff": 2,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Rayuki (sub)",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 1,
-			"wins": 1,
-			"losses": 0,
-			"draws": 0,
-			"goalsFor": 2,
-			"goalsAgainst": 1,
-			"goalDiff": 1,
-			"winrate": 100.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Kazemaru",
-			"teams": ["FGS"],
-			"primaryTeam": "FGS",
-			"games": 4,
-			"wins": 1,
-			"losses": 1,
-			"draws": 2,
-			"goalsFor": 9,
-			"goalsAgainst": 9,
-			"goalDiff": 0,
-			"winrate": 25.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Kaelith",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 3,
-			"wins": 1,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 8,
-			"goalsAgainst": 8,
-			"goalDiff": 0,
-			"winrate": 33.3,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "Flavira",
-			"teams": ["KOM"],
-			"primaryTeam": "KOM",
-			"games": 3,
-			"wins": 1,
-			"losses": 0,
-			"draws": 2,
-			"goalsFor": 4,
-			"goalsAgainst": 4,
-			"goalDiff": 0,
-			"winrate": 33.3,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "Kakuszka",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 5,
-			"wins": 1,
-			"losses": 4,
-			"draws": 0,
-			"goalsFor": 6,
-			"goalsAgainst": 8,
-			"goalDiff": -2,
-			"winrate": 20.0,
-			"forfeitsGiven": 2,
-			"forfeitsReceived": 0,
-			"regularGames": 5,
-			"playoffGames": 0
-		},
-		{
-			"name": "Kappa",
-			"teams": ["KOM"],
-			"primaryTeam": "KOM",
-			"games": 4,
-			"wins": 1,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 6,
-			"goalsAgainst": 8,
-			"goalDiff": -2,
-			"winrate": 25.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Sokkah",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 4,
-			"wins": 1,
-			"losses": 2,
-			"draws": 1,
-			"goalsFor": 8,
-			"goalsAgainst": 11,
-			"goalDiff": -3,
-			"winrate": 25.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Rayuki",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 4,
-			"wins": 1,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 7,
-			"goalsAgainst": 12,
-			"goalDiff": -5,
-			"winrate": 25.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 2
-		},
-		{
-			"name": "Evo",
-			"teams": ["FGS"],
-			"primaryTeam": "FGS",
-			"games": 4,
-			"wins": 1,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 13,
-			"goalDiff": -10,
-			"winrate": 25.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 1,
-			"regularGames": 4,
-			"playoffGames": 0
-		},
-		{
-			"name": "Oppo",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 1,
-			"wins": 0,
-			"losses": 0,
-			"draws": 1,
-			"goalsFor": 2,
-			"goalsAgainst": 2,
-			"goalDiff": 0,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "l'ornythorinque",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 0,
-			"goalsAgainst": 0,
-			"goalDiff": 0,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "LeScxlopendre",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 0,
-			"goalsAgainst": 0,
-			"goalDiff": 0,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "R9",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 0,
-			"goalsAgainst": 0,
-			"goalDiff": 0,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Saikyoo",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 2,
-			"wins": 0,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 0,
-			"goalsAgainst": 0,
-			"goalDiff": 0,
-			"winrate": 0.0,
-			"forfeitsGiven": 2,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 0
-		},
-		{
-			"name": "Fen",
-			"teams": ["GKO"],
-			"primaryTeam": "GKO",
-			"games": 3,
-			"wins": 0,
-			"losses": 2,
-			"draws": 1,
-			"goalsFor": 3,
-			"goalsAgainst": 4,
-			"goalDiff": -1,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "Master",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 2,
-			"goalsAgainst": 3,
-			"goalDiff": -1,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 0,
-			"playoffGames": 1
-		},
-		{
-			"name": "Colombo",
-			"teams": ["LMS"],
-			"primaryTeam": "LMS",
-			"games": 2,
-			"wins": 0,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 2,
-			"goalDiff": -1,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 0
-		},
-		{
-			"name": "Zekw0n",
-			"teams": ["OMP"],
-			"primaryTeam": "OMP",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 2,
-			"goalDiff": -1,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "LeCxméléon",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 2,
-			"goalsAgainst": 4,
-			"goalDiff": -2,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "LaScxlopendre",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 2,
-			"wins": 0,
-			"losses": 2,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 3,
-			"goalDiff": -2,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 2,
-			"playoffGames": 0
-		},
-		{
-			"name": "Shozuma",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 3,
-			"goalDiff": -2,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "Yahito",
-			"teams": ["ASE"],
-			"primaryTeam": "ASE",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 6,
-			"goalDiff": -3,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "LePelican",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 4,
-			"goalDiff": -3,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "LeScolopendre",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 1,
-			"wins": 0,
-			"losses": 1,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 4,
-			"goalDiff": -3,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 0
-		},
-		{
-			"name": "SuperMxuette",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 3,
-			"wins": 0,
-			"losses": 2,
-			"draws": 1,
-			"goalsFor": 4,
-			"goalsAgainst": 8,
-			"goalDiff": -4,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "SuperMouette",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 3,
-			"wins": 0,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 8,
-			"goalDiff": -5,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "LePxlican",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 3,
-			"wins": 0,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 2,
-			"goalsAgainst": 8,
-			"goalDiff": -6,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "L'Éléphant",
-			"teams": ["ZOO"],
-			"primaryTeam": "ZOO",
-			"games": 3,
-			"wins": 0,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 1,
-			"goalsAgainst": 7,
-			"goalDiff": -6,
-			"winrate": 0.0,
-			"forfeitsGiven": 1,
-			"forfeitsReceived": 0,
-			"regularGames": 3,
-			"playoffGames": 0
-		},
-		{
-			"name": "Thunungu",
-			"teams": ["DR"],
-			"primaryTeam": "DR",
-			"games": 3,
-			"wins": 0,
-			"losses": 3,
-			"draws": 0,
-			"goalsFor": 3,
-			"goalsAgainst": 13,
-			"goalDiff": -10,
-			"winrate": 0.0,
-			"forfeitsGiven": 0,
-			"forfeitsReceived": 0,
-			"regularGames": 1,
-			"playoffGames": 2
-		}
-	],
-	"rosters": {
-		"LMS": ["Colombo", "Eren", "Kakuszka", "Panda", "Saikyoo", "Zerion"],
-		"DR": [
-			"AstroKyo",
-			"Astrokyo",
-			"Patachoo",
-			"Rayuki",
-			"Rayuki (sub)",
-			"Shinji",
-			"Shozuma",
-			"Thunungu"
-		],
-		"ZOO": [
-			"L'Éléphant",
-			"LaScxlopendre",
-			"LeCxméléon",
-			"LeLxopard",
-			"LePelican",
-			"LePxlican",
-			"LeScolopendre",
-			"LeScxlopendre",
-			"SuperMouette",
-			"SuperMxuette",
-			"l'ornythorinque"
-		],
-		"GKO": ["Fen", "Gamewatch", "Kaelith", "Lotus", "Tomus", "Vype", "Woodzy", "gamewatch"],
-		"OMP": [
-			"Carillo",
-			"Leo",
-			"Master",
-			"Oppo",
-			"Opposing",
-			"Sokkah",
-			"WeezaR",
-			"Weezar",
-			"Zekw0n",
-			"Zekwon"
-		],
-		"ASE": [
-			"Eternity",
-			"Flamme",
-			"Karmaxe",
-			"R9",
-			"Razimi",
-			"Taiyo",
-			"Tiabox",
-			"Vapo",
-			"Vince",
-			"Yahito",
-			"Zen"
-		],
-		"FGS": ["Evo", "Hakai", "Kazemaru", "Nathan"],
-		"KOM": ["Flavira", "Kappa", "Mathiuze", "Volfe"]
-	},
-	"h2h": {
-		"GKO": {
-			"OMP": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": true
-			},
-			"ASE": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": true
-			},
-			"DR": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": false
-			},
-			"FGS": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": true
-			},
-			"LMS": {
-				"scoreFor": 1,
-				"scoreAgainst": 1,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": false
-			},
-			"KOM": {
-				"scoreFor": 2,
-				"scoreAgainst": 0,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": true
-			},
-			"ZOO": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": false
-			}
-		},
-		"OMP": {
-			"GKO": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": false
-			},
-			"ASE": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": true
-			},
-			"DR": {
-				"scoreFor": 2,
-				"scoreAgainst": 0,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": false
-			},
-			"FGS": {
-				"scoreFor": 2,
-				"scoreAgainst": 0,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": false
-			},
-			"LMS": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": false
-			},
-			"KOM": {
-				"scoreFor": 2,
-				"scoreAgainst": 0,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": false
-			},
-			"ZOO": { "scoreFor": 2, "scoreAgainst": 0, "matchday": 6, "date": "2026-05-15", "home": true }
-		},
-		"ASE": {
-			"GKO": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": false
-			},
-			"OMP": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": false
-			},
-			"DR": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": false
-			},
-			"FGS": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": true
-			},
-			"LMS": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": false
-			},
-			"KOM": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": true
-			},
-			"ZOO": { "scoreFor": 3, "scoreAgainst": 0, "matchday": 7, "date": "2026-05-22", "home": true }
-		},
-		"DR": {
-			"GKO": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": true
-			},
-			"OMP": {
-				"scoreFor": 0,
-				"scoreAgainst": 2,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": true
-			},
-			"ASE": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": true
-			},
-			"FGS": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": false
-			},
-			"LMS": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": false
-			},
-			"KOM": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": false
-			},
-			"ZOO": { "scoreFor": 3, "scoreAgainst": 0, "matchday": 3, "date": "2026-04-24", "home": true }
-		},
-		"FGS": {
-			"GKO": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": false
-			},
-			"OMP": {
-				"scoreFor": 0,
-				"scoreAgainst": 2,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": true
-			},
-			"ASE": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": false
-			},
-			"DR": { "scoreFor": 2, "scoreAgainst": 1, "matchday": 7, "date": "2026-05-22", "home": true },
-			"LMS": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": true
-			},
-			"KOM": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": true
-			},
-			"ZOO": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": false
-			}
-		},
-		"LMS": {
-			"GKO": {
-				"scoreFor": 1,
-				"scoreAgainst": 1,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": true
-			},
-			"OMP": {
-				"scoreFor": 2,
-				"scoreAgainst": 1,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": true
-			},
-			"ASE": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": true
-			},
-			"DR": { "scoreFor": 0, "scoreAgainst": 3, "matchday": 1, "date": "2026-04-10", "home": true },
-			"FGS": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": false
-			},
-			"KOM": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": false
-			},
-			"ZOO": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": false
-			}
-		},
-		"KOM": {
-			"GKO": {
-				"scoreFor": 0,
-				"scoreAgainst": 2,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": false
-			},
-			"OMP": {
-				"scoreFor": 0,
-				"scoreAgainst": 2,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": true
-			},
-			"ASE": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": false
-			},
-			"DR": { "scoreFor": 1, "scoreAgainst": 2, "matchday": 6, "date": "2026-05-15", "home": true },
-			"FGS": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": false
-			},
-			"LMS": {
-				"scoreFor": 3,
-				"scoreAgainst": 0,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": true
-			},
-			"ZOO": {
-				"scoreFor": 1,
-				"scoreAgainst": 2,
-				"matchday": 5,
-				"date": "2026-05-08",
-				"home": false
-			}
-		},
-		"ZOO": {
-			"GKO": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 1,
-				"date": "2026-04-10",
-				"home": true
-			},
-			"OMP": {
-				"scoreFor": 0,
-				"scoreAgainst": 2,
-				"matchday": 6,
-				"date": "2026-05-15",
-				"home": false
-			},
-			"ASE": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 7,
-				"date": "2026-05-22",
-				"home": false
-			},
-			"DR": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 3,
-				"date": "2026-04-24",
-				"home": false
-			},
-			"FGS": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 4,
-				"date": "2026-05-01",
-				"home": true
-			},
-			"LMS": {
-				"scoreFor": 0,
-				"scoreAgainst": 3,
-				"matchday": 2,
-				"date": "2026-04-17",
-				"home": true
-			},
-			"KOM": { "scoreFor": 2, "scoreAgainst": 1, "matchday": 5, "date": "2026-05-08", "home": true }
-		}
-	}
+  "regularMatchdays": [
+    {
+      "matchday": 1,
+      "date": "2026-04-10",
+      "matches": [
+        {
+          "time": "18h",
+          "home": "LMS",
+          "away": "DR",
+          "homeScore": 0,
+          "awayScore": 3,
+          "date": "2026-04-10",
+          "matchday": 1,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Zerion",
+              "awayPlayer": "Shinji",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Saikyoo",
+              "awayPlayer": "Patachoo",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kakuszka",
+              "awayPlayer": "Astrokyo",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "DR"
+        },
+        {
+          "time": "19h",
+          "home": "ZOO",
+          "away": "GKO",
+          "homeScore": 0,
+          "awayScore": 3,
+          "date": "2026-04-10",
+          "matchday": 1,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "L'Éléphant",
+              "awayPlayer": "Woodzy",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "l'ornythorinque",
+              "awayPlayer": "gamewatch",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "SuperMouette",
+              "awayPlayer": "Tomus",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "20h",
+          "home": "OMP",
+          "away": "ASE",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-04-10",
+          "matchday": 1,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Opposing",
+              "awayPlayer": "R9",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Leo",
+              "awayPlayer": "Yahito",
+              "homeGoals": 6,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "WeezaR",
+              "awayPlayer": "Zen",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "OMP"
+        },
+        {
+          "time": "21h",
+          "home": "FGS",
+          "away": "KOM",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-04-10",
+          "matchday": 1,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Nathan",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Evo",
+              "awayPlayer": "Kappa",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Hakai",
+              "awayPlayer": "Volfe",
+              "homeGoals": 4,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Hakai",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 1,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": true,
+          "winnerId": "FGS"
+        }
+      ]
+    },
+    {
+      "matchday": 2,
+      "date": "2026-04-17",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "FGS",
+          "away": "OMP",
+          "homeScore": 0,
+          "awayScore": 2,
+          "date": "2026-04-17",
+          "matchday": 2,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Kazemaru",
+              "awayPlayer": "Opposing",
+              "homeGoals": 3,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Hakai",
+              "awayPlayer": "Carillo",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Nathan",
+              "awayPlayer": "Sokkah",
+              "homeGoals": 2,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "OMP"
+        },
+        {
+          "time": "20h",
+          "home": "ASE",
+          "away": "KOM",
+          "homeScore": 3,
+          "awayScore": 0,
+          "date": "2026-04-17",
+          "matchday": 2,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Tiabox",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 3,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Karmaxe",
+              "awayPlayer": "Volfe",
+              "homeGoals": 4,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Eternity",
+              "awayPlayer": "Kappa",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "ASE"
+        },
+        {
+          "time": "21h",
+          "home": "ZOO",
+          "away": "LMS",
+          "homeScore": 0,
+          "awayScore": 3,
+          "date": "2026-04-17",
+          "matchday": 2,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "L'Éléphant",
+              "awayPlayer": "Zerion",
+              "homeGoals": 0,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "SuperMouette",
+              "awayPlayer": "Panda",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "LePelican",
+              "awayPlayer": "Kakuszka",
+              "homeGoals": 1,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "LMS"
+        },
+        {
+          "time": "22h",
+          "home": "DR",
+          "away": "GKO",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-04-17",
+          "matchday": 2,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Astrokyo",
+              "awayPlayer": "Kaelith",
+              "homeGoals": 3,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Rayuki (sub)",
+              "awayPlayer": "Fen",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Patachoo",
+              "awayPlayer": "Tomus",
+              "homeGoals": 1,
+              "awayGoals": 5,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "DR"
+        }
+      ]
+    },
+    {
+      "matchday": 3,
+      "date": "2026-04-24",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "ASE",
+          "away": "FGS",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-04-24",
+          "matchday": 3,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Tiabox",
+              "awayPlayer": "Evo",
+              "homeGoals": 6,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Vince",
+              "awayPlayer": "Hakai",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Taiyo",
+              "awayPlayer": "Kazemaru",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Taiyo",
+              "awayPlayer": "Hakai",
+              "homeGoals": 1,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": true,
+          "winnerId": "ASE"
+        },
+        {
+          "time": "20h",
+          "home": "LMS",
+          "away": "GKO",
+          "homeScore": 1,
+          "awayScore": 1,
+          "date": "2026-04-24",
+          "matchday": 3,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Zerion",
+              "awayPlayer": "Tomus",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Gamidon",
+              "homePlayer": "Kakuszka",
+              "awayPlayer": "Fen",
+              "homeGoals": -1,
+              "awayGoals": -1,
+              "forfeitHome": true,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Saikyoo",
+              "awayPlayer": "Vype",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Zerion",
+              "awayPlayer": "Vype",
+              "homeGoals": 0,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": true,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "21h",
+          "home": "KOM",
+          "away": "OMP",
+          "homeScore": 0,
+          "awayScore": 2,
+          "date": "2026-04-24",
+          "matchday": 3,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Mathiuze",
+              "awayPlayer": "Carillo",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Volfe",
+              "awayPlayer": "Leo",
+              "homeGoals": 1,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Flavira",
+              "awayPlayer": "Sokkah",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "OMP"
+        },
+        {
+          "time": "22h",
+          "home": "DR",
+          "away": "ZOO",
+          "homeScore": 3,
+          "awayScore": 0,
+          "date": "2026-04-24",
+          "matchday": 3,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Astrokyo",
+              "awayPlayer": "SuperMouette",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Shinji",
+              "awayPlayer": "L'Éléphant",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Patachoo",
+              "awayPlayer": "LeScolopendre",
+              "homeGoals": 4,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "DR"
+        }
+      ]
+    },
+    {
+      "matchday": 4,
+      "date": "2026-05-01",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "GKO",
+          "away": "KOM",
+          "homeScore": 2,
+          "awayScore": 0,
+          "date": "2026-05-01",
+          "matchday": 4,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Fen",
+              "awayPlayer": "Flavira",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Lotus",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 4,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Vype",
+              "awayPlayer": "Volfe",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "20h",
+          "home": "DR",
+          "away": "ASE",
+          "homeScore": 1,
+          "awayScore": 2,
+          "date": "2026-05-01",
+          "matchday": 4,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Rayuki",
+              "awayPlayer": "Vapo",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Patachoo",
+              "awayPlayer": "Eternity",
+              "homeGoals": 2,
+              "awayGoals": 5,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Shinji",
+              "awayPlayer": "Vince",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "ASE"
+        },
+        {
+          "time": "21h",
+          "home": "LMS",
+          "away": "OMP",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-01",
+          "matchday": 4,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Kakuszka",
+              "awayPlayer": "Opposing",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "Zerion",
+              "awayPlayer": "Zekw0n",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Eren",
+              "awayPlayer": "Sokkah",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "LMS"
+        },
+        {
+          "time": "22h",
+          "home": "ZOO",
+          "away": "FGS",
+          "homeScore": 0,
+          "awayScore": 3,
+          "date": "2026-05-01",
+          "matchday": 4,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "LeCxméléon",
+              "awayPlayer": "Nathan",
+              "homeGoals": 2,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Shakka",
+              "homePlayer": "SuperMxuette",
+              "awayPlayer": "Hakai",
+              "homeGoals": 1,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "LeScxlopendre",
+              "awayPlayer": "Evo",
+              "homeGoals": -1,
+              "awayGoals": 0,
+              "forfeitHome": true,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "FGS"
+        }
+      ]
+    },
+    {
+      "matchday": 5,
+      "date": "2026-05-08",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "GKO",
+          "away": "FGS",
+          "homeScore": 3,
+          "awayScore": 0,
+          "date": "2026-05-08",
+          "matchday": 5,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Woodzy",
+              "awayPlayer": "Kazemaru",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Gamidon",
+              "homePlayer": "Vype",
+              "awayPlayer": "Nathan",
+              "homeGoals": 4,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kaelith",
+              "awayPlayer": "Hakai",
+              "homeGoals": 6,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "20h",
+          "home": "ZOO",
+          "away": "KOM",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-08",
+          "matchday": 5,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "LePxlican",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Gamidon",
+              "homePlayer": "LeLxopard",
+              "awayPlayer": "Kappa",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "SuperMxuette",
+              "awayPlayer": "Volfe",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "LeLxopard",
+              "awayPlayer": "Mathiuze",
+              "homeGoals": 1,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": true,
+          "winnerId": "ZOO"
+        },
+        {
+          "time": "21h",
+          "home": "DR",
+          "away": "OMP",
+          "homeScore": 0,
+          "awayScore": 2,
+          "date": "2026-05-08",
+          "matchday": 5,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Shinji",
+              "awayPlayer": "Opposing",
+              "homeGoals": 1,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Gamidon",
+              "homePlayer": "Rayuki",
+              "awayPlayer": "Carillo",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Astrokyo",
+              "awayPlayer": "Leo",
+              "homeGoals": 3,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "OMP"
+        },
+        {
+          "time": "22h",
+          "home": "LMS",
+          "away": "ASE",
+          "homeScore": 1,
+          "awayScore": 2,
+          "date": "2026-05-08",
+          "matchday": 5,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Zerion",
+              "awayPlayer": "Eternity",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": "Gamidon",
+              "homePlayer": "Eren",
+              "awayPlayer": "Razimi",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kakuszka",
+              "awayPlayer": "Vince",
+              "homeGoals": 1,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "ASE"
+        }
+      ]
+    },
+    {
+      "matchday": 6,
+      "date": "2026-05-15",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "GKO",
+          "away": "ASE",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-15",
+          "matchday": 6,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Vype",
+              "awayPlayer": "Vince",
+              "homeGoals": 4,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Woodzy",
+              "awayPlayer": "Eternity",
+              "homeGoals": 3,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "gamewatch",
+              "awayPlayer": "Taiyo",
+              "homeGoals": 5,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "20h",
+          "home": "OMP",
+          "away": "ZOO",
+          "homeScore": 2,
+          "awayScore": 0,
+          "date": "2026-05-15",
+          "matchday": 6,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Oppo",
+              "awayPlayer": "LeLxopard",
+              "homeGoals": 2,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Zekwon",
+              "awayPlayer": "LaScxlopendre",
+              "homeGoals": 3,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Weezar",
+              "awayPlayer": "LePxlican",
+              "homeGoals": 3,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "OMP"
+        },
+        {
+          "time": "21h",
+          "home": "KOM",
+          "away": "DR",
+          "homeScore": 1,
+          "awayScore": 2,
+          "date": "2026-05-15",
+          "matchday": 6,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Mathiuze",
+              "awayPlayer": "AstroKyo",
+              "homeGoals": 2,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kappa",
+              "awayPlayer": "Shinji",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Volfe",
+              "awayPlayer": "Shozuma",
+              "homeGoals": 3,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "DR"
+        },
+        {
+          "time": "28.0",
+          "home": "FGS",
+          "away": "LMS",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-15",
+          "matchday": 6,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Hakai",
+              "awayPlayer": "Zerion",
+              "homeGoals": 1,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Nathan",
+              "awayPlayer": "Eren",
+              "homeGoals": 1,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kazemaru",
+              "awayPlayer": "Colombo",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Hakai",
+              "awayPlayer": "Eren",
+              "homeGoals": 1,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": true,
+          "winnerId": "FGS"
+        }
+      ]
+    },
+    {
+      "matchday": 7,
+      "date": "2026-05-22",
+      "matches": [
+        {
+          "time": "19h",
+          "home": "FGS",
+          "away": "DR",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-22",
+          "matchday": 7,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Evo",
+              "awayPlayer": "Shinji",
+              "homeGoals": 2,
+              "awayGoals": 4,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Hakai",
+              "awayPlayer": "Astrokyo",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Nathan",
+              "awayPlayer": "Thunungu",
+              "homeGoals": 4,
+              "awayGoals": 0,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "FGS"
+        },
+        {
+          "time": "20h",
+          "home": "GKO",
+          "away": "OMP",
+          "homeScore": 2,
+          "awayScore": 1,
+          "date": "2026-05-22",
+          "matchday": 7,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Woodzy",
+              "awayPlayer": "Sokkah",
+              "homeGoals": 5,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Gamewatch",
+              "awayPlayer": "Carillo",
+              "homeGoals": 3,
+              "awayGoals": 2,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Kaelith",
+              "awayPlayer": "WeezaR",
+              "homeGoals": 1,
+              "awayGoals": 3,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "GKO"
+        },
+        {
+          "time": "21h",
+          "home": "KOM",
+          "away": "LMS",
+          "homeScore": 3,
+          "awayScore": 0,
+          "date": "2026-05-22",
+          "matchday": 7,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Volfe",
+              "awayPlayer": "Zerion",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Mathiuze",
+              "awayPlayer": "Eren",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Flavira",
+              "awayPlayer": "Colombo",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "KOM"
+        },
+        {
+          "time": "22h",
+          "home": "ASE",
+          "away": "ZOO",
+          "homeScore": 3,
+          "awayScore": 0,
+          "date": "2026-05-22",
+          "matchday": 7,
+          "games": [
+            {
+              "slotLabel": "Pseudo TO",
+              "homePlayer": "Razimi",
+              "awayPlayer": "LaScxlopendre",
+              "homeGoals": 0,
+              "awayGoals": -1,
+              "forfeitHome": false,
+              "forfeitAway": true
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Flamme",
+              "awayPlayer": "LePxlican",
+              "homeGoals": 2,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            },
+            {
+              "slotLabel": null,
+              "homePlayer": "Vapo",
+              "awayPlayer": "SuperMxuette",
+              "homeGoals": 4,
+              "awayGoals": 1,
+              "forfeitHome": false,
+              "forfeitAway": false
+            }
+          ],
+          "phase": "regular",
+          "overtime": false,
+          "winnerId": "ASE"
+        }
+      ]
+    }
+  ],
+  "playoffMatches": [
+    {
+      "time": "20h",
+      "home": "OMP",
+      "away": "ASE",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2026-05-29",
+      "matchday": 1,
+      "games": [
+        {
+          "slotLabel": "Pseudo TO",
+          "homePlayer": "Leo",
+          "awayPlayer": "Vince",
+          "homeGoals": 2,
+          "awayGoals": 0,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Master",
+          "awayPlayer": "Flamme",
+          "homeGoals": 2,
+          "awayGoals": 3,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "WeezaR",
+          "awayPlayer": "Vapo",
+          "homeGoals": 3,
+          "awayGoals": 0,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Leo",
+          "awayPlayer": "Flamme",
+          "homeGoals": 3,
+          "awayGoals": 2,
+          "forfeitHome": false,
+          "forfeitAway": false
+        }
+      ],
+      "label": "Demi 1",
+      "roundIndex": 0,
+      "phase": "playoff"
+    },
+    {
+      "time": "21h30",
+      "home": "GKO",
+      "away": "DR",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2026-05-29",
+      "matchday": 1,
+      "games": [
+        {
+          "slotLabel": "Pseudo TO",
+          "homePlayer": "Gamewatch",
+          "awayPlayer": "Astrokyo",
+          "homeGoals": 3,
+          "awayGoals": 0,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Woodzy",
+          "awayPlayer": "Thunungu",
+          "homeGoals": 6,
+          "awayGoals": 1,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Vype",
+          "awayPlayer": "Rayuki",
+          "homeGoals": 5,
+          "awayGoals": 2,
+          "forfeitHome": false,
+          "forfeitAway": false
+        }
+      ],
+      "label": "Demi 2",
+      "roundIndex": 0,
+      "phase": "playoff"
+    },
+    {
+      "time": "20h",
+      "home": "GKO",
+      "away": "OMP",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2026-06-05",
+      "matchday": 2,
+      "games": [
+        {
+          "slotLabel": "Pseudo TO",
+          "homePlayer": "gamewatch",
+          "awayPlayer": "Opposing",
+          "homeGoals": 2,
+          "awayGoals": 0,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Woodzy",
+          "awayPlayer": "Leo",
+          "homeGoals": 0,
+          "awayGoals": 3,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Vype",
+          "awayPlayer": "WeezaR",
+          "homeGoals": 0,
+          "awayGoals": -1,
+          "forfeitHome": false,
+          "forfeitAway": true
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Vype",
+          "awayPlayer": "WeezaR",
+          "homeGoals": 3,
+          "awayGoals": 2,
+          "forfeitHome": false,
+          "forfeitAway": false
+        }
+      ],
+      "label": "Finale winners",
+      "roundIndex": 1,
+      "phase": "playoff"
+    },
+    {
+      "time": "21h30",
+      "home": "ASE",
+      "away": "DR",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2026-06-05",
+      "matchday": 2,
+      "games": [
+        {
+          "slotLabel": "Pseudo TO",
+          "homePlayer": "Eternity",
+          "awayPlayer": "Rayuki",
+          "homeGoals": 2,
+          "awayGoals": 1,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Taiyo",
+          "awayPlayer": "Shinji",
+          "homeGoals": 3,
+          "awayGoals": 2,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Vapo",
+          "awayPlayer": "Thunungu",
+          "homeGoals": 3,
+          "awayGoals": 2,
+          "forfeitHome": false,
+          "forfeitAway": false
+        }
+      ],
+      "label": "Demi losers",
+      "roundIndex": 1,
+      "phase": "playoff"
+    },
+    {
+      "time": "20h",
+      "home": "GKO",
+      "away": "OMP",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2026-06-06",
+      "matchday": 3,
+      "games": [
+        {
+          "slotLabel": "Pseudo TO",
+          "homePlayer": "gamewatch",
+          "awayPlayer": "Opposing",
+          "homeGoals": 1,
+          "awayGoals": 0,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Woodzy",
+          "awayPlayer": "Leo",
+          "homeGoals": 5,
+          "awayGoals": 4,
+          "forfeitHome": false,
+          "forfeitAway": false
+        },
+        {
+          "slotLabel": null,
+          "homePlayer": "Vype",
+          "awayPlayer": "WeezaR",
+          "homeGoals": 3,
+          "awayGoals": 1,
+          "forfeitHome": false,
+          "forfeitAway": false
+        }
+      ],
+      "label": "Finale losers",
+      "roundIndex": 2,
+      "phase": "playoff"
+    }
+  ],
+  "players": [
+    {
+      "name": "Vype",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 9,
+      "wins": 9,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 23,
+      "goalsAgainst": 11,
+      "goalDiff": 12,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 2,
+      "regularGames": 5,
+      "playoffGames": 4
+    },
+    {
+      "name": "gamewatch",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 6,
+      "wins": 6,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 14,
+      "goalsAgainst": 5,
+      "goalDiff": 9,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 3,
+      "playoffGames": 3
+    },
+    {
+      "name": "Hakai",
+      "teams": ["FGS"],
+      "primaryTeam": "FGS",
+      "games": 10,
+      "wins": 6,
+      "losses": 3,
+      "draws": 1,
+      "goalsFor": 17,
+      "goalsAgainst": 13,
+      "goalDiff": 4,
+      "winrate": 60.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 10,
+      "playoffGames": 0
+    },
+    {
+      "name": "Leo",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 7,
+      "wins": 5,
+      "losses": 1,
+      "draws": 1,
+      "goalsFor": 25,
+      "goalsAgainst": 14,
+      "goalDiff": 11,
+      "winrate": 71.4,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 4
+    },
+    {
+      "name": "Woodzy",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 7,
+      "wins": 5,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 25,
+      "goalsAgainst": 17,
+      "goalDiff": 8,
+      "winrate": 71.4,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 3
+    },
+    {
+      "name": "Zerion",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 8,
+      "wins": 4,
+      "losses": 3,
+      "draws": 1,
+      "goalsFor": 13,
+      "goalsAgainst": 7,
+      "goalDiff": 6,
+      "winrate": 50.0,
+      "forfeitsGiven": 2,
+      "forfeitsReceived": 0,
+      "regularGames": 8,
+      "playoffGames": 0
+    },
+    {
+      "name": "Eternity",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 5,
+      "wins": 4,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 15,
+      "goalsAgainst": 10,
+      "goalDiff": 5,
+      "winrate": 80.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 1
+    },
+    {
+      "name": "Astrokyo",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 7,
+      "wins": 4,
+      "losses": 2,
+      "draws": 1,
+      "goalsFor": 14,
+      "goalsAgainst": 13,
+      "goalDiff": 1,
+      "winrate": 57.1,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 6,
+      "playoffGames": 1
+    },
+    {
+      "name": "Shinji",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 7,
+      "wins": 4,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 11,
+      "goalsAgainst": 13,
+      "goalDiff": -2,
+      "winrate": 57.1,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 2,
+      "regularGames": 6,
+      "playoffGames": 1
+    },
+    {
+      "name": "WeezaR",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 7,
+      "wins": 3,
+      "losses": 4,
+      "draws": 0,
+      "goalsFor": 13,
+      "goalsAgainst": 10,
+      "goalDiff": 3,
+      "winrate": 42.9,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 4
+    },
+    {
+      "name": "Carillo",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 4,
+      "wins": 3,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 8,
+      "goalsAgainst": 5,
+      "goalDiff": 3,
+      "winrate": 75.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Opposing",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 6,
+      "wins": 3,
+      "losses": 2,
+      "draws": 1,
+      "goalsFor": 10,
+      "goalsAgainst": 8,
+      "goalDiff": 2,
+      "winrate": 50.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 4,
+      "playoffGames": 2
+    },
+    {
+      "name": "Tiabox",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 9,
+      "goalsAgainst": 0,
+      "goalDiff": 9,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 0
+    },
+    {
+      "name": "Tomus",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 3,
+      "wins": 2,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 10,
+      "goalsAgainst": 5,
+      "goalDiff": 5,
+      "winrate": 66.7,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "LeLxopard",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 3,
+      "wins": 2,
+      "losses": 0,
+      "draws": 1,
+      "goalsFor": 5,
+      "goalsAgainst": 3,
+      "goalDiff": 2,
+      "winrate": 66.7,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "Razimi",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 2,
+      "wins": 2,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 1,
+      "goalDiff": 2,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 2,
+      "playoffGames": 0
+    },
+    {
+      "name": "Nathan",
+      "teams": ["FGS"],
+      "primaryTeam": "FGS",
+      "games": 6,
+      "wins": 2,
+      "losses": 3,
+      "draws": 1,
+      "goalsFor": 14,
+      "goalsAgainst": 13,
+      "goalDiff": 1,
+      "winrate": 33.3,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 6,
+      "playoffGames": 0
+    },
+    {
+      "name": "Flamme",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 3,
+      "wins": 2,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 7,
+      "goalsAgainst": 6,
+      "goalDiff": 1,
+      "winrate": 66.7,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 2
+    },
+    {
+      "name": "Vince",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 5,
+      "wins": 2,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 11,
+      "goalsAgainst": 11,
+      "goalDiff": 0,
+      "winrate": 40.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 1
+    },
+    {
+      "name": "Taiyo",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 4,
+      "wins": 2,
+      "losses": 1,
+      "draws": 1,
+      "goalsFor": 9,
+      "goalsAgainst": 9,
+      "goalDiff": 0,
+      "winrate": 50.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 1
+    },
+    {
+      "name": "Vapo",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 9,
+      "goalsAgainst": 9,
+      "goalDiff": 0,
+      "winrate": 50.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 2
+    },
+    {
+      "name": "Eren",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 5,
+      "wins": 2,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 5,
+      "goalsAgainst": 6,
+      "goalDiff": -1,
+      "winrate": 40.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 5,
+      "playoffGames": 0
+    },
+    {
+      "name": "Patachoo",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 4,
+      "wins": 2,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 7,
+      "goalsAgainst": 11,
+      "goalDiff": -4,
+      "winrate": 50.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Volfe",
+      "teams": ["KOM"],
+      "primaryTeam": "KOM",
+      "games": 7,
+      "wins": 2,
+      "losses": 4,
+      "draws": 1,
+      "goalsFor": 10,
+      "goalsAgainst": 18,
+      "goalDiff": -8,
+      "winrate": 28.6,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 7,
+      "playoffGames": 0
+    },
+    {
+      "name": "Mathiuze",
+      "teams": ["KOM"],
+      "primaryTeam": "KOM",
+      "games": 9,
+      "wins": 2,
+      "losses": 6,
+      "draws": 1,
+      "goalsFor": 10,
+      "goalsAgainst": 19,
+      "goalDiff": -9,
+      "winrate": 22.2,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 9,
+      "playoffGames": 0
+    },
+    {
+      "name": "Karmaxe",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 4,
+      "goalsAgainst": 1,
+      "goalDiff": 3,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Lotus",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 4,
+      "goalsAgainst": 2,
+      "goalDiff": 2,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Panda",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 1,
+      "goalDiff": 2,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Zekwon",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 1,
+      "goalDiff": 2,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Zen",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 1,
+      "goalDiff": 2,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Rayuki (sub)",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "goalsFor": 2,
+      "goalsAgainst": 1,
+      "goalDiff": 1,
+      "winrate": 100.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Kazemaru",
+      "teams": ["FGS"],
+      "primaryTeam": "FGS",
+      "games": 4,
+      "wins": 1,
+      "losses": 1,
+      "draws": 2,
+      "goalsFor": 9,
+      "goalsAgainst": 9,
+      "goalDiff": 0,
+      "winrate": 25.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Kaelith",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 3,
+      "wins": 1,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 8,
+      "goalsAgainst": 8,
+      "goalDiff": 0,
+      "winrate": 33.3,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "Flavira",
+      "teams": ["KOM"],
+      "primaryTeam": "KOM",
+      "games": 3,
+      "wins": 1,
+      "losses": 0,
+      "draws": 2,
+      "goalsFor": 4,
+      "goalsAgainst": 4,
+      "goalDiff": 0,
+      "winrate": 33.3,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "Kakuszka",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 5,
+      "wins": 1,
+      "losses": 4,
+      "draws": 0,
+      "goalsFor": 6,
+      "goalsAgainst": 8,
+      "goalDiff": -2,
+      "winrate": 20.0,
+      "forfeitsGiven": 2,
+      "forfeitsReceived": 0,
+      "regularGames": 5,
+      "playoffGames": 0
+    },
+    {
+      "name": "Kappa",
+      "teams": ["KOM"],
+      "primaryTeam": "KOM",
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 6,
+      "goalsAgainst": 8,
+      "goalDiff": -2,
+      "winrate": 25.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Sokkah",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 4,
+      "wins": 1,
+      "losses": 2,
+      "draws": 1,
+      "goalsFor": 8,
+      "goalsAgainst": 11,
+      "goalDiff": -3,
+      "winrate": 25.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Rayuki",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 7,
+      "goalsAgainst": 12,
+      "goalDiff": -5,
+      "winrate": 25.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 2
+    },
+    {
+      "name": "Evo",
+      "teams": ["FGS"],
+      "primaryTeam": "FGS",
+      "games": 4,
+      "wins": 1,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 13,
+      "goalDiff": -10,
+      "winrate": 25.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 1,
+      "regularGames": 4,
+      "playoffGames": 0
+    },
+    {
+      "name": "Oppo",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1,
+      "goalsFor": 2,
+      "goalsAgainst": 2,
+      "goalDiff": 0,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "l'ornythorinque",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "goalDiff": 0,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "LeScxlopendre",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "goalDiff": 0,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "R9",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "goalDiff": 0,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Saikyoo",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "goalDiff": 0,
+      "winrate": 0.0,
+      "forfeitsGiven": 2,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 0
+    },
+    {
+      "name": "Fen",
+      "teams": ["GKO"],
+      "primaryTeam": "GKO",
+      "games": 3,
+      "wins": 0,
+      "losses": 2,
+      "draws": 1,
+      "goalsFor": 3,
+      "goalsAgainst": 4,
+      "goalDiff": -1,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "Master",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 2,
+      "goalsAgainst": 3,
+      "goalDiff": -1,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 0,
+      "playoffGames": 1
+    },
+    {
+      "name": "Colombo",
+      "teams": ["LMS"],
+      "primaryTeam": "LMS",
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 2,
+      "goalDiff": -1,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 0
+    },
+    {
+      "name": "Zekw0n",
+      "teams": ["OMP"],
+      "primaryTeam": "OMP",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 2,
+      "goalDiff": -1,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "LeCxméléon",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 2,
+      "goalsAgainst": 4,
+      "goalDiff": -2,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "LaScxlopendre",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 2,
+      "wins": 0,
+      "losses": 2,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 3,
+      "goalDiff": -2,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 2,
+      "playoffGames": 0
+    },
+    {
+      "name": "Shozuma",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 3,
+      "goalDiff": -2,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "Yahito",
+      "teams": ["ASE"],
+      "primaryTeam": "ASE",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 6,
+      "goalDiff": -3,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "LePelican",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 4,
+      "goalDiff": -3,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "LeScolopendre",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 4,
+      "goalDiff": -3,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 0
+    },
+    {
+      "name": "SuperMxuette",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 3,
+      "wins": 0,
+      "losses": 2,
+      "draws": 1,
+      "goalsFor": 4,
+      "goalsAgainst": 8,
+      "goalDiff": -4,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "SuperMouette",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 3,
+      "wins": 0,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 8,
+      "goalDiff": -5,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "LePxlican",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 3,
+      "wins": 0,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 2,
+      "goalsAgainst": 8,
+      "goalDiff": -6,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "L'Éléphant",
+      "teams": ["ZOO"],
+      "primaryTeam": "ZOO",
+      "games": 3,
+      "wins": 0,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 1,
+      "goalsAgainst": 7,
+      "goalDiff": -6,
+      "winrate": 0.0,
+      "forfeitsGiven": 1,
+      "forfeitsReceived": 0,
+      "regularGames": 3,
+      "playoffGames": 0
+    },
+    {
+      "name": "Thunungu",
+      "teams": ["DR"],
+      "primaryTeam": "DR",
+      "games": 3,
+      "wins": 0,
+      "losses": 3,
+      "draws": 0,
+      "goalsFor": 3,
+      "goalsAgainst": 13,
+      "goalDiff": -10,
+      "winrate": 0.0,
+      "forfeitsGiven": 0,
+      "forfeitsReceived": 0,
+      "regularGames": 1,
+      "playoffGames": 2
+    }
+  ],
+  "rosters": {
+    "LMS": ["Colombo", "Eren", "Kakuszka", "Panda", "Saikyoo", "Zerion"],
+    "DR": ["AstroKyo", "Astrokyo", "Patachoo", "Rayuki", "Rayuki (sub)", "Shinji", "Shozuma", "Thunungu"],
+    "ZOO": [
+      "L'Éléphant",
+      "LaScxlopendre",
+      "LeCxméléon",
+      "LeLxopard",
+      "LePelican",
+      "LePxlican",
+      "LeScolopendre",
+      "LeScxlopendre",
+      "SuperMouette",
+      "SuperMxuette",
+      "l'ornythorinque"
+    ],
+    "GKO": ["Fen", "Gamewatch", "Kaelith", "Lotus", "Tomus", "Vype", "Woodzy", "gamewatch"],
+    "OMP": ["Carillo", "Leo", "Master", "Oppo", "Opposing", "Sokkah", "WeezaR", "Weezar", "Zekw0n", "Zekwon"],
+    "ASE": ["Eternity", "Flamme", "Karmaxe", "R9", "Razimi", "Taiyo", "Tiabox", "Vapo", "Vince", "Yahito", "Zen"],
+    "FGS": ["Evo", "Hakai", "Kazemaru", "Nathan"],
+    "KOM": ["Flavira", "Kappa", "Mathiuze", "Volfe"]
+  },
+  "h2h": {
+    "GKO": {
+      "OMP": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": true
+      },
+      "ASE": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": true
+      },
+      "DR": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": false
+      },
+      "FGS": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": true
+      },
+      "LMS": {
+        "scoreFor": 1,
+        "scoreAgainst": 1,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": false
+      },
+      "KOM": {
+        "scoreFor": 2,
+        "scoreAgainst": 0,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": true
+      },
+      "ZOO": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": false
+      }
+    },
+    "OMP": {
+      "GKO": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": false
+      },
+      "ASE": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": true
+      },
+      "DR": {
+        "scoreFor": 2,
+        "scoreAgainst": 0,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": false
+      },
+      "FGS": {
+        "scoreFor": 2,
+        "scoreAgainst": 0,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": false
+      },
+      "LMS": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": false
+      },
+      "KOM": {
+        "scoreFor": 2,
+        "scoreAgainst": 0,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": false
+      },
+      "ZOO": { "scoreFor": 2, "scoreAgainst": 0, "matchday": 6, "date": "2026-05-15", "home": true }
+    },
+    "ASE": {
+      "GKO": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": false
+      },
+      "OMP": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": false
+      },
+      "DR": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": false
+      },
+      "FGS": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": true
+      },
+      "LMS": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": false
+      },
+      "KOM": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": true
+      },
+      "ZOO": { "scoreFor": 3, "scoreAgainst": 0, "matchday": 7, "date": "2026-05-22", "home": true }
+    },
+    "DR": {
+      "GKO": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": true
+      },
+      "OMP": {
+        "scoreFor": 0,
+        "scoreAgainst": 2,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": true
+      },
+      "ASE": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": true
+      },
+      "FGS": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": false
+      },
+      "LMS": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": false
+      },
+      "KOM": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": false
+      },
+      "ZOO": { "scoreFor": 3, "scoreAgainst": 0, "matchday": 3, "date": "2026-04-24", "home": true }
+    },
+    "FGS": {
+      "GKO": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": false
+      },
+      "OMP": {
+        "scoreFor": 0,
+        "scoreAgainst": 2,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": true
+      },
+      "ASE": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": false
+      },
+      "DR": { "scoreFor": 2, "scoreAgainst": 1, "matchday": 7, "date": "2026-05-22", "home": true },
+      "LMS": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": true
+      },
+      "KOM": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": true
+      },
+      "ZOO": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": false
+      }
+    },
+    "LMS": {
+      "GKO": {
+        "scoreFor": 1,
+        "scoreAgainst": 1,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": true
+      },
+      "OMP": {
+        "scoreFor": 2,
+        "scoreAgainst": 1,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": true
+      },
+      "ASE": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": true
+      },
+      "DR": { "scoreFor": 0, "scoreAgainst": 3, "matchday": 1, "date": "2026-04-10", "home": true },
+      "FGS": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": false
+      },
+      "KOM": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": false
+      },
+      "ZOO": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": false
+      }
+    },
+    "KOM": {
+      "GKO": {
+        "scoreFor": 0,
+        "scoreAgainst": 2,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": false
+      },
+      "OMP": {
+        "scoreFor": 0,
+        "scoreAgainst": 2,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": true
+      },
+      "ASE": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": false
+      },
+      "DR": { "scoreFor": 1, "scoreAgainst": 2, "matchday": 6, "date": "2026-05-15", "home": true },
+      "FGS": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": false
+      },
+      "LMS": {
+        "scoreFor": 3,
+        "scoreAgainst": 0,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": true
+      },
+      "ZOO": {
+        "scoreFor": 1,
+        "scoreAgainst": 2,
+        "matchday": 5,
+        "date": "2026-05-08",
+        "home": false
+      }
+    },
+    "ZOO": {
+      "GKO": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 1,
+        "date": "2026-04-10",
+        "home": true
+      },
+      "OMP": {
+        "scoreFor": 0,
+        "scoreAgainst": 2,
+        "matchday": 6,
+        "date": "2026-05-15",
+        "home": false
+      },
+      "ASE": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 7,
+        "date": "2026-05-22",
+        "home": false
+      },
+      "DR": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 3,
+        "date": "2026-04-24",
+        "home": false
+      },
+      "FGS": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 4,
+        "date": "2026-05-01",
+        "home": true
+      },
+      "LMS": {
+        "scoreFor": 0,
+        "scoreAgainst": 3,
+        "matchday": 2,
+        "date": "2026-04-17",
+        "home": true
+      },
+      "KOM": { "scoreFor": 2, "scoreAgainst": 1, "matchday": 5, "date": "2026-05-08", "home": true }
+    }
+  }
 }

@@ -8,5 +8,4 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Creates a browser Supabase client (anon, no auth).
  * For authenticated requests, use the SupabaseProvider context instead.
  */
-export const createClient = (): SupabaseClient =>
-  createSupabaseBrowserClient() as unknown as SupabaseClient;
+export const createClient = (): SupabaseClient => createSupabaseBrowserClient() as unknown as SupabaseClient;

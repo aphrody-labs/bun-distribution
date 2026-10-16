@@ -14,10 +14,10 @@ export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
 /** Variante `<Badge>` correspondant à une tonalité métier. */
 export function badgeVariant(tone: Tone): BadgeVariant {
-	return TONE_TO_SHADCN_BADGE[tone];
+  return TONE_TO_SHADCN_BADGE[tone];
 }
 
 /** Classes Tailwind de repli, pour un rendu hors `<Badge>`. */
 export function toneClassName(tone: Tone): string {
-	return TONE_TO_TAILWIND[tone];
+  return TONE_TO_TAILWIND[tone];
 }

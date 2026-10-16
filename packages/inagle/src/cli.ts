@@ -26,10 +26,7 @@ program
   .name("inagle")
   .description("Inazuma Eleven Victory Road Data CLI")
   .version(packageMetadata.version)
-  .option(
-    "--game-dir <source>",
-    "Game root, data directory, nie.exe or HTTP/SSH source; defaults to shared discovery",
-  )
+  .option("--game-dir <source>", "Game root, data directory, nie.exe or HTTP/SSH source; defaults to shared discovery")
   .option("--data-source <source>", "Data adapter: auto, vfs, sqlite or postgres")
   .hook("preAction", () => {
     const options = program.opts();
@@ -55,7 +52,7 @@ registerItemsCommand(program);
 registerSkillsCommand(program);
 registerTeamsCommand(program);
 // The database publication adapter is loaded only when explicitly selected.
-if (Bun.argv.slice(2).some((argument) => argument === "push")) {
+if (Bun.argv.slice(2).some(argument => argument === "push")) {
   const { registerPushCommand } = await import("./cli-push.js");
   registerPushCommand(program);
 } else {
@@ -66,7 +63,7 @@ program
   .command("locate")
   .description("Locate the shared game source without mounting its VFS")
   .option("--json", "Output source and Rust discovery latency")
-  .action((options) => {
+  .action(options => {
     const result = locateGameSource(program.opts().gameDir);
     console.log(options.json ? JSON.stringify(result) : result.source);
   });

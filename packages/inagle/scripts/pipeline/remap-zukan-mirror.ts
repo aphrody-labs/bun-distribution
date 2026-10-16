@@ -48,9 +48,7 @@ try {
 
 const DRY = process.argv.includes("--dry") || !process.argv.includes("--apply");
 const ONLY_SHAWN = process.argv.includes("--only-shawn");
-const MIRROR_ARG = process.argv
-  .find((arg) => arg.startsWith("--mirror="))
-  ?.slice("--mirror=".length);
+const MIRROR_ARG = process.argv.find(arg => arg.startsWith("--mirror="))?.slice("--mirror=".length);
 
 const DATA_DIR = iecodeDataRoot();
 const PARAM_EN = process.env.ZUKAN_PARAM_EN || join(DATA_DIR, "zukan/param_en.json");
@@ -136,19 +134,14 @@ async function main() {
   // ── Load zukan EN + JA (merge by hash so JA names available where needed) ──
   const enEntries: ZukanEntry[] = JSON.parse(await Bun.file(PARAM_EN).text());
   const jaEntries: ZukanEntry[] = JSON.parse(await Bun.file(PARAM_JA).text());
-  const orderRaw:
-    | { order_map: Record<string, number> }
-    | Array<{ zukanHash: string | null; order: number }> = JSON.parse(
-    await Bun.file(ORDER_PATH).text(),
-  );
+  const orderRaw: { order_map: Record<string, number> } | Array<{ zukanHash: string | null; order: number }> =
+    JSON.parse(await Bun.file(ORDER_PATH).text());
   const orderMap = Array.isArray(orderRaw)
-    ? Object.fromEntries(
-        orderRaw.filter((row) => row.zukanHash).map((row) => [row.zukanHash!, row.order]),
-      )
+    ? Object.fromEntries(orderRaw.filter(row => row.zukanHash).map(row => [row.zukanHash!, row.order]))
     : orderRaw.order_map;
 
-  const withHash = enEntries.filter((e) => e.zukanHash).length;
-  const jaWithHash = jaEntries.filter((e) => e.zukanHash).length;
+  const withHash = enEntries.filter(e => e.zukanHash).length;
+  const jaWithHash = jaEntries.filter(e => e.zukanHash).length;
   console.log(`EN entries with hash: ${withHash}/${enEntries.length}`);
   console.log(`JA entries with hash: ${jaWithHash}/${jaEntries.length}`);
 
@@ -178,11 +171,11 @@ async function main() {
   for (const e of [...jaEntries, ...enEntries]) {
     if (e.zukanHash) zukanByHash.set(e.zukanHash, e);
   }
-  const dbById = new Map(dbChars.map((c) => [c.id, c]));
+  const dbById = new Map(dbChars.map(c => [c.id, c]));
 
   // ── Index zukan EN by name ──
   const enByName = new Map<string, ZukanEntry[]>();
-  for (const e of enEntries.filter((e) => e.zukanHash)) {
+  for (const e of enEntries.filter(e => e.zukanHash)) {
     const key = e.name.trim().toLowerCase();
     if (!enByName.has(key)) enByName.set(key, []);
     enByName.get(key)!.push(e);
@@ -190,7 +183,7 @@ async function main() {
 
   // ── Index zukan JA by name ──
   const jaByName = new Map<string, ZukanEntry[]>();
-  for (const e of jaEntries.filter((e) => e.zukanHash)) {
+  for (const e of jaEntries.filter(e => e.zukanHash)) {
     const key = e.name.trim();
     if (!jaByName.has(key)) jaByName.set(key, []);
     jaByName.get(key)!.push(e);
@@ -233,7 +226,7 @@ async function main() {
   for (const [name, zukanGroup] of enByName) {
     const dbGroup = dbByNameFr.get(name);
     if (!dbGroup) continue;
-    const unassigned = dbGroup.filter((c) => !assigned.has(c.id));
+    const unassigned = dbGroup.filter(c => !assigned.has(c.id));
     if (unassigned.length > 0) matchGroupsStrict(ctx, zukanGroup, unassigned, assigned);
   }
   console.log(`Phase B: +${assigned.size - beforeB} (total: ${assigned.size})`);
@@ -241,7 +234,7 @@ async function main() {
   // ═══ Phase B1.5: Nickname match ═══
   const beforeB15 = assigned.size;
   const enByNickname = new Map<string, ZukanEntry[]>();
-  for (const e of enEntries.filter((e) => e.zukanHash && e.nickname)) {
+  for (const e of enEntries.filter(e => e.zukanHash && e.nickname)) {
     const nick = e.nickname!.trim().toLowerCase();
     const firstWord = e.name
       .trim()
@@ -264,7 +257,7 @@ async function main() {
   // ═══ Phase B2: First-word EN match ═══
   const beforeB2 = assigned.size;
   const enByFirstWord = new Map<string, ZukanEntry[]>();
-  for (const e of enEntries.filter((e) => e.zukanHash)) {
+  for (const e of enEntries.filter(e => e.zukanHash)) {
     const first = e.name.trim().split(/\s+/)[0].toLowerCase();
     if (first.length >= 3) {
       if (!enByFirstWord.has(first)) enByFirstWord.set(first, []);
@@ -283,7 +276,7 @@ async function main() {
   // ═══ Phase B3: Surname match ═══
   const beforeB3 = assigned.size;
   const enByLastWord = new Map<string, ZukanEntry[]>();
-  for (const e of enEntries.filter((e) => e.zukanHash)) {
+  for (const e of enEntries.filter(e => e.zukanHash)) {
     const words = e.name.trim().split(/\s+/);
     if (words.length >= 2) {
       const last = words[words.length - 1].toLowerCase();
@@ -301,15 +294,13 @@ async function main() {
     const zukanGroup = enByLastWord.get(dbLast);
     if (!zukanGroup) continue;
     const dbFirst = words[0].toLowerCase();
-    const filtered = zukanGroup.filter((z) => z.name.toLowerCase().includes(dbFirst));
+    const filtered = zukanGroup.filter(z => z.name.toLowerCase().includes(dbFirst));
     if (filtered.length > 0) assignBest(ctx, c, filtered, assigned);
   }
   console.log(`Phase B3: +${assigned.size - beforeB3} (total: ${assigned.size})`);
 
   // ═══ Phase B4: MixiMax skipped ═══
-  const mixiMaxCount = dbChars.filter(
-    (c) => c.name_en && (c.name_en.includes("×") || c.name_en.includes("+")),
-  ).length;
+  const mixiMaxCount = dbChars.filter(c => c.name_en && (c.name_en.includes("×") || c.name_en.includes("+"))).length;
   console.log(`Phase B4: ${mixiMaxCount} MixiMax characters excluded from zukan matching`);
 
   // ═══ Phase JA-A: Exact JA name match ═══
@@ -317,7 +308,7 @@ async function main() {
   for (const [name, zukanGroup] of jaByName) {
     const dbGroup = dbByNameJa.get(name);
     if (dbGroup) {
-      const unassigned = dbGroup.filter((c) => !assigned.has(c.id));
+      const unassigned = dbGroup.filter(c => !assigned.has(c.id));
       if (unassigned.length > 0) matchGroupsStrict(ctx, zukanGroup, unassigned, assigned);
     }
   }
@@ -326,7 +317,7 @@ async function main() {
   // ═══ Phase JA-B: JA nickname match ═══
   const beforeJAB = assigned.size;
   const jaByNickname = new Map<string, ZukanEntry[]>();
-  for (const e of jaEntries.filter((e) => e.zukanHash && e.nickname)) {
+  for (const e of jaEntries.filter(e => e.zukanHash && e.nickname)) {
     const nick = e.nickname!.trim();
     const fullName = e.name.trim();
     if (nick.length >= 1 && fullName.startsWith(nick)) {
@@ -347,7 +338,7 @@ async function main() {
   // ═══ Phase JA-C: JA first-part match ═══
   const beforeJAC = assigned.size;
   const jaByFirstPart = new Map<string, ZukanEntry[]>();
-  for (const e of jaEntries.filter((e) => e.zukanHash)) {
+  for (const e of jaEntries.filter(e => e.zukanHash)) {
     const parts = e.name.trim().split(/[\s・]+/);
     if (parts[0] && parts[0].length >= 2) {
       if (!jaByFirstPart.has(parts[0])) jaByFirstPart.set(parts[0], []);
@@ -361,10 +352,10 @@ async function main() {
     const zukanGroup = jaByFirstPart.get(parts[0]);
     if (!zukanGroup) continue;
     const dbSecond = parts[1];
-    const filtered = zukanGroup.filter((z) => {
+    const filtered = zukanGroup.filter(z => {
       if (!z.zukanHash) return false;
       const zParts = z.name.trim().split(/[\s・]+/);
-      return zParts.some((p) => p === dbSecond);
+      return zParts.some(p => p === dbSecond);
     });
     if (filtered.length > 0) assignBest(ctx, c, filtered, assigned);
   }
@@ -390,7 +381,7 @@ async function main() {
     }
 
     const enNormIndex = new Map<string, ZukanEntry[]>();
-    for (const e of enEntries.filter((e) => e.zukanHash)) {
+    for (const e of enEntries.filter(e => e.zukanHash)) {
       const norm = normalizeForMatch(e.name);
       if (!enNormIndex.has(norm)) enNormIndex.set(norm, []);
       enNormIndex.get(norm)!.push(e);
@@ -402,7 +393,7 @@ async function main() {
       }
     }
 
-    const unmatched = dbChars.filter((c) => !assigned.has(c.id) && c.name_ja);
+    const unmatched = dbChars.filter(c => !assigned.has(c.id) && c.name_ja);
     console.log(`  Converting ${unmatched.length} JA names to romaji...`);
 
     for (const c of unmatched) {
@@ -421,9 +412,9 @@ async function main() {
       if (!zukanGroup || zukanGroup.length === 0) continue;
 
       const candidates = zukanGroup
-        .filter((z) => z.zukanHash)
-        .map((z) => ({ z, score: matchScore(z, c) }))
-        .filter((p) => p.score >= 20)
+        .filter(z => z.zukanHash)
+        .map(z => ({ z, score: matchScore(z, c) }))
+        .filter(p => p.score >= 20)
         .sort((a, b) => b.score - a.score);
       if (candidates.length > 0) {
         // NOTE: original does NOT add to usedHashes here — preserved verbatim.
@@ -437,9 +428,7 @@ async function main() {
   const beforeC = assigned.size;
   for (const c of dbChars) {
     if (assigned.has(c.id)) continue;
-    const siblings =
-      dbByNameEn.get(c.name_en?.trim().toLowerCase() || "") ||
-      dbByNameJa.get(c.name_ja?.trim() || "");
+    const siblings = dbByNameEn.get(c.name_en?.trim().toLowerCase() || "") || dbByNameJa.get(c.name_ja?.trim() || "");
     if (siblings) {
       const sameEraOrUnknown = (s: DbChar) => {
         if (!c.series || !s.series) return true;
@@ -456,7 +445,7 @@ async function main() {
       };
       const withHashSib =
         siblings.find(
-          (s) =>
+          s =>
             assigned.has(s.id) &&
             s.position === c.position &&
             s.element === c.element &&
@@ -465,7 +454,7 @@ async function main() {
             descOk(s),
         ) ||
         siblings.find(
-          (s) =>
+          s =>
             assigned.has(s.id) &&
             s.position === c.position &&
             s.element === c.element &&
@@ -473,7 +462,7 @@ async function main() {
             descOk(s),
         ) ||
         siblings.find(
-          (s) =>
+          s =>
             assigned.has(s.id) &&
             s.position === c.position &&
             s.element === c.element &&
@@ -493,12 +482,10 @@ async function main() {
   for (const c of dbChars) {
     if (assigned.has(c.id)) continue;
     if (c.name_en && (c.name_en.includes("×") || c.name_en.includes("+"))) continue;
-    const siblings =
-      dbByNameEn.get(c.name_en?.trim().toLowerCase() || "") ||
-      dbByNameJa.get(c.name_ja?.trim() || "");
+    const siblings = dbByNameEn.get(c.name_en?.trim().toLowerCase() || "") || dbByNameJa.get(c.name_ja?.trim() || "");
     if (siblings) {
       const withHashSib = siblings.find(
-        (s) =>
+        s =>
           assigned.has(s.id) &&
           s.series &&
           c.series &&
@@ -522,7 +509,7 @@ async function main() {
   // ═══ Phase E: Era correction ═══
   let eraSwaps = 0;
   const zukanByNamePosElem = new Map<string, ZukanEntry[]>();
-  for (const e of enEntries.filter((e) => e.zukanHash)) {
+  for (const e of enEntries.filter(e => e.zukanHash)) {
     const pos = normPos(e.position);
     const elem = normElem(e.element);
     const key = `${e.name.trim().toLowerCase()}|${pos}|${elem}`;
@@ -530,7 +517,7 @@ async function main() {
     zukanByNamePosElem.get(key)!.push(e);
   }
   const zukanHashToEntry = new Map<string, ZukanEntry>();
-  for (const e of enEntries.filter((e) => e.zukanHash)) {
+  for (const e of enEntries.filter(e => e.zukanHash)) {
     zukanHashToEntry.set(e.zukanHash!, e);
   }
   const ERA_ORDER: Record<string, number> = { OG: 1, GO: 2, Modern: 3 };
@@ -704,9 +691,7 @@ async function main() {
     } else {
       // hash unchanged but order may need correction (recompute against order_map)
       const curOrderRow = ro
-        .query<{ zukan_order: number | null }, [string]>(
-          "SELECT zukan_order FROM inagle_characters WHERE id = ?",
-        )
+        .query<{ zukan_order: number | null }, [string]>("SELECT zukan_order FROM inagle_characters WHERE id = ?")
         .get(c.id);
       const curOrder = curOrderRow?.zukan_order ?? null;
       if (curOrder !== nextOrder) {
@@ -717,7 +702,7 @@ async function main() {
   ro.close();
   if (ONLY_SHAWN) {
     const shawnIds = new Set(Object.keys(MANUAL_OVERRIDES).slice(3));
-    changes = changes.filter((change) => shawnIds.has(change.id));
+    changes = changes.filter(change => shawnIds.has(change.id));
   }
 
   console.log("\n════════ DIFF SUMMARY ════════");
@@ -726,19 +711,17 @@ async function main() {
   console.log(`Hash CHANGED vs current: ${changedCount}`);
   console.log(`  -> becoming NULL: ${toNull}`);
   console.log(`  -> from NULL to a hash: ${fromNull}`);
-  console.log(
-    `Rows to UPDATE${ONLY_SHAWN ? " (Shawn uniquement)" : ""} (hash and/or order delta): ${changes.length}`,
-  );
+  console.log(`Rows to UPDATE${ONLY_SHAWN ? " (Shawn uniquement)" : ""} (hash and/or order delta): ${changes.length}`);
 
   // ── Top-15 by zukan_order (after remap) ──
   console.log("\n════════ TOP-15 by zukan_order (after remap) ════════");
   const ranked = dbChars
-    .map((c) => {
+    .map(c => {
       const h = finalHashById.get(c.id) ?? null;
       const ord = h != null ? (orderMap[h] ?? null) : null;
       return { c, h, ord };
     })
-    .filter((r) => r.ord != null)
+    .filter(r => r.ord != null)
     .sort((a, b) => a.ord! - b.ord! || a.c.id.localeCompare(b.c.id))
     .slice(0, 15);
   for (const r of ranked) {
@@ -761,15 +744,9 @@ async function main() {
       );
     }
   };
-  verify(
-    "Alexander (フロイ, MF/Wind, Orion — should -> NULL, no zukan entry)",
-    (c) => c.name_ja === "フロイ",
-  );
-  verify("Alan Master (era)", (c) => c.name_en === "Alan Master");
-  verify(
-    "Alexander Scrivener (keep k/x/b/xbs1kbllvxu, GK/Mountain/Ares)",
-    (c) => c.name_en === "Alexander Scrivener",
-  );
+  verify("Alexander (フロイ, MF/Wind, Orion — should -> NULL, no zukan entry)", c => c.name_ja === "フロイ");
+  verify("Alan Master (era)", c => c.name_en === "Alan Master");
+  verify("Alexander Scrivener (keep k/x/b/xbs1kbllvxu, GK/Mountain/Ares)", c => c.name_en === "Alexander Scrivener");
 
   // ════════════════════════════════════════════════════════════════════════
   // Emit Supabase SQL + apply to mirror (only when not dry)
@@ -779,9 +756,7 @@ async function main() {
     const lines: string[] = [];
     lines.push("-- Remap zukan_hash + zukan_order on inagle_characters (Supabase).");
     lines.push(`-- Generated ${new Date().toISOString()} from mirror ${MIRROR}`);
-    lines.push(
-      `-- ${changes.length} rows. Only zukan_hash + zukan_order touched; sheet_data untouched.`,
-    );
+    lines.push(`-- ${changes.length} rows. Only zukan_hash + zukan_order touched; sheet_data untouched.`);
     lines.push("BEGIN;");
     // Batch as individual UPDATEs grouped by (hash, order) to keep file compact-ish.
     // Group ids that share the same (hash, order) into one IN(...) update.
@@ -794,7 +769,7 @@ async function main() {
     for (const { hash, order, ids } of groups.values()) {
       const hashSql = hash === null ? "NULL" : `'${sqlEsc(hash)}'`;
       const orderSql = order === null ? "NULL" : String(order);
-      const idList = ids.map((id) => `'${sqlEsc(id)}'`).join(", ");
+      const idList = ids.map(id => `'${sqlEsc(id)}'`).join(", ");
       lines.push(
         `UPDATE inagle_characters SET zukan_hash = ${hashSql}, zukan_order = ${orderSql} WHERE id IN (${idList});`,
       );
@@ -814,7 +789,7 @@ async function main() {
     }
     lines.push("COMMIT;");
     await Bun.write(SUPABASE_SQL_OUT, lines.join("\n") + "\n");
-    const updateCount = lines.filter((l) => l.startsWith("UPDATE")).length;
+    const updateCount = lines.filter(l => l.startsWith("UPDATE")).length;
     console.log(
       `\nSupabase SQL written: ${SUPABASE_SQL_OUT} (${updateCount} UPDATE statements, ${changes.length} rows)`,
     );
@@ -822,15 +797,11 @@ async function main() {
 
   if (!DRY) {
     const rw = new Database(MIRROR, { readwrite: true });
-    const stmt = rw.query(
-      "UPDATE inagle_characters SET zukan_hash = ?, zukan_order = ? WHERE id = ?",
-    );
+    const stmt = rw.query("UPDATE inagle_characters SET zukan_hash = ?, zukan_order = ? WHERE id = ?");
     const tx = rw.transaction((rows: typeof changes) => {
       for (const ch of rows) stmt.run(ch.hash, ch.order, ch.id);
       if (ONLY_SHAWN) {
-        const bioStmt = rw.query(
-          "UPDATE inagle_characters SET age_group = ?, school_year = ? WHERE zukan_hash = ?",
-        );
+        const bioStmt = rw.query("UPDATE inagle_characters SET age_group = ?, school_year = ? WHERE zukan_hash = ?");
         for (const [hash, bio] of Object.entries(SHAWN_BIO)) {
           bioStmt.run(bio.age, bio.school, hash);
         }

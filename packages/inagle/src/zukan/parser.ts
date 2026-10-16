@@ -91,7 +91,7 @@ export function normalizeImagePath(src: string | null): string | null {
  * Parses a character list page (chara_list)
  */
 export async function parseCharacterListPage(filePath: string): Promise<ZukanCharacter[]> {
-  const html = fs.readFileSync(filePath, "utf-8");
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
   const characters: ZukanCharacter[] = [];
 
@@ -120,13 +120,11 @@ export async function parseCharacterListPage(filePath: string): Promise<ZukanCha
     const picture = row.find("picture");
     let imageSource = null;
     if (picture.length) {
-      imageSource =
-        picture.find('source[type="image/webp"]').attr("srcset") || picture.find("img").attr("src");
+      imageSource = picture.find('source[type="image/webp"]').attr("srcset") || picture.find("img").attr("src");
     }
 
     if (!imageSource) {
-      imageSource =
-        row.find('img[src*="/k/"]').attr("src") || row.find('img[src*="prd/assets"]').attr("src");
+      imageSource = row.find('img[src*="/k/"]').attr("src") || row.find('img[src*="prd/assets"]').attr("src");
     }
 
     const image = normalizeImagePath(imageSource || null);
@@ -156,8 +154,7 @@ export async function parseCharacterListPage(filePath: string): Promise<ZukanCha
         if (v === "Inazuma Eleven" && gameLabel === "Inazuma Eleven") return true;
         if (v === "Inazuma Eleven 2" && gameLabel.startsWith("Inazuma Eleven 2")) return true;
         if (v === "Inazuma Eleven 3" && gameLabel.startsWith("Inazuma Eleven 3")) return true;
-        if (v === "Inazuma Eleven GO" && gameLabel.startsWith("Inazuma Eleven GO: Light"))
-          return true;
+        if (v === "Inazuma Eleven GO" && gameLabel.startsWith("Inazuma Eleven GO: Light")) return true;
         if (v === "Chrono Stone" && gameLabel.includes("Chrono Stone")) return true;
         if (v === "Galaxy" && gameLabel.includes("Galaxy")) return true;
         if (v === "Ares" && gameLabel.includes("Ares")) return true;
@@ -203,8 +200,8 @@ export async function parseCharacterListPage(filePath: string): Promise<ZukanCha
  * Parses a character detail page (chara_param)
  */
 export async function parseCharacterDetailPage(filePath: string): Promise<Partial<ZukanCharacter>> {
-  if (!fs.existsSync(filePath)) return {};
-  const html = fs.readFileSync(filePath, "utf-8");
+  if (!(await Bun.file(filePath).exists())) return {};
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
 
   const stats: any = {};
@@ -275,8 +272,8 @@ export async function parseCharacterDetailPage(filePath: string): Promise<Partia
  * Parses a character model viewer page (chara_model_view) to get the modelId
  */
 export async function parseCharacterModelPage(filePath: string): Promise<{ modelId?: string }> {
-  if (!fs.existsSync(filePath)) return {};
-  const html = fs.readFileSync(filePath, "utf-8");
+  if (!(await Bun.file(filePath).exists())) return {};
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
 
   const selectedOption = $("#character-select option[selected]");
@@ -331,9 +328,7 @@ export function parseSkillListHtml(html: string): ZukanSkill[] {
     // Image/Thumbnail
     const picture = lBox.find("picture");
     const thumbnailUrl = normalizeImagePath(
-      picture.find('source[type="image/webp"]').attr("srcset") ||
-        picture.find("img").attr("src") ||
-        null,
+      picture.find('source[type="image/webp"]').attr("srcset") || picture.find("img").attr("src") || null,
     );
 
     // Description
@@ -376,14 +371,14 @@ export function parseSkillListHtml(html: string): ZukanSkill[] {
  * Parses a skill list page
  */
 export async function parseSkillListPage(filePath: string): Promise<ZukanSkill[]> {
-  return parseSkillListHtml(fs.readFileSync(filePath, "utf-8"));
+  return parseSkillListHtml(await Bun.file(filePath).text());
 }
 
 /**
  * Parses an item list page
  */
 export async function parseItemPage(filePath: string): Promise<ZukanItem[]> {
-  const html = fs.readFileSync(filePath, "utf-8");
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
   const items: ZukanItem[] = [];
 
@@ -392,16 +387,11 @@ export async function parseItemPage(filePath: string): Promise<ZukanItem[]> {
 
   $(".itemListBox > li").each((_, li) => {
     // Name is inside .detailBox > .name, not .nameBox
-    const name =
-      $(li).find(".detailBox .name ruby").text().trim() ||
-      $(li).find(".detailBox .name").text().trim();
+    const name = $(li).find(".detailBox .name ruby").text().trim() || $(li).find(".detailBox .name").text().trim();
     if (!name) return;
 
     const picture = $(li).find("figure.item picture");
-    let imageUrl =
-      picture.find('source[type="image/webp"]').attr("srcset") ||
-      picture.find("img").attr("src") ||
-      null;
+    let imageUrl = picture.find('source[type="image/webp"]').attr("srcset") || picture.find("img").attr("src") || null;
 
     imageUrl = normalizeImagePath(imageUrl);
 
@@ -422,7 +412,7 @@ export async function parseItemPage(filePath: string): Promise<ZukanItem[]> {
  * Parses a formation page
  */
 export async function parseFormationPage(filePath: string): Promise<ZukanFormation[]> {
-  const html = fs.readFileSync(filePath, "utf-8");
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
   const formations: ZukanFormation[] = [];
 
@@ -463,7 +453,7 @@ export async function parseFormationPage(filePath: string): Promise<ZukanFormati
  * Parses a team info page (mostly for the filter list)
  */
 export async function parseTeamPage(filePath: string): Promise<ZukanTeam[]> {
-  const html = fs.readFileSync(filePath, "utf-8");
+  const html = await Bun.file(filePath).text();
   const $ = cheerio.load(html);
   const teams: ZukanTeam[] = [];
 

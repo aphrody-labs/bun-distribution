@@ -7,7 +7,7 @@ export async function startCronDaemon(): Promise<void> {
 }
 
 if (import.meta.main) {
-  if (process.argv.slice(2).some((arg) => arg === "--help" || arg === "-h"))
+  if (process.argv.slice(2).some(arg => arg === "--help" || arg === "-h"))
     console.log("Usage: rg-cron [--run <task>]. No --run starts the scheduled daemon.");
   else await startCronDaemon();
 }

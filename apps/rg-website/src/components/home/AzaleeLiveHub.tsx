@@ -85,8 +85,7 @@ const PREVIEW_LINKS: Record<PreviewTab, { href: string; label: string }> = {
 function CharacterMiniCard({ character }: { character: PreviewCharacter }) {
   const faceUrl = getCharacterImageUrl(character.internal_code || character.id);
   const posColor =
-    POSITION_COLORS[character.position] ??
-    "bg-surface-container-highest text-foreground border-outline-variant/30";
+    POSITION_COLORS[character.position] ?? "bg-surface-container-highest text-foreground border-outline-variant/30";
   const elementSprite = ELEMENT_SPRITE_MAP[character.element];
   const href = `/wiki/chara/${character.base_slug || character.slug || character.id}`;
 
@@ -142,8 +141,8 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
 
     let isMounted = true;
     fetch("/api/public/azalee/preview")
-      .then((response) => response.json())
-      .then((data) => {
+      .then(response => response.json())
+      .then(data => {
         if (isMounted && data && !data.error) {
           setLiveData(data);
         }
@@ -213,13 +212,8 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
         </div>
 
         <div className="relative z-10 flex items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground">
-            {activeCount ? activeCount.toLocaleString("fr-FR") : "Wiki"}
-          </span>
-          <Link
-            href={activeLink.href}
-            className="flex items-center gap-1 font-bold text-azalee-yellow hover:underline"
-          >
+          <span className="text-muted-foreground">{activeCount ? activeCount.toLocaleString("fr-FR") : "Wiki"}</span>
+          <Link href={activeLink.href} className="flex items-center gap-1 font-bold text-azalee-yellow hover:underline">
             {activeLink.label}
             <ArrowRight className="size-3" aria-hidden />
           </Link>
@@ -230,7 +224,7 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
             (liveData?.characters?.length ? (
               liveData.characters
                 .slice(0, 4)
-                .map((character) => <CharacterMiniCard key={character.id} character={character} />)
+                .map(character => <CharacterMiniCard key={character.id} character={character} />)
             ) : (
               <EmptyPreview />
             ))}
@@ -239,7 +233,7 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
             (liveData?.skills?.length ? (
               liveData.skills
                 .slice(0, 4)
-                .map((skill) => (
+                .map(skill => (
                   <MoveCard
                     key={skill.id}
                     id={skill.id}
@@ -258,7 +252,7 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
             (liveData?.items?.length ? (
               liveData.items
                 .slice(0, 4)
-                .map((item) => (
+                .map(item => (
                   <ItemCard
                     key={item.id}
                     id={item.id}
@@ -274,7 +268,7 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
 
           {activePreview === "teams" &&
             (liveData?.teams?.length ? (
-              liveData.teams.slice(0, 4).map((team) => (
+              liveData.teams.slice(0, 4).map(team => (
                 <TeamCard
                   key={team.id}
                   team={{
@@ -306,7 +300,7 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
               </Link>
             </div>
             <div className="grid gap-2 min-[600px]:grid-cols-2">
-              {articles.slice(0, 2).map((article) => (
+              {articles.slice(0, 2).map(article => (
                 <Link
                   key={article.id}
                   href={`/news/${article.slug}`}
@@ -314,21 +308,9 @@ export function AzaleeLiveHub({ stats, previewData, articles = [] }: AzaleeLiveH
                 >
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-surface-container-highest">
                     {article.featured_image_url ? (
-                      <Image
-                        src={article.featured_image_url}
-                        alt=""
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
+                      <Image src={article.featured_image_url} alt="" fill sizes="48px" className="object-cover" />
                     ) : (
-                      <Image
-                        src="/RG_Azalee-logo.webp"
-                        alt=""
-                        fill
-                        sizes="48px"
-                        className="object-contain p-2"
-                      />
+                      <Image src="/RG_Azalee-logo.webp" alt="" fill sizes="48px" className="object-contain p-2" />
                     )}
                   </div>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-foreground group-hover/article:text-azalee-yellow">

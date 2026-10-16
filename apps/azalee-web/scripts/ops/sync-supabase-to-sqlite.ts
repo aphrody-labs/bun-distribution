@@ -50,7 +50,7 @@ const doFull = args.has("full");
 const onlyTables = args
   .get("tables")
   ?.split(",")
-  .map((s) => s.trim());
+  .map(s => s.trim());
 // PostgREST plafonne à 1000 lignes/requête → page ≤ 1000.
 const pageSize = Math.min(1000, Number(args.get("page") ?? "1000"));
 
@@ -64,7 +64,7 @@ function findActiveMirror(): string {
   for (const dir of dirs) {
     try {
       const files = readdirSync(dir)
-        .filter((f) => f.startsWith("supabase-") && f.endsWith(".sqlite"))
+        .filter(f => f.startsWith("supabase-") && f.endsWith(".sqlite"))
         .sort((a, b) => b.localeCompare(a));
       if (files.length > 0) return path.join(dir, files[0]);
     } catch {
@@ -127,7 +127,7 @@ const baseTables = new Set(
       `SELECT table_name FROM information_schema.tables
 			 WHERE table_schema='public' AND table_type='BASE TABLE'`,
     )
-  ).rows.map((r) => r.table_name),
+  ).rows.map(r => r.table_name),
 );
 const pkRes = await pg.query<{ table_name: string; cols: string; col: string }>(`
 	SELECT tc.table_name, count(*) OVER (PARTITION BY tc.table_name)::text AS cols, kcu.column_name AS col
@@ -153,7 +153,7 @@ for (const r of colRes.rows) {
   if (r.column_name === "updated_at") t.hasUpdated = true;
 }
 let tables = [...tblMap.values()];
-if (onlyTables) tables = tables.filter((t) => onlyTables.includes(t.name));
+if (onlyTables) tables = tables.filter(t => onlyTables.includes(t.name));
 
 // --- Source de DONNÉES : Supabase REST (service role) ---
 const supabase = createSupabaseServiceClient();
@@ -169,13 +169,9 @@ for (const p of [
 ]) {
   db.exec(`PRAGMA ${p}`);
 }
-db.exec(
-  `CREATE TABLE IF NOT EXISTS _sync_meta (table_name TEXT PRIMARY KEY, watermark TEXT, synced_at TEXT)`,
-);
+db.exec(`CREATE TABLE IF NOT EXISTS _sync_meta (table_name TEXT PRIMARY KEY, watermark TEXT, synced_at TEXT)`);
 const getWm = db.prepare("SELECT watermark FROM _sync_meta WHERE table_name=?");
-const setWm = db.prepare(
-  "INSERT OR REPLACE INTO _sync_meta (table_name, watermark, synced_at) VALUES (?,?,?)",
-);
+const setWm = db.prepare("INSERT OR REPLACE INTO _sync_meta (table_name, watermark, synced_at) VALUES (?,?,?)");
 // Floor = date du full backup (le mirror contient déjà tout jusque-là) → 1er run
 // incrémental = deltas seulement, pas un re-pull de 67k lignes.
 let backupFloor = "1970-01-01T00:00:00Z";
@@ -191,7 +187,7 @@ const sqliteHasTable = (name: string): boolean =>
   db.query("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name) !== null;
 const ensureTable = (t: Tbl) => {
   if (!sqliteHasTable(t.name)) {
-    const decl = t.cols.map((c) => `"${c.name}" ${c.affinity}`).join(", ");
+    const decl = t.cols.map(c => `"${c.name}" ${c.affinity}`).join(", ");
     db.exec(`CREATE TABLE "${t.name}" (${decl}${t.pk ? `, PRIMARY KEY ("${t.pk}")` : ""})`);
   }
   // Les tables du full backup n'ont PAS de PK déclarée → ON CONFLICT échoue.
@@ -208,8 +204,8 @@ const summary: string[] = [];
 
 for (const t of tables) {
   ensureTable(t);
-  const colNames = t.cols.map((c) => `"${c.name}"`).join(", ");
-  const placeholders = t.cols.map((c) => `$${c.name}`).join(", ");
+  const colNames = t.cols.map(c => `"${c.name}"`).join(", ");
+  const placeholders = t.cols.map(c => `$${c.name}`).join(", ");
   const bind = (r: Record<string, unknown>) => {
     const p: Record<string, string | number | null> = {};
     for (const c of t.cols) p[`$${c.name}`] = coerce(r[c.name], c.affinity);
@@ -219,8 +215,8 @@ for (const t of tables) {
   if (!doFull && t.hasUpdated && t.pk) {
     // --- Incrémental par watermark updated_at ---
     const updates = t.cols
-      .filter((c) => c.name !== t.pk)
-      .map((c) => `"${c.name}"=excluded."${c.name}"`)
+      .filter(c => c.name !== t.pk)
+      .map(c => `"${c.name}"=excluded."${c.name}"`)
       .join(", ");
     const upsert = db.prepare(
       `INSERT INTO "${t.name}" (${colNames}) VALUES (${placeholders}) ON CONFLICT("${t.pk}") DO UPDATE SET ${updates}`,
@@ -252,13 +248,10 @@ for (const t of tables) {
     }
     setWm.run(t.name, watermark, new Date().toISOString());
     totalUpserts += changed;
-    if (changed > 0)
-      summary.push(`  ↑ ${t.name.padEnd(32)} ${String(changed).padStart(6)} upserts`);
+    if (changed > 0) summary.push(`  ↑ ${t.name.padEnd(32)} ${String(changed).padStart(6)} upserts`);
   } else if (t.pk && (doFull || doFullStatic)) {
     // --- Full-refresh paginé (--full toute table, --full-static les sans-updated_at) ---
-    const insert = db.prepare(
-      `INSERT OR REPLACE INTO "${t.name}" (${colNames}) VALUES (${placeholders})`,
-    );
+    const insert = db.prepare(`INSERT OR REPLACE INTO "${t.name}" (${colNames}) VALUES (${placeholders})`);
     const insertMany = db.transaction((rows: Record<string, unknown>[]) => {
       for (const r of rows) insert.run(bind(r));
     });
@@ -298,10 +291,10 @@ for (const t of tables) {
     }
     if (remote.size > 0) {
       const localIds = db.query(`SELECT "${t.pk}" AS k FROM "${t.name}"`).all() as { k: unknown }[];
-      const toDelete = localIds.map((r) => String(r.k)).filter((k) => !remote.has(k));
+      const toDelete = localIds.map(r => String(r.k)).filter(k => !remote.has(k));
       if (toDelete.length > 0) {
         const del = db.prepare(`DELETE FROM "${t.name}" WHERE "${t.pk}"=?`);
-        const delMany = db.transaction((ids: string[]) => ids.forEach((id) => del.run(id)));
+        const delMany = db.transaction((ids: string[]) => ids.forEach(id => del.run(id)));
         delMany(toDelete);
         totalDeletes += toDelete.length;
         summary.push(`  ✗ ${t.name.padEnd(32)} ${String(toDelete.length).padStart(6)} deletes`);

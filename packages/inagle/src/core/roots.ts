@@ -22,9 +22,7 @@ function firstEnv(names: readonly string[]): string | undefined {
 }
 
 function moduleDir(): string {
-  return typeof import.meta.dir === "string"
-    ? import.meta.dir
-    : path.dirname(fileURLToPath(import.meta.url));
+  return typeof import.meta.dir === "string" ? import.meta.dir : path.dirname(fileURLToPath(import.meta.url));
 }
 
 /** IECODE checkout root (`packages/inagle/src/core` → four levels up). */
@@ -52,10 +50,7 @@ export function iecodeDataPath(...parts: string[]): string {
 
 /** Rose Griffon source root: the Aphrody monorepo sibling or a legacy RG checkout. */
 export function rgRoot(): string {
-  return (
-    firstEnv(["APHRODY_RG_ROOT", "RG_REPO_ROOT", "APHRODY_ROOT"]) ??
-    path.resolve(iecodeRoot(), "../aphrody")
-  );
+  return firstEnv(["APHRODY_RG_ROOT", "RG_REPO_ROOT", "APHRODY_ROOT"]) ?? path.resolve(iecodeRoot(), "../aphrody");
 }
 
 /** Rose Griffon website root (`apps/rg-website` in Aphrody, `apps/website` in legacy RG). */

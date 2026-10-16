@@ -28,10 +28,10 @@
  */
 import { Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
-	ApplicationCommandOptionType,
-	ChannelType,
-	type ChatInputCommandInteraction,
-	type GuildTextBasedChannel,
+  ApplicationCommandOptionType,
+  ChannelType,
+  type ChatInputCommandInteraction,
+  type GuildTextBasedChannel,
 } from "discord.js";
 
 import { logAdminAction } from "../../lib/audit";
@@ -44,90 +44,87 @@ import "./racine";
 
 @Discord()
 @SlashGroup({
-	description: "Salon où le bot publie les sanctions prises avec /moderation",
-	name: "journal",
-	root: "administration",
+  description: "Salon où le bot publie les sanctions prises avec /moderation",
+  name: "journal",
+  root: "administration",
 })
 @SlashGroup("journal", "administration")
 export class AdministrationJournalCommand {
-	@Slash({
-		description: "Choisir le salon du journal de modération (vide = ne rien publier)",
-		name: "salon",
-	})
-	async salon(
-		@SlashOption({
-			channelTypes: [ChannelType.GuildText, ChannelType.GuildAnnouncement],
-			description: "Le salon (laisse vide pour COUPER la publication)",
-			name: "salon",
-			required: false,
-			type: ApplicationCommandOptionType.Channel,
-		})
-		salon: GuildTextBasedChannel | undefined,
-		interaction: ChatInputCommandInteraction
-	) {
-		await differerEnPrive(interaction);
-		const admin = await exigerDroits(interaction);
-		if (!admin) {
-			return;
-		}
-		const guildId = interaction.guildId;
-		if (!guildId) {
-			await repondre(
-				interaction,
-				echec("Hors serveur", "Un journal se règle sur un serveur, pas en message privé.")
-			);
-			return;
-		}
-		try {
-			const actuels = await reglagesDe(guildId);
-			const modifies = fusionnerReglages(actuels, {
-				moderation: { actif: salon !== undefined, salonJournal: salon?.id ?? null },
-			});
-			await enregistrerReglages(guildId, modifies);
-			await logAdminAction({
-				action: "moderation.journal",
-				adminId: admin.profileId,
-				details: { salon: salon?.id ?? null },
-				discordId: interaction.user.id,
-				targetId: guildId,
-				targetType: "bot_reglages_guilde",
-			});
+  @Slash({
+    description: "Choisir le salon du journal de modération (vide = ne rien publier)",
+    name: "salon",
+  })
+  async salon(
+    @SlashOption({
+      channelTypes: [ChannelType.GuildText, ChannelType.GuildAnnouncement],
+      description: "Le salon (laisse vide pour COUPER la publication)",
+      name: "salon",
+      required: false,
+      type: ApplicationCommandOptionType.Channel,
+    })
+    salon: GuildTextBasedChannel | undefined,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await differerEnPrive(interaction);
+    const admin = await exigerDroits(interaction);
+    if (!admin) {
+      return;
+    }
+    const guildId = interaction.guildId;
+    if (!guildId) {
+      await repondre(interaction, echec("Hors serveur", "Un journal se règle sur un serveur, pas en message privé."));
+      return;
+    }
+    try {
+      const actuels = await reglagesDe(guildId);
+      const modifies = fusionnerReglages(actuels, {
+        moderation: { actif: salon !== undefined, salonJournal: salon?.id ?? null },
+      });
+      await enregistrerReglages(guildId, modifies);
+      await logAdminAction({
+        action: "moderation.journal",
+        adminId: admin.profileId,
+        details: { salon: salon?.id ?? null },
+        discordId: interaction.user.id,
+        targetId: guildId,
+        targetType: "bot_reglages_guilde",
+      });
 
-			if (!salon) {
-				await repondre(
-					interaction,
-					succes(
-						"Journal de modération coupé",
-						"Les sanctions continuent d'être consignées dans `admin_audit_log` — elles ne seront simplement plus publiées nulle part.",
-						{ prive: true }
-					)
-				);
-				return;
-			}
+      if (!salon) {
+        await repondre(
+          interaction,
+          succes(
+            "Journal de modération coupé",
+            "Les sanctions continuent d'être consignées dans `admin_audit_log` — elles ne seront simplement plus publiées nulle part.",
+            { prive: true },
+          ),
+        );
+        return;
+      }
 
-			// L'essai passe par le MÊME chemin qu'une vraie sanction : réglages
-			// relus, salon résolu, embed envoyé. Il vaut donc preuve, là où une
-			// vérification de permissions calculée ne vaudrait que promesse.
-			const echecEssai = await publierAuJournal(interaction.client, guildId, {
-				action: "discord.avertir",
-				cibleId: interaction.user.id,
-				cibleEtiquette: interaction.user.tag,
-				parQui: interaction.user.id,
-				motif: "Carte d'essai — le journal de modération vient d'être branché sur ce salon.",
-				precisions: [{ nom: "Essai", valeur: "aucune sanction n'a été prise" }],
-			});
-			await repondre(
-				interaction,
-				echecEssai
-					? echec("Salon enregistré, mais rien n'a pu y être publié", echecEssai)
-					: succes(
-							"Journal de modération branché",
-							`Avertissements, exclusions et bannissements paraîtront dans ${salon.toString()}. Une carte d'essai vient d'y être posée.`,
-							{ prive: true }
-						)
-			);
-		} catch (err) {
-			await repondre(interaction, echec("Réglage refusé", messagePanne(err)));
-		}
-	}
+      // L'essai passe par le MÊME chemin qu'une vraie sanction : réglages
+      // relus, salon résolu, embed envoyé. Il vaut donc preuve, là où une
+      // vérification de permissions calculée ne vaudrait que promesse.
+      const echecEssai = await publierAuJournal(interaction.client, guildId, {
+        action: "discord.avertir",
+        cibleId: interaction.user.id,
+        cibleEtiquette: interaction.user.tag,
+        parQui: interaction.user.id,
+        motif: "Carte d'essai — le journal de modération vient d'être branché sur ce salon.",
+        precisions: [{ nom: "Essai", valeur: "aucune sanction n'a été prise" }],
+      });
+      await repondre(
+        interaction,
+        echecEssai
+          ? echec("Salon enregistré, mais rien n'a pu y être publié", echecEssai)
+          : succes(
+              "Journal de modération branché",
+              `Avertissements, exclusions et bannissements paraîtront dans ${salon.toString()}. Une carte d'essai vient d'y être posée.`,
+              { prive: true },
+            ),
+      );
+    } catch (err) {
+      await repondre(interaction, echec("Réglage refusé", messagePanne(err)));
+    }
+  }
 }

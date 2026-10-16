@@ -13,19 +13,13 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { buildOrderMap } from "../../src/zukan/order.ts";
-import {
-  createPgClient,
-  getInagleDatabaseURL,
-  isInagleDatabaseConfigured,
-} from "@rosegriffon/db/pg";
+import { createPgClient, getInagleDatabaseURL, isInagleDatabaseConfigured } from "@rosegriffon/db/pg";
 import * as cheerio from "cheerio";
 
 const __dirname = import.meta.dir;
 const PACKAGE_ROOT = resolve(__dirname, "../../..");
 
-const DATA_ROOT = process.env.DATA_PATH
-  ? resolve(process.env.DATA_PATH, "zukan")
-  : resolve(PACKAGE_ROOT, "data/zukan");
+const DATA_ROOT = process.env.DATA_PATH ? resolve(process.env.DATA_PATH, "zukan") : resolve(PACKAGE_ROOT, "data/zukan");
 const CACHE_DIR = resolve(DATA_ROOT, "chara_param_cache_en");
 const OUTPUT_PATH = resolve(DATA_ROOT, "zukan_order_en.json");
 const USER_AGENT =
@@ -47,7 +41,7 @@ interface ZukanOrderEntry {
 
 // ─── Fetch ───────────────────────────────────────────────────
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function fetchPage(pageNum: number, forceFresh: boolean): Promise<string> {
   if (!existsSync(CACHE_DIR)) await mkdir(CACHE_DIR, { recursive: true });
@@ -143,7 +137,7 @@ async function main() {
 
   console.log(`\nTotal crawled: ${allEntries.length} characters in official order.`);
 
-  const withHash = allEntries.filter((e) => e.zukanHash).length;
+  const withHash = allEntries.filter(e => e.zukanHash).length;
   console.log(`With zukanHash: ${withHash}/${allEntries.length}`);
 
   // Game distribution
@@ -222,9 +216,7 @@ async function main() {
 	`);
   console.log("\nFirst 10 in official order:");
   for (const r of sample)
-    console.log(
-      `  #${String(r.zukan_order).padStart(4)} ${(r.name_en || "?").padEnd(25)} (${r.series})`,
-    );
+    console.log(`  #${String(r.zukan_order).padStart(4)} ${(r.name_en || "?").padEnd(25)} (${r.series})`);
 
   const { rows: sampleLast } = await client.query(`
 		SELECT name_en, series, zukan_order FROM inagle_characters
@@ -232,15 +224,13 @@ async function main() {
 	`);
   console.log("\nLast 10 in official order:");
   for (const r of sampleLast.reverse())
-    console.log(
-      `  #${String(r.zukan_order).padStart(4)} ${(r.name_en || "?").padEnd(25)} (${r.series})`,
-    );
+    console.log(`  #${String(r.zukan_order).padStart(4)} ${(r.name_en || "?").padEnd(25)} (${r.series})`);
 
   await client.end();
   console.log("\nDone.");
 }
 
-main().catch((e) => {
+main().catch(e => {
   console.error(e);
   process.exit(1);
 });

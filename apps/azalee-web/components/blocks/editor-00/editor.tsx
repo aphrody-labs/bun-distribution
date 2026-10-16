@@ -49,7 +49,7 @@ export function Editor({
 
           <OnChangePlugin
             ignoreSelectionChange
-            onChange={(editorState) => {
+            onChange={editorState => {
               onChange?.(editorState);
               onSerializedChange?.(editorState.toJSON());
             }}

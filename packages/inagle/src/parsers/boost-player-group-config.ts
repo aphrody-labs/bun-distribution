@@ -84,19 +84,13 @@ function parseEntries(entries: ConfigNode[]) {
 // ============================================================================
 
 export async function loadBoostPlayerGroupConfigAsync(dataPath: string = DATA_ROOT) {
-  const path = join(
-    dataPath,
-    "common/gamedata/boost_grp",
-    "boost_player_group_config_0.00.00.cfg.bin.json",
-  );
+  const path = join(dataPath, "common/gamedata/boost_grp", "boost_player_group_config_0.00.00.cfg.bin.json");
   const content = await loadJsonAsync<{ entries: ConfigNode[] }>(path);
   if (!content?.entries) return null;
   return parseEntries(content.entries);
 }
 
-export async function buildBoostPlayerGroupDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<BoostPlayerGroupDatabase> {
+export async function buildBoostPlayerGroupDatabase(dataPath: string = DATA_ROOT): Promise<BoostPlayerGroupDatabase> {
   const result = await loadBoostPlayerGroupConfigAsync(dataPath);
   const spiritTable = result?.spiritTable || [];
   const configs = result?.configs || [];

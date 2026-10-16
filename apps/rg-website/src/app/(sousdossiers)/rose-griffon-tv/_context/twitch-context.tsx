@@ -20,8 +20,8 @@ const TwitchContext = createContext<TwitchContextType | undefined>(undefined);
 
 const fetcher = (url: string) =>
   fetch(url)
-    .then((res) => res.json())
-    .then((data) => ({
+    .then(res => res.json())
+    .then(data => ({
       isLive: data.live?.is_live || false,
       videoId: null,
       followers: data.followers || 0,
@@ -47,16 +47,12 @@ export function TwitchProvider({
   children: ReactNode;
   channel?: TwitchChannel;
 }) {
-  const { data, error, isLoading, mutate } = useSWR<TwitchData>(
-    `/api/public/rgtv/status?channel=${channel}`,
-    fetcher,
-    {
-      dedupingInterval: 60000, // Cache for 1 minute
-      focusThrottleInterval: 300000, // Revalidate at most every 5 minutes when window focused
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-    },
-  );
+  const { data, error, isLoading, mutate } = useSWR<TwitchData>(`/api/public/rgtv/status?channel=${channel}`, fetcher, {
+    dedupingInterval: 60000, // Cache for 1 minute
+    focusThrottleInterval: 300000, // Revalidate at most every 5 minutes when window focused
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
 
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
@@ -66,7 +62,7 @@ export function TwitchProvider({
     if (error && retryCount < maxRetries) {
       const timeoutId = setTimeout(
         () => {
-          setRetryCount((prev) => prev + 1);
+          setRetryCount(prev => prev + 1);
           mutate();
         },
         2 ** retryCount * 3000,

@@ -13,11 +13,7 @@
  * Les avatars hébergés chez nous (Supabase Storage `*.supabase.co`, `cdn`/
  * `azalee.rosegriffon.fr`) restent optimisés : ils sont sur notre origine.
  */
-const REMOTE_AVATAR_HOSTS = [
-	"cdn.discordapp.com",
-	"lh3.googleusercontent.com",
-	"pbs.twimg.com",
-];
+const REMOTE_AVATAR_HOSTS = ["cdn.discordapp.com", "lh3.googleusercontent.com", "pbs.twimg.com"];
 
 /**
  * Indique si une URL d'avatar provient d'un CDN tiers (Discord/Google/Twitter)
@@ -25,8 +21,8 @@ const REMOTE_AVATAR_HOSTS = [
  * d'optimisation d'images de Next (cf. piège 402 dans CLAUDE.md).
  */
 export function isRemoteAvatar(url: string | null | undefined): boolean {
-	if (!url) {
-		return false;
-	}
-	return REMOTE_AVATAR_HOSTS.some((host) => url.includes(host));
+  if (!url) {
+    return false;
+  }
+  return REMOTE_AVATAR_HOSTS.some(host => url.includes(host));
 }

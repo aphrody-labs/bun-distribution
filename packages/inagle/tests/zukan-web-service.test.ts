@@ -1,18 +1,14 @@
 import { zukanReferenceFrame } from "../src/zukan/reference-frame.ts";
 import { afterEach, expect, test } from "bun:test";
 import { fetchZukanSkillPage, zukanSkillPageUrl } from "../src/zukan/skill-videos.ts";
-import {
-  createZukanWebService,
-  setZukanWebServiceFactory,
-  zukanResponseHtml,
-} from "../src/zukan/web-service.ts";
+import { createZukanWebService, setZukanWebServiceFactory, zukanResponseHtml } from "../src/zukan/web-service.ts";
 
 afterEach(() => setZukanWebServiceFactory(null));
 
 test("skill acquisition delegates the exact locale and page URL to Web", async () => {
   const urls: string[] = [];
   setZukanWebServiceFactory(() => ({
-    response: async (url) => {
+    response: async url => {
       urls.push(url);
       return {
         status: 200,
@@ -39,9 +35,7 @@ test("original HTML is preserved and incomplete or failed responses are rejected
   };
   expect(await zukanResponseHtml(service, "https://zukan.inazuma.jp/en/", "Page")).toBe(html);
   status = 404;
-  await expect(zukanResponseHtml(service, "https://zukan.inazuma.jp/en/", "Page")).rejects.toThrow(
-    "Page: HTTP 404",
-  );
+  await expect(zukanResponseHtml(service, "https://zukan.inazuma.jp/en/", "Page")).rejects.toThrow("Page: HTTP 404");
   status = 200;
   truncated = true;
   await expect(zukanResponseHtml(service, "https://zukan.inazuma.jp/en/", "Page")).rejects.toThrow(

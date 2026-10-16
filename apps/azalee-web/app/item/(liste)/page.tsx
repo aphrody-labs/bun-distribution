@@ -20,7 +20,7 @@ export async function generateMetadata({
   const page = typeof rawParams.page === "string" ? rawParams.page : undefined;
 
   const activeCategory = category || "shoes";
-  const categoryLabel = CATEGORIES.find((t) => t.value === activeCategory)?.label || "Équipements";
+  const categoryLabel = CATEGORIES.find(t => t.value === activeCategory)?.label || "Équipements";
 
   let title = `${categoryLabel} - Objets`;
   if (q) {
@@ -88,7 +88,7 @@ export default async function ItemsPage({
 
   const pageNumber = page ? Number.parseInt(page.toString(), 10) : 1;
   const activeCategory = (category as string) || "shoes";
-  const categoryLabel = CATEGORIES.find((t) => t.value === activeCategory)?.label || "Équipements";
+  const categoryLabel = CATEGORIES.find(t => t.value === activeCategory)?.label || "Équipements";
 
   // Data First: Fetch paginated from DB
   const { data: items, total } = await wikiService.getItemsList({
@@ -120,10 +120,7 @@ export default async function ItemsPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <h1 className="sr-only">Objets</h1>
       <div className="space-y-4">
         <WikiSearchToolbar placeholder="Rechercher un objet..." showFilters={false} />
@@ -145,7 +142,7 @@ export default async function ItemsPage({
                 id={item.itemId}
                 name={item.name_FR || item.names?.en || "Inconnu"}
                 category={item.category}
-                categoryLabel={CATEGORIES.find((t) => t.value === item.category)?.label}
+                categoryLabel={CATEGORIES.find(t => t.value === item.category)?.label}
                 rarity={item.rarity}
                 internalCode={item.internalCode}
                 icon={item.image}

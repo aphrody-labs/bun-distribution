@@ -31,18 +31,18 @@ import type { ConfigVroid } from "./constantes";
  *   publique en lecture seule) au lieu de planter.
  */
 export function lireConfigVroid(): ConfigVroid | null {
-	const applicationId = process.env.VROID_APPLICATION_ID?.trim();
-	const secret = process.env.VROID_SECRET?.trim();
+  const applicationId = process.env.VROID_APPLICATION_ID?.trim();
+  const secret = process.env.VROID_SECRET?.trim();
 
-	// Une variable posée mais vide n'est pas une configuration.
-	if (!applicationId || !secret) return null;
+  // Une variable posée mais vide n'est pas une configuration.
+  if (!applicationId || !secret) return null;
 
-	return {
-		applicationId,
-		secret,
-		redirectUri: process.env.VROID_REDIRECT_URI?.trim() || "https://azalee.rosegriffon.fr/",
-		scope: process.env.VROID_SCOPE?.trim() || "heart default",
-	};
+  return {
+    applicationId,
+    secret,
+    redirectUri: process.env.VROID_REDIRECT_URI?.trim() || "https://azalee.rosegriffon.fr/",
+    scope: process.env.VROID_SCOPE?.trim() || "heart default",
+  };
 }
 
 /**
@@ -51,11 +51,9 @@ export function lireConfigVroid(): ConfigVroid | null {
  * @throws {Error} si `VROID_APPLICATION_ID` ou `VROID_SECRET` manque.
  */
 export function exigerConfigVroid(): ConfigVroid {
-	const config = lireConfigVroid();
-	if (!config) {
-		throw new Error(
-			"VRoid Hub n'est pas configuré : posez VROID_APPLICATION_ID et VROID_SECRET dans l'environnement."
-		);
-	}
-	return config;
+  const config = lireConfigVroid();
+  if (!config) {
+    throw new Error("VRoid Hub n'est pas configuré : posez VROID_APPLICATION_ID et VROID_SECRET dans l'environnement.");
+  }
+  return config;
 }

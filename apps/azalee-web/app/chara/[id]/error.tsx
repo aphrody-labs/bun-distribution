@@ -9,10 +9,6 @@ export default function Error({ error }: { error: Error & { digest?: string } })
   }, [error]);
 
   return (
-    <WikiErrorState
-      title="Impossible de charger ce personnage"
-      backHref="/chara"
-      backLabel="Retour aux personnages"
-    />
+    <WikiErrorState title="Impossible de charger ce personnage" backHref="/chara" backLabel="Retour aux personnages" />
   );
 }

@@ -58,14 +58,9 @@ export default async function ImageValidationPage({
 
   if (filter === "multi_versions") {
     // Get chara_ids that have at least one BASARA version
-    const { data: basaraRows } = await db
-      .from("inagle_characters")
-      .select("chara_id")
-      .eq("rarity", 20);
+    const { data: basaraRows } = await db.from("inagle_characters").select("chara_id").eq("rarity", 20);
 
-    const charaIds = [
-      ...new Set((basaraRows || []).map((r: any) => r.chara_id).filter(Boolean)),
-    ] as string[];
+    const charaIds = [...new Set((basaraRows || []).map((r: any) => r.chara_id).filter(Boolean))] as string[];
     totalCount = charaIds.length;
 
     const pagedIds = charaIds.slice((page - 1) * perPage, page * perPage);
@@ -155,7 +150,7 @@ export default async function ImageValidationPage({
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        {filterOptions.map((f) => (
+        {filterOptions.map(f => (
           <Link
             key={f.value}
             href={`/dashboard/database/images?filter=${f.value}`}
@@ -174,10 +169,10 @@ export default async function ImageValidationPage({
       {/* Character Grid */}
       <div className="space-y-6">
         {[...grouped.entries()].map(([charaId, rows]) => {
-          const hasBasara = rows.some((r) => r.rarity >= 20);
-          const zukanHashes = new Set(rows.map((r) => r.zukan_hash).filter(Boolean));
+          const hasBasara = rows.some(r => r.rarity >= 20);
+          const zukanHashes = new Set(rows.map(r => r.zukan_hash).filter(Boolean));
           const allSameImage = zukanHashes.size <= 1;
-          const missingImages = rows.filter((r) => !r.zukan_hash);
+          const missingImages = rows.filter(r => !r.zukan_hash);
 
           return (
             <div
@@ -192,9 +187,7 @@ export default async function ImageValidationPage({
             >
               {/* Group Header */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-black text-on-surface">
-                  {rows[0].name_fr || rows[0].name_en || "???"}
-                </span>
+                <span className="font-black text-on-surface">{rows[0].name_fr || rows[0].name_en || "???"}</span>
                 <span className="text-xs font-mono text-on-surface-variant">{charaId}</span>
                 {hasBasara && (
                   <Badge className="bg-linear-to-r from-[#4facfe] via-[#7367f0] to-[#9733ee] text-white border-none text-[10px] font-black">
@@ -202,18 +195,12 @@ export default async function ImageValidationPage({
                   </Badge>
                 )}
                 {missingImages.length > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-600 border-amber-400 text-[10px] font-bold"
-                  >
+                  <Badge variant="outline" className="text-amber-600 border-amber-400 text-[10px] font-bold">
                     {missingImages.length} sans image
                   </Badge>
                 )}
                 {!allSameImage && rows.length > 1 && (
-                  <Badge
-                    variant="outline"
-                    className="text-red-600 border-red-400 text-[10px] font-bold"
-                  >
+                  <Badge variant="outline" className="text-red-600 border-red-400 text-[10px] font-bold">
                     Images différentes
                   </Badge>
                 )}
@@ -221,7 +208,7 @@ export default async function ImageValidationPage({
 
               {/* Variants Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {rows.map((row) => {
+                {rows.map(row => {
                   const imgUrl = getImageUrl(row);
                   return (
                     <div
@@ -240,11 +227,7 @@ export default async function ImageValidationPage({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <ImageOff
-                              size={20}
-                              className="text-on-surface-variant"
-                              aria-hidden="true"
-                            />
+                            <ImageOff size={20} className="text-on-surface-variant" aria-hidden="true" />
                           </div>
                         )}
                       </div>
@@ -263,15 +246,9 @@ export default async function ImageValidationPage({
                             {row.rarity_label || "N"}
                           </Badge>
                           {row.position && (
-                            <span className="text-[9px] font-bold text-on-surface-variant">
-                              {row.position}
-                            </span>
+                            <span className="text-[9px] font-bold text-on-surface-variant">{row.position}</span>
                           )}
-                          {row.element && (
-                            <span className="text-[9px] text-on-surface-variant">
-                              {row.element}
-                            </span>
-                          )}
+                          {row.element && <span className="text-[9px] text-on-surface-variant">{row.element}</span>}
                         </div>
                         <div
                           className="text-[9px] font-mono text-on-surface-variant truncate max-w-[100px]"
@@ -280,16 +257,11 @@ export default async function ImageValidationPage({
                           {row.id}
                         </div>
                         {row.constellation && (
-                          <div
-                            className="text-[9px] text-purple-500 truncate max-w-[100px]"
-                            title={row.constellation}
-                          >
+                          <div className="text-[9px] text-purple-500 truncate max-w-[100px]" title={row.constellation}>
                             {row.constellation}
                           </div>
                         )}
-                        {!row.zukan_hash && (
-                          <span className="text-[9px] text-amber-500 font-bold">Pas de zukan</span>
-                        )}
+                        {!row.zukan_hash && <span className="text-[9px] text-amber-500 font-bold">Pas de zukan</span>}
                       </div>
                       <Link
                         href={`/chara/${row.slug || row.id}`}

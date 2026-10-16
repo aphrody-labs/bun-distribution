@@ -39,7 +39,7 @@ function findHeroConfigFile(): string | null {
 
   const files = readdirSync(soccerDir);
   const configFile = files
-    .filter((f) => f.startsWith("soccer_chara_unique_rarity_config") && f.endsWith(".cfg.bin.json"))
+    .filter(f => f.startsWith("soccer_chara_unique_rarity_config") && f.endsWith(".cfg.bin.json"))
     .sort()
     .pop();
 
@@ -68,9 +68,7 @@ export function loadHeroConfig() {
 
   try {
     const data = JSON.parse(readFileSync(filePath, "utf-8"));
-    const list = data.lists?.find(
-      (l: { name: string }) => l.name === "m_soccerCharaUniqueRarityList",
-    );
+    const list = data.lists?.find((l: { name: string }) => l.name === "m_soccerCharaUniqueRarityList");
 
     if (!list?.values) {
       console.warn("[hero-config] No values found in config");
@@ -104,9 +102,7 @@ export function loadHeroConfig() {
       byCharaId.set(entry.charaId, info);
     }
 
-    console.log(
-      `[hero-config] Loaded ${byCharaId.size} base characters, ${byParamId.size} hero variants`,
-    );
+    console.log(`[hero-config] Loaded ${byCharaId.size} base characters, ${byParamId.size} hero variants`);
   } catch (e) {
     console.error("[hero-config] Failed to parse config:", e);
   }

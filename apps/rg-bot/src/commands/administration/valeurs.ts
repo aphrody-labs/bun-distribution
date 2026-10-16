@@ -30,12 +30,12 @@ import { CLE_REGLAGE_TWEETS, type FiltreTweets } from "../../lib/tweets-format";
  * réalité de la colonne, plutôt que de choisir laquelle mentir.
  */
 export const ROLES_ASSIGNABLES: readonly string[] = Object.freeze(
-	[...new Set<string>([...ALL_ROLES, "member"])].toSorted((a, b) => a.localeCompare(b, "fr"))
+  [...new Set<string>([...ALL_ROLES, "member"])].toSorted((a, b) => a.localeCompare(b, "fr")),
 );
 
 /** Vrai si la valeur est un rôle que l'on accepte d'écrire dans `profiles.role`. */
 export function estRoleAssignable(valeur: unknown): valeur is RgRole | "member" {
-	return typeof valeur === "string" && ROLES_ASSIGNABLES.includes(valeur);
+  return typeof valeur === "string" && ROLES_ASSIGNABLES.includes(valeur);
 }
 
 /** Les trois états d'un article, tels que la colonne `articles.status` les porte. */
@@ -43,7 +43,7 @@ export const STATUTS_ARTICLE = ["published", "draft", "archived"] as const;
 export type StatutArticle = (typeof STATUTS_ARTICLE)[number];
 
 export function estStatutArticle(valeur: unknown): valeur is StatutArticle {
-	return typeof valeur === "string" && (STATUTS_ARTICLE as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (STATUTS_ARTICLE as readonly string[]).includes(valeur);
 }
 
 /**
@@ -51,28 +51,20 @@ export function estStatutArticle(valeur: unknown): valeur is StatutArticle {
  * Repris tel quel de `commands/admin/team.ts` : ce sont les valeurs en base.
  */
 export const EQUIPES_RG = [
-	{ nom: "Bureau de l'Association", valeur: "bureauteam" },
-	{ nom: "Association", valeur: "assoteam" },
-	{ nom: "Partenaires & Collaborateurs", valeur: "collabteam" },
-	{ nom: "Équipe Achilléa", valeur: "achilleateam" },
-	{ nom: "Équipe Azalée", valeur: "azaleeteam" },
-	{ nom: "Équipe Lore", valeur: "loreteam" },
-	{ nom: "Équipe Dessinateur", valeur: "dessinateurteam" },
-	{ nom: "Cellule de Médiation", valeur: "mediationteam" },
-	{ nom: "Équipe Production", valeur: "productionteam" },
-	{ nom: "Équipe Réseaux", valeur: "socialteam" },
+  { nom: "Bureau de l'Association", valeur: "bureauteam" },
+  { nom: "Association", valeur: "assoteam" },
+  { nom: "Partenaires & Collaborateurs", valeur: "collabteam" },
+  { nom: "Équipe Achilléa", valeur: "achilleateam" },
+  { nom: "Équipe Azalée", valeur: "azaleeteam" },
+  { nom: "Équipe Lore", valeur: "loreteam" },
+  { nom: "Équipe Dessinateur", valeur: "dessinateurteam" },
+  { nom: "Cellule de Médiation", valeur: "mediationteam" },
+  { nom: "Équipe Production", valeur: "productionteam" },
+  { nom: "Équipe Réseaux", valeur: "socialteam" },
 ] as const;
 
 /** Les sept jours, index `stream_schedules.day_of_week` (0 = dimanche). */
-export const JOURS_SEMAINE = [
-	"Dimanche",
-	"Lundi",
-	"Mardi",
-	"Mercredi",
-	"Jeudi",
-	"Vendredi",
-	"Samedi",
-] as const;
+export const JOURS_SEMAINE = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"] as const;
 
 /**
  * Lit une date saisie à la main.
@@ -88,40 +80,37 @@ export const JOURS_SEMAINE = [
  * ou lève très loin de la saisie.
  */
 export function analyserDate(saisie: unknown): Date | null {
-	if (typeof saisie !== "string") {
-		return null;
-	}
-	const propre = saisie.trim();
-	if (propre.length === 0) {
-		return null;
-	}
-	// On n'accepte que les formes ancrées sur une date ISO : `01/05/2026` est
-	// ambigu (jour/mois ou mois/jour), et `new Date` le résout différemment
-	// selon la locale du moteur.
-	const forme =
-		/^(\d{4})-(\d{2})-(\d{2})([T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/.exec(
-			propre
-		);
-	if (!forme) {
-		return null;
-	}
-	// Le calendrier se vérifie AVANT `new Date`, arithmétiquement : `new Date`
-	// ne rejette pas un jour hors du mois, il le reporte silencieusement
-	// (`2026-02-30` devenait le 2 mars, et une correction de saisie passait donc
-	// pour une date valable). `Date.UTC(a, mois, 0)` donne le dernier jour du
-	// mois précédent, soit le nombre de jours du mois demandé, années
-	// bissextiles comprises.
-	const annee = Number(forme[1]);
-	const mois = Number(forme[2]);
-	const jour = Number(forme[3]);
-	if (mois < 1 || mois > 12 || jour < 1) {
-		return null;
-	}
-	if (jour > new Date(Date.UTC(annee, mois, 0)).getUTCDate()) {
-		return null;
-	}
-	const instant = new Date(propre.replace(" ", "T"));
-	return Number.isNaN(instant.getTime()) ? null : instant;
+  if (typeof saisie !== "string") {
+    return null;
+  }
+  const propre = saisie.trim();
+  if (propre.length === 0) {
+    return null;
+  }
+  // On n'accepte que les formes ancrées sur une date ISO : `01/05/2026` est
+  // ambigu (jour/mois ou mois/jour), et `new Date` le résout différemment
+  // selon la locale du moteur.
+  const forme = /^(\d{4})-(\d{2})-(\d{2})([T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/.exec(propre);
+  if (!forme) {
+    return null;
+  }
+  // Le calendrier se vérifie AVANT `new Date`, arithmétiquement : `new Date`
+  // ne rejette pas un jour hors du mois, il le reporte silencieusement
+  // (`2026-02-30` devenait le 2 mars, et une correction de saisie passait donc
+  // pour une date valable). `Date.UTC(a, mois, 0)` donne le dernier jour du
+  // mois précédent, soit le nombre de jours du mois demandé, années
+  // bissextiles comprises.
+  const annee = Number(forme[1]);
+  const mois = Number(forme[2]);
+  const jour = Number(forme[3]);
+  if (mois < 1 || mois > 12 || jour < 1) {
+    return null;
+  }
+  if (jour > new Date(Date.UTC(annee, mois, 0)).getUTCDate()) {
+    return null;
+  }
+  const instant = new Date(propre.replace(" ", "T"));
+  return Number.isNaN(instant.getTime()) ? null : instant;
 }
 
 /**
@@ -129,40 +118,39 @@ export function analyserDate(saisie: unknown): Date | null {
  * `stream_schedules.start_time` est une colonne `time`, pas un texte libre.
  */
 export function analyserHeure(saisie: unknown): string | null {
-	if (typeof saisie !== "string") {
-		return null;
-	}
-	const trouve = /^(\d{1,2}):(\d{2})$/.exec(saisie.trim());
-	if (!trouve) {
-		return null;
-	}
-	const heures = Number(trouve[1]);
-	const minutes = Number(trouve[2]);
-	if (heures > 23 || minutes > 59) {
-		return null;
-	}
-	return `${String(heures).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  if (typeof saisie !== "string") {
+    return null;
+  }
+  const trouve = /^(\d{1,2}):(\d{2})$/.exec(saisie.trim());
+  if (!trouve) {
+    return null;
+  }
+  const heures = Number(trouve[1]);
+  const minutes = Number(trouve[2]);
+  if (heures > 23 || minutes > 59) {
+    return null;
+  }
+  return `${String(heures).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 /** Vrai si la valeur a la forme d'un UUID (les clés primaires du site). */
 export function estUuid(valeur: unknown): boolean {
-	return (
-		typeof valeur === "string" &&
-		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valeur.trim())
-	);
+  return (
+    typeof valeur === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valeur.trim())
+  );
 }
 
 /** Vrai si la valeur a la forme d'un identifiant Discord (flocon numérique). */
 export function estIdentifiantDiscord(valeur: unknown): boolean {
-	return typeof valeur === "string" && /^\d{17,20}$/.test(valeur.trim());
+  return typeof valeur === "string" && /^\d{17,20}$/.test(valeur.trim());
 }
 
 /** Huit premiers caractères d'un identifiant, pour un accusé de réception lisible. */
 export function abregerIdentifiant(valeur: string | null | undefined): string {
-	if (!valeur) {
-		return "—";
-	}
-	return valeur.length > 8 ? `${valeur.slice(0, 8)}…` : valeur;
+  if (!valeur) {
+    return "—";
+  }
+  return valeur.length > 8 ? `${valeur.slice(0, 8)}…` : valeur;
 }
 
 // ─── Boutons de confirmation ────────────────────────────────────────────────
@@ -181,25 +169,23 @@ export type ReponseConfirmation = "oui" | "non";
  * même seconde.
  */
 export function construireIdConfirmation(reponse: ReponseConfirmation, graine: string): string {
-	return `${PREFIXE_CONFIRMATION}|${reponse}|${graine}`;
+  return `${PREFIXE_CONFIRMATION}|${reponse}|${graine}`;
 }
 
 /** Décompose un identifiant de bouton. Rend `null` sur tout ce qui n'est pas à nous. */
-export function analyserIdConfirmation(
-	id: unknown
-): { reponse: ReponseConfirmation; graine: string } | null {
-	if (typeof id !== "string") {
-		return null;
-	}
-	const morceaux = id.split("|");
-	if (morceaux.length !== 3 || morceaux[0] !== PREFIXE_CONFIRMATION) {
-		return null;
-	}
-	const [, reponse, graine] = morceaux;
-	if ((reponse !== "oui" && reponse !== "non") || !graine || graine.length === 0) {
-		return null;
-	}
-	return { reponse, graine };
+export function analyserIdConfirmation(id: unknown): { reponse: ReponseConfirmation; graine: string } | null {
+  if (typeof id !== "string") {
+    return null;
+  }
+  const morceaux = id.split("|");
+  if (morceaux.length !== 3 || morceaux[0] !== PREFIXE_CONFIRMATION) {
+    return null;
+  }
+  const [, reponse, graine] = morceaux;
+  if ((reponse !== "oui" && reponse !== "non") || !graine || graine.length === 0) {
+    return null;
+  }
+  return { reponse, graine };
 }
 
 /**
@@ -209,29 +195,29 @@ export function analyserIdConfirmation(
  * pas d'où l'on vient ne permet pas de revenir en arrière.
  */
 export function decrireChangement(avant: unknown, apres: unknown, limite = 120): string {
-	return `\`${bornerValeur(avant, limite)}\` → \`${bornerValeur(apres, limite)}\``;
+  return `\`${bornerValeur(avant, limite)}\` → \`${bornerValeur(apres, limite)}\``;
 }
 
 /** Rend une valeur quelconque affichable sur une ligne, sans jamais lever. */
 export function bornerValeur(valeur: unknown, limite = 120): string {
-	if (valeur === null || valeur === undefined) {
-		return "aucune";
-	}
-	let texte: string;
-	if (typeof valeur === "string") {
-		texte = valeur;
-	} else {
-		try {
-			texte = JSON.stringify(valeur) ?? String(valeur);
-		} catch {
-			texte = String(valeur);
-		}
-	}
-	texte = texte.replace(/\s+/g, " ").trim();
-	if (texte.length === 0) {
-		return "vide";
-	}
-	return texte.length > limite ? `${texte.slice(0, limite - 1)}…` : texte;
+  if (valeur === null || valeur === undefined) {
+    return "aucune";
+  }
+  let texte: string;
+  if (typeof valeur === "string") {
+    texte = valeur;
+  } else {
+    try {
+      texte = JSON.stringify(valeur) ?? String(valeur);
+    } catch {
+      texte = String(valeur);
+    }
+  }
+  texte = texte.replace(/\s+/g, " ").trim();
+  if (texte.length === 0) {
+    return "vide";
+  }
+  return texte.length > limite ? `${texte.slice(0, limite - 1)}…` : texte;
 }
 
 // ─── Réglages k/v (`public.settings`) ───────────────────────────────────────
@@ -253,18 +239,18 @@ const FORME_CLE_REGLAGE = /^[a-z0-9][a-z0-9_]*(\.[a-z0-9_]+)*$/;
 
 /** Clé normalisée (rognée, en minuscules), ou `null` si la forme est refusée. */
 export function normaliserCleReglage(saisie: unknown): string | null {
-	if (typeof saisie !== "string") {
-		return null;
-	}
-	const propre = saisie.trim().toLowerCase();
-	return FORME_CLE_REGLAGE.test(propre) ? propre : null;
+  if (typeof saisie !== "string") {
+    return null;
+  }
+  const propre = saisie.trim().toLowerCase();
+  return FORME_CLE_REGLAGE.test(propre) ? propre : null;
 }
 
 export interface ValeurReglage {
-	/** Ce qui sera réellement écrit dans la colonne `jsonb`. */
-	valeur: unknown;
-	/** Vrai si la saisie était du JSON ; faux si elle est rangée comme chaîne. */
-	json: boolean;
+  /** Ce qui sera réellement écrit dans la colonne `jsonb`. */
+  valeur: unknown;
+  /** Vrai si la saisie était du JSON ; faux si elle est rangée comme chaîne. */
+  json: boolean;
 }
 
 /**
@@ -279,11 +265,11 @@ export interface ValeurReglage {
  * table, mais rendu VISIBLE : la réponse dit lequel des deux chemins a servi.
  */
 export function analyserValeurReglage(saisie: string): ValeurReglage {
-	try {
-		return { valeur: JSON.parse(saisie.trim()) as unknown, json: true };
-	} catch {
-		return { valeur: saisie, json: false };
-	}
+  try {
+    return { valeur: JSON.parse(saisie.trim()) as unknown, json: true };
+  } catch {
+    return { valeur: saisie, json: false };
+  }
 }
 
 /**
@@ -301,18 +287,18 @@ export function analyserValeurReglage(saisie: string): ValeurReglage {
  * sans un mot. La forme est donc vérifiée AVANT l'écriture, pas signalée après.
  */
 export function refusValeurReglage(cle: string, valeur: unknown): string | null {
-	if (cle !== CLE_REGLAGE_TWEETS) {
-		return null;
-	}
-	if (valeur === null || typeof valeur !== "object" || Array.isArray(valeur)) {
-		return (
-			`\`${CLE_REGLAGE_TWEETS}\` doit rester un OBJET JSON : le lecteur ` +
-			"(`lireFiltreTweets`) ignore silencieusement toute autre forme et retombe sur les valeurs " +
-			"par défaut du code — la liste des comptes suivis serait perdue sans le moindre message. " +
-			"Pour couper la notification, utilise `/administration veille regler actif:false`."
-		);
-	}
-	return null;
+  if (cle !== CLE_REGLAGE_TWEETS) {
+    return null;
+  }
+  if (valeur === null || typeof valeur !== "object" || Array.isArray(valeur)) {
+    return (
+      `\`${CLE_REGLAGE_TWEETS}\` doit rester un OBJET JSON : le lecteur ` +
+      "(`lireFiltreTweets`) ignore silencieusement toute autre forme et retombe sur les valeurs " +
+      "par défaut du code — la liste des comptes suivis serait perdue sans le moindre message. " +
+      "Pour couper la notification, utilise `/administration veille regler actif:false`."
+    );
+  }
+  return null;
 }
 
 // ─── Annonce d'un article ───────────────────────────────────────────────────
@@ -331,46 +317,43 @@ export function refusValeurReglage(cle: string, valeur: unknown): string | null 
  * clair (`http://`) fait rejeter l'embed ENTIER par l'API, donc une annonce
  * perdue plutôt qu'une image manquante.
  */
-export function urlIllustrationAbsolue(
-	url: string | null | undefined,
-	origine: string
-): string | null {
-	const propre = url?.trim() ?? "";
-	if (propre.length === 0) {
-		return null;
-	}
-	if (propre.startsWith("https://")) {
-		return propre;
-	}
-	if (propre.startsWith("/")) {
-		return `${origine}${propre}`;
-	}
-	return null;
+export function urlIllustrationAbsolue(url: string | null | undefined, origine: string): string | null {
+  const propre = url?.trim() ?? "";
+  if (propre.length === 0) {
+    return null;
+  }
+  if (propre.startsWith("https://")) {
+    return propre;
+  }
+  if (propre.startsWith("/")) {
+    return `${origine}${propre}`;
+  }
+  return null;
 }
 
 // ─── Réglage de la veille X ─────────────────────────────────────────────────
 
 /** Modifications demandées à `/administration veille regler`. */
 export interface ModificationsVeille {
-	actif?: boolean;
-	salon?: string;
-	maxParLot?: number;
-	ajouter?: string;
-	retirer?: string;
-	exclure?: string;
-	inclure?: string;
+  actif?: boolean;
+  salon?: string;
+  maxParLot?: number;
+  ajouter?: string;
+  retirer?: string;
+  exclure?: string;
+  inclure?: string;
 }
 
 export interface PatchVeille {
-	/** Champs à fusionner dans `settings['tweets.notification']`. Vide si rien ne change. */
-	patch: Partial<FiltreTweets>;
-	/** Une ligne « avant → après » par changement, pour l'accusé ET pour l'audit. */
-	changements: string[];
+  /** Champs à fusionner dans `settings['tweets.notification']`. Vide si rien ne change. */
+  patch: Partial<FiltreTweets>;
+  /** Une ligne « avant → après » par changement, pour l'accusé ET pour l'audit. */
+  changements: string[];
 }
 
 /** Pseudo X comparable : X ignore la casse et le `@` (`@Level5Hub` = `level5hub`). */
 function clefCompte(valeur: string): string {
-	return valeur.trim().replace(/^@/, "").toLowerCase();
+  return valeur.trim().replace(/^@/, "").toLowerCase();
 }
 
 /**
@@ -387,101 +370,88 @@ function clefCompte(valeur: string): string {
  * Elle refuse aussi silencieusement les doublons : ajouter `@Level5Hub` quand
  * `level5hub` est déjà suivi ne produit aucun changement, donc aucune écriture.
  */
-export function construirePatchVeille(
-	avant: FiltreTweets,
-	modifications: ModificationsVeille
-): PatchVeille {
-	const patch: Partial<FiltreTweets> = {};
-	const changements: string[] = [];
+export function construirePatchVeille(avant: FiltreTweets, modifications: ModificationsVeille): PatchVeille {
+  const patch: Partial<FiltreTweets> = {};
+  const changements: string[] = [];
 
-	if (modifications.actif !== undefined && modifications.actif !== avant.actif) {
-		patch.actif = modifications.actif;
-		changements.push(
-			`État : ${decrireChangement(avant.actif ? "active" : "coupée", modifications.actif ? "active" : "coupée")}`
-		);
-	}
+  if (modifications.actif !== undefined && modifications.actif !== avant.actif) {
+    patch.actif = modifications.actif;
+    changements.push(
+      `État : ${decrireChangement(avant.actif ? "active" : "coupée", modifications.actif ? "active" : "coupée")}`,
+    );
+  }
 
-	if (modifications.salon !== undefined && modifications.salon !== avant.salon) {
-		patch.salon = modifications.salon;
-		changements.push(`Salon : ${decrireChangement(avant.salon, modifications.salon)}`);
-	}
+  if (modifications.salon !== undefined && modifications.salon !== avant.salon) {
+    patch.salon = modifications.salon;
+    changements.push(`Salon : ${decrireChangement(avant.salon, modifications.salon)}`);
+  }
 
-	if (modifications.maxParLot !== undefined && modifications.maxParLot !== avant.max_par_lot) {
-		patch.max_par_lot = modifications.maxParLot;
-		changements.push(
-			`Seuil de détail : ${decrireChangement(avant.max_par_lot, modifications.maxParLot)}`
-		);
-	}
+  if (modifications.maxParLot !== undefined && modifications.maxParLot !== avant.max_par_lot) {
+    patch.max_par_lot = modifications.maxParLot;
+    changements.push(`Seuil de détail : ${decrireChangement(avant.max_par_lot, modifications.maxParLot)}`);
+  }
 
-	let comptes = [...avant.comptes];
-	if (modifications.ajouter) {
-		const propre = modifications.ajouter.trim().replace(/^@/, "");
-		if (propre.length > 0 && !comptes.some((compte) => clefCompte(compte) === clefCompte(propre))) {
-			comptes.push(propre);
-			changements.push(`Compte suivi en plus : \`@${propre}\``);
-		}
-	}
-	if (modifications.retirer) {
-		const cible = clefCompte(modifications.retirer);
-		const restants = comptes.filter((compte) => clefCompte(compte) !== cible);
-		if (restants.length !== comptes.length) {
-			comptes = restants;
-			changements.push(
-				`Compte retiré du suivi : \`@${modifications.retirer.trim().replace(/^@/, "")}\``
-			);
-		}
-	}
-	if (comptes.length !== avant.comptes.length || comptes.some((c, i) => c !== avant.comptes[i])) {
-		patch.comptes = comptes;
-	}
+  let comptes = [...avant.comptes];
+  if (modifications.ajouter) {
+    const propre = modifications.ajouter.trim().replace(/^@/, "");
+    if (propre.length > 0 && !comptes.some(compte => clefCompte(compte) === clefCompte(propre))) {
+      comptes.push(propre);
+      changements.push(`Compte suivi en plus : \`@${propre}\``);
+    }
+  }
+  if (modifications.retirer) {
+    const cible = clefCompte(modifications.retirer);
+    const restants = comptes.filter(compte => clefCompte(compte) !== cible);
+    if (restants.length !== comptes.length) {
+      comptes = restants;
+      changements.push(`Compte retiré du suivi : \`@${modifications.retirer.trim().replace(/^@/, "")}\``);
+    }
+  }
+  if (comptes.length !== avant.comptes.length || comptes.some((c, i) => c !== avant.comptes[i])) {
+    patch.comptes = comptes;
+  }
 
-	let exclues = [...avant.categories_exclues];
-	if (modifications.exclure) {
-		const propre = modifications.exclure.trim();
-		if (
-			propre.length > 0 &&
-			!exclues.some((categorie) => categorie.toLowerCase() === propre.toLowerCase())
-		) {
-			exclues.push(propre);
-			changements.push(`Catégorie exclue en plus : \`${propre}\``);
-		}
-	}
-	if (modifications.inclure) {
-		const cible = modifications.inclure.trim().toLowerCase();
-		const restantes = exclues.filter((categorie) => categorie.toLowerCase() !== cible);
-		if (restantes.length !== exclues.length) {
-			exclues = restantes;
-			changements.push(`Catégorie de nouveau annoncée : \`${modifications.inclure.trim()}\``);
-		}
-	}
-	if (
-		exclues.length !== avant.categories_exclues.length ||
-		exclues.some((c, i) => c !== avant.categories_exclues[i])
-	) {
-		patch.categories_exclues = exclues;
-	}
+  let exclues = [...avant.categories_exclues];
+  if (modifications.exclure) {
+    const propre = modifications.exclure.trim();
+    if (propre.length > 0 && !exclues.some(categorie => categorie.toLowerCase() === propre.toLowerCase())) {
+      exclues.push(propre);
+      changements.push(`Catégorie exclue en plus : \`${propre}\``);
+    }
+  }
+  if (modifications.inclure) {
+    const cible = modifications.inclure.trim().toLowerCase();
+    const restantes = exclues.filter(categorie => categorie.toLowerCase() !== cible);
+    if (restantes.length !== exclues.length) {
+      exclues = restantes;
+      changements.push(`Catégorie de nouveau annoncée : \`${modifications.inclure.trim()}\``);
+    }
+  }
+  if (exclues.length !== avant.categories_exclues.length || exclues.some((c, i) => c !== avant.categories_exclues[i])) {
+    patch.categories_exclues = exclues;
+  }
 
-	return { patch, changements };
+  return { patch, changements };
 }
 
 // ─── Synchronisation des membres Discord ────────────────────────────────────
 
 /** Ce que la base sait d'un membre AVANT la synchronisation. */
 export interface EtatMembreEnBase {
-	discordId: string;
-	/** Vrai si `discord_members.left_at` est renseigné (membre marqué parti). */
-	parti: boolean;
+  discordId: string;
+  /** Vrai si `discord_members.left_at` est renseigné (membre marqué parti). */
+  parti: boolean;
 }
 
 export interface ResumeSynchronisation {
-	/** Présents sur le serveur et absents de la table : lignes créées. */
-	ajoutes: string[];
-	/** Présents des deux côtés et déjà comptés présents : lignes rafraîchies. */
-	misAJour: number;
-	/** Marqués partis mais de retour sur le serveur : `left_at` remis à `NULL`. */
-	revenus: string[];
-	/** Comptés présents en base mais absents du serveur : ils sont partis. */
-	partis: string[];
+  /** Présents sur le serveur et absents de la table : lignes créées. */
+  ajoutes: string[];
+  /** Présents des deux côtés et déjà comptés présents : lignes rafraîchies. */
+  misAJour: number;
+  /** Marqués partis mais de retour sur le serveur : `left_at` remis à `NULL`. */
+  revenus: string[];
+  /** Comptés présents en base mais absents du serveur : ils sont partis. */
+  partis: string[];
 }
 
 /**
@@ -515,41 +485,41 @@ export interface ResumeSynchronisation {
  * moindre départ réel.
  */
 export function departSuspect(nbPartis: number, nbPresentsEnBase: number): boolean {
-	if (nbPartis <= 0) {
-		return false;
-	}
-	return nbPartis >= Math.max(20, Math.ceil(nbPresentsEnBase * 0.1));
+  if (nbPartis <= 0) {
+    return false;
+  }
+  return nbPartis >= Math.max(20, Math.ceil(nbPresentsEnBase * 0.1));
 }
 
 export function comparerMembres(
-	enBase: readonly EtatMembreEnBase[],
-	presents: Iterable<string>
+  enBase: readonly EtatMembreEnBase[],
+  presents: Iterable<string>,
 ): ResumeSynchronisation {
-	const connus = new Map(enBase.map((ligne) => [ligne.discordId, ligne.parti]));
-	const surLeServeur = new Set(presents);
+  const connus = new Map(enBase.map(ligne => [ligne.discordId, ligne.parti]));
+  const surLeServeur = new Set(presents);
 
-	const ajoutes: string[] = [];
-	const revenus: string[] = [];
-	let misAJour = 0;
-	for (const identifiant of surLeServeur) {
-		const parti = connus.get(identifiant);
-		if (parti === undefined) {
-			ajoutes.push(identifiant);
-		} else if (parti) {
-			revenus.push(identifiant);
-		} else {
-			misAJour += 1;
-		}
-	}
+  const ajoutes: string[] = [];
+  const revenus: string[] = [];
+  let misAJour = 0;
+  for (const identifiant of surLeServeur) {
+    const parti = connus.get(identifiant);
+    if (parti === undefined) {
+      ajoutes.push(identifiant);
+    } else if (parti) {
+      revenus.push(identifiant);
+    } else {
+      misAJour += 1;
+    }
+  }
 
-	const partis: string[] = [];
-	for (const [identifiant, parti] of connus) {
-		if (!parti && !surLeServeur.has(identifiant)) {
-			partis.push(identifiant);
-		}
-	}
+  const partis: string[] = [];
+  for (const [identifiant, parti] of connus) {
+    if (!parti && !surLeServeur.has(identifiant)) {
+      partis.push(identifiant);
+    }
+  }
 
-	return { ajoutes, misAJour, revenus, partis };
+  return { ajoutes, misAJour, revenus, partis };
 }
 
 // ─── Articles : libellés d'état ─────────────────────────────────────────────
@@ -563,31 +533,31 @@ export function comparerMembres(
  * « draft » brut dans un salon comme le faisait `/rg-chronique-admin list`.
  */
 export const LIBELLES_STATUT_ARTICLE: Readonly<Record<StatutArticle, string>> = Object.freeze({
-	published: "publié",
-	draft: "brouillon",
-	archived: "archivé",
+  published: "publié",
+  draft: "brouillon",
+  archived: "archivé",
 });
 
 /** Pastille de l'état d'un article. Le libellé reste lisible sans la couleur. */
 export const BADGES_STATUT_ARTICLE: Readonly<Record<StatutArticle, string>> = Object.freeze({
-	published: "🟢",
-	draft: "📝",
-	archived: "📦",
+  published: "🟢",
+  draft: "📝",
+  archived: "📦",
 });
 
 export function libelleStatutArticle(statut: string | null | undefined): string {
-	return estStatutArticle(statut) ? LIBELLES_STATUT_ARTICLE[statut] : "état inconnu";
+  return estStatutArticle(statut) ? LIBELLES_STATUT_ARTICLE[statut] : "état inconnu";
 }
 
 export function badgeStatutArticle(statut: string | null | undefined): string {
-	return estStatutArticle(statut) ? BADGES_STATUT_ARTICLE[statut] : "❔";
+  return estStatutArticle(statut) ? BADGES_STATUT_ARTICLE[statut] : "❔";
 }
 
 /** Propositions Discord pour l'option `statut`, dérivées de la contrainte SQL. */
 export const CHOIX_STATUT_ARTICLE = [
-	{ name: "Publié", value: "published" },
-	{ name: "Brouillon", value: "draft" },
-	{ name: "Archivé", value: "archived" },
+  { name: "Publié", value: "published" },
+  { name: "Brouillon", value: "draft" },
+  { name: "Archivé", value: "archived" },
 ] as const;
 
 // ─── Créneaux de stream : libellés d'état ───────────────────────────────────
@@ -607,18 +577,18 @@ export const STATUTS_CRENEAU = ["active", "inactive", "coming_soon"] as const;
 export type StatutCreneau = (typeof STATUTS_CRENEAU)[number];
 
 export function estStatutCreneau(valeur: unknown): valeur is StatutCreneau {
-	return typeof valeur === "string" && (STATUTS_CRENEAU as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (STATUTS_CRENEAU as readonly string[]).includes(valeur);
 }
 
 /** Libellés repris tels quels de l'écran d'administration du site. */
 export const LIBELLES_STATUT_CRENEAU: Readonly<Record<StatutCreneau, string>> = Object.freeze({
-	active: "Actif",
-	inactive: "Inactif",
-	coming_soon: "À venir",
+  active: "Actif",
+  inactive: "Inactif",
+  coming_soon: "À venir",
 });
 
 export function libelleStatutCreneau(statut: string | null | undefined): string {
-	return estStatutCreneau(statut) ? LIBELLES_STATUT_CRENEAU[statut] : "état inconnu";
+  return estStatutCreneau(statut) ? LIBELLES_STATUT_CRENEAU[statut] : "état inconnu";
 }
 
 /**
@@ -630,24 +600,24 @@ export function libelleStatutCreneau(statut: string | null | undefined): string 
  * évite qu'on cherche pourquoi « le créneau ajouté n'apparaît pas ».
  */
 export function estCreneauPublic(statut: string | null | undefined): boolean {
-	return statut === "active";
+  return statut === "active";
 }
 
 export const CHOIX_STATUT_CRENEAU = [
-	{ name: "Actif (visible sur le site)", value: "active" },
-	{ name: "Inactif (masqué du planning public)", value: "inactive" },
-	{ name: "À venir", value: "coming_soon" },
+  { name: "Actif (visible sur le site)", value: "active" },
+  { name: "Inactif (masqué du planning public)", value: "inactive" },
+  { name: "À venir", value: "coming_soon" },
 ] as const;
 
 // ─── Jours de la semaine ────────────────────────────────────────────────────
 
 /** Vrai si la valeur est un index de jour exploitable par `day_of_week`. */
 export function estJourSemaine(valeur: unknown): valeur is number {
-	return typeof valeur === "number" && Number.isInteger(valeur) && valeur >= 0 && valeur <= 6;
+  return typeof valeur === "number" && Number.isInteger(valeur) && valeur >= 0 && valeur <= 6;
 }
 
 export function libelleJourSemaine(jour: unknown): string {
-	return estJourSemaine(jour) ? JOURS_SEMAINE[jour]! : "jour inconnu";
+  return estJourSemaine(jour) ? JOURS_SEMAINE[jour]! : "jour inconnu";
 }
 
 /**
@@ -658,18 +628,18 @@ export function libelleJourSemaine(jour: unknown): string {
  * personne. On décale l'AFFICHAGE, jamais la valeur stockée.
  */
 export function ordreAffichageJour(jour: number): number {
-	return (jour + 6) % 7;
+  return (jour + 6) % 7;
 }
 
 /** Les sept jours proposés dans Discord, déjà ordonnés du lundi au dimanche. */
 export const CHOIX_JOUR_SEMAINE = [
-	{ name: "Lundi", value: 1 },
-	{ name: "Mardi", value: 2 },
-	{ name: "Mercredi", value: 3 },
-	{ name: "Jeudi", value: 4 },
-	{ name: "Vendredi", value: 5 },
-	{ name: "Samedi", value: 6 },
-	{ name: "Dimanche", value: 0 },
+  { name: "Lundi", value: 1 },
+  { name: "Mardi", value: 2 },
+  { name: "Mercredi", value: 3 },
+  { name: "Jeudi", value: 4 },
+  { name: "Vendredi", value: 5 },
+  { name: "Samedi", value: 6 },
+  { name: "Dimanche", value: 0 },
 ] as const;
 
 // ─── Saisie d'un champ facultatif ───────────────────────────────────────────
@@ -684,36 +654,36 @@ export const CHOIX_JOUR_SEMAINE = [
  * donc un marqueur explicite, et le distinguer de « absent » au niveau du type.
  */
 export const MARQUEURS_EFFACEMENT: readonly string[] = Object.freeze([
-	"-",
-	"—",
-	"vide",
-	"aucun",
-	"aucune",
-	"neant",
-	"néant",
-	"rien",
+  "-",
+  "—",
+  "vide",
+  "aucun",
+  "aucune",
+  "neant",
+  "néant",
+  "rien",
 ]);
 
 export interface ChampTextuel {
-	/** L'option a-t-elle été fournie ? Si non, la colonne ne doit PAS être touchée. */
-	readonly fourni: boolean;
-	/** Valeur à écrire : `null` signifie « vider la colonne ». */
-	readonly valeur: string | null;
+  /** L'option a-t-elle été fournie ? Si non, la colonne ne doit PAS être touchée. */
+  readonly fourni: boolean;
+  /** Valeur à écrire : `null` signifie « vider la colonne ». */
+  readonly valeur: string | null;
 }
 
 /** Lit une option textuelle facultative en distinguant « absente » de « à vider ». */
 export function lireChampTextuel(saisie: string | null | undefined): ChampTextuel {
-	if (typeof saisie !== "string") {
-		return { fourni: false, valeur: null };
-	}
-	const propre = saisie.trim();
-	if (propre.length === 0) {
-		return { fourni: false, valeur: null };
-	}
-	if (MARQUEURS_EFFACEMENT.includes(propre.toLowerCase())) {
-		return { fourni: true, valeur: null };
-	}
-	return { fourni: true, valeur: propre };
+  if (typeof saisie !== "string") {
+    return { fourni: false, valeur: null };
+  }
+  const propre = saisie.trim();
+  if (propre.length === 0) {
+    return { fourni: false, valeur: null };
+  }
+  if (MARQUEURS_EFFACEMENT.includes(propre.toLowerCase())) {
+    return { fourni: true, valeur: null };
+  }
+  return { fourni: true, valeur: propre };
 }
 
 /**
@@ -725,29 +695,29 @@ export function lireChampTextuel(saisie: string | null | undefined): ChampTextue
  * requêtes publiques filtrent sur `end_time >= NOW()`).
  */
 export function verifierPlageTemporelle(debut: Date, fin: Date): string | null {
-	if (fin.getTime() === debut.getTime()) {
-		return "La fin est identique au début : l'événement durerait zéro seconde.";
-	}
-	if (fin.getTime() < debut.getTime()) {
-		return "La fin est ANTÉRIEURE au début. Inverse les deux dates.";
-	}
-	return null;
+  if (fin.getTime() === debut.getTime()) {
+    return "La fin est identique au début : l'événement durerait zéro seconde.";
+  }
+  if (fin.getTime() < debut.getTime()) {
+    return "La fin est ANTÉRIEURE au début. Inverse les deux dates.";
+  }
+  return null;
 }
 
 /** Confirmation d'une action destructrice : seul « oui » vaut accord. */
 export function estConfirme(saisie: unknown): boolean {
-	if (typeof saisie !== "string") {
-		return false;
-	}
-	// NFD sépare la lettre de son accent, la plage U+0300–U+036F retire les
-	// diacritiques : « OUI », « oui » et un « oùi » malheureux valent tous accord.
-	return (
-		saisie
-			.trim()
-			.toLowerCase()
-			.normalize("NFD")
-			.replaceAll(/[\u0300-\u036f]/g, "") === "oui"
-	);
+  if (typeof saisie !== "string") {
+    return false;
+  }
+  // NFD sépare la lettre de son accent, la plage U+0300–U+036F retire les
+  // diacritiques : « OUI », « oui » et un « oùi » malheureux valent tous accord.
+  return (
+    saisie
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replaceAll(/[\u0300-\u036f]/g, "") === "oui"
+  );
 }
 
 // ─── Ce qu'un salon Discord n'a PAS le droit de voir ────────────────────────
@@ -768,12 +738,12 @@ export function estConfirme(saisie: unknown): boolean {
  * il ne dit rien de la personne hors de nos propres bases.
  */
 export const COLONNES_PROFIL_PRIVEES: readonly string[] = Object.freeze([
-	"email",
-	"address_line1",
-	"address_line2",
-	"city",
-	"postal_code",
-	"country",
+  "email",
+  "address_line1",
+  "address_line2",
+  "city",
+  "postal_code",
+  "country",
 ]);
 
 /**
@@ -785,34 +755,34 @@ export const COLONNES_PROFIL_PRIVEES: readonly string[] = Object.freeze([
  * l'ancienne commande fuitait.
  */
 export const COLONNES_PROFIL_AFFICHABLES: readonly string[] = Object.freeze([
-	"id",
-	"username",
-	"full_name",
-	"role",
-	"discord_id",
-	"avatar_url",
-	"banner_url",
-	"bio",
-	"website",
-	"twitter_handle",
-	"patreon_id",
-	"badges",
-	"claimed_at",
-	"updated_at",
+  "id",
+  "username",
+  "full_name",
+  "role",
+  "discord_id",
+  "avatar_url",
+  "banner_url",
+  "bio",
+  "website",
+  "twitter_handle",
+  "patreon_id",
+  "badges",
+  "claimed_at",
+  "updated_at",
 ]);
 
 /** Vrai si cette colonne de `profiles` relève de la vie privée. */
 export function estColonneProfilPrivee(nom: unknown): boolean {
-	return typeof nom === "string" && COLONNES_PROFIL_PRIVEES.includes(nom.trim().toLowerCase());
+  return typeof nom === "string" && COLONNES_PROFIL_PRIVEES.includes(nom.trim().toLowerCase());
 }
 
 /** Le strict nécessaire pour nommer un profil dans une liste. */
 export interface ProfilAffichable {
-	readonly id: string;
-	readonly username?: string | null;
-	readonly full_name?: string | null;
-	readonly role?: string | null;
-	readonly discord_id?: string | null;
+  readonly id: string;
+  readonly username?: string | null;
+  readonly full_name?: string | null;
+  readonly role?: string | null;
+  readonly discord_id?: string | null;
 }
 
 /**
@@ -823,8 +793,8 @@ export interface ProfilAffichable {
  * le plus. On retombe ici sur l'uuid abrégé, qui identifie sans révéler.
  */
 export function nomAffichable(profil: ProfilAffichable): string {
-	const nom = profil.full_name?.trim() || profil.username?.trim() || "";
-	return nom.length > 0 ? nom : abregerIdentifiant(profil.id);
+  const nom = profil.full_name?.trim() || profil.username?.trim() || "";
+  return nom.length > 0 ? nom : abregerIdentifiant(profil.id);
 }
 
 /**
@@ -835,17 +805,14 @@ export function nomAffichable(profil: ProfilAffichable): string {
  * celui de la base. On réutilise l'échappement déjà testé de `/staff`.
  */
 export function ligneProfil(profil: ProfilAffichable): string {
-	const morceaux = [
-		`\`${profil.role ?? "user"}\``,
-		`**${echapperMarkdown(bornerValeur(nomAffichable(profil), 40))}**`,
-	];
-	if (profil.username) {
-		morceaux.push(`@${echapperMarkdown(bornerValeur(profil.username, 32))}`);
-	}
-	if (profil.discord_id) {
-		morceaux.push(`<@${profil.discord_id}>`);
-	}
-	return `${morceaux.join(" ")}\n   └ \`${profil.id}\``;
+  const morceaux = [`\`${profil.role ?? "user"}\``, `**${echapperMarkdown(bornerValeur(nomAffichable(profil), 40))}**`];
+  if (profil.username) {
+    morceaux.push(`@${echapperMarkdown(bornerValeur(profil.username, 32))}`);
+  }
+  if (profil.discord_id) {
+    morceaux.push(`<@${profil.discord_id}>`);
+  }
+  return `${morceaux.join(" ")}\n   └ \`${profil.id}\``;
 }
 
 // ─── Garde-fous des actions sur un profil ───────────────────────────────────
@@ -863,7 +830,7 @@ export function ligneProfil(profil: ProfilAffichable): string {
 export const ROLES_INTOUCHABLES: readonly string[] = Object.freeze(["superadmin"]);
 
 export function estRoleIntouchable(role: unknown): boolean {
-	return typeof role === "string" && ROLES_INTOUCHABLES.includes(role);
+  return typeof role === "string" && ROLES_INTOUCHABLES.includes(role);
 }
 
 /**
@@ -878,13 +845,11 @@ export function estRoleIntouchable(role: unknown): boolean {
  * moment d'écrire.
  */
 export const ROLES_ATTRIBUABLES: readonly string[] = Object.freeze(
-	ROLES_ASSIGNABLES.filter((role) => !estRoleIntouchable(role))
+  ROLES_ASSIGNABLES.filter(role => !estRoleIntouchable(role)),
 );
 
 /** Autorisation accordée, ou refusée avec sa raison — jamais un simple booléen. */
-export type Verdict =
-	| { readonly autorise: true }
-	| { readonly autorise: false; readonly raison: string };
+export type Verdict = { readonly autorise: true } | { readonly autorise: false; readonly raison: string };
 
 /**
  * Décide si une action d'administration sur un profil est recevable.
@@ -898,51 +863,51 @@ export type Verdict =
  * l'action ne doit pas être un coup dans l'eau.
  */
 export function verifierActionSurProfil(params: {
-	readonly acteurProfileId: string;
-	readonly cibleProfileId: string;
-	readonly roleCible: string | null | undefined;
-	readonly nouveauRole?: string | null;
+  readonly acteurProfileId: string;
+  readonly cibleProfileId: string;
+  readonly roleCible: string | null | undefined;
+  readonly nouveauRole?: string | null;
 }): Verdict {
-	if (params.acteurProfileId === params.cibleProfileId) {
-		return {
-			autorise: false,
-			raison:
-				"Tu ne peux pas agir sur ton propre profil depuis Discord : retirer son propre rôle " +
-				"ferme la porte de l'intérieur. Demande à un autre administrateur.",
-		};
-	}
-	if (estRoleIntouchable(params.roleCible)) {
-		return {
-			autorise: false,
-			raison:
-				`Ce profil est \`${params.roleCible}\` : le bot n'y touche pas. Ce rôle est le seul ` +
-				"à pouvoir promouvoir d'autres administrateurs, il se gère à la main en base.",
-		};
-	}
-	if (params.nouveauRole === undefined) {
-		return { autorise: true };
-	}
-	if (estRoleIntouchable(params.nouveauRole)) {
-		return {
-			autorise: false,
-			raison:
-				"Le rôle `superadmin` ne s'accorde pas depuis Discord : ce serait faire du jeton du " +
-				"bot un chemin d'escalade de privilèges vers le site.",
-		};
-	}
-	if (!estRoleAssignable(params.nouveauRole)) {
-		return {
-			autorise: false,
-			raison: `Rôle inconnu. Les rôles acceptés : ${ROLES_ASSIGNABLES.join(", ")}.`,
-		};
-	}
-	if ((params.roleCible ?? "user") === params.nouveauRole) {
-		return {
-			autorise: false,
-			raison: `Ce profil est déjà \`${params.nouveauRole}\` : il n'y a rien à changer.`,
-		};
-	}
-	return { autorise: true };
+  if (params.acteurProfileId === params.cibleProfileId) {
+    return {
+      autorise: false,
+      raison:
+        "Tu ne peux pas agir sur ton propre profil depuis Discord : retirer son propre rôle " +
+        "ferme la porte de l'intérieur. Demande à un autre administrateur.",
+    };
+  }
+  if (estRoleIntouchable(params.roleCible)) {
+    return {
+      autorise: false,
+      raison:
+        `Ce profil est \`${params.roleCible}\` : le bot n'y touche pas. Ce rôle est le seul ` +
+        "à pouvoir promouvoir d'autres administrateurs, il se gère à la main en base.",
+    };
+  }
+  if (params.nouveauRole === undefined) {
+    return { autorise: true };
+  }
+  if (estRoleIntouchable(params.nouveauRole)) {
+    return {
+      autorise: false,
+      raison:
+        "Le rôle `superadmin` ne s'accorde pas depuis Discord : ce serait faire du jeton du " +
+        "bot un chemin d'escalade de privilèges vers le site.",
+    };
+  }
+  if (!estRoleAssignable(params.nouveauRole)) {
+    return {
+      autorise: false,
+      raison: `Rôle inconnu. Les rôles acceptés : ${ROLES_ASSIGNABLES.join(", ")}.`,
+    };
+  }
+  if ((params.roleCible ?? "user") === params.nouveauRole) {
+    return {
+      autorise: false,
+      raison: `Ce profil est déjà \`${params.nouveauRole}\` : il n'y a rien à changer.`,
+    };
+  }
+  return { autorise: true };
 }
 
 // ─── Équipes : le libellé qui est VRAIMENT en base ──────────────────────────
@@ -958,29 +923,29 @@ export function verifierActionSurProfil(params: {
  * voisines. On écrit la valeur de la base, et on affiche la même partout.
  */
 export const NOM_EQUIPE_EN_BASE: Readonly<Record<string, string>> = Object.freeze({
-	bureauteam: "Bureau de l'Association",
-	assoteam: "Membres de l'Association",
-	loreteam: "Équipe Lore",
-	dessinateurteam: "Équipe Dessinateur",
-	productionteam: "Équipe Production",
-	socialteam: "Équipe Réseaux",
-	achilleateam: "Équipe Achilléa",
-	azaleeteam: "Équipe Azalée",
-	mediationteam: "Cellule de Médiation",
-	collabteam: "Partenaires & Collaborateurs",
+  bureauteam: "Bureau de l'Association",
+  assoteam: "Membres de l'Association",
+  loreteam: "Équipe Lore",
+  dessinateurteam: "Équipe Dessinateur",
+  productionteam: "Équipe Production",
+  socialteam: "Équipe Réseaux",
+  achilleateam: "Équipe Achilléa",
+  azaleeteam: "Équipe Azalée",
+  mediationteam: "Cellule de Médiation",
+  collabteam: "Partenaires & Collaborateurs",
 });
 
 /** Libellé d'une équipe ; on retombe sur l'identifiant brut si on ne le connaît pas. */
 export function libelleEquipeRg(valeur: unknown): string {
-	if (typeof valeur !== "string") {
-		return "équipe inconnue";
-	}
-	return NOM_EQUIPE_EN_BASE[valeur] ?? valeur;
+  if (typeof valeur !== "string") {
+    return "équipe inconnue";
+  }
+  return NOM_EQUIPE_EN_BASE[valeur] ?? valeur;
 }
 
 /** Vrai si l'identifiant correspond à l'une des dix équipes. */
 export function estEquipeRg(valeur: unknown): boolean {
-	return typeof valeur === "string" && Object.hasOwn(NOM_EQUIPE_EN_BASE, valeur);
+  return typeof valeur === "string" && Object.hasOwn(NOM_EQUIPE_EN_BASE, valeur);
 }
 
 // ─── Validation des champs d'un membre d'équipe ─────────────────────────────
@@ -993,32 +958,28 @@ export function estEquipeRg(valeur: unknown): boolean {
  * l'écriture et l'erreur remonte en pile d'appels dans le salon.
  */
 export const LIMITES_MEMBRE_EQUIPE = Object.freeze({
-	nom: 80,
-	role: 80,
-	lien: 500,
-	image: 1_000,
-	ordreMax: 32_767,
+  nom: 80,
+  role: 80,
+  lien: 500,
+  image: 1_000,
+  ordreMax: 32_767,
 });
 
 /** Valeur validée, ou refus motivé. */
 export type ResultatValidation<T> =
-	| { readonly ok: true; readonly valeur: T }
-	| { readonly ok: false; readonly raison: string };
+  { readonly ok: true; readonly valeur: T } | { readonly ok: false; readonly raison: string };
 
 /** Nom ou rôle affiché d'un membre : obligatoire, borné, sans espaces parasites. */
-export function validerTexteMembre(
-	champ: "nom" | "role",
-	saisie: unknown
-): ResultatValidation<string> {
-	const propre = typeof saisie === "string" ? saisie.trim() : "";
-	const limite = champ === "nom" ? LIMITES_MEMBRE_EQUIPE.nom : LIMITES_MEMBRE_EQUIPE.role;
-	if (propre.length === 0) {
-		return { ok: false, raison: `Le ${champ} est obligatoire.` };
-	}
-	if (propre.length > limite) {
-		return { ok: false, raison: `Le ${champ} ne doit pas dépasser ${limite} caractères.` };
-	}
-	return { ok: true, valeur: propre };
+export function validerTexteMembre(champ: "nom" | "role", saisie: unknown): ResultatValidation<string> {
+  const propre = typeof saisie === "string" ? saisie.trim() : "";
+  const limite = champ === "nom" ? LIMITES_MEMBRE_EQUIPE.nom : LIMITES_MEMBRE_EQUIPE.role;
+  if (propre.length === 0) {
+    return { ok: false, raison: `Le ${champ} est obligatoire.` };
+  }
+  if (propre.length > limite) {
+    return { ok: false, raison: `Le ${champ} ne doit pas dépasser ${limite} caractères.` };
+  }
+  return { ok: true, valeur: propre };
 }
 
 /**
@@ -1026,64 +987,58 @@ export function validerTexteMembre(
  * c'est la convention du formulaire du site, et sans elle on ne peut jamais
  * retirer un lien devenu mort.
  */
-export function validerUrlMembre(
-	champ: "image" | "lien",
-	saisie: unknown
-): ResultatValidation<string | null> {
-	if (saisie === null || saisie === undefined) {
-		return { ok: true, valeur: null };
-	}
-	const propre = typeof saisie === "string" ? saisie.trim() : "";
-	if (propre.length === 0) {
-		return { ok: true, valeur: null };
-	}
-	const limite = champ === "image" ? LIMITES_MEMBRE_EQUIPE.image : LIMITES_MEMBRE_EQUIPE.lien;
-	if (propre.length > limite) {
-		return { ok: false, raison: `L'URL (${champ}) ne doit pas dépasser ${limite} caractères.` };
-	}
-	if (!propre.startsWith("https://") && !propre.startsWith("http://")) {
-		return { ok: false, raison: `L'URL (${champ}) doit commencer par http:// ou https://.` };
-	}
-	return { ok: true, valeur: propre };
+export function validerUrlMembre(champ: "image" | "lien", saisie: unknown): ResultatValidation<string | null> {
+  if (saisie === null || saisie === undefined) {
+    return { ok: true, valeur: null };
+  }
+  const propre = typeof saisie === "string" ? saisie.trim() : "";
+  if (propre.length === 0) {
+    return { ok: true, valeur: null };
+  }
+  const limite = champ === "image" ? LIMITES_MEMBRE_EQUIPE.image : LIMITES_MEMBRE_EQUIPE.lien;
+  if (propre.length > limite) {
+    return { ok: false, raison: `L'URL (${champ}) ne doit pas dépasser ${limite} caractères.` };
+  }
+  if (!propre.startsWith("https://") && !propre.startsWith("http://")) {
+    return { ok: false, raison: `L'URL (${champ}) doit commencer par http:// ou https://.` };
+  }
+  return { ok: true, valeur: propre };
 }
 
 /** Ordre d'affichage (`display_index`, smallint). Vide = « laisse la base décider ». */
 export function validerOrdreAffichage(saisie: unknown): ResultatValidation<number | null> {
-	if (saisie === null || saisie === undefined || saisie === "") {
-		return { ok: true, valeur: null };
-	}
-	const nombre = typeof saisie === "number" ? saisie : Number(String(saisie).trim());
-	if (!Number.isInteger(nombre)) {
-		return { ok: false, raison: "L'ordre d'affichage doit être un nombre entier." };
-	}
-	if (nombre < 0 || nombre > LIMITES_MEMBRE_EQUIPE.ordreMax) {
-		return {
-			ok: false,
-			raison: `L'ordre d'affichage doit tenir entre 0 et ${LIMITES_MEMBRE_EQUIPE.ordreMax}.`,
-		};
-	}
-	return { ok: true, valeur: nombre };
+  if (saisie === null || saisie === undefined || saisie === "") {
+    return { ok: true, valeur: null };
+  }
+  const nombre = typeof saisie === "number" ? saisie : Number(String(saisie).trim());
+  if (!Number.isInteger(nombre)) {
+    return { ok: false, raison: "L'ordre d'affichage doit être un nombre entier." };
+  }
+  if (nombre < 0 || nombre > LIMITES_MEMBRE_EQUIPE.ordreMax) {
+    return {
+      ok: false,
+      raison: `L'ordre d'affichage doit tenir entre 0 et ${LIMITES_MEMBRE_EQUIPE.ordreMax}.`,
+    };
+  }
+  return { ok: true, valeur: nombre };
 }
 
 /** Identifiant Discord facultatif : soit un flocon, soit rien. */
-export function validerIdentifiantDiscordFacultatif(
-	saisie: unknown
-): ResultatValidation<string | null> {
-	if (saisie === null || saisie === undefined) {
-		return { ok: true, valeur: null };
-	}
-	const propre = typeof saisie === "string" ? saisie.trim() : "";
-	if (propre.length === 0) {
-		return { ok: true, valeur: null };
-	}
-	if (!estIdentifiantDiscord(propre)) {
-		return {
-			ok: false,
-			raison:
-				"L'identifiant Discord doit être composé de 17 à 20 chiffres (clic droit › Copier l'identifiant).",
-		};
-	}
-	return { ok: true, valeur: propre };
+export function validerIdentifiantDiscordFacultatif(saisie: unknown): ResultatValidation<string | null> {
+  if (saisie === null || saisie === undefined) {
+    return { ok: true, valeur: null };
+  }
+  const propre = typeof saisie === "string" ? saisie.trim() : "";
+  if (propre.length === 0) {
+    return { ok: true, valeur: null };
+  }
+  if (!estIdentifiantDiscord(propre)) {
+    return {
+      ok: false,
+      raison: "L'identifiant Discord doit être composé de 17 à 20 chiffres (clic droit › Copier l'identifiant).",
+    };
+  }
+  return { ok: true, valeur: propre };
 }
 
 // ─── État porté par un bouton ───────────────────────────────────────────────
@@ -1103,39 +1058,36 @@ export const LIMITE_CUSTOM_ID = 100;
  * l'appelant affiche alors la page sans boutons plutôt que de voir tout son
  * message refusé par l'API.
  */
-export function encoderEtatBouton(
-	prefixe: string,
-	champs: Readonly<Record<string, string | number>>
-): string | null {
-	const morceaux = Object.entries(champs)
-		.filter(([, valeur]) => valeur !== "" && valeur !== null && valeur !== undefined)
-		.map(([clef, valeur]) => `${clef}=${encodeURIComponent(String(valeur))}`);
-	const id = [prefixe, ...morceaux].join("|");
-	return id.length > LIMITE_CUSTOM_ID ? null : id;
+export function encoderEtatBouton(prefixe: string, champs: Readonly<Record<string, string | number>>): string | null {
+  const morceaux = Object.entries(champs)
+    .filter(([, valeur]) => valeur !== "" && valeur !== null && valeur !== undefined)
+    .map(([clef, valeur]) => `${clef}=${encodeURIComponent(String(valeur))}`);
+  const id = [prefixe, ...morceaux].join("|");
+  return id.length > LIMITE_CUSTOM_ID ? null : id;
 }
 
 /** Relit un `custom_id` produit par `encoderEtatBouton`. `null` = pas à nous. */
 export function decoderEtatBouton(prefixe: string, id: unknown): Record<string, string> | null {
-	if (typeof id !== "string") {
-		return null;
-	}
-	const morceaux = id.split("|");
-	if (morceaux.shift() !== prefixe) {
-		return null;
-	}
-	const champs: Record<string, string> = {};
-	for (const morceau of morceaux) {
-		const separation = morceau.indexOf("=");
-		if (separation <= 0) {
-			return null;
-		}
-		try {
-			champs[morceau.slice(0, separation)] = decodeURIComponent(morceau.slice(separation + 1));
-		} catch {
-			// `decodeURIComponent` lève sur un `%` isolé : un identifiant forgé ne
-			// doit pas faire tomber la commande.
-			return null;
-		}
-	}
-	return champs;
+  if (typeof id !== "string") {
+    return null;
+  }
+  const morceaux = id.split("|");
+  if (morceaux.shift() !== prefixe) {
+    return null;
+  }
+  const champs: Record<string, string> = {};
+  for (const morceau of morceaux) {
+    const separation = morceau.indexOf("=");
+    if (separation <= 0) {
+      return null;
+    }
+    try {
+      champs[morceau.slice(0, separation)] = decodeURIComponent(morceau.slice(separation + 1));
+    } catch {
+      // `decodeURIComponent` lève sur un `%` isolé : un identifiant forgé ne
+      // doit pas faire tomber la commande.
+      return null;
+    }
+  }
+  return champs;
 }

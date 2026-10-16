@@ -3,12 +3,11 @@ import CircuitRankingClient from "@/app/achillea/tournaments/circuit/ranking/cir
 
 /* Alias historique de `/achillea/tournaments/circuit/ranking`. */
 export const metadata = metadonneesAchillea({
-	titre: "Classement du circuit",
-	description:
-		"Le classement général du circuit Achilléa : joueurs, clans et tournois comptant pour la saison.",
-	chemin: "/achillea/tournaments/circuit/ranking",
+  titre: "Classement du circuit",
+  description: "Le classement général du circuit Achilléa : joueurs, clans et tournois comptant pour la saison.",
+  chemin: "/achillea/tournaments/circuit/ranking",
 });
 
 export default function EventsCircuitRankingPage() {
-	return <CircuitRankingClient />;
+  return <CircuitRankingClient />;
 }

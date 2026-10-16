@@ -261,11 +261,7 @@ export function buildConstellationMapping(): ConstellationMapping {
     const names = resolvedNames[i];
 
     // Each constellation has 3 rarity entries (indices i*3, i*3+1, i*3+2)
-    const rarityEntries = [
-      rarityRateList[i * 3],
-      rarityRateList[i * 3 + 1],
-      rarityRateList[i * 3 + 2],
-    ].filter(Boolean);
+    const rarityEntries = [rarityRateList[i * 3], rarityRateList[i * 3 + 1], rarityRateList[i * 3 + 2]].filter(Boolean);
 
     // Collect all character IDs for this constellation
     const characterIds: string[] = [];
@@ -336,10 +332,7 @@ export function getConstellationByIndex(index: number): Constellation | undefine
 export function getConstellationByName(name: string): Constellation | undefined {
   const q = name.toLowerCase();
   return buildConstellationMapping().constellations.find(
-    (c) =>
-      c.names.fr?.toLowerCase().includes(q) ||
-      c.names.en?.toLowerCase().includes(q) ||
-      c.names.ja?.includes(name),
+    c => c.names.fr?.toLowerCase().includes(q) || c.names.en?.toLowerCase().includes(q) || c.names.ja?.includes(name),
   );
 }
 

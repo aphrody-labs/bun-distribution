@@ -13,9 +13,7 @@ export type ToolView = (typeof TOOL_IDS)[keyof typeof TOOL_IDS];
 
 export function toolFromSearch(search: string): ToolView {
   const key = new URLSearchParams(search).get("tool");
-  return key && Object.hasOwn(TOOL_IDS, key)
-    ? TOOL_IDS[key as keyof typeof TOOL_IDS]
-    : "traducteur";
+  return key && Object.hasOwn(TOOL_IDS, key) ? TOOL_IDS[key as keyof typeof TOOL_IDS] : "traducteur";
 }
 
 export function toolSearch(search: string, view: ToolView): string {

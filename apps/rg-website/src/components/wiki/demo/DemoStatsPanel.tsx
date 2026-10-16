@@ -74,7 +74,7 @@ export function DemoStatsPanel({
   useEffect(() => {
     let on = true;
     calculateStats(params, level)
-      .then((r) => {
+      .then(r => {
         if (!on) return;
         setBlock(r.stats);
         setTotal(r.total);
@@ -89,7 +89,7 @@ export function DemoStatsPanel({
   useEffect(() => {
     let on = true;
     statCurve(params, 1, 99)
-      .then((rows) => on && setCurve(rows.map((r) => r.total)))
+      .then(rows => on && setCurve(rows.map(r => r.total)))
       .catch(() => on && setCurve([]));
     return () => {
       on = false;
@@ -103,9 +103,7 @@ export function DemoStatsPanel({
       {/* Paramètres. */}
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-            Forme
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">Forme</p>
           <div className="flex flex-wrap gap-1.5">
             {forms.map((f, i) => (
               <button
@@ -124,11 +122,9 @@ export function DemoStatsPanel({
           </div>
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-            Rareté
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">Rareté</p>
           <div className="flex flex-wrap gap-1.5">
-            {RARITIES.map((r) => (
+            {RARITIES.map(r => (
               <button
                 key={r.code}
                 type="button"
@@ -145,11 +141,9 @@ export function DemoStatsPanel({
           </div>
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-            Pattern de croissance
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">Pattern de croissance</p>
           <div className="flex flex-wrap gap-1.5">
-            {GROWTH_PATTERNS.map((p) => (
+            {GROWTH_PATTERNS.map(p => (
               <button
                 key={p}
                 type="button"
@@ -167,9 +161,7 @@ export function DemoStatsPanel({
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-              Niveau
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">Niveau</p>
             <span className="text-sm font-bold tabular-nums text-primary">Lv {level}</span>
           </div>
           <input
@@ -177,7 +169,7 @@ export function DemoStatsPanel({
             min={1}
             max={99}
             value={level}
-            onChange={(e) => setLevel(Number(e.target.value))}
+            onChange={e => setLevel(Number(e.target.value))}
             className="w-full accent-primary"
             aria-label="Niveau"
           />
@@ -185,9 +177,7 @@ export function DemoStatsPanel({
       </div>
 
       {error ? (
-        <p className="p-4 text-center text-sm text-on-surface-variant">
-          Moteur de stats indisponible (wasm).
-        </p>
+        <p className="p-4 text-center text-sm text-on-surface-variant">Moteur de stats indisponible (wasm).</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* 7 stats + repère pré-calculé. */}
@@ -199,7 +189,7 @@ export function DemoStatsPanel({
               </span>
             </div>
             <div className="space-y-2">
-              {STATS.map((s) => {
+              {STATS.map(s => {
                 const v = block?.[s.k] ?? 0;
                 const ref = precomputed.lv99[s.pre];
                 return (
@@ -245,11 +235,7 @@ export function DemoStatsPanel({
 /** Petit graphe SVG du total + marqueur de niveau (repris de `StatCalculator`, non exporté). */
 function TotalCurve({ curve, level }: { curve: number[]; level: number }) {
   if (curve.length < 2) {
-    return (
-      <div className="flex h-40 items-center justify-center text-xs text-on-surface-variant/60">
-        …
-      </div>
-    );
+    return <div className="flex h-40 items-center justify-center text-xs text-on-surface-variant/60">…</div>;
   }
   const W = 320;
   const H = 140;
@@ -274,13 +260,7 @@ function TotalCurve({ curve, level }: { curve: number[]; level: number }) {
 
       aria-label="Courbe du total des stats"
     >
-      <polyline
-        points={pts}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        className="text-primary"
-      />
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth={2} className="text-primary" />
       <line
         x1={cx}
         y1={0}

@@ -39,8 +39,7 @@ import { TexteDiscord } from "./TexteDiscord";
  * pour une vignette de demi-largeur — du sur-téléchargement pur à ces trois
  * largeurs précises.
  */
-const TAILLES_VIGNETTE =
-  "(max-width: 374px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
+const TAILLES_VIGNETTE = "(max-width: 374px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw";
 
 /*
  * Indicateur de focus clavier de la vignette : une `outline` à décalage NÉGATIF,
@@ -54,8 +53,7 @@ const TAILLES_VIGNETTE =
  * Une `outline` négative reste dans la zone de rognage et, d'après l'ordre de
  * peinture CSS, passe au-dessus de l'image de la vignette.
  */
-const FOCUS_VIGNETTE =
-  "focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-primary";
+const FOCUS_VIGNETTE = "focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-primary";
 
 /*
  * Lien « Voir sur X ». `min-h-11` comme les autres cibles tactiles de la page :
@@ -185,10 +183,10 @@ export function PostCarte({
               preload="metadata"
               aria-label={`Vidéo publiée sur ${reseau} par ${post.auteurNom}`}
               className="size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
-              onMouseEnter={(evenement) => {
+              onMouseEnter={evenement => {
                 void evenement.currentTarget.play().catch(() => {});
               }}
-              onMouseLeave={(evenement) => {
+              onMouseLeave={evenement => {
                 evenement.currentTarget.pause();
                 evenement.currentTarget.currentTime = 0;
               }}
@@ -250,16 +248,8 @@ export function PostCarte({
           {post.source === "x" ? (
             <div className="flex items-center gap-3 text-xs text-on-surface-variant">
               <Metrique icone={Heart} valeur={post.metriques?.like_count} libelle="j'aime" />
-              <Metrique
-                icone={Repeat2}
-                valeur={post.metriques?.retweet_count}
-                libelle="repartages"
-              />
-              <Metrique
-                icone={MessageCircle}
-                valeur={post.metriques?.reply_count}
-                libelle="réponses"
-              />
+              <Metrique icone={Repeat2} valeur={post.metriques?.retweet_count} libelle="repartages" />
+              <Metrique icone={MessageCircle} valeur={post.metriques?.reply_count} libelle="réponses" />
             </div>
           ) : (
             <span className="text-xs text-on-surface-variant">Déposé sur Discord</span>
@@ -280,9 +270,7 @@ export function PostCarte({
         {/* `text-primary` et non `text-rg-or` : l'or de marque est lisible sur le
 				    dégradé marine de la bannière, pas sur une surface d'interface claire. */}
         {post.hashtagTrouve && (
-          <span className="text-xs font-semibold text-primary">
-            {afficherHashtag(post.hashtagTrouve)}
-          </span>
+          <span className="text-xs font-semibold text-primary">{afficherHashtag(post.hashtagTrouve)}</span>
         )}
       </div>
     </Card>

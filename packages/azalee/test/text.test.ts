@@ -135,9 +135,7 @@ describe("download-filename — nom de fichier public", () => {
 
 describe("aura-translations — effets de passives", () => {
   test("traduit conditions, portées et stats", () => {
-    expect(translatePassiveEffect("For nearby players, Own Shot AT +10")).toStartWith(
-      "Proximité : ",
-    );
+    expect(translatePassiveEffect("For nearby players, Own Shot AT +10")).toStartWith("Proximité : ");
     expect(translatePassiveEffect("Team Bond Power +5")).toContain("Puissance de lien");
   });
 

@@ -10,17 +10,13 @@ import RankedChallengeClient from "./ranked-challenge-client";
  * la source de la page.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Défi privé",
-	description: "Rejoindre un défi classé Achilléa depuis un lien d'invitation.",
-	chemin: null,
-	indexable: false,
+  titre: "Défi privé",
+  description: "Rejoindre un défi classé Achilléa depuis un lien d'invitation.",
+  chemin: null,
+  indexable: false,
 });
 
-export default async function RankedChallengePage({
-	params,
-}: {
-	params: Promise<{ code: string }>;
-}) {
-	const { code } = await params;
-	return <RankedChallengeClient code={code} />;
+export default async function RankedChallengePage({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params;
+  return <RankedChallengeClient code={code} />;
 }

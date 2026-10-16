@@ -16,9 +16,7 @@ if (!binary && !existsSync(manifestPath)) {
   process.exit(1);
 }
 const proc = Bun.spawn(
-  binary
-    ? [binary, ...args]
-    : ["cargo", "run", "--quiet", "--manifest-path", manifestPath, "--", ...args],
+  binary ? [binary, ...args] : ["cargo", "run", "--quiet", "--manifest-path", manifestPath, "--", ...args],
   { cwd: repoRoot, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
 );
 process.exit(await proc.exited);

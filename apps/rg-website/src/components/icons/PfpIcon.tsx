@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
  * Utilise l'overlay officiel depuis /public
  */
 export const PfpIcon = ({ className }: { className?: string }) => (
-	<Image
-		src="/overlay.webp"
-		alt="Avatar RG"
-		width={24}
-		height={24}
-		className={cn("rounded-sm object-contain", className)}
-	/>
+  <Image
+    src="/overlay.webp"
+    alt="Avatar RG"
+    width={24}
+    height={24}
+    className={cn("rounded-sm object-contain", className)}
+  />
 );

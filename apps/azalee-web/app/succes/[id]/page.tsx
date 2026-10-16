@@ -7,11 +7,7 @@ import { notFound } from "next/navigation";
 import { getTrophy, getTrophyNeighbors } from "@/lib/wiki/trophies";
 import { CATEGORY_LABELS, type Trophy } from "@rosegriffon/azalee/wiki/trophies-shared";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const trophy = await getTrophy(id);
   const name = trophy?.name || "Succès";
@@ -52,9 +48,7 @@ function NeighborLink({ trophy, dir }: { trophy: Trophy; dir: "prev" | "next" })
       href={`/succes/${trophy.id}`}
       className="group flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-3 transition-colors hover:bg-surface-container"
     >
-      {isPrev && (
-        <ArrowLeft size={18} className="shrink-0 text-on-surface-variant" aria-hidden="true" />
-      )}
+      {isPrev && <ArrowLeft size={18} className="shrink-0 text-on-surface-variant" aria-hidden="true" />}
       <div className={isPrev ? "min-w-0" : "min-w-0 text-right"}>
         <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
           {isPrev ? "Précédent" : "Suivant"}
@@ -63,9 +57,7 @@ function NeighborLink({ trophy, dir }: { trophy: Trophy; dir: "prev" | "next" })
           {trophy.name}
         </span>
       </div>
-      {!isPrev && (
-        <ArrowRight size={18} className="shrink-0 text-on-surface-variant" aria-hidden="true" />
-      )}
+      {!isPrev && <ArrowRight size={18} className="shrink-0 text-on-surface-variant" aria-hidden="true" />}
     </Link>
   );
 }
@@ -105,10 +97,7 @@ export default async function TrophyDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="w-full space-y-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Fil d'Ariane */}
       <div className="flex items-center gap-2 text-sm font-medium text-on-surface-variant">
@@ -149,9 +138,7 @@ export default async function TrophyDetailPage({ params }: { params: Promise<{ i
 
       {/* Nom localisé */}
       <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-on-surface-variant/70">
-          Nom localisé
-        </h2>
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-on-surface-variant/70">Nom localisé</h2>
         <div className="space-y-2">
           {trophy.names.fr && (
             <p className="text-sm text-on-surface">
@@ -205,15 +192,10 @@ export default async function TrophyDetailPage({ params }: { params: Promise<{ i
 
       {/* Attributs */}
       <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4">
-        <h2 className="mb-1 text-sm font-bold uppercase tracking-wider text-on-surface-variant/70">
-          Détails
-        </h2>
+        <h2 className="mb-1 text-sm font-bold uppercase tracking-wider text-on-surface-variant/70">Détails</h2>
         <MetaRow label="Catégorie" value={categoryLabel} />
         <MetaRow label="Groupe" value={trophy.groupLabel} />
-        <MetaRow
-          label="Code interne"
-          value={<code className="font-mono text-xs">{trophy.code}</code>}
-        />
+        <MetaRow label="Code interne" value={<code className="font-mono text-xs">{trophy.code}</code>} />
       </section>
 
       {/* Note d'honnêteté : pas de récompense/icône extraites. */}
@@ -221,8 +203,7 @@ export default async function TrophyDetailPage({ params }: { params: Promise<{ i
         <div className="flex items-start gap-3 rounded-2xl border border-outline-variant/30 bg-surface-container p-4">
           <Info size={18} className="mt-0.5 shrink-0 text-on-surface-variant" aria-hidden="true" />
           <p className="text-sm text-on-surface-variant">
-            Le jeu ne fournit pas de texte de condition pour ce succès. Seul son nom localisé est
-            affiché.
+            Le jeu ne fournit pas de texte de condition pour ce succès. Seul son nom localisé est affiché.
           </p>
         </div>
       )}

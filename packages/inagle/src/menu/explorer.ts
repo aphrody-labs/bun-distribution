@@ -107,12 +107,7 @@ export class MenuExplorer {
    */
   scan(relativePath: string = "", options: ScanOptions = {}): MenuEntry[] {
     const results: MenuEntry[] = [];
-    const {
-      recursive = true,
-      extensions,
-      includeDirectories = false,
-      maxDepth = Infinity,
-    } = options;
+    const { recursive = true, extensions, includeDirectories = false, maxDepth = Infinity } = options;
 
     const processDir = (currentPath: string, currentDepth: number) => {
       if (currentDepth > maxDepth) return;
@@ -159,9 +154,9 @@ export class MenuExplorer {
 
     if (typeof pattern === "string") {
       const lowerPattern = pattern.toLowerCase();
-      return allFiles.filter((f) => f.name.toLowerCase().includes(lowerPattern));
+      return allFiles.filter(f => f.name.toLowerCase().includes(lowerPattern));
     } else {
-      return allFiles.filter((f) => pattern.test(f.name));
+      return allFiles.filter(f => pattern.test(f.name));
     }
   }
 

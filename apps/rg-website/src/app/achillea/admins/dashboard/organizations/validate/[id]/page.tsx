@@ -7,25 +7,17 @@ import OrganizationValidationClient from "./organization-validation-client";
  * `"use client"` interdit. L'interface, inchangée, vit dans
  * `organization-validation-client.tsx`.
  */
-export async function generateMetadata({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-	const { id } = await params;
-	return metadonneesAchillea({
-		titre: "Validation d'une organisation",
-		description: "Instruction d'un dossier d'accréditation d'organisation esport.",
-		chemin: `/achillea/admins/dashboard/organizations/validate/${id}`,
-		indexable: false,
-	});
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  return metadonneesAchillea({
+    titre: "Validation d'une organisation",
+    description: "Instruction d'un dossier d'accréditation d'organisation esport.",
+    chemin: `/achillea/admins/dashboard/organizations/validate/${id}`,
+    indexable: false,
+  });
 }
 
-export default async function OrganizationValidationPage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
-	const { id } = await params;
-	return <OrganizationValidationClient id={id} />;
+export default async function OrganizationValidationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <OrganizationValidationClient id={id} />;
 }

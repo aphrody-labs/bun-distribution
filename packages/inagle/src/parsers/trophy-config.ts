@@ -36,11 +36,7 @@ export function buildTrophyDatabase(_dataPath: string) {
 
     function traverse(node: ConfigNode) {
       // TROPHY_INFO_0
-      if (
-        node.name.startsWith("TROPHY_INFO_") &&
-        !node.name.includes("_LIST_") &&
-        !node.name.includes("_REF_")
-      ) {
+      if (node.name.startsWith("TROPHY_INFO_") && !node.name.includes("_LIST_") && !node.name.includes("_REF_")) {
         const vars = node.variables;
 
         let idHex = "";
@@ -53,7 +49,7 @@ export function buildTrophyDatabase(_dataPath: string) {
         }
 
         // Find Code
-        const strVar = vars.find((v) => v.type === "String");
+        const strVar = vars.find(v => v.type === "String");
         if (strVar) code = strVar.value;
 
         // Find Hashes

@@ -1,16 +1,7 @@
 "use client";
 
 import type { Item } from "@rosegriffon/inagle";
-import {
-  ArrowRightLeft,
-  Backpack,
-  Coins,
-  Layers,
-  MapPin,
-  ShoppingBag,
-  Star,
-  Store,
-} from "lucide-react";
+import { ArrowRightLeft, Backpack, Coins, Layers, MapPin, ShoppingBag, Star, Store } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
@@ -115,9 +106,7 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
   const categoryInfo = CATEGORY_LABELS[categoryKey] || { icon: "backpack", label: categoryKey };
   // Bonus de stats RÉELS décodés (kick +6, control +5, …). Source : parser + bonus-db.
   const bonuses = (item as any).bonuses as Record<string, number> | null;
-  const bonusEntries = bonuses
-    ? Object.entries(bonuses).filter(([, v]) => typeof v === "number" && v !== 0)
-    : [];
+  const bonusEntries = bonuses ? Object.entries(bonuses).filter(([, v]) => typeof v === "number" && v !== 0) : [];
   const maxBonus = bonusEntries.length ? Math.max(...bonusEntries.map(([, v]) => Math.abs(v))) : 0;
   const { maxStack } = item as any;
   // La description peut désormais être renseignée (lue depuis item_text via le descId).
@@ -145,16 +134,8 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
               />
             ) : (
               <>
-                <Backpack
-                  size={96}
-                  className="text-on-surface-variant/20 sm:hidden"
-                  aria-hidden="true"
-                />
-                <Backpack
-                  size={128}
-                  className="text-on-surface-variant/20 hidden sm:block"
-                  aria-hidden="true"
-                />
+                <Backpack size={96} className="text-on-surface-variant/20 sm:hidden" aria-hidden="true" />
+                <Backpack size={128} className="text-on-surface-variant/20 hidden sm:block" aria-hidden="true" />
               </>
             )}
           </div>
@@ -162,21 +143,13 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
           {/* Badges */}
           <div className="flex flex-wrap justify-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-highest border border-outline-variant/10">
-              <Icon
-                name={categoryInfo.icon}
-                size={16}
-                className="text-on-surface-variant shrink-0"
-              />
-              <span className="text-sm font-bold text-on-surface uppercase tracking-wider">
-                {categoryInfo.label}
-              </span>
+              <Icon name={categoryInfo.icon} size={16} className="text-on-surface-variant shrink-0" />
+              <span className="text-sm font-bold text-on-surface uppercase tracking-wider">{categoryInfo.label}</span>
             </div>
             {rarityLabel && (
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <Star size={18} className="text-primary" aria-hidden="true" />
-                <span className="text-sm font-bold text-primary uppercase tracking-wider">
-                  {rarityLabel}
-                </span>
+                <span className="text-sm font-bold text-primary uppercase tracking-wider">{rarityLabel}</span>
               </div>
             )}
           </div>
@@ -246,9 +219,7 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
                             <span className="text-[10px] font-bold text-on-surface-variant uppercase opacity-60">
                               {info.label}
                             </span>
-                            <span
-                              className={`text-sm font-black ${positive ? "text-primary" : "text-error"}`}
-                            >
+                            <span className={`text-sm font-black ${positive ? "text-primary" : "text-error"}`}>
                               {positive ? "+" : ""}
                               {value}
                             </span>
@@ -272,18 +243,14 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
             {price != null && price > 0 && (
               <div className="flex items-center gap-2">
                 <Coins size={18} className="text-on-surface-variant" aria-hidden="true" />
-                <span className="text-sm font-bold text-on-surface">
-                  {price.toLocaleString("fr-FR")}
-                </span>
+                <span className="text-sm font-bold text-on-surface">{price.toLocaleString("fr-FR")}</span>
                 <span className="text-xs text-on-surface-variant">Points</span>
               </div>
             )}
             {maxStack != null && maxStack > 1 && maxStack < 99999 && (
               <div className="flex items-center gap-2">
                 <Layers size={18} className="text-on-surface-variant" aria-hidden="true" />
-                <span className="text-sm font-bold text-on-surface">
-                  {maxStack.toLocaleString("fr-FR")}
-                </span>
+                <span className="text-sm font-bold text-on-surface">{maxStack.toLocaleString("fr-FR")}</span>
                 <span className="text-xs text-on-surface-variant">max</span>
               </div>
             )}
@@ -310,7 +277,7 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
 					    `stat1/stat2` non interprétables qu'on ne doit pas afficher). */}
           {bonusEntries.length === 0 &&
             sheetData?.stats &&
-            Object.keys(sheetData.stats).some((k) => k in STAT_LABELS) &&
+            Object.keys(sheetData.stats).some(k => k in STAT_LABELS) &&
             Object.entries(sheetData.stats).some(([k, v]) => k in STAT_LABELS && v > 0) && (
               <div>
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase block mb-3 opacity-60">
@@ -361,16 +328,9 @@ export function ItemDetail({ item, itemName, itemDesc }: ItemDetailProps) {
           </h2>
           <div className="space-y-3">
             {exchangeRecipes.map((recipe, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/10"
-              >
+              <div key={i} className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/10">
                 <div className="flex items-center gap-2 mb-2">
-                  <ShoppingBag
-                    size={16}
-                    className="text-on-surface-variant shrink-0"
-                    aria-hidden="true"
-                  />
+                  <ShoppingBag size={16} className="text-on-surface-variant shrink-0" aria-hidden="true" />
                   <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">
                     {recipe.shop}
                   </span>

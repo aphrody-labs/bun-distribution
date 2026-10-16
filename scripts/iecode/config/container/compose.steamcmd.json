@@ -32,10 +32,7 @@
       "init": true,
       "restart": "unless-stopped",
       "shm_size": "1gb",
-      "security_opt": [
-        "apparmor=iecode-steam-client",
-        "seccomp=seccomp-steam-client.json"
-      ],
+      "security_opt": ["apparmor=iecode-steam-client", "seccomp=seccomp-steam-client.json"],
       "ports": [
         {
           "target": 6080,
@@ -73,13 +70,21 @@
       "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode" }
     },
     "ie-proton-runtime": {
-      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-proton-runtime" }
+      "labels": {
+        "io.aphrody.profile": "ie",
+        "io.aphrody.workspace": "iecode",
+        "io.aphrody.store": "steam-proton-runtime"
+      }
     },
     "ie-steam-state": {
       "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-auth" }
     },
     "ie-steam-client-state": {
-      "labels": { "io.aphrody.profile": "ie", "io.aphrody.workspace": "iecode", "io.aphrody.store": "steam-client-auth" }
+      "labels": {
+        "io.aphrody.profile": "ie",
+        "io.aphrody.workspace": "iecode",
+        "io.aphrody.store": "steam-client-auth"
+      }
     }
   }
 }

@@ -151,9 +151,7 @@ export function NewsEditorForm({ initialData }: NewsEditorFormProps) {
       try {
         const data = JSON.parse(saved);
         if (data.title && data.title !== title) {
-          const recover = window.confirm(
-            "Un brouillon non sauvegardé a été trouvé. Voulez-vous le récupérer ?",
-          );
+          const recover = window.confirm("Un brouillon non sauvegardé a été trouvé. Voulez-vous le récupérer ?");
           if (recover) {
             // oxlint-disable-next-line react/set-state-in-effect -- restores a localStorage draft (external system) after the user confirms
             setTitle(data.title || "");
@@ -602,7 +600,7 @@ export function NewsEditorForm({ initialData }: NewsEditorFormProps) {
         initialStatus={initialData?.status ?? undefined}
         activeTab={activeTab}
         shareOnDiscord={shareOnDiscord}
-        onTogglePreview={() => setShowPreview((v) => !v)}
+        onTogglePreview={() => setShowPreview(v => !v)}
         onSaveDraft={() => handleSave("draft")}
         onSaveAndContinue={() => handleSave(undefined, { redirect: false })}
         onRevertToDraft={() => {

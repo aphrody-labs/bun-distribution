@@ -15,27 +15,27 @@
 import { cn } from "@/lib/utils";
 
 export interface PrimeIconProps {
-	/** Nom PrimeIcons SANS le préfixe : `trophy`, `users`, `discord`… */
-	name: string;
-	className?: string;
-	/**
-	 * Libellé pour les lecteurs d'écran.
-	 *
-	 * Absent, l'icône est masquée (`aria-hidden`) : une icône décorative
-	 * annoncée à côté du texte qu'elle illustre double l'information.
-	 */
-	label?: string;
-	/** Largeur fixe, pour aligner une colonne d'icônes dans une liste. */
-	fixedWidth?: boolean;
+  /** Nom PrimeIcons SANS le préfixe : `trophy`, `users`, `discord`… */
+  name: string;
+  className?: string;
+  /**
+   * Libellé pour les lecteurs d'écran.
+   *
+   * Absent, l'icône est masquée (`aria-hidden`) : une icône décorative
+   * annoncée à côté du texte qu'elle illustre double l'information.
+   */
+  label?: string;
+  /** Largeur fixe, pour aligner une colonne d'icônes dans une liste. */
+  fixedWidth?: boolean;
 }
 
 export function PrimeIcon({ className, fixedWidth, label, name }: PrimeIconProps) {
-	return (
-		<i
-			aria-hidden={label ? undefined : true}
-			aria-label={label}
-			className={cn("pi", `pi-${name}`, fixedWidth && "pi-fw", className)}
-			role={label ? "img" : undefined}
-		/>
-	);
+  return (
+    <i
+      aria-hidden={label ? undefined : true}
+      aria-label={label}
+      className={cn("pi", `pi-${name}`, fixedWidth && "pi-fw", className)}
+      role={label ? "img" : undefined}
+    />
+  );
 }

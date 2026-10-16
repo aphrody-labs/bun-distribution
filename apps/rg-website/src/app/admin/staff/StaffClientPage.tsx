@@ -83,30 +83,17 @@ interface OptionsColonnes {
  * propres oublis — l'un n'avait ni `title` ni `aria-label` sur ses boutons
  * d'action, un autre n'affichait pas l'équipe.
  */
-function construireColonnes({
-  section,
-  enCours,
-  onBasculer,
-  onEditer,
-  onSupprimer,
-}: OptionsColonnes) {
+function construireColonnes({ section, enCours, onBasculer, onEditer, onSupprimer }: OptionsColonnes) {
   return [
     {
       cell: (membre: TeamMember) => (
-        <AvatarMembre
-          src={membre.image_url}
-          alt={`Photo de ${membre.name}`}
-          taille={40}
-          attenue={section.inactifs}
-        />
+        <AvatarMembre src={membre.image_url} alt={`Photo de ${membre.name}`} taille={40} attenue={section.inactifs} />
       ),
       className: "w-[60px]",
       header: "Photo",
     },
     {
-      cell: (membre: TeamMember) => (
-        <span className="font-medium wrap-break-word">{membre.name}</span>
-      ),
+      cell: (membre: TeamMember) => <span className="font-medium wrap-break-word">{membre.name}</span>,
       header: "Nom",
     },
     {
@@ -137,9 +124,7 @@ function construireColonnes({
       header: "Discord",
     },
     {
-      cell: (membre: TeamMember) => (
-        <span className="tabular-nums">{membre.display_index ?? "—"}</span>
-      ),
+      cell: (membre: TeamMember) => <span className="tabular-nums">{membre.display_index ?? "—"}</span>,
       className: "hidden lg:table-cell w-[80px]",
       header: "Ordre",
     },
@@ -147,12 +132,7 @@ function construireColonnes({
       cell: (membre: TeamMember) => (
         <div className="flex flex-wrap justify-end gap-1">
           {section.inactifs ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={enCours}
-              onClick={() => onBasculer(membre, true)}
-            >
+            <Button variant="outline" size="sm" disabled={enCours} onClick={() => onBasculer(membre, true)}>
               {membre.source === SOURCE_DISCORD ? (
                 <Check className="mr-1 size-4" aria-hidden="true" />
               ) : (
@@ -249,7 +229,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
     }
 
     toast.success(`${membre.name} a été supprimé`);
-    setMembres((precedents) => precedents.filter((m) => m.id !== membre.id));
+    setMembres(precedents => precedents.filter(m => m.id !== membre.id));
     setConfirmationSuppression({ open: false });
     demarrerTransition(() => router.refresh());
   };
@@ -264,9 +244,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
         return;
       }
       toast.success(actif ? `${membre.name} est de nouveau visible` : `${membre.name} est masqué`);
-      setMembres((precedents) =>
-        precedents.map((m) => (m.id === membre.id ? { ...m, is_active: actif } : m)),
-      );
+      setMembres(precedents => precedents.map(m => (m.id === membre.id ? { ...m, is_active: actif } : m)));
       router.refresh();
     });
   };
@@ -281,11 +259,11 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
   };
 
   // ── Statistiques : calculées sur l'ensemble, jamais sur le filtre ────────
-  const inactifs = useMemo(() => membres.filter((m) => m.is_active === false), [membres]);
-  const actifs = useMemo(() => membres.filter((m) => m.is_active !== false), [membres]);
-  const nombreEnAttente = inactifs.filter((m) => m.source === SOURCE_DISCORD).length;
+  const inactifs = useMemo(() => membres.filter(m => m.is_active === false), [membres]);
+  const actifs = useMemo(() => membres.filter(m => m.is_active !== false), [membres]);
+  const nombreEnAttente = inactifs.filter(m => m.source === SOURCE_DISCORD).length;
   const nombreDesactives = inactifs.length - nombreEnAttente;
-  const equipesPeuplees = new Set(actifs.map((m) => m.team_id)).size;
+  const equipesPeuplees = new Set(actifs.map(m => m.team_id)).size;
 
   // ── Filtrage : la recherche porte AUSSI sur les membres inactifs ─────────
   const sections = useMemo<Section[]>(() => {
@@ -304,8 +282,8 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
     const trier = (liste: TeamMember[]) => liste.toSorted(comparateur);
 
     const retenus = membres.filter(correspond);
-    const enAttente = retenus.filter((m) => m.is_active === false && m.source === SOURCE_DISCORD);
-    const desactives = retenus.filter((m) => m.is_active === false && m.source !== SOURCE_DISCORD);
+    const enAttente = retenus.filter(m => m.is_active === false && m.source === SOURCE_DISCORD);
+    const desactives = retenus.filter(m => m.is_active === false && m.source !== SOURCE_DISCORD);
 
     const parEquipe = new Map<string, TeamMember[]>();
     for (const membre of retenus) {
@@ -329,9 +307,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
         titre: `Imports Discord à valider (${enAttente.length})`,
       });
     }
-    for (const [idEquipe, liste] of [...parEquipe.entries()].toSorted(
-      (a, b) => rangEquipe(a[0]) - rangEquipe(b[0]),
-    )) {
+    for (const [idEquipe, liste] of [...parEquipe.entries()].toSorted((a, b) => rangEquipe(a[0]) - rangEquipe(b[0]))) {
       resultat.push({
         cle: idEquipe,
         inactifs: false,
@@ -380,20 +356,12 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
         <StatsCard title="Actifs" value={actifs.length} icon={UsersIcon} accent="emerald" />
         <StatsCard title="À valider" value={nombreEnAttente} icon={Check} accent="amber" />
         <StatsCard title="Désactivés" value={nombreDesactives} icon={EyeOff} accent="rose" />
-        <StatsCard
-          title="Équipes"
-          value={`${equipesPeuplees} / ${NOMBRE_EQUIPES}`}
-          icon={LayoutGrid}
-          accent="sky"
-        />
+        <StatsCard title="Équipes" value={`${equipesPeuplees} / ${NOMBRE_EQUIPES}`} icon={LayoutGrid} accent="sky" />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
-          <Search
-            className="absolute left-2.5 top-2.5 size-4 text-on-surface-variant"
-            aria-hidden="true"
-          />
+          <Search className="absolute left-2.5 top-2.5 size-4 text-on-surface-variant" aria-hidden="true" />
           <label htmlFor="recherche-staff" className="sr-only">
             Rechercher un membre par nom, rôle ou identifiant Discord
           </label>
@@ -403,7 +371,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
             placeholder="Nom, rôle, ID Discord…"
             className="pl-9"
             value={recherche}
-            onChange={(evenement) => setRecherche(evenement.target.value)}
+            onChange={evenement => setRecherche(evenement.target.value)}
           />
         </div>
         <Select value={equipeFiltre} onValueChange={setEquipeFiltre}>
@@ -412,7 +380,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="toutes">Toutes les équipes</SelectItem>
-            {EQUIPES.map((equipe) => (
+            {EQUIPES.map(equipe => (
               <SelectItem key={equipe.id} value={equipe.id}>
                 {equipe.libelle}
               </SelectItem>
@@ -427,14 +395,10 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={
-              modeTri === "ordre" ? "Trier par ordre alphabétique" : "Trier par ordre d'affichage"
-            }
-            title={
-              modeTri === "ordre" ? "Trier par ordre alphabétique" : "Trier par ordre d'affichage"
-            }
+            aria-label={modeTri === "ordre" ? "Trier par ordre alphabétique" : "Trier par ordre d'affichage"}
+            title={modeTri === "ordre" ? "Trier par ordre alphabétique" : "Trier par ordre d'affichage"}
             className="size-10 rounded-none"
-            onClick={() => setModeTri((mode) => (mode === "ordre" ? "nom" : "ordre"))}
+            onClick={() => setModeTri(mode => (mode === "ordre" ? "nom" : "ordre"))}
           >
             {modeTri === "ordre" ? (
               <ArrowUp01 className="size-4" aria-hidden="true" />
@@ -450,9 +414,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
             aria-pressed={modeAffichage === "liste"}
             title="Affichage en liste"
             className={
-              modeAffichage === "liste"
-                ? "size-10 rounded-none bg-surface-container-high"
-                : "size-10 rounded-none"
+              modeAffichage === "liste" ? "size-10 rounded-none bg-surface-container-high" : "size-10 rounded-none"
             }
             onClick={() => setModeAffichage("liste")}
           >
@@ -466,9 +428,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
             aria-pressed={modeAffichage === "grille"}
             title="Affichage en grille"
             className={
-              modeAffichage === "grille"
-                ? "size-10 rounded-none bg-surface-container-high"
-                : "size-10 rounded-none"
+              modeAffichage === "grille" ? "size-10 rounded-none bg-surface-container-high" : "size-10 rounded-none"
             }
             onClick={() => setModeAffichage("grille")}
           >
@@ -488,9 +448,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
                 <EmptyMedia variant="icon">
                   <UsersIcon className="size-6" aria-hidden="true" />
                 </EmptyMedia>
-                <EmptyTitle>
-                  {filtreActif ? "Aucun membre ne correspond" : "Aucun membre pour le moment"}
-                </EmptyTitle>
+                <EmptyTitle>{filtreActif ? "Aucun membre ne correspond" : "Aucun membre pour le moment"}</EmptyTitle>
                 <EmptyDescription>
                   {filtreActif
                     ? "Aucun membre ne correspond à cette recherche ou à cette équipe."
@@ -522,7 +480,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
             </p>
           )}
 
-          {sections.map((section) =>
+          {sections.map(section =>
             modeAffichage === "liste" ? (
               <AdminDataGrid
                 key={section.cle}
@@ -544,7 +502,7 @@ export function StaffClientPage({ initialMembers }: StaffClientPageProps) {
                 </CardHeader>
                 <CardContent className="px-0">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {section.membres.map((membre) => (
+                    {section.membres.map(membre => (
                       <StaffMemberCard
                         key={membre.id}
                         member={membre}

@@ -33,7 +33,7 @@ export function TeamFilter({ teams }: TeamFilterProps) {
 
   const handleSelect = (teamId: string) => {
     setOpen(false);
-    navigate((params) => {
+    navigate(params => {
       if (params.get("team") === teamId) {
         params.delete("team");
       } else {
@@ -42,7 +42,7 @@ export function TeamFilter({ teams }: TeamFilterProps) {
     });
   };
 
-  const selectedTeam = teams.find((t) => t.id === currentTeamId);
+  const selectedTeam = teams.find(t => t.id === currentTeamId);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -73,14 +73,12 @@ export function TeamFilter({ teams }: TeamFilterProps) {
           <CommandList id={listId}>
             <CommandEmpty>Aucune équipe trouvée.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-y-auto">
-              {teams.map((team) => (
+              {teams.map(team => (
                 <CommandItem
                   key={team.id}
                   value={team.name}
                   onSelect={() => handleSelect(team.id)}
-                  className={cn(
-                    currentTeamId === team.id && "bg-surface-container-highest font-medium",
-                  )}
+                  className={cn(currentTeamId === team.id && "bg-surface-container-highest font-medium")}
                 >
                   <span className="truncate">{team.name}</span>
                 </CommandItem>

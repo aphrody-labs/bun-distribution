@@ -11,17 +11,7 @@ import { type Locale, sanitizeText, toHex } from "../core/data-loader.js";
 import { DATA_ROOT } from "../core/paths.js";
 
 /** Supported locales */
-export const ALL_LOCALES: Locale[] = [
-  "ja",
-  "en",
-  "fr",
-  "de",
-  "es",
-  "it",
-  "pt",
-  "zh_hans",
-  "zh_hant",
-];
+export const ALL_LOCALES: Locale[] = ["ja", "en", "fr", "de", "es", "it", "pt", "zh_hans", "zh_hant"];
 
 /** Text file info */
 export interface TextFileInfo {
@@ -125,7 +115,7 @@ export function discoverTextFiles(dataPath: string = DATA_ROOT): TextFileInfo[] 
   const enDir = join(textDir, "en");
   if (!existsSync(enDir)) return results;
 
-  const files = readdirSync(enDir).filter((f) => f.endsWith(".cfg.bin.json"));
+  const files = readdirSync(enDir).filter(f => f.endsWith(".cfg.bin.json"));
 
   for (const file of files) {
     const type = file.replace(".cfg.bin.json", "");
@@ -273,7 +263,7 @@ export function createUniversalTextAPI(dataPath: string = DATA_ROOT) {
     meta: {
       totalFiles: db.totalFiles,
       totalEntries: db.totalEntries,
-      types: db.types.map((t) => ({
+      types: db.types.map(t => ({
         key: t.key,
         locales: t.locales.length,
         entries: t.entryCounts.en || t.entryCounts.ja || 0,

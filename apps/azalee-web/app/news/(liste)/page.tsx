@@ -55,7 +55,7 @@ export default async function NewsFeedPage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const featuredArr = (featured as any[]) || [];
     if (featuredArr.length > 0) {
-      featuredArticles = featuredArr.map((a) => ({
+      featuredArticles = featuredArr.map(a => ({
         author_id: a.author_id,
         category: a.category,
         date: a.published_at || a.created_at,
@@ -66,7 +66,7 @@ export default async function NewsFeedPage({
         title: a.title,
         type: "article",
       }));
-      featuredArr.forEach((f) => featuredIds.add(f.id));
+      featuredArr.forEach(f => featuredIds.add(f.id));
     }
   }
 
@@ -167,8 +167,7 @@ export default async function NewsFeedPage({
               date: t.created_at,
               excerpt: t.translation || t.text,
               id: t.id,
-              image:
-                t.media && t.media.length > 0 ? t.media[0].preview_url || t.media[0].url : null,
+              image: t.media && t.media.length > 0 ? t.media[0].preview_url || t.media[0].url : null,
               media: t.media || [],
               quotedTweets: t.quoted_tweets || [],
               slug: t.id,
@@ -194,36 +193,27 @@ export default async function NewsFeedPage({
   // Le total pour la pagination correspond à la source dominante : si on filtre
   // "Tweet" → total tweets, sinon → total articles (les tweets sont une bande
   // Secondaire). Ça rend la pagination prévisible et cohérente avec le tri.
-  const totalItems = isTweetOnly
-    ? tweetsRes.total
-    : articlesRes.total + (tweetsAllowed ? tweetsRes.total : 0);
+  const totalItems = isTweetOnly ? tweetsRes.total : articlesRes.total + (tweetsAllowed ? tweetsRes.total : 0);
 
   const articleIds = [
-    ...feedItems.filter((i) => i.type === "article").map((i) => i.id),
-    ...featuredArticles.map((i) => i.id),
+    ...feedItems.filter(i => i.type === "article").map(i => i.id),
+    ...featuredArticles.map(i => i.id),
   ];
 
-  const [
-    popularTags,
-    reactionCounts,
-    popularArticles,
-    trendingArticles,
-    commentCounts,
-    continueReadingArticles,
-  ] = await Promise.all([
-    currentPage === 1 && !searchQuery ? getPopularTags(20) : Promise.resolve([]),
-    articleIds.length > 0 ? getReactionCounts(articleIds) : Promise.resolve({}),
-    currentPage === 1 && !searchQuery ? getPopularArticles(5) : Promise.resolve([]),
-    currentPage === 1 && !searchQuery ? getTrendingArticles(5) : Promise.resolve([]),
-    articleIds.length > 0 ? getCommentCounts(articleIds) : Promise.resolve({}),
-    currentPage === 1 && !searchQuery ? getContinueReading(4) : Promise.resolve([]),
-  ]);
+  const [popularTags, reactionCounts, popularArticles, trendingArticles, commentCounts, continueReadingArticles] =
+    await Promise.all([
+      currentPage === 1 && !searchQuery ? getPopularTags(20) : Promise.resolve([]),
+      articleIds.length > 0 ? getReactionCounts(articleIds) : Promise.resolve({}),
+      currentPage === 1 && !searchQuery ? getPopularArticles(5) : Promise.resolve([]),
+      currentPage === 1 && !searchQuery ? getTrendingArticles(5) : Promise.resolve([]),
+      articleIds.length > 0 ? getCommentCounts(articleIds) : Promise.resolve({}),
+      currentPage === 1 && !searchQuery ? getContinueReading(4) : Promise.resolve([]),
+    ]);
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    description:
-      "Actualités, traductions exclusives, interviews et analyses sur Inazuma Eleven: Victory Road.",
+    description: "Actualités, traductions exclusives, interviews et analyses sur Inazuma Eleven: Victory Road.",
     isPartOf: { "@type": "WebSite", name: "Azalée", url: "https://azalee.rosegriffon.fr" },
     mainEntity: {
       "@type": "ItemList",
@@ -245,10 +235,7 @@ export default async function NewsFeedPage({
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <NewsFeedClient
         feedItems={feedItems}
         totalItems={totalItems}

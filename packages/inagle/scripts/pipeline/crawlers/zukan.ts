@@ -93,8 +93,8 @@ function extractCharacters($: cheerio.CheerioAPI): ZukanCharacter[] {
   });
 
   return raw.characters
-    .filter((c) => c.id && c.name)
-    .map((c) => ({
+    .filter(c => c.id && c.name)
+    .map(c => ({
       id: c.id!,
       name: c.name!,
       nickname: c.nickname || undefined,
@@ -140,13 +140,11 @@ function extractSkills($: cheerio.CheerioAPI): ZukanSkill[] {
   });
 
   return raw.skills
-    .filter((s) => Boolean(s.name))
+    .filter(s => Boolean(s.name))
     .map((s, i) => ({
       name: s.name!,
       type: typesByIndex[i]?.join(", ") || undefined,
-      videoUrl: s.videoUrl?.endsWith(".wmv")
-        ? s.videoUrl.replace(".wmv", ".webm")
-        : s.videoUrl || undefined,
+      videoUrl: s.videoUrl?.endsWith(".wmv") ? s.videoUrl.replace(".wmv", ".webm") : s.videoUrl || undefined,
     }));
 }
 
@@ -207,7 +205,6 @@ async function main() {
 const isDirectRun =
   import.meta.url.startsWith("file:") &&
   process.argv[1] &&
-  (process.argv[1] === import.meta.url.replace("file://", "") ||
-    process.argv[1].endsWith("zukan.ts"));
+  (process.argv[1] === import.meta.url.replace("file://", "") || process.argv[1].endsWith("zukan.ts"));
 
 if (isDirectRun) main();

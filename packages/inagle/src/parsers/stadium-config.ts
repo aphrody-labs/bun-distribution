@@ -114,9 +114,7 @@ function parseContent(content: any): ParsedStadium[] {
 // Loaders
 // ============================================================================
 
-export async function loadStadiumConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedStadium[] | null> {
+export async function loadStadiumConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedStadium[] | null> {
   const path = join(dataPath, "common/gamedata/soccer/soccer_game_option.cfg.bin.json");
   const content = await loadJsonAsync<any>(path);
   return content ? parseContent(content) : null;

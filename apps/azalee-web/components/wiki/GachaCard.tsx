@@ -27,9 +27,7 @@ export function CapsuleCard({ prize, className }: { prize: CapsulePrize; classNa
           <Gift size={20} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-            Lot
-          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Lot</span>
           <h3 className="truncate font-mono text-sm font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
             {prize.id}
           </h3>
@@ -79,9 +77,7 @@ export function CostumeCard({ costume, className }: { costume: Costume; classNam
           <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
             Costume #{costume.index}
           </span>
-          <h3 className="truncate font-mono text-sm font-bold leading-tight text-on-surface">
-            {costume.modelRef}
-          </h3>
+          <h3 className="truncate font-mono text-sm font-bold leading-tight text-on-surface">{costume.modelRef}</h3>
         </div>
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-1.5">

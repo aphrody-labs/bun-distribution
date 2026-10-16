@@ -31,14 +31,10 @@ const cases: Array<{ name: string; old: QFn; neo: QFn }> = [];
 
 function addCase(
   name: string,
-  build: (
-    B: typeof OldBuilder | typeof NewBuilder,
-    db: unknown,
-  ) => PromiseLike<Resp> | { run(): Promise<Resp> },
+  build: (B: typeof OldBuilder | typeof NewBuilder, db: unknown) => PromiseLike<Resp> | { run(): Promise<Resp> },
 ) {
   // L'ancienne façade expose `run()` ; la nouvelle reste thenable.
-  const settle = async (r: PromiseLike<Resp> | { run(): Promise<Resp> }): Promise<Resp> =>
-    "run" in r ? r.run() : r;
+  const settle = async (r: PromiseLike<Resp> | { run(): Promise<Resp> }): Promise<Resp> => ("run" in r ? r.run() : r);
   cases.push({
     name,
     old: () => settle(build(OldBuilder, oldDb)),
@@ -96,9 +92,7 @@ addCase("order zukan_order asc nulls first", (B, db) =>
 
 // 7. vue *_clean (GROUP BY name_fr) + count exact (119 distinct / 282 rows)
 addCase("keshins_clean group by + count", (B, db) =>
-  q(B, db, "inagle_keshins_clean")
-    .select("*", { count: "exact" })
-    .order("name_fr", { nullsFirst: false }),
+  q(B, db, "inagle_keshins_clean").select("*", { count: "exact" }).order("name_fr", { nullsFirst: false }),
 );
 
 // 8. *_clean avec not ilike (filtre wa%/wkt%) — réplique wiki-service
@@ -137,9 +131,7 @@ addCase("items in category + range", (B, db) =>
 );
 
 // 13. or vide -> 1=0 -> maybeSingle null
-addCase("or empty -> match nothing", (B, db) =>
-  q(B, db, "inagle_characters").select("id").or("id.eq.").maybeSingle(),
-);
+addCase("or empty -> match nothing", (B, db) => q(B, db, "inagle_characters").select("id").or("id.eq.").maybeSingle());
 
 // 14. in() vide -> 1=0 -> [] avec count 0
 addCase("in empty -> nothing + count", (B, db) =>
@@ -148,10 +140,7 @@ addCase("in empty -> nothing + count", (B, db) =>
 
 // 15. json_extract ->> POSITIF (8 auras avec name_FR LIKE %a%)
 addCase("or ->> json_extract positif", (B, db) =>
-  q(B, db, "inagle_auras")
-    .select("id, name_fr, sheet_data")
-    .or("sheet_data->>name_FR.ilike.%a%")
-    .order("id"),
+  q(B, db, "inagle_auras").select("id, name_fr, sheet_data").or("sheet_data->>name_FR.ilike.%a%").order("id"),
 );
 
 // 16. gte/lte sur entier (price items — range réel 0..7141)
@@ -166,9 +155,7 @@ addCase("gte/lte price range", (B, db) =>
 );
 
 // 17. single() qui trouve
-addCase("single() hit", (B, db) =>
-  q(B, db, "inagle_skills").select("id, name_fr").eq("id", "rhd10010").single(),
-);
+addCase("single() hit", (B, db) => q(B, db, "inagle_skills").select("id, name_fr").eq("id", "rhd10010").single());
 
 function stable(value: unknown): string {
   // Sérialisation stable (clés triées) pour comparer data + count.
@@ -213,7 +200,5 @@ for (const c of cases) {
   }
 }
 
-console.log(
-  `\n=== ${failures === 0 ? "ALL IDENTICAL (diff vide)" : `${failures} DIFF`} / ${cases.length} cases ===`,
-);
+console.log(`\n=== ${failures === 0 ? "ALL IDENTICAL (diff vide)" : `${failures} DIFF`} / ${cases.length} cases ===`);
 process.exit(failures === 0 ? 0 : 1);

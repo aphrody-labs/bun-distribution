@@ -7,15 +7,10 @@ export function configuredDataSource(): string | undefined {
 
 export function ownedPostgresUrl(): string {
   const value = (process.env.INAGLE_DATABASE_URL ?? process.env.NIE_PG_URL)?.trim();
-  if (!value)
-    throw new Error("INAGLE_DATABASE_URL is required for the selected IECODE PostgreSQL source");
+  if (!value) throw new Error("INAGLE_DATABASE_URL is required for the selected IECODE PostgreSQL source");
   try {
     const url = new URL(value);
-    if (
-      !["postgres:", "postgresql:"].includes(url.protocol) ||
-      !url.hostname ||
-      url.pathname === "/"
-    )
+    if (!["postgres:", "postgresql:"].includes(url.protocol) || !url.hostname || url.pathname === "/")
       throw new Error();
   } catch {
     throw new Error("INAGLE_DATABASE_URL must identify an IECODE PostgreSQL host and database");

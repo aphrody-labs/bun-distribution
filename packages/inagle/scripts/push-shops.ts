@@ -15,7 +15,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importShops(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("Fatal:", e);
     process.exit(1);
   });

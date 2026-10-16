@@ -21,13 +21,7 @@ export interface TacticCardProps {
  * invisible. On l'affiche donc dans une zone bannière (`aspect-[24/5]`), pas un carré.
  * Fallback propre (icône `Map`) si l'image est absente ou 404.
  */
-export function TacticCard({
-  id,
-  name,
-  image,
-  categoryLabel = "Tactique",
-  className,
-}: TacticCardProps) {
+export function TacticCard({ id, name, image, categoryLabel = "Tactique", className }: TacticCardProps) {
   const [imgError, setImgError] = useState(false);
   const hasImage = !!image && !imgError;
 

@@ -7,5 +7,5 @@ import type { SVGProps } from "react";
  * caractère. Voir `twitter.tsx` pour le raisonnement.
  */
 export function YoutubeIcon(props: SVGProps<SVGSVGElement>) {
-	return <YouTubeIcon title="YouTube" {...props} />;
+  return <YouTubeIcon title="YouTube" {...props} />;
 }

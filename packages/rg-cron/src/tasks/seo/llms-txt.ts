@@ -35,13 +35,13 @@ const WEBSITE_PUBLIC = cronSharedPath("seo");
 const DEV_CREDIT = "yoyo — https://x.com/yoyo__goat";
 
 function nowStamp(): string {
-	return new Date().toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 // ─── WEBSITE (rosegriffon.fr) ────────────────────────────────────────────────
 
 function websiteLlms(): string {
-	return `# Rose Griffon
+  return `# Rose Griffon
 
 > Association française dédiée à la communauté Inazuma Eleven. Rose Griffon rassemble les fans francophones autour d'événements, de projets créatifs et de contenus sur la licence Inazuma Eleven (LEVEL-5).
 
@@ -74,7 +74,7 @@ Généré le : ${nowStamp()}
 }
 
 function websiteLlmsFull(): string {
-	return `# Rose Griffon — Référence complète
+  return `# Rose Griffon — Référence complète
 
 > Rose Griffon est une association française dédiée à la communauté Inazuma Eleven (licence LEVEL-5). Elle fédère les fans francophones autour d'événements, de projets créatifs collaboratifs et de contenus d'information, et maintient le wiki Azalée consacré à Inazuma Eleven: Victory Road.
 
@@ -146,7 +146,7 @@ Stack : Next.js, React, Bun, TypeScript, Supabase.
 // ─── WIKI AZALÉE (rosegriffon.fr/wiki) ───────────────────────────────────────
 
 function azaleeLlms(): string {
-	return `# Azalée — Wiki Inazuma Eleven: Victory Road
+  return `# Azalée — Wiki Inazuma Eleven: Victory Road
 
 > Wiki francophone consacré à Inazuma Eleven: Victory Road (IEVR), maintenu par l'association Rose Griffon. Base de données complète : personnages, techniques, objets, auras, tactiques et actualités.
 
@@ -180,7 +180,7 @@ Généré le : ${nowStamp()}
 }
 
 function azaleeLlmsFull(): string {
-	return `# Azalée — Wiki Inazuma Eleven: Victory Road — Référence complète
+  return `# Azalée — Wiki Inazuma Eleven: Victory Road — Référence complète
 
 > Azalée est le wiki francophone de référence pour Inazuma Eleven: Victory Road (IEVR), le jeu de LEVEL-5. Maintenu par l'association Rose Griffon, il agrège personnages, techniques, objets, auras, tactiques, compétences passives et actualités du jeu, avec des outils communautaires.
 
@@ -258,86 +258,85 @@ Stack : Next.js, React, Bun, TypeScript. Données : Inazuma Eleven: Victory Road
  * d'IA (Gemini, etc.) acceptent — certains rejettent/mal-gèrent le `text/plain` de `llm.txt`.
  */
 function llmsToHtml(md: string, title: string): string {
-	const esc = (s: string) =>
-		s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-	const linkify = (s: string) =>
-		esc(s)
-			.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2">$1</a>')
-			.replace(/(?<!["=])(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
-	const lines = md.split("\n");
-	const out: string[] = [];
-	let inList = false;
-	const closeList = () => {
-		if (inList) {
-			out.push("</ul>");
-			inList = false;
-		}
-	};
-	for (const raw of lines) {
-		const l = raw.trimEnd();
-		if (/^#{1,6}\s/.test(l)) {
-			closeList();
-			const lvl = (l.match(/^#+/) as RegExpMatchArray)[0].length;
-			out.push(`<h${lvl}>${linkify(l.replace(/^#+\s/, ""))}</h${lvl}>`);
-		} else if (/^>\s?/.test(l)) {
-			closeList();
-			out.push(`<blockquote>${linkify(l.replace(/^>\s?/, ""))}</blockquote>`);
-		} else if (/^[-*]\s/.test(l)) {
-			if (!inList) {
-				out.push("<ul>");
-				inList = true;
-			}
-			out.push(`<li>${linkify(l.replace(/^[-*]\s/, ""))}</li>`);
-		} else if (l === "") {
-			closeList();
-		} else {
-			closeList();
-			out.push(`<p>${linkify(l)}</p>`);
-		}
-	}
-	closeList();
-	return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><meta name="robots" content="index, follow"><style>body{max-width:48rem;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.6}a{color:#0c1730}blockquote{border-left:3px solid #d4af37;margin:0;padding-left:1rem;color:#555}</style></head><body>\n${out.join("\n")}\n</body></html>\n`;
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const linkify = (s: string) =>
+    esc(s)
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2">$1</a>')
+      .replace(/(?<!["=])(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
+  const lines = md.split("\n");
+  const out: string[] = [];
+  let inList = false;
+  const closeList = () => {
+    if (inList) {
+      out.push("</ul>");
+      inList = false;
+    }
+  };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^#{1,6}\s/.test(l)) {
+      closeList();
+      const lvl = (l.match(/^#+/) as RegExpMatchArray)[0].length;
+      out.push(`<h${lvl}>${linkify(l.replace(/^#+\s/, ""))}</h${lvl}>`);
+    } else if (/^>\s?/.test(l)) {
+      closeList();
+      out.push(`<blockquote>${linkify(l.replace(/^>\s?/, ""))}</blockquote>`);
+    } else if (/^[-*]\s/.test(l)) {
+      if (!inList) {
+        out.push("<ul>");
+        inList = true;
+      }
+      out.push(`<li>${linkify(l.replace(/^[-*]\s/, ""))}</li>`);
+    } else if (l === "") {
+      closeList();
+    } else {
+      closeList();
+      out.push(`<p>${linkify(l)}</p>`);
+    }
+  }
+  closeList();
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><meta name="robots" content="index, follow"><style>body{max-width:48rem;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.6}a{color:#0c1730}blockquote{border-left:3px solid #d4af37;margin:0;padding-left:1rem;color:#555}</style></head><body>\n${out.join("\n")}\n</body></html>\n`;
 }
 
 export async function runSeoLlmsTxt(): Promise<{ success: boolean; error?: string }> {
-	console.log("[SEO llms.txt] Génération des fichiers llms.txt / llm.txt / .md / .html…");
-	try {
-		const websiteIndex = websiteLlms();
-		const azaleeIndex = azaleeLlms();
-		const websiteFull = websiteLlmsFull();
-		const azaleeFull = azaleeLlmsFull();
-		const unifiedIndex = `${websiteIndex}\n${azaleeIndex}`;
-		const unifiedFull = `${websiteFull}\n${azaleeFull}`;
-		await mkdir(WEBSITE_PUBLIC, { recursive: true });
+  console.log("[SEO llms.txt] Génération des fichiers llms.txt / llm.txt / .md / .html…");
+  try {
+    const websiteIndex = websiteLlms();
+    const azaleeIndex = azaleeLlms();
+    const websiteFull = websiteLlmsFull();
+    const azaleeFull = azaleeLlmsFull();
+    const unifiedIndex = `${websiteIndex}\n${azaleeIndex}`;
+    const unifiedFull = `${websiteFull}\n${azaleeFull}`;
+    await mkdir(WEBSITE_PUBLIC, { recursive: true });
 
-		const targets: Array<{ path: string; content: string }> = [
-			// Website : llm.txt est l'alias référencé par les métadonnées Next.
-			{ path: join(WEBSITE_PUBLIC, "llms.txt"), content: unifiedIndex },
-			{ path: join(WEBSITE_PUBLIC, "llm.txt"), content: unifiedIndex },
-			{ path: join(WEBSITE_PUBLIC, "llms-full.txt"), content: unifiedFull },
-			// Website — versions markdown (.md) + HTML (.html) fetchables par les IA.
-			{ path: join(WEBSITE_PUBLIC, "llm.md"), content: unifiedIndex },
-			{ path: join(WEBSITE_PUBLIC, "llms.md"), content: unifiedIndex },
-			{ path: join(WEBSITE_PUBLIC, "llms-full.md"), content: unifiedFull },
-			{
-				path: join(WEBSITE_PUBLIC, "llm.html"),
-				content: llmsToHtml(unifiedIndex, "Rose Griffon et Azalée — llm.txt"),
-			},
-			{
-				path: join(WEBSITE_PUBLIC, "llms-full.html"),
-				content: llmsToHtml(unifiedFull, "Rose Griffon et Azalée — llms-full"),
-			},
-		];
+    const targets: Array<{ path: string; content: string }> = [
+      // Website : llm.txt est l'alias référencé par les métadonnées Next.
+      { path: join(WEBSITE_PUBLIC, "llms.txt"), content: unifiedIndex },
+      { path: join(WEBSITE_PUBLIC, "llm.txt"), content: unifiedIndex },
+      { path: join(WEBSITE_PUBLIC, "llms-full.txt"), content: unifiedFull },
+      // Website — versions markdown (.md) + HTML (.html) fetchables par les IA.
+      { path: join(WEBSITE_PUBLIC, "llm.md"), content: unifiedIndex },
+      { path: join(WEBSITE_PUBLIC, "llms.md"), content: unifiedIndex },
+      { path: join(WEBSITE_PUBLIC, "llms-full.md"), content: unifiedFull },
+      {
+        path: join(WEBSITE_PUBLIC, "llm.html"),
+        content: llmsToHtml(unifiedIndex, "Rose Griffon et Azalée — llm.txt"),
+      },
+      {
+        path: join(WEBSITE_PUBLIC, "llms-full.html"),
+        content: llmsToHtml(unifiedFull, "Rose Griffon et Azalée — llms-full"),
+      },
+    ];
 
-		for (const { path, content } of targets) {
-			await writeFile(path, content, "utf-8");
-			console.log(`[SEO llms.txt] Écrit : ${path} (${content.length} octets)`);
-		}
+    for (const { path, content } of targets) {
+      await writeFile(path, content, "utf-8");
+      console.log(`[SEO llms.txt] Écrit : ${path} (${content.length} octets)`);
+    }
 
-		console.log(`[SEO llms.txt] ${targets.length} fichiers générés avec succès.`);
-		return { success: true };
-	} catch (err: any) {
-		console.error("[SEO llms.txt] Erreur lors de la génération :", err);
-		return { success: false, error: err.message || String(err) };
-	}
+    console.log(`[SEO llms.txt] ${targets.length} fichiers générés avec succès.`);
+    return { success: true };
+  } catch (err: any) {
+    console.error("[SEO llms.txt] Erreur lors de la génération :", err);
+    return { success: false, error: err.message || String(err) };
+  }
 }

@@ -98,7 +98,7 @@ export function SkillVideoPlayer({
                 ? `Vidéo de la technique ${skillName} — ${variantFr}`
                 : `Vidéo de la technique ${skillName}`
             }
-            onError={() => setFailed((f) => ({ ...f, [activeIndex]: true }))}
+            onError={() => setFailed(f => ({ ...f, [activeIndex]: true }))}
           >
             Votre navigateur ne prend pas en charge la lecture de vidéos.
           </video>
@@ -108,11 +108,7 @@ export function SkillVideoPlayer({
       {/* Sélecteur de variante — 236 techniques sur 895 en ont deux (réussite/échec,
 			    défense/contre-tir). L'onglet n'apparaît que s'il y a un choix à faire. */}
       {videos.length > 1 && (
-        <div
-          className="flex flex-wrap gap-2"
-          role="tablist"
-          aria-label={`Variantes de ${skillName}`}
-        >
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label={`Variantes de ${skillName}`}>
           {videos.map((v, i) => (
             <button
               key={v.videoUrl}

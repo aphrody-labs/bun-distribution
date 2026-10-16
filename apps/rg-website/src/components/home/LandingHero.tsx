@@ -55,7 +55,7 @@ export function LandingHero({ stats }: LandingHeroProps) {
   useEffect(() => {
     if (prefersReducedMotion || HERO_BACKGROUNDS.length <= 1) return;
     const id = window.setInterval(() => {
-      setBgIndex((i) => (i + 1) % HERO_BACKGROUNDS.length);
+      setBgIndex(i => (i + 1) % HERO_BACKGROUNDS.length);
     }, HERO_CYCLE_MS);
     return () => window.clearInterval(id);
   }, [prefersReducedMotion]);
@@ -74,7 +74,7 @@ export function LandingHero({ stats }: LandingHeroProps) {
         { count: stats.characters, label: "joueurs" },
         { count: stats.skills, label: "techniques" },
         { count: stats.items, label: "objets" },
-      ].filter((s) => s.count > 0)
+      ].filter(s => s.count > 0)
     : [];
 
   return (
@@ -164,10 +164,7 @@ export function LandingHero({ stats }: LandingHeroProps) {
         </motion.div>
 
         {/* Content (layer 3 — foreground, -75px) */}
-        <motion.div
-          style={foregroundStyle}
-          className="flex-1 flex flex-col items-center justify-center px-6"
-        >
+        <motion.div style={foregroundStyle} className="flex-1 flex flex-col items-center justify-center px-6">
           <div className="flex flex-col items-center justify-center -translate-y-[5vh] animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
             <Image
               src="/ie.webp"
@@ -204,9 +201,7 @@ export function LandingHero({ stats }: LandingHeroProps) {
             className="flex flex-col items-center gap-1.5 animate-[fadeSlideUp_0.6s_ease-out_2s_both]"
             aria-label="Défiler vers le contenu"
           >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">
-              Explorer
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Explorer</span>
             <div className="p-1.5 rounded-full bg-white/5 border border-white/10">
               <ArrowDown className="size-4 text-white/60" />
             </div>
@@ -244,8 +239,7 @@ export function LandingHero({ stats }: LandingHeroProps) {
               {statPills.map((pill, i) => (
                 <span key={pill.label}>
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-sm font-bold shadow-lg">
-                    <span className="text-[#F4D03F]">{pill.count.toLocaleString("fr-FR")}+</span>{" "}
-                    {pill.label}
+                    <span className="text-[#F4D03F]">{pill.count.toLocaleString("fr-FR")}+</span> {pill.label}
                   </span>
                   {i < statPills.length - 1 && <span className="mx-1 text-white/20">·</span>}
                 </span>

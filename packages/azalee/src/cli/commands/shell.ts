@@ -16,18 +16,8 @@ import type { Command } from "commander";
 
 import { colors } from "../context";
 import { createInagleService, type InagleService } from "../inagle";
-import {
-  renderCharaProfile,
-  renderItemProfile,
-  renderSkillProfile,
-  renderTeamProfile,
-} from "../render";
-import {
-  getPendingSelection,
-  setActiveReadline,
-  setPendingSelection,
-  setReplMode,
-} from "../repl-state";
+import { renderCharaProfile, renderItemProfile, renderSkillProfile, renderTeamProfile } from "../render";
+import { getPendingSelection, setActiveReadline, setPendingSelection, setReplMode } from "../repl-state";
 
 /** Commandes proposées à la complétion. */
 const COMPLETION_COMMANDS = [
@@ -145,25 +135,25 @@ Tapez '${colors.bold}exit${colors.reset}' ou '${colors.bold}quit${colors.reset}'
         const parts = trimmed.split(/\s+/);
         const cmd = parts[0].toLowerCase();
         if (parts.length === 1) {
-          const hits = COMPLETION_COMMANDS.filter((c) => c.startsWith(cmd));
+          const hits = COMPLETION_COMMANDS.filter(c => c.startsWith(cmd));
           return [hits.length ? hits : COMPLETION_COMMANDS, line];
         }
         const query = parts.slice(1).join(" ").toLowerCase();
         if (cmd === "chara" || cmd === "c") {
-          const hits = characterCache.filter((name) => name.toLowerCase().startsWith(query));
-          return [hits.map((name) => `${cmd} "${name}"`), line];
+          const hits = characterCache.filter(name => name.toLowerCase().startsWith(query));
+          return [hits.map(name => `${cmd} "${name}"`), line];
         }
         if (cmd === "skill" || cmd === "k") {
-          const hits = skillCache.filter((name) => name.toLowerCase().startsWith(query));
-          return [hits.map((name) => `${cmd} "${name}"`), line];
+          const hits = skillCache.filter(name => name.toLowerCase().startsWith(query));
+          return [hits.map(name => `${cmd} "${name}"`), line];
         }
         if (cmd === "item" || cmd === "i") {
-          const hits = itemCache.filter((name) => name.toLowerCase().startsWith(query));
-          return [hits.map((name) => `${cmd} "${name}"`), line];
+          const hits = itemCache.filter(name => name.toLowerCase().startsWith(query));
+          return [hits.map(name => `${cmd} "${name}"`), line];
         }
         if (cmd === "team" || cmd === "t") {
-          const hits = teamCache.filter((name) => name.toLowerCase().startsWith(query));
-          return [hits.map((name) => `${cmd} "${name}"`), line];
+          const hits = teamCache.filter(name => name.toLowerCase().startsWith(query));
+          return [hits.map(name => `${cmd} "${name}"`), line];
         }
         return [[], line];
       }
@@ -220,9 +210,7 @@ Tapez '${colors.bold}exit${colors.reset}' ou '${colors.bold}quit${colors.reset}'
                 console.log(renderTeamProfile(match));
               }
             } catch (e) {
-              console.error(
-                `${colors.red}Erreur d'affichage : ${(e as Error).message}${colors.reset}`,
-              );
+              console.error(`${colors.red}Erreur d'affichage : ${(e as Error).message}${colors.reset}`);
             }
             setPendingSelection(null);
             rl.setPrompt(`${colors.bold}${colors.green}azalee 🌸 > ${colors.reset}`);
@@ -230,9 +218,7 @@ Tapez '${colors.bold}exit${colors.reset}' ou '${colors.bold}quit${colors.reset}'
             rl.prompt();
             return;
           } else if (/^\d+$/.test(input)) {
-            console.log(
-              `${colors.yellow}Sélection invalide (index hors limites). Sélection annulée.${colors.reset}`,
-            );
+            console.log(`${colors.yellow}Sélection invalide (index hors limites). Sélection annulée.${colors.reset}`);
             setPendingSelection(null);
             rl.setPrompt(`${colors.bold}${colors.green}azalee 🌸 > ${colors.reset}`);
             rl.prompt();
@@ -294,13 +280,9 @@ Commandes disponibles :
           if (code === "commander.helpDisplayed" || code === "commander.help") {
             // déjà affiché par commander
           } else if (code === "commander.unknownCommand") {
-            console.log(
-              `${colors.red}Commande inconnue: '${cmd}'. Tapez 'help' pour voir la liste.${colors.reset}`,
-            );
+            console.log(`${colors.red}Commande inconnue: '${cmd}'. Tapez 'help' pour voir la liste.${colors.reset}`);
           } else {
-            console.error(
-              `${colors.red}Erreur d'exécution: ${(err as Error).message}${colors.reset}`,
-            );
+            console.error(`${colors.red}Erreur d'exécution: ${(err as Error).message}${colors.reset}`);
           }
         } finally {
           setReplMode(false);

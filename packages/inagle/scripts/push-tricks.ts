@@ -15,7 +15,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importTricks(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("❌ Erreur push-tricks:", e);
     process.exit(1);
   });

@@ -38,18 +38,16 @@ import { PAR_PAGE, type PageMembres, type ProvenanceXp, type TriMembres } from "
  * passer par ici tirerait `server-only` dans le bundle navigateur.
  */
 export {
-	estTriMembres,
-	LIBELLES_PROVENANCE,
-	LIBELLES_TRI,
-	PAR_PAGE,
-	TRIS_MEMBRES,
-	type LigneMembre,
-	type PageMembres,
-	type ProvenanceXp,
-	type TriMembres,
+  estTriMembres,
+  LIBELLES_PROVENANCE,
+  LIBELLES_TRI,
+  PAR_PAGE,
+  TRIS_MEMBRES,
+  type LigneMembre,
+  type PageMembres,
+  type ProvenanceXp,
+  type TriMembres,
 } from "./membres-shared";
-
-
 
 /**
  * Traduit un tri en clause `ORDER BY`.
@@ -59,35 +57,35 @@ export {
  * injection qui attend son tour. Un tri inconnu retombe sur l'XP.
  */
 function clauseTri(tri: TriMembres): string {
-	switch (tri) {
-		case "jetons":
-			return "p.jetons_gagnes DESC, p.xp DESC";
-		case "messages":
-			return "p.messages_comptes DESC, p.xp DESC";
-		case "recent":
-			return "p.dernier_gain_le DESC NULLS LAST, p.xp DESC";
-		default:
-			return "p.xp DESC, p.messages_comptes DESC";
-	}
+  switch (tri) {
+    case "jetons":
+      return "p.jetons_gagnes DESC, p.xp DESC";
+    case "messages":
+      return "p.messages_comptes DESC, p.xp DESC";
+    case "recent":
+      return "p.dernier_gain_le DESC NULLS LAST, p.xp DESC";
+    default:
+      return "p.xp DESC, p.messages_comptes DESC";
+  }
 }
 
 interface LigneBrute {
-	discord_id: string;
-	username: string | null;
-	display_name: string | null;
-	avatar_url: string | null;
-	left_at: string | Date | null;
-	xp: string;
-	niveau: number;
-	jetons: number;
-	jetons_gagnes: string;
-	messages_comptes: string;
-	serie_quotidienne: number;
-	dernier_gain_le: string | Date | null;
-	titre: string | null;
-	a_api: boolean;
-	a_classement: boolean;
-	rang: string;
+  discord_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  left_at: string | Date | null;
+  xp: string;
+  niveau: number;
+  jetons: number;
+  jetons_gagnes: string;
+  messages_comptes: string;
+  serie_quotidienne: number;
+  dernier_gain_le: string | Date | null;
+  titre: string | null;
+  a_api: boolean;
+  a_classement: boolean;
+  rang: string;
 }
 
 /**
@@ -102,16 +100,16 @@ interface LigneBrute {
  * `"123420"` et personne ne le verrait avant qu'un classement ne soit absurde.
  */
 export async function classementMembres(
-	guildId: string,
-	options: { page?: number; tri?: TriMembres; inclurePartis?: boolean } = {}
+  guildId: string,
+  options: { page?: number; tri?: TriMembres; inclurePartis?: boolean } = {},
 ): Promise<PageMembres> {
-	const tri = options.tri ?? "xp";
-	const page = Math.max(1, Math.floor(options.page ?? 1));
-	const decalage = (page - 1) * PAR_PAGE;
-	const filtreParti = options.inclurePartis ? "" : "AND m.left_at IS NULL";
+  const tri = options.tri ?? "xp";
+  const page = Math.max(1, Math.floor(options.page ?? 1));
+  const decalage = (page - 1) * PAR_PAGE;
+  const filtreParti = options.inclurePartis ? "" : "AND m.left_at IS NULL";
 
-	const lignes = await pgQuery<LigneBrute>(
-		`WITH classe AS (
+  const lignes = await pgQuery<LigneBrute>(
+    `WITH classe AS (
 			 SELECT p.*, row_number() OVER (ORDER BY ${clauseTri(tri)}) AS rang
 			   FROM public.bot_profils p
 			   LEFT JOIN public.discord_members m ON m.discord_id = p.discord_id
@@ -128,42 +126,40 @@ export async function classementMembres(
 		          ON i.guild_id = $1 AND i.discord_id = c.discord_id
 		  ORDER BY c.rang
 		  LIMIT $2 OFFSET $3`,
-		[guildId, PAR_PAGE, decalage]
-	);
+    [guildId, PAR_PAGE, decalage],
+  );
 
-	const [compte] = await pgQuery<{ total: string }>(
-		`SELECT count(*) AS total
+  const [compte] = await pgQuery<{ total: string }>(
+    `SELECT count(*) AS total
 		   FROM public.bot_profils p
 		   LEFT JOIN public.discord_members m ON m.discord_id = p.discord_id
 		  WHERE p.guild_id = $1 AND p.xp > 0 ${filtreParti}`,
-		[guildId]
-	);
+    [guildId],
+  );
 
-	const total = Number(compte?.total ?? 0);
-	return {
-		lignes: lignes.map((ligne) => ({
-			avatarUrl: ligne.avatar_url,
-			dernierGainLe: ligne.dernier_gain_le
-				? new Date(ligne.dernier_gain_le).toISOString()
-				: null,
-			discordId: ligne.discord_id,
-			jetons: Number(ligne.jetons ?? 0),
-			jetonsGagnes: Number(ligne.jetons_gagnes ?? 0),
-			messages: Number(ligne.messages_comptes ?? 0),
-			niveau: Number(ligne.niveau ?? 0),
-			parti: ligne.left_at !== null,
-			provenance: provenanceDe(ligne),
-			pseudo: ligne.display_name ?? ligne.username ?? ligne.discord_id,
-			rang: Number(ligne.rang),
-			serieQuotidienne: Number(ligne.serie_quotidienne ?? 0),
-			titre: ligne.titre,
-			xp: Number(ligne.xp ?? 0),
-		})),
-		page,
-		pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
-		total,
-		tri,
-	};
+  const total = Number(compte?.total ?? 0);
+  return {
+    lignes: lignes.map(ligne => ({
+      avatarUrl: ligne.avatar_url,
+      dernierGainLe: ligne.dernier_gain_le ? new Date(ligne.dernier_gain_le).toISOString() : null,
+      discordId: ligne.discord_id,
+      jetons: Number(ligne.jetons ?? 0),
+      jetonsGagnes: Number(ligne.jetons_gagnes ?? 0),
+      messages: Number(ligne.messages_comptes ?? 0),
+      niveau: Number(ligne.niveau ?? 0),
+      parti: ligne.left_at !== null,
+      provenance: provenanceDe(ligne),
+      pseudo: ligne.display_name ?? ligne.username ?? ligne.discord_id,
+      rang: Number(ligne.rang),
+      serieQuotidienne: Number(ligne.serie_quotidienne ?? 0),
+      titre: ligne.titre,
+      xp: Number(ligne.xp ?? 0),
+    })),
+    page,
+    pages: Math.max(1, Math.ceil(total / PAR_PAGE)),
+    total,
+    tri,
+  };
 }
 
 /**
@@ -180,28 +176,28 @@ export async function classementMembres(
  * soit un minorant plutôt qu'une mesure.
  */
 function provenanceDe(ligne: Pick<LigneBrute, "a_api" | "a_classement">): ProvenanceXp {
-	if (ligne.a_api) {
-		return "api";
-	}
-	if (ligne.a_classement) {
-		return "classement";
-	}
-	return "historique";
+  if (ligne.a_api) {
+    return "api";
+  }
+  if (ligne.a_classement) {
+    return "classement";
+  }
+  return "historique";
 }
 
 export interface CouvertureImport {
-	/** Membres humains encore présents sur le serveur. */
-	humains: number;
-	/** Profils porteurs d'XP. */
-	avecXp: number;
-	/** Lignes d'archive Noctaly, toutes sources confondues. */
-	archives: number;
-	archivesApi: number;
-	archivesClassement: number;
-	/** ISO 8601 du dernier import, `null` si aucun. */
-	dernierImportLe: string | null;
-	xpTotale: number;
-	niveauMax: number;
+  /** Membres humains encore présents sur le serveur. */
+  humains: number;
+  /** Profils porteurs d'XP. */
+  avecXp: number;
+  /** Lignes d'archive Noctaly, toutes sources confondues. */
+  archives: number;
+  archivesApi: number;
+  archivesClassement: number;
+  /** ISO 8601 du dernier import, `null` si aucun. */
+  dernierImportLe: string | null;
+  xpTotale: number;
+  niveauMax: number;
 }
 
 /**
@@ -212,49 +208,43 @@ export interface CouvertureImport {
  * doit pas rendre la page blanche.
  */
 export async function couvertureImport(guildId: string): Promise<CouvertureImport> {
-	const [humains, profils, archives] = await Promise.all([
-		essayer<{ n: string }>(
-			"SELECT count(*) AS n FROM public.discord_members WHERE NOT is_bot AND left_at IS NULL",
-			[]
-		),
-		essayer<{ n: string; xp: string; niveau: number | null }>(
-			`SELECT count(*) FILTER (WHERE xp > 0) AS n,
+  const [humains, profils, archives] = await Promise.all([
+    essayer<{ n: string }>("SELECT count(*) AS n FROM public.discord_members WHERE NOT is_bot AND left_at IS NULL", []),
+    essayer<{ n: string; xp: string; niveau: number | null }>(
+      `SELECT count(*) FILTER (WHERE xp > 0) AS n,
 			        coalesce(sum(xp), 0) AS xp,
 			        max(niveau) AS niveau
 			   FROM public.bot_profils WHERE guild_id = $1`,
-			[guildId]
-		),
-		essayer<{ n: string; api: string; classement: string; dernier: string | Date | null }>(
-			`SELECT count(*) AS n,
+      [guildId],
+    ),
+    essayer<{ n: string; api: string; classement: string; dernier: string | Date | null }>(
+      `SELECT count(*) AS n,
 			        count(*) FILTER (WHERE profil_niveau ? 'totalXp') AS api,
 			        count(*) FILTER (WHERE profil_niveau ? 'userID') AS classement,
 			        max(importe_le) AS dernier
 			   FROM public.bot_import_noctaly WHERE guild_id = $1`,
-			[guildId]
-		),
-	]);
+      [guildId],
+    ),
+  ]);
 
-	return {
-		archives: Number(archives?.n ?? 0),
-		archivesApi: Number(archives?.api ?? 0),
-		archivesClassement: Number(archives?.classement ?? 0),
-		avecXp: Number(profils?.n ?? 0),
-		dernierImportLe: archives?.dernier ? new Date(archives.dernier).toISOString() : null,
-		humains: Number(humains?.n ?? 0),
-		niveauMax: Number(profils?.niveau ?? 0),
-		xpTotale: Number(profils?.xp ?? 0),
-	};
+  return {
+    archives: Number(archives?.n ?? 0),
+    archivesApi: Number(archives?.api ?? 0),
+    archivesClassement: Number(archives?.classement ?? 0),
+    avecXp: Number(profils?.n ?? 0),
+    dernierImportLe: archives?.dernier ? new Date(archives.dernier).toISOString() : null,
+    humains: Number(humains?.n ?? 0),
+    niveauMax: Number(profils?.niveau ?? 0),
+    xpTotale: Number(profils?.xp ?? 0),
+  };
 }
 
 async function essayer<T>(sql: string, params: unknown[]): Promise<T | null> {
-	try {
-		const lignes = await pgQuery<T>(sql, params);
-		return lignes[0] ?? null;
-	} catch (erreur) {
-		console.warn(
-			"[bot/membres] agrégat indisponible :",
-			erreur instanceof Error ? erreur.message : erreur
-		);
-		return null;
-	}
+  try {
+    const lignes = await pgQuery<T>(sql, params);
+    return lignes[0] ?? null;
+  } catch (erreur) {
+    console.warn("[bot/membres] agrégat indisponible :", erreur instanceof Error ? erreur.message : erreur);
+    return null;
+  }
 }

@@ -38,24 +38,24 @@ import { z } from "zod";
  * comparaison avec l'historique Noctaly fausse.
  */
 export const GAIN_XP_DEFAUT = Object.freeze({
-	/**
-	 * XP d'un message éligible — 20, fixe.
-	 *
-	 * C'est la règle de Noctaly, écrite noir sur blanc sur son classement :
-	 * « Toutes les 60 secondes, tu peux envoyer un message pour obtenir 20 XP ».
-	 * La fourchette 15–25 d'avant venait de la convention des bots du marché ;
-	 * elle rendait la progression légèrement plus rapide en moyenne et, surtout,
-	 * elle empêchait de retrouver le compte exact d'un membre. Minimum et
-	 * maximum sont donc égaux : le tirage aléatoire existe toujours dans le code
-	 * (il suffit d'écarter les deux bornes pour le réactiver), il ne tire juste
-	 * plus rien.
-	 */
-	minimum: 20,
-	maximum: 20,
-	/** Délai avant qu'un nouveau message rapporte. */
-	delaiSecondes: 60,
-	/** Jetons Kizuna offerts à chaque montée de niveau, multipliés par le niveau. */
-	jetonsParNiveau: 10,
+  /**
+   * XP d'un message éligible — 20, fixe.
+   *
+   * C'est la règle de Noctaly, écrite noir sur blanc sur son classement :
+   * « Toutes les 60 secondes, tu peux envoyer un message pour obtenir 20 XP ».
+   * La fourchette 15–25 d'avant venait de la convention des bots du marché ;
+   * elle rendait la progression légèrement plus rapide en moyenne et, surtout,
+   * elle empêchait de retrouver le compte exact d'un membre. Minimum et
+   * maximum sont donc égaux : le tirage aléatoire existe toujours dans le code
+   * (il suffit d'écarter les deux bornes pour le réactiver), il ne tire juste
+   * plus rien.
+   */
+  minimum: 20,
+  maximum: 20,
+  /** Délai avant qu'un nouveau message rapporte. */
+  delaiSecondes: 60,
+  /** Jetons Kizuna offerts à chaque montée de niveau, multipliés par le niveau. */
+  jetonsParNiveau: 10,
 } as const);
 
 // ─── Briques de schéma ──────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ const flocon = z.string().regex(/^\d{15,25}$/, "identifiant Discord attendu");
 
 /** Liste de flocons, dédoublonnée — deux fois le même rôle n'a aucun sens. */
 const flocons = z
-	.array(flocon)
-	.default([])
-	.transform((liste) => [...new Set(liste)]);
+  .array(flocon)
+  .default([])
+  .transform(liste => [...new Set(liste)]);
 
 /**
  * Où annoncer une montée de niveau.
@@ -89,68 +89,68 @@ export type LieuAnnonce = (typeof LIEUX_ANNONCE)[number];
 
 /** Libellés d'interface des lieux d'annonce de niveau. */
 export const LIBELLES_LIEU_ANNONCE: Readonly<Record<LieuAnnonce, string>> = Object.freeze({
-	salon: "Dans un salon dédié",
-	place: "Dans le salon du message",
-	prive: "En message privé",
-	aucune: "Aucune annonce",
+  salon: "Dans un salon dédié",
+  place: "Dans le salon du message",
+  prive: "En message privé",
+  aucune: "Aucune annonce",
 });
 
 const reglagesNiveaux = z
-	.object({
-		actif: z.boolean().default(true),
-		/** Salon d'annonce quand `annonce = "salon"`. */
-		salonAnnonce: flocon.nullable().default(null),
-		annonce: z.enum(LIEUX_ANNONCE).default("aucune"),
-		/**
-		 * N'annoncer QUE les niveaux multiples de cette valeur.
-		 *
-		 * Sans ce filtre, un membre actif déclenche une annonce tous les deux ou
-		 * trois jours en début de courbe — et deux mille membres actifs, c'est un
-		 * salon inutilisable. À 5, on ne fête que ce qui se fête : les paliers
-		 * ronds. `1` rétablit l'annonce à chaque niveau.
-		 */
-		palierAnnonce: z.number().int().min(1).max(100).default(5),
-		/**
-		 * Annoncer aussi les CHANGEMENTS DE RANG (Normal → Expérimenté → Héros →
-		 * BASARA), même hors palier. Trois fois dans une vie de membre : c'est le
-		 * genre d'événement qui mérite un message.
-		 */
-		annoncerRang: z.boolean().default(true),
-		/** Salons qui ne rapportent aucune XP (bots, journaux, vitrines). */
-		salonsExclus: flocons,
-		/** Rôles qui ne gagnent pas d'XP (bots, comptes de service). */
-		rolesExclus: flocons,
-		gain: z
-			.object({
-				minimum: z.number().int().min(0).max(1_000).default(GAIN_XP_DEFAUT.minimum),
-				maximum: z.number().int().min(0).max(1_000).default(GAIN_XP_DEFAUT.maximum),
-				delaiSecondes: z.number().int().min(0).max(3_600).default(GAIN_XP_DEFAUT.delaiSecondes),
-			})
-			.prefault({}),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    /** Salon d'annonce quand `annonce = "salon"`. */
+    salonAnnonce: flocon.nullable().default(null),
+    annonce: z.enum(LIEUX_ANNONCE).default("aucune"),
+    /**
+     * N'annoncer QUE les niveaux multiples de cette valeur.
+     *
+     * Sans ce filtre, un membre actif déclenche une annonce tous les deux ou
+     * trois jours en début de courbe — et deux mille membres actifs, c'est un
+     * salon inutilisable. À 5, on ne fête que ce qui se fête : les paliers
+     * ronds. `1` rétablit l'annonce à chaque niveau.
+     */
+    palierAnnonce: z.number().int().min(1).max(100).default(5),
+    /**
+     * Annoncer aussi les CHANGEMENTS DE RANG (Normal → Expérimenté → Héros →
+     * BASARA), même hors palier. Trois fois dans une vie de membre : c'est le
+     * genre d'événement qui mérite un message.
+     */
+    annoncerRang: z.boolean().default(true),
+    /** Salons qui ne rapportent aucune XP (bots, journaux, vitrines). */
+    salonsExclus: flocons,
+    /** Rôles qui ne gagnent pas d'XP (bots, comptes de service). */
+    rolesExclus: flocons,
+    gain: z
+      .object({
+        minimum: z.number().int().min(0).max(1_000).default(GAIN_XP_DEFAUT.minimum),
+        maximum: z.number().int().min(0).max(1_000).default(GAIN_XP_DEFAUT.maximum),
+        delaiSecondes: z.number().int().min(0).max(3_600).default(GAIN_XP_DEFAUT.delaiSecondes),
+      })
+      .prefault({}),
+  })
+  .prefault({});
 
 const reglagesTickets = z
-	.object({
-		actif: z.boolean().default(true),
-		/** Salon qui porte le panneau d'ouverture, et parent des fils de tickets. */
-		salonPanneau: flocon.nullable().default(null),
-		/** Salon où part la carte de fermeture. */
-		salonHistorique: flocon.nullable().default(null),
-		/** Catégorie de salons « Support » — utile en mode `salon` seulement. */
-		categorieSupport: flocon.nullable().default(null),
-		/** Rôles qui prennent en charge les tickets ordinaires. */
-		rolesStaff: flocons,
-		/** Rôles qui voient AUSSI les tickets sensibles (signalements). */
-		rolesDirection: flocons,
-		/**
-		 * `fil` reprend le fonctionnement en place (ticketsbot crée des fils) ;
-		 * `salon` crée un vrai salon dans la catégorie Support. Le défaut est `fil` :
-		 * un serveur est plafonné à 500 salons, jamais aux fils.
-		 */
-		mode: z.enum(["fil", "salon"]).default("fil"),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    /** Salon qui porte le panneau d'ouverture, et parent des fils de tickets. */
+    salonPanneau: flocon.nullable().default(null),
+    /** Salon où part la carte de fermeture. */
+    salonHistorique: flocon.nullable().default(null),
+    /** Catégorie de salons « Support » — utile en mode `salon` seulement. */
+    categorieSupport: flocon.nullable().default(null),
+    /** Rôles qui prennent en charge les tickets ordinaires. */
+    rolesStaff: flocons,
+    /** Rôles qui voient AUSSI les tickets sensibles (signalements). */
+    rolesDirection: flocons,
+    /**
+     * `fil` reprend le fonctionnement en place (ticketsbot crée des fils) ;
+     * `salon` crée un vrai salon dans la catégorie Support. Le défaut est `fil` :
+     * un serveur est plafonné à 500 salons, jamais aux fils.
+     */
+    mode: z.enum(["fil", "salon"]).default("fil"),
+  })
+  .prefault({});
 
 /**
  * Où souhaiter la bienvenue.
@@ -165,33 +165,33 @@ export type LieuBienvenue = (typeof LIEUX_BIENVENUE)[number];
 
 /** Libellés d'interface des lieux de bienvenue. */
 export const LIBELLES_LIEU_BIENVENUE: Readonly<Record<LieuBienvenue, string>> = Object.freeze({
-	salon: "Dans un salon dédié",
-	prive: "En message privé",
-	aucune: "Aucun message",
+  salon: "Dans un salon dédié",
+  prive: "En message privé",
+  aucune: "Aucun message",
 });
 
 const reglagesAccueil = z
-	.object({
-		actif: z.boolean().default(true),
-		lieu: z.enum(LIEUX_BIENVENUE).default("aucune"),
-		/** Salon d'accueil quand `lieu = "salon"`. */
-		salon: flocon.nullable().default(null),
-		/**
-		 * Texte du message. `{membre}` est remplacé par la mention, `{serveur}` par
-		 * le nom du serveur, `{compte}` par le nombre de membres.
-		 * `null` = le texte par défaut du bot.
-		 */
-		texte: z.string().max(1_000).nullable().default(null),
-		/**
-		 * Rôle posé à l'arrivée. Il passe par la MÊME garde stricte que les
-		 * récompenses de niveau : un rôle d'arrivée est distribué automatiquement à
-		 * tout le monde, c'est la surface la plus large qui existe.
-		 */
-		roleArrivee: flocon.nullable().default(null),
-		/** Joindre la carte image d'accueil. */
-		carte: z.boolean().default(true),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    lieu: z.enum(LIEUX_BIENVENUE).default("aucune"),
+    /** Salon d'accueil quand `lieu = "salon"`. */
+    salon: flocon.nullable().default(null),
+    /**
+     * Texte du message. `{membre}` est remplacé par la mention, `{serveur}` par
+     * le nom du serveur, `{compte}` par le nombre de membres.
+     * `null` = le texte par défaut du bot.
+     */
+    texte: z.string().max(1_000).nullable().default(null),
+    /**
+     * Rôle posé à l'arrivée. Il passe par la MÊME garde stricte que les
+     * récompenses de niveau : un rôle d'arrivée est distribué automatiquement à
+     * tout le monde, c'est la surface la plus large qui existe.
+     */
+    roleArrivee: flocon.nullable().default(null),
+    /** Joindre la carte image d'accueil. */
+    carte: z.boolean().default(true),
+  })
+  .prefault({});
 
 /**
  * Boîte à suggestions.
@@ -202,19 +202,19 @@ const reglagesAccueil = z
  * toute seule.
  */
 const reglagesSuggestions = z
-	.object({
-		actif: z.boolean().default(true),
-		salon: flocon.nullable().default(null),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    salon: flocon.nullable().default(null),
+  })
+  .prefault({});
 
 const reglagesKizuna = z
-	.object({
-		actif: z.boolean().default(true),
-		/** Salon où annoncer les recrutements remarquables (Héros, BASARA). */
-		salonAnnonce: flocon.nullable().default(null),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    /** Salon où annoncer les recrutements remarquables (Héros, BASARA). */
+    salonAnnonce: flocon.nullable().default(null),
+  })
+  .prefault({});
 
 /**
  * Journal de modération — la trace, là où le staff la lit.
@@ -232,67 +232,59 @@ const reglagesKizuna = z
  * pas.
  */
 const reglagesModeration = z
-	.object({
-		actif: z.boolean().default(true),
-		/** Salon où publier chaque action de modération. `null` = rien n'est publié. */
-		salonJournal: flocon.nullable().default(null),
-	})
-	.prefault({});
+  .object({
+    actif: z.boolean().default(true),
+    /** Salon où publier chaque action de modération. `null` = rien n'est publié. */
+    salonJournal: flocon.nullable().default(null),
+  })
+  .prefault({});
 
 export const SchemaReglages = z
-	.object({
-		niveaux: reglagesNiveaux,
-		tickets: reglagesTickets,
-		kizuna: reglagesKizuna,
-		accueil: reglagesAccueil,
-		suggestions: reglagesSuggestions,
-		moderation: reglagesModeration,
-	})
-	.prefault({});
+  .object({
+    niveaux: reglagesNiveaux,
+    tickets: reglagesTickets,
+    kizuna: reglagesKizuna,
+    accueil: reglagesAccueil,
+    suggestions: reglagesSuggestions,
+    moderation: reglagesModeration,
+  })
+  .prefault({});
 
 export type ReglagesCommunaute = z.infer<typeof SchemaReglages>;
 
 /** Les six sections réglables, dans l'ordre d'affichage de l'interface. */
-export const SECTIONS_REGLAGES = [
-	"niveaux",
-	"tickets",
-	"moderation",
-	"accueil",
-	"suggestions",
-	"kizuna",
-] as const;
+export const SECTIONS_REGLAGES = ["niveaux", "tickets", "moderation", "accueil", "suggestions", "kizuna"] as const;
 
 export type SectionReglages = (typeof SECTIONS_REGLAGES)[number];
 
 /** Libellé et rôle de chaque section — la même phrase dans Discord et sur le site. */
-export const LIBELLES_SECTIONS: Readonly<
-	Record<SectionReglages, { readonly titre: string; readonly role: string }>
-> = Object.freeze({
-	niveaux: {
-		titre: "Niveaux",
-		role: "Expérience gagnée par message, annonces de montée et exclusions.",
-	},
-	tickets: {
-		titre: "Tickets",
-		role: "Panneau d'ouverture, prise en charge et historique des tickets.",
-	},
-	moderation: {
-		titre: "Modération",
-		role: "Salon où publier les avertissements, exclusions et bannissements.",
-	},
-	accueil: {
-		titre: "Accueil",
-		role: "Message de bienvenue et rôle posé à l'arrivée d'un membre.",
-	},
-	suggestions: {
-		titre: "Suggestions",
-		role: "Boîte à suggestions publique et salon de dépôt.",
-	},
-	kizuna: {
-		titre: "Jetons Kizuna",
-		role: "Monnaie de communauté et annonce des recrutements remarquables.",
-	},
-});
+export const LIBELLES_SECTIONS: Readonly<Record<SectionReglages, { readonly titre: string; readonly role: string }>> =
+  Object.freeze({
+    niveaux: {
+      titre: "Niveaux",
+      role: "Expérience gagnée par message, annonces de montée et exclusions.",
+    },
+    tickets: {
+      titre: "Tickets",
+      role: "Panneau d'ouverture, prise en charge et historique des tickets.",
+    },
+    moderation: {
+      titre: "Modération",
+      role: "Salon où publier les avertissements, exclusions et bannissements.",
+    },
+    accueil: {
+      titre: "Accueil",
+      role: "Message de bienvenue et rôle posé à l'arrivée d'un membre.",
+    },
+    suggestions: {
+      titre: "Suggestions",
+      role: "Boîte à suggestions publique et salon de dépôt.",
+    },
+    kizuna: {
+      titre: "Jetons Kizuna",
+      role: "Monnaie de communauté et annonce des recrutements remarquables.",
+    },
+  });
 
 /** Le document par défaut — celui d'une guilde qui n'a jamais rien réglé. */
 export const REGLAGES_DEFAUT: ReglagesCommunaute = SchemaReglages.parse({});
@@ -306,17 +298,15 @@ export const REGLAGES_DEFAUT: ReglagesCommunaute = SchemaReglages.parse({});
  * figure du membre.
  */
 export function lireReglages(brut: unknown): ReglagesCommunaute {
-	const resultat = SchemaReglages.safeParse(brut ?? {});
-	if (resultat.success) {
-		return resultat.data;
-	}
-	console.warn(
-		"[reglages] document illisible, retour aux défauts :",
-		resultat.error.issues
-			.map((probleme) => `${probleme.path.join(".")} ${probleme.message}`)
-			.join(" · ")
-	);
-	return REGLAGES_DEFAUT;
+  const resultat = SchemaReglages.safeParse(brut ?? {});
+  if (resultat.success) {
+    return resultat.data;
+  }
+  console.warn(
+    "[reglages] document illisible, retour aux défauts :",
+    resultat.error.issues.map(probleme => `${probleme.path.join(".")} ${probleme.message}`).join(" · "),
+  );
+  return REGLAGES_DEFAUT;
 }
 
 /**
@@ -325,7 +315,7 @@ export function lireReglages(brut: unknown): ReglagesCommunaute {
  * valeur qui sera silencieusement ignorée à la relecture.
  */
 export function validerReglages(brut: unknown): ReglagesCommunaute {
-	return SchemaReglages.parse(brut);
+  return SchemaReglages.parse(brut);
 }
 
 /**
@@ -337,11 +327,11 @@ export function validerReglages(brut: unknown): ReglagesCommunaute {
  * Un test vérifie que les deux ne divergent pas.
  */
 export type ModificationReglages = {
-	[K in SectionReglages]?: K extends "niveaux"
-		? Partial<Omit<ReglagesCommunaute["niveaux"], "gain">> & {
-				gain?: Partial<ReglagesCommunaute["niveaux"]["gain"]>;
-			}
-		: Partial<ReglagesCommunaute[K]>;
+  [K in SectionReglages]?: K extends "niveaux"
+    ? Partial<Omit<ReglagesCommunaute["niveaux"], "gain">> & {
+        gain?: Partial<ReglagesCommunaute["niveaux"]["gain"]>;
+      }
+    : Partial<ReglagesCommunaute[K]>;
 };
 
 /**
@@ -358,23 +348,20 @@ export type ModificationReglages = {
  * anti-spam enverrait `{ gain: { delaiSecondes: 90 } }` et remettrait la
  * fourchette d'XP à 15–25 sans que personne ne l'ait demandé.
  */
-export function fusionnerReglages(
-	actuels: ReglagesCommunaute,
-	modification: ModificationReglages
-): ReglagesCommunaute {
-	const { gain: gainModifie, ...niveauxModifies } = modification.niveaux ?? {};
-	return validerReglages({
-		accueil: { ...actuels.accueil, ...modification.accueil },
-		suggestions: { ...actuels.suggestions, ...modification.suggestions },
-		kizuna: { ...actuels.kizuna, ...modification.kizuna },
-		niveaux: {
-			...actuels.niveaux,
-			...niveauxModifies,
-			gain: { ...actuels.niveaux.gain, ...gainModifie },
-		},
-		tickets: { ...actuels.tickets, ...modification.tickets },
-		moderation: { ...actuels.moderation, ...modification.moderation },
-	});
+export function fusionnerReglages(actuels: ReglagesCommunaute, modification: ModificationReglages): ReglagesCommunaute {
+  const { gain: gainModifie, ...niveauxModifies } = modification.niveaux ?? {};
+  return validerReglages({
+    accueil: { ...actuels.accueil, ...modification.accueil },
+    suggestions: { ...actuels.suggestions, ...modification.suggestions },
+    kizuna: { ...actuels.kizuna, ...modification.kizuna },
+    niveaux: {
+      ...actuels.niveaux,
+      ...niveauxModifies,
+      gain: { ...actuels.niveaux.gain, ...gainModifie },
+    },
+    tickets: { ...actuels.tickets, ...modification.tickets },
+    moderation: { ...actuels.moderation, ...modification.moderation },
+  });
 }
 
 /**
@@ -397,12 +384,12 @@ export function fusionnerReglages(
  * place. Vérifié : `{ niveaux: { actif: false } }` ressort tel quel.
  */
 function partielSansDefauts(objet: z.ZodObject): z.ZodObject {
-	const forme: Record<string, z.ZodType> = {};
-	for (const [clef, champ] of Object.entries(objet.shape as Record<string, z.ZodType>)) {
-		const nu = deballer(champ);
-		forme[clef] = (nu instanceof z.ZodObject ? partielSansDefauts(nu) : nu).optional();
-	}
-	return z.object(forme).strict();
+  const forme: Record<string, z.ZodType> = {};
+  for (const [clef, champ] of Object.entries(objet.shape as Record<string, z.ZodType>)) {
+    const nu = deballer(champ);
+    forme[clef] = (nu instanceof z.ZodObject ? partielSansDefauts(nu) : nu).optional();
+  }
+  return z.object(forme).strict();
 }
 
 /**
@@ -418,14 +405,14 @@ function partielSansDefauts(objet: z.ZodObject): z.ZodObject {
  * vouloir éviter.
  */
 function deballer(champ: z.ZodType): z.ZodType {
-	if (champ instanceof z.ZodDefault || champ instanceof z.ZodPrefault) {
-		return deballer(champ.unwrap() as z.ZodType);
-	}
-	if (champ instanceof z.ZodPipe) {
-		const entree = deballer(champ.in as z.ZodType);
-		return entree.pipe(champ.out as z.ZodType) as z.ZodType;
-	}
-	return champ;
+  if (champ instanceof z.ZodDefault || champ instanceof z.ZodPrefault) {
+    return deballer(champ.unwrap() as z.ZodType);
+  }
+  if (champ instanceof z.ZodPipe) {
+    const entree = deballer(champ.in as z.ZodType);
+    return entree.pipe(champ.out as z.ZodType) as z.ZodType;
+  }
+  return champ;
 }
 
 /**
@@ -437,15 +424,15 @@ function deballer(champ: z.ZodType): z.ZodType {
  * c'est-à-dire à n'importe quel client porteur d'une session administrateur.
  */
 export const SchemaModificationReglages = z
-	.object({
-		niveaux: partielSansDefauts(reglagesNiveaux.unwrap()).optional(),
-		tickets: partielSansDefauts(reglagesTickets.unwrap()).optional(),
-		kizuna: partielSansDefauts(reglagesKizuna.unwrap()).optional(),
-		accueil: partielSansDefauts(reglagesAccueil.unwrap()).optional(),
-		suggestions: partielSansDefauts(reglagesSuggestions.unwrap()).optional(),
-		moderation: partielSansDefauts(reglagesModeration.unwrap()).optional(),
-	})
-	.strict();
+  .object({
+    niveaux: partielSansDefauts(reglagesNiveaux.unwrap()).optional(),
+    tickets: partielSansDefauts(reglagesTickets.unwrap()).optional(),
+    kizuna: partielSansDefauts(reglagesKizuna.unwrap()).optional(),
+    accueil: partielSansDefauts(reglagesAccueil.unwrap()).optional(),
+    suggestions: partielSansDefauts(reglagesSuggestions.unwrap()).optional(),
+    moderation: partielSansDefauts(reglagesModeration.unwrap()).optional(),
+  })
+  .strict();
 
 /**
  * Les réglages sont-ils exploitables pour les tickets ?
@@ -454,20 +441,20 @@ export const SchemaModificationReglages = z
  * savoir CE QU'IL RESTE à poser, pas seulement que ça ne marche pas.
  */
 export function manquesTickets(reglages: ReglagesCommunaute): string[] {
-	const manques: string[] = [];
-	if (!reglages.tickets.salonPanneau) {
-		manques.push("le salon du panneau (`salon-panneau`)");
-	}
-	if (!reglages.tickets.salonHistorique) {
-		manques.push("le salon d'historique (`salon-historique`)");
-	}
-	if (reglages.tickets.rolesStaff.length === 0 && reglages.tickets.rolesDirection.length === 0) {
-		manques.push("au moins un rôle de prise en charge (`role-staff`)");
-	}
-	if (reglages.tickets.mode === "salon" && !reglages.tickets.categorieSupport) {
-		manques.push("la catégorie Support (`categorie`), obligatoire en mode salon");
-	}
-	return manques;
+  const manques: string[] = [];
+  if (!reglages.tickets.salonPanneau) {
+    manques.push("le salon du panneau (`salon-panneau`)");
+  }
+  if (!reglages.tickets.salonHistorique) {
+    manques.push("le salon d'historique (`salon-historique`)");
+  }
+  if (reglages.tickets.rolesStaff.length === 0 && reglages.tickets.rolesDirection.length === 0) {
+    manques.push("au moins un rôle de prise en charge (`role-staff`)");
+  }
+  if (reglages.tickets.mode === "salon" && !reglages.tickets.categorieSupport) {
+    manques.push("la catégorie Support (`categorie`), obligatoire en mode salon");
+  }
+  return manques;
 }
 
 /**
@@ -476,48 +463,46 @@ export function manquesTickets(reglages: ReglagesCommunaute): string[] {
  * Une section sans manque est prête ; une section désactivée n'a aucun manque
  * (on ne réclame pas un salon d'annonce à quelqu'un qui a coupé les annonces).
  */
-export function manquesParSection(
-	reglages: ReglagesCommunaute
-): Readonly<Record<SectionReglages, string[]>> {
-	const niveaux: string[] = [];
-	if (reglages.niveaux.actif) {
-		if (reglages.niveaux.annonce === "salon" && !reglages.niveaux.salonAnnonce) {
-			manquePousse(niveaux, "le salon d'annonce des montées de niveau");
-		}
-		if (reglages.niveaux.gain.maximum < reglages.niveaux.gain.minimum) {
-			manquePousse(niveaux, "un gain maximum au moins égal au minimum");
-		}
-	}
+export function manquesParSection(reglages: ReglagesCommunaute): Readonly<Record<SectionReglages, string[]>> {
+  const niveaux: string[] = [];
+  if (reglages.niveaux.actif) {
+    if (reglages.niveaux.annonce === "salon" && !reglages.niveaux.salonAnnonce) {
+      manquePousse(niveaux, "le salon d'annonce des montées de niveau");
+    }
+    if (reglages.niveaux.gain.maximum < reglages.niveaux.gain.minimum) {
+      manquePousse(niveaux, "un gain maximum au moins égal au minimum");
+    }
+  }
 
-	const accueil: string[] = [];
-	if (reglages.accueil.actif && reglages.accueil.lieu === "salon" && !reglages.accueil.salon) {
-		manquePousse(accueil, "le salon d'accueil");
-	}
+  const accueil: string[] = [];
+  if (reglages.accueil.actif && reglages.accueil.lieu === "salon" && !reglages.accueil.salon) {
+    manquePousse(accueil, "le salon d'accueil");
+  }
 
-	const suggestions: string[] = [];
-	if (reglages.suggestions.actif && !reglages.suggestions.salon) {
-		manquePousse(suggestions, "le salon de dépôt des suggestions");
-	}
+  const suggestions: string[] = [];
+  if (reglages.suggestions.actif && !reglages.suggestions.salon) {
+    manquePousse(suggestions, "le salon de dépôt des suggestions");
+  }
 
-	const moderation: string[] = [];
-	if (reglages.moderation.actif && !reglages.moderation.salonJournal) {
-		manquePousse(moderation, "le salon du journal de modération");
-	}
+  const moderation: string[] = [];
+  if (reglages.moderation.actif && !reglages.moderation.salonJournal) {
+    manquePousse(moderation, "le salon du journal de modération");
+  }
 
-	return Object.freeze({
-		niveaux,
-		moderation,
-		tickets: reglages.tickets.actif ? manquesTickets(reglages) : [],
-		accueil,
-		suggestions,
-		// Le salon d'annonce des recrutements est facultatif : sans lui, les
-		// recrutements remarquables ne sont simplement pas annoncés.
-		kizuna: [],
-	});
+  return Object.freeze({
+    niveaux,
+    moderation,
+    tickets: reglages.tickets.actif ? manquesTickets(reglages) : [],
+    accueil,
+    suggestions,
+    // Le salon d'annonce des recrutements est facultatif : sans lui, les
+    // recrutements remarquables ne sont simplement pas annoncés.
+    kizuna: [],
+  });
 }
 
 function manquePousse(liste: string[], texte: string): void {
-	liste.push(texte);
+  liste.push(texte);
 }
 
 // ─── Profils du bot ─────────────────────────────────────────────────────────
@@ -529,7 +514,7 @@ export type NomProfilBot = (typeof NOMS_PROFILS_BOT)[number];
 
 /** Vrai si la chaîne est un nom de profil connu. */
 export function estNomProfilBot(valeur: unknown): valeur is NomProfilBot {
-	return typeof valeur === "string" && (NOMS_PROFILS_BOT as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (NOMS_PROFILS_BOT as readonly string[]).includes(valeur);
 }
 
 /**
@@ -541,18 +526,18 @@ export function estNomProfilBot(valeur: unknown): valeur is NomProfilBot {
  * dans un bundle navigateur.
  */
 export interface ProfilBotPublic {
-	readonly nom: NomProfilBot;
-	readonly titre: string;
-	/** Unité systemd qui fait tourner ce profil. */
-	readonly unite: string;
-	/** Couleur d'accent de la marque, en hexadécimal CSS. */
-	readonly couleurHex: `#${string}`;
-	/** Domaine que le profil représente. */
-	readonly domaine: string;
-	/** Port de son serveur d'administration en boucle locale. */
-	readonly portAdmin: number;
-	/** Ce que ce profil sert, en une phrase. */
-	readonly role: string;
+  readonly nom: NomProfilBot;
+  readonly titre: string;
+  /** Unité systemd qui fait tourner ce profil. */
+  readonly unite: string;
+  /** Couleur d'accent de la marque, en hexadécimal CSS. */
+  readonly couleurHex: `#${string}`;
+  /** Domaine que le profil représente. */
+  readonly domaine: string;
+  /** Port de son serveur d'administration en boucle locale. */
+  readonly portAdmin: number;
+  /** Ce que ce profil sert, en une phrase. */
+  readonly role: string;
 }
 
 /**
@@ -564,111 +549,109 @@ export interface ProfilBotPublic {
  * bot.
  */
 export const PROFILS_BOT: Readonly<Record<NomProfilBot, ProfilBotPublic>> = Object.freeze({
-	rg: Object.freeze({
-		nom: "rg",
-		titre: "Rose Griffon",
-		unite: "rg-bot.service",
-		couleurHex: "#a14b3f",
-		domaine: "rosegriffon.fr",
-		portAdmin: 3007,
-		role: "communauté, modération, tickets, niveaux et administration du serveur",
-	}),
-	azalee: Object.freeze({
-		nom: "azalee",
-		titre: "Azalée",
-		unite: "azalee-bot.service",
-		couleurHex: "#F89C5A",
-		domaine: "azalee.rosegriffon.fr",
-		portAdmin: 3008,
-		role: "données du jeu, fichiers extraits, recherche sémantique et annonces X",
-	}),
+  rg: Object.freeze({
+    nom: "rg",
+    titre: "Rose Griffon",
+    unite: "rg-bot.service",
+    couleurHex: "#a14b3f",
+    domaine: "rosegriffon.fr",
+    portAdmin: 3007,
+    role: "communauté, modération, tickets, niveaux et administration du serveur",
+  }),
+  azalee: Object.freeze({
+    nom: "azalee",
+    titre: "Azalée",
+    unite: "azalee-bot.service",
+    couleurHex: "#F89C5A",
+    domaine: "azalee.rosegriffon.fr",
+    portAdmin: 3008,
+    role: "données du jeu, fichiers extraits, recherche sémantique et annonces X",
+  }),
 });
 
-export const TOUS_LES_PROFILS_BOT: readonly ProfilBotPublic[] = Object.freeze(
-	Object.values(PROFILS_BOT)
-);
+export const TOUS_LES_PROFILS_BOT: readonly ProfilBotPublic[] = Object.freeze(Object.values(PROFILS_BOT));
 
 // ─── État d'exécution, tel que le serveur d'administration du bot le rend ────
 
 /** Une guilde où le bot est présent. */
 export interface GuildeBot {
-	readonly id: string;
-	readonly nom: string;
-	readonly membres: number;
-	/** Les commandes du profil y sont-elles enregistrées ? */
-	readonly servie: boolean;
-	readonly icone: string | null;
+  readonly id: string;
+  readonly nom: string;
+  readonly membres: number;
+  /** Les commandes du profil y sont-elles enregistrées ? */
+  readonly servie: boolean;
+  readonly icone: string | null;
 }
 
 /** Une option de slash command, telle que Discord la décrit. */
 export interface OptionCommandeBot {
-	readonly nom: string;
-	readonly description: string;
-	readonly type: string;
-	readonly requise: boolean;
+  readonly nom: string;
+  readonly description: string;
+  readonly type: string;
+  readonly requise: boolean;
 }
 
 /** Une commande — racine, sous-groupe ou sous-commande, à plat. */
 export interface CommandeBot {
-	/** Chemin complet tel qu'un membre le tape, sans la barre oblique. */
-	readonly chemin: string;
-	/** Nom de la commande racine. */
-	readonly racine: string;
-	/** Sous-groupe, quand il y en a un. */
-	readonly groupe: string | null;
-	/** Nom de la sous-commande, quand il y en a une. */
-	readonly sousCommande: string | null;
-	readonly description: string;
-	readonly options: readonly OptionCommandeBot[];
-	/** Profil qui sert cette commande. */
-	readonly profil: NomProfilBot;
-	/** Fichier source, relatif à `apps/bot/src`. */
-	readonly source: string | null;
-	/**
-	 * Réservée au staff ?
-	 *
-	 * Déduit de la racine (`administration`, `staff`) : c'est la garde
-	 * `requireRgAdmin` qui décide réellement, mais l'interface doit pouvoir
-	 * distinguer une commande publique d'une commande d'exploitation.
-	 */
-	readonly reservee: boolean;
+  /** Chemin complet tel qu'un membre le tape, sans la barre oblique. */
+  readonly chemin: string;
+  /** Nom de la commande racine. */
+  readonly racine: string;
+  /** Sous-groupe, quand il y en a un. */
+  readonly groupe: string | null;
+  /** Nom de la sous-commande, quand il y en a une. */
+  readonly sousCommande: string | null;
+  readonly description: string;
+  readonly options: readonly OptionCommandeBot[];
+  /** Profil qui sert cette commande. */
+  readonly profil: NomProfilBot;
+  /** Fichier source, relatif à `apps/bot/src`. */
+  readonly source: string | null;
+  /**
+   * Réservée au staff ?
+   *
+   * Déduit de la racine (`administration`, `staff`) : c'est la garde
+   * `requireRgAdmin` qui décide réellement, mais l'interface doit pouvoir
+   * distinguer une commande publique d'une commande d'exploitation.
+   */
+  readonly reservee: boolean;
 }
 
 /** Réponse de `GET /etat` du serveur d'administration du bot. */
 export interface EtatBot {
-	readonly profil: NomProfilBot;
-	readonly titre: string;
-	/** Étiquette Discord du bot connecté (`nom#0000`), `null` avant `ready`. */
-	readonly etiquette: string | null;
-	readonly identifiantApplication: string | null;
-	/** Secondes depuis le démarrage du processus. */
-	readonly uptimeSecondes: number;
-	/** Latence de la passerelle Discord, en millisecondes. `-1` avant le premier battement. */
-	readonly latenceMs: number;
-	readonly guildes: readonly GuildeBot[];
-	/** Guildes configurées mais non rejointes — la panne la plus silencieuse. */
-	readonly guildesAbsentes: readonly string[];
-	readonly nombreCommandes: number;
-	readonly modulesCharges: number;
-	/** Mémoire résidente du processus, en octets. */
-	readonly memoireOctets: number;
-	/** ISO 8601. */
-	readonly mesureLe: string;
+  readonly profil: NomProfilBot;
+  readonly titre: string;
+  /** Étiquette Discord du bot connecté (`nom#0000`), `null` avant `ready`. */
+  readonly etiquette: string | null;
+  readonly identifiantApplication: string | null;
+  /** Secondes depuis le démarrage du processus. */
+  readonly uptimeSecondes: number;
+  /** Latence de la passerelle Discord, en millisecondes. `-1` avant le premier battement. */
+  readonly latenceMs: number;
+  readonly guildes: readonly GuildeBot[];
+  /** Guildes configurées mais non rejointes — la panne la plus silencieuse. */
+  readonly guildesAbsentes: readonly string[];
+  readonly nombreCommandes: number;
+  readonly modulesCharges: number;
+  /** Mémoire résidente du processus, en octets. */
+  readonly memoireOctets: number;
+  /** ISO 8601. */
+  readonly mesureLe: string;
 }
 
 /** État agrégé des deux profils, tel que le site l'affiche. */
 export interface EtatBotAgrege {
-	readonly profil: ProfilBotPublic;
-	readonly joignable: boolean;
-	readonly etat: EtatBot | null;
-	readonly erreur: string | null;
-	readonly latenceSondeMs: number;
+  readonly profil: ProfilBotPublic;
+  readonly joignable: boolean;
+  readonly etat: EtatBot | null;
+  readonly erreur: string | null;
+  readonly latenceSondeMs: number;
 }
 
 /** Réponse de `GET /sante` — volontairement minuscule, sondée toutes les minutes. */
 export interface SanteBot {
-	readonly ok: boolean;
-	readonly profil: NomProfilBot;
-	readonly pret: boolean;
-	readonly uptimeSecondes: number;
+  readonly ok: boolean;
+  readonly profil: NomProfilBot;
+  readonly pret: boolean;
+  readonly uptimeSecondes: number;
 }

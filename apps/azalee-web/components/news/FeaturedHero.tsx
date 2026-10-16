@@ -39,18 +39,12 @@ function FeaturedMain({ item }: { item: FeedItem }) {
             <Badge className="bg-primary text-on-primary rounded-lg border-none px-2.5 py-0.5 text-[10px] md:text-xs font-bold uppercase tracking-wider">
               {categoryLabel}
             </Badge>
-            <span className="text-white/70 text-xs">
-              {formatDistanceToNow(date, { addSuffix: true, locale: fr })}
-            </span>
+            <span className="text-white/70 text-xs">{formatDistanceToNow(date, { addSuffix: true, locale: fr })}</span>
           </div>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight line-clamp-3 mb-2">
             {item.title}
           </h2>
-          {item.excerpt && (
-            <p className="text-sm md:text-base text-white/70 line-clamp-2 max-w-2xl">
-              {item.excerpt}
-            </p>
-          )}
+          {item.excerpt && <p className="text-sm md:text-base text-white/70 line-clamp-2 max-w-2xl">{item.excerpt}</p>}
           <span className="inline-flex items-center gap-1.5 text-sm text-white/60 mt-3 group-hover:text-primary transition-colors">
             <span className="font-medium">Lire l&apos;article</span>
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
@@ -110,7 +104,7 @@ export function FeaturedHero({ articles }: { articles: FeedItem[] }) {
       <FeaturedMain item={main} />
       {secondary.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {secondary.map((item) => (
+          {secondary.map(item => (
             <FeaturedSecondary key={item.id} item={item} />
           ))}
         </div>

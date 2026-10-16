@@ -21,38 +21,38 @@
  * sur le repli — une valeur plausible et fausse, le pire des deux mondes.
  */
 export function toNumber(value: unknown): number | null {
-	if (value === null || value === undefined || typeof value === "boolean") return null;
-	if (typeof value === "string" && value.trim() === "") return null;
-	if (typeof value === "object") return null;
+  if (value === null || value === undefined || typeof value === "boolean") return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  if (typeof value === "object") return null;
 
-	const parsed = Number(value);
-	return Number.isFinite(parsed) ? parsed : null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /** Nombre fini, ou `fallback`. Neutralise `NaN`, `±Infinity`, `null` et `""`. */
 export function toFinite(value: unknown, fallback = 0): number {
-	return toNumber(value) ?? fallback;
+  return toNumber(value) ?? fallback;
 }
 
 /** Entier `>= 0` (un décompte, une taille, un total). */
 export function toCount(value: unknown, fallback = 0): number {
-	const parsed = toNumber(value);
-	if (parsed === null) return fallback;
-	return Math.max(0, Math.floor(parsed));
+  const parsed = toNumber(value);
+  if (parsed === null) return fallback;
+  return Math.max(0, Math.floor(parsed));
 }
 
 /** Entier `>= minimum` (un numéro de page, un nombre de manches). */
 export function toPositiveInt(value: unknown, fallback = 1, minimum = 1): number {
-	const parsed = toNumber(value);
-	if (parsed === null) return fallback;
-	return Math.max(minimum, Math.floor(parsed));
+  const parsed = toNumber(value);
+  if (parsed === null) return fallback;
+  return Math.max(minimum, Math.floor(parsed));
 }
 
 /** Ramène `value` dans `[min, max]`, `NaN` compris. */
 export function clamp(value: unknown, min: number, max: number): number {
-	const parsed = toNumber(value);
-	if (parsed === null) return min;
-	return Math.min(max, Math.max(min, parsed));
+  const parsed = toNumber(value);
+  if (parsed === null) return min;
+  return Math.min(max, Math.max(min, parsed));
 }
 
 /**
@@ -62,7 +62,7 @@ export function clamp(value: unknown, min: number, max: number): number {
  * index d'avatar par défaut, ça donne un accès hors bornes silencieux.
  */
 export function euclideanMod(value: number, modulus: number): number {
-	// `+ 0` normalise `-0` en `0` : `Object.is(-0, 0)` est faux, et un `-0` qui
-	// remonte jusqu'à une comparaison stricte produit une inégalité invisible.
-	return (((value % modulus) + modulus) % modulus) + 0;
+  // `+ 0` normalise `-0` en `0` : `Object.is(-0, 0)` est faux, et un `-0` qui
+  // remonte jusqu'à une comparaison stricte produit une inégalité invisible.
+  return (((value % modulus) + modulus) % modulus) + 0;
 }

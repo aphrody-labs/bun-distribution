@@ -22,9 +22,7 @@ export async function generateMetadata({
     // Une page de résultats ne s'indexe pas, mais ses liens mènent aux fiches :
     // on la laisse suivre.
     robots: q ? { follow: true, index: false } : undefined,
-    title: q
-      ? `"${q}" - Recherche | Azalée`
-      : "Encyclopédie | Inazuma Eleven Victory Road - Azalée",
+    title: q ? `"${q}" - Recherche | Azalée` : "Encyclopédie | Inazuma Eleven Victory Road - Azalée",
   };
 }
 

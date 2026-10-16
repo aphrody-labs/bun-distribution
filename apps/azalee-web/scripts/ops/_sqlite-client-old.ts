@@ -19,7 +19,7 @@ function getSqlitePath(): string | null {
       const files = readdirSync(dir);
       // Filter for supabase-*.sqlite files and sort descending (latest first)
       const sqliteFiles = files
-        .filter((f) => f.startsWith("supabase-") && f.endsWith(".sqlite"))
+        .filter(f => f.startsWith("supabase-") && f.endsWith(".sqlite"))
         .sort((a, b) => b.localeCompare(a));
 
       if (sqliteFiles.length > 0) {
@@ -193,7 +193,7 @@ export class SqliteQueryBuilder {
     const column = this.cleanCol(col);
     const placeholders = arr.map(() => "?").join(", ");
     this.wheres.push(`${column} IN (${placeholders})`);
-    this.params.push(...arr.map((val) => (typeof val === "boolean" ? (val ? 1 : 0) : val)));
+    this.params.push(...arr.map(val => (typeof val === "boolean" ? (val ? 1 : 0) : val)));
     return this;
   }
 
@@ -313,9 +313,7 @@ export class SqliteQueryBuilder {
           try {
             const parsed = JSON.parse(val);
             if (Array.isArray(parsed) && parsed[0]?.id) {
-              conditions.push(
-                `EXISTS (SELECT 1 FROM json_each(${column}) WHERE json_each.value->>'id' = ?)`,
-              );
+              conditions.push(`EXISTS (SELECT 1 FROM json_each(${column}) WHERE json_each.value->>'id' = ?)`);
               orParams.push(parsed[0].id);
             }
           } catch {
@@ -415,14 +413,12 @@ export class SqliteQueryBuilder {
     return sql;
   }
 
-  private async execute(): Promise<
-    Record<string, unknown> | Array<Record<string, unknown>> | null
-  > {
+  private async execute(): Promise<Record<string, unknown> | Array<Record<string, unknown>> | null> {
     const sql = this.compileSelect();
     const stmt = this.db.prepare(sql);
     const rawRows = stmt.all(...this.params) as Array<Record<string, unknown>>;
 
-    const parsedRows = rawRows.map((r) => this.parseRow(r));
+    const parsedRows = rawRows.map(r => this.parseRow(r));
 
     if (this.isSingle) {
       if (parsedRows.length === 0) {

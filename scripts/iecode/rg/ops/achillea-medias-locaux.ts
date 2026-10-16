@@ -27,9 +27,9 @@ import { $ } from "bun";
 
 /** Colonnes qui portent une URL de média Achilléa. */
 const COLONNES = [
-	{ colonne: "clan_avatar_url", table: "clan" },
-	{ colonne: "url", table: "image" },
-	{ colonne: "screenshot_url", table: "lobby_user" },
+  { colonne: "clan_avatar_url", table: "clan" },
+  { colonne: "url", table: "image" },
+  { colonne: "screenshot_url", table: "lobby_user" },
 ] as const;
 
 /** Racine publique qui remplace le domaine cloud. */
@@ -39,7 +39,7 @@ const BASE_PUBLIQUE = "https://achillea.rosegriffon.fr/storage/v1/object/public"
 const RACINE_DISQUE = "/var/www/achillea-storage";
 
 async function psql(sql: string): Promise<string> {
-	return (await $`sudo -u postgres psql -d rg -v ON_ERROR_STOP=1 -Atc ${sql}`.text()).trim();
+  return (await $`sudo -u postgres psql -d rg -v ON_ERROR_STOP=1 -Atc ${sql}`.text()).trim();
 }
 
 /**
@@ -49,9 +49,9 @@ async function psql(sql: string): Promise<string> {
  * clé de stockage et le chemin sur disque.
  */
 function cheminDepuisUrl(url: string): string | null {
-	const marqueur = "/object/public/";
-	const position = url.indexOf(marqueur);
-	return position === -1 ? null : url.slice(position + marqueur.length);
+  const marqueur = "/object/public/";
+  const position = url.indexOf(marqueur);
+  return position === -1 ? null : url.slice(position + marqueur.length);
 }
 
 const appliquer = Bun.argv.includes("--appliquer");
@@ -60,42 +60,36 @@ let reecrites = 0;
 let absentes = 0;
 
 for (const { table, colonne } of COLONNES) {
-	const lignes = (
-		await psql(
-			`select ${colonne} from achillea."${table}" where ${colonne} like '%supabase.co%'`
-		)
-	)
-		.split("\n")
-		.filter(Boolean);
+  const lignes = (await psql(`select ${colonne} from achillea."${table}" where ${colonne} like '%supabase.co%'`))
+    .split("\n")
+    .filter(Boolean);
 
-	for (const url of lignes) {
-		total++;
-		const chemin = cheminDepuisUrl(url);
-		if (!chemin) {
-			console.warn(`… URL inattendue, ignorée : ${url.slice(0, 60)}…`);
-			continue;
-		}
+  for (const url of lignes) {
+    total++;
+    const chemin = cheminDepuisUrl(url);
+    if (!chemin) {
+      console.warn(`… URL inattendue, ignorée : ${url.slice(0, 60)}…`);
+      continue;
+    }
 
-		const existe = await Bun.file(`${RACINE_DISQUE}/${chemin}`).exists();
-		if (!existe) {
-			absentes++;
-			console.warn(`… ${chemin} absent du disque : URL laissée telle quelle`);
-			continue;
-		}
+    const existe = await Bun.file(`${RACINE_DISQUE}/${chemin}`).exists();
+    if (!existe) {
+      absentes++;
+      console.warn(`… ${chemin} absent du disque : URL laissée telle quelle`);
+      continue;
+    }
 
-		const nouvelle = `${BASE_PUBLIQUE}/${chemin}`;
-		if (appliquer) {
-			await psql(
-				`update achillea."${table}" set ${colonne} = '${nouvelle}' where ${colonne} = '${url}'`
-			);
-		}
-		reecrites++;
-	}
+    const nouvelle = `${BASE_PUBLIQUE}/${chemin}`;
+    if (appliquer) {
+      await psql(`update achillea."${table}" set ${colonne} = '${nouvelle}' where ${colonne} = '${url}'`);
+    }
+    reecrites++;
+  }
 }
 
 console.info(
-	`${total} URL cloud — ${reecrites} ${appliquer ? "réécrites" : "réécrivables"}, ${absentes} sans fichier local`
+  `${total} URL cloud — ${reecrites} ${appliquer ? "réécrites" : "réécrivables"}, ${absentes} sans fichier local`,
 );
 if (!appliquer && reecrites > 0) {
-	console.info("Relancer avec --appliquer pour écrire.");
+  console.info("Relancer avec --appliquer pour écrire.");
 }

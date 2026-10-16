@@ -71,7 +71,11 @@ See the [current bridge contract](../../../docs/development/INAGLE-NIE-FFI.md).
 
 ```typescript
 import { Inagle } from "@rosegriffon/inagle";
-import { nieCrc32, nieDecompressCrilayla, nieProbeHeader } from "@rosegriffon/inagle/ffi";
+import {
+  nieCrc32,
+  nieDecompressCrilayla,
+  nieProbeHeader,
+} from "@rosegriffon/inagle/ffi";
 import { IecodeDotnet } from "@rosegriffon/inagle/dotnet";
 
 // 1. Instant header probe

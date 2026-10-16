@@ -46,7 +46,7 @@
  * de cent nombres se relit mal, et une formule d'une ligne se vérifie.
  */
 export const PALIERS_EXPERIENCE: readonly number[] = Object.freeze(
-	Array.from({ length: 100 }, (_, index) => 5 * index * index + 50 * index + 100)
+  Array.from({ length: 100 }, (_, index) => 5 * index * index + 50 * index + 100),
 );
 
 /** Plafond, celui du jeu. */
@@ -60,11 +60,11 @@ export const NIVEAU_MAX = 100;
  * appelé sur chaque message du serveur.
  */
 export const CUMULS: readonly number[] = (() => {
-	const cumuls: number[] = Array.from({ length: NIVEAU_MAX + 1 }, () => 0);
-	for (let niveau = 2; niveau <= NIVEAU_MAX; niveau++) {
-		cumuls[niveau] = (cumuls[niveau - 1] as number) + (PALIERS_EXPERIENCE[niveau - 2] as number);
-	}
-	return Object.freeze(cumuls);
+  const cumuls: number[] = Array.from({ length: NIVEAU_MAX + 1 }, () => 0);
+  for (let niveau = 2; niveau <= NIVEAU_MAX; niveau++) {
+    cumuls[niveau] = (cumuls[niveau - 1] as number) + (PALIERS_EXPERIENCE[niveau - 2] as number);
+  }
+  return Object.freeze(cumuls);
 })();
 
 /** XP totale à accumuler pour toucher le plafond. */
@@ -76,10 +76,10 @@ export const XP_NIVEAU_MAX = CUMULS[NIVEAU_MAX] as number;
  * remonter jusqu'à un affichage.
  */
 export function xpPourAtteindre(niveau: number): number {
-	if (!Number.isFinite(niveau) || niveau <= 1) {
-		return 0;
-	}
-	return CUMULS[Math.min(NIVEAU_MAX, Math.floor(niveau))] as number;
+  if (!Number.isFinite(niveau) || niveau <= 1) {
+    return 0;
+  }
+  return CUMULS[Math.min(NIVEAU_MAX, Math.floor(niveau))] as number;
 }
 
 /**
@@ -89,68 +89,68 @@ export function xpPourAtteindre(niveau: number): number {
  * un chemin appelé à chaque message de deux mille membres.
  */
 export function niveauPour(xp: number): number {
-	if (!Number.isFinite(xp) || xp <= 0) {
-		return 1;
-	}
-	if (xp >= XP_NIVEAU_MAX) {
-		return NIVEAU_MAX;
-	}
-	let bas = 1;
-	let haut = NIVEAU_MAX;
-	while (bas < haut) {
-		const milieu = Math.ceil((bas + haut) / 2);
-		if ((CUMULS[milieu] as number) <= xp) {
-			bas = milieu;
-		} else {
-			haut = milieu - 1;
-		}
-	}
-	return bas;
+  if (!Number.isFinite(xp) || xp <= 0) {
+    return 1;
+  }
+  if (xp >= XP_NIVEAU_MAX) {
+    return NIVEAU_MAX;
+  }
+  let bas = 1;
+  let haut = NIVEAU_MAX;
+  while (bas < haut) {
+    const milieu = Math.ceil((bas + haut) / 2);
+    if ((CUMULS[milieu] as number) <= xp) {
+      bas = milieu;
+    } else {
+      haut = milieu - 1;
+    }
+  }
+  return bas;
 }
 
 /** Tout ce qu'une carte de profil a besoin de savoir sur une XP. */
 export interface Progression {
-	niveau: number;
-	xp: number;
-	/** XP acquise DANS le niveau courant. */
-	xpDansNiveau: number;
-	/** XP que coûte le passage au niveau suivant, `0` au plafond. */
-	xpDuNiveau: number;
-	/** Ce qu'il reste à gagner pour monter, `0` au plafond. */
-	restant: number;
-	/** Avancement dans le niveau, de 0 à 1. Vaut 1 au plafond. */
-	ratio: number;
-	/** Vrai quand le plafond du jeu est atteint. */
-	auMaximum: boolean;
+  niveau: number;
+  xp: number;
+  /** XP acquise DANS le niveau courant. */
+  xpDansNiveau: number;
+  /** XP que coûte le passage au niveau suivant, `0` au plafond. */
+  xpDuNiveau: number;
+  /** Ce qu'il reste à gagner pour monter, `0` au plafond. */
+  restant: number;
+  /** Avancement dans le niveau, de 0 à 1. Vaut 1 au plafond. */
+  ratio: number;
+  /** Vrai quand le plafond du jeu est atteint. */
+  auMaximum: boolean;
 }
 
 /** Décompose une XP cumulée pour l'affichage. */
 export function progression(xp: number): Progression {
-	const total = Number.isFinite(xp) && xp > 0 ? Math.floor(xp) : 0;
-	const niveau = niveauPour(total);
-	if (niveau >= NIVEAU_MAX) {
-		return {
-			auMaximum: true,
-			niveau: NIVEAU_MAX,
-			ratio: 1,
-			restant: 0,
-			xp: total,
-			xpDansNiveau: 0,
-			xpDuNiveau: 0,
-		};
-	}
-	const base = CUMULS[niveau] as number;
-	const xpDuNiveau = PALIERS_EXPERIENCE[niveau - 1] as number;
-	const xpDansNiveau = total - base;
-	return {
-		auMaximum: false,
-		niveau,
-		ratio: xpDuNiveau === 0 ? 0 : xpDansNiveau / xpDuNiveau,
-		restant: xpDuNiveau - xpDansNiveau,
-		xp: total,
-		xpDansNiveau,
-		xpDuNiveau,
-	};
+  const total = Number.isFinite(xp) && xp > 0 ? Math.floor(xp) : 0;
+  const niveau = niveauPour(total);
+  if (niveau >= NIVEAU_MAX) {
+    return {
+      auMaximum: true,
+      niveau: NIVEAU_MAX,
+      ratio: 1,
+      restant: 0,
+      xp: total,
+      xpDansNiveau: 0,
+      xpDuNiveau: 0,
+    };
+  }
+  const base = CUMULS[niveau] as number;
+  const xpDuNiveau = PALIERS_EXPERIENCE[niveau - 1] as number;
+  const xpDansNiveau = total - base;
+  return {
+    auMaximum: false,
+    niveau,
+    ratio: xpDuNiveau === 0 ? 0 : xpDansNiveau / xpDuNiveau,
+    restant: xpDuNiveau - xpDansNiveau,
+    xp: total,
+    xpDansNiveau,
+    xpDuNiveau,
+  };
 }
 
 /**
@@ -162,16 +162,16 @@ export function progression(xp: number): Progression {
  * rôles intermédiaires en silence.
  */
 export function niveauxFranchis(xpAvant: number, xpApres: number): number[] {
-	const depart = niveauPour(xpAvant);
-	const arrivee = niveauPour(xpApres);
-	if (arrivee <= depart) {
-		return [];
-	}
-	const franchis: number[] = [];
-	for (let niveau = depart + 1; niveau <= arrivee; niveau++) {
-		franchis.push(niveau);
-	}
-	return franchis;
+  const depart = niveauPour(xpAvant);
+  const arrivee = niveauPour(xpApres);
+  if (arrivee <= depart) {
+    return [];
+  }
+  const franchis: number[] = [];
+  for (let niveau = depart + 1; niveau <= arrivee; niveau++) {
+    franchis.push(niveau);
+  }
+  return franchis;
 }
 
 // ─── Rangs ──────────────────────────────────────────────────────────────────
@@ -186,36 +186,36 @@ export function niveauxFranchis(xpAvant: number, xpApres: number): number[] {
  * rang correspond à la rareté réelle de la catégorie dans le jeu.
  */
 export interface Rang {
-	/** Libellé exact des données FR du jeu. */
-	nom: string;
-	/** Premier niveau du rang. */
-	depuis: number;
-	/** Rôle de couleur à demander au thème (`lib/canvas/theme.ts`). */
-	teinte: "texteAttenue" | "azalee" | "brique" | "or";
+  /** Libellé exact des données FR du jeu. */
+  nom: string;
+  /** Premier niveau du rang. */
+  depuis: number;
+  /** Rôle de couleur à demander au thème (`lib/canvas/theme.ts`). */
+  teinte: "texteAttenue" | "azalee" | "brique" | "or";
 }
 
 export const RANGS: readonly Rang[] = Object.freeze([
-	{ depuis: 1, nom: "Normal", teinte: "texteAttenue" },
-	{ depuis: 20, nom: "Expérimenté", teinte: "azalee" },
-	{ depuis: 50, nom: "Héros", teinte: "brique" },
-	{ depuis: 80, nom: "BASARA", teinte: "or" },
+  { depuis: 1, nom: "Normal", teinte: "texteAttenue" },
+  { depuis: 20, nom: "Expérimenté", teinte: "azalee" },
+  { depuis: 50, nom: "Héros", teinte: "brique" },
+  { depuis: 80, nom: "BASARA", teinte: "or" },
 ]);
 
 /** Rang d'un niveau. Toujours défini : le premier rang commence au niveau 1. */
 export function rangDe(niveau: number): Rang {
-	const borne = Number.isFinite(niveau) ? niveau : 1;
-	let trouve = RANGS[0] as Rang;
-	for (const rang of RANGS) {
-		if (borne >= rang.depuis) {
-			trouve = rang;
-		}
-	}
-	return trouve;
+  const borne = Number.isFinite(niveau) ? niveau : 1;
+  let trouve = RANGS[0] as Rang;
+  for (const rang of RANGS) {
+    if (borne >= rang.depuis) {
+      trouve = rang;
+    }
+  }
+  return trouve;
 }
 
 /** Niveau du prochain rang, `null` quand le dernier est atteint. */
 export function prochainRang(niveau: number): Rang | null {
-	return RANGS.find((rang) => rang.depuis > niveau) ?? null;
+  return RANGS.find(rang => rang.depuis > niveau) ?? null;
 }
 
 // ─── Gain d'expérience ──────────────────────────────────────────────────────
@@ -241,9 +241,9 @@ import { GAIN_XP_DEFAUT as GAIN_DEFAUT } from "./bot";
 export { GAIN_DEFAUT };
 
 export interface ReglesGain {
-	minimum: number;
-	maximum: number;
-	delaiSecondes: number;
+  minimum: number;
+  maximum: number;
+  delaiSecondes: number;
 }
 
 /**
@@ -254,10 +254,10 @@ export interface ReglesGain {
  * milieu d'un module par ailleurs pur.
  */
 export function gainDeMessage(regles: ReglesGain = GAIN_DEFAUT, tirage: number = Math.random()): number {
-	const bas = Math.max(0, Math.floor(regles.minimum));
-	const haut = Math.max(bas, Math.floor(regles.maximum));
-	const borne = Number.isFinite(tirage) ? Math.min(0.999_999, Math.max(0, tirage)) : 0;
-	return bas + Math.floor(borne * (haut - bas + 1));
+  const bas = Math.max(0, Math.floor(regles.minimum));
+  const haut = Math.max(bas, Math.floor(regles.maximum));
+  const borne = Number.isFinite(tirage) ? Math.min(0.999_999, Math.max(0, tirage)) : 0;
+  return bas + Math.floor(borne * (haut - bas + 1));
 }
 
 /**
@@ -268,19 +268,19 @@ export function gainDeMessage(regles: ReglesGain = GAIN_DEFAUT, tirage: number =
  * compte pas.
  */
 export function messageEligible(
-	dernier: Date | string | number | null | undefined,
-	maintenant: Date = new Date(),
-	delaiSecondes: number = GAIN_DEFAUT.delaiSecondes
+  dernier: Date | string | number | null | undefined,
+  maintenant: Date = new Date(),
+  delaiSecondes: number = GAIN_DEFAUT.delaiSecondes,
 ): boolean {
-	if (dernier === null || dernier === undefined || dernier === "") {
-		return true;
-	}
-	const instant = dernier instanceof Date ? dernier : new Date(dernier);
-	const ms = instant.getTime();
-	if (Number.isNaN(ms)) {
-		return true;
-	}
-	return maintenant.getTime() - ms >= Math.max(0, delaiSecondes) * 1_000;
+  if (dernier === null || dernier === undefined || dernier === "") {
+    return true;
+  }
+  const instant = dernier instanceof Date ? dernier : new Date(dernier);
+  const ms = instant.getTime();
+  if (Number.isNaN(ms)) {
+    return true;
+  }
+  return maintenant.getTime() - ms >= Math.max(0, delaiSecondes) * 1_000;
 }
 
 /**
@@ -298,23 +298,23 @@ export function messageEligible(
  * demande de l'intéressé.
  */
 export function meriteAnnonce(
-	niveauAvant: number,
-	niveauApres: number,
-	options: { palier?: number; annoncerRang?: boolean } = {}
+  niveauAvant: number,
+  niveauApres: number,
+  options: { palier?: number; annoncerRang?: boolean } = {},
 ): boolean {
-	if (niveauApres <= niveauAvant) {
-		return false;
-	}
-	if (options.annoncerRang !== false && rangDe(niveauApres).nom !== rangDe(niveauAvant).nom) {
-		return true;
-	}
-	const palier = Math.max(1, Math.floor(options.palier ?? 5));
-	if (palier === 1) {
-		return true;
-	}
-	// Un gain exceptionnel peut franchir plusieurs niveaux d'un coup : on annonce
-	// dès qu'un palier a été TRAVERSÉ, pas seulement atterri dessus.
-	return Math.floor(niveauApres / palier) > Math.floor(niveauAvant / palier);
+  if (niveauApres <= niveauAvant) {
+    return false;
+  }
+  if (options.annoncerRang !== false && rangDe(niveauApres).nom !== rangDe(niveauAvant).nom) {
+    return true;
+  }
+  const palier = Math.max(1, Math.floor(options.palier ?? 5));
+  if (palier === 1) {
+    return true;
+  }
+  // Un gain exceptionnel peut franchir plusieurs niveaux d'un coup : on annonce
+  // dès qu'un palier a été TRAVERSÉ, pas seulement atterri dessus.
+  return Math.floor(niveauApres / palier) > Math.floor(niveauAvant / palier);
 }
 
 /**
@@ -324,10 +324,7 @@ export function meriteAnnonce(
  * franchir le niveau 2, sans quoi la seule stratégie rentable serait de rester
  * en bas de l'échelle.
  */
-export function jetonsDeMontee(
-	niveau: number,
-	parNiveau: number = GAIN_DEFAUT.jetonsParNiveau
-): number {
-	const borne = Number.isFinite(niveau) ? Math.max(1, Math.floor(niveau)) : 1;
-	return borne * Math.max(0, Math.floor(parNiveau));
+export function jetonsDeMontee(niveau: number, parNiveau: number = GAIN_DEFAUT.jetonsParNiveau): number {
+  const borne = Number.isFinite(niveau) ? Math.max(1, Math.floor(niveau)) : 1;
+  return borne * Math.max(0, Math.floor(parNiveau));
 }

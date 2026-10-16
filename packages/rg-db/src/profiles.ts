@@ -15,22 +15,22 @@ import type { Database } from "./types.gen";
 
 /** Liste de colonnes prête à passer à `.select()`. */
 export const PUBLIC_PROFILE_COLUMNS =
-	"id, updated_at, username, avatar_url, role, website, discord_id, bio, banner_url, banner_position, poste, twitter_handle, badges";
+  "id, updated_at, username, avatar_url, role, website, discord_id, bio, banner_url, banner_position, poste, twitter_handle, badges";
 
 /** Profil tel qu'un client non privilégié peut le lire. */
 export type PublicProfile = Pick<
-	Database["public"]["Tables"]["profiles"]["Row"],
-	| "id"
-	| "updated_at"
-	| "username"
-	| "avatar_url"
-	| "role"
-	| "website"
-	| "discord_id"
-	| "bio"
-	| "banner_url"
-	| "banner_position"
-	| "poste"
-	| "twitter_handle"
-	| "badges"
+  Database["public"]["Tables"]["profiles"]["Row"],
+  | "id"
+  | "updated_at"
+  | "username"
+  | "avatar_url"
+  | "role"
+  | "website"
+  | "discord_id"
+  | "bio"
+  | "banner_url"
+  | "banner_position"
+  | "poste"
+  | "twitter_handle"
+  | "badges"
 >;

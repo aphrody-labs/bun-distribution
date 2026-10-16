@@ -122,11 +122,7 @@ export function cfgbin_typed_json(bytes: Uint8Array, filename: string): string;
 /**
  * Extrait et décompresse un fichier d'un CPK.
  */
-export function cpk_extract_file(
-  cpk_bytes: Uint8Array,
-  cpk_filename: string,
-  entry_json: string,
-): Uint8Array;
+export function cpk_extract_file(cpk_bytes: Uint8Array, cpk_filename: string, entry_json: string): Uint8Array;
 
 /**
  * Parse un fichier CPK et retourne son TOC (Table of Contents) au format JSON.
@@ -339,27 +335,10 @@ export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly __wbg_wasmgame_free: (a: number, b: number) => void;
   readonly audio_to_wav: (a: number, b: number) => [number, number, number, number];
-  readonly aura_lookup: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
-  readonly calculate_stats: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number,
-  ) => [number, number];
+  readonly aura_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly calculate_stats: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
   readonly cfgbin_parse_json: (a: number, b: number) => [number, number, number, number];
-  readonly cfgbin_typed_json: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly cfgbin_typed_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly cpk_extract_file: (
     a: number,
     b: number,
@@ -368,62 +347,27 @@ export interface InitOutput {
     e: number,
     f: number,
   ) => [number, number, number, number];
-  readonly cpk_parse_entries: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly cpk_parse_entries: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly crilayla_decompress: (a: number, b: number) => [number, number, number, number];
   readonly detect_format: (a: number, b: number) => [number, number];
   readonly final_score: (a: number, b: number) => number;
   readonly g4md_parse_json: (a: number, b: number) => [number, number, number, number];
-  readonly g4mg_extract_json: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly g4mg_extract_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly g4pk_parse_json: (a: number, b: number) => [number, number, number, number];
   readonly g4tx_info_json: (a: number, b: number) => [number, number, number, number];
-  readonly g4tx_named_to_png: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly g4tx_named_to_png: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly g4tx_sprite_sheet_json: (a: number, b: number) => [number, number, number, number];
   readonly g4tx_to_png: (a: number, b: number) => [number, number, number, number];
   readonly is_lua_bytecode: (a: number, b: number) => number;
   readonly item_lookup: (a: number, b: number) => [number, number, number, number];
   readonly lip_to_json: (a: number, b: number) => [number, number, number, number];
   readonly lua_bytecode_json: (a: number, b: number) => [number, number, number, number];
-  readonly match_tick: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
-  readonly model_to_glb: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
-  readonly parse_save_json: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly match_tick: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly model_to_glb: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly parse_save_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly rarity_to_growth_rank: (a: number) => number;
   readonly single_stat: (a: number, b: number, c: number, d: number, e: number) => number;
-  readonly skill_lookup: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-  ) => [number, number, number, number];
+  readonly skill_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
   readonly utf_table_json: (a: number, b: number) => [number, number, number, number];
   readonly wasmgame_height: (a: number) => number;
   readonly wasmgame_in_match: (a: number) => number;
@@ -464,8 +408,5 @@ export function initSync(module: { module: SyncInitInput } | SyncInitInput): Ini
  * @returns {Promise<InitOutput>}
  */
 export default function __wbg_init(
-  module_or_path?:
-    | { module_or_path: InitInput | Promise<InitInput> }
-    | InitInput
-    | Promise<InitInput>,
+  module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>,
 ): Promise<InitOutput>;

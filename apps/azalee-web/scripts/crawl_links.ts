@@ -39,28 +39,17 @@ async function crawl() {
             if (cleanUrl && !visited.has(cleanUrl) && !queue.includes(cleanUrl)) {
               // Avoid crawling dynamic items deeply (like 1000s of charas or skills)
               // We only want directory-level pages and some examples
-              const isDeepChara =
-                cleanUrl.includes("/chara/") && cleanUrl.split("/chara/")[1]?.includes("-");
-              const isDeepSkill =
-                cleanUrl.includes("/skill/") && cleanUrl.split("/skill/")[1]?.length > 5;
-              const isDeepItem =
-                cleanUrl.includes("/item/") && cleanUrl.split("/item/")[1]?.length > 5;
-              const isDeepAura =
-                cleanUrl.includes("/aura/") && cleanUrl.split("/aura/")[1]?.length > 5;
-              const isDeepTactic =
-                cleanUrl.includes("/tactic/") && cleanUrl.split("/tactic/")[1]?.length > 5;
-              const isDeepQuest =
-                cleanUrl.includes("/quete/") && cleanUrl.split("/quete/")[1]?.length > 5;
-              const isDeepTrophy =
-                cleanUrl.includes("/succes/") && cleanUrl.split("/succes/")[1]?.length > 5;
-              const isDeepStade =
-                cleanUrl.includes("/stade/") && cleanUrl.split("/stade/")[1]?.length > 5;
-              const isDeepShop =
-                cleanUrl.includes("/boutique/") && cleanUrl.split("/boutique/")[1]?.length > 5;
-              const isDeepPassive =
-                cleanUrl.includes("/passive/") && cleanUrl.split("/passive/")[1]?.length > 5;
-              const isDeepCoach =
-                cleanUrl.includes("/entraineur/") && cleanUrl.split("/entraineur/")[1]?.length > 0;
+              const isDeepChara = cleanUrl.includes("/chara/") && cleanUrl.split("/chara/")[1]?.includes("-");
+              const isDeepSkill = cleanUrl.includes("/skill/") && cleanUrl.split("/skill/")[1]?.length > 5;
+              const isDeepItem = cleanUrl.includes("/item/") && cleanUrl.split("/item/")[1]?.length > 5;
+              const isDeepAura = cleanUrl.includes("/aura/") && cleanUrl.split("/aura/")[1]?.length > 5;
+              const isDeepTactic = cleanUrl.includes("/tactic/") && cleanUrl.split("/tactic/")[1]?.length > 5;
+              const isDeepQuest = cleanUrl.includes("/quete/") && cleanUrl.split("/quete/")[1]?.length > 5;
+              const isDeepTrophy = cleanUrl.includes("/succes/") && cleanUrl.split("/succes/")[1]?.length > 5;
+              const isDeepStade = cleanUrl.includes("/stade/") && cleanUrl.split("/stade/")[1]?.length > 5;
+              const isDeepShop = cleanUrl.includes("/boutique/") && cleanUrl.split("/boutique/")[1]?.length > 5;
+              const isDeepPassive = cleanUrl.includes("/passive/") && cleanUrl.split("/passive/")[1]?.length > 5;
+              const isDeepCoach = cleanUrl.includes("/entraineur/") && cleanUrl.split("/entraineur/")[1]?.length > 0;
 
               if (isDeepChara && !cleanUrl.includes("mark-evans")) return;
               if (isDeepSkill && !cleanUrl.includes("whd00010")) return;

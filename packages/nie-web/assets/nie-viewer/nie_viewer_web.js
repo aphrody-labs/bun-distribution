@@ -140,15 +140,7 @@ export class ModelViewer {
   gizmo_rotate(axis, from_x, from_y, to_x, to_y) {
     const ptr0 = passStringToWasm0(axis, wasm.__wbindgen_export, wasm.__wbindgen_export2);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.modelviewer_gizmo_rotate(
-      this.__wbg_ptr,
-      ptr0,
-      len0,
-      from_x,
-      from_y,
-      to_x,
-      to_y,
-    );
+    const ret = wasm.modelviewer_gizmo_rotate(this.__wbg_ptr, ptr0, len0, from_x, from_y, to_x, to_y);
     return ret;
   }
   /**
@@ -163,15 +155,7 @@ export class ModelViewer {
   gizmo_scale(axis, from_x, from_y, to_x, to_y) {
     const ptr0 = passStringToWasm0(axis, wasm.__wbindgen_export, wasm.__wbindgen_export2);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.modelviewer_gizmo_scale(
-      this.__wbg_ptr,
-      ptr0,
-      len0,
-      from_x,
-      from_y,
-      to_x,
-      to_y,
-    );
+    const ret = wasm.modelviewer_gizmo_scale(this.__wbg_ptr, ptr0, len0, from_x, from_y, to_x, to_y);
     return ret;
   }
   /**
@@ -203,11 +187,7 @@ export class ModelViewer {
   load_scene(document_json) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      const ptr0 = passStringToWasm0(
-        document_json,
-        wasm.__wbindgen_export,
-        wasm.__wbindgen_export2,
-      );
+      const ptr0 = passStringToWasm0(document_json, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       const len0 = WASM_VECTOR_LEN;
       wasm.modelviewer_load_scene(retptr, this.__wbg_ptr, ptr0, len0);
       var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
@@ -462,9 +442,7 @@ function __wbg_get_imports() {
     __wbg___wbindgen_string_get_71bb4348194e31f0: function (arg0, arg1) {
       const obj = getObject(arg1);
       const ret = typeof obj === "string" ? obj : undefined;
-      var ptr1 = isLikeNone(ret)
-        ? 0
-        : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       var len1 = WASM_VECTOR_LEN;
       getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
       getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
@@ -497,18 +475,10 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_bindAttribLocation_79b5d26727094518: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).bindAttribLocation(
-        getObject(arg1),
-        arg2 >>> 0,
-        getStringFromWasm0(arg3, arg4),
-      );
+      getObject(arg0).bindAttribLocation(getObject(arg1), arg2 >>> 0, getStringFromWasm0(arg3, arg4));
     },
     __wbg_bindAttribLocation_d56d3c40331af7ed: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).bindAttribLocation(
-        getObject(arg1),
-        arg2 >>> 0,
-        getStringFromWasm0(arg3, arg4),
-      );
+      getObject(arg0).bindAttribLocation(getObject(arg1), arg2 >>> 0, getStringFromWasm0(arg3, arg4));
     },
     __wbg_bindBufferRange_16a9d90becc2a7d7: function (arg0, arg1, arg2, arg3, arg4, arg5) {
       getObject(arg0).bindBufferRange(arg1 >>> 0, arg2 >>> 0, getObject(arg3), arg4, arg5);
@@ -589,18 +559,7 @@ function __wbg_get_imports() {
       arg9,
       arg10,
     ) {
-      getObject(arg0).blitFramebuffer(
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9 >>> 0,
-        arg10 >>> 0,
-      );
+      getObject(arg0).blitFramebuffer(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 >>> 0, arg10 >>> 0);
     },
     __wbg_bufferData_26132561617ce8fb: function (arg0, arg1, arg2, arg3) {
       getObject(arg0).bufferData(arg1 >>> 0, getObject(arg2), arg3 >>> 0);
@@ -669,49 +628,11 @@ function __wbg_get_imports() {
     __wbg_compileShader_fcf3f3d2891f73f9: function (arg0, arg1) {
       getObject(arg0).compileShader(getObject(arg1));
     },
-    __wbg_compressedTexSubImage2D_44c06107dab236a8: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-      arg7,
-      arg8,
-    ) {
-      getObject(arg0).compressedTexSubImage2D(
-        arg1 >>> 0,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7 >>> 0,
-        getObject(arg8),
-      );
+    __wbg_compressedTexSubImage2D_44c06107dab236a8: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+      getObject(arg0).compressedTexSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, getObject(arg8));
     },
-    __wbg_compressedTexSubImage2D_7f963168c14c0082: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-      arg7,
-      arg8,
-    ) {
-      getObject(arg0).compressedTexSubImage2D(
-        arg1 >>> 0,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7 >>> 0,
-        getObject(arg8),
-      );
+    __wbg_compressedTexSubImage2D_7f963168c14c0082: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+      getObject(arg0).compressedTexSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, getObject(arg8));
     },
     __wbg_compressedTexSubImage2D_9d66d6214713bbfb: function (
       arg0,
@@ -725,17 +646,7 @@ function __wbg_get_imports() {
       arg8,
       arg9,
     ) {
-      getObject(arg0).compressedTexSubImage2D(
-        arg1 >>> 0,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7 >>> 0,
-        arg8,
-        arg9,
-      );
+      getObject(arg0).compressedTexSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, arg8, arg9);
     },
     __wbg_compressedTexSubImage3D_73e1f9f3aa71a2da: function (
       arg0,
@@ -809,44 +720,13 @@ function __wbg_get_imports() {
         getObject(arg0).copyBufferToBuffer(getObject(arg1), arg2, getObject(arg3), arg4, arg5);
       }, arguments);
     },
-    __wbg_copyTexSubImage2D_3c7de20db5e2b39f: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-      arg7,
-      arg8,
-    ) {
+    __wbg_copyTexSubImage2D_3c7de20db5e2b39f: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
       getObject(arg0).copyTexSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     },
-    __wbg_copyTexSubImage2D_4b1ba73bf053b4e6: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-      arg7,
-      arg8,
-    ) {
+    __wbg_copyTexSubImage2D_4b1ba73bf053b4e6: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
       getObject(arg0).copyTexSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     },
-    __wbg_copyTexSubImage3D_8ba04135d122a27a: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-      arg7,
-      arg8,
-      arg9,
-    ) {
+    __wbg_copyTexSubImage3D_8ba04135d122a27a: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
       getObject(arg0).copyTexSubImage3D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
     },
     __wbg_createBindGroupLayout_59891d473ac8665d: function () {
@@ -1088,14 +968,7 @@ function __wbg_get_imports() {
     __wbg_drawBuffers_558d96e52e754731: function (arg0, arg1) {
       getObject(arg0).drawBuffers(getObject(arg1));
     },
-    __wbg_drawElementsInstancedANGLE_a73eba5955ee33fa: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-    ) {
+    __wbg_drawElementsInstancedANGLE_a73eba5955ee33fa: function (arg0, arg1, arg2, arg3, arg4, arg5) {
       getObject(arg0).drawElementsInstancedANGLE(arg1 >>> 0, arg2, arg3 >>> 0, arg4, arg5);
     },
     __wbg_drawElementsInstanced_fdc96cf6adbebc12: function (arg0, arg1, arg2, arg3, arg4, arg5) {
@@ -1165,43 +1038,16 @@ function __wbg_get_imports() {
       getObject(arg0).framebufferRenderbuffer(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, getObject(arg4));
     },
     __wbg_framebufferTexture2D_367ab597a005e8d9: function (arg0, arg1, arg2, arg3, arg4, arg5) {
-      getObject(arg0).framebufferTexture2D(
-        arg1 >>> 0,
-        arg2 >>> 0,
-        arg3 >>> 0,
-        getObject(arg4),
-        arg5,
-      );
+      getObject(arg0).framebufferTexture2D(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, getObject(arg4), arg5);
     },
     __wbg_framebufferTexture2D_3a558e14f56720d2: function (arg0, arg1, arg2, arg3, arg4, arg5) {
-      getObject(arg0).framebufferTexture2D(
-        arg1 >>> 0,
-        arg2 >>> 0,
-        arg3 >>> 0,
-        getObject(arg4),
-        arg5,
-      );
+      getObject(arg0).framebufferTexture2D(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, getObject(arg4), arg5);
     },
     __wbg_framebufferTextureLayer_2312acdc74f97676: function (arg0, arg1, arg2, arg3, arg4, arg5) {
       getObject(arg0).framebufferTextureLayer(arg1 >>> 0, arg2 >>> 0, getObject(arg3), arg4, arg5);
     },
-    __wbg_framebufferTextureMultiviewOVR_bab62b45b7debf2c: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-    ) {
-      getObject(arg0).framebufferTextureMultiviewOVR(
-        arg1 >>> 0,
-        arg2 >>> 0,
-        getObject(arg3),
-        arg4,
-        arg5,
-        arg6,
-      );
+    __wbg_framebufferTextureMultiviewOVR_bab62b45b7debf2c: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
+      getObject(arg0).framebufferTextureMultiviewOVR(arg1 >>> 0, arg2 >>> 0, getObject(arg3), arg4, arg5, arg6);
     },
     __wbg_frontFace_9bdcf2a758e989e5: function (arg0, arg1) {
       getObject(arg0).frontFace(arg1 >>> 0);
@@ -1278,18 +1124,14 @@ function __wbg_get_imports() {
     },
     __wbg_getProgramInfoLog_35410850de9ccefe: function (arg0, arg1, arg2) {
       const ret = getObject(arg1).getProgramInfoLog(getObject(arg2));
-      var ptr1 = isLikeNone(ret)
-        ? 0
-        : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       var len1 = WASM_VECTOR_LEN;
       getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
       getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
     },
     __wbg_getProgramInfoLog_cd84be80942f345b: function (arg0, arg1, arg2) {
       const ret = getObject(arg1).getProgramInfoLog(getObject(arg2));
-      var ptr1 = isLikeNone(ret)
-        ? 0
-        : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       var len1 = WASM_VECTOR_LEN;
       getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
       getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
@@ -1308,18 +1150,14 @@ function __wbg_get_imports() {
     },
     __wbg_getShaderInfoLog_495bddda98172699: function (arg0, arg1, arg2) {
       const ret = getObject(arg1).getShaderInfoLog(getObject(arg2));
-      var ptr1 = isLikeNone(ret)
-        ? 0
-        : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       var len1 = WASM_VECTOR_LEN;
       getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
       getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
     },
     __wbg_getShaderInfoLog_f423ce6d280ccca0: function (arg0, arg1, arg2) {
       const ret = getObject(arg1).getShaderInfoLog(getObject(arg2));
-      var ptr1 = isLikeNone(ret)
-        ? 0
-        : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+      var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
       var len1 = WASM_VECTOR_LEN;
       getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
       getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
@@ -1345,24 +1183,15 @@ function __wbg_get_imports() {
       return addHeapObject(ret);
     },
     __wbg_getUniformBlockIndex_3bf387d80cee898d: function (arg0, arg1, arg2, arg3) {
-      const ret = getObject(arg0).getUniformBlockIndex(
-        getObject(arg1),
-        getStringFromWasm0(arg2, arg3),
-      );
+      const ret = getObject(arg0).getUniformBlockIndex(getObject(arg1), getStringFromWasm0(arg2, arg3));
       return ret;
     },
     __wbg_getUniformLocation_340155dc706d3fea: function (arg0, arg1, arg2, arg3) {
-      const ret = getObject(arg0).getUniformLocation(
-        getObject(arg1),
-        getStringFromWasm0(arg2, arg3),
-      );
+      const ret = getObject(arg0).getUniformLocation(getObject(arg1), getStringFromWasm0(arg2, arg3));
       return isLikeNone(ret) ? 0 : addHeapObject(ret);
     },
     __wbg_getUniformLocation_ab63f569a4e41744: function (arg0, arg1, arg2, arg3) {
-      const ret = getObject(arg0).getUniformLocation(
-        getObject(arg1),
-        getStringFromWasm0(arg2, arg3),
-      );
+      const ret = getObject(arg0).getUniformLocation(getObject(arg1), getStringFromWasm0(arg2, arg3));
       return isLikeNone(ret) ? 0 : addHeapObject(ret);
     },
     __wbg_get_37b48b8fa52d1f2c: function (arg0, arg1) {
@@ -1787,14 +1616,7 @@ function __wbg_get_imports() {
       const ret = getObject(arg0).reason;
       return (__wbindgen_enum_GpuDeviceLostReason.indexOf(ret) + 1 || 3) - 1;
     },
-    __wbg_renderbufferStorageMultisample_d64a8abb8689a968: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-    ) {
+    __wbg_renderbufferStorageMultisample_d64a8abb8689a968: function (arg0, arg1, arg2, arg3, arg4, arg5) {
       getObject(arg0).renderbufferStorageMultisample(arg1 >>> 0, arg2, arg3 >>> 0, arg4, arg5);
     },
     __wbg_renderbufferStorage_2918fb696fd45663: function (arg0, arg1, arg2, arg3, arg4) {
@@ -1829,13 +1651,7 @@ function __wbg_get_imports() {
     },
     __wbg_setBindGroup_851043cf286f55f2: function () {
       return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
-        getObject(arg0).setBindGroup(
-          arg1 >>> 0,
-          getObject(arg2),
-          getArrayU32FromWasm0(arg3, arg4),
-          arg5,
-          arg6 >>> 0,
-        );
+        getObject(arg0).setBindGroup(arg1 >>> 0, getObject(arg2), getArrayU32FromWasm0(arg3, arg4), arg5, arg6 >>> 0);
       }, arguments);
     },
     __wbg_setBindGroup_b546d112a2d27da3: function (arg0, arg1, arg2) {
@@ -1845,12 +1661,7 @@ function __wbg_get_imports() {
       getObject(arg0).setIndexBuffer(getObject(arg1), __wbindgen_enum_GpuIndexFormat[arg2], arg3);
     },
     __wbg_setIndexBuffer_f0aa83f423c3ea49: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).setIndexBuffer(
-        getObject(arg1),
-        __wbindgen_enum_GpuIndexFormat[arg2],
-        arg3,
-        arg4,
-      );
+      getObject(arg0).setIndexBuffer(getObject(arg1), __wbindgen_enum_GpuIndexFormat[arg2], arg3, arg4);
     },
     __wbg_setPipeline_b0ecc74bdf8be629: function (arg0, arg1) {
       getObject(arg0).setPipeline(getObject(arg1));
@@ -2426,91 +2237,26 @@ function __wbg_get_imports() {
     },
     __wbg_texImage2D_0e0f37b9fb297d01: function () {
       return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-        getObject(arg0).texImage2D(
-          arg1 >>> 0,
-          arg2,
-          arg3,
-          arg4,
-          arg5,
-          arg6,
-          arg7 >>> 0,
-          arg8 >>> 0,
-          getObject(arg9),
-        );
+        getObject(arg0).texImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, arg8 >>> 0, getObject(arg9));
       }, arguments);
     },
     __wbg_texImage2D_0e537dc331652de3: function () {
       return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-        getObject(arg0).texImage2D(
-          arg1 >>> 0,
-          arg2,
-          arg3,
-          arg4,
-          arg5,
-          arg6,
-          arg7 >>> 0,
-          arg8 >>> 0,
-          arg9,
-        );
+        getObject(arg0).texImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, arg8 >>> 0, arg9);
       }, arguments);
     },
     __wbg_texImage2D_7bc3001cb8602ed2: function () {
       return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-        getObject(arg0).texImage2D(
-          arg1 >>> 0,
-          arg2,
-          arg3,
-          arg4,
-          arg5,
-          arg6,
-          arg7 >>> 0,
-          arg8 >>> 0,
-          getObject(arg9),
-        );
+        getObject(arg0).texImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, arg8 >>> 0, getObject(arg9));
       }, arguments);
     },
     __wbg_texImage3D_30dbf7234481b8f5: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-      ) {
-        getObject(arg0).texImage3D(
-          arg1 >>> 0,
-          arg2,
-          arg3,
-          arg4,
-          arg5,
-          arg6,
-          arg7,
-          arg8 >>> 0,
-          arg9 >>> 0,
-          arg10,
-        );
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
+        getObject(arg0).texImage3D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7, arg8 >>> 0, arg9 >>> 0, arg10);
       }, arguments);
     },
     __wbg_texImage3D_8647ef58aef5b912: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
         getObject(arg0).texImage3D(
           arg1 >>> 0,
           arg2,
@@ -2629,17 +2375,7 @@ function __wbg_get_imports() {
     },
     __wbg_texSubImage2D_d14d9c0a1f627c31: function () {
       return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-        getObject(arg0).texSubImage2D(
-          arg1 >>> 0,
-          arg2,
-          arg3,
-          arg4,
-          arg5,
-          arg6,
-          arg7 >>> 0,
-          arg8 >>> 0,
-          arg9,
-        );
+        getObject(arg0).texSubImage2D(arg1 >>> 0, arg2, arg3, arg4, arg5, arg6, arg7 >>> 0, arg8 >>> 0, arg9);
       }, arguments);
     },
     __wbg_texSubImage2D_f03448e182b0820d: function () {
@@ -2658,20 +2394,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_09a97a968b93253d: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2688,20 +2411,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_0fdbd843482bb916: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2718,20 +2428,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_355efde0dc047913: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2748,20 +2445,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_5a238709d114b609: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2778,20 +2462,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_933e4cd41cc5376d: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2808,20 +2479,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_bd32c8e29e470904: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2838,20 +2496,7 @@ function __wbg_get_imports() {
       }, arguments);
     },
     __wbg_texSubImage3D_c3538b28040daac9: function () {
-      return handleError(function (
-        arg0,
-        arg1,
-        arg2,
-        arg3,
-        arg4,
-        arg5,
-        arg6,
-        arg7,
-        arg8,
-        arg9,
-        arg10,
-        arg11,
-      ) {
+      return handleError(function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
         getObject(arg0).texSubImage3D(
           arg1 >>> 0,
           arg2,
@@ -2953,88 +2598,40 @@ function __wbg_get_imports() {
       getObject(arg0).uniformBlockBinding(getObject(arg1), arg2 >>> 0, arg3 >>> 0);
     },
     __wbg_uniformMatrix2fv_b666dc80e084ddbc: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix2fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix2fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix2fv_cd6e1725152efce9: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix2fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix2fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix2x3fv_6a6221d5300ad184: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix2x3fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix2x3fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix2x4fv_68bc9cd1e2d67339: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix2x4fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix2x4fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix3fv_2ccfe6ff9f4f57ec: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix3fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix3fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix3fv_da8c388748c5739b: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix3fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix3fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix3x2fv_1083b1ecb80866a1: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix3x2fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix3x2fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix3x4fv_d4cc158d92dbd1ce: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix3x4fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix3x4fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix4fv_61b1a000cfdc35cc: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix4fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix4fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix4fv_c8ba105f2ce3edf8: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix4fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix4fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix4x2fv_cb66ed882d29c550: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix4x2fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix4x2fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_uniformMatrix4x3fv_99e2e5fabf39e8b6: function (arg0, arg1, arg2, arg3, arg4) {
-      getObject(arg0).uniformMatrix4x3fv(
-        getObject(arg1),
-        arg2 !== 0,
-        getArrayF32FromWasm0(arg3, arg4),
-      );
+      getObject(arg0).uniformMatrix4x3fv(getObject(arg1), arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
     },
     __wbg_unmap_817a2e3248a553fb: function (arg0) {
       getObject(arg0).unmap();
@@ -3058,26 +2655,10 @@ function __wbg_get_imports() {
     __wbg_vertexAttribIPointer_23b6d6b8b8b79b4d: function (arg0, arg1, arg2, arg3, arg4, arg5) {
       getObject(arg0).vertexAttribIPointer(arg1 >>> 0, arg2, arg3 >>> 0, arg4, arg5);
     },
-    __wbg_vertexAttribPointer_36c76a0c7e4f0239: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-    ) {
+    __wbg_vertexAttribPointer_36c76a0c7e4f0239: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
       getObject(arg0).vertexAttribPointer(arg1 >>> 0, arg2, arg3 >>> 0, arg4 !== 0, arg5, arg6);
     },
-    __wbg_vertexAttribPointer_4e5d289c5d224210: function (
-      arg0,
-      arg1,
-      arg2,
-      arg3,
-      arg4,
-      arg5,
-      arg6,
-    ) {
+    __wbg_vertexAttribPointer_4e5d289c5d224210: function (arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
       getObject(arg0).vertexAttribPointer(arg1 >>> 0, arg2, arg3 >>> 0, arg4 !== 0, arg5, arg6);
     },
     __wbg_viewport_a0ca330f9b85397e: function (arg0, arg1, arg2, arg3, arg4) {
@@ -3384,22 +2965,9 @@ const __wbindgen_enum_GpuTextureFormat = [
   "astc-12x12-unorm-srgb",
 ];
 
-const __wbindgen_enum_GpuTextureSampleType = [
-  "float",
-  "unfilterable-float",
-  "depth",
-  "sint",
-  "uint",
-];
+const __wbindgen_enum_GpuTextureSampleType = ["float", "unfilterable-float", "depth", "sint", "uint"];
 
-const __wbindgen_enum_GpuTextureViewDimension = [
-  "1d",
-  "2d",
-  "2d-array",
-  "cube",
-  "cube-array",
-  "3d",
-];
+const __wbindgen_enum_GpuTextureViewDimension = ["1d", "2d", "2d-array", "cube", "cube-array", "3d"];
 
 const __wbindgen_enum_GpuVertexFormat = [
   "uint8",
@@ -3449,7 +3017,7 @@ const __wbindgen_enum_GpuVertexStepMode = ["vertex", "instance"];
 const ModelViewerFinalization =
   typeof FinalizationRegistry === "undefined"
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry((ptr) => wasm.__wbg_modelviewer_free(ptr, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_modelviewer_free(ptr, 1));
 
 function addHeapObject(obj) {
   if (heap_next === heap.length) heap.push(heap.length + 1);
@@ -3463,7 +3031,7 @@ function addHeapObject(obj) {
 const CLOSURE_DTORS =
   typeof FinalizationRegistry === "undefined"
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry((state) => wasm.__wbindgen_export5(state.a, state.b));
+    : new FinalizationRegistry(state => wasm.__wbindgen_export5(state.a, state.b));
 
 function debugString(val) {
   // primitive types
@@ -3576,8 +3144,7 @@ function getDataViewMemory0() {
   if (
     cachedDataViewMemory0 === null ||
     cachedDataViewMemory0.buffer.detached === true ||
-    (cachedDataViewMemory0.buffer.detached === undefined &&
-      cachedDataViewMemory0.buffer !== wasm.memory.buffer)
+    (cachedDataViewMemory0.buffer.detached === undefined && cachedDataViewMemory0.buffer !== wasm.memory.buffer)
   ) {
     cachedDataViewMemory0 = new DataView(wasm.memory.buffer);
   }
@@ -3858,9 +3425,7 @@ async function __wbg_init(module_or_path) {
     if (Object.getPrototypeOf(module_or_path) === Object.prototype) {
       ({ module_or_path } = module_or_path);
     } else {
-      console.warn(
-        "using deprecated parameters for the initialization function; pass a single object instead",
-      );
+      console.warn("using deprecated parameters for the initialization function; pass a single object instead");
     }
   }
 

@@ -69,71 +69,71 @@ import { XSession } from "@aphrody/x";
 // crawlTwitterSearch (harvest-search.ts) — complémentaire des timelines ci-dessous.
 
 export const OFFICIAL_X_ACCOUNTS = [
-	"inazuma_project", // 公式 JP principal
-	"inazuma_cross", // 公式 JP — jeu mobile Inazuma Eleven Cross
-	"AkihiroHino", // CEO LEVEL-5
-	"LEVEL5_times", // LEVEL-5 officiel
-	"Azalee_IE", // FR
-	"InazumaSeries", // Series / officiel global EN
-	"Level5Hub", // news/leaks ES actif
-	// communauté / news haut-signal centrés IE (découverte search Aphrody 2026-06)
-	"DartsEnthusiast", // EN news/analyse
-	"InazumaNational", // EN clips/comparatifs
-	"ShinAngelico", // ES leaker/news
-	"Braco_Frost", // ES news/leaks
-	// round 2 — officiels + communauté vérifiés (Grok OIDC discovery + Aphrody verify)
-	"inazumaSD_L5", // 公式 JP — Inazuma Eleven SD
-	"mutugame", // ambassadeur officiel LEVEL-5 公認
-	"inazo__", // FR news/analyse
-	"ievrfr", // FR dédié Victory Road
-	"InazumaCrossFR", // FR dédié Cross
-	"ElevenEspanol", // ES communauté/news
-	"InazumaItalia", // IT communauté/news
-	"Tenmatsukaze2", // PT/BR communauté
-	"TheBrasem", // EN résumés/news (Ina-Dai, DLC, hissatsu)
-	"Inazuma_JuuuN", // JA streamer/analyse VR+Cross
-	"Koume_no_Inaire", // JA compétitif/meta VR
-	// low / fallback (gardés pour historique / search discovery, peuvent retourner 0)
-	"InazumaElevenEN",
-	"inazuma_eleven",
-	"hino_akihiro",
+  "inazuma_project", // 公式 JP principal
+  "inazuma_cross", // 公式 JP — jeu mobile Inazuma Eleven Cross
+  "AkihiroHino", // CEO LEVEL-5
+  "LEVEL5_times", // LEVEL-5 officiel
+  "Azalee_IE", // FR
+  "InazumaSeries", // Series / officiel global EN
+  "Level5Hub", // news/leaks ES actif
+  // communauté / news haut-signal centrés IE (découverte search Aphrody 2026-06)
+  "DartsEnthusiast", // EN news/analyse
+  "InazumaNational", // EN clips/comparatifs
+  "ShinAngelico", // ES leaker/news
+  "Braco_Frost", // ES news/leaks
+  // round 2 — officiels + communauté vérifiés (Grok OIDC discovery + Aphrody verify)
+  "inazumaSD_L5", // 公式 JP — Inazuma Eleven SD
+  "mutugame", // ambassadeur officiel LEVEL-5 公認
+  "inazo__", // FR news/analyse
+  "ievrfr", // FR dédié Victory Road
+  "InazumaCrossFR", // FR dédié Cross
+  "ElevenEspanol", // ES communauté/news
+  "InazumaItalia", // IT communauté/news
+  "Tenmatsukaze2", // PT/BR communauté
+  "TheBrasem", // EN résumés/news (Ina-Dai, DLC, hissatsu)
+  "Inazuma_JuuuN", // JA streamer/analyse VR+Cross
+  "Koume_no_Inaire", // JA compétitif/meta VR
+  // low / fallback (gardés pour historique / search discovery, peuvent retourner 0)
+  "InazumaElevenEN",
+  "inazuma_eleven",
+  "hino_akihiro",
 ] as const;
 
 export type OfficialXAccount = (typeof OFFICIAL_X_ACCOUNTS)[number];
 
 /** Comptes prioritaires (fort volume + activité) — pour crawls rapides ou filtrage RAG. */
 export const PRIMARY_X_ACCOUNTS: readonly OfficialXAccount[] = [
-	"inazuma_project",
-	"inazuma_cross",
-	"AkihiroHino",
-	"LEVEL5_times",
-	"Azalee_IE",
-	"InazumaSeries",
+  "inazuma_project",
+  "inazuma_cross",
+  "AkihiroHino",
+  "LEVEL5_times",
+  "Azalee_IE",
+  "InazumaSeries",
 ] as const;
 
 /** Retourne la liste complète (ou primaire si opt-in). */
 export function getOfficialXAccounts(primaryOnly = false): readonly string[] {
-	return primaryOnly ? PRIMARY_X_ACCOUNTS : OFFICIAL_X_ACCOUNTS;
+  return primaryOnly ? PRIMARY_X_ACCOUNTS : OFFICIAL_X_ACCOUNTS;
 }
 
 /** Helper: charge cookie Aphrody Xcom.json (si présent) et renvoie "auth_token=..; ct0=.." pour XSession.fromCookieString. */
 export function loadXCookieHeader(): string | null {
-	try {
-		return XSession.loadOrEnv().cookieHeader();
-	} catch {
-		return null;
-	}
+  try {
+    return XSession.loadOrEnv().cookieHeader();
+  } catch {
+    return null;
+  }
 }
 
 /** Load the shared Aphrody X session as cookies for the x.com CDP page. */
 export function loadAphrodyXCookies(): Array<{ name: string; value: string; domain: string; path: string }> {
-	try {
-		const session = XSession.loadOrEnv();
-		return [
-			{ name: "auth_token", value: session.auth_token, domain: ".x.com", path: "/" },
-			{ name: "ct0", value: session.ct0, domain: ".x.com", path: "/" },
-		];
-	} catch {
-		return [];
-	}
+  try {
+    const session = XSession.loadOrEnv();
+    return [
+      { name: "auth_token", value: session.auth_token, domain: ".x.com", path: "/" },
+      { name: "ct0", value: session.ct0, domain: ".x.com", path: "/" },
+    ];
+  } catch {
+    return [];
+  }
 }

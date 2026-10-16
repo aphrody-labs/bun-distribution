@@ -128,9 +128,7 @@ function parseContent(content: any): {
         const idVar = vars.find((v: any) => v.type === "Int");
         const resourceId = idVar ? toHex(parseInt(idVar.value, 10)) : `INFO_${i}`;
 
-        const isTemplate = paths.some(
-          (p: string) => p.includes("<charaID>") || p.includes("<skillID>"),
-        );
+        const isTemplate = paths.some((p: string) => p.includes("<charaID>") || p.includes("<skillID>"));
 
         const pathMap: Partial<CharaResourceTemplate> = {};
         for (let j = 0; j < Math.min(paths.length, PATH_FIELDS.length); j++) {
@@ -171,9 +169,7 @@ export async function loadCharaMenuResourceConfigAsync(
   return content ? parseContent(content) : null;
 }
 
-export async function buildCharaMenuResourceDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<CharaMenuResourceDatabase> {
+export async function buildCharaMenuResourceDatabase(dataPath: string = DATA_ROOT): Promise<CharaMenuResourceDatabase> {
   const result = await loadCharaMenuResourceConfigAsync(dataPath);
   const basePath = result?.basePath || "#/menu/";
   const template = result?.template || null;

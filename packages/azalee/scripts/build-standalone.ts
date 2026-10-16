@@ -43,9 +43,7 @@ const compile = Bun.spawn(
     "--minify",
     "--sourcemap",
     ...(values.target ? [`--target=${values.target}`] : []),
-    ...(values["compile-executable-path"]
-      ? [`--compile-executable-path=${values["compile-executable-path"]}`]
-      : []),
+    ...(values["compile-executable-path"] ? [`--compile-executable-path=${values["compile-executable-path"]}`] : []),
     entry,
     "--outfile",
     outFile,
@@ -55,9 +53,7 @@ const compile = Bun.spawn(
 if ((await compile.exited) !== 0) throw new Error("Azalee standalone compilation failed");
 
 const size = Bun.file(outFile).size;
-console.log(
-  `built=${outFile} size=${(size / 1024 / 1024).toFixed(1)}Mo ms=${Date.now() - started}`,
-);
+console.log(`built=${outFile} size=${(size / 1024 / 1024).toFixed(1)}Mo ms=${Date.now() - started}`);
 
 if (values.install) {
   const target = path.join(process.env.HOME || homedir(), ".local/bin/azalee");

@@ -15,7 +15,7 @@ async function main() {
 
   for (let pageNum = 1; pageNum <= 5; pageNum++) {
     const filePath = path.join(skillDir, `page-${pageNum}.html`);
-    if (!fs.existsSync(filePath)) {
+    if (!(await Bun.file(filePath).exists())) {
       console.warn(`File not found: ${filePath}`);
       continue;
     }

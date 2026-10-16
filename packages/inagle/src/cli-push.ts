@@ -65,7 +65,7 @@ export function registerPushCommand(program: Command) {
     .description("Push Inagle data to PostgreSQL")
     .option("--env <path>", "Path to .env file", ".env")
     .option("--db-url <url>", "Postgres Connection URL")
-    .action(async (options) => {
+    .action(async options => {
       if (options.env) {
         dotenv.config({ path: path.resolve(process.cwd(), options.env) });
       }
@@ -214,9 +214,7 @@ async function importCharacters(service: any, db: DataAdapter) {
   const auraHashes = new Set<string>(
     service.skills
       .auraAll()
-      .flatMap((a: any) =>
-        [a.auraId, a.auraIdStr, a.id].filter((value): value is string => typeof value === "string"),
-      ),
+      .flatMap((a: any) => [a.auraId, a.auraIdStr, a.id].filter((value): value is string => typeof value === "string")),
   );
   console.log(`  Loaded ${auraHashes.size} aura hashes for skill/aura separation`);
 
@@ -231,10 +229,8 @@ async function importCharacters(service: any, db: DataAdapter) {
 
       // Separate skills from auras — chara_param mixes both in the same slots
       const rawSkills: { learnLevel: number; skillId: string }[] = c.skills || [];
-      const skills = rawSkills.filter(
-        (s) => s.skillId !== "0x00000002" && !auraHashes.has(s.skillId),
-      );
-      const auras = rawSkills.filter((s) => auraHashes.has(s.skillId));
+      const skills = rawSkills.filter(s => s.skillId !== "0x00000002" && !auraHashes.has(s.skillId));
+      const auras = rawSkills.filter(s => auraHashes.has(s.skillId));
 
       return {
         id: c.charaParamId,
@@ -341,10 +337,7 @@ async function importSkills(service: any, db: DataAdapter) {
   // modifiées, toutes les nuits. Un plan de site qui ment sur ses dates finit par
   // ne plus être cru — et gaspille le budget d'exploration en attendant.
   const preserved = new Map<string, PreservedSkill>();
-  for (const r of await db.fetchAll(
-    "inagle_skills",
-    "id, video_url, poster_url, thumbnail_url, created_at",
-  )) {
+  for (const r of await db.fetchAll("inagle_skills", "id, video_url, poster_url, thumbnail_url, created_at")) {
     preserved.set(String(r.id), {
       created_at: r.created_at ?? null,
       poster_url: r.poster_url ?? null,
@@ -356,7 +349,7 @@ async function importSkills(service: any, db: DataAdapter) {
     "inagle_skill_videos",
     "skill_id, position, label, video_url, poster_url, source",
   );
-  const avecZukan = [...preserved.values()].filter((p) => p.video_url || p.thumbnail_url).length;
+  const avecZukan = [...preserved.values()].filter(p => p.video_url || p.thumbnail_url).length;
   console.log(
     `  ${preserved.size} techniques préservées (${avecZukan} enrichies zukan, ${preservedVideos.length} variantes vidéo).`,
   );
@@ -411,9 +404,7 @@ async function importSkills(service: any, db: DataAdapter) {
       partner_count: s.partnerCount || 0,
       evolution_type: s.growthSpeed || null,
       skill_effect_bit_flag: s.skillEffectBitFlag || 0,
-      tags: s.tags
-        ? `{${s.tags.map((t: string) => `"${t.replace(/"/g, '\\"')}"`).join(",")}}`
-        : "{}",
+      tags: s.tags ? `{${s.tags.map((t: string) => `"${t.replace(/"/g, '\\"')}"`).join(",")}}` : "{}",
       image_url: service.images.skillUrl(id),
       data: s,
       updated_at: new Date().toISOString(),
@@ -503,10 +494,7 @@ async function importItems(service: any, db: DataAdapter) {
       const existingHasDesc = !!getDesc(existing, "fr");
       const itemHasDesc = !!getDesc(item, "fr");
 
-      if (
-        (!existingHasCode && itemHasCode) ||
-        (existingHasCode === itemHasCode && !existingHasDesc && itemHasDesc)
-      ) {
+      if ((!existingHasCode && itemHasCode) || (existingHasCode === itemHasCode && !existingHasDesc && itemHasDesc)) {
         uniqueMap.set(key, item);
       }
     }
@@ -640,8 +628,7 @@ async function importAuras(service: any, db: DataAdapter) {
     if (subType === "Keshin") keshins.push({ ...baseRecord, type: "Esprit Guerrier", data: a });
     else if (subType === "Soul") souls.push({ ...baseRecord, type: "Totem", data: a });
     else if (subType === "Awakening") awakenings.push({ ...baseRecord, type: "Éveil", data: a });
-    else if (subType === "ModeChange")
-      modeChanges.push({ ...baseRecord, type: "Changement de mode", data: a });
+    else if (subType === "ModeChange") modeChanges.push({ ...baseRecord, type: "Changement de mode", data: a });
     else if (subType === "Aura") {
       if (name.includes("Miximax")) miximax.push({ ...baseRecord, type: "Miximax", data: a });
       else {

@@ -96,11 +96,7 @@ export const TEXTURE_PREFIXES = {
 /**
  * Build a standard icon path.
  */
-export function buildIconPath(
-  prefix: keyof typeof TEXTURE_PREFIXES,
-  filename: string,
-  lang = "<LG>",
-): string {
+export function buildIconPath(prefix: keyof typeof TEXTURE_PREFIXES, filename: string, lang = "<LG>"): string {
   const base = TEXTURE_PREFIXES[prefix];
   if (base.includes("<LG>")) {
     return `${base.replace("<LG>", lang)}/${filename}.g4tx`;

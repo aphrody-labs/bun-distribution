@@ -18,13 +18,7 @@ const toc = [
 ].join("\n");
 const schemaSql = [
   header(1, "public", "SCHEMA", "-", "-- public schema support"),
-  header(
-    2,
-    "inagle_awakenings",
-    "TABLE",
-    "public",
-    "CREATE TABLE public.inagle_awakenings (id text);",
-  ),
+  header(2, "inagle_awakenings", "TABLE", "public", "CREATE TABLE public.inagle_awakenings (id text);"),
   header(3, "profiles", "TABLE", "public", "CREATE TABLE public.profiles (id text);"),
   header(
     4,
@@ -75,9 +69,7 @@ test("client TLS evidence qualifies an encrypted proxy connection independently 
   expect(evidence.cipher).toBe("TLS_AES_256_GCM_SHA384");
   expect(evidence.conninfoSha256).toHaveLength(64);
   expect(clientTransport(conninfo.replace("TLSv1.3", "TLSv1.2")).protocol).toBe("TLSv1.2");
-  expect(() =>
-    clientTransport(conninfo.replace("SSL Connection,true", "SSL Connection,false")),
-  ).toThrow("client TLS");
+  expect(() => clientTransport(conninfo.replace("SSL Connection,true", "SSL Connection,false"))).toThrow("client TLS");
   expect(() => clientTransport(conninfo.replace("TLSv1.3", "TLSv1.1"))).toThrow("client TLS");
   expect(() => clientTransport(conninfo.replace("Bits,256", "Bits,64"))).toThrow("client TLS");
   expect(() => clientTransport(conninfo + "SSL Protocol,TLSv1.3\n")).toThrow("Invalid client SSL");
@@ -86,7 +78,7 @@ test("client TLS evidence qualifies an encrypted proxy connection independently 
 test("each source table data entry is assigned once to its owner, including Inagle migration history", () => {
   const result = partitionArchive(fixture());
   expect(result.entries).toHaveLength(10);
-  expect(result.tables.filter((t) => t.owner === "game").map((t) => t.name)).toEqual([
+  expect(result.tables.filter(t => t.owner === "game").map(t => t.name)).toEqual([
     "inagle_awakenings",
     "niers_schema_migrations",
   ]);
@@ -111,10 +103,10 @@ test("cross-store admin policies become scoped NOLOGIN writer privileges, withou
     "GRANT SELECT, INSERT, UPDATE, DELETE ON public.inagle_awakenings TO inagle_writer",
   );
   expect(result.policySql).toContain("FOR ALL TO inagle_writer USING (true) WITH CHECK (true)");
-  expect(result.policyRewrites.map((p) => p.target)).toEqual(["writer", "reader"]);
+  expect(result.policyRewrites.map(p => p.target)).toEqual(["writer", "reader"]);
   expect(result.policySql).toContain("FOR SELECT TO inagle_reader USING (true)");
   expect(result.gameToc).not.toContain(" ACL ");
-  expect(result.entries.find((e) => e.id === 10)?.disposition).toBe("privileges-held");
+  expect(result.entries.find(e => e.id === 10)?.disposition).toBe("privileges-held");
   expect(result.crossStoreDependencies).toEqual([
     {
       id: 8,
@@ -136,23 +128,23 @@ test("a migration-history owner guess cannot qualify an unrelated or incomplete 
       history: { ...input.history, technicalFamilyMatches: { inagle: 3 } },
     }),
   ).toThrow("ownership evidence");
-  expect(() =>
-    partitionArchive({ ...input, history: { ...input.history, sourceSha256: "b".repeat(64) } }),
-  ).toThrow("ownership evidence");
+  expect(() => partitionArchive({ ...input, history: { ...input.history, sourceSha256: "b".repeat(64) } })).toThrow(
+    "ownership evidence",
+  );
   expect(() => partitionArchive({ ...input, expectedEntries: 11 })).toThrow("coverage");
 });
 
 test("duplicate TOC IDs, unknown descriptions and uninventoried data fail before generating an allowlist", () => {
   const input = fixture();
-  expect(() =>
-    partitionArchive({ ...input, toc: input.toc + "\n" + input.toc.split("\n")[0] }),
-  ).toThrow("Duplicate TOC");
-  expect(() =>
-    partitionArchive({ ...input, toc: input.toc + "\n11; 0 0 PRIVATE DATA public private owner" }),
-  ).toThrow("Unknown TOC");
-  expect(() =>
-    partitionArchive({ ...input, toc: input.toc + "\n11; 0 0 TABLE DATA public missing owner" }),
-  ).toThrow("Uninventoried table data");
+  expect(() => partitionArchive({ ...input, toc: input.toc + "\n" + input.toc.split("\n")[0] })).toThrow(
+    "Duplicate TOC",
+  );
+  expect(() => partitionArchive({ ...input, toc: input.toc + "\n11; 0 0 PRIVATE DATA public private owner" })).toThrow(
+    "Unknown TOC",
+  );
+  expect(() => partitionArchive({ ...input, toc: input.toc + "\n11; 0 0 TABLE DATA public missing owner" })).toThrow(
+    "Uninventoried table data",
+  );
   expect(() =>
     partitionArchive({
       ...input,

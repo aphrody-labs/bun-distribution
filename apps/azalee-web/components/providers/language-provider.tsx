@@ -52,8 +52,7 @@ export function LanguageProvider({
     frDictionary as Record<string, string>,
   );
   const [loadedLanguage, setLoadedLanguage] = useState<Language | null>(null);
-  const dictionary =
-    language === "fr" ? (frDictionary as Record<string, string>) : loadedDictionary;
+  const dictionary = language === "fr" ? (frDictionary as Record<string, string>) : loadedDictionary;
   const isLoading = language !== "fr" && loadedLanguage !== language;
 
   const setLanguage = (lang: Language) => {
@@ -77,18 +76,18 @@ export function LanguageProvider({
 
     const controller = new AbortController();
     fetch(`/locales/${language}.json`, { signal: controller.signal })
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error(`Locale ${language}: HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
+      .then(data => {
         setLoadedDictionary({
           ...(frDictionary as Record<string, string>),
           ...(data as Record<string, string>),
         });
         setLoadedLanguage(language);
       })
-      .catch((error) => {
+      .catch(error => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to load locale", error);
         setLanguageState(DEFAULT_LANGUAGE);

@@ -22,12 +22,8 @@ function fixture(run: (root: string, command: (name: string) => number) => void)
     for (const file of ["tools/docs-archive.ts", "validation/docs.ts", "validation/docs-files.ts"])
       copyFileSync(join(import.meta.dir, "..", file), join(root, "scripts", file));
     // Archive fixtures exercise the real documentation gate; root inventory has separate tests.
-    writeFileSync(
-      join(root, "scripts/iecode/tools/readme.ts"),
-      "export function checkReadmeInventory() {}\n",
-    );
-    for (const folder of ["docs/history", "docs/research"])
-      mkdirSync(join(root, folder), { recursive: true });
+    writeFileSync(join(root, "scripts/iecode/tools/readme.ts"), "export function checkReadmeInventory() {}\n");
+    for (const folder of ["docs/history", "docs/research"]) mkdirSync(join(root, folder), { recursive: true });
     writeFileSync(join(root, "docs/README.md"), "[History](history/report.md)\n");
     writeFileSync(join(root, "docs/history/report.md"), "Unique historical evidence\n");
     writeFileSync(join(root, "docs/research/report.md"), "Unique research evidence\n");
@@ -51,8 +47,7 @@ function fixture(run: (root: string, command: (name: string) => number) => void)
     expect(Bun.spawnSync(["git", "init", "-q", root]).exitCode).toBe(0);
     expect(Bun.spawnSync(["git", "add", "."], { cwd: root }).exitCode).toBe(0);
     const command = (name: string): number =>
-      Bun.spawnSync(["bun", join(root, "scripts/iecode/tools/docs-archive.ts"), name], { cwd: root })
-        .exitCode;
+      Bun.spawnSync(["bun", join(root, "scripts/iecode/tools/docs-archive.ts"), name], { cwd: root }).exitCode;
     run(root, command);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -71,12 +66,8 @@ test("compact, repack and unpack preserve all evidence and local edits", () => {
     writeFileSync(join(root, "docs/README.md"), "New local edit\n");
     expect(command("unpack")).toBe(0);
     expect(readFileSync(join(root, "docs/README.md"), "utf8")).toBe("New local edit\n");
-    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe(
-      "Unique historical evidence\n",
-    );
-    expect(readFileSync(join(root, "docs/research/report.md"), "utf8")).toBe(
-      "Unique research evidence\n",
-    );
+    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe("Unique historical evidence\n");
+    expect(readFileSync(join(root, "docs/research/report.md"), "utf8")).toBe("Unique research evidence\n");
   });
 });
 
@@ -107,9 +98,7 @@ test("partial cold-tree edits cannot discard other archived files", () => {
     expect(Bun.spawnSync(["git", "add", "docs/history/new.md"], { cwd: root }).exitCode).toBe(0);
     expect(command("compact")).toBe(0);
     expect(command("unpack")).toBe(0);
-    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe(
-      "Unique historical evidence\n",
-    );
+    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe("Unique historical evidence\n");
     expect(readFileSync(join(root, "docs/history/new.md"), "utf8")).toBe("New evidence\n");
   });
 });
@@ -129,16 +118,12 @@ test("packing excludes ignored private notes and untracked drafts but retains tr
     expect(paths).toContain("docs/history/report.md");
     expect(paths).not.toContain("private.md");
     expect(paths).not.toContain("draft.md");
-    expect(readFileSync(join(root, "docs/domain/memory/private.md"), "utf8")).toBe(
-      "Private fixture only\n",
-    );
+    expect(readFileSync(join(root, "docs/domain/memory/private.md"), "utf8")).toBe("Private fixture only\n");
     expect(command("pack")).toBe(0);
     // Untracked drafts are independently checked by docs:check; remove this fixture draft
     // before exercising unpack validation of the classified public snapshot.
     rmSync(join(root, "docs/draft.md"));
     expect(command("unpack")).toBe(0);
-    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe(
-      "Unique historical evidence\n",
-    );
+    expect(readFileSync(join(root, "docs/history/report.md"), "utf8")).toBe("Unique historical evidence\n");
   });
 });

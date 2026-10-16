@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
 
-const content = fs.readFileSync("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js", "utf8");
+const content = await Bun.file("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js").text();
 
 console.log("File size:", content.length);
 

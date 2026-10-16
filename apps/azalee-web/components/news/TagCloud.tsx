@@ -11,8 +11,8 @@ export function TagCloud({ tags }: TagCloudProps) {
     return null;
   }
 
-  const maxCount = Math.max(...tags.map((t) => t.count));
-  const minCount = Math.min(...tags.map((t) => t.count));
+  const maxCount = Math.max(...tags.map(t => t.count));
+  const minCount = Math.min(...tags.map(t => t.count));
   const range = maxCount - minCount || 1;
 
   const getSize = (count: number) => {
@@ -23,9 +23,7 @@ export function TagCloud({ tags }: TagCloudProps) {
 
   return (
     <div className="p-5 rounded-2xl bg-surface-container-low border border-outline-variant/10">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60 mb-3">
-        Tags populaires
-      </h3>
+      <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60 mb-3">Tags populaires</h3>
       <div className="flex flex-wrap gap-2">
         {tags.map(({ tag, count }) => (
           <Link

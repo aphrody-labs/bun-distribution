@@ -83,7 +83,7 @@ function fitObject(object: THREE.Object3D, emissiveBoost: boolean): void {
 
   if (emissiveBoost) {
     // Couches d'effet : émissif boosté + hors tonemapping pour « briller » dans le Bloom.
-    object.traverse((child) => {
+    object.traverse(child => {
       const mesh = child as THREE.Mesh;
       if (!mesh.isMesh) return;
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -157,18 +157,12 @@ function CameraRig({
 }
 
 /** Remonte le handle de rendu (gl/scene/camera/advance/sequence) au wrapper. */
-function ReadyReporter({
-  sequence,
-  onReady,
-}: {
-  sequence: ISequence;
-  onReady?: (h: CutinSceneHandle) => void;
-}): null {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const camera = useThree((s) => s.camera);
-  const advance = useThree((s) => s.advance);
-  const setFrameloop = useThree((s) => s.setFrameloop);
+function ReadyReporter({ sequence, onReady }: { sequence: ISequence; onReady?: (h: CutinSceneHandle) => void }): null {
+  const gl = useThree(s => s.gl);
+  const scene = useThree(s => s.scene);
+  const camera = useThree(s => s.camera);
+  const advance = useThree(s => s.advance);
+  const setFrameloop = useThree(s => s.setFrameloop);
   useEffect(() => {
     onReady?.({
       gl,
@@ -176,7 +170,7 @@ function ReadyReporter({
       camera,
       advance,
       sequence,
-      setFrameloop: (mode) => setFrameloop(mode),
+      setFrameloop: mode => setFrameloop(mode),
     });
   }, [gl, scene, camera, advance, sequence, setFrameloop, onReady]);
   return null;
@@ -185,10 +179,7 @@ function ReadyReporter({
 /** Contenu de la scène (intérieur du `<Canvas>`). */
 function SceneContent(props: CutinSceneProps): React.JSX.Element {
   const { manifest, storyboard, glbLayers, visibility, bloom = true, orbit = false } = props;
-  const sheet = useMemo(
-    () => getProject("azalee-cutin").sheet(manifest.eventId),
-    [manifest.eventId],
-  );
+  const sheet = useMemo(() => getProject("azalee-cutin").sheet(manifest.eventId), [manifest.eventId]);
   const sequence = sheet.sequence;
 
   // Réinitialise le playhead au montage / changement de durée. La longueur de timeline
@@ -202,7 +193,7 @@ function SceneContent(props: CutinSceneProps): React.JSX.Element {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
     let active = true;
-    void import("@theatre/studio").then((mod) => {
+    void import("@theatre/studio").then(mod => {
       if (active) mod.default.initialize();
     });
     return () => {
@@ -210,7 +201,7 @@ function SceneContent(props: CutinSceneProps): React.JSX.Element {
     };
   }, []);
 
-  const visibleLayers = glbLayers.filter((l) => visibility[l.id] !== false);
+  const visibleLayers = glbLayers.filter(l => visibility[l.id] !== false);
 
   return (
     <SheetProvider sheet={sheet}>
@@ -220,7 +211,7 @@ function SceneContent(props: CutinSceneProps): React.JSX.Element {
       <directionalLight position={[-4, 2, -3]} intensity={0.8} color={0xbcd0ff} />
 
       <Suspense fallback={null}>
-        {visibleLayers.map((layer) => (
+        {visibleLayers.map(layer => (
           <LayerModel key={layer.id} layer={layer} />
         ))}
       </Suspense>

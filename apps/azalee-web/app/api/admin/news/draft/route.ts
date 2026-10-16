@@ -190,11 +190,7 @@ async function resolveAuthorId(supabase: any, body: DraftBody): Promise<string> 
     const filter = body.author_email
       ? { col: "email", val: body.author_email }
       : { col: "username", val: body.author_username! };
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq(filter.col, filter.val)
-      .maybeSingle();
+    const { data, error } = await supabase.from("profiles").select("id").eq(filter.col, filter.val).maybeSingle();
     if (error) {
       throw new Error(`Profile lookup failed: ${error.message}`);
     }
@@ -276,20 +272,17 @@ async function fetchCoAuthorsFromDiscordRole(
     after = lastMember.user.id;
   }
 
-  const withRole = all.filter((m) => m.roles?.includes(roleId));
+  const withRole = all.filter(m => m.roles?.includes(roleId));
   if (withRole.length === 0) {
     return [];
   }
 
-  const discordIds = withRole.map((m) => m.user.id);
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, discord_id")
-    .in("discord_id", discordIds);
+  const discordIds = withRole.map(m => m.user.id);
+  const { data: profiles } = await supabase.from("profiles").select("id, discord_id").in("discord_id", discordIds);
 
   const profileByDiscord = new Map<string, string>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ((profiles ?? []) as any[]).map((p) => [p.discord_id, p.id as string]),
+    ((profiles ?? []) as any[]).map(p => [p.discord_id, p.id as string]),
   );
 
   const out: CoAuthor[] = [];
@@ -334,10 +327,7 @@ async function ensureUniqueSlug(supabase: any, base: string): Promise<string> {
 export async function POST(request: NextRequest) {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "CLAUDE_API_KEY non configuré côté serveur" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "CLAUDE_API_KEY non configuré côté serveur" }, { status: 500 });
   }
 
   const authHeader = request.headers.get("authorization");
@@ -393,7 +383,7 @@ export async function POST(request: NextRequest) {
         body.exclude_author_from_co ? authorId : null,
       );
       for (const c of expanded) {
-        if (!coAuthors.some((existing) => existing.discord_id === c.discord_id)) {
+        if (!coAuthors.some(existing => existing.discord_id === c.discord_id)) {
           coAuthors.push(c);
         }
       }
@@ -419,11 +409,7 @@ export async function POST(request: NextRequest) {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from("articles")
-      .insert([row])
-      .select("id, slug")
-      .single();
+    const { data, error } = await (supabase as any).from("articles").insert([row]).select("id, slug").single();
 
     if (error) {
       return NextResponse.json({ error: `Supabase insert: ${error.message}` }, { status: 500 });

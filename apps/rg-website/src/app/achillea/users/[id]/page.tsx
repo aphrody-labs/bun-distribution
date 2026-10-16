@@ -5,7 +5,7 @@ import { signalerEchec } from "@/lib/achillea/signaler";
 import UserProfileClient from "./user-profile-client";
 
 interface ProfilJoueurProps {
-	params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }
 
 /*
@@ -17,31 +17,31 @@ interface ProfilJoueurProps {
  * aucune donnée de session n'est lue ici.
  */
 export async function generateMetadata({ params }: ProfilJoueurProps): Promise<Metadata> {
-	const { id } = await params;
-	const chemin = `/achillea/users/${id}`;
+  const { id } = await params;
+  const chemin = `/achillea/users/${id}`;
 
-	const resultat = await createAchilleaClient().users.get(id);
-	if (!resultat.ok) {
-		signalerEchec(`users/${id} — métadonnées`, resultat);
-		return metadonneesAchillea({
-			titre: "Profil joueur",
-			description: "Palier, statistiques classées et palmarès d'un joueur Achilléa.",
-			chemin,
-		});
-	}
+  const resultat = await createAchilleaClient().users.get(id);
+  if (!resultat.ok) {
+    signalerEchec(`users/${id} — métadonnées`, resultat);
+    return metadonneesAchillea({
+      titre: "Profil joueur",
+      description: "Palier, statistiques classées et palmarès d'un joueur Achilléa.",
+      chemin,
+    });
+  }
 
-	const joueur = resultat.value;
-	const palier = joueur.soloRank?.key;
-	return metadonneesAchillea({
-		titre: joueur.username,
-		description: palier
-			? `${joueur.username} sur Achilléa : palier ${palier} (${joueur.soloRank?.elo ?? 0} AP) en 1v1, statistiques classées et palmarès en tournoi.`
-			: `${joueur.username} sur Achilléa : statistiques classées, clan et palmarès en tournoi.`,
-		chemin,
-	});
+  const joueur = resultat.value;
+  const palier = joueur.soloRank?.key;
+  return metadonneesAchillea({
+    titre: joueur.username,
+    description: palier
+      ? `${joueur.username} sur Achilléa : palier ${palier} (${joueur.soloRank?.elo ?? 0} AP) en 1v1, statistiques classées et palmarès en tournoi.`
+      : `${joueur.username} sur Achilléa : statistiques classées, clan et palmarès en tournoi.`,
+    chemin,
+  });
 }
 
 export default async function UserProfilePage({ params }: ProfilJoueurProps) {
-	const { id } = await params;
-	return <UserProfileClient id={id} />;
+  const { id } = await params;
+  return <UserProfileClient id={id} />;
 }

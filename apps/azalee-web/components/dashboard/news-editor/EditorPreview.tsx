@@ -17,15 +17,8 @@ interface EditorPreviewProps {
   onClose: () => void;
 }
 
-export function EditorPreview({
-  title,
-  excerpt,
-  imageUrl,
-  category,
-  content,
-  onClose,
-}: EditorPreviewProps) {
-  const currentCategory = CATEGORIES.find((c) => c.value === category);
+export function EditorPreview({ title, excerpt, imageUrl, category, content, onClose }: EditorPreviewProps) {
+  const currentCategory = CATEGORIES.find(c => c.value === category);
   const wordCount = countWords(content);
   const readTime = estimateReadTime(wordCount);
 
@@ -40,22 +33,12 @@ export function EditorPreview({
       <article className="max-w-3xl mx-auto px-6 py-12 space-y-6">
         {imageUrl && (
           <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-muted">
-            <Image
-              src={imageUrl}
-              alt="Cover"
-              fill
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover"
-            />
+            <Image src={imageUrl} alt="Cover" fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
           </div>
         )}
         <div className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">
-            {currentCategory?.label}
-          </span>
-          <h1 className="text-4xl font-black tracking-tight leading-tight">
-            {title || "Sans titre"}
-          </h1>
+          <span className="text-xs font-bold uppercase tracking-wider text-primary">{currentCategory?.label}</span>
+          <h1 className="text-4xl font-black tracking-tight leading-tight">{title || "Sans titre"}</h1>
           {excerpt && <p className="text-lg text-muted-foreground">{excerpt}</p>}
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground border-y border-outline-variant/20 py-3">

@@ -43,7 +43,7 @@ export async function computeSHA256(filePath: string): Promise<string | null> {
     const arr = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest("SHA-256", arr);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   } catch {
     return null;
   }

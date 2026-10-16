@@ -29,10 +29,7 @@ export function sourcePlayerUrl(source: MediaSource, startSeconds = 0): string {
   return source.url;
 }
 
-export function sourceFromEpisode(
-  videoId: string,
-  thumbnailUrl: string | null,
-): MediaSource | null {
+export function sourceFromEpisode(videoId: string, thumbnailUrl: string | null): MediaSource | null {
   if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
     return {
       platform: "youtube",
@@ -41,9 +38,7 @@ export function sourceFromEpisode(
       official: true,
     };
   }
-  const dailymotionId = thumbnailUrl?.match(
-    /dailymotion\.com\/thumbnail\/video\/([A-Za-z0-9]+)/,
-  )?.[1];
+  const dailymotionId = thumbnailUrl?.match(/dailymotion\.com\/thumbnail\/video\/([A-Za-z0-9]+)/)?.[1];
   if (dailymotionId) {
     return { platform: "dailymotion", id: dailymotionId, url: thumbnailUrl!, official: true };
   }

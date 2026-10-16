@@ -7,16 +7,16 @@
  * @returns URL complète de l'asset
  */
 export function getAssetUrl(path: string): string {
-	if (!path) return "";
-	if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("blob:")) return path;
+  if (!path) return "";
+  if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("blob:")) return path;
 
-	const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-	if (!supabaseUrl) return path;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return path;
 
-	const ASSETS_BUCKET_URL = `${supabaseUrl}/storage/v1/object/public/assets`;
+  const ASSETS_BUCKET_URL = `${supabaseUrl}/storage/v1/object/public/assets`;
 
-	// Nettoyer le chemin (enlever le slash initial si présent)
-	const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  // Nettoyer le chemin (enlever le slash initial si présent)
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
-	return `${ASSETS_BUCKET_URL}/${cleanPath}`;
+  return `${ASSETS_BUCKET_URL}/${cleanPath}`;
 }

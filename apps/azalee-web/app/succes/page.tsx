@@ -7,11 +7,7 @@ import { FadeInItem, FadeInStagger } from "@/components/ui/fade-in";
 import { WikiSearchToolbar } from "@/components/wiki/WikiSearchToolbar";
 import { parseSearchParams } from "@/lib/validations";
 import { getTrophiesList } from "@/lib/wiki/trophies";
-import {
-  CATEGORY_LABELS,
-  type Trophy,
-  type TrophyCategory,
-} from "@rosegriffon/azalee/wiki/trophies-shared";
+import { CATEGORY_LABELS, type Trophy, type TrophyCategory } from "@rosegriffon/azalee/wiki/trophies-shared";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/succes" },
@@ -21,17 +17,7 @@ export const metadata: Metadata = {
 };
 
 /** Onglet de filtre catégorie (Link server-side, préserve la recherche `q`). */
-function CategoryTab({
-  active,
-  href,
-  label,
-  count,
-}: {
-  active: boolean;
-  href: string;
-  label: string;
-  count: number;
-}) {
+function CategoryTab({ active, href, label, count }: { active: boolean; href: string; label: string; count: number }) {
   return (
     <Link
       href={href}
@@ -68,12 +54,8 @@ function TrophyCard({ trophy }: { trophy: Trophy }) {
         <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
           {trophy.groupLabel}
         </span>
-        <h2 className="truncate text-sm font-semibold text-on-surface group-hover:text-primary">
-          {trophy.name}
-        </h2>
-        {trophy.desc && (
-          <p className="mt-0.5 line-clamp-2 text-xs text-on-surface-variant">{trophy.desc}</p>
-        )}
+        <h2 className="truncate text-sm font-semibold text-on-surface group-hover:text-primary">{trophy.name}</h2>
+        {trophy.desc && <p className="mt-0.5 line-clamp-2 text-xs text-on-surface-variant">{trophy.desc}</p>}
       </div>
     </Link>
   );
@@ -88,8 +70,7 @@ export default async function SuccesPage({
   const params = parseSearchParams(rawParams);
   const q = params.q || "";
   const catParam = typeof rawParams.cat === "string" ? rawParams.cat : "all";
-  const cat: TrophyCategory | "all" =
-    catParam === "trophy" || catParam === "activity" ? catParam : "all";
+  const cat: TrophyCategory | "all" = catParam === "trophy" || catParam === "activity" ? catParam : "all";
 
   const { trophies, counts } = await getTrophiesList({ q, cat });
 
@@ -124,10 +105,7 @@ export default async function SuccesPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
 
       {/* En-tête */}
       <div className="space-y-1">
@@ -135,8 +113,7 @@ export default async function SuccesPage({
           Succès & Trophées
         </h1>
         <p className="text-sm text-on-surface-variant">
-          Liste complète des succès et objectifs d&apos;activité d&apos;Inazuma Eleven: Victory
-          Road.
+          Liste complète des succès et objectifs d&apos;activité d&apos;Inazuma Eleven: Victory Road.
         </p>
       </div>
 
@@ -169,7 +146,7 @@ export default async function SuccesPage({
       {/* Grille */}
       {trophies.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {trophies.map((trophy) => (
+          {trophies.map(trophy => (
             <FadeInItem key={trophy.id}>
               <TrophyCard trophy={trophy} />
             </FadeInItem>

@@ -11,13 +11,4 @@ export * from "./nie.js";
 export * from "./fork-runtime.js";
 
 // Bun-native C-ABI FFI bindings & utilities
-export {
-  dlopen,
-  FFIType,
-  suffix,
-  ptr,
-  CString,
-  JSCallback,
-  CFunction,
-  toArrayBuffer,
-} from "bun:ffi";
+export { dlopen, FFIType, suffix, ptr, CString, JSCallback, CFunction, toArrayBuffer } from "bun:ffi";

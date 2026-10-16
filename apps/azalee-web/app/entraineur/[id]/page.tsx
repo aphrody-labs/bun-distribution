@@ -5,11 +5,7 @@ import { notFound } from "next/navigation";
 import { CoachDetail } from "@/components/wiki/CoachDetail";
 import { getCoach } from "@/lib/wiki/coaches";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const coach = await getCoach(Number(id));
 

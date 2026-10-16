@@ -51,13 +51,10 @@ export default async function NiveauPage() {
   return (
     <div className="w-full space-y-6">
       <header className="space-y-2">
-        <h1 className="text-fluid-headline-lg font-extrabold text-on-surface">
-          Niveaux &amp; Expérience
-        </h1>
+        <h1 className="text-fluid-headline-lg font-extrabold text-on-surface">Niveaux &amp; Expérience</h1>
         <p className="max-w-2xl text-on-surface-variant">
-          Combien d'expérience faut-il pour monter un joueur d'un niveau à l'autre ? Cette page
-          expose la table d'expérience du jeu telle qu'elle est extraite, sans lissage ni formule
-          reconstituée.
+          Combien d'expérience faut-il pour monter un joueur d'un niveau à l'autre ? Cette page expose la table
+          d'expérience du jeu telle qu'elle est extraite, sans lissage ni formule reconstituée.
         </p>
       </header>
 
@@ -65,14 +62,8 @@ export default async function NiveauPage() {
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Chiffre label="Paliers en base" valeur={String(data.entries.length)} />
           <Chiffre label="Niveau maximum" valeur={String(data.maxLevel)} />
-          <Chiffre
-            label={`EXP totale Lv${data.minLevel} → Lv${data.maxLevel}`}
-            valeur={formatExp(data.totalExp)}
-          />
-          <Chiffre
-            label="Palier le plus cher"
-            valeur={formatExp(Math.max(...data.entries.map((e) => e.needExp)))}
-          />
+          <Chiffre label={`EXP totale Lv${data.minLevel} → Lv${data.maxLevel}`} valeur={formatExp(data.totalExp)} />
+          <Chiffre label="Palier le plus cher" valeur={formatExp(Math.max(...data.entries.map(e => e.needExp)))} />
         </dl>
       )}
 
@@ -81,23 +72,22 @@ export default async function NiveauPage() {
       <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 text-sm text-on-surface-variant sm:p-5">
         <h2 className="mb-2 text-sm font-bold text-on-surface">D'où viennent ces chiffres</h2>
         <p>
-          Source : la table <code className="text-on-surface">inagle_exp_table</code>, extraite du
-          fichier de configuration <code className="text-on-surface">chara_exp_table_config</code>{" "}
-          du jeu. Chaque ligne donne l'expérience nécessaire pour passer d'un niveau au niveau
-          suivant ; les cumuls affichés ici sont la somme des paliers précédents, exactement comme
-          le calcule le moteur de données du projet.
+          Source : la table <code className="text-on-surface">inagle_exp_table</code>, extraite du fichier de
+          configuration <code className="text-on-surface">chara_exp_table_config</code> du jeu. Chaque ligne donne
+          l'expérience nécessaire pour passer d'un niveau au niveau suivant ; les cumuls affichés ici sont la somme des
+          paliers précédents, exactement comme le calcule le moteur de données du projet.
         </p>
         {data.entries.length > 0 && (
           <p className="mt-2">
             La ligne du niveau {data.maxLevel} porte bien une valeur en base (
-            {formatExp(data.entries[data.entries.length - 1]?.needExp ?? 0)} EXP), mais comme il
-            n'existe pas de niveau {data.maxLevel + 1} elle ne finance aucun passage : elle est
-            affichée telle quelle dans le tableau et exclue de tous les cumuls.
+            {formatExp(data.entries[data.entries.length - 1]?.needExp ?? 0)} EXP), mais comme il n'existe pas de niveau{" "}
+            {data.maxLevel + 1} elle ne finance aucun passage : elle est affichée telle quelle dans le tableau et exclue
+            de tous les cumuls.
           </p>
         )}
         <p className="mt-2">
-          La table ne contient que le niveau et son coût : aucun bonus de rareté, aucune courbe
-          alternative n'y figure. Rien de tel n'est donc affiché ici.
+          La table ne contient que le niveau et son coût : aucun bonus de rareté, aucune courbe alternative n'y figure.
+          Rien de tel n'est donc affiché ici.
         </p>
       </section>
     </div>

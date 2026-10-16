@@ -17,7 +17,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importSkillTechnic(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("Erreur fatale push-skill_technic:", e);
     process.exit(1);
   });

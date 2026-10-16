@@ -14,13 +14,9 @@ import { getDatabaseURL } from "./pg";
 export const ACHILLEA_SCHEMA = "achillea" as const;
 
 export function getAchilleaDatabaseUrl(): string {
-	return getDatabaseURL();
+  return getDatabaseURL();
 }
 
 export function getAchilleaApiUrl(): string {
-	return (
-		process.env["NEXT_PUBLIC_ACHILLEA_API_URL"] ||
-		process.env["ACHILLEA_API_URL"] ||
-		"https://api.rosegriffon.fr"
-	);
+  return process.env["NEXT_PUBLIC_ACHILLEA_API_URL"] || process.env["ACHILLEA_API_URL"] || "https://api.rosegriffon.fr";
 }

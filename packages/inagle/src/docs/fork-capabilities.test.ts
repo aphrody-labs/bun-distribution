@@ -36,9 +36,7 @@ test("documentation preserves every inventory section and native witness without
   const artifacts = generateForkCapabilityArtifacts({
     catalog,
     runtimeRevision: "0".repeat(40),
-    artifacts: [
-      { fileName: "ie.dll", sha256: "1".repeat(64), abiVersion: 1, aliasOfCanonicalLibrary: true },
-    ],
+    artifacts: [{ fileName: "ie.dll", sha256: "1".repeat(64), abiVersion: 1, aliasOfCanonicalLibrary: true }],
   });
   const markdown = artifacts["FORK-CAPABILITIES.md"]!;
   expect(markdown).toContain("bun:python");

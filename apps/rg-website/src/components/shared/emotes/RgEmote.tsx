@@ -58,8 +58,7 @@ export default function RgEmote({
     <div
       className={cn(
         "inline-block relative select-none",
-        animated &&
-          "hover:scale-110 hover:rotate-12 transition-transform duration-300 cursor-pointer",
+        animated && "hover:scale-110 hover:rotate-12 transition-transform duration-300 cursor-pointer",
         className,
       )}
       style={{ height: size, width: size }}
@@ -77,7 +76,7 @@ export default function RgEmote({
         sizes={`${size}px`}
         onError={handleError}
         unoptimized // Emotes are small, optimization might be overkill or cause issues with some formats
-        onContextMenu={preventDownload ? (e) => e.preventDefault() : undefined}
+        onContextMenu={preventDownload ? e => e.preventDefault() : undefined}
         draggable={preventDownload ? false : undefined}
       />
     </div>
@@ -98,14 +97,7 @@ interface RgEmoteLineProps extends React.HTMLAttributes<HTMLDivElement> {
   animated?: boolean;
 }
 
-export function RgEmoteLine({
-  emotes,
-  size = 32,
-  gap = 8,
-  animated = true,
-  className,
-  ...props
-}: RgEmoteLineProps) {
+export function RgEmoteLine({ emotes, size = 32, gap = 8, animated = true, className, ...props }: RgEmoteLineProps) {
   return (
     <div className={cn("flex items-center", className)} style={{ gap: `${gap}px` }} {...props}>
       {emotes.map((emoteName, index) => (
@@ -146,11 +138,11 @@ export function RgEmoteGrid({
   let filteredEmotes = Object.values(EMOTES);
 
   if (character) {
-    filteredEmotes = filteredEmotes.filter((e) => e.character === character);
+    filteredEmotes = filteredEmotes.filter(e => e.character === character);
   }
 
   if (category) {
-    filteredEmotes = filteredEmotes.filter((e) => e.category === category);
+    filteredEmotes = filteredEmotes.filter(e => e.category === category);
   }
 
   return (
@@ -159,7 +151,7 @@ export function RgEmoteGrid({
       style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
       {...props}
     >
-      {filteredEmotes.map((emote) => (
+      {filteredEmotes.map(emote => (
         <button
           key={emote.name}
           onClick={() => onEmoteClick?.(emote)}
@@ -167,9 +159,7 @@ export function RgEmoteGrid({
           type="button"
         >
           <RgEmote name={emote.name as keyof typeof EMOTES} size={size} animated={animated} />
-          <span className="text-xs text-muted-foreground text-center">
-            {emote.name.replaceAll(/_/g, " ")}
-          </span>
+          <span className="text-xs text-muted-foreground text-center">{emote.name.replaceAll(/_/g, " ")}</span>
         </button>
       ))}
     </div>

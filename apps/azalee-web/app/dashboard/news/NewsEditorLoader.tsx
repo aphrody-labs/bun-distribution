@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 const NewsEditorForm = dynamic(
-  () => import("@/components/dashboard/news-editor/NewsEditorForm").then((m) => m.NewsEditorForm),
+  () => import("@/components/dashboard/news-editor/NewsEditorForm").then(m => m.NewsEditorForm),
   {
     loading: () => (
       <div className="flex flex-col gap-4 animate-pulse p-6">

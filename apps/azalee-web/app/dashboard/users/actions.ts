@@ -14,16 +14,9 @@ async function requireAdminSession() {
   }
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
 
-  if (
-    !profile ||
-    !USER_MANAGEMENT_ROLES.includes(profile.role as (typeof USER_MANAGEMENT_ROLES)[number])
-  ) {
+  if (!profile || !USER_MANAGEMENT_ROLES.includes(profile.role as (typeof USER_MANAGEMENT_ROLES)[number])) {
     return { error: "Permissions insuffisantes", role: null, session: null };
   }
 
@@ -69,10 +62,7 @@ export async function changeUserRole(targetUserId: string, newRole: string) {
   }
 
   // Update role
-  const { error } = await (adminDb as any)
-    .from("profiles")
-    .update({ role: newRole })
-    .eq("id", targetUserId);
+  const { error } = await (adminDb as any).from("profiles").update({ role: newRole }).eq("id", targetUserId);
 
   if (error) {
     console.error("Error changing role:", error);
@@ -118,10 +108,7 @@ export async function banUser(targetUserId: string) {
   }
 
   // Set role to banned
-  const { error } = await (adminDb as any)
-    .from("profiles")
-    .update({ role: "banned" })
-    .eq("id", targetUserId);
+  const { error } = await (adminDb as any).from("profiles").update({ role: "banned" }).eq("id", targetUserId);
 
   if (error) {
     console.error("Error banning user:", error);

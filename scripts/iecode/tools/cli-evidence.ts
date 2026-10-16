@@ -1,14 +1,6 @@
 #!/usr/bin/env bun
 /** Collect private runtime evidence; never infer parser capabilities from source. */
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  lstatSync,
-  readdirSync,
-  realpathSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, existsSync, mkdirSync, lstatSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -34,8 +26,7 @@ if (values.help) {
   );
   process.exit(0);
 }
-if (!values.out || !values["game-dir"])
-  throw new Error("--out and --game-dir are required; see --help");
+if (!values.out || !values["game-dir"]) throw new Error("--out and --game-dir are required; see --help");
 
 const root = realpathSync(resolve(import.meta.dir, "../../.."));
 const out = resolve(values.out);
@@ -58,8 +49,7 @@ for (const input of [game]) {
 }
 mkdirSync(out, { mode: 0o700, recursive: true });
 chmodSync(out, 0o700);
-if (readdirSync(out).length)
-  throw new Error("Choose an empty output directory; existing files are not overwritten");
+if (readdirSync(out).length) throw new Error("Choose an empty output directory; existing files are not overwritten");
 const save = (name: string, text: string) => writeFileSync(join(out, name), text, { mode: 0o600 });
 const dataRoot = existsSync(join(game, "cpk_list.cfg.bin"))
   ? game
@@ -112,11 +102,11 @@ function observedShape(value: unknown, depth = 0): Shape {
   if (depth > 12) return { type: "unknown" };
   if (value === null) return { type: "null" };
   if (Array.isArray(value)) {
-    const shapes = value.slice(0, 32).map((item) => observedShape(item, depth + 1));
+    const shapes = value.slice(0, 32).map(item => observedShape(item, depth + 1));
     return {
       type: "array",
       items: {
-        anyOf: [...new Map(shapes.map((shape) => [JSON.stringify(shape), shape])).values()],
+        anyOf: [...new Map(shapes.map(shape => [JSON.stringify(shape), shape])).values()],
       },
     };
   }
@@ -124,9 +114,7 @@ function observedShape(value: unknown, depth = 0): Shape {
     return {
       type: "object",
       additionalProperties: true,
-      properties: Object.fromEntries(
-        Object.entries(value).map(([key, item]) => [key, observedShape(item, depth + 1)]),
-      ),
+      properties: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, observedShape(item, depth + 1)])),
     };
   return { type: typeof value };
 }
@@ -134,12 +122,12 @@ const tools = [
   { name: "nie", candidate: values.nie!, required: true },
   { name: "iecode", candidate: values.iecode!, required: true },
   { name: "inagle", candidate: values.inagle!, required: true },
-  ...["iecode-cpp", "ievr-tools", "iecode-homebrew"].map((name) => ({
+  ...["iecode-cpp", "ievr-tools", "iecode-homebrew"].map(name => ({
     name,
     candidate: name,
     required: false,
   })),
-].map((tool) => ({ ...tool, executable: Bun.which(tool.candidate) }));
+].map(tool => ({ ...tool, executable: Bun.which(tool.candidate) }));
 type Receipt = {
   id: string;
   tool: string;
@@ -155,7 +143,7 @@ type Receipt = {
 const commands: Receipt[] = [];
 const machineOutput = new Map<string, unknown>();
 async function probe(toolName: string, id: string, args: string[], jsonFile?: string) {
-  const tool = tools.find((tool) => tool.name === toolName)!;
+  const tool = tools.find(tool => tool.name === toolName)!;
   if (!tool.executable) return;
   const start = performance.now();
   let timedOut = false;
@@ -169,9 +157,7 @@ async function probe(toolName: string, id: string, args: string[], jsonFile?: st
       NIE_GAME_DIR: undefined,
       IECODE_GAME_PATH: undefined,
       NIE_GAME_PATH: undefined,
-      ...(values.library
-        ? { IECODE_LIB_PATH: resolve(values.library), NIE_FFI_PATH: resolve(values.library) }
-        : {}),
+      ...(values.library ? { IECODE_LIB_PATH: resolve(values.library), NIE_FFI_PATH: resolve(values.library) } : {}),
       RAYON_NUM_THREADS: "4",
       NIE_CPK_CACHE_BUDGET_GIB: "4",
       NIE_CONFIG_DIR: join(out, "source-index"),
@@ -199,13 +185,12 @@ async function probe(toolName: string, id: string, args: string[], jsonFile?: st
       if (id.endsWith("-locate") && parsed && typeof parsed === "object") {
         const result = parsed as { discovery_ms?: number; source?: string };
         discoveryMs = result.discovery_ms ?? null;
-        if (discoveryMs === null || !result.source)
-          outputDiagnostic = "missing-native-discovery-result";
+        if (discoveryMs === null || !result.source) outputDiagnostic = "missing-native-discovery-result";
       }
       if (id === "inagle-stats" && parsed && typeof parsed === "object") {
         const stats = parsed as Record<string, unknown>;
         domainCounts = Object.fromEntries(
-          ["characters", "skills", "items", "teams"].flatMap((key) =>
+          ["characters", "skills", "items", "teams"].flatMap(key =>
             typeof stats[key] === "number" ? [[key, stats[key] as number]] : [],
           ),
         );
@@ -219,8 +204,7 @@ async function probe(toolName: string, id: string, args: string[], jsonFile?: st
           {
             kind: "observed-output-shape/v1",
             command: id,
-            limits:
-              "One output; arrays sampled at 32 elements; not a normative JSON Schema or binary format layout.",
+            limits: "One output; arrays sampled at 32 elements; not a normative JSON Schema or binary format layout.",
             shape: observedShape(parsed),
           },
           null,
@@ -268,92 +252,40 @@ async function probe(toolName: string, id: string, args: string[], jsonFile?: st
     discoveryMs,
     diagnostic,
   });
-  console.log(
-    `${id}: exit=${exitCode}${timedOut ? " timeout" : ""}${diagnostic ? ` ${diagnostic}` : ""}`,
-  );
+  console.log(`${id}: exit=${exitCode}${timedOut ? " timeout" : ""}${diagnostic ? ` ${diagnostic}` : ""}`);
 }
 for (const tool of tools) {
   await probe(tool.name, `${tool.name}-help`, ["--help"]);
-  if (tool.name !== "iecode-homebrew")
-    await probe(tool.name, `${tool.name}-version`, ["--version"]);
+  if (tool.name !== "iecode-homebrew") await probe(tool.name, `${tool.name}-version`, ["--version"]);
 }
 await probe("nie", "nie-info", ["info", "--game-dir", source, "--json"]);
 await probe("nie", "nie-locate", ["vfs", "locate", "--json"]);
 await probe("iecode", "iecode-locate", ["vfs", "locate", "--json"]);
 await probe("inagle", "inagle-locate", ["locate", "--json"]);
 await probe("nie", "nie-vfs-stats", ["vfs", "stats", "--game-dir", source]);
-await probe("nie", "nie-config-path", [
-  "vfs",
-  "find",
-  "cfg.bin",
-  "--game-dir",
-  source,
-  "--limit",
-  "1",
-  "--json",
-]);
-await probe("nie", "nie-characters", [
-  "vfs",
-  "chara",
-  "--game-dir",
-  source,
-  "--json",
-  "--limit",
-  "3",
-  "--no-paths",
-]);
-await probe("nie", "nie-skills", [
-  "vfs",
-  "waza",
-  "--game-dir",
-  source,
-  "--json",
-  "--limit",
-  "3",
-  "--no-paths",
-]);
+await probe("nie", "nie-config-path", ["vfs", "find", "cfg.bin", "--game-dir", source, "--limit", "1", "--json"]);
+await probe("nie", "nie-characters", ["vfs", "chara", "--game-dir", source, "--json", "--limit", "3", "--no-paths"]);
+await probe("nie", "nie-skills", ["vfs", "waza", "--game-dir", source, "--json", "--limit", "3", "--no-paths"]);
 await probe("iecode", "iecode-info", ["info", "--game", source, "--json"]);
 await probe("iecode", "iecode-vfs-stats", ["vfs", "stats", "--game", source, "--json"]);
-await probe("iecode", "iecode-vfs-find", [
-  "vfs",
-  "find",
-  "cfg.bin",
-  "--game",
-  source,
-  "--limit",
-  "3",
-  "--json",
-]);
+await probe("iecode", "iecode-vfs-find", ["vfs", "find", "cfg.bin", "--game", source, "--limit", "3", "--json"]);
 let configPath: string | undefined;
-if (commands.find((command) => command.id === "nie-config-path")?.jsonShape) {
+if (commands.find(command => command.id === "nie-config-path")?.jsonShape) {
   configPath = (machineOutput.get("nie-config-path") as { path: string }[])[0]?.path;
 }
-if (configPath)
-  await probe("iecode", "iecode-vfs-decode", [
-    "vfs",
-    "decode",
-    configPath,
-    "--game",
-    source,
-    "--json",
-  ]);
+if (configPath) await probe("iecode", "iecode-vfs-decode", ["vfs", "decode", configPath, "--game", source, "--json"]);
 await probe("inagle", "inagle-stats", ["--game-dir", source, "stats", "--json"]);
 await probe("inagle", "inagle-search", ["--game-dir", source, "search", "a", "--limit", "3"]);
 await probe("inagle", "inagle-team-encode", ["team-builder", "encode", "1", "0:100", "1:200"]);
 await probe("inagle", "inagle-team-decode", ["team-builder", "decode", "MXwwOjEwMHwxOjIwMA=="]);
-const failed = commands.filter(
-  (command) => command.exitCode !== 0 || command.timedOut || command.diagnostic !== null,
-);
+const failed = commands.filter(command => command.exitCode !== 0 || command.timedOut || command.diagnostic !== null);
 const comparisons: { vfsEntryCountsMatch?: boolean; discoveredSourcesMatch?: boolean } = {};
 const discovered = ["nie-locate", "iecode-locate", "inagle-locate"].map(
-  (id) => (machineOutput.get(id) as { source?: string } | undefined)?.source,
+  id => (machineOutput.get(id) as { source?: string } | undefined)?.source,
 );
-comparisons.discoveredSourcesMatch =
-  discovered.every((value) => !!value) && new Set(discovered).size === 1;
+comparisons.discoveredSourcesMatch = discovered.every(value => !!value) && new Set(discovered).size === 1;
 if (
-  commands.filter(
-    (command) => ["nie-info", "iecode-vfs-stats"].includes(command.id) && command.jsonShape,
-  ).length === 2
+  commands.filter(command => ["nie-info", "iecode-vfs-stats"].includes(command.id) && command.jsonShape).length === 2
 ) {
   const rust = machineOutput.get("nie-info") as {
     vfs: { entrees: number };
@@ -361,8 +293,7 @@ if (
   const managed = machineOutput.get("iecode-vfs-stats") as {
     entry_count: number;
   };
-  comparisons.vfsEntryCountsMatch =
-    rust.vfs.entrees === managed.entry_count && managed.entry_count > 0;
+  comparisons.vfsEntryCountsMatch = rust.vfs.entrees === managed.entry_count && managed.entry_count > 0;
 }
 const inputsAfter = inputSnapshot();
 const inputsUnchanged = JSON.stringify(inputsBefore) === JSON.stringify(inputsAfter);
@@ -394,7 +325,7 @@ save(
   "| Probe | Exit | Observed shape | Diagnostic |\n| --- | ---: | --- | --- |\n" +
     commands
       .map(
-        (command) =>
+        command =>
           `| ${command.id} | ${command.exitCode} | ${command.jsonShape ? "yes" : "none"} | ${command.diagnostic ?? (command.timedOut ? "timeout" : "—")} |`,
       )
       .join("\n") +
@@ -407,6 +338,6 @@ process.exitCode =
   failed.length ||
   !inputsUnchanged ||
   Object.values(comparisons).includes(false) ||
-  tools.some((tool) => tool.required && !tool.executable)
+  tools.some(tool => tool.required && !tool.executable)
     ? 1
     : 0;

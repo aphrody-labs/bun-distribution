@@ -35,11 +35,7 @@ export function useEditorModal(): [
     }
     const { title, content, closeOnClickOutside } = modalContent;
     return (
-      <DialogPrimitive.Root
-        open
-        disablePointerDismissal={!closeOnClickOutside}
-        onOpenChange={onOpenChange}
-      >
+      <DialogPrimitive.Root open disablePointerDismissal={!closeOnClickOutside} onOpenChange={onOpenChange}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Backdrop className="fixed inset-0 z-[150] bg-black/80 data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0" />
           <DialogPrimitive.Popup
@@ -70,11 +66,7 @@ export function useEditorModal(): [
   }, [modalContent, onOpenChange]);
 
   const showModal = useCallback(
-    (
-      title: string,
-      getContent: (onClose: () => void) => JSX.Element,
-      closeOnClickOutside = false,
-    ) => {
+    (title: string, getContent: (onClose: () => void) => JSX.Element, closeOnClickOutside = false) => {
       setModalContent({
         closeOnClickOutside,
         content: getContent(onClose),

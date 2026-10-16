@@ -30,13 +30,7 @@ export interface TagCloudItem extends NewsTag {
 }
 
 export type NewsCategory =
-  | "announcement"
-  | "game-update"
-  | "guide"
-  | "community"
-  | "tournament"
-  | "patch-notes"
-  | "dev-blog";
+  "announcement" | "game-update" | "guide" | "community" | "tournament" | "patch-notes" | "dev-blog";
 
 export interface Article {
   id: string;
@@ -139,28 +133,28 @@ export function filterFeed(items: Article[], filter: FeedFilter = {}): Article[]
   let result = [...items];
 
   if (filter.status) {
-    result = result.filter((a) => a.status === filter.status);
+    result = result.filter(a => a.status === filter.status);
   } else {
     // Default to published only
-    result = result.filter((a) => a.status === "published");
+    result = result.filter(a => a.status === "published");
   }
 
   if (filter.category) {
-    result = result.filter((a) => a.category === filter.category);
+    result = result.filter(a => a.category === filter.category);
   }
 
   if (filter.tag) {
     const t = filter.tag.toLowerCase();
-    result = result.filter((a) => a.tags.some((tag) => tag.toLowerCase() === t));
+    result = result.filter(a => a.tags.some(tag => tag.toLowerCase() === t));
   }
 
   if (filter.searchQuery) {
     const q = filter.searchQuery.toLowerCase();
     result = result.filter(
-      (a) =>
+      a =>
         a.title.toLowerCase().includes(q) ||
         a.summary.toLowerCase().includes(q) ||
-        a.tags.some((tag) => tag.toLowerCase().includes(q)),
+        a.tags.some(tag => tag.toLowerCase().includes(q)),
     );
   }
 
@@ -175,7 +169,7 @@ export function filterFeed(items: Article[], filter: FeedFilter = {}): Article[]
 export function generateRssFeed(channel: FeedChannel, items: FeedItem[]): string {
   const itemsXml = items
     .map(
-      (item) => `    <item>
+      item => `    <item>
       <title><![CDATA[${item.title}]]></title>
       <link>${item.link}</link>
       <guid isPermaLink="${item.guid ? "false" : "true"}">${item.guid ?? item.link}</guid>

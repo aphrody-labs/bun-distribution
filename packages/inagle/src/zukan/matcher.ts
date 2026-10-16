@@ -245,12 +245,12 @@ export function descriptionSimilarity(a: string, b: string): number {
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, "")
         .split(/\s+/)
-        .filter((w) => w.length > 2 && !STOP_WORDS.has(w)),
+        .filter(w => w.length > 2 && !STOP_WORDS.has(w)),
     );
   const sa = tokenize(a);
   const sb = tokenize(b);
   if (sa.size === 0 || sb.size === 0) return 0;
-  const intersection = [...sa].filter((w) => sb.has(w)).length;
+  const intersection = [...sa].filter(w => sb.has(w)).length;
   const union = new Set([...sa, ...sb]).size;
   return intersection / union;
 }
@@ -298,9 +298,12 @@ export function matchScore(z: ZukanMatchEntry, db: ZukanMatchDbChar): number {
     if (isHero) {
       // Heroes use original character designs — prefer EARLIEST era portrait
       const zOrder = ERA_ORDER[zEra || ""] || 0;
-      if (zOrder === 1) score += 60; // OG era = best for heroes
-      else if (zSeries === db.series) score += 40; // Same series = ok fallback
-      else if (zEra === dbEra) score += 30; // Same era = ok
+      if (zOrder === 1)
+        score += 60; // OG era = best for heroes
+      else if (zSeries === db.series)
+        score += 40; // Same series = ok fallback
+      else if (zEra === dbEra)
+        score += 30; // Same era = ok
       else score += 5; // Other = last resort
     } else {
       if (dbEra && zEra && dbEra !== zEra) return -1; // Hard block cross-era
@@ -387,10 +390,10 @@ export function matchGroupsStrict(
   dbGroup: ZukanMatchDbChar[],
   assigned: Map<string, string>,
 ) {
-  const unassignedDb = dbGroup.filter((c) => !assigned.has(c.id));
+  const unassignedDb = dbGroup.filter(c => !assigned.has(c.id));
   if (unassignedDb.length === 0) return;
 
-  const available = zukanGroup.filter((z) => z.zukanHash && !ctx.usedHashes.has(z.zukanHash));
+  const available = zukanGroup.filter(z => z.zukanHash && !ctx.usedHashes.has(z.zukanHash));
 
   // Build score matrix and assign greedily by best score
   const pairs: { db: ZukanMatchDbChar; z: ZukanMatchEntry; score: number }[] = [];
@@ -420,9 +423,9 @@ export function assignBest(
 ) {
   if (assigned.has(c.id)) return;
   const scored = candidates
-    .filter((z) => z.zukanHash && !ctx.usedHashes.has(z.zukanHash))
-    .map((z) => ({ z, score: matchScore(z, c) }))
-    .filter((p) => p.score >= minScore)
+    .filter(z => z.zukanHash && !ctx.usedHashes.has(z.zukanHash))
+    .map(z => ({ z, score: matchScore(z, c) }))
+    .filter(p => p.score >= minScore)
     .sort((a, b) => b.score - a.score);
   if (scored.length > 0) {
     assigned.set(c.id, scored[0].z.zukanHash!);

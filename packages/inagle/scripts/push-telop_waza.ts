@@ -15,7 +15,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importTelopWaza(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("❌ Erreur push-telop_waza:", e);
     process.exit(1);
   });

@@ -36,9 +36,7 @@ export function WikiPageHeader({
           <Icon name={icon} size={24} />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-on-surface sm:text-3xl">
-            {title}
-          </h1>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-on-surface sm:text-3xl">{title}</h1>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-on-surface-variant">{description}</p>
         </div>
         {count != null && (

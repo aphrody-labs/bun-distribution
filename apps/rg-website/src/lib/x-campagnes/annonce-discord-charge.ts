@@ -1,15 +1,15 @@
 import {
-	BOUTONS_PAR_RANGEE,
-	borner,
-	COULEUR_MARQUE,
-	emotesRoseGriffon,
-	LIMITE_AUTEUR,
-	LIMITE_CONTENU,
-	LIMITE_DESCRIPTION,
-	LIMITE_LIBELLE_BOUTON,
-	LIMITE_PIED,
-	LIMITE_TITRE,
-	RANGEES_PAR_MESSAGE,
+  BOUTONS_PAR_RANGEE,
+  borner,
+  COULEUR_MARQUE,
+  emotesRoseGriffon,
+  LIMITE_AUTEUR,
+  LIMITE_CONTENU,
+  LIMITE_DESCRIPTION,
+  LIMITE_LIBELLE_BOUTON,
+  LIMITE_PIED,
+  LIMITE_TITRE,
+  RANGEES_PAR_MESSAGE,
 } from "@rosegriffon/types/discord";
 
 import { SITE_URL } from "@/lib/site-url";
@@ -75,8 +75,8 @@ const EMOTES = emotesRoseGriffon(process.env);
 
 /** Origine publique du site, sans barre oblique finale. */
 export function origine(): string {
-	const brut = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
-	return brut.replace(/\/+$/, "");
+  const brut = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
+  return brut.replace(/\/+$/, "");
 }
 
 /**
@@ -95,24 +95,24 @@ const HOTES_PERISSABLES = new Set(["cdn.discordapp.com", "media.discordapp.net",
  * relira pour le corriger.
  */
 export function imageAbsolue(url: string | null, chemin: string | null): string | null {
-	const candidat = url && url.trim() !== "" ? url.trim() : urlImageAsset(chemin);
-	if (!candidat) {
-		return null;
-	}
-	if (candidat.startsWith("/")) {
-		return `${origine()}${candidat}`;
-	}
-	if (!/^https?:\/\//i.test(candidat)) {
-		return null;
-	}
-	try {
-		if (HOTES_PERISSABLES.has(new URL(candidat).hostname.toLowerCase())) {
-			return null;
-		}
-	} catch {
-		return null;
-	}
-	return candidat;
+  const candidat = url && url.trim() !== "" ? url.trim() : urlImageAsset(chemin);
+  if (!candidat) {
+    return null;
+  }
+  if (candidat.startsWith("/")) {
+    return `${origine()}${candidat}`;
+  }
+  if (!/^https?:\/\//i.test(candidat)) {
+    return null;
+  }
+  try {
+    if (HOTES_PERISSABLES.has(new URL(candidat).hostname.toLowerCase())) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+  return candidat;
 }
 
 /**
@@ -130,54 +130,54 @@ export function imageAbsolue(url: string | null, chemin: string | null): string 
  * cinquante personnes pour rien.
  */
 export function neutraliserMentions(texte: string): string {
-	return texte
-		.replace(/@(everyone|here)\b/gi, "$1")
-		.replace(/<@[!&]?(\d+)>/g, "@$1")
-		.replace(/<#(\d+)>/g, "#$1");
+  return texte
+    .replace(/@(everyone|here)\b/gi, "$1")
+    .replace(/<@[!&]?(\d+)>/g, "@$1")
+    .replace(/<#(\d+)>/g, "#$1");
 }
 
 /** « 1er », « 2e », « 3e »… — l'ordinal français, pas l'anglais. */
 export function ordinalFr(rang: number): string {
-	return rang === 1 ? "1er" : `${rang}e`;
+  return rang === 1 ? "1er" : `${rang}e`;
 }
 
 /* ── LA CHARGE ────────────────────────────────────────────────────────────── */
 
 /** Un gagnant, tel que l'annonce doit le montrer. */
 export interface GagnantAnnonce {
-	rang: number;
-	pseudo: string;
-	/**
-	 * Le flocon Discord de la personne, ou `null`.
-	 *
-	 * ⚠ `null` NE SE REMPLACE PAS. Fabriquer un identifiant pour « avoir une
-	 * mention partout » pingue un inconnu et attribue publiquement une œuvre à
-	 * quelqu'un qui ne l'a pas faite. Cinq des quatorze participants d'`iergday`
-	 * n'existent que sur X ou Instagram : pour eux, l'attribution passe par le
-	 * pseudo en gras et le lien vers leur publication, ce qui est vérifiable.
-	 */
-	discordId: string | null;
-	source: SourceTirage;
-	/** Lien public vers la publication qui atteste l'éligibilité. */
-	lien: string;
-	/** URL ABSOLUE du meilleur fichier de l'œuvre tirée, ou `null`. */
-	image: string | null;
-	lot: string | null;
+  rang: number;
+  pseudo: string;
+  /**
+   * Le flocon Discord de la personne, ou `null`.
+   *
+   * ⚠ `null` NE SE REMPLACE PAS. Fabriquer un identifiant pour « avoir une
+   * mention partout » pingue un inconnu et attribue publiquement une œuvre à
+   * quelqu'un qui ne l'a pas faite. Cinq des quatorze participants d'`iergday`
+   * n'existent que sur X ou Instagram : pour eux, l'attribution passe par le
+   * pseudo en gras et le lien vers leur publication, ce qui est vérifiable.
+   */
+  discordId: string | null;
+  source: SourceTirage;
+  /** Lien public vers la publication qui atteste l'éligibilité. */
+  lien: string;
+  /** URL ABSOLUE du meilleur fichier de l'œuvre tirée, ou `null`. */
+  image: string | null;
+  lot: string | null;
 }
 
 /** Ce que l'annonce dit du tirage lui-même. */
 export interface ContexteAnnonce {
-	titreCampagne: string;
-	slugCampagne: string;
-	numero: number;
-	nbParticipants: number;
-	nbOeuvres: number;
-	nbGagnants: number;
-	poidsMode: PoidsMode;
-	baliseRound: number;
-	baliseChaine: string;
-	/** Instant de publication, en ISO — l'horodatage de l'embed. */
-	publieLe: string;
+  titreCampagne: string;
+  slugCampagne: string;
+  numero: number;
+  nbParticipants: number;
+  nbOeuvres: number;
+  nbGagnants: number;
+  poidsMode: PoidsMode;
+  baliseRound: number;
+  baliseChaine: string;
+  /** Instant de publication, en ISO — l'horodatage de l'embed. */
+  publieLe: string;
 }
 
 /** Nombre maximal de boutons-liens : 5 rangées de 5, plafond imposé par Discord. */
@@ -193,92 +193,90 @@ const MAX_BOUTONS = BOUTONS_PAR_RANGEE * RANGEES_PAR_MESSAGE;
  * pas qu'il a gagné.
  */
 export function chargeAnnonceTirage(
-	gagnants: readonly GagnantAnnonce[],
-	ctx: ContexteAnnonce
+  gagnants: readonly GagnantAnnonce[],
+  ctx: ContexteAnnonce,
 ): Record<string, unknown> {
-	const classes = gagnants.toSorted((a, b) => a.rang - b.rang);
-	const premier = classes[0] ?? null;
+  const classes = gagnants.toSorted((a, b) => a.rang - b.rang);
+  const premier = classes[0] ?? null;
 
-	const lignes = classes.map((gagnant) => {
-		// Une VRAIE mention seulement quand on détient le flocon ; sinon le pseudo en
-		// gras. Les deux formes sont neutralisées : le pseudo est du texte que le
-		// participant a choisi lui-même.
-		const nom = neutraliserMentions(gagnant.pseudo);
-		const mention = gagnant.discordId ? `<@${gagnant.discordId}>` : `**${borner(nom, 60)}**`;
-		const lot = gagnant.lot ? ` — ${neutraliserMentions(gagnant.lot)}` : "";
-		return `**${ordinalFr(gagnant.rang)} ·** ${mention}${lot}`;
-	});
+  const lignes = classes.map(gagnant => {
+    // Une VRAIE mention seulement quand on détient le flocon ; sinon le pseudo en
+    // gras. Les deux formes sont neutralisées : le pseudo est du texte que le
+    // participant a choisi lui-même.
+    const nom = neutraliserMentions(gagnant.pseudo);
+    const mention = gagnant.discordId ? `<@${gagnant.discordId}>` : `**${borner(nom, 60)}**`;
+    const lot = gagnant.lot ? ` — ${neutraliserMentions(gagnant.lot)}` : "";
+    return `**${ordinalFr(gagnant.rang)} ·** ${mention}${lot}`;
+  });
 
-	const rappel =
-		"Si tu te reconnais et que tu veux être prévenu·e, réponds ici — " +
-		"**aucun lot ni tirage n'avait été annoncé pendant la campagne**, " +
-		"personne n'a participé en sachant qu'il y en aurait un.";
+  const rappel =
+    "Si tu te reconnais et que tu veux être prévenu·e, réponds ici — " +
+    "**aucun lot ni tirage n'avait été annoncé pendant la campagne**, " +
+    "personne n'a participé en sachant qu'il y en aurait un.";
 
-	const content = borner(
-		[
-			`${EMOTES.fete} **Tirage au sort — ${neutraliserMentions(ctx.titreCampagne)}** ${EMOTES.annonce}`,
-			...lignes,
-			"",
-			rappel,
-		].join("\n"),
-		LIMITE_CONTENU
-	);
+  const content = borner(
+    [
+      `${EMOTES.fete} **Tirage au sort — ${neutraliserMentions(ctx.titreCampagne)}** ${EMOTES.annonce}`,
+      ...lignes,
+      "",
+      rappel,
+    ].join("\n"),
+    LIMITE_CONTENU,
+  );
 
-	// ⚠ `parse: []` INTERDIT `@everyone`, `@here` et les rôles, quoi que contienne
-	// le texte. La liste blanche `users` est ce qui rend la mention des gagnants
-	// réelle sans rien ouvrir d'autre — et quand personne n'a de flocon, le champ
-	// est ABSENT, donc aucune mention n'est émise.
-	const flocons = [...new Set(classes.map((g) => g.discordId).filter((id): id is string => Boolean(id)))];
+  // ⚠ `parse: []` INTERDIT `@everyone`, `@here` et les rôles, quoi que contienne
+  // le texte. La liste blanche `users` est ce qui rend la mention des gagnants
+  // réelle sans rien ouvrir d'autre — et quand personne n'a de flocon, le champ
+  // est ABSENT, donc aucune mention n'est émise.
+  const flocons = [...new Set(classes.map(g => g.discordId).filter((id): id is string => Boolean(id)))];
 
-	const description = borner(
-		[
-			classes.length === 1
-				? `Bravo ${neutraliserMentions(classes[0]?.pseudo ?? "")} !`
-				: "Bravo à toutes et tous !",
-			"",
-			`${ctx.nbParticipants} participant·es · ${ctx.nbOeuvres} œuvres · ${ctx.nbGagnants} gagnant·e·s`,
-			`Poids : ${ctx.poidsMode === "un_par_personne" ? "une chance par personne" : "une chance par œuvre"}`,
-			"Chaque œuvre est un ticket, tirés un par un sans remise.",
-			`Aléa : drand quicknet, round #${ctx.baliseRound} — personne, nous compris, ne pouvait le prévoir.`,
-			`Vérifier : ${origine()}/iergday`,
-		].join("\n"),
-		LIMITE_DESCRIPTION
-	);
+  const description = borner(
+    [
+      classes.length === 1 ? `Bravo ${neutraliserMentions(classes[0]?.pseudo ?? "")} !` : "Bravo à toutes et tous !",
+      "",
+      `${ctx.nbParticipants} participant·es · ${ctx.nbOeuvres} œuvres · ${ctx.nbGagnants} gagnant·e·s`,
+      `Poids : ${ctx.poidsMode === "un_par_personne" ? "une chance par personne" : "une chance par œuvre"}`,
+      "Chaque œuvre est un ticket, tirés un par un sans remise.",
+      `Aléa : drand quicknet, round #${ctx.baliseRound} — personne, nous compris, ne pouvait le prévoir.`,
+      `Vérifier : ${origine()}/iergday`,
+    ].join("\n"),
+    LIMITE_DESCRIPTION,
+  );
 
-	// 5 boutons par rangée, 5 rangées : au-delà, Discord refuse le message entier.
-	// Les gagnants au-delà du 25e gardent leur ligne dans le `content`, avec leur
-	// mention — c'est le bouton qui manque, pas la personne.
-	const boutons = classes.slice(0, MAX_BOUTONS).map((gagnant) => ({
-		label: borner(`Voir la création de ${neutraliserMentions(gagnant.pseudo)}`, LIMITE_LIBELLE_BOUTON),
-		style: 5,
-		type: 2,
-		url: gagnant.lien,
-	}));
-	const rangees: Array<Record<string, unknown>> = [];
-	for (let i = 0; i < boutons.length; i += BOUTONS_PAR_RANGEE) {
-		rangees.push({ components: boutons.slice(i, i + BOUTONS_PAR_RANGEE), type: 1 });
-	}
+  // 5 boutons par rangée, 5 rangées : au-delà, Discord refuse le message entier.
+  // Les gagnants au-delà du 25e gardent leur ligne dans le `content`, avec leur
+  // mention — c'est le bouton qui manque, pas la personne.
+  const boutons = classes.slice(0, MAX_BOUTONS).map(gagnant => ({
+    label: borner(`Voir la création de ${neutraliserMentions(gagnant.pseudo)}`, LIMITE_LIBELLE_BOUTON),
+    style: 5,
+    type: 2,
+    url: gagnant.lien,
+  }));
+  const rangees: Array<Record<string, unknown>> = [];
+  for (let i = 0; i < boutons.length; i += BOUTONS_PAR_RANGEE) {
+    rangees.push({ components: boutons.slice(i, i + BOUTONS_PAR_RANGEE), type: 1 });
+  }
 
-	return {
-		allowed_mentions: flocons.length > 0 ? { parse: [], users: flocons } : { parse: [] },
-		...(rangees.length > 0 ? { components: rangees } : {}),
-		content,
-		embeds: [
-			{
-				...(premier ? { author: { name: borner(neutraliserMentions(premier.pseudo), LIMITE_AUTEUR) } } : {}),
-				color: COULEUR_MARQUE,
-				description,
-				footer: {
-					text: borner(
-						`${neutraliserMentions(ctx.titreCampagne)} · ${origine().replace(/^https?:\/\//, "")}/iergday`,
-						LIMITE_PIED
-					),
-				},
-				...(premier?.image ? { image: { url: premier.image } } : {}),
-				timestamp: ctx.publieLe,
-				title: borner(`Tirage n°${ctx.numero}`, LIMITE_TITRE),
-				url: `${origine()}/iergday`,
-			},
-		],
-	};
+  return {
+    allowed_mentions: flocons.length > 0 ? { parse: [], users: flocons } : { parse: [] },
+    ...(rangees.length > 0 ? { components: rangees } : {}),
+    content,
+    embeds: [
+      {
+        ...(premier ? { author: { name: borner(neutraliserMentions(premier.pseudo), LIMITE_AUTEUR) } } : {}),
+        color: COULEUR_MARQUE,
+        description,
+        footer: {
+          text: borner(
+            `${neutraliserMentions(ctx.titreCampagne)} · ${origine().replace(/^https?:\/\//, "")}/iergday`,
+            LIMITE_PIED,
+          ),
+        },
+        ...(premier?.image ? { image: { url: premier.image } } : {}),
+        timestamp: ctx.publieLe,
+        title: borner(`Tirage n°${ctx.numero}`, LIMITE_TITRE),
+        url: `${origine()}/iergday`,
+      },
+    ],
+  };
 }

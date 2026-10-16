@@ -38,7 +38,7 @@ export async function translateWithGoogle(text: string, from: string, to: string
     if (res.ok) {
       const data = (await res.json()) as [Array<[string]>] | null;
       if (data && data[0]) {
-        return data[0].map((x) => x[0]).join("");
+        return data[0].map(x => x[0]).join("");
       }
     }
   } catch (e) {
@@ -59,8 +59,8 @@ export async function searchDatabaseTranslate(query: string): Promise<TranslateM
 
   const hira = toHiragana(sanitized.toLowerCase());
   const kata = toKatakana(sanitized.toLowerCase());
-  const isValidHira = hira.length > 0 && [...hira].every((c) => isKana(c) || c === "ー");
-  const isValidKata = kata.length > 0 && [...kata].every((c) => isKana(c) || c === "ー");
+  const isValidHira = hira.length > 0 && [...hira].every(c => isKana(c) || c === "ー");
+  const isValidKata = kata.length > 0 && [...kata].every(c => isKana(c) || c === "ー");
 
   // PostgreSQL en premier.
   const dbUrl = isInagleDatabaseConfigured() ? getInagleDatabaseURL() : undefined;
@@ -82,18 +82,12 @@ export async function searchDatabaseTranslate(query: string): Promise<TranslateM
 			`;
       const charParams: unknown[] = [q];
       if (isValidHira && hira !== sanitized.toLowerCase()) {
-        charSql = charSql.replace(
-          "OR name_roma ILIKE $1",
-          `OR name_roma ILIKE $1 OR name_ja ILIKE $2`,
-        );
+        charSql = charSql.replace("OR name_roma ILIKE $1", `OR name_roma ILIKE $1 OR name_ja ILIKE $2`);
         charParams.push(`%${hira}%`);
       }
       if (isValidKata && kata !== sanitized.toLowerCase()) {
         const paramIndex = charParams.length + 1;
-        charSql = charSql.replace(
-          "OR name_ja ILIKE $2",
-          `OR name_ja ILIKE $2 OR name_ja ILIKE $${paramIndex}`,
-        );
+        charSql = charSql.replace("OR name_ja ILIKE $2", `OR name_ja ILIKE $2 OR name_ja ILIKE $${paramIndex}`);
         charParams.push(`%${kata}%`);
       }
 
@@ -175,10 +169,7 @@ export async function searchDatabaseTranslate(query: string): Promise<TranslateM
       }
       if (isValidKata && kata !== sanitized.toLowerCase()) {
         const paramIndex = charParams.length + 1;
-        charSql = charSql.replace(
-          "OR name_ja LIKE ?2",
-          `OR name_ja LIKE ?2 OR name_ja LIKE ?${paramIndex}`,
-        );
+        charSql = charSql.replace("OR name_ja LIKE ?2", `OR name_ja LIKE ?2 OR name_ja LIKE ?${paramIndex}`);
         charParams.push(`%${kata}%`);
       }
 
@@ -328,23 +319,21 @@ export async function searchGlossaryTranslate(query: string): Promise<TranslateM
   if (!sanitized) return [];
   const hiraCandidate = toHiragana(sanitized).toLowerCase();
   const kataCandidate = toKatakana(sanitized).toLowerCase();
-  const isValidHira = [...hiraCandidate].every((c) => isKana(c) || c === "ー");
-  const isValidKata = [...kataCandidate].every((c) => isKana(c) || c === "ー");
+  const isValidHira = [...hiraCandidate].every(c => isKana(c) || c === "ー");
+  const isValidKata = [...kataCandidate].every(c => isKana(c) || c === "ー");
   const rows = await loadGlossaryRows();
   return rows
-    .filter((row) => {
-      const names = [row.name_fr, row.name_en, row.name_ja]
-        .filter(Boolean)
-        .map((name) => name!.toLowerCase());
+    .filter(row => {
+      const names = [row.name_fr, row.name_en, row.name_ja].filter(Boolean).map(name => name!.toLowerCase());
       return names.some(
-        (name) =>
+        name =>
           name.includes(sanitized) ||
           (isValidHira && name.includes(hiraCandidate)) ||
           (isValidKata && name.includes(kataCandidate)) ||
           (row.name_ja ? japaneseToRomaji(row.name_ja)?.toLowerCase().includes(sanitized) : false),
       );
     })
-    .map((row) => ({
+    .map(row => ({
       id: row.id,
       type: row.sub_type?.toLowerCase().includes("soul") ? "soul" : row.type,
       typeLabel: row.sub_type?.toLowerCase().includes("soul") ? "Totem" : row.typeLabel,

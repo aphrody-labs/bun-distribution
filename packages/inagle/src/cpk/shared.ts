@@ -51,8 +51,7 @@ export interface CpkListing {
 export type CpkAssetKind = "image" | "model" | "raw";
 
 export const CDN_BASE =
-  (typeof process !== "undefined" && (process.env.NIE_CDN_BASE || process.env.MODEL_SERVE_URL)) ||
-  "";
+  (typeof process !== "undefined" && (process.env.NIE_CDN_BASE || process.env.MODEL_SERVE_URL)) || "";
 
 /** Extensions décodées en image (g4tx → png live par le CDN). */
 const IMAGE_EXTS = new Set(["g4tx"]);
@@ -93,9 +92,7 @@ export function cpkAssetUrl(path: string, ext?: string): string | null {
 
   if (kind === "image") {
     // g4tx vivent 100 % sous `data/dx11/` → `/dx11/<reste>.png` (g4tx→png live).
-    const rel = path.startsWith("data/dx11/")
-      ? path.slice("data/dx11/".length)
-      : stripDataPrefix(path);
+    const rel = path.startsWith("data/dx11/") ? path.slice("data/dx11/".length) : stripDataPrefix(path);
     const noExt = rel.replace(/\.g4tx$/i, "");
     return `${CDN_BASE}/dx11/${encodeVfsPath(noExt)}.png`;
   }
@@ -213,15 +210,7 @@ export function normalizeDir(path: string): string {
  * rendu de la fiche fichier (`<img>`, viewer 3D, player audio/vidéo, texte,
  * config binaire, ou lien brut). Purement dérivée de l'extension.
  */
-export type CpkPreviewKind =
-  | "image"
-  | "model"
-  | "text"
-  | "config"
-  | "sound"
-  | "movie"
-  | "package"
-  | "raw";
+export type CpkPreviewKind = "image" | "model" | "text" | "config" | "sound" | "movie" | "package" | "raw";
 
 const TEXT_EXTS = new Set(["txt", "json", "xml", "csv", "lua", "cfg", "ini", "yml", "yaml"]);
 // `ext` = dernier segment après le point (cf. materialize.ts), donc `foo.cfg.bin` → ext `bin`.

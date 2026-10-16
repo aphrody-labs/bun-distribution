@@ -27,39 +27,39 @@
 import { syncZukanSkillVideos } from "@rosegriffon/inagle/zukan/sync-skill-videos";
 
 export async function rafraichirVideosTechniques(): Promise<{
-	success: boolean;
-	stats: {
-		techniques: number;
-		examinees: number;
-		zukanTechniques: number;
-		zukanDeuxVideos: number;
-		planifiees: number;
-		videos: number;
-		techniquesEcrites: number;
-		videosEcrites: number;
-		sansCorrespondance: number;
-	};
+  success: boolean;
+  stats: {
+    techniques: number;
+    examinees: number;
+    zukanTechniques: number;
+    zukanDeuxVideos: number;
+    planifiees: number;
+    videos: number;
+    techniquesEcrites: number;
+    videosEcrites: number;
+    sansCorrespondance: number;
+  };
 }> {
-	const res = await syncZukanSkillVideos({ apply: true });
-	const videos = res.plans.reduce((n, p) => n + p.videos.length, 0);
+  const res = await syncZukanSkillVideos({ apply: true });
+  const videos = res.plans.reduce((n, p) => n + p.videos.length, 0);
 
-	console.log(
-		`[zukan:videos] ${res.skillsUpdated} techniques et ${res.videosUpserted} vidéos écrites ` +
-			`(${res.unresolved.length} sans correspondance upstream, laissées NULL).`
-	);
+  console.log(
+    `[zukan:videos] ${res.skillsUpdated} techniques et ${res.videosUpserted} vidéos écrites ` +
+      `(${res.unresolved.length} sans correspondance upstream, laissées NULL).`,
+  );
 
-	return {
-		success: true,
-		stats: {
-			examinees: res.examined,
-			planifiees: res.plans.length,
-			sansCorrespondance: res.unresolved.length,
-			techniques: res.skillsTotal,
-			techniquesEcrites: res.skillsUpdated,
-			videos,
-			videosEcrites: res.videosUpserted,
-			zukanDeuxVideos: res.zukanMulti,
-			zukanTechniques: res.zukanSkills,
-		},
-	};
+  return {
+    success: true,
+    stats: {
+      examinees: res.examined,
+      planifiees: res.plans.length,
+      sansCorrespondance: res.unresolved.length,
+      techniques: res.skillsTotal,
+      techniquesEcrites: res.skillsUpdated,
+      videos,
+      videosEcrites: res.videosUpserted,
+      zukanDeuxVideos: res.zukanMulti,
+      zukanTechniques: res.zukanSkills,
+    },
+  };
 }

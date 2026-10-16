@@ -47,19 +47,17 @@ export function VerificationClient({
   const supabase = createClient();
 
   const handleFieldChange = (table: TableType, id: string, field: string, value: string) => {
-    setData((prev) => ({
+    setData(prev => ({
       ...prev,
-      [table]: prev[table].map((row) =>
-        row.id === id ? { ...row, [field]: value, _dirty: true } : row,
-      ),
+      [table]: prev[table].map(row => (row.id === id ? { ...row, [field]: value, _dirty: true } : row)),
     }));
   };
 
   const saveRow = async (table: TableType, id: string) => {
-    const row = data[table].find((r) => r.id === id);
+    const row = data[table].find(r => r.id === id);
     if (!row) return;
 
-    setLoading((prev) => ({ ...prev, [id]: true }));
+    setLoading(prev => ({ ...prev, [id]: true }));
 
     let tableName = "inagle_characters";
     if (table === "skills") tableName = "inagle_skills";
@@ -80,9 +78,9 @@ export function VerificationClient({
 
       if (error) throw error;
 
-      setData((prev) => ({
+      setData(prev => ({
         ...prev,
-        [table]: prev[table].map((r) => (r.id === id ? { ...r, _dirty: false } : r)),
+        [table]: prev[table].map(r => (r.id === id ? { ...r, _dirty: false } : r)),
       }));
 
       toast.success(`Enregistrement ${row.name_ja || row.name_en || id} mis à jour !`);
@@ -90,12 +88,12 @@ export function VerificationClient({
       console.error(err);
       toast.error(`Erreur de sauvegarde : ${err.message}`);
     } finally {
-      setLoading((prev) => ({ ...prev, [id]: false }));
+      setLoading(prev => ({ ...prev, [id]: false }));
     }
   };
 
   const saveAllDirty = async () => {
-    const dirtyRows = data[activeTab].filter((row) => row._dirty);
+    const dirtyRows = data[activeTab].filter(row => row._dirty);
     if (dirtyRows.length === 0) {
       toast.info("Aucune modification en attente.");
       return;
@@ -130,10 +128,10 @@ export function VerificationClient({
     }
 
     // Refresh state
-    setData((prev) => ({
+    setData(prev => ({
       ...prev,
-      [activeTab]: prev[activeTab].map((row) =>
-        row._dirty && dirtyRows.some((dr) => dr.id === row.id) ? { ...row, _dirty: false } : row,
+      [activeTab]: prev[activeTab].map(row =>
+        row._dirty && dirtyRows.some(dr => dr.id === row.id) ? { ...row, _dirty: false } : row,
       ),
     }));
 
@@ -142,7 +140,7 @@ export function VerificationClient({
   };
 
   const currentList = data[activeTab];
-  const dirtyCount = currentList.filter((r) => r._dirty).length;
+  const dirtyCount = currentList.filter(r => r._dirty).length;
 
   const tabConfigs: Array<{ id: TableType; label: string; count: number }> = [
     { id: "characters", label: "Joueurs", count: data.characters.length },
@@ -155,7 +153,7 @@ export function VerificationClient({
     <div className="space-y-6">
       {/* Tabs selectors */}
       <div className="flex flex-wrap gap-2 border-b border-outline-variant/20 pb-4">
-        {tabConfigs.map((tab) => (
+        {tabConfigs.map(tab => (
           <Button
             key={tab.id}
             variant={activeTab === tab.id ? "default" : "outline"}
@@ -193,8 +191,7 @@ export function VerificationClient({
           </div>
           <h3 className="text-lg font-bold text-on-surface">Tout est en ordre !</h3>
           <p className="text-sm text-on-surface-variant max-w-md mx-auto mt-2">
-            Aucune anomalie de traduction ou de données manquantes n&apos;a été détectée dans cette
-            catégorie.
+            Aucune anomalie de traduction ou de données manquantes n&apos;a été détectée dans cette catégorie.
           </p>
         </div>
       ) : (
@@ -221,7 +218,7 @@ export function VerificationClient({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentList.map((row) => (
+                {currentList.map(row => (
                   <TableRow
                     key={row.id}
                     className={`border-outline-variant/5 hover:bg-surface-container-low/30 transition-all duration-300 ${
@@ -233,20 +230,14 @@ export function VerificationClient({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-bold text-on-surface text-sm">
-                          {row.name_ja || "—"}
-                        </span>
-                        <span className="text-xs text-on-surface-variant">
-                          {row.name_en || "—"}
-                        </span>
+                        <span className="font-bold text-on-surface text-sm">{row.name_ja || "—"}</span>
+                        <span className="text-xs text-on-surface-variant">{row.name_en || "—"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="py-2">
                       <Input
                         value={row.name_fr || ""}
-                        onChange={(e) =>
-                          handleFieldChange(activeTab, row.id, "name_fr", e.target.value)
-                        }
+                        onChange={e => handleFieldChange(activeTab, row.id, "name_fr", e.target.value)}
                         placeholder="Traduction du nom..."
                         className="h-10 text-sm rounded-xl border-outline/30 focus:border-primary"
                       />
@@ -254,9 +245,7 @@ export function VerificationClient({
                     <TableCell className="py-2">
                       <Textarea
                         value={row.description_fr || ""}
-                        onChange={(e) =>
-                          handleFieldChange(activeTab, row.id, "description_fr", e.target.value)
-                        }
+                        onChange={e => handleFieldChange(activeTab, row.id, "description_fr", e.target.value)}
                         placeholder="Traduction de la description..."
                         className="min-h-[40px] h-10 py-2 text-xs rounded-xl border-outline/30 focus:border-primary resize-y font-sans"
                       />
@@ -271,11 +260,7 @@ export function VerificationClient({
                             onClick={() => saveRow(activeTab, row.id)}
                             disabled={loading[row.id]}
                           >
-                            {loading[row.id] ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <Save size={16} />
-                            )}
+                            {loading[row.id] ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                           </Button>
                         )}
                         {row._dirty ? (

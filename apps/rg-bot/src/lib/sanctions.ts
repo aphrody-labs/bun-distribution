@@ -23,77 +23,76 @@
  */
 import { borner, echapper } from "./ui/texte";
 
-
 /** Les actions de modération consignées, et ce qu'elles valent à la lecture. */
 export const ACTIONS_MODERATION = [
-	"discord.avertir",
-	"discord.exclure",
-	"discord.lever-exclusion",
-	"discord.expulser",
-	"discord.bannir",
-	"discord.debannir",
+  "discord.avertir",
+  "discord.exclure",
+  "discord.lever-exclusion",
+  "discord.expulser",
+  "discord.bannir",
+  "discord.debannir",
 ] as const;
 
 export type ActionModeration = (typeof ACTIONS_MODERATION)[number];
 
 export function estActionModeration(valeur: unknown): valeur is ActionModeration {
-	return typeof valeur === "string" && (ACTIONS_MODERATION as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (ACTIONS_MODERATION as readonly string[]).includes(valeur);
 }
 
 interface Etiquette {
-	libelle: string;
-	icone: string;
-	/**
-	 * Poids dans le décompte de gravité. Les LEVÉES valent zéro : elles font
-	 * partie de l'historique (le staff doit voir qu'une exclusion a été levée)
-	 * mais elles ne sont pas des sanctions, et les compter gonflerait le score
-	 * d'un membre qu'on a justement gracié.
-	 */
-	poids: number;
+  libelle: string;
+  icone: string;
+  /**
+   * Poids dans le décompte de gravité. Les LEVÉES valent zéro : elles font
+   * partie de l'historique (le staff doit voir qu'une exclusion a été levée)
+   * mais elles ne sont pas des sanctions, et les compter gonflerait le score
+   * d'un membre qu'on a justement gracié.
+   */
+  poids: number;
 }
 
 const ETIQUETTES: Readonly<Record<ActionModeration, Etiquette>> = Object.freeze({
-	"discord.avertir": { icone: "⚠️", libelle: "Avertissement", poids: 1 },
-	"discord.bannir": { icone: "⛔", libelle: "Bannissement", poids: 5 },
-	"discord.debannir": { icone: "🔓", libelle: "Débannissement", poids: 0 },
-	"discord.exclure": { icone: "🔇", libelle: "Exclusion temporaire", poids: 2 },
-	"discord.expulser": { icone: "👢", libelle: "Expulsion", poids: 3 },
-	"discord.lever-exclusion": { icone: "🔈", libelle: "Exclusion levée", poids: 0 },
+  "discord.avertir": { icone: "⚠️", libelle: "Avertissement", poids: 1 },
+  "discord.bannir": { icone: "⛔", libelle: "Bannissement", poids: 5 },
+  "discord.debannir": { icone: "🔓", libelle: "Débannissement", poids: 0 },
+  "discord.exclure": { icone: "🔇", libelle: "Exclusion temporaire", poids: 2 },
+  "discord.expulser": { icone: "👢", libelle: "Expulsion", poids: 3 },
+  "discord.lever-exclusion": { icone: "🔈", libelle: "Exclusion levée", poids: 0 },
 });
 
 export function libelleAction(action: string): string {
-	return estActionModeration(action) ? ETIQUETTES[action].libelle : action;
+  return estActionModeration(action) ? ETIQUETTES[action].libelle : action;
 }
 
 export function iconeAction(action: string): string {
-	return estActionModeration(action) ? ETIQUETTES[action].icone : "•";
+  return estActionModeration(action) ? ETIQUETTES[action].icone : "•";
 }
 
 export function poidsAction(action: string): number {
-	return estActionModeration(action) ? ETIQUETTES[action].poids : 0;
+  return estActionModeration(action) ? ETIQUETTES[action].poids : 0;
 }
 
 // ─── Entrées ────────────────────────────────────────────────────────────────
 
 export interface EntreeHistorique {
-	action: string;
-	/** Motif tel qu'il a été saisi par le staff, `null` s'il n'y en avait pas. */
-	motif: string | null;
-	/** Identifiant Discord du membre du staff qui a agi, `null` si inconnu. */
-	parQui: string | null;
-	le: Date;
+  action: string;
+  /** Motif tel qu'il a été saisi par le staff, `null` s'il n'y en avait pas. */
+  motif: string | null;
+  /** Identifiant Discord du membre du staff qui a agi, `null` si inconnu. */
+  parQui: string | null;
+  le: Date;
 }
 
 export interface Resume {
-	total: number;
-	/** Somme des poids — une mesure de gravité, pas un compteur d'incidents. */
-	gravite: number;
-	/** Décompte par action, dans l'ordre de `ACTIONS_MODERATION`. */
-	parAction: Array<{ action: ActionModeration; nombre: number }>;
-	/** La plus récente, `null` si l'historique est vide. */
-	derniere: EntreeHistorique | null;
-	/** Nombre d'entrées des 90 derniers jours — ce qui pèse vraiment. */
-	recentes: number;
+  total: number;
+  /** Somme des poids — une mesure de gravité, pas un compteur d'incidents. */
+  gravite: number;
+  /** Décompte par action, dans l'ordre de `ACTIONS_MODERATION`. */
+  parAction: Array<{ action: ActionModeration; nombre: number }>;
+  /** La plus récente, `null` si l'historique est vide. */
+  derniere: EntreeHistorique | null;
+  /** Nombre d'entrées des 90 derniers jours — ce qui pèse vraiment. */
+  recentes: number;
 }
 
 /** Fenêtre au-delà de laquelle une sanction cesse d'être « récente ». */
@@ -108,46 +107,39 @@ export const JOURS_RECENTS = 90;
  * deux ans n'est pas dans la même situation qu'un membre qui en a trois ce
  * mois-ci, et un seul compteur confond les deux.
  */
-export function resumer(
-	entrees: readonly EntreeHistorique[],
-	maintenant: Date = new Date()
-): Resume {
-	const compteurs = new Map<ActionModeration, number>(
-		ACTIONS_MODERATION.map((action) => [action, 0])
-	);
-	let gravite = 0;
-	let recentes = 0;
-	const limite = maintenant.getTime() - JOURS_RECENTS * 86_400_000;
+export function resumer(entrees: readonly EntreeHistorique[], maintenant: Date = new Date()): Resume {
+  const compteurs = new Map<ActionModeration, number>(ACTIONS_MODERATION.map(action => [action, 0]));
+  let gravite = 0;
+  let recentes = 0;
+  const limite = maintenant.getTime() - JOURS_RECENTS * 86_400_000;
 
-	for (const entree of entrees) {
-		if (estActionModeration(entree.action)) {
-			compteurs.set(entree.action, (compteurs.get(entree.action) ?? 0) + 1);
-		}
-		gravite += poidsAction(entree.action);
-		const instant = entree.le instanceof Date ? entree.le.getTime() : Number.NaN;
-		if (Number.isFinite(instant) && instant >= limite) {
-			recentes += 1;
-		}
-	}
+  for (const entree of entrees) {
+    if (estActionModeration(entree.action)) {
+      compteurs.set(entree.action, (compteurs.get(entree.action) ?? 0) + 1);
+    }
+    gravite += poidsAction(entree.action);
+    const instant = entree.le instanceof Date ? entree.le.getTime() : Number.NaN;
+    if (Number.isFinite(instant) && instant >= limite) {
+      recentes += 1;
+    }
+  }
 
-	// `entrees` arrive triée du plus récent au plus ancien (c'est l'ordre de la
-	// requête) ; on ne re-trie pas pour ne pas dépendre silencieusement de
-	// l'appelant sur le seul point qui compte.
-	const derniere =
-		entrees.length === 0
-			? null
-			: entrees.reduce((plus, entree) => (entree.le > plus.le ? entree : plus));
+  // `entrees` arrive triée du plus récent au plus ancien (c'est l'ordre de la
+  // requête) ; on ne re-trie pas pour ne pas dépendre silencieusement de
+  // l'appelant sur le seul point qui compte.
+  const derniere =
+    entrees.length === 0 ? null : entrees.reduce((plus, entree) => (entree.le > plus.le ? entree : plus));
 
-	return {
-		derniere,
-		gravite,
-		parAction: ACTIONS_MODERATION.map((action) => ({
-			action,
-			nombre: compteurs.get(action) ?? 0,
-		})),
-		recentes,
-		total: entrees.length,
-	};
+  return {
+    derniere,
+    gravite,
+    parAction: ACTIONS_MODERATION.map(action => ({
+      action,
+      nombre: compteurs.get(action) ?? 0,
+    })),
+    recentes,
+    total: entrees.length,
+  };
 }
 
 /**
@@ -158,16 +150,16 @@ export function resumer(
  * qui suggère « à bannir » serait lue comme un avis.
  */
 export function libelleResume(resume: Resume): string {
-	if (resume.total === 0) {
-		return "Dossier vierge — aucune trace de modération.";
-	}
-	const morceaux = [
-		`${resume.total} entrée${resume.total > 1 ? "s" : ""} au total`,
-		resume.recentes > 0
-			? `${resume.recentes} sur les ${JOURS_RECENTS} derniers jours`
-			: `aucune depuis ${JOURS_RECENTS} jours`,
-	];
-	return morceaux.join(" · ");
+  if (resume.total === 0) {
+    return "Dossier vierge — aucune trace de modération.";
+  }
+  const morceaux = [
+    `${resume.total} entrée${resume.total > 1 ? "s" : ""} au total`,
+    resume.recentes > 0
+      ? `${resume.recentes} sur les ${JOURS_RECENTS} derniers jours`
+      : `aucune depuis ${JOURS_RECENTS} jours`,
+  ];
+  return morceaux.join(" · ");
 }
 
 // ─── Journal de modération ──────────────────────────────────────────────────
@@ -184,17 +176,17 @@ export function libelleResume(resume: Resume): string {
  * confondre obligerait à relire la ligne qu'on vient d'écrire pour l'afficher.
  */
 export interface ActionJournalisee {
-	action: ActionModeration;
-	/** Flocon du membre visé. */
-	cibleId: string;
-	/** Nom lisible du membre visé (`user.tag`), ou son identifiant brut. */
-	cibleEtiquette: string;
-	/** Flocon du membre du staff qui a agi. */
-	parQui: string;
-	/** Motif saisi. `null` quand l'action n'en demande pas (débannissement). */
-	motif: string | null;
-	/** Précisions propres à l'action ; les entrées vides sont ignorées. */
-	precisions?: ReadonlyArray<{ nom: string; valeur: string | null } | null>;
+  action: ActionModeration;
+  /** Flocon du membre visé. */
+  cibleId: string;
+  /** Nom lisible du membre visé (`user.tag`), ou son identifiant brut. */
+  cibleEtiquette: string;
+  /** Flocon du membre du staff qui a agi. */
+  parQui: string;
+  /** Motif saisi. `null` quand l'action n'en demande pas (débannissement). */
+  motif: string | null;
+  /** Précisions propres à l'action ; les entrées vides sont ignorées. */
+  precisions?: ReadonlyArray<{ nom: string; valeur: string | null } | null>;
 }
 
 /** Intention de couleur d'une ligne de journal — la palette vit dans `lib/ui`. */
@@ -209,26 +201,26 @@ export type IntentionJournal = "attention" | "echec" | "succes";
  * lire.
  */
 const INTENTIONS: Readonly<Record<ActionModeration, IntentionJournal>> = Object.freeze({
-	"discord.avertir": "attention",
-	"discord.bannir": "echec",
-	"discord.debannir": "succes",
-	"discord.exclure": "attention",
-	"discord.expulser": "echec",
-	"discord.lever-exclusion": "succes",
+  "discord.avertir": "attention",
+  "discord.bannir": "echec",
+  "discord.debannir": "succes",
+  "discord.exclure": "attention",
+  "discord.expulser": "echec",
+  "discord.lever-exclusion": "succes",
 });
 
 export function intentionAction(action: ActionModeration): IntentionJournal {
-	return INTENTIONS[action];
+  return INTENTIONS[action];
 }
 
 /** Ce qu'il faut poser sur un embed pour publier une action au journal. */
 export interface LigneJournal {
-	/** Émoji de l'action, à poser par l'appelante — l'embed n'en ajoute pas d'autre. */
-	icone: string;
-	titre: string;
-	description: string;
-	intention: IntentionJournal;
-	champs: Array<{ nom: string; valeur: string; enLigne: boolean }>;
+  /** Émoji de l'action, à poser par l'appelante — l'embed n'en ajoute pas d'autre. */
+  icone: string;
+  titre: string;
+  description: string;
+  intention: IntentionJournal;
+  champs: Array<{ nom: string; valeur: string; enLigne: boolean }>;
 }
 
 /**
@@ -244,20 +236,20 @@ export interface LigneJournal {
  * seule sait si son texte a déjà traversé `echapper()`.
  */
 export function ligneJournal(entree: ActionJournalisee): LigneJournal {
-	const champs: LigneJournal["champs"] = [
-		{ enLigne: false, nom: "Motif", valeur: borner(entree.motif ?? "—", 1_000) },
-		{ enLigne: true, nom: "Par", valeur: `<@${entree.parQui}>` },
-	];
-	for (const precision of entree.precisions ?? []) {
-		if (precision && precision.valeur && precision.valeur.trim().length > 0) {
-			champs.push({ enLigne: true, nom: precision.nom, valeur: borner(precision.valeur, 1_000) });
-		}
-	}
-	return {
-		champs,
-		description: `<@${entree.cibleId}> — ${echapper(entree.cibleEtiquette)} (\`${entree.cibleId}\`)`,
-		icone: iconeAction(entree.action),
-		intention: INTENTIONS[entree.action],
-		titre: libelleAction(entree.action),
-	};
+  const champs: LigneJournal["champs"] = [
+    { enLigne: false, nom: "Motif", valeur: borner(entree.motif ?? "—", 1_000) },
+    { enLigne: true, nom: "Par", valeur: `<@${entree.parQui}>` },
+  ];
+  for (const precision of entree.precisions ?? []) {
+    if (precision && precision.valeur && precision.valeur.trim().length > 0) {
+      champs.push({ enLigne: true, nom: precision.nom, valeur: borner(precision.valeur, 1_000) });
+    }
+  }
+  return {
+    champs,
+    description: `<@${entree.cibleId}> — ${echapper(entree.cibleEtiquette)} (\`${entree.cibleId}\`)`,
+    icone: iconeAction(entree.action),
+    intention: INTENTIONS[entree.action],
+    titre: libelleAction(entree.action),
+  };
 }

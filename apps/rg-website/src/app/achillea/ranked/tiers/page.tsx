@@ -7,14 +7,13 @@ import { createAchilleaClient } from "@/lib/achillea";
  * interdit. L'interface, inchangée, vit dans `ranked-tiers-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Paliers de classement",
-	description:
-		"Les onze paliers Achilléa, de Fer à Légendaire : seuils d'ELO et répartition réelle des joueurs.",
-	chemin: "/achillea/ranked/tiers",
-	indexable: true,
+  titre: "Paliers de classement",
+  description: "Les onze paliers Achilléa, de Fer à Légendaire : seuils d'ELO et répartition réelle des joueurs.",
+  chemin: "/achillea/ranked/tiers",
+  indexable: true,
 });
 
 export default async function RankedTiersPage() {
-	const result = await createAchilleaClient().ranked.tiers(2);
-	return <RankedTiersClient initialTiers={result.ok ? result.value : null} />;
+  const result = await createAchilleaClient().ranked.tiers(2);
+  return <RankedTiersClient initialTiers={result.ok ? result.value : null} />;
 }

@@ -25,12 +25,7 @@ describe("InagleError", () => {
 
   it("should create error with cause", () => {
     const originalError = new Error("Original error");
-    const error = new InagleError(
-      InagleErrorCode.DATA_PARSE_ERROR,
-      "Failed to parse",
-      undefined,
-      originalError,
-    );
+    const error = new InagleError(InagleErrorCode.DATA_PARSE_ERROR, "Failed to parse", undefined, originalError);
 
     expect(error.cause).toBe(originalError);
   });

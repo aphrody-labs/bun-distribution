@@ -79,32 +79,32 @@ import { RG_GUILD_ID } from "@rosegriffon/types/discord";
 import { sql } from "../lib/db";
 import { niveauPour } from "../lib/experience";
 import {
-	AIDE_CLE_MANQUANTE,
-	attenteAvantSuivante,
-	bilanVide,
-	CADENCE_DEFAUT,
-	classerReponse,
-	convertirMonnaie,
-	distribution,
-	FENETRE_OBSERVEE,
-	fusionnerClassements,
-	lireClassement,
-	lireProfil,
-	lireProfilEconomie,
-	lireQuota,
-	meriteEcriture,
-	meriteEcritureEconomie,
-	PLAFOND_DOCUMENTE,
-	resumerBilan,
-	TRIS_CLASSEMENT,
-	urlClassementPublic,
-	urlCoffresGuilde,
-	urlObjetsGuilde,
-	urlProfilEconomie,
-	urlProfilNiveau,
-	type Issue,
-	type ProfilClasse,
-	type Quota,
+  AIDE_CLE_MANQUANTE,
+  attenteAvantSuivante,
+  bilanVide,
+  CADENCE_DEFAUT,
+  classerReponse,
+  convertirMonnaie,
+  distribution,
+  FENETRE_OBSERVEE,
+  fusionnerClassements,
+  lireClassement,
+  lireProfil,
+  lireProfilEconomie,
+  lireQuota,
+  meriteEcriture,
+  meriteEcritureEconomie,
+  PLAFOND_DOCUMENTE,
+  resumerBilan,
+  TRIS_CLASSEMENT,
+  urlClassementPublic,
+  urlCoffresGuilde,
+  urlObjetsGuilde,
+  urlProfilEconomie,
+  urlProfilNiveau,
+  type Issue,
+  type ProfilClasse,
+  type Quota,
 } from "../lib/noctaly";
 
 /**
@@ -114,8 +114,8 @@ import {
  * quelqu'un d'autre, c'est de ne pas être rejeté pour cause d'agent vide.
  */
 const NAVIGATEUR =
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-	"Chrome/140.0.0.0 Safari/537.36";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
+  "Chrome/140.0.0.0 Safari/537.36";
 
 const GUILD_ID = RG_GUILD_ID;
 
@@ -125,16 +125,16 @@ const sansEco = Bun.argv.includes("--sans-eco");
 
 /** Lit une option `--nom=valeur` numérique, ou rend le défaut. */
 function optionNombre(nom: string, defaut: number): number {
-	const argument = Bun.argv.find((valeur) => valeur.startsWith(`--${nom}=`));
-	if (!argument) {
-		return defaut;
-	}
-	const valeur = Number(argument.slice(nom.length + 3));
-	if (!Number.isFinite(valeur) || valeur < 0) {
-		console.error(`Option illisible : ${argument}`);
-		process.exit(1);
-	}
-	return valeur;
+  const argument = Bun.argv.find(valeur => valeur.startsWith(`--${nom}=`));
+  if (!argument) {
+    return defaut;
+  }
+  const valeur = Number(argument.slice(nom.length + 3));
+  if (!Number.isFinite(valeur) || valeur < 0) {
+    console.error(`Option illisible : ${argument}`);
+    process.exit(1);
+  }
+  return valeur;
 }
 
 const cadence = Math.min(PLAFOND_DOCUMENTE, Math.max(1, optionNombre("cadence", CADENCE_DEFAUT)));
@@ -157,11 +157,11 @@ const taux = optionNombre("taux", 0);
 const cle = (Bun.env.NOCTALY_API_KEY ?? "").trim();
 const avecApi = cle !== "";
 if (!avecApi) {
-	console.warn(`${AIDE_CLE_MANQUANTE}\n`);
-	console.warn("→ Import en mode DÉGRADÉ : classement public seul.\n");
+  console.warn(`${AIDE_CLE_MANQUANTE}\n`);
+  console.warn("→ Import en mode DÉGRADÉ : classement public seul.\n");
 }
 
-const dormir = (ms: number) => new Promise((resoudre) => setTimeout(resoudre, ms));
+const dormir = (ms: number) => new Promise(resoudre => setTimeout(resoudre, ms));
 
 const bilan = bilanVide();
 let quota: Quota = { dansSecondes: null, limite: null, restant: null };
@@ -176,54 +176,54 @@ let interrompu: string | null = null;
  * qu'on ait à y penser à chaque appel.
  */
 async function interroger(url: string): Promise<{ issue: Issue; corps: unknown }> {
-	await dormir(attenteAvantSuivante(quota, cadence));
-	let reponse: Response;
-	try {
-		reponse = await fetch(url, {
-			headers: { Authorization: cle },
-			signal: AbortSignal.timeout(15_000),
-		});
-	} catch (err) {
-		return { corps: err instanceof Error ? err.message : String(err), issue: "panne" };
-	}
-	quota = lireQuota(reponse.headers);
+  await dormir(attenteAvantSuivante(quota, cadence));
+  let reponse: Response;
+  try {
+    reponse = await fetch(url, {
+      headers: { Authorization: cle },
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    return { corps: err instanceof Error ? err.message : String(err), issue: "panne" };
+  }
+  quota = lireQuota(reponse.headers);
 
-	// Le corps est lu AVANT le classement, et non plus seulement sur 200 : un
-	// module éteint répond `400 {"code":"module_disabled"}`, statut que rien ne
-	// distingue d'une requête malformée sans regarder la charge. C'est cette
-	// distinction qui permet d'abandonner une passe entière au lieu de la jouer
-	// membre par membre pour mille huit cents 404.
-	const texte = await reponse.text().catch(() => "");
-	let corps: unknown = null;
-	if (texte !== "") {
-		try {
-			corps = JSON.parse(texte);
-		} catch {
-			corps = null;
-		}
-	}
+  // Le corps est lu AVANT le classement, et non plus seulement sur 200 : un
+  // module éteint répond `400 {"code":"module_disabled"}`, statut que rien ne
+  // distingue d'une requête malformée sans regarder la charge. C'est cette
+  // distinction qui permet d'abandonner une passe entière au lieu de la jouer
+  // membre par membre pour mille huit cents 404.
+  const texte = await reponse.text().catch(() => "");
+  let corps: unknown = null;
+  if (texte !== "") {
+    try {
+      corps = JSON.parse(texte);
+    } catch {
+      corps = null;
+    }
+  }
 
-	const issue = classerReponse(reponse.status, corps);
-	if (issue === "refuse") {
-		interrompu =
-			`clé refusée (HTTP ${reponse.status}) — vérifier NOCTALY_API_KEY et qu'elle appartient ` +
-			`bien au serveur ${GUILD_ID}`;
-		return { corps: null, issue };
-	}
-	if (issue === "quota") {
-		// On ne réessaie PAS : la documentation annonce un retryAfter d'une heure
-		// et une mise en liste noire pour les applications qui insistent. L'import
-		// étant idempotent, reprendre plus tard ne coûte rien.
-		interrompu =
-			`quota dépassé (HTTP 429) — reprendre plus tard avec une cadence plus basse ` +
-			`(--cadence=${Math.max(1, Math.floor(cadence / 2))}). Aucune requête de plus n'est ` +
-			`envoyée : insister fait blacklister.`;
-		return { corps: null, issue };
-	}
-	if (issue !== "ok") {
-		return { corps, issue };
-	}
-	return { corps, issue };
+  const issue = classerReponse(reponse.status, corps);
+  if (issue === "refuse") {
+    interrompu =
+      `clé refusée (HTTP ${reponse.status}) — vérifier NOCTALY_API_KEY et qu'elle appartient ` +
+      `bien au serveur ${GUILD_ID}`;
+    return { corps: null, issue };
+  }
+  if (issue === "quota") {
+    // On ne réessaie PAS : la documentation annonce un retryAfter d'une heure
+    // et une mise en liste noire pour les applications qui insistent. L'import
+    // étant idempotent, reprendre plus tard ne coûte rien.
+    interrompu =
+      `quota dépassé (HTTP 429) — reprendre plus tard avec une cadence plus basse ` +
+      `(--cadence=${Math.max(1, Math.floor(cadence / 2))}). Aucune requête de plus n'est ` +
+      `envoyée : insister fait blacklister.`;
+    return { corps: null, issue };
+  }
+  if (issue !== "ok") {
+    return { corps, issue };
+  }
+  return { corps, issue };
 }
 
 /**
@@ -246,26 +246,26 @@ async function interroger(url: string): Promise<{ issue: Issue; corps: unknown }
  * donc simplement zéro profil, ce qui n'est pas une panne.
  */
 async function chargerPageClassement(url: string): Promise<string | null> {
-	const cookies = await lireEnteteCookies();
-	const arguments_ = [
-		"curl",
-		"--silent",
-		"--show-error",
-		"--max-time",
-		"20",
-		"--user-agent",
-		NAVIGATEUR,
-		...(cookies ? ["--header", `cookie: ${cookies}`] : []),
-		url,
-	];
-	const proc = Bun.spawn(arguments_, { stderr: "pipe", stdout: "pipe" });
-	const sortie = await new Response(proc.stdout).text();
-	const code = await proc.exited;
-	if (code !== 0) {
-		console.warn(`  ⚠ classement : curl a rendu le code ${code}`);
-		return null;
-	}
-	return sortie;
+  const cookies = await lireEnteteCookies();
+  const arguments_ = [
+    "curl",
+    "--silent",
+    "--show-error",
+    "--max-time",
+    "20",
+    "--user-agent",
+    NAVIGATEUR,
+    ...(cookies ? ["--header", `cookie: ${cookies}`] : []),
+    url,
+  ];
+  const proc = Bun.spawn(arguments_, { stderr: "pipe", stdout: "pipe" });
+  const sortie = await new Response(proc.stdout).text();
+  const code = await proc.exited;
+  if (code !== 0) {
+    console.warn(`  ⚠ classement : curl a rendu le code ${code}`);
+    return null;
+  }
+  return sortie;
 }
 
 /**
@@ -276,20 +276,18 @@ async function chargerPageClassement(url: string): Promise<string | null> {
  * un import ne doit pas échouer parce qu'une source d'appoint a expiré.
  */
 async function lireEnteteCookies(): Promise<string | null> {
-	const chemin = new URL("../../../../.secrets/noctaly-cookies.json", import.meta.url).pathname;
-	const fichier = Bun.file(chemin);
-	if (!(await fichier.exists())) {
-		return null;
-	}
-	try {
-		const jar = (await fichier.json()) as Array<{ domain: string; name: string; value: string }>;
-		const pourNoctaly = jar.filter((c) => c.domain.replace(/^\./, "").endsWith("noctaly.com"));
-		return pourNoctaly.length === 0
-			? null
-			: pourNoctaly.map((c) => `${c.name}=${c.value}`).join("; ");
-	} catch {
-		return null;
-	}
+  const chemin = new URL("../../../../.secrets/noctaly-cookies.json", import.meta.url).pathname;
+  const fichier = Bun.file(chemin);
+  if (!(await fichier.exists())) {
+    return null;
+  }
+  try {
+    const jar = (await fichier.json()) as Array<{ domain: string; name: string; value: string }>;
+    const pourNoctaly = jar.filter(c => c.domain.replace(/^\./, "").endsWith("noctaly.com"));
+    return pourNoctaly.length === 0 ? null : pourNoctaly.map(c => `${c.name}=${c.value}`).join("; ");
+  } catch {
+    return null;
+  }
 }
 
 // ─── Amorce : le classement public ──────────────────────────────────────────
@@ -305,29 +303,29 @@ console.log(`=== Import Noctaly ${essai ? "[--essai, rien n'est écrit] " : ""}=
 
 const classements: ProfilClasse[][] = [];
 for (const tri of TRIS_CLASSEMENT) {
-	const page = await chargerPageClassement(urlClassementPublic(GUILD_ID, tri));
-	const lus = page === null ? [] : lireClassement(page);
-	classements.push(lus);
-	console.log(`  classement ?sort=${tri.padEnd(9)} → ${String(lus.length).padStart(3)} profil(s)`);
-	// Ces pages ne comptent pas dans le quota de l'API (autre origine), mais on
-	// espace quand même : c'est le site public d'un tiers.
-	await dormir(600);
+  const page = await chargerPageClassement(urlClassementPublic(GUILD_ID, tri));
+  const lus = page === null ? [] : lireClassement(page);
+  classements.push(lus);
+  console.log(`  classement ?sort=${tri.padEnd(9)} → ${String(lus.length).padStart(3)} profil(s)`);
+  // Ces pages ne comptent pas dans le quota de l'API (autre origine), mais on
+  // espace quand même : c'est le site public d'un tiers.
+  await dormir(600);
 }
 const classement = fusionnerClassements(classements);
-const parClassement = new Map(classement.map((entree) => [entree.discordId, entree]));
+const parClassement = new Map(classement.map(entree => [entree.discordId, entree]));
 console.log(
-	`  → ${classement.length} membre(s) distinct(s) connus du classement` +
-		(classement.length > 0
-			? ` · de ${classement[0]!.profil.xpTotale} à ${classement.at(-1)!.profil.xpTotale} XP`
-			: " (session expirée ou module de niveaux inactif)")
+  `  → ${classement.length} membre(s) distinct(s) connus du classement` +
+    (classement.length > 0
+      ? ` · de ${classement[0]!.profil.xpTotale} à ${classement.at(-1)!.profil.xpTotale} XP`
+      : " (session expirée ou module de niveaux inactif)"),
 );
 
 if (classement.length === 0 && !avecApi) {
-	console.error(
-		"\nAucune source disponible : ni clé API, ni classement lisible.\n" +
-			"Le classement exige une session valide dans .secrets/noctaly-cookies.json."
-	);
-	process.exit(1);
+  console.error(
+    "\nAucune source disponible : ni clé API, ni classement lisible.\n" +
+      "Le classement exige une session valide dans .secrets/noctaly-cookies.json.",
+  );
+  process.exit(1);
 }
 
 // ─── Les membres à interroger ───────────────────────────────────────────────
@@ -335,12 +333,12 @@ if (classement.length === 0 && !avecApi) {
 // gaspillée (Noctaly ne leur donne pas d'XP), et un membre parti répond
 // `404 Unknown Member` — sauf s'il revient un jour, d'où `--tous`.
 const membresBruts = tous
-	? await sql<Array<{ discord_id: string; username: string }>>`
+  ? await sql<Array<{ discord_id: string; username: string }>>`
 		SELECT discord_id, username FROM discord_members
 		 WHERE NOT is_bot
 		 ORDER BY joined_at NULLS LAST
 	`
-	: await sql<Array<{ discord_id: string; username: string }>>`
+  : await sql<Array<{ discord_id: string; username: string }>>`
 		SELECT discord_id, username FROM discord_members
 		 WHERE NOT is_bot AND left_at IS NULL
 		 ORDER BY joined_at NULLS LAST
@@ -358,9 +356,9 @@ const membresBruts = tous
 const rang = new Map<string, number>();
 classement.forEach((entree, index) => rang.set(entree.discordId, index));
 const membresTries = membresBruts.toSorted((a, b) => {
-	const ra = rang.get(a.discord_id) ?? Number.MAX_SAFE_INTEGER;
-	const rb = rang.get(b.discord_id) ?? Number.MAX_SAFE_INTEGER;
-	return ra - rb;
+  const ra = rang.get(a.discord_id) ?? Number.MAX_SAFE_INTEGER;
+  const rb = rang.get(b.discord_id) ?? Number.MAX_SAFE_INTEGER;
+  return ra - rb;
 });
 
 /**
@@ -374,11 +372,11 @@ const membres = limite > 0 ? membresTries.slice(0, limite) : membresTries;
 
 /** Les membres déjà crédités en jetons — un crédit ne se rejoue pas. */
 const dejaCredites = new Set(
-	(
-		await sql<Array<{ discord_id: string }>>`
+  (
+    await sql<Array<{ discord_id: string }>>`
 			SELECT discord_id FROM bot_import_noctaly WHERE guild_id = ${GUILD_ID}
 		`
-	).map((ligne) => ligne.discord_id)
+  ).map(ligne => ligne.discord_id),
 );
 
 // ─── Le module d'économie est-il seulement allumé ? ─────────────────────────
@@ -395,39 +393,39 @@ const dejaCredites = new Set(
 // doublaient les occasions de déclencher un 429.
 let ecoActive = !sansEco;
 if (!sansEco && avecApi) {
-	const sonde = await interroger(urlObjetsGuilde(GUILD_ID));
-	if (sonde.issue === "module-desactive") {
-		ecoActive = false;
-		console.log(
-			"\n  module économie ÉTEINT sur ce serveur → la passe d'économie est abandonnée " +
-				`(${membres.length} requête(s) évitée(s)).`
-		);
-	} else if (sonde.issue === "ok") {
-		await archiverCatalogue("items", sonde.corps);
-		const coffres = await interroger(urlCoffresGuilde(GUILD_ID));
-		if (coffres.issue === "ok") {
-			await archiverCatalogue("chests", coffres.corps);
-		} else {
-			console.log(`  catalogue chests : ${coffres.issue}`);
-		}
-	} else {
-		console.log(`  catalogue items : ${sonde.issue}`);
-	}
+  const sonde = await interroger(urlObjetsGuilde(GUILD_ID));
+  if (sonde.issue === "module-desactive") {
+    ecoActive = false;
+    console.log(
+      "\n  module économie ÉTEINT sur ce serveur → la passe d'économie est abandonnée " +
+        `(${membres.length} requête(s) évitée(s)).`,
+    );
+  } else if (sonde.issue === "ok") {
+    await archiverCatalogue("items", sonde.corps);
+    const coffres = await interroger(urlCoffresGuilde(GUILD_ID));
+    if (coffres.issue === "ok") {
+      await archiverCatalogue("chests", coffres.corps);
+    } else {
+      console.log(`  catalogue chests : ${coffres.issue}`);
+    }
+  } else {
+    console.log(`  catalogue items : ${sonde.issue}`);
+  }
 }
 
 /** Écrit un catalogue de guilde dans son archive. */
 async function archiverCatalogue(genre: "items" | "chests", corps: unknown): Promise<void> {
-	const compte = Array.isArray((corps as Record<string, unknown> | null)?.[genre])
-		? ((corps as Record<string, unknown>)[genre] as unknown[]).length
-		: 0;
-	console.log(`  catalogue ${genre} : ${compte} entrée(s)`);
-	if (essai || corps === null) {
-		return;
-	}
-	// Pas de `JSON.stringify(corps)` : Bun.SQL encode déjà en JSON une valeur
-	// liée à un paramètre `::jsonb` — la stringifier double l'encodage (la
-	// colonne reçoit une chaîne, pas un objet).
-	await sql`
+  const compte = Array.isArray((corps as Record<string, unknown> | null)?.[genre])
+    ? ((corps as Record<string, unknown>)[genre] as unknown[]).length
+    : 0;
+  console.log(`  catalogue ${genre} : ${compte} entrée(s)`);
+  if (essai || corps === null) {
+    return;
+  }
+  // Pas de `JSON.stringify(corps)` : Bun.SQL encode déjà en JSON une valeur
+  // liée à un paramètre `::jsonb` — la stringifier double l'encodage (la
+  // colonne reçoit une chaîne, pas un objet).
+  await sql`
 		INSERT INTO bot_import_noctaly_catalogue (guild_id, genre, contenu)
 		VALUES (${GUILD_ID}, ${genre}, ${corps}::jsonb)
 		ON CONFLICT (guild_id, genre) DO UPDATE SET
@@ -438,11 +436,11 @@ async function archiverCatalogue(genre: "items" | "chests", corps: unknown): Pro
 const requetesParMembre = (avecApi ? 1 : 0) + (ecoActive && avecApi ? 1 : 0);
 const secondes = Math.ceil((membres.length * requetesParMembre) / cadence);
 console.log(
-	`\n${membres.length} membre(s) × ${requetesParMembre} requête(s) · cadence ${cadence} req/s\n` +
-		`quota réel mesuré : ${FENETRE_OBSERVEE.requetes} requêtes / ${FENETRE_OBSERVEE.secondes} s ` +
-		`(la documentation annonce ${PLAFOND_DOCUMENTE}/s — elle est fausse)\n` +
-		`durée estimée ${Math.floor(secondes / 60)} min ${secondes % 60} s · ` +
-		`taux monnaie → jetons : ${taux === 0 ? "0 (aucune monnaie importée)" : taux}\n`
+  `\n${membres.length} membre(s) × ${requetesParMembre} requête(s) · cadence ${cadence} req/s\n` +
+    `quota réel mesuré : ${FENETRE_OBSERVEE.requetes} requêtes / ${FENETRE_OBSERVEE.secondes} s ` +
+    `(la documentation annonce ${PLAFOND_DOCUMENTE}/s — elle est fausse)\n` +
+    `durée estimée ${Math.floor(secondes / 60)} min ${secondes % 60} s · ` +
+    `taux monnaie → jetons : ${taux === 0 ? "0 (aucune monnaie importée)" : taux}\n`,
 );
 
 // ─── La boucle des membres ──────────────────────────────────────────────────
@@ -451,120 +449,116 @@ const soldes: number[] = [];
 let parcourus = 0;
 
 for (const membre of membres) {
-	if (interrompu) {
-		break;
-	}
+  if (interrompu) {
+    break;
+  }
 
-	/**
-	 * Ce que le classement public sait déjà de ce membre, s'il le connaît.
-	 *
-	 * Il sert de REPLI, jamais de raccourci : quand l'API répond, c'est elle qui
-	 * fait foi (elle porte en plus `xp` intra-niveau et `neededXp`, et elle est
-	 * à la seconde près). Le classement ne prend la main que là où l'API n'a pas
-	 * pu parler — pas de clé, ou import interrompu avant d'arriver à ce membre.
-	 */
-	const depuisClassement = parClassement.get(membre.discord_id) ?? null;
+  /**
+   * Ce que le classement public sait déjà de ce membre, s'il le connaît.
+   *
+   * Il sert de REPLI, jamais de raccourci : quand l'API répond, c'est elle qui
+   * fait foi (elle porte en plus `xp` intra-niveau et `neededXp`, et elle est
+   * à la seconde près). Le classement ne prend la main que là où l'API n'a pas
+   * pu parler — pas de clé, ou import interrompu avant d'arriver à ce membre.
+   */
+  const depuisClassement = parClassement.get(membre.discord_id) ?? null;
 
-	const niveauRep = avecApi
-		? await interroger(urlProfilNiveau(GUILD_ID, membre.discord_id))
-		: ({ corps: null, issue: "absent" } as const);
-	if (avecApi) {
-		bilan.interroges++;
-	}
-	if (interrompu) {
-		break;
-	}
+  const niveauRep = avecApi
+    ? await interroger(urlProfilNiveau(GUILD_ID, membre.discord_id))
+    : ({ corps: null, issue: "absent" } as const);
+  if (avecApi) {
+    bilan.interroges++;
+  }
+  if (interrompu) {
+    break;
+  }
 
-	let profil = null;
-	switch (niveauRep.issue) {
-		case "ok":
-			profil = lireProfil(niveauRep.corps);
-			if (!profil) {
-				bilan.illisibles++;
-				console.warn(`  ⚠ ${membre.username} — profil de niveau illisible`);
-			}
-			break;
-		case "absent":
-			bilan.absents++;
-			break;
-		default:
-			bilan.pannes++;
-			console.warn(`  ⚠ ${membre.username} — niveau : ${niveauRep.issue}`);
-			break;
-	}
+  let profil = null;
+  switch (niveauRep.issue) {
+    case "ok":
+      profil = lireProfil(niveauRep.corps);
+      if (!profil) {
+        bilan.illisibles++;
+        console.warn(`  ⚠ ${membre.username} — profil de niveau illisible`);
+      }
+      break;
+    case "absent":
+      bilan.absents++;
+      break;
+    default:
+      bilan.pannes++;
+      console.warn(`  ⚠ ${membre.username} — niveau : ${niveauRep.issue}`);
+      break;
+  }
 
-	// Repli sur le classement : un membre que l'API dit absent mais que le
-	// classement connaît a bel et bien de l'XP. Le cas se produit en mode
-	// dégradé (aucune clé) et, plus rarement, si l'API perd un profil.
-	let issuDuClassement = false;
-	if (profil === null && depuisClassement !== null) {
-		profil = depuisClassement.profil;
-		issuDuClassement = true;
-		if (niveauRep.issue === "absent" && avecApi) {
-			// L'API ne le connaît pas alors que le classement l'affiche : à
-			// signaler, c'est une incohérence côté Noctaly, pas chez nous.
-			bilan.absents--;
-			console.warn(
-				`  ⚠ ${membre.username} — absent de l'API mais présent au classement ` +
-					`(${depuisClassement.profil.xpTotale} XP) : valeur du classement retenue`
-			);
-		}
-	}
+  // Repli sur le classement : un membre que l'API dit absent mais que le
+  // classement connaît a bel et bien de l'XP. Le cas se produit en mode
+  // dégradé (aucune clé) et, plus rarement, si l'API perd un profil.
+  let issuDuClassement = false;
+  if (profil === null && depuisClassement !== null) {
+    profil = depuisClassement.profil;
+    issuDuClassement = true;
+    if (niveauRep.issue === "absent" && avecApi) {
+      // L'API ne le connaît pas alors que le classement l'affiche : à
+      // signaler, c'est une incohérence côté Noctaly, pas chez nous.
+      bilan.absents--;
+      console.warn(
+        `  ⚠ ${membre.username} — absent de l'API mais présent au classement ` +
+          `(${depuisClassement.profil.xpTotale} XP) : valeur du classement retenue`,
+      );
+    }
+  }
 
-	// L'économie s'interroge même quand le niveau est absent : les deux modules
-	// de Noctaly sont indépendants, un membre peut avoir de la monnaie sans XP.
-	let eco = null;
-	/**
-	 * La réponse d'économie TELLE QUELLE, gardée pour l'archive.
-	 *
-	 * `lireProfilEconomie` réduit `items[]` et `chests[]` à leur nombre — c'est
-	 * tout ce dont l'import a besoin. Mais archiver cette réduction viderait
-	 * l'archive de sa raison d'être : le détail de l'inventaire (noms, prix,
-	 * durabilité, quantités) ne se retrouvera nulle part une fois Noctaly
-	 * retiré du serveur. C'est le corps brut qu'on garde.
-	 */
-	let ecoBrut: unknown = null;
-	if (ecoActive && avecApi) {
-		const ecoRep = await interroger(urlProfilEconomie(GUILD_ID, membre.discord_id));
-		if (interrompu) {
-			break;
-		}
-		if (ecoRep.issue === "ok") {
-			ecoBrut = ecoRep.corps;
-			eco = lireProfilEconomie(ecoRep.corps);
-		} else if (ecoRep.issue !== "absent") {
-			bilan.pannes++;
-		}
-		if (eco) {
-			soldes.push(eco.monnaie);
-		}
-	}
+  // L'économie s'interroge même quand le niveau est absent : les deux modules
+  // de Noctaly sont indépendants, un membre peut avoir de la monnaie sans XP.
+  let eco = null;
+  /**
+   * La réponse d'économie TELLE QUELLE, gardée pour l'archive.
+   *
+   * `lireProfilEconomie` réduit `items[]` et `chests[]` à leur nombre — c'est
+   * tout ce dont l'import a besoin. Mais archiver cette réduction viderait
+   * l'archive de sa raison d'être : le détail de l'inventaire (noms, prix,
+   * durabilité, quantités) ne se retrouvera nulle part une fois Noctaly
+   * retiré du serveur. C'est le corps brut qu'on garde.
+   */
+  let ecoBrut: unknown = null;
+  if (ecoActive && avecApi) {
+    const ecoRep = await interroger(urlProfilEconomie(GUILD_ID, membre.discord_id));
+    if (interrompu) {
+      break;
+    }
+    if (ecoRep.issue === "ok") {
+      ecoBrut = ecoRep.corps;
+      eco = lireProfilEconomie(ecoRep.corps);
+    } else if (ecoRep.issue !== "absent") {
+      bilan.pannes++;
+    }
+    if (eco) {
+      soldes.push(eco.monnaie);
+    }
+  }
 
-	if (!profil && !eco) {
-		continue;
-	}
+  if (!profil && !eco) {
+    continue;
+  }
 
-	// L'archive d'abord : elle est la seule trace intégrale, et elle sert de
-	// garde contre un double crédit de jetons.
-	const premierPassage = !dejaCredites.has(membre.discord_id);
-	if (!essai) {
-		// Pas de `JSON.stringify(...)` sur les corps : Bun.SQL encode déjà en
-		// JSON une valeur liée à un paramètre `::jsonb` — la stringifier double
-		// l'encodage. `null` reste `null` (NULL SQL), le cast ne s'applique qu'à
-		// une valeur présente.
-		// L'archive garde la charge de la source qui a répondu, TELLE QUELLE.
-		// Les deux formes sont reconnaissables sans colonne supplémentaire : la
-		// réponse d'API porte `totalXp`, l'entrée de classement porte `userID`.
-		// Le `COALESCE` du conflit protège l'archive d'API : elle est plus riche,
-		// une repasse en mode dégradé ne doit pas l'écraser — d'où le `null` quand
-		// il n'y a rien de neuf.
-		const archiveNiveau =
-			niveauRep.issue === "ok"
-				? niveauRep.corps
-				: issuDuClassement
-					? (depuisClassement?.brut ?? null)
-					: null;
-		await sql`
+  // L'archive d'abord : elle est la seule trace intégrale, et elle sert de
+  // garde contre un double crédit de jetons.
+  const premierPassage = !dejaCredites.has(membre.discord_id);
+  if (!essai) {
+    // Pas de `JSON.stringify(...)` sur les corps : Bun.SQL encode déjà en
+    // JSON une valeur liée à un paramètre `::jsonb` — la stringifier double
+    // l'encodage. `null` reste `null` (NULL SQL), le cast ne s'applique qu'à
+    // une valeur présente.
+    // L'archive garde la charge de la source qui a répondu, TELLE QUELLE.
+    // Les deux formes sont reconnaissables sans colonne supplémentaire : la
+    // réponse d'API porte `totalXp`, l'entrée de classement porte `userID`.
+    // Le `COALESCE` du conflit protège l'archive d'API : elle est plus riche,
+    // une repasse en mode dégradé ne doit pas l'écraser — d'où le `null` quand
+    // il n'y a rien de neuf.
+    const archiveNiveau =
+      niveauRep.issue === "ok" ? niveauRep.corps : issuDuClassement ? (depuisClassement?.brut ?? null) : null;
+    await sql`
 			INSERT INTO bot_import_noctaly (guild_id, discord_id, profil_niveau, profil_eco)
 			VALUES (
 				${GUILD_ID}, ${membre.discord_id},
@@ -576,38 +570,38 @@ for (const membre of membres) {
 				profil_eco = COALESCE(EXCLUDED.profil_eco, bot_import_noctaly.profil_eco),
 				importe_le = now()
 		`;
-	}
-	bilan.archives++;
+  }
+  bilan.archives++;
 
-	const aDuNiveau = profil !== null && meriteEcriture(profil);
-	const aDeLEco = eco !== null && meriteEcritureEconomie(eco);
-	if (profil !== null && !aDuNiveau) {
-		bilan.vides++;
-	}
-	if (aDeLEco) {
-		bilan.economies++;
-	}
-	if (!aDuNiveau && !aDeLEco) {
-		continue;
-	}
+  const aDuNiveau = profil !== null && meriteEcriture(profil);
+  const aDeLEco = eco !== null && meriteEcritureEconomie(eco);
+  if (profil !== null && !aDuNiveau) {
+    bilan.vides++;
+  }
+  if (aDeLEco) {
+    bilan.economies++;
+  }
+  if (!aDuNiveau && !aDeLEco) {
+    continue;
+  }
 
-	const xp = aDuNiveau && profil ? profil.xpTotale : 0;
-	const niveau = niveauPour(xp);
-	const messages = aDuNiveau && profil ? profil.messages : 0;
-	const serie = aDeLEco && eco ? (eco.serieQuotidienne ?? 0) : 0;
-	// Les jetons ne se recréditent pas : `premierPassage` garde le mouvement.
-	const jetons = premierPassage && eco ? convertirMonnaie(eco.monnaie, taux) : 0;
+  const xp = aDuNiveau && profil ? profil.xpTotale : 0;
+  const niveau = niveauPour(xp);
+  const messages = aDuNiveau && profil ? profil.messages : 0;
+  const serie = aDeLEco && eco ? (eco.serieQuotidienne ?? 0) : 0;
+  // Les jetons ne se recréditent pas : `premierPassage` garde le mouvement.
+  const jetons = premierPassage && eco ? convertirMonnaie(eco.monnaie, taux) : 0;
 
-	if (aDuNiveau && profil) {
-		bilan.ecrits++;
-		if (issuDuClassement) {
-			bilan.classes++;
-		}
-		notables.push({ messages, niveau, pseudo: membre.username, xp });
-	}
+  if (aDuNiveau && profil) {
+    bilan.ecrits++;
+    if (issuDuClassement) {
+      bilan.classes++;
+    }
+    notables.push({ messages, niveau, pseudo: membre.username, xp });
+  }
 
-	if (!essai) {
-		await sql`
+  if (!essai) {
+    await sql`
 			INSERT INTO bot_profils (
 				guild_id, discord_id, xp, niveau, messages_comptes,
 				jetons, jetons_gagnes, serie_quotidienne, maj_le
@@ -625,69 +619,67 @@ for (const membre of membres) {
 				jetons_gagnes = bot_profils.jetons_gagnes + EXCLUDED.jetons_gagnes,
 				maj_le = now()
 		`;
-	}
+  }
 
-	// Compté sur les membres PARCOURUS et non sur les requêtes envoyées : en mode
-	// dégradé aucune requête ne part, et la progression serait muette.
-	parcourus++;
-	if (parcourus % 100 === 0) {
-		const reste = quota.restant === null ? "" : ` · quota ${quota.restant}/${quota.limite ?? "?"}`;
-		console.log(`  … ${parcourus}/${membres.length} · ${bilan.ecrits} importé(s)${reste}`);
-	}
+  // Compté sur les membres PARCOURUS et non sur les requêtes envoyées : en mode
+  // dégradé aucune requête ne part, et la progression serait muette.
+  parcourus++;
+  if (parcourus % 100 === 0) {
+    const reste = quota.restant === null ? "" : ` · quota ${quota.restant}/${quota.limite ?? "?"}`;
+    console.log(`  … ${parcourus}/${membres.length} · ${bilan.ecrits} importé(s)${reste}`);
+  }
 }
 
 // ─── Le rapport ─────────────────────────────────────────────────────────────
 notables.sort((a, b) => b.xp - a.xp);
 if (notables.length > 0) {
-	console.log(`\nLes 20 plus hauts profils :`);
-	for (const entree of notables.slice(0, 20)) {
-		console.log(
-			`  ${entree.pseudo.padEnd(28).slice(0, 28)} ${String(entree.xp).padStart(8)} xp ` +
-				`→ niveau ${String(entree.niveau).padStart(3)} · ${entree.messages} message(s)`
-		);
-	}
+  console.log(`\nLes 20 plus hauts profils :`);
+  for (const entree of notables.slice(0, 20)) {
+    console.log(
+      `  ${entree.pseudo.padEnd(28).slice(0, 28)} ${String(entree.xp).padStart(8)} xp ` +
+        `→ niveau ${String(entree.niveau).padStart(3)} · ${entree.messages} message(s)`,
+    );
+  }
 }
 
 const monnaie = distribution(soldes);
 if (monnaie.compte > 0) {
-	console.log(
-		`\nMonnaie Noctaly : ${monnaie.compte} membre(s) en ont · médiane ${monnaie.median} · ` +
-			`maximum ${monnaie.maximum} · total ${monnaie.total}`
-	);
-	if (taux === 0) {
-		console.log(
-			`  Aucune n'a été convertie (--taux=0). Un jeton Kizuna vaut 25/jour et un recrutement ` +
-				`en coûte 150 :\n  relancer avec --taux=<valeur> une fois le rapport ci-dessus lu.`
-		);
-	} else {
-		console.log(`  Convertie au taux ${taux} → ${convertirMonnaie(monnaie.total, taux)} jeton(s) au total.`);
-	}
+  console.log(
+    `\nMonnaie Noctaly : ${monnaie.compte} membre(s) en ont · médiane ${monnaie.median} · ` +
+      `maximum ${monnaie.maximum} · total ${monnaie.total}`,
+  );
+  if (taux === 0) {
+    console.log(
+      `  Aucune n'a été convertie (--taux=0). Un jeton Kizuna vaut 25/jour et un recrutement ` +
+        `en coûte 150 :\n  relancer avec --taux=<valeur> une fois le rapport ci-dessus lu.`,
+    );
+  } else {
+    console.log(`  Convertie au taux ${taux} → ${convertirMonnaie(monnaie.total, taux)} jeton(s) au total.`);
+  }
 }
 
 console.log(`\n${resumerBilan(bilan)}`);
 if (essai) {
-	console.log("(--essai : aucune écriture)");
+  console.log("(--essai : aucune écriture)");
 }
 
 if (interrompu) {
-	console.error(`\nImport INTERROMPU : ${interrompu}`);
-	process.exit(1);
+  console.error(`\nImport INTERROMPU : ${interrompu}`);
+  process.exit(1);
 }
 
 if (!essai) {
-	const [stats] = await sql<
-		Array<{ total: number; avec_xp: number; xp_max: string; niveau_max: number }>
-	>`
+  const [stats] = await sql<Array<{ total: number; avec_xp: number; xp_max: string; niveau_max: number }>>`
 		SELECT count(*)::int AS total,
 		       count(*) FILTER (WHERE xp > 0)::int AS avec_xp,
 		       max(xp) AS xp_max,
 		       max(niveau)::int AS niveau_max
 		  FROM bot_profils WHERE guild_id = ${GUILD_ID}
 	`;
-	console.log(
-		`bot_profils(guild_id=${GUILD_ID}) : ${stats?.total} ligne(s) · ${stats?.avec_xp} avec XP · ` +
-			`max(xp)=${stats?.xp_max} · max(niveau)=${stats?.niveau_max}`
-	);
+  console.log(
+    `bot_profils(guild_id=${GUILD_ID}) : ${stats?.total} ligne(s) · ${stats?.avec_xp} avec XP · ` +
+      `max(xp)=${stats?.xp_max} · max(niveau)=${stats?.niveau_max}`,
+  );
 }
 
 process.exit(0);

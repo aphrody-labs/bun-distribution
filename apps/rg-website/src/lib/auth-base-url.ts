@@ -16,8 +16,7 @@ export function resolveAuthBaseURL(input: {
   if (origin) {
     try {
       const parsed = new URL(origin);
-      const rosegriffonHost =
-        parsed.hostname === SITE_HOSTNAME || parsed.hostname.endsWith(`.${SITE_HOSTNAME}`);
+      const rosegriffonHost = parsed.hostname === SITE_HOSTNAME || parsed.hostname.endsWith(`.${SITE_HOSTNAME}`);
       if (parsed.protocol === "https:" && rosegriffonHost) return SITE_URL;
       if (!input.production && /^https?:$/.test(parsed.protocol) && isLoopback(parsed.hostname)) {
         return parsed.origin;

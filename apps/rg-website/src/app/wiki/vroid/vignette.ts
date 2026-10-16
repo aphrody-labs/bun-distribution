@@ -17,6 +17,6 @@
  * @returns l'URL interne à charger, ou `null` si la source est absente.
  */
 export function urlVignette(source: string | null | undefined): string | null {
-	if (!source) return null;
-	return `/api/vroid/image?url=${encodeURIComponent(source)}`;
+  if (!source) return null;
+  return `/api/vroid/image?url=${encodeURIComponent(source)}`;
 }

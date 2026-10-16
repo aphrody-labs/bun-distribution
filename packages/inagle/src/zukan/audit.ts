@@ -149,11 +149,7 @@ export function auditSpearmanCorrelation(a: number[], b: number[]): number {
 // Mismatch detection — critères partagés
 // ============================================================================
 
-export type AuditMismatchType =
-  | "STALE_HASH"
-  | "NAME_MISMATCH"
-  | "GENDER_MISMATCH"
-  | "ATTR_MISMATCH";
+export type AuditMismatchType = "STALE_HASH" | "NAME_MISMATCH" | "GENDER_MISMATCH" | "ATTR_MISMATCH";
 
 /** Résultat d'audit pour une ligne DB. */
 export interface AuditMismatch {
@@ -176,10 +172,7 @@ export interface AuditMismatch {
  *  - eraMismatch (ignoré pour Héros Ares) ;
  *  - corrélation de stats < 0.3 → raison "STATS".
  */
-export function evaluateRow(
-  db: AuditDbRow,
-  zukanByHash: Map<string, AuditZukanEntry[]>,
-): AuditMismatch | null {
+export function evaluateRow(db: AuditDbRow, zukanByHash: Map<string, AuditZukanEntry[]>): AuditMismatch | null {
   const zukanEntries = db.zukan_hash ? zukanByHash.get(db.zukan_hash) : undefined;
   if (!zukanEntries || zukanEntries.length === 0) {
     return {
@@ -210,10 +203,8 @@ export function evaluateRow(
     zukanName.includes(dbFirst) ||
     dbNameEn.includes(zukanFirst);
 
-  const posMismatch =
-    z.position && db.position && auditNormPos(z.position) !== auditNormPos(db.position);
-  const elemMismatch =
-    !isMixiMax && z.element && db.element && auditNormElem(z.element) !== auditNormElem(db.element);
+  const posMismatch = z.position && db.position && auditNormPos(z.position) !== auditNormPos(db.position);
+  const elemMismatch = !isMixiMax && z.element && db.element && auditNormElem(z.element) !== auditNormElem(db.element);
   const zGender = z.gender === "Male" ? "M" : z.gender === "Female" ? "F" : null;
   const genderMismatch = zGender && db.gender && zGender !== db.gender;
 
@@ -260,9 +251,9 @@ export function evaluateRow(
 
   if (reasons.length === 0) return null;
 
-  const type: AuditMismatchType = reasons.some((r) => r.startsWith("NAME"))
+  const type: AuditMismatchType = reasons.some(r => r.startsWith("NAME"))
     ? "NAME_MISMATCH"
-    : reasons.some((r) => r.startsWith("GENDER"))
+    : reasons.some(r => r.startsWith("GENDER"))
       ? "GENDER_MISMATCH"
       : "ATTR_MISMATCH";
 

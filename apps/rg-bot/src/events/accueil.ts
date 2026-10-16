@@ -34,131 +34,120 @@ import { creerEmbed, pied } from "../lib/ui";
 
 /** Pose le rôle d'arrivée, si et seulement si il est sûr. */
 async function poserRoleArrivee(membre: GuildMember, roleId: string): Promise<void> {
-	const role = membre.guild.roles.cache.get(roleId);
-	if (!role) {
-		console.warn(`[accueil] rôle d'arrivée ${roleId} introuvable sur ${membre.guild.id}.`);
-		return;
-	}
-	const moi = membre.guild.members.me;
-	const verdict = verifierAttributionAutomatique(
-		{
-			estEveryone: role.id === membre.guild.id,
-			gereParIntegration: role.managed,
-			id: role.id,
-			nom: role.name,
-			permissions: role.permissions.bitfield.toString(),
-			position: role.position,
-		},
-		{
-			peutGererRoles: moi?.permissions.has("ManageRoles") ?? false,
-			positionMax: moi?.roles.highest.position ?? 0,
-		}
-	);
-	if (!verdict.ok) {
-		console.warn(`[accueil] rôle d'arrivée REFUSÉ (${role.name}) : ${verdict.motif}`);
-		return;
-	}
-	try {
-		await membre.roles.add(role.id, "Rôle d'arrivée");
-	} catch (err) {
-		console.warn(
-			`[accueil] rôle d'arrivée non posé sur ${membre.id} :`,
-			err instanceof Error ? err.message : err
-		);
-	}
+  const role = membre.guild.roles.cache.get(roleId);
+  if (!role) {
+    console.warn(`[accueil] rôle d'arrivée ${roleId} introuvable sur ${membre.guild.id}.`);
+    return;
+  }
+  const moi = membre.guild.members.me;
+  const verdict = verifierAttributionAutomatique(
+    {
+      estEveryone: role.id === membre.guild.id,
+      gereParIntegration: role.managed,
+      id: role.id,
+      nom: role.name,
+      permissions: role.permissions.bitfield.toString(),
+      position: role.position,
+    },
+    {
+      peutGererRoles: moi?.permissions.has("ManageRoles") ?? false,
+      positionMax: moi?.roles.highest.position ?? 0,
+    },
+  );
+  if (!verdict.ok) {
+    console.warn(`[accueil] rôle d'arrivée REFUSÉ (${role.name}) : ${verdict.motif}`);
+    return;
+  }
+  try {
+    await membre.roles.add(role.id, "Rôle d'arrivée");
+  } catch (err) {
+    console.warn(`[accueil] rôle d'arrivée non posé sur ${membre.id} :`, err instanceof Error ? err.message : err);
+  }
 }
 
 @Discord()
 export class AccueilEvents {
-	@On({ event: "guildMemberAdd" })
-	async surArrivee([membre]: ArgsOf<"guildMemberAdd">) {
-		try {
-			const reglages = await reglagesDe(membre.guild.id);
-			if (!reglages.accueil.actif) {
-				return;
-			}
+  @On({ event: "guildMemberAdd" })
+  async surArrivee([membre]: ArgsOf<"guildMemberAdd">) {
+    try {
+      const reglages = await reglagesDe(membre.guild.id);
+      if (!reglages.accueil.actif) {
+        return;
+      }
 
-			if (reglages.accueil.roleArrivee) {
-				await poserRoleArrivee(membre, reglages.accueil.roleArrivee);
-			}
+      if (reglages.accueil.roleArrivee) {
+        await poserRoleArrivee(membre, reglages.accueil.roleArrivee);
+      }
 
-			const lieu = reglages.accueil.lieu;
-			if (lieu === "aucune") {
-				return;
-			}
+      const lieu = reglages.accueil.lieu;
+      if (lieu === "aucune") {
+        return;
+      }
 
-			const compte = membre.guild.memberCount;
-			const texte = reglages.accueil.texte
-				? remplirGabarit(reglages.accueil.texte, {
-						compte,
-						membre: membre.toString(),
-						serveur: membre.guild.name,
-					})
-				: `${membre.toString()} vient d'arriver sur **${membre.guild.name}**.`;
+      const compte = membre.guild.memberCount;
+      const texte = reglages.accueil.texte
+        ? remplirGabarit(reglages.accueil.texte, {
+            compte,
+            membre: membre.toString(),
+            serveur: membre.guild.name,
+          })
+        : `${membre.toString()} vient d'arriver sur **${membre.guild.name}**.`;
 
-			const embed = creerEmbed({
-				description: texte,
-				icone: "membre",
-				intention: "succes",
-				titre: "Bienvenue",
-			});
-			pied(embed, { note: `${compte} membres` });
+      const embed = creerEmbed({
+        description: texte,
+        icone: "membre",
+        intention: "succes",
+        titre: "Bienvenue",
+      });
+      pied(embed, { note: `${compte} membres` });
 
-			const fichiers: AttachmentBuilder[] = [];
-			if (reglages.accueil.carte) {
-				try {
-					const image = await renderCarteAccueil({
-						avatarUrl: membre.displayAvatarURL({ extension: "png", size: 256 }),
-						message: reglages.accueil.texte
-							? remplirGabarit(reglages.accueil.texte, {
-									compte,
-									membre: membre.displayName,
-									serveur: membre.guild.name,
-								})
-							: null,
-						pseudo: membre.displayName,
-						rang: compte,
-						serveur: membre.guild.name,
-					});
-					fichiers.push(new AttachmentBuilder(image, { name: "bienvenue.png" }));
-				} catch (err) {
-					// Une carte qui échoue ne doit pas faire disparaître l'accueil.
-					console.warn(
-						"[accueil] carte non rendue :",
-						err instanceof Error ? err.message : err
-					);
-				}
-			}
+      const fichiers: AttachmentBuilder[] = [];
+      if (reglages.accueil.carte) {
+        try {
+          const image = await renderCarteAccueil({
+            avatarUrl: membre.displayAvatarURL({ extension: "png", size: 256 }),
+            message: reglages.accueil.texte
+              ? remplirGabarit(reglages.accueil.texte, {
+                  compte,
+                  membre: membre.displayName,
+                  serveur: membre.guild.name,
+                })
+              : null,
+            pseudo: membre.displayName,
+            rang: compte,
+            serveur: membre.guild.name,
+          });
+          fichiers.push(new AttachmentBuilder(image, { name: "bienvenue.png" }));
+        } catch (err) {
+          // Une carte qui échoue ne doit pas faire disparaître l'accueil.
+          console.warn("[accueil] carte non rendue :", err instanceof Error ? err.message : err);
+        }
+      }
 
-			if (lieu === "prive") {
-				await membre
-					.send({ embeds: [embed], files: fichiers })
-					.catch(() => undefined);
-				return;
-			}
+      if (lieu === "prive") {
+        await membre.send({ embeds: [embed], files: fichiers }).catch(() => undefined);
+        return;
+      }
 
-			if (!reglages.accueil.salon) {
-				// `salon` sans salon configuré ne retombe pas sur un salon au hasard.
-				return;
-			}
-			const salon = (await membre.client.channels
-				.fetch(reglages.accueil.salon)
-				.catch(() => null)) as TextBasedChannel | null;
-			if (salon && "send" in salon) {
-				await salon.send({
-					// La borne qui compte : le texte d'accueil est réglable par le staff,
-					// et un `@everyone` qui s'y glisse ne doit pas devenir un ping de deux
-					// mille personnes.
-					allowedMentions: { users: [membre.id] },
-					embeds: [embed],
-					files: fichiers,
-				});
-			}
-		} catch (err) {
-			console.error(
-				"[accueil] échec :",
-				err instanceof Error ? (err.stack ?? err.message) : err
-			);
-		}
-	}
+      if (!reglages.accueil.salon) {
+        // `salon` sans salon configuré ne retombe pas sur un salon au hasard.
+        return;
+      }
+      const salon = (await membre.client.channels
+        .fetch(reglages.accueil.salon)
+        .catch(() => null)) as TextBasedChannel | null;
+      if (salon && "send" in salon) {
+        await salon.send({
+          // La borne qui compte : le texte d'accueil est réglable par le staff,
+          // et un `@everyone` qui s'y glisse ne doit pas devenir un ping de deux
+          // mille personnes.
+          allowedMentions: { users: [membre.id] },
+          embeds: [embed],
+          files: fichiers,
+        });
+      }
+    } catch (err) {
+      console.error("[accueil] échec :", err instanceof Error ? (err.stack ?? err.message) : err);
+    }
+  }
 }

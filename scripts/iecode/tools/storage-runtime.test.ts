@@ -31,8 +31,7 @@ test("qualification reads existing complete mirrors without changing their bytes
   const path = join(fixture(), "mirror.sqlite");
   const database = new Database(path);
   for (const name of MIRROR_TABLES) database.run(`CREATE TABLE ${name} (id INTEGER)`);
-  for (const name of ["characters", "skills", "teams"])
-    database.run(`INSERT INTO inagle_${name} VALUES (1)`);
+  for (const name of ["characters", "skills", "teams"]) database.run(`INSERT INTO inagle_${name} VALUES (1)`);
   database.close();
   const before = digest(path);
   expect(sqliteEvidence(path, "mirror")).toEqual({
@@ -103,21 +102,15 @@ test("PostgreSQL selection requires IE ownership, health and the exact loopback 
       url,
     ),
   ).toBe(false);
-  expect(
-    ownedPostgres({ ...container, State: { Running: true, Health: { Status: "starting" } } }, url),
-  ).toBe(false);
+  expect(ownedPostgres({ ...container, State: { Running: true, Health: { Status: "starting" } } }, url)).toBe(false);
 });
 
 test("auto respects qualified availability and PostgreSQL opt-out", () => {
   expect(selectStorage({ postgres: true, sqlite: true })).toBe("postgres");
   expect(selectStorage({ postgres: true, sqlite: true, postgresDisabled: true })).toBe("sqlite");
   expect(selectStorage({ postgres: false, sqlite: true })).toBe("sqlite");
-  expect(() => selectStorage({ explicit: "postgres", postgres: false, sqlite: true })).toThrow(
-    "not qualified",
-  );
-  expect(() => selectStorage({ explicit: "sqlite", postgres: false, sqlite: false })).toThrow(
-    "not qualified",
-  );
+  expect(() => selectStorage({ explicit: "postgres", postgres: false, sqlite: true })).toThrow("not qualified");
+  expect(() => selectStorage({ explicit: "sqlite", postgres: false, sqlite: false })).toThrow("not qualified");
 });
 
 test("backup mounts require an explicit existing source and stay read-only", () => {

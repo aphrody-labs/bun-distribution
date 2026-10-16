@@ -27,9 +27,7 @@ test("existing SQLite projections use the shared service mapping without modifyi
         "drops_battles",
         "drops_treasures",
       ]) {
-        db.exec(
-          `CREATE TABLE inagle_${name}(id TEXT, character_id TEXT, name_id TEXT, name_en TEXT, data TEXT)`,
-        );
+        db.exec(`CREATE TABLE inagle_${name}(id TEXT, character_id TEXT, name_id TEXT, name_en TEXT, data TEXT)`);
       }
       for (const name of ["characters", "skills", "teams"])
         db.query(`INSERT INTO inagle_${name}(id, name_en, data) VALUES (?, ?, ?)`).run(

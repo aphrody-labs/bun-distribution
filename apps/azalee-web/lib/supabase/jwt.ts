@@ -14,9 +14,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function mintSupabaseJwt(userId: string): string {
   const secret = process.env.SUPABASE_JWT_SECRET;
   if (!secret) {
-    throw new Error(
-      "CRITICAL: SUPABASE_JWT_SECRET is missing from environment variables. Authentication will fail.",
-    );
+    throw new Error("CRITICAL: SUPABASE_JWT_SECRET is missing from environment variables. Authentication will fail.");
   }
   if (!UUID_RE.test(userId)) {
     throw new Error("mintSupabaseJwt: invalid userId format");

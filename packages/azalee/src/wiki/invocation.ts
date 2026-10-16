@@ -25,8 +25,7 @@ export type { InvocationSign, InvocationTier } from "./invocation-shared";
 export { rarityLabel } from "./invocation-shared";
 
 /** Chemin du config Players Universe (version courante du dump). */
-const CONFIG_VFS_PATH =
-  "data/common/gamedata/players_universe/players_universe_config_1.03.59.00.cfg.bin";
+const CONFIG_VFS_PATH = "data/common/gamedata/players_universe/players_universe_config_1.03.59.00.cfg.bin";
 const CONFIG_CFG_URL = `https://cdn.rosegriffon.fr/cfg/${CONFIG_VFS_PATH}`;
 
 interface RarityRateRow {
@@ -50,25 +49,20 @@ const sql = createInagleSql<InvocationDatabase>();
 
 /** Décode les taux d'invocation et les joint aux noms de constellations. */
 export async function getInvocationRates(): Promise<InvocationSign[]> {
-  const cfg = await fetchJson<{ lists?: Array<{ name: string; rows: unknown[] }> }>(
-    CONFIG_CFG_URL,
-    { revalidate: 86400 },
-  );
+  const cfg = await fetchJson<{ lists?: Array<{ name: string; rows: unknown[] }> }>(CONFIG_CFG_URL, {
+    revalidate: 86400,
+  });
   if (!cfg) return [];
 
   const lists = cfg.lists ?? [];
-  const signs = (lists.find((l) => l.name === "m_starSignInfoList")?.rows ?? []) as SignRow[];
-  const rates = (lists.find((l) => l.name === "m_starSignRarityRateInfoList")?.rows ??
-    []) as RarityRateRow[];
+  const signs = (lists.find(l => l.name === "m_starSignInfoList")?.rows ?? []) as SignRow[];
+  const rates = (lists.find(l => l.name === "m_starSignRarityRateInfoList")?.rows ?? []) as RarityRateRow[];
   if (signs.length === 0 || rates.length < signs.length * 3) return [];
 
   // Noms des constellations (idx = signNo - 1).
   const byIdx = new Map<number, { name_fr: string; character_count: number }>();
   try {
-    const data = await sql
-      .selectFrom("inagle_constellations")
-      .select(["idx", "name_fr", "character_count"])
-      .execute();
+    const data = await sql.selectFrom("inagle_constellations").select(["idx", "name_fr", "character_count"]).execute();
     for (const c of data) {
       byIdx.set(c.idx, { name_fr: c.name_fr, character_count: c.character_count });
     }
@@ -84,10 +78,8 @@ export async function getInvocationRates(): Promise<InvocationSign[]> {
     const con = byIdx.get(signNo - 1);
 
     const tiers: InvocationTier[] = trio
-      .map((t) => {
-        const count = Array.isArray(t.starSignCharaInfoList)
-          ? (t.starSignCharaInfoList[1] ?? 0)
-          : 0;
+      .map(t => {
+        const count = Array.isArray(t.starSignCharaInfoList) ? (t.starSignCharaInfoList[1] ?? 0) : 0;
         const ratePct = (t.rarityRateDefault / sum) * 100;
         return {
           rarityType: t.rarityType,

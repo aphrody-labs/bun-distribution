@@ -1,11 +1,7 @@
 "use client";
 
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
-import {
-  INSERT_CHECK_LIST_COMMAND,
-  INSERT_ORDERED_LIST_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
-} from "@lexical/list";
+import { INSERT_CHECK_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { FORMAT_ELEMENT_COMMAND, FORMAT_TEXT_COMMAND } from "lexical";
 import {
   AlignCenter,
@@ -25,28 +21,11 @@ import {
 import { useCallback, useState } from "react";
 import { useToolbarContext } from "@/components/editor/context/toolbar-context";
 import { InsertImageDialog } from "@/components/editor/plugins/images-plugin";
-import {
-  Button,
-  Input,
-  Label,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@rosegriffon/ui";
+import { Button, Input, Label, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@rosegriffon/ui";
 
 export function Toolbar() {
-  const {
-    activeEditor,
-    showModal,
-    isBold,
-    isItalic,
-    isUnderline,
-    isStrikethrough,
-    isCode,
-    isLink,
-  } = useToolbarContext();
+  const { activeEditor, showModal, isBold, isItalic, isUnderline, isStrikethrough, isCode, isLink } =
+    useToolbarContext();
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("https://");
@@ -118,18 +97,12 @@ export function Toolbar() {
   };
 
   const insertImage = useCallback(() => {
-    showModal("Insérer une image", (onClose) => (
-      <InsertImageDialog activeEditor={activeEditor} onClose={onClose} />
-    ));
+    showModal("Insérer une image", onClose => <InsertImageDialog activeEditor={activeEditor} onClose={onClose} />);
   }, [activeEditor, showModal]);
 
   return (
     <>
-      <div
-        className="flex items-center gap-1 flex-wrap"
-        role="toolbar"
-        aria-label="Mise en forme du texte"
-      >
+      <div className="flex items-center gap-1 flex-wrap" role="toolbar" aria-label="Mise en forme du texte">
         <Button
           variant={isBold ? "secondary" : "ghost"}
           size="sm"
@@ -192,13 +165,7 @@ export function Toolbar() {
         >
           <AlignLeft className="size-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="size-8 p-0"
-          onClick={() => onClick("center")}
-          aria-label="Centrer"
-        >
+        <Button variant="ghost" size="sm" className="size-8 p-0" onClick={() => onClick("center")} aria-label="Centrer">
           <AlignCenter className="size-4" />
         </Button>
         <Button
@@ -253,13 +220,7 @@ export function Toolbar() {
         >
           <LinkIcon className="size-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="size-8 p-0"
-          onClick={insertImage}
-          aria-label="Insérer une image"
-        >
+        <Button variant="ghost" size="sm" className="size-8 p-0" onClick={insertImage} aria-label="Insérer une image">
           <ImageIcon className="size-4" />
         </Button>
       </div>
@@ -276,8 +237,8 @@ export function Toolbar() {
               <Input
                 id="link-url"
                 value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setLinkUrl(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     handleLinkSubmit();

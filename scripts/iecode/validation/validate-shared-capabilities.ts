@@ -16,16 +16,13 @@ for (const capability of manifest.capabilities) {
     failures.push(`${capability.id}: missing owner ${capability.owner}`);
   if (!capability.proofTests.length) failures.push(`${capability.id}: no proof tests`);
   for (const name of manifest.surfaces) {
-    const surface = capability.surfaces[name as keyof typeof capability.surfaces] as
-      | Surface
-      | undefined;
+    const surface = capability.surfaces[name as keyof typeof capability.surfaces] as Surface | undefined;
     if (!surface) {
       failures.push(`${capability.id}/${name}: missing disposition`);
       continue;
     }
     if (surface.kind === "not-exposed") {
-      if (!surface.rationale?.trim())
-        failures.push(`${capability.id}/${name}: not-exposed without rationale`);
+      if (!surface.rationale?.trim()) failures.push(`${capability.id}/${name}: not-exposed without rationale`);
       continue;
     }
     if (!surface.evidence?.length) {
@@ -33,8 +30,7 @@ for (const capability of manifest.capabilities) {
       continue;
     }
     for (const [path, needle] of surface.evidence) {
-      if (!(await Bun.file(path).exists()))
-        failures.push(`${capability.id}/${name}: missing evidence file ${path}`);
+      if (!(await Bun.file(path).exists())) failures.push(`${capability.id}/${name}: missing evidence file ${path}`);
       else if (!(await text(path)).includes(needle))
         failures.push(`${capability.id}/${name}: ${path} lacks ${JSON.stringify(needle)}`);
     }
@@ -44,23 +40,18 @@ for (const capability of manifest.capabilities) {
 const cli = await text(manifest.registries.cli);
 const mcp = await text(manifest.registries.mcp);
 const cliBlock = cli.match(/enum Cmd \{([\s\S]*?)\n\}/)?.[1] ?? "";
-const cliCommands = [...cliBlock.matchAll(/^    (?:#\[[^\n]+\]\n    )*([A-Z][A-Za-z0-9_]*)/gm)].map(
-  (match) => match[1],
-);
+const cliCommands = [...cliBlock.matchAll(/^    (?:#\[[^\n]+\]\n    )*([A-Z][A-Za-z0-9_]*)/gm)].map(match => match[1]);
 if (!mcp.includes('aphrody_nie_cli::main_entry_with(["nie", "mcp"])'))
   failures.push("MCP is not an in-process CLI adapter");
 if (!cliCommands.length) failures.push("CLI registry parsed zero commands");
 
-const bySurface = (surface: string) =>
-  inventory.entries.filter((entry) => entry.surface === surface);
+const bySurface = (surface: string) => inventory.entries.filter(entry => entry.surface === surface);
 const expectedCounts = { cli: 47, mcp: 19 };
 for (const [surface, expected] of Object.entries(expectedCounts)) {
   const entries = bySurface(surface);
   if (entries.length !== expected)
-    failures.push(
-      `${surface}: mapped ${entries.length}, expected ${expected} authoritative entries`,
-    );
-  if (new Set(entries.map((entry) => entry.entry)).size !== entries.length)
+    failures.push(`${surface}: mapped ${entries.length}, expected ${expected} authoritative entries`);
+  if (new Set(entries.map(entry => entry.entry)).size !== entries.length)
     failures.push(`${surface}: duplicate mapped entries`);
   for (const entry of entries) {
     if (!entry.capability || !entry.owner || !entry.rationale)
@@ -71,44 +62,25 @@ for (const [surface, expected] of Object.entries(expectedCounts)) {
       failures.push(`${surface}/${entry.entry}: invalid classification`);
     const bindingOwner = entry.owner.startsWith("crates/nie/aphrody-nie-cli/");
     if (entry.classification === "portable" && bindingOwner)
-      failures.push(
-        `${surface}/${entry.entry}: portable capability is still owned by binding ${entry.owner}`,
-      );
+      failures.push(`${surface}/${entry.entry}: portable capability is still owned by binding ${entry.owner}`);
     if (entry.classification === "portable" && !bindingOwner) {
       if (!("sourceEvidence" in entry)) {
-        failures.push(
-          `${surface}/${entry.entry}: portable binding has no concrete delegation evidence`,
-        );
+        failures.push(`${surface}/${entry.entry}: portable binding has no concrete delegation evidence`);
       } else {
         const rawEvidence = entry.sourceEvidence as [string, string] | [string, string][];
         const evidence =
-          typeof rawEvidence[0] === "string"
-            ? [rawEvidence as [string, string]]
-            : (rawEvidence as [string, string][]);
+          typeof rawEvidence[0] === "string" ? [rawEvidence as [string, string]] : (rawEvidence as [string, string][]);
         if (!evidence.length)
-          failures.push(
-            `${surface}/${entry.entry}: source does not prove delegation to ${entry.owner}`,
-          );
+          failures.push(`${surface}/${entry.entry}: source does not prove delegation to ${entry.owner}`);
         for (const [source, needle] of evidence) {
-          if (
-            !source ||
-            !needle ||
-            !(await Bun.file(source).exists()) ||
-            !(await text(source)).includes(needle)
-          )
-            failures.push(
-              `${surface}/${entry.entry}: source does not prove delegation to ${entry.owner}`,
-            );
+          if (!source || !needle || !(await Bun.file(source).exists()) || !(await text(source)).includes(needle))
+            failures.push(`${surface}/${entry.entry}: source does not prove delegation to ${entry.owner}`);
         }
       }
     }
     if (entry.classification === "host_only") {
-      const allowed =
-        surface === "cli" && /^(ComputerUse|Info|Find|Grep|Mem|PatchEac)$/.test(entry.entry);
-      if (!allowed)
-        failures.push(
-          `${surface}/${entry.entry}: host_only is not an allowlisted OS/process operation`,
-        );
+      const allowed = surface === "cli" && /^(ComputerUse|Info|Find|Grep|Mem|PatchEac)$/.test(entry.entry);
+      if (!allowed) failures.push(`${surface}/${entry.entry}: host_only is not an allowlisted OS/process operation`);
       if (/Local command binding|Native filesystem, process, database/.test(entry.rationale))
         failures.push(`${surface}/${entry.entry}: generic host_only rationale`);
     }
@@ -116,15 +88,13 @@ for (const [surface, expected] of Object.entries(expectedCounts)) {
 }
 
 const authoritative = {
-  cli: cliCommands.filter((name) => name !== "Mcp"),
+  cli: cliCommands.filter(name => name !== "Mcp"),
   mcp: [
-    ...(await text("crates/nie/aphrody-nie-cli/src/mcp.rs")).matchAll(
-      /#\[tool\([\s\S]*?name = "([^"]+)"[\s\S]*?\)\]/g,
-    ),
-  ].map((match) => match[1]),
+    ...(await text("crates/nie/aphrody-nie-cli/src/mcp.rs")).matchAll(/#\[tool\([\s\S]*?name = "([^"]+)"[\s\S]*?\)\]/g),
+  ].map(match => match[1]),
 };
 for (const [surface, entries] of Object.entries(authoritative)) {
-  const mapped = new Set(bySurface(surface).map((entry) => entry.entry));
+  const mapped = new Set(bySurface(surface).map(entry => entry.entry));
   for (const entry of entries)
     if (!mapped.has(entry)) failures.push(`${surface}: unmapped authoritative entry ${entry}`);
   for (const entry of mapped)

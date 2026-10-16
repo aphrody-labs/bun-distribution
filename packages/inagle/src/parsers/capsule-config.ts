@@ -78,8 +78,7 @@ function parseEntries(entries: ConfigNode[]): CapsuleDatabase {
     if (entry.name.startsWith("CPSL_LOT_WEAPON_COLOR_TABLE_INFO_LIST_BEG")) {
       for (const child of children) {
         if (!child.name.startsWith("CPSL_LOT_WEAPON_COLOR_TABLE_INFO_")) continue;
-        const tableId =
-          child.variables.length > 0 ? toHex(parseIntVar(child.variables[0])) : "0x00000000";
+        const tableId = child.variables.length > 0 ? toHex(parseIntVar(child.variables[0])) : "0x00000000";
 
         const data: Array<{ colorType: number; weight: number }> = [];
         for (const dataList of child.children || []) {

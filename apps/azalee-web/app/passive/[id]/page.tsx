@@ -9,17 +9,11 @@ export const dynamic = "force-static";
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const passive = await wikiService.getPassive(id);
 
-  const name = passive
-    ? passive.description.fr || passive.description.en || passive.string_id
-    : "Passif";
+  const name = passive ? passive.description.fr || passive.description.en || passive.string_id : "Passif";
   const cleanName = name.replace(/\s*\n\s*/g, " ").trim();
   const cat = passive ? PASSIVE_CATEGORY_LABELS[passive.category] || "" : "";
   const description = `${[cleanName, cat].filter(Boolean).join(" - ")}. Passif Inazuma Eleven: Victory Road : effet, valeurs par variante, élément et rareté.`;
@@ -74,10 +68,7 @@ export default async function PassiveDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="w-full space-y-8 pb-20">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Fil d'Ariane */}
       <div className="flex items-center gap-2 text-sm text-on-surface-variant font-medium">

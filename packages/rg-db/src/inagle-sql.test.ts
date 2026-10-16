@@ -2,11 +2,11 @@ import { expect, test } from "bun:test";
 import { pathToFileURL } from "node:url";
 
 test("gameplay queries reject absent Neon configuration while RG remains configured", async () => {
-	const child = Bun.spawn({
-		cmd: [
-			process.execPath,
-			"-e",
-			`
+  const child = Bun.spawn({
+    cmd: [
+      process.execPath,
+      "-e",
+      `
 		import { createInagleSql, destroyInagleSql } from ${JSON.stringify(pathToFileURL(`${import.meta.dir}/inagle-sql.ts`).href)};
 		process.env.RG_DATABASE_URL = "postgresql://owner@127.0.0.1:1/rg";
 		delete process.env.INAGLE_DATABASE_URL;
@@ -18,29 +18,29 @@ test("gameplay queries reject absent Neon configuration while RG remains configu
 		catch (error) { console.log(error.message); }
 		finally { await destroyInagleSql(); }
 	`,
-		],
-		cwd: import.meta.dir,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-	expect(stdout.trim()).toBe(
-		'select "id" from "inagle_characters"\nINAGLE_DATABASE_URL/NIE_PG_URL absent ou corrompu : une chaîne Postgres valide est requise.',
-	);
-	expect(stderr).toBe("");
-	expect(exitCode).toBe(0);
+    ],
+    cwd: import.meta.dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  expect(stdout.trim()).toBe(
+    'select "id" from "inagle_characters"\nINAGLE_DATABASE_URL/NIE_PG_URL absent ou corrompu : une chaîne Postgres valide est requise.',
+  );
+  expect(stderr).toBe("");
+  expect(exitCode).toBe(0);
 });
 
 test("the facade sends RG and gameplay tables through distinct pools and recreates the gameplay pool after shutdown", async () => {
-	const child = Bun.spawn({
-		cmd: [
-			process.execPath,
-			"-e",
-			`
+  const child = Bun.spawn({
+    cmd: [
+      process.execPath,
+      "-e",
+      `
 		import { mock } from "bun:test";
 		const requests = [];
 		mock.module("pg", () => ({ Client: class {}, Pool: class {
@@ -68,25 +68,25 @@ test("the facade sends RG and gameplay tables through distinct pools and recreat
 		await destroyInagleSql(); await destroyAchilleaSql();
 		console.log(JSON.stringify(requests.map(([url,sql])=>[new URL(url).hostname,sql])));
 	`,
-		],
-		cwd: import.meta.dir,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-	expect(stdout.trim()).toBe(
-		JSON.stringify([
-			["supabase.invalid", 'SELECT id FROM "profiles"'],
-			["neon.invalid", 'SELECT id FROM "inagle_characters"'],
-			["override.invalid", 'SELECT id FROM "profiles"'],
-			["neon.invalid", 'SELECT id FROM "inagle_characters"'],
-			["neon.invalid", 'SELECT id FROM "inagle_characters"'],
-		]),
-	);
-	expect(stderr).toBe("");
-	expect(exitCode).toBe(0);
+    ],
+    cwd: import.meta.dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  expect(stdout.trim()).toBe(
+    JSON.stringify([
+      ["supabase.invalid", 'SELECT id FROM "profiles"'],
+      ["neon.invalid", 'SELECT id FROM "inagle_characters"'],
+      ["override.invalid", 'SELECT id FROM "profiles"'],
+      ["neon.invalid", 'SELECT id FROM "inagle_characters"'],
+      ["neon.invalid", 'SELECT id FROM "inagle_characters"'],
+    ]),
+  );
+  expect(stderr).toBe("");
+  expect(exitCode).toBe(0);
 });

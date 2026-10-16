@@ -57,13 +57,13 @@ export function registerSearchCommand(program: Command) {
         return;
       }
 
-      const characters = results.filter((r) => r.type === "character");
-      const skills = results.filter((r) => r.type === "skill");
-      const items = results.filter((r) => r.type === "item");
+      const characters = results.filter(r => r.type === "character");
+      const skills = results.filter(r => r.type === "skill");
+      const items = results.filter(r => r.type === "item");
 
       if (characters.length > 0) {
         console.log(pc.bold(pc.blue("\nCharacters")));
-        characters.forEach((r) => {
+        characters.forEach(r => {
           const c = r.data as any;
           console.log(
             `  ${pc.bold(c.names?.fr || c.names?.en || "???")} ${pc.dim(`(${c.rarity})`)} - ${c.position} ${c.element}`,
@@ -73,7 +73,7 @@ export function registerSearchCommand(program: Command) {
 
       if (skills.length > 0) {
         console.log(pc.bold(pc.green("\nSkills")));
-        skills.forEach((r) => {
+        skills.forEach(r => {
           const s = r.data as any;
           // For GlobalSearch result 's', it might be different structure.
           // But usually it matches EnrichedSkill or similar.
@@ -86,7 +86,7 @@ export function registerSearchCommand(program: Command) {
 
       if (items.length > 0) {
         console.log(pc.bold(pc.yellow("\nItems")));
-        items.forEach((r) => {
+        items.forEach(r => {
           const i = r.data as any;
           console.log(`  ${pc.bold(i.names?.fr || i.names?.en || "???")}`);
         });
@@ -100,7 +100,7 @@ export function registerCharacterCommand(program: Command) {
     .command("character <name>")
     .alias("char")
     .description("Find a character by name")
-    .action(async (name) => {
+    .action(async name => {
       const service = await createInagleService();
       const results = service.characters.search(name, { limit: 5 });
 
@@ -144,7 +144,7 @@ export function registerItemsCommand(program: Command) {
     .description("List items (optional filter by category)")
     .option("-c, --category <category>", "Filter by category (e.g. shoes, consume)")
     .option("-l, --limit <number>", "Limit results", "20")
-    .action(async (options) => {
+    .action(async options => {
       const service = await createInagleService();
       let results = service.items.allItems();
 
@@ -174,7 +174,7 @@ export function registerItemsCommand(program: Command) {
   items
     .command("find <query>")
     .description("Search items by name")
-    .action(async (query) => {
+    .action(async query => {
       const service = await createInagleService();
       const results = service.items.searchItems(query);
 
@@ -206,7 +206,7 @@ export function registerSkillsCommand(program: Command) {
   skills
     .command("find <query>")
     .description("Search skills by name")
-    .action(async (query) => {
+    .action(async query => {
       const service = await createInagleService();
       const results = service.skills.search(query);
 
@@ -261,7 +261,7 @@ export function registerTeamsCommand(program: Command) {
   teams
     .command("get <id>")
     .description("Get team details by ID")
-    .action(async (id) => {
+    .action(async id => {
       const service = await createInagleService();
       const team = service.teams.getTeam(id);
 
@@ -290,9 +290,7 @@ export function registerCompareCommand(program: Command) {
       const service = await createInagleService();
       const level = Math.max(1, Math.min(99, parseInt(options.level, 10) || 99));
       if (service.source === "vfs" && level !== 99)
-        throw new Error(
-          "Native VFS comparison currently exposes level 99 UR reference stats; select --level 99.",
-        );
+        throw new Error("Native VFS comparison currently exposes level 99 UR reference stats; select --level 99.");
 
       const findOne = (q: string) => {
         const found = service.characters.search(q, { limit: 1 });
@@ -320,9 +318,7 @@ export function registerCompareCommand(program: Command) {
       console.log(
         `Position: ${c1.position || "?"} vs ${c2.position || "?"} | Element: ${c1.element || "?"} vs ${c2.element || "?"}`,
       );
-      console.log(
-        `Rarity:   ${c1.rarity || "?"} vs ${c2.rarity || "?"} | ID: ${c1.charaId} vs ${c2.charaId}`,
-      );
+      console.log(`Rarity:   ${c1.rarity || "?"} vs ${c2.rarity || "?"} | ID: ${c1.charaId} vs ${c2.charaId}`);
 
       const s1 = c1.stats?.lv99 ?? c1.stats?.lv1;
       const s2 = c2.stats?.lv99 ?? c2.stats?.lv1;
@@ -342,11 +338,8 @@ export function registerCompareCommand(program: Command) {
           const v1 = Number(s1[stat.key]) || 0;
           const v2 = Number(s2[stat.key]) || 0;
           const diff = v1 - v2;
-          const diffStr =
-            diff > 0 ? pc.green(` (+${diff})`) : diff < 0 ? pc.red(` (${diff})`) : pc.dim(" (=)");
-          console.log(
-            `  ${stat.label.padEnd(14)}: ${String(v1).padStart(4)} vs ${String(v2).padEnd(4)}${diffStr}`,
-          );
+          const diffStr = diff > 0 ? pc.green(` (+${diff})`) : diff < 0 ? pc.red(` (${diff})`) : pc.dim(" (=)");
+          console.log(`  ${stat.label.padEnd(14)}: ${String(v1).padStart(4)} vs ${String(v2).padEnd(4)}${diffStr}`);
         }
       }
     });
@@ -423,8 +416,8 @@ export function registerRandomTeamCommand(program: Command) {
       const starterFW = pick(fws, 2);
 
       const starters = [...starterGK, ...starterDF, ...starterMF, ...starterFW];
-      const usedIds = new Set(starters.map((c) => c.charaId));
-      const bench = shuffled.filter((c) => !usedIds.has(c.charaId)).slice(0, 5);
+      const usedIds = new Set(starters.map(c => c.charaId));
+      const bench = shuffled.filter(c => !usedIds.has(c.charaId)).slice(0, 5);
 
       console.log(pc.bold(pc.cyan(`\n⚽ Random Team Selection (${options.formation ?? "4-4-2"})`)));
       console.log(pc.dim("============================================================"));
@@ -448,9 +441,7 @@ export function registerRandomTeamCommand(program: Command) {
 
 // === TEAM BUILDER COMMAND ===
 export function registerTeamBuilderCommand(program: Command) {
-  const tb = program
-    .command("team-builder")
-    .description("Team builder utilities (encode/decode codes)");
+  const tb = program.command("team-builder").description("Team builder utilities (encode/decode codes)");
 
   tb.command("decode <code>")
     .description("Decode a shareable team code")
@@ -469,7 +460,7 @@ export function registerTeamBuilderCommand(program: Command) {
     .description("Encode a squad into a shareable team code (format: slot:charaId ...)")
     .action(async (formationId: string, playerSlots: string[]) => {
       const { encodeTeamCode } = await import("./game/team-code.js");
-      const slots = playerSlots.map((ps) => {
+      const slots = playerSlots.map(ps => {
         const [slot, charaId] = ps.split(":");
         return { slot: slot || "field-0", charaId: charaId || "" };
       });

@@ -20,11 +20,8 @@ interface CommentSectionProps {
 function CommentSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 space-y-3"
-        >
+      {[0, 1, 2].map(i => (
+        <div key={i} className="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 space-y-3">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-full bg-surface-container" />
             <div className="space-y-1.5 flex-1">
@@ -66,20 +63,20 @@ export function CommentSection({ articleId, initialCommentCount }: CommentSectio
 
   const handleCommentCreated = (comment: Comment) => {
     if (sortOrder === "newest") {
-      setComments((prev) => [comment, ...prev]);
+      setComments(prev => [comment, ...prev]);
     } else {
-      setComments((prev) => [...prev, comment]);
+      setComments(prev => [...prev, comment]);
     }
-    setCount((c) => c + 1);
+    setCount(c => c + 1);
   };
 
   const handleCommentDeleted = (id: string) => {
-    setComments((prev) => prev.filter((c) => c.id !== id));
-    setCount((c) => Math.max(0, c - 1));
+    setComments(prev => prev.filter(c => c.id !== id));
+    setCount(c => Math.max(0, c - 1));
   };
 
   const handleCommentUpdated = (id: string, content: string) => {
-    setComments((prev) => prev.map((c) => (c.id === id ? { ...c, content, is_edited: true } : c)));
+    setComments(prev => prev.map(c => (c.id === id ? { ...c, content, is_edited: true } : c)));
   };
 
   return (
@@ -94,7 +91,7 @@ export function CommentSection({ articleId, initialCommentCount }: CommentSectio
 
         {/* Tri */}
         <div className="flex items-center gap-1 bg-surface-container rounded-xl p-1">
-          {(["newest", "oldest"] as const).map((order) => (
+          {(["newest", "oldest"] as const).map(order => (
             <button
               key={order}
               onClick={() => setSortOrder(order)}
@@ -120,13 +117,11 @@ export function CommentSection({ articleId, initialCommentCount }: CommentSectio
       ) : comments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <MessageSquare className="size-10 text-on-surface-variant/30 mb-3" />
-          <p className="text-on-surface-variant/60 text-sm">
-            Aucun commentaire. Soyez le premier !
-          </p>
+          <p className="text-on-surface-variant/60 text-sm">Aucun commentaire. Soyez le premier !</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {comments.map((comment) => (
+          {comments.map(comment => (
             <CommentItem
               key={comment.id}
               comment={comment}

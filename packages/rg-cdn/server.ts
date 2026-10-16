@@ -14,8 +14,7 @@ const HOST = process.env.CDN_HOST ?? "0.0.0.0";
 const TMP_BASE = pathJoin(tmpdir(), "rpbey-cdn");
 const STORAGE = process.env.CDN_STORAGE ?? pathJoin(TMP_BASE, "images");
 const FALLBACK_PUBLIC_BASE = process.env.CDN_PUBLIC_BASE ?? DEFAULT_CDN_ORIGIN;
-const ASSETS_MANIFEST =
-  process.env.CDN_ASSETS_MANIFEST ?? pathJoin(TMP_BASE, "assets-manifest.json");
+const ASSETS_MANIFEST = process.env.CDN_ASSETS_MANIFEST ?? pathJoin(TMP_BASE, "assets-manifest.json");
 const REPO_ROOT = process.env.CDN_REPO_ROOT ?? pathResolve(import.meta.dir, "../..");
 const VARIANTS_ROOT = process.env.CDN_VARIANTS_ROOT ?? pathJoin(TMP_BASE, "variants");
 const API_KEY = process.env.CDN_API_KEY;
@@ -133,7 +132,6 @@ async function loadManifestCache(force = false): Promise<ManifestCache | null> {
   return manifestCache;
 }
 
-
 // Hôtes autorisés à servir des URLs publiques. nginx reverse-proxy fait
 // croire au backend qu'il est appelé via l'un de ces vhosts (X-Forwarded-Host).
 // On retourne dynamiquement l'URL publique selon le Host reçu :
@@ -184,10 +182,7 @@ function unauthorized() {
 async function serveAssetManifest(req: Request): Promise<Response> {
   const cache = await loadManifestCache();
   if (!cache) {
-    return corsJson(
-      { error: "Manifest not generated yet. Run scripts/scan-assets.ts" },
-      { status: 503 },
-    );
+    return corsJson({ error: "Manifest not generated yet. Run scripts/scan-assets.ts" }, { status: 503 });
   }
   const ifNone = req.headers.get("if-none-match");
   if (ifNone && ifNone === cache.etag) {
@@ -215,28 +210,13 @@ async function serveAssetManifest(req: Request): Promise<Response> {
  *   - `data`          : json → 5min must-revalidate (manifests volatiles)
  *   - `default`       : 1d + swr 1 semaine
  */
-type AssetKind =
-  | "image-raster"
-  | "image-vector"
-  | "video"
-  | "audio"
-  | "font"
-  | "model"
-  | "data"
-  | "default";
+type AssetKind = "image-raster" | "image-vector" | "video" | "audio" | "font" | "model" | "data" | "default";
 
 function classify(path: string): AssetKind {
   const dot = path.lastIndexOf(".");
   if (dot < 0) return "default";
   const ext = path.slice(dot).toLowerCase();
-  if (
-    ext === ".png" ||
-    ext === ".jpg" ||
-    ext === ".jpeg" ||
-    ext === ".webp" ||
-    ext === ".avif" ||
-    ext === ".gif"
-  )
+  if (ext === ".png" || ext === ".jpg" || ext === ".jpeg" || ext === ".webp" || ext === ".avif" || ext === ".gif")
     return "image-raster";
   if (ext === ".svg") return "image-vector";
   if (ext === ".mp4" || ext === ".webm" || ext === ".mov") return "video";
@@ -371,8 +351,7 @@ async function serveAssetFile(req: Request, url: URL): Promise<Response> {
   }
 
   const file = Bun.file(actualPath);
-  if (!(await file.exists()))
-    return new Response("Not Found", { status: 404, headers: withCors() });
+  if (!(await file.exists())) return new Response("Not Found", { status: 404, headers: withCors() });
   const stat = await file.stat();
   if (!stat.isFile()) return new Response("Not Found", { status: 404, headers: withCors() });
   const etag = `"${stat.size.toString(36)}-${stat.mtimeMs.toString(36)}"`;
@@ -471,8 +450,7 @@ export async function handleCdn(req: Request): Promise<Response> {
 
       const body = await req.arrayBuffer();
       if (body.byteLength === 0) return corsJson({ error: "Empty body" }, { status: 400 });
-      if (body.byteLength > 25 * 1024 * 1024)
-        return corsJson({ error: "File too large (>25MB)" }, { status: 413 });
+      if (body.byteLength > 25 * 1024 * 1024) return corsJson({ error: "File too large (>25MB)" }, { status: 413 });
 
       await Bun.write(path, body);
 
@@ -489,8 +467,7 @@ export async function handleCdn(req: Request): Promise<Response> {
       const key = process.env.CDN_API_KEY ?? API_KEY;
       if (req.headers.get("x-api-key") !== key) return unauthorized();
 
-      if (!/^[a-f0-9]{16}\.(png|jpg|webp|gif|svg)$/.test(id))
-        return corsJson({ error: "Invalid id" }, { status: 400 });
+      if (!/^[a-f0-9]{16}\.(png|jpg|webp|gif|svg)$/.test(id)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
       const file = Bun.file(`${STORAGE}/${id}`);
       if (!(await file.exists())) return corsJson({ success: false }, { status: 404 });

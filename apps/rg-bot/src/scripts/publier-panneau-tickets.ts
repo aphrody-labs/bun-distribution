@@ -24,8 +24,8 @@ const SALON_REEL = "1097192985524981841"; // #📧〡tickets, donné par le staf
 
 const token = (Bun.env.DISCORD_BOT_TOKEN ?? "").trim();
 if (token === "") {
-	console.error("DISCORD_BOT_TOKEN manquant.");
-	process.exit(1);
+  console.error("DISCORD_BOT_TOKEN manquant.");
+  process.exit(1);
 }
 
 const actuels = await reglagesDe(GUILD_ID);
@@ -37,25 +37,23 @@ console.log(`salonPanneau corrigé → ${SALON_REEL}`);
 
 const panneau = construirePanneau();
 const corps = {
-	components: panneau.components.map((rangee) => rangee.toJSON()),
-	embeds: panneau.embeds.map((embed) => embed.toJSON()),
+  components: panneau.components.map(rangee => rangee.toJSON()),
+  embeds: panneau.embeds.map(embed => embed.toJSON()),
 };
 
 const reponse = await fetch(`https://discord.com/api/v10/channels/${SALON_REEL}/messages`, {
-	body: JSON.stringify(corps),
-	headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
-	method: "POST",
+  body: JSON.stringify(corps),
+  headers: { Authorization: `Bot ${token}`, "Content-Type": "application/json" },
+  method: "POST",
 });
 
 if (!reponse.ok) {
-	console.error(`Publication refusée (HTTP ${reponse.status}) : ${await reponse.text()}`);
-	process.exit(1);
+  console.error(`Publication refusée (HTTP ${reponse.status}) : ${await reponse.text()}`);
+  process.exit(1);
 }
 
 const message = (await reponse.json()) as { id: string; channel_id: string };
-console.log(
-	`Panneau publié : https://discord.com/channels/${GUILD_ID}/${message.channel_id}/${message.id}`
-);
+console.log(`Panneau publié : https://discord.com/channels/${GUILD_ID}/${message.channel_id}/${message.id}`);
 
 await sql.close();
 process.exit(0);

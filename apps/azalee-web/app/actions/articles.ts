@@ -161,11 +161,7 @@ export async function deleteArticle(articleId: string): Promise<{ error?: string
   const supabase = createAdminClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from("articles")
-    .delete()
-    .eq("id", articleId)
-    .eq("app", APP_SCOPE);
+  const { error } = await (supabase as any).from("articles").delete().eq("id", articleId).eq("app", APP_SCOPE);
 
   if (error) {
     return { error: error.message };
@@ -177,10 +173,7 @@ export async function deleteArticle(articleId: string): Promise<{ error?: string
 /**
  * Pin/unpin un article.
  */
-export async function toggleArticlePin(
-  articleId: string,
-  pinned: boolean,
-): Promise<{ error?: string }> {
+export async function toggleArticlePin(articleId: string, pinned: boolean): Promise<{ error?: string }> {
   try {
     await requireEditorOrFail();
   } catch (error) {
@@ -214,11 +207,7 @@ export async function checkSlugAvailability(
   const supabase = await createClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
-    .from("articles")
-    .select("id, slug")
-    .eq("slug", slug)
-    .eq("app", APP_SCOPE);
+  let query = (supabase as any).from("articles").select("id, slug").eq("slug", slug).eq("app", APP_SCOPE);
 
   if (excludeId) {
     query = query.neq("id", excludeId);
@@ -291,9 +280,7 @@ export async function shareToDiscord(article: {
 /**
  * Duplique un article comme nouveau brouillon (scopé app=azalee).
  */
-export async function duplicateArticle(
-  articleId: string,
-): Promise<{ id: string } | { error: string }> {
+export async function duplicateArticle(articleId: string): Promise<{ id: string } | { error: string }> {
   try {
     await requireEditorOrFail();
   } catch (error) {
@@ -373,7 +360,7 @@ export async function getPopularTags(limit = 30): Promise<Array<{ tag: string; c
       ["published", APP_SCOPE, limit],
     );
 
-    return rows.map((row) => ({ count: Number(row.count), tag: row.tag }));
+    return rows.map(row => ({ count: Number(row.count), tag: row.tag }));
   } catch (error) {
     console.error("Error fetching popular tags:", error);
     return [];
@@ -596,9 +583,7 @@ export async function bulkUpdateArticles(
   return { count: ids.length, success: true };
 }
 
-export async function bulkDeleteArticles(
-  ids: string[],
-): Promise<{ success: boolean; count: number; error?: string }> {
+export async function bulkDeleteArticles(ids: string[]): Promise<{ success: boolean; count: number; error?: string }> {
   if (ids.length === 0) {
     return { success: false, count: 0, error: "Aucun article sélectionné" };
   }
@@ -613,11 +598,7 @@ export async function bulkDeleteArticles(
   const supabase = createAdminClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from("articles")
-    .delete()
-    .in("id", ids)
-    .eq("app", APP_SCOPE);
+  const { error } = await (supabase as any).from("articles").delete().in("id", ids).eq("app", APP_SCOPE);
 
   if (error) {
     console.error("Bulk delete error:", error);
@@ -668,26 +649,10 @@ export async function getArticleStats(): Promise<{
     { data: recentArticles },
   ] = await Promise.all([
     client.from("articles").select("*", { count: "exact", head: true }).eq("app", APP_SCOPE),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "published")
-      .eq("app", APP_SCOPE),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "draft")
-      .eq("app", APP_SCOPE),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "scheduled")
-      .eq("app", APP_SCOPE),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "archived")
-      .eq("app", APP_SCOPE),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("status", "published").eq("app", APP_SCOPE),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("status", "draft").eq("app", APP_SCOPE),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("status", "scheduled").eq("app", APP_SCOPE),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("status", "archived").eq("app", APP_SCOPE),
     // SUM via une lecture des seules colonnes utiles. PostgREST n'expose pas
     // D'agrégat SUM natif via supabase-js sans vue dédiée — on streame uniquement
     // View_count (4 octets/ligne) côté serveur.
@@ -770,8 +735,7 @@ export async function createArticleVersion(
   const { error: insertErr } = await client.from("article_versions").insert({
     article_id: articleId,
     category: article.category,
-    content:
-      typeof article.content === "object" ? JSON.stringify(article.content) : article.content,
+    content: typeof article.content === "object" ? JSON.stringify(article.content) : article.content,
     created_by: article.author_id,
     excerpt: article.excerpt,
     featured_image_url: article.featured_image_url,
@@ -832,11 +796,7 @@ export async function getArticleVersion(versionId: string): Promise<{
 } | null> {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
-    .from("article_versions")
-    .select("*")
-    .eq("id", versionId)
-    .maybeSingle();
+  const { data } = await (supabase as any).from("article_versions").select("*").eq("id", versionId).maybeSingle();
 
   return data || null;
 }
@@ -866,9 +826,7 @@ export async function restoreArticleVersion(
   // Récupérer la version à restaurer en s'assurant qu'elle correspond bien à l'article
   const { data: version, error: fetchErr } = await client
     .from("article_versions")
-    .select(
-      "title, content, excerpt, category, tags, featured_image_url, meta_title, meta_description, article_id",
-    )
+    .select("title, content, excerpt, category, tags, featured_image_url, meta_title, meta_description, article_id")
     .eq("id", versionId)
     .eq("article_id", articleId)
     .maybeSingle();

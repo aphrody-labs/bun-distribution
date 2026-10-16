@@ -27,13 +27,7 @@ export interface IconProps {
   preferSprite?: boolean;
 }
 
-export const Icon = ({
-  name,
-  fill = false,
-  size = 24,
-  className,
-  preferSprite = true,
-}: IconProps) => {
+export const Icon = ({ name, fill = false, size = 24, className, preferSprite = true }: IconProps) => {
   if (preferSprite) {
     const spriteKey = SPRITE_FOR_ICON[name];
     if (spriteKey) {
@@ -52,12 +46,5 @@ export const Icon = ({
     }
     return null;
   }
-  return (
-    <LucideIcon
-      size={size}
-      className={cn(className)}
-      fill={fill ? "currentColor" : "none"}
-      aria-hidden="true"
-    />
-  );
+  return <LucideIcon size={size} className={cn(className)} fill={fill ? "currentColor" : "none"} aria-hidden="true" />;
 };

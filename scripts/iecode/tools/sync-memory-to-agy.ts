@@ -14,15 +14,9 @@ const stateHome = resolve(process.env["APHRODY_HOME"] || join(home, ".aphrody"))
 const privateMemory = join(stateHome, "workspaces", "ie", "memory");
 const claudeMemory = join(home, ".claude", "projects", workspaceKey, "memory");
 const sourceRoots = (
-  process.env["NIE_MEMORY_SOURCES"]?.split(":") ?? [
-    privateMemory,
-    claudeMemory,
-    join(repoRoot, ".agents", "rules"),
-  ]
+  process.env["NIE_MEMORY_SOURCES"]?.split(":") ?? [privateMemory, claudeMemory, join(repoRoot, ".agents", "rules")]
 ).filter(Boolean);
-const targetRoots = (
-  process.env["NIE_MEMORY_TARGETS"]?.split(":") ?? [claudeMemory, privateMemory]
-).filter(Boolean);
+const targetRoots = (process.env["NIE_MEMORY_TARGETS"]?.split(":") ?? [claudeMemory, privateMemory]).filter(Boolean);
 const apply = Bun.argv.includes("--apply");
 
 type Note = { source: string; name: string; content: string; digest: string };
@@ -58,7 +52,7 @@ const document = [
   "> Canonical generated view for Codex, Claude Code and Antigravity. Source notes are preserved; identical notes are included once.",
   `> Generated: ${new Date().toISOString()} · unique notes: ${notes.length}`,
   "",
-  ...notes.flatMap((note) => [
+  ...notes.flatMap(note => [
     `## ${note.name}`,
     `<!-- source: ${note.source}; sha256: ${note.digest} -->`,
     "",
@@ -78,7 +72,5 @@ if (apply) {
   await mkdir(privateMemory, { recursive: true });
   await writeFile(output, document, "utf8");
 }
-console.log(
-  `${apply ? "synced" : "would sync"} ${notes.length} unique memory notes to ${targetRoots.length} adapters`,
-);
+console.log(`${apply ? "synced" : "would sync"} ${notes.length} unique memory notes to ${targetRoots.length} adapters`);
 console.log(`canonical: ${output}`);

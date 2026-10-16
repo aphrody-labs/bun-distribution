@@ -3,14 +3,7 @@
 import { getServerSession } from "@/lib/auth-helpers";
 import { createClient } from "@/lib/supabase/server";
 
-export type SharePlatform =
-  | "twitter"
-  | "facebook"
-  | "whatsapp"
-  | "linkedin"
-  | "telegram"
-  | "copy"
-  | "native";
+export type SharePlatform = "twitter" | "facebook" | "whatsapp" | "linkedin" | "telegram" | "copy" | "native";
 
 export interface ShareCounts {
   total: number;
@@ -42,10 +35,7 @@ const VALID_PLATFORMS: ReadonlySet<SharePlatform> = new Set([
  * Enregistre un partage pour un article. L'authentification est optionnelle :
  * les partages anonymes sont tracés avec user_id null.
  */
-export async function trackShare(
-  articleId: string,
-  platform: SharePlatform,
-): Promise<{ success: boolean }> {
+export async function trackShare(articleId: string, platform: SharePlatform): Promise<{ success: boolean }> {
   if (!articleId || !VALID_PLATFORMS.has(platform)) {
     return { success: false };
   }
@@ -117,10 +107,7 @@ export async function getShareCounts(articleIds: string[]): Promise<Record<strin
         byPlatform: {},
         total: 0,
       };
-      bucket.total =
-        typeof row.total === "number"
-          ? row.total
-          : Number.parseInt(String(row.total ?? "0"), 10) || 0;
+      bucket.total = typeof row.total === "number" ? row.total : Number.parseInt(String(row.total ?? "0"), 10) || 0;
       if (row.by_platform && typeof row.by_platform === "object") {
         for (const [platform, count] of Object.entries(row.by_platform)) {
           bucket.byPlatform[platform] = Number(count) || 0;

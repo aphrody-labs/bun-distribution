@@ -39,11 +39,9 @@ const BASE = process.env.NIE_SITE_BASE ?? "http://127.0.0.1:18099";
 const ARGS = process.argv.slice(2);
 /** `--sweep <n>` compare un ÉCHANTILLON RÉGULIER du catalogue au lieu d'un seul écran. */
 const SWEEP = ARGS.includes("--sweep") ? Number(ARGS[ARGS.indexOf("--sweep") + 1] ?? 24) : 0;
-const ECRAN = ARGS.find((a) => !a.startsWith("--") && Number.isNaN(Number(a))) ?? "chara_bank_menu";
+const ECRAN = ARGS.find(a => !a.startsWith("--") && Number.isNaN(Number(a))) ?? "chara_bank_menu";
 
-const repoRoot = process.env.NIE_REPO_ROOT
-  ? resolve(process.env.NIE_REPO_ROOT)
-  : resolve(import.meta.dir, "../../..");
+const repoRoot = process.env.NIE_REPO_ROOT ? resolve(process.env.NIE_REPO_ROOT) : resolve(import.meta.dir, "../../..");
 const glue = await import(resolve(repoRoot, "apps/nie-web/src/wasm/aphrody_nie_wasm.js"));
 glue.initSync({ module: readFileSync(resolve(repoRoot, "apps/nie-web/public/static/game/nie_wasm_bg.wasm")) });
 
@@ -55,7 +53,7 @@ async function verdictDe(ecran: string): Promise<string> {
   });
   const sortie = await new Response(proc.stdout).text();
   await proc.exited;
-  const ligne = sortie.split("\n").find((l) => /IDENTIQUES|DIFFÉRENTS|inconnu/.test(l));
+  const ligne = sortie.split("\n").find(l => /IDENTIQUES|DIFFÉRENTS|inconnu/.test(l));
   return ligne?.trim() ?? "sans verdict";
 }
 
@@ -91,45 +89,53 @@ if (SWEEP > 0) {
 
 const reponse = await fetch(`${BASE}/api/v1/screens/${ECRAN}`);
 if (!reponse.ok) {
-	console.log(`écran ${ECRAN} inconnu du site (HTTP ${reponse.status})`);
-	process.exit(0);
+  console.log(`écran ${ECRAN} inconnu du site (HTTP ${reponse.status})`);
+  process.exit(0);
 }
 const detail = await reponse.json();
-const builder = new glue.MenuScreenBuilder(JSON.stringify({
-	screen: detail.screen,
-	cfg: detail.cfg,
-	canvas: detail.canvas,
-	items: detail.items.map((i: any) => ({ layer: i.layer, objbin: i.objbin })),
-	layersMissing: detail.layers_missing,
-}));
+const builder = new glue.MenuScreenBuilder(
+  JSON.stringify({
+    screen: detail.screen,
+    cfg: detail.cfg,
+    canvas: detail.canvas,
+    items: detail.items.map((i: any) => ({ layer: i.layer, objbin: i.objbin })),
+    layersMissing: detail.layers_missing,
+  }),
+);
 
 const octets = async (chemin: string) => {
-	const r = await fetch(`${BASE}/f/${chemin}`);
-	return r.ok ? new Uint8Array(await r.arrayBuffer()) : null;
+  const r = await fetch(`${BASE}/f/${chemin}`);
+  return r.ok ? new Uint8Array(await r.arrayBuffer()) : null;
 };
 let charges = 0;
 for (const chemin of builder.required_files()) {
-	const b = await octets(chemin);
-	if (b) { builder.provide_file(chemin, b); charges += 1; }
+  const b = await octets(chemin);
+  if (b) {
+    builder.provide_file(chemin, b);
+    charges += 1;
+  }
 }
 const resolution = new Map<string, string>();
 for (const item of detail.items) {
-	for (const [logique, chemin] of Object.entries(item.companions ?? {})) resolution.set(logique, chemin as string);
+  for (const [logique, chemin] of Object.entries(item.companions ?? {})) resolution.set(logique, chemin as string);
 }
 let compagnons = 0;
 for (const logique of builder.required_companions()) {
-	const chemin = resolution.get(logique);
-	if (!chemin) continue;
-	builder.provide_companion(logique, chemin);
-	const b = await octets(chemin);
-	if (b) { builder.provide_file(chemin, b); compagnons += 1; }
+  const chemin = resolution.get(logique);
+  if (!chemin) continue;
+  builder.provide_companion(logique, chemin);
+  const b = await octets(chemin);
+  if (b) {
+    builder.provide_file(chemin, b);
+    compagnons += 1;
+  }
 }
 
 const pages: [number, string][] = [];
 for (let page = 1; ; page += 1) {
-	const body = await (await fetch(`${BASE}/api/v1/text/fr/menu_text?page=${page}&per_page=200`)).json();
-	for (const l of body.results?.elements ?? []) pages.push([l.hash, l.text]);
-	if (page >= (body.results?.pages ?? 1)) break;
+  const body = await (await fetch(`${BASE}/api/v1/text/fr/menu_text?page=${page}&per_page=200`)).json();
+  for (const l of body.results?.elements ?? []) pages.push([l.hash, l.text]);
+  if (page >= (body.results?.pages ?? 1)) break;
 }
 
 const navigateur = JSON.parse(builder.build("fr", JSON.stringify(pages), "{}"));
@@ -150,38 +156,42 @@ console.log(`objets navigateur ${navigateur.objects.length} | serveur ${serveur.
 // à tort — assez étroit pour qu'une vraie divergence, qui déplace un objet de pixels entiers,
 // reste signalée.
 const voisins = (x: unknown, y: unknown) =>
-	typeof x === "number" && typeof y === "number" &&
-	(x === y || Math.abs(x - y) <= Math.max(Math.abs(x), Math.abs(y)) * 1e-6);
+  typeof x === "number" &&
+  typeof y === "number" &&
+  (x === y || Math.abs(x - y) <= Math.max(Math.abs(x), Math.abs(y)) * 1e-6);
 const structurel = (x: any, y: any): boolean => {
-	if (voisins(x, y)) return false;
-	if (x === null || y === null || typeof x !== "object" || typeof y !== "object") {
-		return JSON.stringify(x) !== JSON.stringify(y);
-	}
-	const cles = [...new Set([...Object.keys(x), ...Object.keys(y)])];
-	return cles.some(c => structurel(x[c], y[c]));
+  if (voisins(x, y)) return false;
+  if (x === null || y === null || typeof x !== "object" || typeof y !== "object") {
+    return JSON.stringify(x) !== JSON.stringify(y);
+  }
+  const cles = [...new Set([...Object.keys(x), ...Object.keys(y)])];
+  return cles.some(c => structurel(x[c], y[c]));
 };
 const sansVisibleObjets = (o: any[]) => o.map(({ visible, ...reste }) => reste);
 const ecartsStructurels = sansVisibleObjets(navigateur.objects)
-	.map((o, i) => structurel(o, sansVisibleObjets(serveur.objects)[i]))
-	.filter(Boolean).length;
+  .map((o, i) => structurel(o, sansVisibleObjets(serveur.objects)[i]))
+  .filter(Boolean).length;
 console.log(
-	a === b
-		? "IDENTIQUES"
-		: ecartsStructurels === 0
-			? "IDENTIQUES hors arrondi (plancher libm)"
-			: `DIFFÉRENTS : ${ecartsStructurels} objet(s) divergent au-delà de l'arrondi`,
+  a === b
+    ? "IDENTIQUES"
+    : ecartsStructurels === 0
+      ? "IDENTIQUES hors arrondi (plancher libm)"
+      : `DIFFÉRENTS : ${ecartsStructurels} objet(s) divergent au-delà de l'arrondi`,
 );
 if (a !== b && ecartsStructurels > 0) {
-	for (let i = 0; i < Math.max(navigateur.objects.length, serveur.objects.length); i += 1) {
-		const x = JSON.stringify(navigateur.objects[i]), y = JSON.stringify(serveur.objects[i]);
-		if (x !== y) {
-			const na = JSON.parse(x ?? "{}"), sa = JSON.parse(y ?? "{}");
-			const cles = [...new Set([...Object.keys(na), ...Object.keys(sa)])];
-			for (const c of cles) {
-				const v1 = JSON.stringify(na[c]), v2 = JSON.stringify(sa[c]);
-				if (v1 !== v2) console.log(`  index ${i}, champ ${c}: nav=${v1?.slice(0,120)} srv=${v2?.slice(0,120)}`);
-			}
-			break;
-		}
-	}
+  for (let i = 0; i < Math.max(navigateur.objects.length, serveur.objects.length); i += 1) {
+    const x = JSON.stringify(navigateur.objects[i]),
+      y = JSON.stringify(serveur.objects[i]);
+    if (x !== y) {
+      const na = JSON.parse(x ?? "{}"),
+        sa = JSON.parse(y ?? "{}");
+      const cles = [...new Set([...Object.keys(na), ...Object.keys(sa)])];
+      for (const c of cles) {
+        const v1 = JSON.stringify(na[c]),
+          v2 = JSON.stringify(sa[c]);
+        if (v1 !== v2) console.log(`  index ${i}, champ ${c}: nav=${v1?.slice(0, 120)} srv=${v2?.slice(0, 120)}`);
+      }
+      break;
+    }
+  }
 }

@@ -6,24 +6,14 @@
  * 2. Version 100 format (typed lists) - skill_config, soccer_*, formation_*
  */
 
-import type {
-  CfgBinDocument,
-  CfgBinEntry,
-  CfgBinNamedDocument,
-  TypedDocument,
-} from "../schemas/cfgbin.js";
+import type { CfgBinDocument, CfgBinEntry, CfgBinNamedDocument, TypedDocument } from "../schemas/cfgbin.js";
 import type { NounInfo, TextInfo } from "../schemas/text.js";
 
 /**
  * Check if document is lowercase Entries format
  */
 export function isEntriesDocument(doc: unknown): doc is CfgBinDocument {
-  return (
-    typeof doc === "object" &&
-    doc !== null &&
-    "entries" in doc &&
-    Array.isArray((doc as CfgBinDocument).entries)
-  );
+  return typeof doc === "object" && doc !== null && "entries" in doc && Array.isArray((doc as CfgBinDocument).entries);
 }
 
 /**
@@ -31,10 +21,7 @@ export function isEntriesDocument(doc: unknown): doc is CfgBinDocument {
  */
 export function isNamedEntriesDocument(doc: unknown): doc is CfgBinNamedDocument {
   return (
-    typeof doc === "object" &&
-    doc !== null &&
-    "Entries" in doc &&
-    Array.isArray((doc as CfgBinNamedDocument).Entries)
+    typeof doc === "object" && doc !== null && "Entries" in doc && Array.isArray((doc as CfgBinNamedDocument).Entries)
   );
 }
 
@@ -126,7 +113,7 @@ export function findEntries(entries: CfgBinEntry[], pattern: string | RegExp): C
  * Get typed list by name from version 100 document
  */
 export function getTypedList<T>(doc: TypedDocument, listName: string): T[] | undefined {
-  const list = doc.lists.find((l) => l.name === listName);
+  const list = doc.lists.find(l => l.name === listName);
   return list?.values as T[] | undefined;
 }
 

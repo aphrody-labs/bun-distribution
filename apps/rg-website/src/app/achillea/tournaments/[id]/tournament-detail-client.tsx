@@ -22,10 +22,7 @@ import { TournamentTopSummary } from "@/components/achillea/TournamentTopSummary
 import { EventParticipantsTable } from "@/components/achillea/EventParticipantsTable";
 import { PlayerNotesPanel } from "@/components/achillea/PlayerNotesPanel";
 import { Badge, Button, Skeleton } from "@rosegriffon/ui";
-import type {
-  WireTournament,
-  WireParticipant,
-} from "@rosegriffon/achillea-types/domain/tournament-ops";
+import type { WireTournament, WireParticipant } from "@rosegriffon/achillea-types/domain/tournament-ops";
 import type { ParticipantDTO } from "@rosegriffon/achillea-types";
 import { TournamentState } from "@rosegriffon/achillea-types/enums/eventEnums";
 import {
@@ -70,7 +67,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
     const client = createAchilleaClient();
     return client.tournaments
       .get(tournamentId)
-      .then((res) => {
+      .then(res => {
         if (res.ok && res.value) {
           setTournament(res.value[0]);
           setParticipants(res.value[1] ?? []);
@@ -107,7 +104,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
     void loadTournament();
   }, [tournamentId]);
 
-  const isUserRegistered = Boolean(user && participants.some((p) => p.user?.id === user.id));
+  const isUserRegistered = Boolean(user && participants.some(p => p.user?.id === user.id));
 
   const isOrganizer = Boolean(tournament && isTournamentOrganizer(user, tournament as any));
 
@@ -124,7 +121,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
     try {
       if (isUserRegistered) {
         await client.tournaments.unregister(tournament.id);
-        setParticipants((prev) => prev.filter((p) => p.user?.id !== user?.id));
+        setParticipants(prev => prev.filter(p => p.user?.id !== user?.id));
       } else {
         await client.tournaments.participate(tournament.id);
         void loadTournament();
@@ -199,7 +196,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
       );
   };
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    const index = tabs.findIndex((tab) => tab.id === activeTab);
+    const index = tabs.findIndex(tab => tab.id === activeTab);
     let next = index;
     if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
     else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
@@ -244,13 +241,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
             <div className="flex items-center gap-5">
               <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-muted shrink-0 border-2 border-border shadow-md">
                 {tournament.logo ? (
-                  <Image
-                    src={tournament.logo}
-                    alt={tournament.name}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
+                  <Image src={tournament.logo} alt={tournament.name} fill unoptimized className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <Trophy className="w-8 h-8 text-amber-400" />
@@ -260,9 +251,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
 
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                    {tournament.name}
-                  </h1>
+                  <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{tournament.name}</h1>
                   <Badge variant={variant} className="text-xs">
                     {stateLabel}
                   </Badge>
@@ -347,12 +336,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
       </div>
 
       {/* Panneau Organisateur / Arbitre */}
-      {isOrganizer && (
-        <TournamentLifecycleActions
-          tournament={tournament}
-          onUpdated={() => void loadTournament()}
-        />
-      )}
+      {isOrganizer && <TournamentLifecycleActions tournament={tournament} onUpdated={() => void loadTournament()} />}
 
       {/* Tabs Navigation */}
       <div
@@ -437,7 +421,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
             maxSlots={tournament.participantsNumber ?? 16}
             isOngoing={tournament.internalState === TournamentState.ONGOING}
             canReportScore={isOrganizer || Boolean(isUserRegistered)}
-            onSelectMatch={(mId) => setSelectedMatchId(mId)}
+            onSelectMatch={mId => setSelectedMatchId(mId)}
           />
         )}
 
@@ -489,7 +473,7 @@ export default function TournamentDetailPage({ id }: { id: string }) {
         {activeTab === "notes" && isOrganizer && (
           <PlayerNotesPanel
             tournamentId={tournament.id}
-            candidates={participants.map((p) => ({
+            candidates={participants.map(p => ({
               id: String(p.user?.id ?? p.id),
               label: p.user?.username ?? `Joueur #${p.id}`,
               avatar: p.user?.avatar,

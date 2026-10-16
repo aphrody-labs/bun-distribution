@@ -38,7 +38,7 @@ export function ItemFilterBar({ categories, currentCategory }: ItemFilterBarProp
     <div className="space-y-4">
       {/* Category Chips */}
       <div className="flex flex-wrap gap-2">
-        {categories.map((f) => {
+        {categories.map(f => {
           const isActive = currentCategory === f.value;
           return (
             <button

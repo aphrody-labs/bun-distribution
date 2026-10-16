@@ -14,97 +14,96 @@ import { GrilleMembres, TitreSection } from "./membre-carte";
  * suivante sans qu'une ligne de code change.
  */
 export async function HierarchieServeur({
-	cle,
-	recherche,
-	staffSeulement = false,
+  cle,
+  recherche,
+  staffSeulement = false,
 }: {
-	cle: CleServeur;
-	recherche?: string;
-	/** Ne montrer que ceux qui ont des pouvoirs réels sur le serveur. */
-	staffSeulement?: boolean;
+  cle: CleServeur;
+  recherche?: string;
+  /** Ne montrer que ceux qui ont des pouvoirs réels sur le serveur. */
+  staffSeulement?: boolean;
 }) {
-	if (recherche) {
-		const trouves = await chercherMembres(cle, recherche);
-		return (
-			<div className="flex flex-col gap-3">
-				<TitreSection titre={`Résultats pour « ${recherche} »`} effectif={trouves.length} />
-				{trouves.length > 0 ? (
-					<GrilleMembres membres={trouves} compacte />
-				) : (
-					<p className="py-8 text-center text-sm text-on-surface-variant">
-						Aucun membre ne porte ce nom sur ce serveur.
-					</p>
-				)}
-			</div>
-		);
-	}
+  if (recherche) {
+    const trouves = await chercherMembres(cle, recherche);
+    return (
+      <div className="flex flex-col gap-3">
+        <TitreSection titre={`Résultats pour « ${recherche} »`} effectif={trouves.length} />
+        {trouves.length > 0 ? (
+          <GrilleMembres membres={trouves} compacte />
+        ) : (
+          <p className="py-8 text-center text-sm text-on-surface-variant">
+            Aucun membre ne porte ce nom sur ce serveur.
+          </p>
+        )}
+      </div>
+    );
+  }
 
-	const hierarchie = await lireHierarchie(cle);
+  const hierarchie = await lireHierarchie(cle);
 
-	if (staffSeulement) {
-		const rien = hierarchie.administration.length === 0 && hierarchie.moderation.length === 0;
-		return (
-			<div className="flex flex-col gap-6">
-				{rien && (
-					<p className="text-sm text-on-surface-variant">
-						Aucun rôle de ce serveur ne porte de permission d&apos;administration ou de
-						modération.
-					</p>
-				)}
-				{hierarchie.administration.length > 0 && (
-					<section className="flex flex-col gap-3">
-						<TitreSection titre="Administration" effectif={hierarchie.administration.length} />
-						<p className="-mt-1 text-xs text-on-surface-variant/70">
-							Membres dont un rôle porte la permission « Administrateur » ou « Gérer le serveur ».
-						</p>
-						<GrilleMembres membres={hierarchie.administration} />
-					</section>
-				)}
-				{hierarchie.moderation.length > 0 && (
-					<section className="flex flex-col gap-3">
-						<TitreSection titre="Modération" effectif={hierarchie.moderation.length} />
-						<p className="-mt-1 text-xs text-on-surface-variant/70">
-							Membres habilités à exclure, bannir, isoler ou gérer les messages.
-						</p>
-						<GrilleMembres membres={hierarchie.moderation} />
-					</section>
-				)}
-			</div>
-		);
-	}
+  if (staffSeulement) {
+    const rien = hierarchie.administration.length === 0 && hierarchie.moderation.length === 0;
+    return (
+      <div className="flex flex-col gap-6">
+        {rien && (
+          <p className="text-sm text-on-surface-variant">
+            Aucun rôle de ce serveur ne porte de permission d&apos;administration ou de modération.
+          </p>
+        )}
+        {hierarchie.administration.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <TitreSection titre="Administration" effectif={hierarchie.administration.length} />
+            <p className="-mt-1 text-xs text-on-surface-variant/70">
+              Membres dont un rôle porte la permission « Administrateur » ou « Gérer le serveur ».
+            </p>
+            <GrilleMembres membres={hierarchie.administration} />
+          </section>
+        )}
+        {hierarchie.moderation.length > 0 && (
+          <section className="flex flex-col gap-3">
+            <TitreSection titre="Modération" effectif={hierarchie.moderation.length} />
+            <p className="-mt-1 text-xs text-on-surface-variant/70">
+              Membres habilités à exclure, bannir, isoler ou gérer les messages.
+            </p>
+            <GrilleMembres membres={hierarchie.moderation} />
+          </section>
+        )}
+      </div>
+    );
+  }
 
-	return (
-		<div className="flex flex-col gap-6">
-			{hierarchie.sections.map((section) => (
-				<section key={section.role?.role_id ?? "sans-role"} className="flex flex-col gap-3">
-					<TitreSection
-						titre={section.role?.name ?? "Membres"}
-						effectif={section.membres.length}
-						couleur={couleurRole(section.role)}
-					/>
-					<GrilleMembres membres={section.membres} compacte />
-				</section>
-			))}
-		</div>
-	);
+  return (
+    <div className="flex flex-col gap-6">
+      {hierarchie.sections.map(section => (
+        <section key={section.role?.role_id ?? "sans-role"} className="flex flex-col gap-3">
+          <TitreSection
+            titre={section.role?.name ?? "Membres"}
+            effectif={section.membres.length}
+            couleur={couleurRole(section.role)}
+          />
+          <GrilleMembres membres={section.membres} compacte />
+        </section>
+      ))}
+    </div>
+  );
 }
 
 /** Effectif et fraîcheur, sous le sélecteur de serveur. */
 export async function ResumeServeur({ cle }: { cle: CleServeur }) {
-	const { total, misAJourLe, administration, moderation } = await lireHierarchie(cle);
+  const { total, misAJourLe, administration, moderation } = await lireHierarchie(cle);
 
-	return (
-		<p className="text-xs text-on-surface-variant/70">
-			{total.toLocaleString("fr-FR")} membres · {administration.length + moderation.length} au staff
-			{misAJourLe && (
-				<>
-					{" · relevé "}
-					{new Intl.DateTimeFormat("fr-FR", {
-						dateStyle: "short",
-						timeStyle: "short",
-					}).format(new Date(misAJourLe))}
-				</>
-			)}
-		</p>
-	);
+  return (
+    <p className="text-xs text-on-surface-variant/70">
+      {total.toLocaleString("fr-FR")} membres · {administration.length + moderation.length} au staff
+      {misAJourLe && (
+        <>
+          {" · relevé "}
+          {new Intl.DateTimeFormat("fr-FR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          }).format(new Date(misAJourLe))}
+        </>
+      )}
+    </p>
+  );
 }

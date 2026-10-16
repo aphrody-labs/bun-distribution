@@ -11,7 +11,7 @@ const keys = [
   "NEXT_PUBLIC_ASSET_URL",
   "NIE_DATA_SOURCE",
 ] as const;
-const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
 afterEach(() => {
   for (const key of keys) {
     if (original[key] === undefined) delete process.env[key];

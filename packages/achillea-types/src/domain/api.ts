@@ -9,15 +9,15 @@
 
 /** Réponse des mutations : `{ success, error? }`. */
 export interface SuccessResponse {
-	success: boolean;
-	error?: string;
+  success: boolean;
+  error?: string;
 }
 
 /** Réponse enveloppée : `{ success, data?, error? }`. */
 export interface ApiEnvelope<T> {
-	success: boolean;
-	data?: T;
-	error?: string;
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
 /**
@@ -29,6 +29,6 @@ export type EntityRef<T> = number | T;
 
 /** `POST /proxy/upload` — image dédupliquée par hash côté API. */
 export interface UploadedImage {
-	id: string;
-	url: string;
+  id: string;
+  url: string;
 }

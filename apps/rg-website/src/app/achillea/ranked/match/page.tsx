@@ -7,19 +7,18 @@ import RankedMatchClient from "./ranked-match-client";
  * interdit. L'interface, inchangée, vit dans `ranked-match-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Match classé en cours",
-	description:
-		"Salon de match classé Achilléa : composition, score et rapport de résultat.",
-	chemin: "/achillea/ranked/match",
-	indexable: false,
+  titre: "Match classé en cours",
+  description: "Salon de match classé Achilléa : composition, score et rapport de résultat.",
+  chemin: "/achillea/ranked/match",
+  indexable: false,
 });
 
 export default function RankedMatchPage() {
-	return (
-		// `useSearchParams` impose une frontière Suspense dès que la page est
-		// rendue depuis un composant serveur : sans elle, le build échoue.
-		<Suspense fallback={null}>
-			<RankedMatchClient />
-		</Suspense>
-	);
+  return (
+    // `useSearchParams` impose une frontière Suspense dès que la page est
+    // rendue depuis un composant serveur : sans elle, le build échoue.
+    <Suspense fallback={null}>
+      <RankedMatchClient />
+    </Suspense>
+  );
 }

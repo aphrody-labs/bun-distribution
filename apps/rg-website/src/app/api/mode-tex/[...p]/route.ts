@@ -15,32 +15,29 @@ import path from "node:path";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(
-	_req: Request,
-	{ params }: { params: Promise<{ p?: string[] }> },
-): Promise<Response> {
-	const { p } = await params;
-	let RACINE: string;
-	try {
-		RACINE = path.resolve(path.join(process.env.DATA_PATH ?? iecodeDataPath(), "mode-tex"));
-		if (!(await fs.stat(RACINE)).isDirectory()) throw new Error("Texture source is unavailable");
-	} catch {
-		return new Response("texture source unavailable", { status: 503 });
-	}
-	const cible = path.resolve(RACINE, (p ?? []).join("/"));
-	// Anti-traversal : le chemin résolu doit rester sous la racine, et ne peut être qu'un PNG.
-	if (!cible.startsWith(RACINE + path.sep) || !cible.endsWith(".png")) {
-		return new Response("chemin refusé", { status: 404 });
-	}
-	try {
-		const octets = await fs.readFile(cible);
-		return new Response(new Uint8Array(octets), {
-			headers: {
-				"content-type": "image/png",
-				"cache-control": "public, max-age=86400, immutable",
-			},
-		});
-	} catch {
-		return new Response("texture absente", { status: 404 });
-	}
+export async function GET(_req: Request, { params }: { params: Promise<{ p?: string[] }> }): Promise<Response> {
+  const { p } = await params;
+  let RACINE: string;
+  try {
+    RACINE = path.resolve(path.join(process.env.DATA_PATH ?? iecodeDataPath(), "mode-tex"));
+    if (!(await fs.stat(RACINE)).isDirectory()) throw new Error("Texture source is unavailable");
+  } catch {
+    return new Response("texture source unavailable", { status: 503 });
+  }
+  const cible = path.resolve(RACINE, (p ?? []).join("/"));
+  // Anti-traversal : le chemin résolu doit rester sous la racine, et ne peut être qu'un PNG.
+  if (!cible.startsWith(RACINE + path.sep) || !cible.endsWith(".png")) {
+    return new Response("chemin refusé", { status: 404 });
+  }
+  try {
+    const octets = await fs.readFile(cible);
+    return new Response(new Uint8Array(octets), {
+      headers: {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=86400, immutable",
+      },
+    });
+  } catch {
+    return new Response("texture absente", { status: 404 });
+  }
 }

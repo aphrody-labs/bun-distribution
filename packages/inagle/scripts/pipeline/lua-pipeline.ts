@@ -66,14 +66,14 @@ function ensureDir(dir: string) {
 
 function getFileList(): string[] {
   return readdirSync(LUA_DIR)
-    .filter((f) => f.endsWith(".lua.bin"))
-    .filter((f) => statSync(join(LUA_DIR, f)).size >= MIN_FILE_SIZE);
+    .filter(f => f.endsWith(".lua.bin"))
+    .filter(f => statSync(join(LUA_DIR, f)).size >= MIN_FILE_SIZE);
 }
 
 function getPriority(filename: string): "p0" | "p1" | "p2" {
   const lower = filename.toLowerCase();
-  if (P0_PATTERNS.some((p) => lower.includes(p))) return "p0";
-  if (P1_PATTERNS.some((p) => lower.startsWith(p))) return "p1";
+  if (P0_PATTERNS.some(p => lower.includes(p))) return "p0";
+  if (P1_PATTERNS.some(p => lower.startsWith(p))) return "p1";
   return "p2";
 }
 
@@ -102,8 +102,8 @@ function extractAllStrings(files: string[]): Record<string, string[]> {
         });
         const strings = raw
           .split("\n")
-          .filter((l) => l.includes("ascii") || l.includes("utf"))
-          .map((l) => l.split(/\s+/).pop()!)
+          .filter(l => l.includes("ascii") || l.includes("utf"))
+          .map(l => l.split(/\s+/).pop()!)
           .filter(Boolean);
         result[key] = strings;
         ok++;
@@ -138,9 +138,7 @@ function buildCrc32Dictionary(allStrings: Record<string, string[]>): Record<stri
     try {
       const ghidraData = JSON.parse(readFileSync(resolve(ghidraStringsPath), "utf-8"));
       const ghidraStrings: string[] = Array.isArray(ghidraData)
-        ? ghidraData
-            .map((s: any) => s.value || s.string || s)
-            .filter((s: any) => typeof s === "string")
+        ? ghidraData.map((s: any) => s.value || s.string || s).filter((s: any) => typeof s === "string")
         : (Object.values(ghidraData)
             .flat()
             .filter((s: any) => typeof s === "string") as string[]);
@@ -185,7 +183,7 @@ function decompileBatch(files: string[], skipP2: boolean): DecompileResult[] {
 
   // Sort by priority
   const sorted = files
-    .map((f) => ({ file: f, priority: getPriority(f) }))
+    .map(f => ({ file: f, priority: getPriority(f) }))
     .sort((a, b) => {
       const order = { p0: 0, p1: 1, p2: 2 };
       return order[a.priority] - order[b.priority];
@@ -232,7 +230,7 @@ function decompileBatch(files: string[], skipP2: boolean): DecompileResult[] {
       // Remove crash stacktraces from output
       const clean = output
         .split("\n")
-        .filter((l) => !l.includes("Exception in thread") && !l.includes("\tat "))
+        .filter(l => !l.includes("Exception in thread") && !l.includes("\tat "))
         .join("\n");
       if (clean.trim().length > 50) {
         writeFileSync(outPath, clean);
@@ -281,7 +279,7 @@ async function resolveSkills(
 				LEFT JOIN inagle_skills s ON s.id = cs.skill_id OR s.internal_code = cs.skill_id OR s.sheet_data->>'skillID' = cs.skill_id
 				WHERE s.id IS NULL AND cs.skill_id NOT LIKE '0x0000000%'
       `);
-      unresolvedIds = rows.map((row) => row.skill_id);
+      unresolvedIds = rows.map(row => row.skill_id);
     } finally {
       await client.end();
     }
@@ -299,7 +297,7 @@ async function resolveSkills(
     }
   }
 
-  const unresolved = unresolvedIds.filter((id) => !resolved[id]);
+  const unresolved = unresolvedIds.filter(id => !resolved[id]);
   console.log(`  ✓ ${Object.keys(resolved).length} résolus via CRC32`);
   console.log(`  ✗ ${unresolved.length} toujours non résolus`);
 
@@ -327,9 +325,7 @@ async function main() {
   console.log(`\n${files.length} fichiers .lua.bin (>= ${MIN_FILE_SIZE} bytes)`);
   const byPrio = { p0: 0, p1: 0, p2: 0 };
   for (const f of files) byPrio[getPriority(f)]++;
-  console.log(
-    `  P0 (critical): ${byPrio.p0} | P1 (gameplay): ${byPrio.p1} | P2 (other): ${byPrio.p2}`,
-  );
+  console.log(`  P0 (critical): ${byPrio.p0} | P1 (gameplay): ${byPrio.p1} | P2 (other): ${byPrio.p2}`);
 
   // ── Étape 1 : Strings ──
   let allStrings: Record<string, string[]>;
@@ -357,7 +353,7 @@ async function main() {
   // ── Étape 3 : Décompilation ──
   const decompileResults = decompileBatch(files, skipP2);
   const errorsPath = join(ANALYSIS_DIR, "decompile-errors.json");
-  const errors = decompileResults.filter((r) => r.status === "strings-only");
+  const errors = decompileResults.filter(r => r.status === "strings-only");
   writeFileSync(errorsPath, JSON.stringify(errors, null, 2));
 
   // ── Étape 4 : Skills ──
@@ -367,10 +363,10 @@ async function main() {
   // ── Étape 5 : Rapport ──
   const totalStrings = Object.values(allStrings).reduce((sum, arr) => sum + arr.length, 0);
   const decompStats = {
-    ok: decompileResults.filter((r) => r.status === "ok").length,
-    partial: decompileResults.filter((r) => r.status === "partial").length,
-    stringsOnly: decompileResults.filter((r) => r.status === "strings-only").length,
-    skip: decompileResults.filter((r) => r.status === "skip").length,
+    ok: decompileResults.filter(r => r.status === "ok").length,
+    partial: decompileResults.filter(r => r.status === "partial").length,
+    stringsOnly: decompileResults.filter(r => r.status === "strings-only").length,
+    skip: decompileResults.filter(r => r.status === "skip").length,
   };
 
   const report = `# Rapport d'analyse Lua IEVR
@@ -382,7 +378,7 @@ Généré le ${new Date().toISOString().split("T")[0]}
 | Métrique | Valeur |
 |---|---|
 | Fichiers .lua.bin | ${files.length} |
-| Stubs ignorés (<${MIN_FILE_SIZE}B) | ${readdirSync(LUA_DIR).filter((f) => f.endsWith(".lua.bin")).length - files.length} |
+| Stubs ignorés (<${MIN_FILE_SIZE}B) | ${readdirSync(LUA_DIR).filter(f => f.endsWith(".lua.bin")).length - files.length} |
 | Strings extraites | ${totalStrings.toLocaleString("fr-FR")} |
 | Strings uniques | ${Object.keys(crc32Dict).length > 0 ? `~${new Set(Object.values(allStrings).flat()).size}` : "?"} |
 | Entrées CRC32 | ${Object.keys(crc32Dict).length.toLocaleString("fr-FR")} |
@@ -409,8 +405,8 @@ Généré le ${new Date().toISOString().split("T")[0]}
 
 ${
   decompileResults
-    .filter((r) => r.priority === "p0" && r.status === "ok")
-    .map((r) => `- \`${basename(r.file, ".lua.bin")}\` — ${r.lines} lignes`)
+    .filter(r => r.priority === "p0" && r.status === "ok")
+    .map(r => `- \`${basename(r.file, ".lua.bin")}\` — ${r.lines} lignes`)
     .join("\n") || "Aucun"
 }
 `;
@@ -422,9 +418,7 @@ ${
   console.log("═══════════════════════════════════════════════════");
   console.log(`  Strings   : ${totalStrings.toLocaleString("fr-FR")} extraites`);
   console.log(`  CRC32     : ${Object.keys(crc32Dict).length.toLocaleString("fr-FR")} entrées`);
-  console.log(
-    `  Décompilés: ${decompStats.ok + decompStats.partial}/${files.length - decompStats.skip}`,
-  );
+  console.log(`  Décompilés: ${decompStats.ok + decompStats.partial}/${files.length - decompStats.skip}`);
   console.log(`  Skills    : ${Object.keys(skillsResult.resolved || {}).length} résolus`);
   console.log(`  Output    : ${ANALYSIS_DIR}`);
 }

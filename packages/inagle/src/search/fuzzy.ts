@@ -63,7 +63,7 @@ const UFUZZY_OPTIONS: uFuzzy.Options = {
       const ranges = info.ranges[i];
       let score = 0;
 
-      if (hay.startsWith(queryLower) || hay.split(/\s+/).some((w) => w.startsWith(queryLower))) {
+      if (hay.startsWith(queryLower) || hay.split(/\s+/).some(w => w.startsWith(queryLower))) {
         score += 1000;
       }
 
@@ -85,7 +85,7 @@ const UFUZZY_OPTIONS: uFuzzy.Options = {
     }
 
     scored.sort((a, b) => b.score - a.score);
-    return scored.map((s) => s.idx);
+    return scored.map(s => s.idx);
   },
 };
 
@@ -109,7 +109,7 @@ export function createSearchIndex<T>(
       const cfg = { ...DEFAULT_CONFIG, ...config };
 
       if (!query.trim()) {
-        return currentItems.slice(0, cfg.limit).map((item) => ({
+        return currentItems.slice(0, cfg.limit).map(item => ({
           item,
           score: 1,
           matches: [],
@@ -123,7 +123,7 @@ export function createSearchIndex<T>(
       }
 
       const results: SearchResult<T>[] = [];
-      const indices = order ? order.map((i) => idxs[i]) : idxs;
+      const indices = order ? order.map(i => idxs[i]) : idxs;
 
       for (let i = 0; i < Math.min(indices.length, cfg.limit); i++) {
         const idx = indices[i];
@@ -153,14 +153,7 @@ export function createSearchIndex<T>(
 }
 
 /** Searchable entry type */
-export type SearchableType =
-  | "basara"
-  | "character"
-  | "skill"
-  | "aura"
-  | "passive"
-  | "team"
-  | "item";
+export type SearchableType = "basara" | "character" | "skill" | "aura" | "passive" | "team" | "item";
 
 /** Global search result */
 export interface GlobalSearchResult {
@@ -186,32 +179,28 @@ export function createGlobalSearch(dataSources: {
   // Create indexes for each data source
   const indexes = {
     basara: dataSources.basara
-      ? createSearchIndex(dataSources.basara, (b) =>
-          [b.names.fr, b.names.en, b.names.ja, b.internalCode].join(" "),
-        )
+      ? createSearchIndex(dataSources.basara, b => [b.names.fr, b.names.en, b.names.ja, b.internalCode].join(" "))
       : null,
     characters: dataSources.characters
-      ? createSearchIndex(dataSources.characters, (c) =>
+      ? createSearchIndex(dataSources.characters, c =>
           [c.names.fr, c.names.en, c.names.ja, c.charaId].filter(Boolean).join(" "),
         )
       : null,
     skills: dataSources.skills
-      ? createSearchIndex(dataSources.skills, (s) =>
+      ? createSearchIndex(dataSources.skills, s =>
           [s.name_FR, s.name_EN, s.name_JA, s.skillIDStr].filter(Boolean).join(" "),
         )
       : null,
     auras: dataSources.auras
-      ? createSearchIndex(dataSources.auras, (a) =>
-          [a.displayName, a.name_FR, a.auraIdStr].filter(Boolean).join(" "),
-        )
+      ? createSearchIndex(dataSources.auras, a => [a.displayName, a.name_FR, a.auraIdStr].filter(Boolean).join(" "))
       : null,
     passives: dataSources.passives
-      ? createSearchIndex(dataSources.passives, (p) =>
+      ? createSearchIndex(dataSources.passives, p =>
           [p.displayName, p.name_FR, p.desc_FR, p.passiveIdStr].filter(Boolean).join(" "),
         )
       : null,
     items: dataSources.items
-      ? createSearchIndex(dataSources.items, (i) =>
+      ? createSearchIndex(dataSources.items, i =>
           [i.name, i.names?.fr, i.names?.en, i.internalCode].filter(Boolean).join(" "),
         )
       : null,
@@ -222,8 +211,7 @@ export function createGlobalSearch(dataSources: {
     basara: (query: string, config?: SearchConfig) => indexes.basara?.search(query, config) || [],
 
     /** Search only characters */
-    characters: (query: string, config?: SearchConfig) =>
-      indexes.characters?.search(query, config) || [],
+    characters: (query: string, config?: SearchConfig) => indexes.characters?.search(query, config) || [],
 
     /** Search only skills */
     skills: (query: string, config?: SearchConfig) => indexes.skills?.search(query, config) || [],
@@ -235,8 +223,7 @@ export function createGlobalSearch(dataSources: {
     auras: (query: string, config?: SearchConfig) => indexes.auras?.search(query, config) || [],
 
     /** Search only passives */
-    passives: (query: string, config?: SearchConfig) =>
-      indexes.passives?.search(query, config) || [],
+    passives: (query: string, config?: SearchConfig) => indexes.passives?.search(query, config) || [],
 
     /** Search across all data types */
     global: (query: string, config?: SearchConfig): GlobalSearchResult[] => {

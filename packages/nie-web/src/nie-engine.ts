@@ -144,10 +144,7 @@ export async function skillLookup(configJson: string, textJson: string): Promise
 }
 
 /** Résolution typée d'une aura (keshin/soul/mixi) depuis ses `cfg.bin`. */
-export async function auraLookup(
-  auraConfigJson: string,
-  skillConfigJson: string,
-): Promise<unknown> {
+export async function auraLookup(auraConfigJson: string, skillConfigJson: string): Promise<unknown> {
   await ensureWasm();
   return JSON.parse(aura_lookup(auraConfigJson, skillConfigJson)) as unknown;
 }
@@ -161,11 +158,7 @@ export async function itemLookup(itemConfigJson: string): Promise<unknown> {
 // --- FSM de match (nie-core) ------------------------------------------------
 
 /** Avance la machine à états d'un match d'un tick ; renvoie le nouvel état (JSON). */
-export async function matchTick(
-  state: string,
-  isTraining: boolean,
-  endCounter: number,
-): Promise<unknown> {
+export async function matchTick(state: string, isTraining: boolean, endCounter: number): Promise<unknown> {
   await ensureWasm();
   return JSON.parse(match_tick(state, isTraining, endCounter)) as unknown;
 }

@@ -51,10 +51,7 @@ function DashboardSkeleton() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 space-y-2"
-          >
+          <div key={i} className="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-4 space-y-2">
             <Skeleton className="h-3 w-16 rounded-lg" />
             <Skeleton className="h-7 w-20 rounded-lg" />
           </div>
@@ -65,11 +62,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-3 w-24 rounded-lg" />
         <div className="flex items-end gap-2 h-24">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="flex-1 rounded-t-lg"
-              style={{ height: `${30 + (i % 4) * 20}%` }}
-            />
+            <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${30 + (i % 4) * 20}%` }} />
           ))}
         </div>
       </div>
@@ -97,25 +90,14 @@ function StatCard({ label, value, icon, accent }: StatCardProps) {
     <div
       className={cn(
         "rounded-2xl p-4 border transition-colors",
-        accent
-          ? "bg-primary/8 border-primary/20"
-          : "bg-surface-container-low border-outline-variant/10",
+        accent ? "bg-primary/8 border-primary/20" : "bg-surface-container-low border-outline-variant/10",
       )}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className={cn("size-4", accent ? "text-primary" : "text-on-surface-variant/60")}>
-          {icon}
-        </span>
-        <span className="text-xs text-on-surface-variant/60 uppercase tracking-wider font-semibold">
-          {label}
-        </span>
+        <span className={cn("size-4", accent ? "text-primary" : "text-on-surface-variant/60")}>{icon}</span>
+        <span className="text-xs text-on-surface-variant/60 uppercase tracking-wider font-semibold">{label}</span>
       </div>
-      <p
-        className={cn(
-          "text-2xl font-black tabular-nums",
-          accent ? "text-primary" : "text-on-surface",
-        )}
-      >
+      <p className={cn("text-2xl font-black tabular-nums", accent ? "text-primary" : "text-on-surface")}>
         {typeof value === "number" ? formatCount(value) : value}
       </p>
     </div>
@@ -130,7 +112,7 @@ export function AuthorDashboard() {
   useEffect(() => {
     let cancelled = false;
     getAuthorDashboard()
-      .then((result) => {
+      .then(result => {
         if (!cancelled) {
           setData(result);
         }
@@ -154,9 +136,7 @@ export function AuthorDashboard() {
   if (data === null) {
     return (
       <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-8 text-center">
-        <p className="text-sm text-on-surface-variant/60">
-          Impossible de charger le tableau de bord.
-        </p>
+        <p className="text-sm text-on-surface-variant/60">Impossible de charger le tableau de bord.</p>
       </div>
     );
   }
@@ -166,9 +146,7 @@ export function AuthorDashboard() {
     return (
       <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-10 text-center space-y-2">
         <BookOpen className="size-10 mx-auto text-on-surface-variant/20" />
-        <p className="text-sm font-medium text-on-surface-variant/70">
-          Aucun article publié pour le moment
-        </p>
+        <p className="text-sm font-medium text-on-surface-variant/70">Aucun article publié pour le moment</p>
         <p className="text-xs text-on-surface-variant/50">
           Commencez à rédiger pour voir vos statistiques apparaître ici.
         </p>
@@ -176,37 +154,22 @@ export function AuthorDashboard() {
     );
   }
 
-  const publishedArticles = data.articles.filter((a) => a.status === "published");
+  const publishedArticles = data.articles.filter(a => a.status === "published");
   const totalReactions = data.articles.reduce((s, a) => s + a.reaction_count, 0);
   const totalComments = data.articles.reduce((s, a) => s + a.comment_count, 0);
 
   // Données pour le graphique : vues par article (top 10 par vues)
-  const chartArticles = [...data.articles]
-    .toSorted((a, b) => b.view_count - a.view_count)
-    .slice(0, 10);
-  const maxViews = Math.max(...chartArticles.map((a) => a.view_count), 1);
+  const chartArticles = [...data.articles].toSorted((a, b) => b.view_count - a.view_count).slice(0, 10);
+  const maxViews = Math.max(...chartArticles.map(a => a.view_count), 1);
 
   return (
     <div className="space-y-6">
       {/* Cartes statistiques */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard
-          label="Articles publiés"
-          value={publishedArticles.length}
-          icon={<BookOpen className="size-4" />}
-        />
-        <StatCard
-          label="Vues totales"
-          value={data.total_views}
-          icon={<Eye className="size-4" />}
-          accent
-        />
+        <StatCard label="Articles publiés" value={publishedArticles.length} icon={<BookOpen className="size-4" />} />
+        <StatCard label="Vues totales" value={data.total_views} icon={<Eye className="size-4" />} accent />
         <StatCard label="Réactions" value={totalReactions} icon={<ThumbsUp className="size-4" />} />
-        <StatCard
-          label="Commentaires"
-          value={totalComments}
-          icon={<MessageCircle className="size-4" />}
-        />
+        <StatCard label="Commentaires" value={totalComments} icon={<MessageCircle className="size-4" />} />
       </div>
 
       {/* Article le plus populaire */}
@@ -242,7 +205,7 @@ export function AuthorDashboard() {
           </div>
 
           <div className="space-y-2.5">
-            {chartArticles.map((article) => {
+            {chartArticles.map(article => {
               const pct = Math.max((article.view_count / maxViews) * 100, 2);
               return (
                 <div key={article.id} className="space-y-1">
@@ -280,7 +243,7 @@ export function AuthorDashboard() {
           </h3>
 
           <ul className="space-y-2">
-            {data.latest_comments.map((comment) => (
+            {data.latest_comments.map(comment => (
               <li
                 key={comment.id}
                 className="rounded-2xl border border-outline-variant/10 bg-surface-container-low px-4 py-3"
@@ -288,19 +251,14 @@ export function AuthorDashboard() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <Link
-                      href={`/news/${data.articles.find((a) => a.id === comment.article_id)?.slug ?? "#"}`}
+                      href={`/news/${data.articles.find(a => a.id === comment.article_id)?.slug ?? "#"}`}
                       className="text-xs font-semibold text-primary/80 hover:text-primary transition-colors truncate block"
                     >
                       {comment.article_title}
                     </Link>
-                    <p className="text-sm text-on-surface mt-0.5 line-clamp-2 leading-snug">
-                      {comment.content}
-                    </p>
+                    <p className="text-sm text-on-surface mt-0.5 line-clamp-2 leading-snug">{comment.content}</p>
                   </div>
-                  <time
-                    className="text-xs text-on-surface-variant/50 shrink-0 mt-0.5"
-                    dateTime={comment.created_at}
-                  >
+                  <time className="text-xs text-on-surface-variant/50 shrink-0 mt-0.5" dateTime={comment.created_at}>
                     {timeAgo(comment.created_at)}
                   </time>
                 </div>

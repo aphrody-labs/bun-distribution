@@ -8,9 +8,9 @@ import type { PageMeta } from "@rosegriffon/achillea-types/domain/common";
  * the effective limit returned by the server, rather than the requested one.
  */
 export function remainingTournamentPages(meta: PageMeta): number[] {
-	const page = Math.max(1, Math.floor(meta.page ?? 1));
-	const limit = Math.max(1, Math.floor(meta.limit ?? 50));
-	const lastPage = Math.max(page, Math.ceil(Math.max(0, meta.total) / limit));
+  const page = Math.max(1, Math.floor(meta.page ?? 1));
+  const limit = Math.max(1, Math.floor(meta.limit ?? 50));
+  const lastPage = Math.max(page, Math.ceil(Math.max(0, meta.total) / limit));
 
-	return Array.from({ length: lastPage - page }, (_, index) => page + index + 1);
+  return Array.from({ length: lastPage - page }, (_, index) => page + index + 1);
 }

@@ -119,7 +119,7 @@ function normalizeWhitespace(input: string): string {
   let out = input.replace(/ {2,}/g, " ");
   out = out
     .split("\n")
-    .map((line) => line.replace(/ +$/, ""))
+    .map(line => line.replace(/ +$/, ""))
     .join("\n");
   return out;
 }

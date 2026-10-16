@@ -16,7 +16,7 @@ export default function DashboardLoading() {
 
       {/* Metrics row skeleton */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2, 3, 4].map(i => (
           <div
             key={i}
             className="flex items-center gap-4 p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant/20"
@@ -34,7 +34,7 @@ export default function DashboardLoading() {
       <div className="space-y-4">
         <Skeleton className="h-5 w-32 rounded bg-surface-container-highest" />
         <div className="rounded-[24px] bg-surface-container-low border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/10">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex items-center gap-4 p-4">
               <Skeleton className="size-10 rounded-xl bg-surface-container-highest shrink-0" />
               <div className="space-y-2 flex-1">
@@ -50,7 +50,7 @@ export default function DashboardLoading() {
       <div className="space-y-4">
         <Skeleton className="h-5 w-28 rounded bg-surface-container-highest" />
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <div
               key={i}
               className="flex items-center gap-4 p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant/20"

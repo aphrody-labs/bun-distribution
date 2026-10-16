@@ -22,10 +22,7 @@ export default function ContactPage() {
           <p className="mb-4 text-on-surface-variant">
             Pour les demandes formelles, partenariats ou questions spécifiques :
           </p>
-          <a
-            href="mailto:contact@rose-griffon.fr"
-            className="text-primary font-bold text-xl hover:underline"
-          >
+          <a href="mailto:contact@rose-griffon.fr" className="text-primary font-bold text-xl hover:underline">
             contact@rose-griffon.fr
           </a>
         </div>

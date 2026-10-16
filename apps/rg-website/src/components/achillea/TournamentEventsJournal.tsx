@@ -35,7 +35,7 @@ export function TournamentEventsJournal({ tournamentId }: TournamentEventsJourna
 
     client.tournaments
       .events(tournamentId)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value) {
           setEvents(res.value);
@@ -89,17 +89,13 @@ export function TournamentEventsJournal({ tournamentId }: TournamentEventsJourna
         };
       case TournamentEventType.PARTICIPANT_REGISTERED:
         return {
-          label: evt.target
-            ? `${evt.target.displayName || evt.target.username} s'est inscrit`
-            : "Nouvelle inscription",
+          label: evt.target ? `${evt.target.displayName || evt.target.username} s'est inscrit` : "Nouvelle inscription",
           icon: <UserPlus className="w-4 h-4 text-emerald-400" />,
         };
       case TournamentEventType.PARTICIPANT_UNREGISTERED:
       case TournamentEventType.PARTICIPANT_REMOVED:
         return {
-          label: evt.target
-            ? `${evt.target.displayName || evt.target.username} a été désinscrit`
-            : "Désinscription",
+          label: evt.target ? `${evt.target.displayName || evt.target.username} a été désinscrit` : "Désinscription",
           icon: <AlertCircle className="w-4 h-4 text-rose-400" />,
         };
       case TournamentEventType.PARTICIPANT_DISQUALIFIED:
@@ -177,18 +173,13 @@ export function TournamentEventsJournal({ tournamentId }: TournamentEventsJourna
               className="p-3.5 px-4 flex items-center justify-between gap-4 hover:bg-muted/20 transition text-xs"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-background border border-border shrink-0">
-                  {details.icon}
-                </div>
+                <div className="p-2 rounded-xl bg-background border border-border shrink-0">{details.icon}</div>
                 <div className="space-y-0.5">
                   <div className="font-semibold text-foreground">{details.label}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
                     {evt.actor && (
                       <span>
-                        Par{" "}
-                        <strong className="text-foreground">
-                          {evt.actor.displayName || evt.actor.username}
-                        </strong>
+                        Par <strong className="text-foreground">{evt.actor.displayName || evt.actor.username}</strong>
                       </span>
                     )}
                     {evt.reason && <span className="italic text-rose-400">({evt.reason})</span>}

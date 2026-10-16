@@ -51,12 +51,12 @@ const BOT_DIR = join(MONOREPO_ROOT, "apps", "bot");
 const SCRIPT = join(BOT_DIR, "src", "scripts", "import-noctaly.ts");
 
 interface ResultatImportNoctaly {
-	success: boolean;
-	error?: string;
-	stats?: {
-		sortie: string;
-		codeSortie: number;
-	};
+  success: boolean;
+  error?: string;
+  stats?: {
+    sortie: string;
+    codeSortie: number;
+  };
 }
 
 /**
@@ -70,23 +70,23 @@ interface ResultatImportNoctaly {
  * clairement d'un import réussi.
  */
 export async function runNoctalyImport(): Promise<ResultatImportNoctaly> {
-	const proc = await $`bun ${SCRIPT}`.cwd(BOT_DIR).nothrow().quiet();
-	const sortie = `${proc.stdout.toString()}${proc.stderr.toString()}`.trim();
+  const proc = await $`bun ${SCRIPT}`.cwd(BOT_DIR).nothrow().quiet();
+  const sortie = `${proc.stdout.toString()}${proc.stderr.toString()}`.trim();
 
-	// Les dernières lignes utiles sont celles qu'un humain veut lire en premier
-	// dans le journal cron — le rapport détaillé (top profils, distribution de
-	// monnaie) reste disponible dans la sortie complète pour qui la consulte.
-	const dernieresLignes = sortie.split("\n").filter(Boolean).slice(-6).join(" · ");
+  // Les dernières lignes utiles sont celles qu'un humain veut lire en premier
+  // dans le journal cron — le rapport détaillé (top profils, distribution de
+  // monnaie) reste disponible dans la sortie complète pour qui la consulte.
+  const dernieresLignes = sortie.split("\n").filter(Boolean).slice(-6).join(" · ");
 
-	if (proc.exitCode !== 0) {
-		console.error(`[noctaly:import] échec (code ${proc.exitCode}) : ${dernieresLignes}`);
-		return {
-			error: dernieresLignes || `code de sortie ${proc.exitCode}`,
-			stats: { codeSortie: proc.exitCode, sortie },
-			success: false,
-		};
-	}
+  if (proc.exitCode !== 0) {
+    console.error(`[noctaly:import] échec (code ${proc.exitCode}) : ${dernieresLignes}`);
+    return {
+      error: dernieresLignes || `code de sortie ${proc.exitCode}`,
+      stats: { codeSortie: proc.exitCode, sortie },
+      success: false,
+    };
+  }
 
-	console.log(`[noctaly:import] ${dernieresLignes}`);
-	return { stats: { codeSortie: proc.exitCode, sortie }, success: true };
+  console.log(`[noctaly:import] ${dernieresLignes}`);
+  return { stats: { codeSortie: proc.exitCode, sortie }, success: true };
 }

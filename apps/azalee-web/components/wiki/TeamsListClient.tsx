@@ -20,10 +20,7 @@ const SERIES_FILTERS: Array<{ value: string; label: string }> = [
 ];
 
 function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 export function TeamsListClient({ teams }: TeamsListClientProps) {
@@ -32,7 +29,7 @@ export function TeamsListClient({ teams }: TeamsListClientProps) {
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
-    return teams.filter((t) => {
+    return teams.filter(t => {
       if (series !== "all" && !t.seriesKeys.includes(series)) return false;
       if (!q) return true;
       const haystack = normalize(`${t.name} ${t.nameEn ?? ""} ${t.nameJa ?? ""}`);
@@ -53,7 +50,7 @@ export function TeamsListClient({ teams }: TeamsListClientProps) {
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher une équipe..."
             className="w-full rounded-full border border-outline-variant bg-surface-container-low pl-10 pr-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
@@ -61,7 +58,7 @@ export function TeamsListClient({ teams }: TeamsListClientProps) {
 
         {/* Filtre série */}
         <div className="flex flex-wrap gap-2">
-          {SERIES_FILTERS.map((f) => (
+          {SERIES_FILTERS.map(f => (
             <button
               key={f.value}
               type="button"
@@ -85,7 +82,7 @@ export function TeamsListClient({ teams }: TeamsListClientProps) {
 
       {filtered.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((team) => (
+          {filtered.map(team => (
             <FadeInItem key={team.id} className="h-full">
               <TeamCard team={team} className="h-full" />
             </FadeInItem>

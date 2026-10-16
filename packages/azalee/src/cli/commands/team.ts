@@ -2,14 +2,7 @@
 
 import type { Command } from "commander";
 
-import {
-  colors,
-  errorMessage,
-  getOrReadInput,
-  reportError,
-  restoreLogs,
-  suppressLogs,
-} from "../context";
+import { colors, errorMessage, getOrReadInput, reportError, restoreLogs, suppressLogs } from "../context";
 import { createInagleService } from "../inagle";
 import { renderTeamProfile } from "../render";
 import { getActiveReadline, setPendingSelection } from "../repl-state";
@@ -46,9 +39,7 @@ export function registerTeamCommand(program: Command): void {
             if (options.json) {
               console.log(JSON.stringify([], null, 2));
             } else {
-              console.log(
-                `${colors.yellow}Aucune équipe trouvée pour : "${inputQuery}"${colors.reset}`,
-              );
+              console.log(`${colors.yellow}Aucune équipe trouvée pour : "${inputQuery}"${colors.reset}`);
             }
             return;
           }
@@ -66,9 +57,7 @@ export function registerTeamCommand(program: Command): void {
             } else {
               const rl = getActiveReadline();
               if (rl) {
-                console.log(
-                  `${colors.yellow}Plusieurs équipes correspondent à votre recherche :${colors.reset}`,
-                );
+                console.log(`${colors.yellow}Plusieurs équipes correspondent à votre recherche :${colors.reset}`);
                 for (const [idx, m] of matches.entries()) {
                   console.log(
                     `  [${colors.bold}${idx + 1}${colors.reset}] ${colors.bold}${m.name}${colors.reset} (ID: ${m.teamId})`,
@@ -80,9 +69,7 @@ export function registerTeamCommand(program: Command): void {
                 );
                 rl.prompt();
               } else {
-                console.log(
-                  `${colors.yellow}Plusieurs équipes correspondent à votre recherche :${colors.reset}`,
-                );
+                console.log(`${colors.yellow}Plusieurs équipes correspondent à votre recherche :${colors.reset}`);
                 for (const m of matches) {
                   console.log(`  - ${colors.bold}${m.name}${colors.reset} (ID: ${m.teamId})`);
                 }
@@ -100,11 +87,7 @@ export function registerTeamCommand(program: Command): void {
           console.log(renderTeamProfile(team));
         }
       } catch (e) {
-        reportError(
-          options.json,
-          errorMessage(e),
-          `${colors.red}Erreur team : ${errorMessage(e)}${colors.reset}`,
-        );
+        reportError(options.json, errorMessage(e), `${colors.red}Erreur team : ${errorMessage(e)}${colors.reset}`);
       }
     });
 }

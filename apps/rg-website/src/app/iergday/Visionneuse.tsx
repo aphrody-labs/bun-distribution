@@ -84,8 +84,7 @@ export interface DocumentVisionne {
 /** Adaptateur : une publication de la galerie devient un document visionnable. */
 export function documentDepuisPost(post: PostCampagne): DocumentVisionne {
   const date = post.publieLe ? new Date(post.publieLe) : null;
-  const dateLisible =
-    date && !Number.isNaN(date.getTime()) ? format(date, "d MMMM yyyy", { locale: fr }) : null;
+  const dateLisible = date && !Number.isNaN(date.getTime()) ? format(date, "d MMMM yyyy", { locale: fr }) : null;
   /*
    * ⚠ LES DEUX SOURCES NE DÉSIGNENT PAS LEURS AUTEURS DE LA MÊME FAÇON.
    * Sur X, `auteurPseudo` est le @ public, il fait partie de l'identité affichée.
@@ -99,14 +98,8 @@ export function documentDepuisPost(post: PostCampagne): DocumentVisionne {
   // qui n'existe pas.
   const surX = post.source === "x";
   const pseudoSur = surX ? `@${post.auteurPseudo}` : post.auteurNom;
-  const reseau =
-    post.source === "x" ? "X" : post.source === "discord" ? "le serveur Discord" : "Instagram";
-  const identifiant =
-    post.source === "x"
-      ? post.tweetId
-      : post.source === "discord"
-        ? post.messageId
-        : post.shortcode;
+  const reseau = post.source === "x" ? "X" : post.source === "discord" ? "le serveur Discord" : "Instagram";
+  const identifiant = post.source === "x" ? post.tweetId : post.source === "discord" ? post.messageId : post.shortcode;
   const racineNom = (surX ? post.auteurPseudo : post.auteurNom).replace(/[^\w-]+/g, "");
   return {
     baseNomFichier: `${racineNom || "post"}-${identifiant}`,
@@ -186,10 +179,7 @@ export function Visionneuse({
   const [telechargement, setTelechargement] = useState(false);
   /** Élément à re-focaliser à la fermeture (la vignette qui a ouvert la vue). */
   const declencheur = useRef<HTMLElement | null>(null);
-  const finalFocus = useCallback(
-    () => (declencheur.current?.isConnected ? declencheur.current : true),
-    [],
-  );
+  const finalFocus = useCallback(() => (declencheur.current?.isConnected ? declencheur.current : true), []);
 
   const ouverte = index !== null;
   const documentOuvert = ouverte ? documents[index] : undefined;
@@ -294,7 +284,7 @@ export function Visionneuse({
   return (
     <Dialog
       open={ouverte}
-      onOpenChange={(ouvert) => {
+      onOpenChange={ouvert => {
         if (!ouvert) {
           onFermer();
         }
@@ -315,20 +305,15 @@ export function Visionneuse({
           {documentOuvert.etiquette} — {index !== null ? index + 1 : 1} sur {documents.length}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Utilisez les flèches gauche et droite pour changer de document, la touche Échap pour
-          fermer.
+          Utilisez les flèches gauche et droite pour changer de document, la touche Échap pour fermer.
         </DialogDescription>
 
         {/* Barre d'outils : identité du document à gauche, actions à droite. */}
         <div className="flex items-center justify-between gap-3 border-b border-outline-variant/40 px-4 py-3">
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-bold text-on-surface">
-              {documentOuvert.titre}
-            </span>
+            <span className="truncate text-sm font-bold text-on-surface">{documentOuvert.titre}</span>
             {documentOuvert.sousTitre && (
-              <span className="truncate text-xs text-on-surface-variant">
-                {documentOuvert.sousTitre}
-              </span>
+              <span className="truncate text-xs text-on-surface-variant">{documentOuvert.sousTitre}</span>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -437,19 +422,10 @@ export function Visionneuse({
                 className={cn(
                   "relative size-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors" +
                     " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-                  position === indexImage
-                    ? "border-primary"
-                    : "border-outline-variant/40 hover:border-primary/60",
+                  position === indexImage ? "border-primary" : "border-outline-variant/40 hover:border-primary/60",
                 )}
               >
-                <Image
-                  src={autre.src}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  quality={70}
-                  className="object-cover"
-                />
+                <Image src={autre.src} alt="" fill sizes="64px" quality={70} className="object-cover" />
               </button>
             ))}
           </div>

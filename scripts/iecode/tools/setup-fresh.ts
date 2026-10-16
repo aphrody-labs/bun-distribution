@@ -56,14 +56,7 @@ if (configuredAphrody) {
 }
 
 // 2. Ensure Git-Ignored Directory Structure
-const ignoredDirs = [
-  ".coord/claims",
-  "var/log",
-  "var/runs",
-  "var/mirror",
-  "assets/textures",
-  "data",
-];
+const ignoredDirs = [".coord/claims", "var/log", "var/runs", "var/mirror", "assets/textures", "data"];
 
 for (const dir of ignoredDirs) {
   const fullPath = join(root, dir);
@@ -134,13 +127,10 @@ const nieExePath = join(dataDirPath, "nie.exe");
 if (options["setup-data"] && !existsSync(cpkListPath) && !existsSync(nieExePath)) {
   console.log("[DATA] Game data not yet present in data/. Running setup-data auto resolver...");
   if (!options["dry-run"]) {
-    const dataSetup = Bun.spawnSync(
-      [process.execPath, "scripts/iecode/tools/data/setup-data.ts", "--method", "auto"],
-      {
-        cwd: root,
-        stdio: ["inherit", "inherit", "inherit"],
-      },
-    );
+    const dataSetup = Bun.spawnSync([process.execPath, "scripts/iecode/tools/data/setup-data.ts", "--method", "auto"], {
+      cwd: root,
+      stdio: ["inherit", "inherit", "inherit"],
+    });
     if (dataSetup.exitCode !== 0) {
       console.warn(
         "[INFO] Game data not populated. Run 'bun run setup:data:nie' or 'bun run setup:data:steamcmd' with your Steam credentials.",
@@ -158,11 +148,7 @@ const docsArchive = join(root, "docs.7z");
 const historyDir = join(root, "docs/history");
 const researchDir = join(root, "docs/research");
 
-if (
-  !options["skip-docs"] &&
-  existsSync(docsArchive) &&
-  (!existsSync(historyDir) || !existsSync(researchDir))
-) {
+if (!options["skip-docs"] && existsSync(docsArchive) && (!existsSync(historyDir) || !existsSync(researchDir))) {
   console.log("[DOCS] Unpacking documentation archive (docs.7z)...");
   if (!options["dry-run"]) {
     const unpack = Bun.spawnSync([process.execPath, "scripts/iecode/tools/docs-archive.ts", "unpack"], {

@@ -29,8 +29,7 @@ export class Ui {
   private gl!: WebGLRenderingContext;
   private fbProgram!: WebGLProgram;
   private fbCoordsAttrib!: number;
-  private useWebGpu =
-    "gpu" in navigator && "transferControlToOffscreen" in HTMLCanvasElement.prototype;
+  private useWebGpu = "gpu" in navigator && "transferControlToOffscreen" in HTMLCanvasElement.prototype;
 
   private worker: Worker | undefined;
   private rendererWorker: Worker | undefined;
@@ -74,12 +73,8 @@ export class Ui {
     this.stopButton = document.getElementById("stop") as HTMLButtonElement;
     this.resetButton = document.getElementById("reset") as HTMLButtonElement;
 
-    this.limitFramerateCheckbox = document.getElementById(
-      "toggle-framerate-limit",
-    ) as HTMLInputElement;
-    this.touchControlsCheckbox = document.getElementById(
-      "toggle-touch-controls",
-    ) as HTMLInputElement;
+    this.limitFramerateCheckbox = document.getElementById("toggle-framerate-limit") as HTMLInputElement;
+    this.touchControlsCheckbox = document.getElementById("toggle-touch-controls") as HTMLInputElement;
 
     this.files = new Files(
       (id, filename, buffer) => {
@@ -152,17 +147,7 @@ export class Ui {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      256,
-      384,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      new Uint8Array(256 * 384 * 4),
-    );
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 384, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(256 * 384 * 4));
 
     const vertShader = gl.createShader(gl.VERTEX_SHADER)!;
     gl.shaderSource(vertShader, vertShaderSource);
@@ -175,9 +160,7 @@ export class Ui {
     gl.shaderSource(fragShader, fragShaderSource);
     gl.compileShader(fragShader);
     if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
-      throw new Error(
-        `WebGL fragment shader compilation failed: ${gl.getShaderInfoLog(fragShader)}`,
-      );
+      throw new Error(`WebGL fragment shader compilation failed: ${gl.getShaderInfoLog(fragShader)}`);
     }
 
     const fbProgram = gl.createProgram()!;
@@ -228,25 +211,15 @@ export class Ui {
 
     const romFilenameExtStart = this.nextRomFilename!.lastIndexOf(".");
     this.gameTitle =
-      romFilenameExtStart === -1
-        ? this.nextRomFilename!
-        : this.nextRomFilename!.slice(0, romFilenameExtStart);
+      romFilenameExtStart === -1 ? this.nextRomFilename! : this.nextRomFilename!.slice(0, romFilenameExtStart);
     this.saveFilename = `${this.gameTitle}.sav`;
 
-    const gameCode = new Uint32Array(
-      this.nextRomBuffer!.buffer,
-      0,
-      this.nextRomBuffer!.length >> 2,
-    )[0xc >> 2]!;
+    const gameCode = new Uint32Array(this.nextRomBuffer!.buffer, 0, this.nextRomBuffer!.length >> 2)[0xc >> 2]!;
     let saveType: SaveType | undefined;
     const dbEntry = dbLookup(this.files.gameDb!, gameCode);
     if (dbEntry) {
       if (this.nextRomBuffer!.length !== dbEntry["rom-size"]) {
-        console.warn(
-          `Unexpected ROM size: expected ${
-            dbEntry["rom-size"]
-          } B, got ${this.nextRomBuffer!.length} B`,
-        );
+        console.warn(`Unexpected ROM size: expected ${dbEntry["rom-size"]} B, got ${this.nextRomBuffer!.length} B`);
       }
       saveType = saveTypes[dbEntry["save-type"]];
     }
@@ -295,11 +268,7 @@ export class Ui {
       }
 
       case EmuToUi.MessageType.ExportSave: {
-        this.files.storeSaveToStorage(
-          this.saveFilename!,
-          message.buffer.slice().buffer,
-          this.gameTitle!,
-        );
+        this.files.storeSaveToStorage(this.saveFilename!, message.buffer.slice().buffer, this.gameTitle!);
         if (message.triggerDownload) {
           const file = new Blob([message.buffer], {
             type: "application/octet-stream;charset=utf-8",
@@ -376,11 +345,7 @@ export class Ui {
     this.rendererWorker = undefined;
     if (this.useWebGpu) this.replaceCanvas();
 
-    this.files.storeSaveToStorage(
-      this.saveFilename!,
-      message.buffer.slice().buffer,
-      this.gameTitle!,
-    );
+    this.files.storeSaveToStorage(this.saveFilename!, message.buffer.slice().buffer, this.gameTitle!);
 
     this.saveFilename = undefined;
     this.gameTitle = undefined;

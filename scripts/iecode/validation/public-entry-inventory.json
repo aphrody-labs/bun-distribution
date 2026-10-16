@@ -14,10 +14,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-app/src/flow.rs",
       "rationale": "Play delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -26,10 +23,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-net/src/lib.rs",
       "rationale": "Net delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -46,10 +40,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-viola/src/lib.rs",
       "rationale": "Mod delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -58,10 +49,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-launcher/src/lib.rs",
       "rationale": "Launcher delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -70,10 +58,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-viola/src/lib.rs",
       "rationale": "Viola delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -82,10 +67,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/lib.rs",
       "rationale": "Format delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -94,10 +76,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/lib.rs",
       "rationale": "Decode delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -106,10 +85,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/cfgbin.rs",
       "rationale": "RefreshTypedJson delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -118,10 +94,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-steam/src/lib.rs",
       "rationale": "Steam delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -138,10 +111,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/locale.rs",
       "rationale": "Locales delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -150,10 +120,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/lib.rs",
       "rationale": "Convert delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -162,10 +129,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-render3d/src/lib.rs",
       "rationale": "Render delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -174,10 +138,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-lua/src/lib.rs",
       "rationale": "Lua delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -186,10 +147,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-lua/src/lib.rs",
       "rationale": "LuaRun delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -198,10 +156,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-lua/src/lib.rs",
       "rationale": "LuaAudit delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -210,10 +165,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-seed/src/lib.rs",
       "rationale": "Seed delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -222,10 +174,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-seed/src/ui_names.rs",
       "rationale": "SeedUi delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "seed_ui::run("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "seed_ui::run("]
     },
     {
       "surface": "cli",
@@ -234,10 +183,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Strings delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -262,10 +208,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/lib.rs",
       "rationale": "Img delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -274,10 +217,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/menu_mode_analysis.rs",
       "rationale": "Mode delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -286,10 +226,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/menu_icons.rs",
       "rationale": "Icons delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -298,10 +235,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-data/src/avatar.rs",
       "rationale": "Avatar delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/avatar_cmd.rs",
-        "category_resource_prefix(cfg,"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/avatar_cmd.rs", "category_resource_prefix(cfg,"]
     },
     {
       "surface": "cli",
@@ -310,10 +244,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-ocgen/src/cli.rs",
       "rationale": "Ocgen delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -322,10 +253,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-index/src/atlas.rs",
       "rationale": "Atlas delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -334,10 +262,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Coverage delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -346,10 +271,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-queue/src/lib.rs",
       "rationale": "Queue delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -358,10 +280,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Propagate delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -370,10 +289,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Rtti delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -382,10 +298,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-index/src/lib.rs",
       "rationale": "Index delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -394,10 +307,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Disasm delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -406,10 +316,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/lib.rs",
       "rationale": "Pdata delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -418,10 +325,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/workflow.rs",
       "rationale": "Rebuild delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "aphrody_nie_re::workflow::rebuild("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "aphrody_nie_re::workflow::rebuild("]
     },
     {
       "surface": "cli",
@@ -430,10 +334,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-re/src/workflow.rs",
       "rationale": "Recover delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "aphrody_nie_re::workflow::recover_with_observer("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "aphrody_nie_re::workflow::recover_with_observer("]
     },
     {
       "surface": "cli",
@@ -442,10 +343,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-save/src/lib.rs",
       "rationale": "Save delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -454,10 +352,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-wiki/src/lib.rs",
       "rationale": "Wiki delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -466,10 +361,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/uniform_map.rs",
       "rationale": "UniformMap delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -478,10 +370,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-formats/src/lib.rs",
       "rationale": "Textures delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -490,10 +379,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/menu_predecode.rs",
       "rationale": "MenuPredecode delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/menu_predecode.rs",
-        "let plan = plan(priority_paths,"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/menu_predecode.rs", "let plan = plan(priority_paths,"]
     },
     {
       "surface": "cli",
@@ -510,10 +396,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/lib.rs",
       "rationale": "Vfs delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -522,10 +405,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/vn.rs",
       "rationale": "Vn delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/vn_cmd.rs",
-        "casting_entries("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/vn_cmd.rs", "casting_entries("]
     },
     {
       "surface": "cli",
@@ -534,10 +414,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-explore/src/cinema.rs",
       "rationale": "Video delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "cli",
@@ -546,10 +423,7 @@
       "classification": "portable",
       "owner": "crates/nie/aphrody-nie-launcher/src/lib.rs",
       "rationale": "Live delegates portable domain work to its named library owner.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/main.rs",
-        "::"
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/main.rs", "::"]
     },
     {
       "surface": "mcp",
@@ -590,10 +464,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
       "rationale": "MCP tool vfs_list is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_explore::mcp_vfs::list("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_explore::mcp_vfs::list("]
     },
     {
       "surface": "mcp",
@@ -602,10 +473,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
       "rationale": "MCP tool vfs_search is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_explore::mcp_vfs::search("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_explore::mcp_vfs::search("]
     },
     {
       "surface": "mcp",
@@ -614,10 +482,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
       "rationale": "MCP tool vfs_stat is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_explore::mcp_vfs::stat("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_explore::mcp_vfs::stat("]
     },
     {
       "surface": "mcp",
@@ -626,10 +491,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
       "rationale": "MCP tool vfs_cat is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_explore::mcp_vfs::cat("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_explore::mcp_vfs::cat("]
     },
     {
       "surface": "mcp",
@@ -638,10 +500,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-explore/src/mcp_vfs.rs",
       "rationale": "MCP tool asset_get is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_explore::mcp_vfs::asset("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_explore::mcp_vfs::asset("]
     },
     {
       "surface": "mcp",
@@ -658,10 +517,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-wiki/src/query.rs",
       "rationale": "MCP tool re_function is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_wiki::query::re_function_report("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_wiki::query::re_function_report("]
     },
     {
       "surface": "mcp",
@@ -670,10 +526,7 @@
       "classification": "transport",
       "owner": "crates/nie/aphrody-nie-wiki/src/query.rs",
       "rationale": "MCP tool re_coverage is an in-process transport adapter.",
-      "sourceEvidence": [
-        "crates/nie/aphrody-nie-cli/src/mcp.rs",
-        "aphrody_nie_wiki::query::re_coverage_report("
-      ]
+      "sourceEvidence": ["crates/nie/aphrody-nie-cli/src/mcp.rs", "aphrody_nie_wiki::query::re_coverage_report("]
     },
     {
       "surface": "mcp",

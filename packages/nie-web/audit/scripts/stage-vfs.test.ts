@@ -13,18 +13,14 @@ test("canonical build stages only integrity-checked archives and publishes manif
     const file = `menu_${sha256}.nievfs`;
     const manifest = {
       schemaVersion: 1,
-      archives: [
-        { id: "menu", url: `/static/game/vfs/${file}`, bytes: 3, sha256, paths: ["data/menu"] },
-      ],
+      archives: [{ id: "menu", url: `/static/game/vfs/${file}`, bytes: 3, sha256, paths: ["data/menu"] }],
     };
     writeFileSync(join(directory, file), bytes);
     writeFileSync(join(directory, "manifest.json"), JSON.stringify(manifest));
     const output = join(directory, "output");
     expect(stageVfs(directory, output)).toBe(1);
     expect(new Uint8Array(readFileSync(join(output, "static/game/vfs", file)))).toEqual(bytes);
-    expect(JSON.parse(readFileSync(join(output, "static/game/vfs/manifest.json"), "utf8"))).toEqual(
-      manifest,
-    );
+    expect(JSON.parse(readFileSync(join(output, "static/game/vfs/manifest.json"), "utf8"))).toEqual(manifest);
     writeFileSync(join(directory, file), new Uint8Array([9, 2, 3]));
     const corruptOutput = join(directory, "corrupt");
     expect(() => stageVfs(directory, corruptOutput)).toThrow("integrity mismatch");

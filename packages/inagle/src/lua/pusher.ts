@@ -14,13 +14,11 @@ export async function importLuaScripts(_service: any, db: DataAdapter) {
   const parsedScripts = await parseLuaIndex();
 
   if (parsedScripts.length === 0) {
-    console.error(
-      "❌ 0 script Lua résolu — vérifier DATA_PATH/lua_scripts/analysis/lua-global-index.json",
-    );
+    console.error("❌ 0 script Lua résolu — vérifier DATA_PATH/lua_scripts/analysis/lua-global-index.json");
     return;
   }
 
-  const rawRecords = parsedScripts.map((s) => ({
+  const rawRecords = parsedScripts.map(s => ({
     id: s.id,
     name: s.name,
     version: s.version,

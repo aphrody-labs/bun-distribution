@@ -18,9 +18,7 @@ export default async function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-on-surface tracking-tight">
-          Gestion des utilisateurs
-        </h1>
+        <h1 className="text-2xl font-black text-on-surface tracking-tight">Gestion des utilisateurs</h1>
         <p className="text-sm text-on-surface-variant mt-1">
           Attribuer les rôles : admin, editor, moderator ou member.
         </p>

@@ -10,7 +10,7 @@ const sourceCandidates = [
   rgWebsitePath("data", "cross", "catalog-index.ndjson.gz"),
   iecodePath("packages", "inagle-cross", "data", "catalog-index.ndjson.gz"),
 ].filter((value): value is string => Boolean(value));
-const source = sourceCandidates.find((value) => existsSync(value));
+const source = sourceCandidates.find(value => existsSync(value));
 if (!source) throw new Error("Catalogue Cross introuvable: fournissez CROSS_CATALOG_PATH.");
 
 const rowsByGuid = new Map<string, Insertable<Database["inagle_cross_catalog"]>>();
@@ -18,8 +18,7 @@ for (const line of gunzipSync(readFileSync(source)).toString("utf8").split("\n")
   if (!line.trim()) continue;
   try {
     const entry = JSON.parse(line) as Record<string, unknown>;
-    if (entry.kind !== "asset" || typeof entry.guid !== "string" || typeof entry.key !== "string")
-      continue;
+    if (entry.kind !== "asset" || typeof entry.guid !== "string" || typeof entry.key !== "string") continue;
     rowsByGuid.set(entry.guid, {
       guid: entry.guid,
       key: entry.key,
@@ -37,14 +36,14 @@ for (const line of gunzipSync(readFileSync(source)).toString("utf8").split("\n")
 
 const db = createInagleSql<Database>();
 const rows = [...rowsByGuid.values()];
-await db.transaction().execute(async (tx) => {
+await db.transaction().execute(async tx => {
   for (let offset = 0; offset < rows.length; offset += 500) {
     const batch = rows.slice(offset, offset + 500);
     await tx
       .insertInto("inagle_cross_catalog")
       .values(batch)
-      .onConflict((oc) =>
-        oc.column("guid").doUpdateSet((eb) => ({
+      .onConflict(oc =>
+        oc.column("guid").doUpdateSet(eb => ({
           key: eb.ref("excluded.key"),
           type: eb.ref("excluded.type"),
           bundle: eb.ref("excluded.bundle"),

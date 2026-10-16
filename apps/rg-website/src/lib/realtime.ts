@@ -10,20 +10,20 @@
 export type RealtimeEventType = "INSERT" | "UPDATE" | "DELETE";
 
 export interface RealtimeEvent<T = Record<string, unknown>> {
-	schema: string;
-	table: string;
-	eventType: RealtimeEventType;
-	new: T | null;
-	old: T | null;
-	/** Charge utile trop grosse pour NOTIFY : seuls les identifiants sont fournis. */
-	truncated?: boolean;
+  schema: string;
+  table: string;
+  eventType: RealtimeEventType;
+  new: T | null;
+  old: T | null;
+  /** Charge utile trop grosse pour NOTIFY : seuls les identifiants sont fournis. */
+  truncated?: boolean;
 }
 
 export interface SubscribeOptions {
-	table: string;
-	schema?: string;
-	/** Filtre au format `postgres_changes` : `colonne=eq.valeur`. */
-	filter?: string;
+  table: string;
+  schema?: string;
+  /** Filtre au format `postgres_changes` : `colonne=eq.valeur`. */
+  filter?: string;
 }
 
 /**
@@ -31,23 +31,23 @@ export interface SubscribeOptions {
  * désabonnement. La reconnexion est prise en charge par `EventSource`.
  */
 export function subscribeTable<T = Record<string, unknown>>(
-	options: SubscribeOptions,
-	onEvent: (event: RealtimeEvent<T>) => void
+  options: SubscribeOptions,
+  onEvent: (event: RealtimeEvent<T>) => void,
 ): () => void {
-	if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") return () => {};
 
-	const params = new URLSearchParams({ table: options.table });
-	if (options.schema) params.set("schema", options.schema);
-	if (options.filter) params.set("filter", options.filter);
+  const params = new URLSearchParams({ table: options.table });
+  if (options.schema) params.set("schema", options.schema);
+  if (options.filter) params.set("filter", options.filter);
 
-	const source = new EventSource(`/realtime/v1/stream?${params.toString()}`);
-	source.onmessage = (message) => {
-		try {
-			onEvent(JSON.parse(message.data) as RealtimeEvent<T>);
-		} catch {
-			// message illisible — on ignore plutôt que de casser l'abonnement
-		}
-	};
+  const source = new EventSource(`/realtime/v1/stream?${params.toString()}`);
+  source.onmessage = message => {
+    try {
+      onEvent(JSON.parse(message.data) as RealtimeEvent<T>);
+    } catch {
+      // message illisible — on ignore plutôt que de casser l'abonnement
+    }
+  };
 
-	return () => source.close();
+  return () => source.close();
 }

@@ -78,7 +78,7 @@ export function EditorHeader({
   onPublish,
   onShareOnDiscordChange,
 }: EditorHeaderProps) {
-  const currentStatus = STATUS_OPTIONS.find((s) => s.value === status);
+  const currentStatus = STATUS_OPTIONS.find(s => s.value === status);
   const isPublished = status === "published" || initialStatus === "published";
   const previewUrl = slug ? (isPublished ? `/news/${slug}` : `/news/${slug}?preview=true`) : null;
 
@@ -105,9 +105,7 @@ export function EditorHeader({
 
           <div className="hidden sm:flex items-center gap-2">
             <div className={cn("size-2 rounded-full", currentStatus?.color)} />
-            <span
-              className={cn("text-xs font-bold uppercase tracking-wider", currentStatus?.textColor)}
-            >
+            <span className={cn("text-xs font-bold uppercase tracking-wider", currentStatus?.textColor)}>
               {currentStatus?.label}
             </span>
           </div>

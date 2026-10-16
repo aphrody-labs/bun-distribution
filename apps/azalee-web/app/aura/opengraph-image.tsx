@@ -82,9 +82,7 @@ export default async function Image() {
         >
           Wiki Azalee
         </div>
-        <div style={{ color: "white", display: "flex", fontSize: 64, fontWeight: 900 }}>
-          Hyper Techniques
-        </div>
+        <div style={{ color: "white", display: "flex", fontSize: 64, fontWeight: 900 }}>Hyper Techniques</div>
         <div style={{ color: "#A09080", display: "flex", fontSize: 22 }}>
           Esprits Guerriers, Totems, Miximax et plus
         </div>
@@ -92,7 +90,7 @@ export default async function Image() {
 
       {/* Aura type cards */}
       <div style={{ display: "flex", gap: 16, marginTop: 24 }}>
-        {AURA_TYPES.map((a) => (
+        {AURA_TYPES.map(a => (
           <div
             key={a.label}
             style={{
@@ -144,23 +142,11 @@ export default async function Image() {
       </div>
 
       {/* Branding */}
-      <div
-        style={{ alignItems: "center", bottom: 20, display: "flex", gap: 10, position: "absolute" }}
-      >
+      <div style={{ alignItems: "center", bottom: 20, display: "flex", gap: 10, position: "absolute" }}>
         {/* oxlint-disable-next-line next/no-img-element -- ImageResponse (next/og) ne supporte pas next/image */}
-        <img
-          src={getOgLogoDataUri()}
-          width={28}
-          height={28}
-          style={{ borderRadius: 7 }}
-          alt="Logo Azalée"
-        />
-        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>
-          azalee.rosegriffon.fr
-        </div>
-        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>
-          Inazuma Eleven: Victory Road
-        </div>
+        <img src={getOgLogoDataUri()} width={28} height={28} style={{ borderRadius: 7 }} alt="Logo Azalée" />
+        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>azalee.rosegriffon.fr</div>
+        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>Inazuma Eleven: Victory Road</div>
       </div>
     </div>,
     { ...size },

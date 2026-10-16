@@ -57,10 +57,7 @@ async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise
     const response = await Promise.race([
       page.goto(url),
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`Navigation timeout (${timeout}ms): ${url}`)),
-          timeout,
-        );
+        timer = setTimeout(() => reject(new Error(`Navigation timeout (${timeout}ms): ${url}`)), timeout);
       }),
     ]);
     if (response.ok === false || (typeof response.status === "number" && response.status >= 400)) {
@@ -79,17 +76,10 @@ async function safeGoto(page: WebCdpPage, url: string, timeout = 30000): Promise
  * page bound. Partial results are never returned after a page error.
  * Database/Redis writes remain owned by the caller.
  */
-export async function crawlZukanOrderPages(
-  opts: CrawlZukanOrderOptions = {},
-): Promise<ZukanOrderCharacter[]> {
+export async function crawlZukanOrderPages(opts: CrawlZukanOrderOptions = {}): Promise<ZukanOrderCharacter[]> {
   const perPage = opts.perPage ?? ZUKAN_ORDER_PER_PAGE;
   const maxPages = opts.maxPages ?? ZUKAN_ORDER_MAX_PAGES;
-  if (
-    !Number.isSafeInteger(perPage) ||
-    perPage < 1 ||
-    !Number.isSafeInteger(maxPages) ||
-    maxPages < 1
-  ) {
+  if (!Number.isSafeInteger(perPage) || perPage < 1 || !Number.isSafeInteger(maxPages) || maxPages < 1) {
     throw new Error("perPage and maxPages must be positive safe integers");
   }
   const log = opts.log ?? ((m: string) => console.log(m));
@@ -111,11 +101,9 @@ export async function crawlZukanOrderPages(
         try {
           let retries = 24; // 24 * 250ms = 6s max
           while (retries > 0) {
-            const count = await page.evaluate<number>(
-              'document.querySelectorAll("ul.charaListBox > li").length',
-            );
+            const count = await page.evaluate<number>('document.querySelectorAll("ul.charaListBox > li").length');
             if (count > 2) break;
-            await new Promise((r) => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 250));
             retries--;
           }
         } catch (error) {
@@ -148,10 +136,8 @@ export async function crawlZukanOrderPages(
           // dans la même page (SSR, pas besoin d'un crawl séparé de chara_list/chara_param
           // en détail). Seuls Age Group/School Year/le surnom manquaient à l'appel.
           const nickname = $(el).find(".lBox .name .nickname").text().trim() || null;
-          const ageGroup =
-            $(el).find(".basic dl:has(dt:contains('Age Group')) dd").text().trim() || null;
-          const schoolYear =
-            $(el).find(".basic dl:has(dt:contains('School Year')) dd").text().trim() || null;
+          const ageGroup = $(el).find(".basic dl:has(dt:contains('Age Group')) dd").text().trim() || null;
+          const schoolYear = $(el).find(".basic dl:has(dt:contains('School Year')) dd").text().trim() || null;
 
           allCharacters.push({
             id: zukanHash || `chara-${globalIndex}`,
@@ -174,20 +160,16 @@ export async function crawlZukanOrderPages(
           break;
         }
       } catch (err) {
-        throw new Error(
-          `Zukan order crawl failed on page ${pageNum}; partial results were discarded`,
-          {
-            cause: err,
-          },
-        );
+        throw new Error(`Zukan order crawl failed on page ${pageNum}; partial results were discarded`, {
+          cause: err,
+        });
       }
     }
   } finally {
     await page.close();
   }
 
-  if (!complete)
-    throw new Error(`Zukan order crawl reached maxPages=${maxPages} before completion`);
+  if (!complete) throw new Error(`Zukan order crawl reached maxPages=${maxPages} before completion`);
   return allCharacters;
 }
 
@@ -195,9 +177,7 @@ export async function crawlZukanOrderPages(
  * Construit la map `zukanHash → order` à partir d'une liste de personnages
  * ordonnés. Pur (aucune dépendance) — réutilisable par les crawlers statiques.
  */
-export function buildOrderMap(
-  characters: { zukanHash: string | null; order: number }[],
-): Record<string, number> {
+export function buildOrderMap(characters: { zukanHash: string | null; order: number }[]): Record<string, number> {
   const orderMap: Record<string, number> = {};
   for (const char of characters) {
     if (char.zukanHash) orderMap[char.zukanHash] = char.order;

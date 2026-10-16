@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  isPrecompressionTarget,
-  PRECOMPRESSION_EXTENSIONS,
-} from "../../tools/scripts/precompression-targets";
+import { isPrecompressionTarget, PRECOMPRESSION_EXTENSIONS } from "../../tools/scripts/precompression-targets";
 
 describe("precompression targets", () => {
   test("includes the native WebAssembly and VFS runtime payloads", () => {

@@ -144,8 +144,7 @@ export function useRankedMatch(idSalle?: string | null): EtatMatch {
   useEffect(() => {
     let annule = false;
 
-    const cible =
-      idSalle ?? (typeof window === "undefined" ? null : window.localStorage.getItem(CLE_SALLE));
+    const cible = idSalle ?? (typeof window === "undefined" ? null : window.localStorage.getItem(CLE_SALLE));
     if (!cible) {
       setConnexion("inactive");
       return;
@@ -185,7 +184,7 @@ export function useRankedMatch(idSalle?: string | null): EtatMatch {
 
         // UN SEUL point d'entrée pour tout l'état du match : code, statut,
         // joueurs, scores, chat. Le serveur pousse, le client n'infère rien.
-        rejointe.onStateChange((state) => {
+        rejointe.onStateChange(state => {
           const brut = state as Record<string, unknown>;
           setCodeSalle(String(brut["roomCode"] ?? "") || null);
           const idLobby = Number(brut["lobbyId"] ?? 0);
@@ -197,7 +196,7 @@ export function useRankedMatch(idSalle?: string | null): EtatMatch {
           setMessages(lireMessages(state));
         });
 
-        rejointe.onMessage("matchEnded", (payload) => {
+        rejointe.onMessage("matchEnded", payload => {
           setResume(payload);
           // Match terminé : plus rien à rejoindre, et un rejoin ne rendrait
           // pas le résumé.
@@ -215,9 +214,7 @@ export function useRankedMatch(idSalle?: string | null): EtatMatch {
       } catch (cause) {
         if (annule) return;
         setConnexion("erreur");
-        setErreur(
-          cause instanceof Error ? `Match injoignable : ${cause.message}` : "Match injoignable.",
-        );
+        setErreur(cause instanceof Error ? `Match injoignable : ${cause.message}` : "Match injoignable.");
       }
     })();
 

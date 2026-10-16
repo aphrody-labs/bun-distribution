@@ -14,25 +14,25 @@ const RAISON = "Paiement hebdomadaire staff actif";
 const ROLES_STAFF = [1, 2, 3] as const; // Moderator, Administrator, SuperAdministrator
 
 export interface ResultatPaiementHebdomadaireAchillea {
-	payes: number;
-	success: true;
-	/** Une autre instance possède déjà le verrou transactionnel. */
-	ignore?: boolean;
+  payes: number;
+  success: true;
+  /** Une autre instance possède déjà le verrou transactionnel. */
+  ignore?: boolean;
 }
 
 export async function runAchilleaWeeklyPayout(): Promise<ResultatPaiementHebdomadaireAchillea> {
-	return sql.begin(async (tx) => {
-		// Les tables Achilléa ont conservé leurs RLS. SET LOCAL est limité à cette
-		// transaction et ne peut donc jamais contaminer une connexion du pool.
-		await tx`SET LOCAL ROLE service_role`;
+  return sql.begin(async tx => {
+    // Les tables Achilléa ont conservé leurs RLS. SET LOCAL est limité à cette
+    // transaction et ne peut donc jamais contaminer une connexion du pool.
+    await tx`SET LOCAL ROLE service_role`;
 
-		const [verrou] = await tx<Array<{ acquis: boolean }>>`
+    const [verrou] = await tx<Array<{ acquis: boolean }>>`
 			SELECT pg_try_advisory_xact_lock(hashtext('rg-cron:achillea:weekly-payout')) AS acquis`;
-		if (!verrou?.acquis) {
-			return { ignore: true, payes: 0, success: true };
-		}
+    if (!verrou?.acquis) {
+      return { ignore: true, payes: 0, success: true };
+    }
 
-		const [resultat] = await tx<Array<{ payes: number }>>`
+    const [resultat] = await tx<Array<{ payes: number }>>`
 			WITH semaine AS (
 				SELECT to_char((now() AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD') AS cle
 			),
@@ -66,7 +66,7 @@ export async function runAchilleaWeeklyPayout(): Promise<ResultatPaiementHebdoma
 			)
 			SELECT count(*)::int AS payes FROM versements`;
 
-		console.log(`[achillea] paiement hebdomadaire : ${resultat?.payes ?? 0} membre(s) crédité(s)`);
-		return { payes: resultat?.payes ?? 0, success: true };
-	});
+    console.log(`[achillea] paiement hebdomadaire : ${resultat?.payes ?? 0} membre(s) crédité(s)`);
+    return { payes: resultat?.payes ?? 0, success: true };
+  });
 }

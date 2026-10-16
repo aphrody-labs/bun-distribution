@@ -111,8 +111,7 @@ export function parseVideoWazaContent(content: any): VideoWazaDatabase {
       fedeInTime: m.fedeInTime,
       fedeOutTime: m.fedeOutTime,
       staffrollDataName: m.staffrollDataName,
-      caption:
-        m.captionId && m.captionId !== "0x00000000" ? (captionById.get(m.captionId) ?? null) : null,
+      caption: m.captionId && m.captionId !== "0x00000000" ? (captionById.get(m.captionId) ?? null) : null,
     };
     videos.push(video);
     byId.set(video.id, video);
@@ -125,9 +124,7 @@ export function parseVideoWazaContent(content: any): VideoWazaDatabase {
 // Loaders
 // ============================================================================
 
-export async function loadVideoWazaConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<VideoWazaDatabase | null> {
+export async function loadVideoWazaConfigAsync(dataPath: string = DATA_ROOT): Promise<VideoWazaDatabase | null> {
   const filename = findConfigFile("event", "event_movie_config");
   if (!filename) return null;
 
@@ -136,9 +133,7 @@ export async function loadVideoWazaConfigAsync(
   return content ? parseVideoWazaContent(content) : null;
 }
 
-export async function buildVideoWazaDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<VideoWazaDatabase> {
+export async function buildVideoWazaDatabase(dataPath: string = DATA_ROOT): Promise<VideoWazaDatabase> {
   const db = await loadVideoWazaConfigAsync(dataPath);
   return db ?? { videos: [], subtitles: [], captions: [], byId: new Map() };
 }

@@ -2,14 +2,7 @@
 
 import type { Command } from "commander";
 
-import {
-  colors,
-  errorMessage,
-  getOrReadInput,
-  reportError,
-  restoreLogs,
-  suppressLogs,
-} from "../context";
+import { colors, errorMessage, getOrReadInput, reportError, restoreLogs, suppressLogs } from "../context";
 import { createInagleService } from "../inagle";
 import { renderSkillProfile } from "../render";
 import { getActiveReadline, setPendingSelection } from "../repl-state";
@@ -37,9 +30,7 @@ export function registerSkillCommand(program: Command): void {
 
         // Résolution par identifiant d'abord (technique, passive, aura).
         let skill: any =
-          svc.skills.get(inputQuery) ||
-          svc.skills.passiveGet(inputQuery) ||
-          svc.skills.auraGet(inputQuery);
+          svc.skills.get(inputQuery) || svc.skills.passiveGet(inputQuery) || svc.skills.auraGet(inputQuery);
 
         // À défaut, recherche par nom sur les techniques puis les auras.
         if (!skill) {
@@ -60,9 +51,7 @@ export function registerSkillCommand(program: Command): void {
             if (options.json) {
               console.log(JSON.stringify([], null, 2));
             } else {
-              console.log(
-                `${colors.yellow}Aucune technique trouvée pour: "${inputQuery}"${colors.reset}`,
-              );
+              console.log(`${colors.yellow}Aucune technique trouvée pour: "${inputQuery}"${colors.reset}`);
             }
             return;
           }
@@ -109,11 +98,7 @@ export function registerSkillCommand(program: Command): void {
           console.log(renderSkillProfile(skill, svc));
         }
       } catch (e) {
-        reportError(
-          options.json,
-          errorMessage(e),
-          `${colors.red}Erreur skill : ${errorMessage(e)}${colors.reset}`,
-        );
+        reportError(options.json, errorMessage(e), `${colors.red}Erreur skill : ${errorMessage(e)}${colors.reset}`);
       }
     });
 }

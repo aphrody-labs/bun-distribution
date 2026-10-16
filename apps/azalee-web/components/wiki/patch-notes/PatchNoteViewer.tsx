@@ -55,11 +55,9 @@ export function PatchNoteViewer({ data }: PatchNoteViewerProps) {
         <div className="relative p-5 md:p-8 lg:p-12 flex flex-col gap-4 md:gap-6">
           <div className="flex flex-wrap items-center gap-3">
             {version && (
-              <span className="text-sm font-bold bg-primary text-on-primary px-3 py-1 rounded-full">
-                v{version}
-              </span>
+              <span className="text-sm font-bold bg-primary text-on-primary px-3 py-1 rounded-full">v{version}</span>
             )}
-            {data.platform.map((p) => (
+            {data.platform.map(p => (
               <PlatformBadge
                 key={p}
                 platform={p}

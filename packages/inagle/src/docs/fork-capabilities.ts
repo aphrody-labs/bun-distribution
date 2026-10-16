@@ -27,9 +27,7 @@ function cell(value: unknown): string {
 
 export function generateForkCapabilitiesMarkdown(document: ForkDocumentation): string {
   const { catalog } = document;
-  const moduleEvidence = new Map(
-    (document.modules ?? []).map((entry) => [entry.name, entry.status]),
-  );
+  const moduleEvidence = new Map((document.modules ?? []).map(entry => [entry.name, entry.status]));
   const sections = [
     "# Aphrody Bun capabilities in IECODE",
     `Producer source revision: ${catalog.source.revision}. Upstream baseline: ${catalog.source.mergeBase}.`,
@@ -39,32 +37,27 @@ export function generateForkCapabilitiesMarkdown(document: ForkDocumentation): s
     "## Modules\n\n| Module | Source | SHA256 | Evidence |\n| --- | --- | --- | --- |\n" +
       catalog.modules
         .map(
-          (entry) =>
+          entry =>
             `| ${cell(entry.name)} | ${cell(entry.source)} | ${entry.sha256} | ${moduleEvidence.get(entry.name) ?? "source-only"} |`,
         )
         .join("\n"),
     "## Producer packages\n\n| Package | Version | Manifest | SHA256 |\n| --- | --- | --- | --- |\n" +
       catalog.packages
-        .map(
-          (entry) =>
-            `| ${cell(entry.name)} | ${cell(entry.version)} | ${cell(entry.manifest)} | ${entry.sha256} |`,
-        )
+        .map(entry => `| ${cell(entry.name)} | ${cell(entry.version)} | ${cell(entry.manifest)} | ${entry.sha256} |`)
         .join("\n"),
     "## Native crate producers\n\n| Crate | Manifest | Crate types | SHA256 |\n| --- | --- | --- | --- |\n" +
       catalog.nativeCrates
         .map(
-          (entry) =>
+          entry =>
             `| ${cell(entry.name)} | ${cell(entry.manifest)} | ${cell(entry.crateTypes.join(", "))} | ${entry.sha256} |`,
         )
         .join("\n"),
     "## Fork source delta\n\n| Status | Source path |\n| --- | --- |\n" +
-      catalog.sourceDelta
-        .map((entry) => `| ${cell(entry.status)} | ${cell(entry.path)} |`)
-        .join("\n"),
+      catalog.sourceDelta.map(entry => `| ${cell(entry.status)} | ${cell(entry.path)} |`).join("\n"),
     "## Native artifact witnesses\n\n| Artifact | SHA256 | ABI | Alias |\n| --- | --- | --- | --- |\n" +
       (document.artifacts ?? [])
         .map(
-          (entry) =>
+          entry =>
             `| ${cell(entry.fileName)} | ${entry.sha256} | ${entry.abiVersion} | ${entry.aliasOfCanonicalLibrary} |`,
         )
         .join("\n"),
@@ -82,14 +75,10 @@ export function generateForkCapabilitiesMarkdown(document: ForkDocumentation): s
   return sections.join("\n\n") + "\n";
 }
 
-export function generateForkCapabilityArtifacts(
-  document: ForkDocumentation,
-): Record<string, string> {
+export function generateForkCapabilityArtifacts(document: ForkDocumentation): Record<string, string> {
   return {
     "FORK-CAPABILITIES.md": generateForkCapabilitiesMarkdown(document),
     "FORK-CAPABILITIES.json": JSON.stringify(document, null, 2) + "\n",
-    ...(document.graph
-      ? { "FORK-GRAPH.json": JSON.stringify(document.graph, null, 2) + "\n" }
-      : {}),
+    ...(document.graph ? { "FORK-GRAPH.json": JSON.stringify(document.graph, null, 2) + "\n" } : {}),
   };
 }

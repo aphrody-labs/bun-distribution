@@ -30,7 +30,7 @@ function findPassiveConfigFile(dir: string): string | null {
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir);
   const configFile = files
-    .filter((f) => f.startsWith("passive_skill_config_") && f.endsWith(".cfg.bin.json"))
+    .filter(f => f.startsWith("passive_skill_config_") && f.endsWith(".cfg.bin.json"))
     .sort()
     .pop();
   return configFile ? join(dir, configFile) : null;
@@ -59,10 +59,7 @@ export async function buildPassiveDatabaseAsync(dataPath: string) {
   ]);
 
   // Load Team Passives
-  const teamPassivePath = join(
-    dataPath,
-    "common/gamedata/soccer/soccer_team_passive_config_0.00.00.cfg.bin.json",
-  );
+  const teamPassivePath = join(dataPath, "common/gamedata/soccer/soccer_team_passive_config_0.00.00.cfg.bin.json");
   const teamContent = await loadJsonAsync<any>(teamPassivePath);
 
   if (teamContent?.lists) {
@@ -120,11 +117,7 @@ export async function buildPassiveDatabaseAsync(dataPath: string) {
           const effectId = toHex(Number.parseInt(vars[0].value, 10));
           const params = vars
             .slice(1)
-            .map((v) =>
-              v.type === "Float"
-                ? parseFloat(v.value.replace(",", "."))
-                : Number.parseInt(v.value, 10),
-            );
+            .map(v => (v.type === "Float" ? parseFloat(v.value.replace(",", ".")) : Number.parseInt(v.value, 10)));
           effectsMap.set(effectId, { effectId, params });
         }
       }

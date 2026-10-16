@@ -95,15 +95,10 @@ export function CharacterSheetWithLevel({
 }: CharacterSheetWithLevelProps) {
   const { getLocalized, language } = useLanguage();
 
-  const displayName = names
-    ? getLocalized({ name_EN: names.en, name_FR: names.fr, name_JA: names.ja }, "name")
-    : name;
+  const displayName = names ? getLocalized({ name_EN: names.en, name_FR: names.fr, name_JA: names.ja }, "name") : name;
 
   const rawDesc = descriptions
-    ? getLocalized(
-        { desc_EN: descriptions.en, desc_FR: descriptions.fr, desc_JA: descriptions.ja },
-        "desc",
-      )
+    ? getLocalized({ desc_EN: descriptions.en, desc_FR: descriptions.fr, desc_JA: descriptions.ja }, "desc")
     : description;
 
   const displayDesc = formatDescription(rawDesc, language);

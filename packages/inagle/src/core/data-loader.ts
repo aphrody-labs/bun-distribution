@@ -149,10 +149,7 @@ export async function loadConfigAsync(category: string, filename: string): Promi
 }
 
 /** Async discovery counterpart: durable PostgreSQL, then explicit offline caches. */
-export async function findConfigFileAsync(
-  category: string,
-  prefix: string,
-): Promise<string | null> {
+export async function findConfigFileAsync(category: string, prefix: string): Promise<string | null> {
   if (cfgbinDataSource() === "vfs") return findVfsConfig(category, prefix);
   const fromPostgres = await cfgbinPostgresFindLatest(category, prefix);
   if (fromPostgres) return fromPostgres;
@@ -163,11 +160,7 @@ export async function findConfigFileAsync(
   if (!allowLooseJson()) return null;
   const dir = join(PATHS.gamedata, category);
   try {
-    return (
-      [...new Bun.Glob(`${prefix}*.cfg.bin.json`).scanSync({ cwd: dir, onlyFiles: true })]
-        .sort()
-        .pop() ?? null
-    );
+    return [...new Bun.Glob(`${prefix}*.cfg.bin.json`).scanSync({ cwd: dir, onlyFiles: true })].sort().pop() ?? null;
   } catch {
     return null;
   }
@@ -202,8 +195,7 @@ export function loadConfig(category: string, filename: string): ConfigFile {
  * source; loose JSON remains an explicit compatibility escape hatch.
  */
 export function loadConfigData<T = ConfigDocument>(category: string, filename: string): T | null {
-  if (cfgbinDataSource() === "vfs")
-    return readVfsConfig(`data/common/gamedata/${category}/${filename}`) as T | null;
+  if (cfgbinDataSource() === "vfs") return readVfsConfig(`data/common/gamedata/${category}/${filename}`) as T | null;
   if (cfgbinDbAvailable()) {
     try {
       return cfgbinDbLoad(category, filename) as T;
@@ -397,7 +389,7 @@ export function sanitizeText(text: string): string {
       .replace(/\n{3,}/g, "\n\n")
       // Trim each line
       .split("\n")
-      .map((line) => line.trim())
+      .map(line => line.trim())
       .join("\n")
       // Final trim
       .trim()
@@ -410,7 +402,7 @@ export function sanitizeText(text: string): string {
 export function getAvailableLocales(): Locale[] {
   try {
     const entries = [...new Bun.Glob("*").scanSync({ cwd: PATHS.textRoot, onlyFiles: false })];
-    return entries.filter((d) => LOCALES.includes(d as Locale)) as Locale[];
+    return entries.filter(d => LOCALES.includes(d as Locale)) as Locale[];
   } catch {
     return [];
   }

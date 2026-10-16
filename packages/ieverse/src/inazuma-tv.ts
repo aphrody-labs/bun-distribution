@@ -29,19 +29,19 @@ export function slugFromUrl(url: string): string {
 }
 
 export function parseOfficialCategories(html: string): OfficialCategory[] {
-  return parseItemList(html, (name) => /categor/i.test(name))
-    .map((item) => ({ ...item, slug: slugFromUrl(item.url) }))
-    .filter((item) => item.slug.length > 0);
+  return parseItemList(html, name => /categor/i.test(name))
+    .map(item => ({ ...item, slug: slugFromUrl(item.url) }))
+    .filter(item => item.slug.length > 0);
 }
 
 export function parseOfficialEpisodes(html: string): OfficialEpisode[] {
-  return parseItemList(html, (name) => /episode/i.test(name))
-    .map((item) => ({
+  return parseItemList(html, name => /episode/i.test(name))
+    .map(item => ({
       number: Number.parseInt(/\/ep-(\d+)/i.exec(item.url)?.[1] ?? String(item.position), 10),
       title: item.name.replace(/^\s*(?:episode|épisode)\s*\d+\s*[-–—:]\s*/i, "").trim(),
       url: item.url,
     }))
-    .filter((episode) => Number.isFinite(episode.number));
+    .filter(episode => Number.isFinite(episode.number));
 }
 
 export function parseYoutubeAtom(xml: string): AtomVideo[] {
@@ -99,11 +99,7 @@ function parseItemList(
   accepts: (name: string) => boolean,
 ): { position: number; name: string; url: string }[] {
   for (const object of jsonLdObjects(html)) {
-    if (
-      object["@type"] !== "ItemList" ||
-      !accepts(typeof object.name === "string" ? object.name : "")
-    )
-      continue;
+    if (object["@type"] !== "ItemList" || !accepts(typeof object.name === "string" ? object.name : "")) continue;
     if (!Array.isArray(object.itemListElement)) continue;
     return object.itemListElement
       .map((raw, index) => {
@@ -114,16 +110,14 @@ function parseItemList(
           url: typeof item.url === "string" ? item.url.trim() : "",
         };
       })
-      .filter((item) => item.name.length > 0 && item.url.length > 0);
+      .filter(item => item.name.length > 0 && item.url.length > 0);
   }
   return [];
 }
 
 function jsonLdObjects(html: string): Record<string, unknown>[] {
   const result: Record<string, unknown>[] = [];
-  for (const match of html.matchAll(
-    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )) {
+  for (const match of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
       const value: unknown = JSON.parse(match[1]!);
       for (const root of Array.isArray(value) ? value : [value]) {
@@ -132,9 +126,7 @@ function jsonLdObjects(html: string): Record<string, unknown>[] {
         const graph = object["@graph"];
         if (Array.isArray(graph))
           result.push(
-            ...graph.filter((item): item is Record<string, unknown> =>
-              Boolean(item && typeof item === "object"),
-            ),
+            ...graph.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object")),
           );
         else result.push(object);
       }

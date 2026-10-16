@@ -12,15 +12,15 @@ export type BracketsStageType = "round_robin" | "single_elimination" | "double_e
 
 /** `brackets-model#SeedOrdering`. */
 export type SeedOrdering =
-	| "natural"
-	| "reverse"
-	| "half_shift"
-	| "reverse_half_shift"
-	| "pair_flip"
-	| "inner_outer"
-	| "groups.effort_balanced"
-	| "groups.seed_optimized"
-	| "groups.bracket_optimized";
+  | "natural"
+  | "reverse"
+  | "half_shift"
+  | "reverse_half_shift"
+  | "pair_flip"
+  | "inner_outer"
+  | "groups.effort_balanced"
+  | "groups.seed_optimized"
+  | "groups.bracket_optimized";
 
 /** `brackets-model#GrandFinalType`. */
 export type GrandFinalType = "none" | "simple" | "double";
@@ -33,10 +33,10 @@ export type BracketId = number | string;
 
 /** Statut d'un match de bracket (`brackets-model#Status`), en valeurs numériques. */
 export enum BracketMatchStatus {
-	Locked = 0,
-	Waiting = 1,
-	Ready = 2,
-	Running = 3,
-	Completed = 4,
-	Archived = 5,
+  Locked = 0,
+  Waiting = 1,
+  Ready = 2,
+  Running = 3,
+  Completed = 4,
+  Archived = 5,
 }

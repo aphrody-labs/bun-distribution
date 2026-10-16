@@ -34,13 +34,13 @@ import { Icon } from "@/components/ui/Icon";
  * faux compte rond. Le nombre de modes vient de `data/modes.json`.
  */
 const COLLECTIONS = [
-	{ path: "/gallery", label: "Illustrations", icon: "image", hint: "sélection in-game" },
-	{ path: "/textures", label: "Textures", icon: "texture", hint: "54 203 fichiers" },
-	{ path: "/sons", label: "Sons & voix", icon: "graphic_eq", hint: "5 512 banques" },
-	{ path: "/videos", label: "Vidéos", icon: "movie", hint: "98 cinématiques" },
-	{ path: "/modeles", label: "Modèles 3D", icon: "deployed_code", hint: "6 236 modèles" },
-	{ path: "/mode", label: "Modes de jeu", icon: "stadia_controller", hint: "11 modes" },
-	{ path: "/avatar", label: "Éditeur d'avatar", icon: "face", hint: "502 parts" },
+  { path: "/gallery", label: "Illustrations", icon: "image", hint: "sélection in-game" },
+  { path: "/textures", label: "Textures", icon: "texture", hint: "54 203 fichiers" },
+  { path: "/sons", label: "Sons & voix", icon: "graphic_eq", hint: "5 512 banques" },
+  { path: "/videos", label: "Vidéos", icon: "movie", hint: "98 cinématiques" },
+  { path: "/modeles", label: "Modèles 3D", icon: "deployed_code", hint: "6 236 modèles" },
+  { path: "/mode", label: "Modes de jeu", icon: "stadia_controller", hint: "11 modes" },
+  { path: "/avatar", label: "Éditeur d'avatar", icon: "face", hint: "502 parts" },
 ] as const;
 
 /** Chemin d'une des collections média. */
@@ -53,43 +53,41 @@ export type MediaPath = (typeof COLLECTIONS)[number]["path"];
  *   non cliquable : on ne propose pas d'aller là où on est déjà.
  */
 export function MediaNav({ active }: { active: MediaPath }) {
-	return (
-		<nav aria-label="Collections média" className="flex flex-wrap gap-2">
-			{COLLECTIONS.map((c) => {
-				const courante = c.path === active;
-				const contenu = (
-					<>
-						<Icon name={c.icon} size={18} className="shrink-0" />
-						<span className="font-medium">{c.label}</span>
-						<span className={courante ? "text-xs opacity-80" : "text-xs text-on-surface-variant"}>
-							{c.hint}
-						</span>
-					</>
-				);
-				return courante ? (
-					<span
-						key={c.path}
-						aria-current="page"
-						className="flex items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm text-on-primary"
-					>
-						{contenu}
-					</span>
-				) : (
-					<Link
-						key={c.path}
-						href={c.path}
-						className="
+  return (
+    <nav aria-label="Collections média" className="flex flex-wrap gap-2">
+      {COLLECTIONS.map(c => {
+        const courante = c.path === active;
+        const contenu = (
+          <>
+            <Icon name={c.icon} size={18} className="shrink-0" />
+            <span className="font-medium">{c.label}</span>
+            <span className={courante ? "text-xs opacity-80" : "text-xs text-on-surface-variant"}>{c.hint}</span>
+          </>
+        );
+        return courante ? (
+          <span
+            key={c.path}
+            aria-current="page"
+            className="flex items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm text-on-primary"
+          >
+            {contenu}
+          </span>
+        ) : (
+          <Link
+            key={c.path}
+            href={c.path}
+            className="
         flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container-low px-3.5 py-2 text-sm
         text-on-surface transition
         hover:border-primary/50 hover:bg-surface-container
       "
-					>
-						{contenu}
-					</Link>
-				);
-			})}
-		</nav>
-	);
+          >
+            {contenu}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
 /**
@@ -99,26 +97,26 @@ export function MediaNav({ active }: { active: MediaPath }) {
  * et se place SOUS la description, avant la navigation.
  */
 export function MediaHeader({
-	title,
-	description,
-	active,
-	children,
+  title,
+  description,
+  active,
+  children,
 }: {
-	title: string;
-	description: React.ReactNode;
-	active: MediaPath;
-	children?: React.ReactNode;
+  title: string;
+  description: React.ReactNode;
+  active: MediaPath;
+  children?: React.ReactNode;
 }) {
-	return (
-		<div className="space-y-4">
-			<header className="space-y-1">
-				<h1 className="text-fluid-headline-md font-extrabold text-on-surface">{title}</h1>
-				<p className="max-w-2xl text-sm text-on-surface-variant">{description}</p>
-				{children}
-			</header>
-			<MediaNav active={active} />
-		</div>
-	);
+  return (
+    <div className="space-y-4">
+      <header className="space-y-1">
+        <h1 className="text-fluid-headline-md font-extrabold text-on-surface">{title}</h1>
+        <p className="max-w-2xl text-sm text-on-surface-variant">{description}</p>
+        {children}
+      </header>
+      <MediaNav active={active} />
+    </div>
+  );
 }
 
 /**
@@ -129,11 +127,11 @@ export function MediaHeader({
  * qu'une 500.
  */
 export function MediaEmpty({ children }: { children: React.ReactNode }) {
-	return (
-		<div className="rounded-[32px] border border-dashed border-outline-variant bg-surface-container-low py-20 text-center">
-			<p className="italic text-on-surface-variant">{children}</p>
-		</div>
-	);
+  return (
+    <div className="rounded-[32px] border border-dashed border-outline-variant bg-surface-container-low py-20 text-center">
+      <p className="italic text-on-surface-variant">{children}</p>
+    </div>
+  );
 }
 
 /**
@@ -144,19 +142,19 @@ export function MediaEmpty({ children }: { children: React.ReactNode }) {
  * conteneur, fiche de modèle — en porte un.
  */
 export function MediaBack({ href, label }: { href: string; label: string }) {
-	return (
-		<Link
-			href={href}
-			className="
+  return (
+    <Link
+      href={href}
+      className="
      inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-3.5 py-2
      text-sm text-on-surface transition
      hover:border-primary/50 hover:bg-surface-container
    "
-		>
-			<Icon name="arrow_back" size={16} className="shrink-0" />
-			{label}
-		</Link>
-	);
+    >
+      <Icon name="arrow_back" size={16} className="shrink-0" />
+      {label}
+    </Link>
+  );
 }
 
 /**
@@ -167,39 +165,33 @@ export function MediaBack({ href, label }: { href: string; label: string }) {
  * rôle du dossier), et le code seulement en repli — relégué en petit sous le titre, jamais
  * à sa place.
  */
-export function MediaTitle({
-	title,
-	code,
-	context,
-}: {
-	title: string;
-	code?: string;
-	context?: string;
-}) {
-	return (
-		<span className="min-w-0">
-			<span className="block truncate text-sm font-medium text-on-surface" title={title}>
-				{title}
-			</span>
-			{(context || code) && (
-				<span className="block truncate text-[11px] text-on-surface-variant">
-					{context}
-					{context && code && " · "}
-					{code && <span className="font-mono">{code}</span>}
-				</span>
-			)}
-		</span>
-	);
+export function MediaTitle({ title, code, context }: { title: string; code?: string; context?: string }) {
+  return (
+    <span className="min-w-0">
+      <span className="block truncate text-sm font-medium text-on-surface" title={title}>
+        {title}
+      </span>
+      {(context || code) && (
+        <span className="block truncate text-[11px] text-on-surface-variant">
+          {context}
+          {context && code && " · "}
+          {code && <span className="font-mono">{code}</span>}
+        </span>
+      )}
+    </span>
+  );
 }
 
 /** Ligne de compte au-dessus d'une grille : ce qui est montré, sur quel total. */
 export function MediaCount({ left, right }: { left: React.ReactNode; right?: React.ReactNode }) {
-	return (
-		<div className="
+  return (
+    <div
+      className="
     flex items-center justify-between gap-3 px-1 text-xs font-medium uppercase tracking-wider text-on-surface-variant
-  ">
-			<span>{left}</span>
-			{right && <span>{right}</span>}
-		</div>
-	);
+  "
+    >
+      <span>{left}</span>
+      {right && <span>{right}</span>}
+    </div>
+  );
 }

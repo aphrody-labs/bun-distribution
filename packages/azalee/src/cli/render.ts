@@ -55,12 +55,7 @@ export function renderOneColumn(text: string): string {
 }
 
 /** Ligne de cadre à deux colonnes (39 + 34 cellules par défaut). */
-export function renderTwoColumns(
-  left: string,
-  right: string,
-  colWidthLeft = 39,
-  colWidthRight = 34,
-): string {
+export function renderTwoColumns(left: string, right: string, colWidthLeft = 39, colWidthRight = 34): string {
   const visibleLeft = getVisibleLength(left);
   const visibleRight = getVisibleLength(right);
 
@@ -111,9 +106,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
     ),
   );
   lines.push(`├──────────────────────────────────────────────────────────────────────────────┤`);
-  lines.push(
-    renderOneColumn(`${colors.bold}Affiliation :${colors.reset} ${chara.teamName || "Aucune"}`),
-  );
+  lines.push(renderOneColumn(`${colors.bold}Affiliation :${colors.reset} ${chara.teamName || "Aucune"}`));
   lines.push(
     renderTwoColumns(
       `${colors.bold}Contrôlable :${colors.reset} ${controllableStr}`,
@@ -157,9 +150,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
       const rar = v.rarity || "N/A";
 
       lines.push(
-        renderOneColumn(
-          `  [${idx + 1}] Element: ${el.padEnd(10)} | Position: ${pos.padEnd(4)} | Rareté: ${rar}`,
-        ),
+        renderOneColumn(`  [${idx + 1}] Element: ${el.padEnd(10)} | Position: ${pos.padEnd(4)} | Rareté: ${rar}`),
       );
 
       if (v.stats) {
@@ -168,29 +159,11 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
         const s99 = interpolateVariantStats(v, 99);
 
         const t1 =
-          s1.kick +
-          s1.control +
-          s1.physical +
-          s1.pressure +
-          s1.technique +
-          s1.agility +
-          (s1.intelligence || 0);
+          s1.kick + s1.control + s1.physical + s1.pressure + s1.technique + s1.agility + (s1.intelligence || 0);
         const t50 =
-          s50.kick +
-          s50.control +
-          s50.physical +
-          s50.pressure +
-          s50.technique +
-          s50.agility +
-          (s50.intelligence || 0);
+          s50.kick + s50.control + s50.physical + s50.pressure + s50.technique + s50.agility + (s50.intelligence || 0);
         const t99 =
-          s99.kick +
-          s99.control +
-          s99.physical +
-          s99.pressure +
-          s99.technique +
-          s99.agility +
-          (s99.intelligence || 0);
+          s99.kick + s99.control + s99.physical + s99.pressure + s99.technique + s99.agility + (s99.intelligence || 0);
 
         const renderRow = (label: string, v1: number, v2: number, v3: number) => {
           const col1 = ` ${label.padEnd(12)} `;
@@ -208,48 +181,25 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
           return `│       │${col1}│${col2}│${col3}│${col4}│                         │`;
         };
 
-        lines.push(
-          `│       ${colors.bold}Courbe de progression des statistiques :${colors.reset}${" ".repeat(30)} │`,
-        );
-        lines.push(
-          `│       ┌──────────────┬─────────┬─────────┬─────────┐                         │`,
-        );
-        lines.push(
-          `│       │ Stat         │ Niv. 1  │ Niv. 50 │ Niv. 99 │                         │`,
-        );
-        lines.push(
-          `│       ├──────────────┼─────────┼─────────┼─────────┤                         │`,
-        );
+        lines.push(`│       ${colors.bold}Courbe de progression des statistiques :${colors.reset}${" ".repeat(30)} │`);
+        lines.push(`│       ┌──────────────┬─────────┬─────────┬─────────┐                         │`);
+        lines.push(`│       │ Stat         │ Niv. 1  │ Niv. 50 │ Niv. 99 │                         │`);
+        lines.push(`│       ├──────────────┼─────────┼─────────┼─────────┤                         │`);
         lines.push(renderRow("Frappe", s1.kick, s50.kick, s99.kick));
         lines.push(renderRow("Contrôle", s1.control, s50.control, s99.control));
         lines.push(renderRow("Physique", s1.physical, s50.physical, s99.physical));
         lines.push(renderRow("Pression", s1.pressure, s50.pressure, s99.pressure));
         lines.push(renderRow("Technique", s1.technique, s50.technique, s99.technique));
         lines.push(renderRow("Agilité", s1.agility, s50.agility, s99.agility));
-        lines.push(
-          renderRow(
-            "Intelligence",
-            s1.intelligence || 0,
-            s50.intelligence || 0,
-            s99.intelligence || 0,
-          ),
-        );
-        lines.push(
-          `│       ├──────────────┼─────────┼─────────┼─────────┤                         │`,
-        );
+        lines.push(renderRow("Intelligence", s1.intelligence || 0, s50.intelligence || 0, s99.intelligence || 0));
+        lines.push(`│       ├──────────────┼─────────┼─────────┼─────────┤                         │`);
         lines.push(renderTotalRow());
-        lines.push(
-          `│       └──────────────┴─────────┴─────────┴─────────┘                         │`,
-        );
+        lines.push(`│       └──────────────┴─────────┴─────────┴─────────┘                         │`);
       }
 
       const auraHashes = getAuraHashSet(svc);
-      const trueSkills = (v.skills || []).filter(
-        (s: any) => s.skillId !== "0x00000002" && !auraHashes.has(s.skillId),
-      );
-      const rawAuraIds = (v.skills || [])
-        .filter((s: any) => auraHashes.has(s.skillId))
-        .map((s: any) => s.skillId);
+      const trueSkills = (v.skills || []).filter((s: any) => s.skillId !== "0x00000002" && !auraHashes.has(s.skillId));
+      const rawAuraIds = (v.skills || []).filter((s: any) => auraHashes.has(s.skillId)).map((s: any) => s.skillId);
 
       const renderColoredLine = (prefix: string, content: string, colorCode: string) => {
         const visibleLength = prefix.length + content.length;
@@ -258,9 +208,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
       };
 
       if (trueSkills.length > 0) {
-        lines.push(
-          renderColoredLine("Techniques : ", `(${trueSkills.length})`, colors.bold + colors.blue),
-        );
+        lines.push(renderColoredLine("Techniques : ", `(${trueSkills.length})`, colors.bold + colors.blue));
         for (const sk of trueSkills) {
           const name = getSkillName(svc, sk.skillId);
           const label = ` - ${name} (Niv. ${sk.learnLevel})`;
@@ -272,7 +220,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
       const sqliteAuras = getAurasForChara(chara.charaId, v.charaParamId);
       const allAuras: ResolvedAura[] = [...sqliteAuras];
       for (const auraId of rawAuraIds) {
-        if (!allAuras.some((a) => a.id.toLowerCase().includes(auraId.toLowerCase()))) {
+        if (!allAuras.some(a => a.id.toLowerCase().includes(auraId.toLowerCase()))) {
           const auraDetails = getAuraMetadataFromDb(auraId);
           if (auraDetails) {
             allAuras.push(auraDetails);
@@ -289,11 +237,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
 
       if (allAuras.length > 0) {
         lines.push(
-          renderColoredLine(
-            "Auras / Miximax / Keshin : ",
-            `(${allAuras.length})`,
-            colors.bold + colors.magenta,
-          ),
+          renderColoredLine("Auras / Miximax / Keshin : ", `(${allAuras.length})`, colors.bold + colors.magenta),
         );
         for (const aura of allAuras) {
           const typeLabel =
@@ -310,9 +254,7 @@ export function renderCharaProfile(chara: any, svc: InagleService): string {
       }
 
       if (idx < chara.variants.length - 1) {
-        lines.push(
-          `│                                                                              │`,
-        );
+        lines.push(`│                                                                              │`);
       }
     }
   }
@@ -391,9 +333,7 @@ export function renderItemProfile(item: any): string {
 
   if (item.stats) {
     lines.push(`│ ${colors.bold}Statistiques octroyées :${colors.reset}${" ".repeat(53)} │`);
-    lines.push(
-      `│   Stat 1: ${String(item.stats.stat1).padEnd(10)} | Stat 2: ${String(item.stats.stat2).padEnd(44)} │`,
-    );
+    lines.push(`│   Stat 1: ${String(item.stats.stat1).padEnd(10)} | Stat 2: ${String(item.stats.stat2).padEnd(44)} │`);
   }
 
   if (item.shops && (item.shops.fr?.length > 0 || item.shops.en?.length > 0)) {
@@ -444,20 +384,14 @@ export function renderTeamProfile(team: any): string {
   lines.push(`├──────────────────────────────────────────────────────────────────────────────┤`);
 
   if (team.uniforms && team.uniforms.length > 0) {
-    lines.push(
-      `│ ${colors.bold}Kits / Uniformes (${team.uniforms.length}) :${colors.reset}${" ".repeat(53)} │`,
-    );
+    lines.push(`│ ${colors.bold}Kits / Uniformes (${team.uniforms.length}) :${colors.reset}${" ".repeat(53)} │`);
     for (const [idx, u] of (team.uniforms as any[]).slice(0, 5).entries()) {
       const kitId = u.uniformId || "N/A";
       const modelName = u.modelName || "N/A";
-      lines.push(
-        `│   [${idx + 1}] ID Uniforme: ${String(kitId).padEnd(10)} | Modèle: ${modelName.padEnd(34)} │`,
-      );
+      lines.push(`│   [${idx + 1}] ID Uniforme: ${String(kitId).padEnd(10)} | Modèle: ${modelName.padEnd(34)} │`);
     }
     if (team.uniforms.length > 5) {
-      lines.push(
-        `│   ... et ${team.uniforms.length - 5} autres kits.                                              │`,
-      );
+      lines.push(`│   ... et ${team.uniforms.length - 5} autres kits.                                              │`);
     }
   }
 

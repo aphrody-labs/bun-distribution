@@ -9,33 +9,30 @@ export { MORPHOLOGIES } from "./libelles";
 
 /** La recette reste assemblée par NIE ; l’atelier ne duplique ni parseur ni moteur. */
 export function Editeur({
-	catalogue,
-	cdn,
-	codeInitial = "",
+  catalogue,
+  cdn,
+  codeInitial = "",
 }: {
-	catalogue: Catalogue;
-	cdn: string;
-	codeInitial?: string;
+  catalogue: Catalogue;
+  cdn: string;
+  codeInitial?: string;
 }) {
-	const [avatar, setAvatar] = useState<EtatAvatar>({
-		choix: {},
-		valeurs: {},
-		champs: {},
-		genre: 0,
-		morphologie: 0,
-	});
-	const modeleUrl = useMemo(
-		() => composerUrlAvatar(catalogue, cdn, avatar),
-		[catalogue, cdn, avatar]
-	);
-	return (
-		<Atelier
-			catalogue={catalogue}
-			avatar={avatar}
-			restaurer={setAvatar}
-			url={modeleUrl}
-			cdn={cdn}
-			codeInitial={codeInitial}
-		/>
-	);
+  const [avatar, setAvatar] = useState<EtatAvatar>({
+    choix: {},
+    valeurs: {},
+    champs: {},
+    genre: 0,
+    morphologie: 0,
+  });
+  const modeleUrl = useMemo(() => composerUrlAvatar(catalogue, cdn, avatar), [catalogue, cdn, avatar]);
+  return (
+    <Atelier
+      catalogue={catalogue}
+      avatar={avatar}
+      restaurer={setAvatar}
+      url={modeleUrl}
+      cdn={cdn}
+      codeInitial={codeInitial}
+    />
+  );
 }

@@ -14,13 +14,11 @@ async function bundledRoots(modulePath: string) {
       "import.meta.url": JSON.stringify(pathToFileURL(modulePath).href),
     },
   });
-  return import(
-    `data:text/javascript;base64,${Buffer.from(transpiler.transformSync(source)).toString("base64")}`
-  );
+  return import(`data:text/javascript;base64,${Buffer.from(transpiler.transformSync(source)).toString("base64")}`);
 }
 
 test("bundled checkout discovery decodes file URLs and Windows drive paths", async () => {
-  const original = rootKeys.map((key) => process.env[key]);
+  const original = rootKeys.map(key => process.env[key]);
   try {
     for (const key of rootKeys) delete process.env[key];
     const checkout = path.resolve(process.cwd(), "owner root % encoded");

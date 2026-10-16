@@ -18,29 +18,29 @@ export const PATRON_DISCOUNT_PERCENT = 20;
 export const PATRON_STRIPE_COUPON_ID = process.env.STRIPE_COUPON_PATRON ?? "kVTx74qC";
 
 export interface PatronDiscount {
-	active: boolean;
-	percent: number;
-	stripeCouponId: string;
-	patronStatus: string | null;
-	tierTitles: string[];
-	currentlyEntitledCents: number | null;
+  active: boolean;
+  percent: number;
+  stripeCouponId: string;
+  patronStatus: string | null;
+  tierTitles: string[];
+  currentlyEntitledCents: number | null;
 }
 
 /** Ligne `patreon_memberships` telle que la sélectionne `getPatronDiscount`. */
 export interface LigneAdhesionPatreon {
-	patron_status?: string | null;
-	tier_titles?: string[] | null;
-	currently_entitled_cents?: number | null;
+  patron_status?: string | null;
+  tier_titles?: string[] | null;
+  currently_entitled_cents?: number | null;
 }
 
 /** État « pas de remise », rendu dès que l'adhésion est absente ou illisible. */
 export const REMISE_ABSENTE: PatronDiscount = {
-	active: false,
-	currentlyEntitledCents: null,
-	patronStatus: null,
-	percent: PATRON_DISCOUNT_PERCENT,
-	stripeCouponId: PATRON_STRIPE_COUPON_ID,
-	tierTitles: [],
+  active: false,
+  currentlyEntitledCents: null,
+  patronStatus: null,
+  percent: PATRON_DISCOUNT_PERCENT,
+  stripeCouponId: PATRON_STRIPE_COUPON_ID,
+  tierTitles: [],
 };
 
 /**
@@ -52,17 +52,17 @@ export const REMISE_ABSENTE: PatronDiscount = {
  * des adhésions en cours.
  */
 export function remiseDepuisAdhesion(ligne: LigneAdhesionPatreon | null): PatronDiscount {
-	if (!ligne) {
-		return REMISE_ABSENTE;
-	}
-	return {
-		active: ligne.patron_status === "active_patron",
-		currentlyEntitledCents: ligne.currently_entitled_cents ?? null,
-		patronStatus: ligne.patron_status ?? null,
-		percent: PATRON_DISCOUNT_PERCENT,
-		stripeCouponId: PATRON_STRIPE_COUPON_ID,
-		tierTitles: ligne.tier_titles ?? [],
-	};
+  if (!ligne) {
+    return REMISE_ABSENTE;
+  }
+  return {
+    active: ligne.patron_status === "active_patron",
+    currentlyEntitledCents: ligne.currently_entitled_cents ?? null,
+    patronStatus: ligne.patron_status ?? null,
+    percent: PATRON_DISCOUNT_PERCENT,
+    stripeCouponId: PATRON_STRIPE_COUPON_ID,
+    tierTitles: ligne.tier_titles ?? [],
+  };
 }
 
 /**
@@ -74,21 +74,21 @@ export function remiseDepuisAdhesion(ligne: LigneAdhesionPatreon | null): Patron
  *   un badge contextuel ("Patron Niveau Evans → -20%").
  */
 export async function getPatronDiscount(userId: string): Promise<PatronDiscount> {
-	const empty = REMISE_ABSENTE;
+  const empty = REMISE_ABSENTE;
 
-	const { data, error } = await createPostgresClient()
-		.from("patreon_memberships")
-		.select("patron_status, tier_titles, currently_entitled_cents")
-		.eq("user_id", userId)
-		.order("currently_entitled_cents", { ascending: false })
-		.limit(1)
-		.maybeSingle();
+  const { data, error } = await createPostgresClient()
+    .from("patreon_memberships")
+    .select("patron_status, tier_titles, currently_entitled_cents")
+    .eq("user_id", userId)
+    .order("currently_entitled_cents", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-	if (error || !data) {
-		return empty;
-	}
+  if (error || !data) {
+    return empty;
+  }
 
-	return remiseDepuisAdhesion(data as LigneAdhesionPatreon);
+  return remiseDepuisAdhesion(data as LigneAdhesionPatreon);
 }
 
 /**
@@ -97,6 +97,6 @@ export async function getPatronDiscount(userId: string): Promise<PatronDiscount>
  * ou `null` si pas de réduction.
  */
 export async function getStripeCouponForUser(userId: string): Promise<string | null> {
-	const d = await getPatronDiscount(userId);
-	return d.active ? d.stripeCouponId : null;
+  const d = await getPatronDiscount(userId);
+  return d.active ? d.stripeCouponId : null;
 }

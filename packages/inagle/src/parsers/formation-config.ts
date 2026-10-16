@@ -62,17 +62,12 @@ export function buildFormationDatabase(_dataPath: string) {
   const textJa = loadTextFile("formation", "ja");
 
   try {
-    const content = loadConfigData<{ lists?: { name: string; values?: any[] }[] }>(
-      "formation",
-      configPath,
-    );
+    const content = loadConfigData<{ lists?: { name: string; values?: any[] }[] }>("formation", configPath);
     if (!content) return { formations, byId };
 
     if (content.lists) {
       const infoList = content.lists.find((l: any) => l.name === "m_SoccerFormationInfoList");
-      const placementList = content.lists.find(
-        (l: any) => l.name === "m_SoccerFormPlacementInfoList",
-      );
+      const placementList = content.lists.find((l: any) => l.name === "m_SoccerFormPlacementInfoList");
 
       const allPlacements: any[] = placementList?.values || [];
 

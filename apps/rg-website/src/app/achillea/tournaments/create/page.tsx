@@ -6,13 +6,12 @@ import TournamentCreateClient from "./tournament-create-client";
  * interdit. L'interface, inchangée, vit dans `tournament-create-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Créer un tournoi",
-	description:
-		"Déclarer un tournoi Inazuma Eleven: Victory Road sur le circuit Achilléa.",
-	chemin: "/achillea/tournaments/create",
-	indexable: false,
+  titre: "Créer un tournoi",
+  description: "Déclarer un tournoi Inazuma Eleven: Victory Road sur le circuit Achilléa.",
+  chemin: "/achillea/tournaments/create",
+  indexable: false,
 });
 
 export default function TournamentCreatePage() {
-	return <TournamentCreateClient />;
+  return <TournamentCreateClient />;
 }

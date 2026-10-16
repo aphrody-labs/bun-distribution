@@ -2,11 +2,11 @@ import { expect, test } from "bun:test";
 import { pathToFileURL } from "node:url";
 
 test("store configuration keeps precedence explicit and rejects missing databases without exposing URLs", async () => {
-	const child = Bun.spawn({
-		cmd: [
-			process.execPath,
-			"-e",
-			`
+  const child = Bun.spawn({
+    cmd: [
+      process.execPath,
+      "-e",
+      `
 			import {getDatabaseURL,getInagleDatabaseURL} from ${JSON.stringify(pathToFileURL(`${import.meta.dir}/pg.ts`).href)};
 			process.env.RG_DATABASE_URL="postgresql://fixture@supabase.invalid/rg";
 			process.env.DATABASE_URL="postgresql://fixture@legacy.invalid/legacy";
@@ -19,27 +19,27 @@ test("store configuration keeps precedence explicit and rejects missing database
 				catch(error) { console.log(error.message.startsWith("INAGLE_DATABASE_URL/NIE_PG_URL"),!error.message.includes("fixture")); }
 			}
 		`,
-		],
-		cwd: import.meta.dir,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-	expect(stdout.trim()).toBe("supabase.invalid neon.invalid\ntrue true\ntrue true\ntrue true");
-	expect(stderr).toBe("");
-	expect(exitCode).toBe(0);
+    ],
+    cwd: import.meta.dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  expect(stdout.trim()).toBe("supabase.invalid neon.invalid\ntrue true\ntrue true\ntrue true");
+  expect(stderr).toBe("");
+  expect(exitCode).toBe(0);
 });
 
 test("Postgres dialect defers configuration until a real query and retains the required URL guard", async () => {
-	const child = Bun.spawn({
-		cmd: [
-			process.execPath,
-			"-e",
-			`
+  const child = Bun.spawn({
+    cmd: [
+      process.execPath,
+      "-e",
+      `
 			import { Kysely } from "kysely";
 			import { createPgDialect } from ${JSON.stringify(pathToFileURL(`${import.meta.dir}/pg.ts`).href)};
 			delete process.env.DATABASE_URL;
@@ -57,19 +57,19 @@ test("Postgres dialect defers configuration until a real query and retains the r
 				await db.destroy();
 			}
 		`,
-		],
-		cwd: import.meta.dir,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-	expect(stdout.trim()).toBe(
-		'select "id" from "profiles"\nRG_DATABASE_URL/DATABASE_URL absent ou corrompu : une chaîne Postgres valide est requise.',
-	);
-	expect(stderr).toBe("");
-	expect(exitCode).toBe(0);
+    ],
+    cwd: import.meta.dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  expect(stdout.trim()).toBe(
+    'select "id" from "profiles"\nRG_DATABASE_URL/DATABASE_URL absent ou corrompu : une chaîne Postgres valide est requise.',
+  );
+  expect(stderr).toBe("");
+  expect(exitCode).toBe(0);
 });

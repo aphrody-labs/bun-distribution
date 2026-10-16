@@ -32,7 +32,7 @@ export async function MediaDownload({ path, awbId }: { path: string; awbId?: num
     <section className="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
       <h2 className="mb-2 text-sm font-medium text-on-surface">Télécharger</h2>
       <ul className="flex flex-wrap gap-2">
-        {meta.formats.map((f) => (
+        {meta.formats.map(f => (
           <li key={f.id}>
             <a
               href={exportUrl(path, f.id, { awbId })}

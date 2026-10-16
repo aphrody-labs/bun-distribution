@@ -30,21 +30,21 @@ export function generateVfsSpecificationMarkdown(): string {
 
   const formatsRows = catalog.supportedFormats
     .map(
-      (f) =>
+      f =>
         `| \`${f.magicHex}\` | \`${f.magicAscii}\` | \`${f.extension}\` | **${f.category}** | ${f.isBigEndian ? "Big" : "Little"} | ${f.encryptionSupported ? "✅" : "❌"} | ${f.compressionSupported ? "✅" : "❌"} | ${f.description} |`,
     )
     .join("\n");
 
   const packRows = catalog.packRules
     .map(
-      (p) =>
+      p =>
         `| \`${p.packName}\` | \`${p.filenameMask}\` | \`${p.keyDerivation}\` | ${p.mountPriority} | ${p.isCompressed ? "✅" : "❌"} | ${p.description} |`,
     )
     .join("\n");
 
   const dirRows = catalog.directories
     .map(
-      (d) =>
+      d =>
         `| \`${d.path}\` | \`${d.primaryExtension}\` | ~${d.fileCountEstimate} | ${d.description} | \`${d.sampleFiles.slice(0, 2).join("`, `")}\` |`,
     )
     .join("\n");
@@ -121,21 +121,21 @@ export function generateNieReMarkdown(): string {
 
   const cryptoRows = reMap.cryptoConstants
     .map(
-      (c) =>
+      c =>
         `| \`${c.name}\` | \`${c.hexValue}\` | \`${c.intValue}\` | ${c.verifiedInGameDump ? "✅ Verified" : "⚠️ Candidate"} | ${c.usage} |`,
     )
     .join("\n");
 
   const offsetRows = reMap.criticalOffsets
     .map(
-      (o) =>
+      o =>
         `| **${o.symbol}** | \`${o.addressHex}\` | \`${o.subsystem}\` | \`${o.callingConvention ?? "default"}\` | \`${o.signature}\` | ${o.description} |`,
     )
     .join("\n");
 
   const rttiRows = reMap.rttiClasses
     .map(
-      (r) =>
+      r =>
         `| \`${r.namespace}::${r.name}\` | \`${r.vtableOffsetHex}\` | \`${r.baseClasses.join(", ") || "None"}\` | ${r.description} |`,
     )
     .join("\n");
@@ -328,10 +328,7 @@ const spec = generateOpenApiSpec();
 /**
  * Writes all static documentation artifacts to a target directory.
  */
-export async function exportDocsToDirectory(
-  outDir: string,
-  fork?: ForkDocumentation,
-): Promise<string[]> {
+export async function exportDocsToDirectory(outDir: string, fork?: ForkDocumentation): Promise<string[]> {
   await fs.mkdir(outDir, { recursive: true });
 
   const files: Record<string, string> = {

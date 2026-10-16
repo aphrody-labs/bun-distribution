@@ -9,7 +9,7 @@ if (!browser) throw new Error("Set IECODE_BROWSER to a Chromium executable");
 const pkg = new URL("../pkg/", import.meta.url);
 type BrowserReport = { frames?: string; top?: number[]; bottom?: number[]; error?: string };
 let resolveReport!: (value: BrowserReport) => void;
-const report = new Promise<BrowserReport>((resolve) => {
+const report = new Promise<BrowserReport>(resolve => {
   resolveReport = resolve;
 });
 // Original ARM homebrew configures red engine-A and blue engine-B backdrops.
@@ -139,12 +139,7 @@ const child = Bun.spawn(
     "--enable-unsafe-webgpu",
     ...(process.platform === "win32"
       ? ["--use-angle=d3d11", "--use-webgpu-adapter=d3d12", "--force-high-performance-gpu"]
-      : [
-          "--enable-features=Vulkan",
-          "--use-angle=vulkan",
-          "--use-vulkan=swiftshader",
-          "--disable-vulkan-surface",
-        ]),
+      : ["--enable-features=Vulkan", "--use-angle=vulkan", "--use-vulkan=swiftshader", "--disable-vulkan-surface"]),
     "--disable-background-networking",
     String(server.url),
   ],
@@ -152,24 +147,17 @@ const child = Bun.spawn(
 );
 const stderr = new Response(child.stderr).text();
 try {
-  const result = await Promise.race([
-    report,
-    child.exited.then((code) => ({ error: `Browser exited: ${code}` })),
-  ]);
+  const result = await Promise.race([report, child.exited.then(code => ({ error: `Browser exited: ${code}` }))]);
   if (result.error) throw new Error(result.error);
   if (result.frames !== "3") throw new Error(`Expected 3 core frames: ${JSON.stringify(result)}`);
   // Independent native soft-renderer test verifies RGB6 62 for RGB5 maximum.
   // The WGPU shader normalizes by 63, producing RGBA8 round(62 / 63 * 255)=251.
-  if (
-    JSON.stringify(result.top) !== "[251,0,0,255]" ||
-    JSON.stringify(result.bottom) !== "[0,0,251,255]"
-  ) {
+  if (JSON.stringify(result.top) !== "[251,0,0,255]" || JSON.stringify(result.bottom) !== "[0,0,251,255]") {
     throw new Error(`Guest-programmed DS backdrop mismatch: ${JSON.stringify(result)}`);
   }
   console.log(
     JSON.stringify({
-      backend:
-        process.platform === "win32" ? "Chromium D3D12 WebGPU" : "Chromium SwiftShader WebGPU",
+      backend: process.platform === "win32" ? "Chromium D3D12 WebGPU" : "Chromium SwiftShader WebGPU",
       ...result,
     }),
   );

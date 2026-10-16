@@ -9,17 +9,17 @@ const SCHEMAS_AUTORISES = new Set(["http:", "https:"]);
 
 /** Vrai si l'URL est absolue et porte un schéma web sûr. */
 export function estUrlSure(url: unknown): url is string {
-	if (typeof url !== "string" || url.length === 0 || url.length > 2048) return false;
-	try {
-		return SCHEMAS_AUTORISES.has(new URL(url).protocol);
-	} catch {
-		return false;
-	}
+  if (typeof url !== "string" || url.length === 0 || url.length > 2048) return false;
+  try {
+    return SCHEMAS_AUTORISES.has(new URL(url).protocol);
+  } catch {
+    return false;
+  }
 }
 
 /** Renvoie l'URL telle quelle si elle est sûre, sinon `null`. */
 export function urlSureOuNull(url: unknown): string | null {
-	return estUrlSure(url) ? url : null;
+  return estUrlSure(url) ? url : null;
 }
 
 /** Hôtes servant les fichiers joints Discord derrière une signature temporaire. */
@@ -35,13 +35,13 @@ const HOTES_CDN_DISCORD = new Set(["cdn.discordapp.com", "media.discordapp.net"]
  * lien, c'est publier une page qui casse demain.
  */
 export function estUrlDiscordExpirante(url: string): boolean {
-	try {
-		const analysee = new URL(url);
-		if (!HOTES_CDN_DISCORD.has(analysee.hostname)) return false;
-		return analysee.searchParams.has("ex") && analysee.searchParams.has("hm");
-	} catch {
-		return false;
-	}
+  try {
+    const analysee = new URL(url);
+    if (!HOTES_CDN_DISCORD.has(analysee.hostname)) return false;
+    return analysee.searchParams.has("ex") && analysee.searchParams.has("hm");
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -56,8 +56,8 @@ export function estUrlDiscordExpirante(url: string): boolean {
  * ré-hébergé qui devra arriver ici — pas la signature.
  */
 export function urlPubliableOuNull(url: unknown): string | null {
-	const sure = urlSureOuNull(url);
-	return sure && !estUrlDiscordExpirante(sure) ? sure : null;
+  const sure = urlSureOuNull(url);
+  return sure && !estUrlDiscordExpirante(sure) ? sure : null;
 }
 
 /**
@@ -65,13 +65,13 @@ export function urlPubliableOuNull(url: unknown): string | null {
  * Les emojis animés n'existent qu'en `.gif`, les autres sont servis en `.webp`.
  */
 export function urlEmojiPersonnalise(id: string, anime = false): string {
-	return `https://cdn.discordapp.com/emojis/${id}.${anime ? "gif" : "webp"}`;
+  return `https://cdn.discordapp.com/emojis/${id}.${anime ? "gif" : "webp"}`;
 }
 
 /** Convertit la couleur entière de l'API Discord en couleur CSS (`#rrggbb`). */
 export function couleurDiscord(valeur: unknown): string | null {
-	if (typeof valeur !== "number" || !Number.isFinite(valeur)) return null;
-	const entier = Math.trunc(valeur);
-	if (entier <= 0 || entier > 0xff_ff_ff) return null;
-	return `#${entier.toString(16).padStart(6, "0")}`;
+  if (typeof valeur !== "number" || !Number.isFinite(valeur)) return null;
+  const entier = Math.trunc(valeur);
+  if (entier <= 0 || entier > 0xff_ff_ff) return null;
+  return `#${entier.toString(16).padStart(6, "0")}`;
 }

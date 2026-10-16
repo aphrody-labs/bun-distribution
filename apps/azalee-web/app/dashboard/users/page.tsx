@@ -140,10 +140,7 @@ export default async function UsersPage({
                       <TableCell className="px-4 sm:px-8 py-4 sm:py-5">
                         <div className="flex items-center gap-2 sm:gap-4">
                           <Avatar className="size-10 sm:size-12 rounded-2xl border-2 border-background ring-1 ring-outline-variant/20 shadow-sm shrink-0">
-                            <AvatarImage
-                              src={profile.avatar_url || undefined}
-                              className="object-cover"
-                            />
+                            <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
                             <AvatarFallback className="bg-secondary-container text-secondary font-black text-base sm:text-lg">
                               {profile.username?.charAt(0).toUpperCase() || "?"}
                             </AvatarFallback>
@@ -222,10 +219,7 @@ export default async function UsersPage({
                 })
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="py-24 sm:py-32 text-center bg-surface-container-lowest"
-                  >
+                  <TableCell colSpan={6} className="py-24 sm:py-32 text-center bg-surface-container-lowest">
                     <div className="flex flex-col items-center gap-3 px-4 text-on-surface-variant sm:gap-4">
                       <UserX size={48} className="text-on-surface-variant/40" aria-hidden="true" />
                       <p className="font-black font-sans uppercase tracking-tighter text-base sm:text-lg">
@@ -243,11 +237,7 @@ export default async function UsersPage({
         </div>
       </div>
 
-      <WikiPagination
-        totalItems={totalItems}
-        itemsPerPage={ITEMS_PER_PAGE}
-        currentPage={currentPage}
-      />
+      <WikiPagination totalItems={totalItems} itemsPerPage={ITEMS_PER_PAGE} currentPage={currentPage} />
     </div>
   );
 }

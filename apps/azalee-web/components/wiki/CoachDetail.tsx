@@ -42,11 +42,7 @@ export function CoachDetail({ coach }: { coach: Coach }) {
       {/* En-tête */}
       <div className="flex flex-col gap-4 rounded-3xl border border-outline-variant/30 bg-surface-container-low p-5 sm:flex-row sm:items-center">
         <div className="relative flex aspect-square w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface-container-high">
-          <CoachFace
-            internalCode={coach.internalCode}
-            alt={coach.name}
-            className="text-primary opacity-40"
-          />
+          <CoachFace internalCode={coach.internalCode} alt={coach.name} className="text-primary opacity-40" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -55,9 +51,7 @@ export function CoachDetail({ coach }: { coach: Coach }) {
             </span>
             {coach.elementKey ? <ElementIcon element={coach.elementKey} size="md" /> : null}
           </div>
-          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-on-surface font-display">
-            {coach.name}
-          </h1>
+          <h1 className="mt-2 text-2xl font-extrabold leading-tight text-on-surface font-display">{coach.name}</h1>
           {coach.nameKanji && coach.nameKanji !== coach.name ? (
             <p className="text-sm text-on-surface-variant">
               {coach.nameKanji}
@@ -112,10 +106,7 @@ export function CoachDetail({ coach }: { coach: Coach }) {
 
           {/* Grille rôle × rareté résolue depuis inagle_manager_passives */}
           {scaling &&
-          (scaling.coordCommon ||
-            scaling.coordLegendary ||
-            scaling.managerCommon ||
-            scaling.managerLegendary) ? (
+          (scaling.coordCommon || scaling.coordLegendary || scaling.managerCommon || scaling.managerLegendary) ? (
             <div className="mt-4 overflow-hidden rounded-2xl border border-outline-variant/20">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[18rem] text-sm">

@@ -10,13 +10,13 @@ import { subscribeTable } from "@/lib/realtime";
  * Adossé au service rg-realtime (SSE) depuis la migration hors Supabase.
  */
 export function RealtimeSettingsListener() {
-	const router = useRouter();
+  const router = useRouter();
 
-	useEffect(() => {
-		return subscribeTable({ table: "settings" }, () => {
-			router.refresh();
-		});
-	}, [router]);
+  useEffect(() => {
+    return subscribeTable({ table: "settings" }, () => {
+      router.refresh();
+    });
+  }, [router]);
 
-	return null; // Composant sans rendu
+  return null; // Composant sans rendu
 }

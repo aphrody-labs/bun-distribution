@@ -28,41 +28,39 @@ const CDN = cdnOrigin(process.env.NEXT_PUBLIC_CDN_ORIGIN);
  * sujet. Tolérant : tout champ non trouvé reste `null`/`"main"`.
  */
 export function parseLayerName(
-	eventId: string,
-	fileName: string,
+  eventId: string,
+  fileName: string,
 ): { subject: string; phase: string | null; plan: string | null } {
-	// Retire l'extension puis le préfixe `<eventId>_`.
-	let stem = fileName.replace(/\.g4pk$/i, "");
-	if (stem.startsWith(`${eventId}_`)) stem = stem.slice(eventId.length + 1);
+  // Retire l'extension puis le préfixe `<eventId>_`.
+  let stem = fileName.replace(/\.g4pk$/i, "");
+  if (stem.startsWith(`${eventId}_`)) stem = stem.slice(eventId.length + 1);
 
-	const tokens = stem.split("_").filter(Boolean);
-	let phase: string | null = null;
-	let plan: string | null = null;
-	const subjectParts: string[] = [];
+  const tokens = stem.split("_").filter(Boolean);
+  let phase: string | null = null;
+  let plan: string | null = null;
+  const subjectParts: string[] = [];
 
-	for (const tok of tokens) {
-		if (/^s\d{2,}$/i.test(tok)) {
-			phase = tok.toLowerCase();
-		} else if (/^p\d{2,}$/i.test(tok)) {
-			// `pNN` = plan technique interne, non exposé.
-		} else if (/^c\d{4}$/i.test(tok)) {
-			plan = tok.toLowerCase();
-		} else {
-			subjectParts.push(tok);
-		}
-	}
+  for (const tok of tokens) {
+    if (/^s\d{2,}$/i.test(tok)) {
+      phase = tok.toLowerCase();
+    } else if (/^p\d{2,}$/i.test(tok)) {
+      // `pNN` = plan technique interne, non exposé.
+    } else if (/^c\d{4}$/i.test(tok)) {
+      plan = tok.toLowerCase();
+    } else {
+      subjectParts.push(tok);
+    }
+  }
 
-	// Le sujet `<eventId>` répété (couche « main ») est normalisé.
-	const subject = subjectParts.length === 0 || subjectParts.join("_") === eventId
-		? "main"
-		: subjectParts.join("_");
-	return { subject, phase, plan };
+  // Le sujet `<eventId>` répété (couche « main ») est normalisé.
+  const subject = subjectParts.length === 0 || subjectParts.join("_") === eventId ? "main" : subjectParts.join("_");
+  return { subject, phase, plan };
 }
 
 /** Réponse minimale de `GET /api/cpk?path=<dir>` consommée ici. */
 interface CpkListingResponse {
-	dir: string;
-	files?: CpkFile[];
+  dir: string;
+  files?: CpkFile[];
 }
 
 /**
@@ -70,50 +68,47 @@ interface CpkListingResponse {
  *
  * @throws si l'API `/api/cpk` répond non-OK.
  */
-export async function fetchCutinManifest(
-	cutin: SkillCutin,
-	signal?: AbortSignal,
-): Promise<CutinManifest> {
-	const dir = cutin.effects_dir.replace(/\/$/, "");
-	const res = await fetch(`/api/cpk?path=${encodeURIComponent(dir)}`, { signal });
-	if (!res.ok) {
-		throw new Error(`Listing CPK indisponible (${res.status}) pour ${dir}`);
-	}
-	const json = (await res.json()) as CpkListingResponse;
-	const files = json.files ?? [];
+export async function fetchCutinManifest(cutin: SkillCutin, signal?: AbortSignal): Promise<CutinManifest> {
+  const dir = cutin.effects_dir.replace(/\/$/, "");
+  const res = await fetch(`/api/cpk?path=${encodeURIComponent(dir)}`, { signal });
+  if (!res.ok) {
+    throw new Error(`Listing CPK indisponible (${res.status}) pour ${dir}`);
+  }
+  const json = (await res.json()) as CpkListingResponse;
+  const files = json.files ?? [];
 
-	// Couches = tous les .g4pk de l'event (renderable résolu plus tard par decode.ts).
-	const layers: CutinLayerDescriptor[] = files
-		.filter((f) => f.name.toLowerCase().endsWith(".g4pk"))
-		.map((f) => {
-			const { subject, phase, plan } = parseLayerName(cutin.event_id_name, f.name);
-			return {
-				id: f.name.replace(/\.g4pk$/i, ""),
-				vfsPath: f.path,
-				rawUrl: cpkRawUrl(f.path),
-				subject,
-				phase,
-				plan,
-				renderable: false,
-			} satisfies CutinLayerDescriptor;
-		});
+  // Couches = tous les .g4pk de l'event (renderable résolu plus tard par decode.ts).
+  const layers: CutinLayerDescriptor[] = files
+    .filter(f => f.name.toLowerCase().endsWith(".g4pk"))
+    .map(f => {
+      const { subject, phase, plan } = parseLayerName(cutin.event_id_name, f.name);
+      return {
+        id: f.name.replace(/\.g4pk$/i, ""),
+        vfsPath: f.path,
+        rawUrl: cpkRawUrl(f.path),
+        subject,
+        phase,
+        plan,
+        renderable: false,
+      } satisfies CutinLayerDescriptor;
+    });
 
-	// Caméra : repérée par suffixe de nom (plus robuste que reconstruire le chemin).
-	const cameraFile = files.find((f) => f.name.toLowerCase().endsWith("_camera.g4cm"));
-	const cameraG4cmUrl = cameraFile ? cpkRawUrl(cameraFile.path) : null;
+  // Caméra : repérée par suffixe de nom (plus robuste que reconstruire le chemin).
+  const cameraFile = files.find(f => f.name.toLowerCase().endsWith("_camera.g4cm"));
+  const cameraG4cmUrl = cameraFile ? cpkRawUrl(cameraFile.path) : null;
 
-	// Telops par langue (g4tx → png via le CDN). On ignore les langues sans URL mappable.
-	const telops = cutin.telop_by_lang
-		.map(([lang, p]) => ({ lang, pngUrl: cpkAssetUrl(p) }))
-		.filter((t): t is { lang: string; pngUrl: string } => t.pngUrl !== null);
+  // Telops par langue (g4tx → png via le CDN). On ignore les langues sans URL mappable.
+  const telops = cutin.telop_by_lang
+    .map(([lang, p]) => ({ lang, pngUrl: cpkAssetUrl(p) }))
+    .filter((t): t is { lang: string; pngUrl: string } => t.pngUrl !== null);
 
-	return {
-		eventId: cutin.event_id_name,
-		effectsDir: dir,
-		modelGlbUrl: `${CDN}/model-chr/waza/${cutin.event_id_name}.glb`,
-		cameraG4cmUrl,
-		layers,
-		telops,
-		soundRawUrl: cutin.sound_cfg ? cpkRawUrl(cutin.sound_cfg) : null,
-	};
+  return {
+    eventId: cutin.event_id_name,
+    effectsDir: dir,
+    modelGlbUrl: `${CDN}/model-chr/waza/${cutin.event_id_name}.glb`,
+    cameraG4cmUrl,
+    layers,
+    telops,
+    soundRawUrl: cutin.sound_cfg ? cpkRawUrl(cutin.sound_cfg) : null,
+  };
 }

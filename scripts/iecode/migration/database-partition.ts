@@ -2,8 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { chmod, readFile, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-export const POSTGRES_IMAGE =
-  "postgres@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873";
+export const POSTGRES_IMAGE = "postgres@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873";
 const identifier = '"(?:[^"\\n]|"")*"|[A-Za-z_][A-Za-z_0-9$]*';
 const relationPattern = new RegExp(`(${identifier})\\s*\\.\\s*(${identifier})`, "g");
 const kinds = [
@@ -67,8 +66,7 @@ export function clientTransport(conninfo: string) {
   return { protocol, cipher, keyBits, conninfoSha256: digest(conninfo) };
 }
 
-const unquote = (value: string) =>
-  value.startsWith('"') ? value.slice(1, -1).replaceAll('""', '"') : value;
+const unquote = (value: string) => (value.startsWith('"') ? value.slice(1, -1).replaceAll('""', '"') : value);
 const quote = (value: string) => '"' + value.replaceAll('"', '""') + '"';
 type Owner = "game" | "rg" | "shared";
 export interface TableMetadata {
@@ -107,9 +105,7 @@ const gameTable = (schema: string, name: string) =>
 
 export function sqlBlocks(sql: string): Map<number, SqlBlock> {
   const result = new Map<number, SqlBlock>();
-  for (const match of sql.matchAll(
-    /^-- TOC entry (\d+) \(.*?\)\n([\s\S]*?)(?=^-- TOC entry |$(?![\s\S]))/gm,
-  )) {
+  for (const match of sql.matchAll(/^-- TOC entry (\d+) \(.*?\)\n([\s\S]*?)(?=^-- TOC entry |$(?![\s\S]))/gm)) {
     const header = /^-- Name: (.*); Type: (.*); Schema: (.*); Owner: (.*)$/m.exec(match[2]!);
     if (!header) throw new Error("Missing archive schema metadata header");
     const id = Number(match[1]);
@@ -132,19 +128,16 @@ export function partitionArchive(input: {
     input.history.sourceSha256 !== input.sourceSha256 ||
     input.history.rawValuesExported !== false ||
     input.history.rows !==
-      (input.tables.find((t) => t.schema === "public" && t.name === "niers_schema_migrations")
-        ?.rowCount ?? 0) ||
+      (input.tables.find(t => t.schema === "public" && t.name === "niers_schema_migrations")?.rowCount ?? 0) ||
     input.history.technicalFamilyMatches.inagle !== input.history.rows
   )
     throw new Error("Inagle migration-history ownership evidence does not match the source");
   const blocks = sqlBlocks(input.schemaSql);
-  const allKinds = [...new Set([...kinds, ...[...blocks.values()].map((b) => b.kind)])].sort(
+  const allKinds = [...new Set([...kinds, ...[...blocks.values()].map(b => b.kind)])].sort(
     (a, b) => b.length - a.length,
   );
-  const pattern = new RegExp(
-    `^(\\d+);\\s+\\d+\\s+\\d+\\s+(${allKinds.join("|")})\\s+(\\S+)\\s+(.*)$`,
-  );
-  const tables = new Map(input.tables.map((t) => [`${t.schema}.${t.name}`, t]));
+  const pattern = new RegExp(`^(\\d+);\\s+\\d+\\s+\\d+\\s+(${allKinds.join("|")})\\s+(\\S+)\\s+(.*)$`);
+  const tables = new Map(input.tables.map(t => [`${t.schema}.${t.name}`, t]));
   const ids = new Set<number>();
   const entries: ArchiveEntry[] = [];
   const bodies = new Map<number, string>();
@@ -164,12 +157,11 @@ export function partitionArchive(input: {
     const references = [
       ...new Set(
         [...body.matchAll(relationPattern)]
-          .map((m) => `${unquote(m[1]!)}.${unquote(m[2]!)}`)
-          .filter((key) => tables.has(key)),
+          .map(m => `${unquote(m[1]!)}.${unquote(m[2]!)}`)
+          .filter(key => tables.has(key)),
       ),
     ].sort();
-    let parentRelation =
-      kind === "TABLE" || kind === "TABLE DATA" ? `${schema}.${unquote(name)}` : undefined;
+    let parentRelation = kind === "TABLE" || kind === "TABLE DATA" ? `${schema}.${unquote(name)}` : undefined;
     const anchor = new RegExp(
       `(?:ALTER TABLE (?:ONLY )?|\\bON (?:ONLY )?|\\bOWNED BY )(${identifier})\\s*\\.\\s*(${identifier})`,
     ).exec(body);
@@ -207,19 +199,13 @@ export function partitionArchive(input: {
         ? "game"
         : "rg";
     if (
-      (schema === "-" &&
-        ["SCHEMA", "COMMENT"].includes(kind) &&
-        /^(SCHEMA )?(public|extensions)$/.test(name)) ||
+      (schema === "-" && ["SCHEMA", "COMMENT"].includes(kind) && /^(SCHEMA )?(public|extensions)$/.test(name)) ||
       kind === "EXTENSION" ||
       (kind === "COMMENT" && name.startsWith("EXTENSION "))
     )
       owner = "shared";
     const functionReferences = [
-      ...new Set(
-        [...body.matchAll(/\b(auth\.[A-Za-z_][A-Za-z_0-9]*|public\.is_admin)\s*\(/g)].map(
-          (m) => m[1]!,
-        ),
-      ),
+      ...new Set([...body.matchAll(/\b(auth\.[A-Za-z_][A-Za-z_0-9]*|public\.is_admin)\s*\(/g)].map(m => m[1]!)),
     ].sort();
     let disposition: ArchiveEntry["disposition"] = ["ACL", "DEFAULT ACL"].includes(kind)
       ? "privileges-held"
@@ -227,8 +213,7 @@ export function partitionArchive(input: {
     if (owner === "game" && kind === "POLICY") {
       const statement = /CREATE POLICY [\s\S]*?;/.exec(body)?.[0] ?? "";
       const roles = /\bTO\s+([^;]+?)(?:\s+(?:USING|WITH CHECK)|;)/.exec(statement)?.[1]?.trim();
-      if ((roles && roles.toLowerCase() !== "public") || functionReferences.length)
-        disposition = "policy-rewrite";
+      if ((roles && roles.toLowerCase() !== "public") || functionReferences.length) disposition = "policy-rewrite";
     }
     entries.push({
       id,
@@ -245,12 +230,9 @@ export function partitionArchive(input: {
       disposition,
     });
   }
-  if (entries.length !== input.expectedEntries)
-    throw new Error("TOC coverage does not match the pinned archive");
+  if (entries.length !== input.expectedEntries) throw new Error("TOC coverage does not match the pinned archive");
   const sequenceOwners = new Map(
-    entries
-      .filter((e) => e.kind === "SEQUENCE OWNED BY")
-      .map((e) => [`${e.schema}.${e.name}`, e.owner]),
+    entries.filter(e => e.kind === "SEQUENCE OWNED BY").map(e => [`${e.schema}.${e.name}`, e.owner]),
   );
   for (const e of entries)
     if (["SEQUENCE", "SEQUENCE SET"].includes(e.kind)) {
@@ -259,39 +241,36 @@ export function partitionArchive(input: {
     }
   const allowlist = (owner: "game" | "rg") =>
     entries.filter(
-      (e) =>
+      e =>
         e.disposition === "restore" &&
         (e.owner === owner ||
-          (e.owner === "shared" &&
-            (owner === "rg" || (e.kind === "SCHEMA" && e.name === "public")))),
+          (e.owner === "shared" && (owner === "rg" || (e.kind === "SCHEMA" && e.name === "public")))),
     );
   const gameEntries = allowlist("game");
   const rgEntries = allowlist("rg");
-  const gameData = gameEntries.filter((e) => e.kind === "TABLE DATA");
-  const rgData = rgEntries.filter((e) => e.kind === "TABLE DATA");
+  const gameData = gameEntries.filter(e => e.kind === "TABLE DATA");
+  const rgData = rgEntries.filter(e => e.kind === "TABLE DATA");
   if (
     gameData.length + rgData.length !== input.tables.length ||
-    new Set([...gameData, ...rgData].map((e) => e.id)).size !== input.tables.length ||
-    new Set([...gameData, ...rgData].map((e) => e.parentRelation)).size !== input.tables.length ||
-    [...tables.keys()].some(
-      (key) => ![...gameData, ...rgData].some((e) => e.parentRelation === key),
-    )
+    new Set([...gameData, ...rgData].map(e => e.id)).size !== input.tables.length ||
+    new Set([...gameData, ...rgData].map(e => e.parentRelation)).size !== input.tables.length ||
+    [...tables.keys()].some(key => ![...gameData, ...rgData].some(e => e.parentRelation === key))
   )
     throw new Error("Data partitions must cover each table exactly once");
   const crossStoreDependencies = entries
-    .map((e) => ({
+    .map(e => ({
       id: e.id,
       kind: e.kind,
       owner: e.owner,
       disposition: e.disposition,
       relations: e.references.filter(
-        (key) => (gameTable(...(key.split(".") as [string, string])) ? "game" : "rg") !== e.owner,
+        key => (gameTable(...(key.split(".") as [string, string])) ? "game" : "rg") !== e.owner,
       ),
       functions: e.owner === "game" ? e.functionReferences : [],
       confidence: "INFERRED" as const,
     }))
-    .filter((e) => e.relations.length || e.functions.length);
-  if (crossStoreDependencies.some((e) => e.owner === "game" && e.disposition === "restore"))
+    .filter(e => e.relations.length || e.functions.length);
+  if (crossStoreDependencies.some(e => e.owner === "game" && e.disposition === "restore"))
     throw new Error("Unresolved game cross-store dependency requires an explicit owner rewrite");
   const readerPolicies: string[] = [];
   const policyRewrites: {
@@ -303,15 +282,10 @@ export function partitionArchive(input: {
   }[] = [];
   const writerTables = new Set<string>();
   const importerTables = new Set<string>();
-  for (const e of entries.filter((e) => e.disposition === "policy-rewrite")) {
+  for (const e of entries.filter(e => e.disposition === "policy-rewrite")) {
     const statement = /CREATE POLICY [\s\S]*?;/.exec(bodies.get(e.id) ?? "")?.[0];
-    if (!statement || !e.parentRelation)
-      throw new Error("Policy rewrite requires an exact source relation and DDL");
-    if (
-      /\bFOR SELECT\b/.test(statement) &&
-      /USING \(true\)/.test(statement) &&
-      !e.functionReferences.length
-    ) {
+    if (!statement || !e.parentRelation) throw new Error("Policy rewrite requires an exact source relation and DDL");
+    if (/\bFOR SELECT\b/.test(statement) && /USING \(true\)/.test(statement) && !e.functionReferences.length) {
       const target = statement.replace(/\bTO\s+[^;]+?(?=\s+USING)/, "TO inagle_reader");
       readerPolicies.push(target);
       policyRewrites.push({
@@ -322,9 +296,7 @@ export function partitionArchive(input: {
         targetSha256: digest(target),
       });
     } else {
-      const importer =
-        /^public\.inagle_(cpk_index|game_text)$/.test(e.parentRelation) &&
-        !e.functionReferences.length;
+      const importer = /^public\.inagle_(cpk_index|game_text)$/.test(e.parentRelation) && !e.functionReferences.length;
       (importer ? importerTables : writerTables).add(e.parentRelation);
       policyRewrites.push({
         id: e.id,
@@ -335,25 +307,20 @@ export function partitionArchive(input: {
     }
   }
   const roleSql = ["inagle_reader", "inagle_writer", "inagle_importer"]
-    .map(
-      (role) =>
-        `CREATE ROLE ${role} NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;`,
-    )
+    .map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;`)
     .join("\n");
   const scopedWrites = (role: string, names: Set<string>) =>
     [...names]
       .sort()
       .map(
-        (table) =>
+        table =>
           `GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO ${role};\nCREATE POLICY ${quote(role + "_backend_write")} ON ${table} FOR ALL TO ${role} USING (true) WITH CHECK (true);`,
       )
       .join("\n");
   const policySql = `${roleSql}\nGRANT USAGE ON SCHEMA public TO inagle_reader, inagle_writer, inagle_importer;\nGRANT SELECT ON ALL TABLES IN SCHEMA public TO inagle_reader;\n${readerPolicies.join("\n")}\n${scopedWrites("inagle_writer", writerTables)}\n${scopedWrites("inagle_importer", importerTables)}\n`;
   const toc = (selected: ArchiveEntry[]) =>
-    "; Owner partition; source privilege replay withheld.\n" +
-    selected.map((e) => e.sourceLine).join("\n") +
-    "\n";
-  const tablesWithOwner = input.tables.map((t) => ({
+    "; Owner partition; source privilege replay withheld.\n" + selected.map(e => e.sourceLine).join("\n") + "\n";
+  const tablesWithOwner = input.tables.map(t => ({
     ...t,
     owner: gameTable(t.schema, t.name) ? ("game" as const) : ("rg" as const),
   }));
@@ -405,11 +372,7 @@ async function boundedProcess(argv: string[], timeoutMs = 300_000) {
   };
   const timer = setTimeout(() => task.kill(), timeoutMs);
   try {
-    const [stdout, stderr, exitCode] = await Promise.all([
-      drain(task.stdout),
-      drain(task.stderr),
-      task.exited,
-    ]);
+    const [stdout, stderr, exitCode] = await Promise.all([drain(task.stdout), drain(task.stderr), task.exited]);
     return {
       stdout,
       exitCode,
@@ -442,11 +405,9 @@ async function prepare(directory: string) {
     await chmod(resolve(directory, name), 0o600);
   }
   const { gameToc: _gameToc, rgToc: _rgToc, policySql: _policySql, ...manifest } = result;
-  await writeFile(
-    resolve(directory, "owner-partition-ts.json"),
-    JSON.stringify(manifest, null, 2) + "\n",
-    { mode: 0o600 },
-  );
+  await writeFile(resolve(directory, "owner-partition-ts.json"), JSON.stringify(manifest, null, 2) + "\n", {
+    mode: 0o600,
+  });
   await writeFile(
     resolve(directory, "game-probe-plan.json"),
     JSON.stringify(
@@ -473,12 +434,10 @@ async function prepare(directory: string) {
     JSON.stringify({
       tocEntries: result.tocEntries,
       tableCount: result.tables.length,
-      owners: ["game", "rg"].map((owner) => ({
+      owners: ["game", "rg"].map(owner => ({
         owner,
-        tables: result.tables.filter((t) => t.owner === owner).length,
-        rows: result.tables
-          .filter((t) => t.owner === owner)
-          .reduce((total, t) => total + t.rowCount, 0),
+        tables: result.tables.filter(t => t.owner === owner).length,
+        rows: result.tables.filter(t => t.owner === owner).reduce((total, t) => total + t.rowCount, 0),
       })),
       policyRewrites: result.policyRewrites.length,
       cloudWritesApproved: false,
@@ -487,12 +446,9 @@ async function prepare(directory: string) {
 }
 
 async function localProbe(directory: string) {
-  if (process.platform !== "linux")
-    throw new Error("Select the qualified native Docker host explicitly");
+  if (process.platform !== "linux") throw new Error("Select the qualified native Docker host explicitly");
   const plan = JSON.parse(await readFile(resolve(directory, "game-probe-plan.json"), "utf8"));
-  const manifest = JSON.parse(
-    await readFile(resolve(directory, "owner-partition-ts.json"), "utf8"),
-  );
+  const manifest = JSON.parse(await readFile(resolve(directory, "owner-partition-ts.json"), "utf8"));
   const metadata = JSON.parse(await readFile(resolve(directory, "postgres-metadata.json"), "utf8"));
   const archive = resolve(directory, "rg.dump");
   const toc = resolve(directory, "neon-inagle.toc");
@@ -506,9 +462,7 @@ async function localProbe(directory: string) {
     digest(policies) !== plan.policySqlSha256
   )
     throw new Error("Local probe plan/source/allowlist/policy hashes do not match");
-  const tables = manifest.tables.filter(
-    (t: TableMetadata & { owner: Owner }) => t.owner === "game",
-  ) as TableMetadata[];
+  const tables = manifest.tables.filter((t: TableMetadata & { owner: Owner }) => t.owner === "game") as TableMetadata[];
   const name = "iecode-game-probe-" + randomUUID().replaceAll("-", "").slice(0, 12);
   const exec = ["docker", "exec", "--user", `${process.getuid?.()}:${process.getgid?.()}`, name];
   const cleanup = async () => {
@@ -516,8 +470,7 @@ async function localProbe(directory: string) {
       ["docker", "inspect", "--format", '{{index .Config.Labels "io.aphrody.task"}}', name],
       10_000,
     );
-    if (inspect.stdout.trim() !== name)
-      throw new Error("Task-labelled container ownership mismatch");
+    if (inspect.stdout.trim() !== name) throw new Error("Task-labelled container ownership mismatch");
     const remove = await boundedProcess(["docker", "rm", "-f", name], 15_000);
     if (remove.exitCode) throw new Error("Owned PostgreSQL probe cleanup failed");
   };
@@ -540,15 +493,14 @@ async function localProbe(directory: string) {
       "-c",
       sql,
     ]);
-    if (result.exitCode)
-      throw new Error("Local probe SQL failed; diagnostic hash " + result.diagnosticSha256);
+    if (result.exitCode) throw new Error("Local probe SQL failed; diagnostic hash " + result.diagnosticSha256);
     return result.stdout.trim();
   };
   const countsSql =
     "SELECT json_agg(json_build_object('schema',schema,'name',name,'rowCount',count) ORDER BY name) FROM (" +
     tables
       .map(
-        (t) =>
+        t =>
           `SELECT 'public'::text AS schema, '${t.name}'::text AS name, COUNT(*) AS count FROM public.${quote(t.name)}`,
       )
       .join(" UNION ALL ") +
@@ -612,8 +564,7 @@ async function localProbe(directory: string) {
       ],
       30_000,
     );
-    if (start.exitCode)
-      throw new Error("Isolated PostgreSQL start failed: " + start.diagnosticSha256);
+    if (start.exitCode) throw new Error("Isolated PostgreSQL start failed: " + start.diagnosticSha256);
     started = true;
     const deadline = Date.now() + 60_000;
     for (;;) {
@@ -624,18 +575,7 @@ async function localProbe(directory: string) {
       const ready =
         main.exitCode === 0
           ? await boundedProcess(
-              [
-                ...exec,
-                "psql",
-                "-U",
-                "postgres",
-                "-d",
-                "inagle_probe",
-                "-X",
-                "-q",
-                "-c",
-                "SELECT 1",
-              ],
+              [...exec, "psql", "-U", "postgres", "-d", "inagle_probe", "-X", "-q", "-c", "SELECT 1"],
               5_000,
             )
           : undefined;
@@ -658,16 +598,13 @@ async function localProbe(directory: string) {
       "/input/game.toc",
       "/input/rg.dump",
     ]);
-    if (restore.exitCode)
-      throw new Error("Game-only restore failed; diagnostic hash " + restore.diagnosticSha256);
+    if (restore.exitCode) throw new Error("Game-only restore failed; diagnostic hash " + restore.diagnosticSha256);
     await query("BEGIN;" + policies + "COMMIT;");
     const ownerCounts = JSON.parse(await query(countsSql)) as TableMetadata[];
-    const readerCounts = JSON.parse(
-      await query("SET ROLE inagle_reader;" + countsSql),
-    ) as TableMetadata[];
-    const expected = new Map(tables.map((t) => [t.name, t.rowCount]));
+    const readerCounts = JSON.parse(await query("SET ROLE inagle_reader;" + countsSql)) as TableMetadata[];
+    const expected = new Map(tables.map(t => [t.name, t.rowCount]));
     if (
-      ownerCounts.some((t) => expected.get(t.name) !== t.rowCount) ||
+      ownerCounts.some(t => expected.get(t.name) !== t.rowCount) ||
       JSON.stringify(ownerCounts) !== JSON.stringify(readerCounts)
     )
       throw new Error("Source/game/reader row-count parity failed");
@@ -685,14 +622,11 @@ async function localProbe(directory: string) {
       ),
     ] as string[]) {
       const name = table.slice("public.".length);
-      const column = metadata.tables.find(
-        (t: TableMetadata) => t.schema === "public" && t.name === name,
-      )?.columns?.[0]?.name;
-      if (!column)
-        throw new Error("Actual source column metadata required for policy qualification");
+      const column = metadata.tables.find((t: TableMetadata) => t.schema === "public" && t.name === name)?.columns?.[0]
+        ?.name;
+      if (!column) throw new Error("Actual source column metadata required for policy qualification");
       const role =
-        manifest.policyRewrites.find((p: { table: string }) => p.table === table).target ===
-        "importer"
+        manifest.policyRewrites.find((p: { table: string }) => p.table === table).target === "importer"
           ? "inagle_importer"
           : "inagle_writer";
       const update = `UPDATE public.${quote(name)} SET ${quote(column)}=${quote(column)} WHERE ctid=(SELECT ctid FROM public.${quote(name)} LIMIT 1) RETURNING 1`;
@@ -715,9 +649,7 @@ async function localProbe(directory: string) {
       if (!reader.exitCode || !reader.sqlStates.includes("42501"))
         throw new Error("Reader write-denial policy gate failed");
       const affected = Number(
-        await query(
-          `BEGIN;SET LOCAL ROLE ${role};WITH touched AS (${update}) SELECT count(*) FROM touched;ROLLBACK;`,
-        ),
+        await query(`BEGIN;SET LOCAL ROLE ${role};WITH touched AS (${update}) SELECT count(*) FROM touched;ROLLBACK;`),
       );
       const expectedRows = Math.min(1, expected.get(name) ?? 0);
       if (affected !== expectedRows) throw new Error("Scoped writer policy gate failed");
@@ -751,11 +683,7 @@ async function localProbe(directory: string) {
       sourceMutated: false,
       rawRowDataExported: false,
     };
-    await writeFile(
-      resolve(directory, "game-probe-ts.json"),
-      JSON.stringify(receipt, null, 2) + "\n",
-      { mode: 0o600 },
-    );
+    await writeFile(resolve(directory, "game-probe-ts.json"), JSON.stringify(receipt, null, 2) + "\n", { mode: 0o600 });
     console.log(JSON.stringify({ ...receipt, tables: undefined }));
   } finally {
     if (started) await cleanup();
@@ -763,12 +691,9 @@ async function localProbe(directory: string) {
 }
 
 async function neonPreflight(directory: string, credentials: string) {
-  if (process.platform !== "linux")
-    throw new Error("Select the qualified native Docker host explicitly");
+  if (process.platform !== "linux") throw new Error("Select the qualified native Docker host explicitly");
   const plan = JSON.parse(await readFile(resolve(directory, "neon-game-plan.json"), "utf8"));
-  const manifest = JSON.parse(
-    await readFile(resolve(directory, "owner-partition-ts.json"), "utf8"),
-  );
+  const manifest = JSON.parse(await readFile(resolve(directory, "owner-partition-ts.json"), "utf8"));
   if (
     plan.schema !== "iecode-neon-game-plan/1" ||
     plan.status !== "read-only-preflight-approved" ||
@@ -787,11 +712,7 @@ async function neonPreflight(directory: string, credentials: string) {
     plan.policySqlSha256 !== manifest.policySqlSha256
   )
     throw new Error("Explicit isolated Inagle target required");
-  for (const path of [
-    credentials,
-    resolve(credentials, "pgpass"),
-    resolve(credentials, "pg_service.conf"),
-  ])
+  for (const path of [credentials, resolve(credentials, "pgpass"), resolve(credentials, "pg_service.conf")])
     if ((await stat(path)).mode & 0o077) throw new Error("Credential store must remain private");
   const service = await readFile(resolve(credentials, "pg_service.conf"), "utf8");
   if (
@@ -856,8 +777,7 @@ async function neonPreflight(directory: string, credentials: string) {
     "SELECT json_build_object('database',current_database(),'role',current_user,'serverVersion',current_setting('server_version'),'readOnly',current_setting('transaction_read_only'),'backendSsl',(SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()),'userTables',(SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema')),'roles',(SELECT json_agg(json_build_object('name',rolname,'canLogin',rolcanlogin,'canCreateRole',rolcreaterole,'bypassRls',rolbypassrls)) FROM pg_roles WHERE rolname IN (current_user,'inagle_reader','inagle_writer','inagle_importer')));",
   ];
   const result = await boundedProcess(argv, 60_000);
-  if (result.exitCode)
-    throw new Error("Read-only Neon preflight failed; diagnostic hash " + result.diagnosticSha256);
+  if (result.exitCode) throw new Error("Read-only Neon preflight failed; diagnostic hash " + result.diagnosticSha256);
   const metadata = JSON.parse(result.stdout.trim());
   if (
     metadata.database !== "inagle" ||
@@ -872,9 +792,7 @@ async function neonPreflight(directory: string, credentials: string) {
     60_000,
   );
   if (transportResult.exitCode)
-    throw new Error(
-      "Client TLS preflight failed; diagnostic hash " + transportResult.diagnosticSha256,
-    );
+    throw new Error("Client TLS preflight failed; diagnostic hash " + transportResult.diagnosticSha256);
   const transport = {
     ...clientTransport(transportResult.stdout),
     sslmode: "verify-full",
@@ -893,11 +811,7 @@ async function neonPreflight(directory: string, credentials: string) {
     credentialMount: "read-only",
     cloudWrites: false,
   };
-  await writeFile(
-    resolve(directory, "neon-preflight.json"),
-    JSON.stringify(receipt, null, 2) + "\n",
-    { mode: 0o600 },
-  );
+  await writeFile(resolve(directory, "neon-preflight.json"), JSON.stringify(receipt, null, 2) + "\n", { mode: 0o600 });
   console.log(JSON.stringify(receipt));
 }
 

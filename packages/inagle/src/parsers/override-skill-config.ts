@@ -141,15 +141,13 @@ function findOverrideSkillConfigFile(dir: string): string | null {
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir);
   const configFile = files
-    .filter((f) => f.startsWith("override_skill_config_") && f.endsWith(".cfg.bin.json"))
+    .filter(f => f.startsWith("override_skill_config_") && f.endsWith(".cfg.bin.json"))
     .sort()
     .pop();
   return configFile ? join(dir, configFile) : null;
 }
 
-export async function loadOverrideSkillConfigAsync(
-  dataPath: string,
-): Promise<OverrideSkillDatabase | null> {
+export async function loadOverrideSkillConfigAsync(dataPath: string): Promise<OverrideSkillDatabase | null> {
   const skillDir = join(dataPath, "common", "gamedata", "skill");
   const configPath = findOverrideSkillConfigFile(skillDir);
 

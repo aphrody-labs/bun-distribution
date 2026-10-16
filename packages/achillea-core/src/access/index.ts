@@ -37,31 +37,31 @@ export type AppAbility = MongoAbility<[AchilleaAction, AchilleaSubject]>;
  *   owner  : manage all
  */
 export function buildAbilityFor(role: AchilleaRole): AppAbility {
-	const builder = new AbilityBuilder<AppAbility>(createMongoAbility);
-	const { can, cannot } = builder;
+  const builder = new AbilityBuilder<AppAbility>(createMongoAbility);
+  const { can, cannot } = builder;
 
-	switch (role) {
-		case AchilleaRole.owner:
-			can("manage", "all");
-			break;
+  switch (role) {
+    case AchilleaRole.owner:
+      can("manage", "all");
+      break;
 
-		case AchilleaRole.admin:
-			can("manage", "all");
-			// Un admin ne peut pas modifier un user dont le rôle est owner
-			cannot("manage", "User", { role: "owner" } as never);
-			break;
+    case AchilleaRole.admin:
+      can("manage", "all");
+      // Un admin ne peut pas modifier un user dont le rôle est owner
+      cannot("manage", "User", { role: "owner" } as never);
+      break;
 
-		case AchilleaRole.staff:
-			can("view", "all");
-			can("moderate", "Sanction");
-			can("cast", "CastEvent");
-			break;
+    case AchilleaRole.staff:
+      can("view", "all");
+      can("moderate", "Sanction");
+      can("cast", "CastEvent");
+      break;
 
-		case AchilleaRole.member:
-		default:
-			can("view", "all");
-			break;
-	}
+    case AchilleaRole.member:
+    default:
+      can("view", "all");
+      break;
+  }
 
-	return builder.build();
+  return builder.build();
 }

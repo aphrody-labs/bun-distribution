@@ -10,12 +10,12 @@ import AstralLeagueClient from "../astral/astral-league-client";
  * que faisait le layout, qui pointait des pages DIFFÉRENTES vers une seule.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Astral League",
-	description:
-		"Le championnat Astral League d'Achilléa : classement, calendrier des journées et règlement de la saison.",
-	chemin: "/achillea/leagues/astral",
+  titre: "Astral League",
+  description:
+    "Le championnat Astral League d'Achilléa : classement, calendrier des journées et règlement de la saison.",
+  chemin: "/achillea/leagues/astral",
 });
 
 export default function AsytralLeagueSaison1AliasPage() {
-	return <AstralLeagueClient />;
+  return <AstralLeagueClient />;
 }

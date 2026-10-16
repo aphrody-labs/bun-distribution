@@ -107,7 +107,7 @@ interface Args {
 
 function parseArgs(argv: string[]): Args {
   const get = (flag: string): string | undefined => {
-    const hit = argv.find((a) => a.startsWith(`${flag}=`));
+    const hit = argv.find(a => a.startsWith(`${flag}=`));
     return hit?.slice(flag.length + 1);
   };
   const scriptDir = path.dirname(new URL(import.meta.url).pathname);
@@ -176,9 +176,7 @@ function collectRoot(dataRoot: string): { entries: TextEntry[]; perCat: Map<stri
 
   // Ordre prioritaire : les dicts sémantiques (chara/item/skill…) avant `_roma`
   // et les génériques, pour que `INSERT OR IGNORE` conserve le bon texte.
-  const orderedDicts = [...dictNames].sort(
-    (a, b) => rootPriority(a) - rootPriority(b) || a.localeCompare(b),
-  );
+  const orderedDicts = [...dictNames].sort((a, b) => rootPriority(a) - rootPriority(b) || a.localeCompare(b));
 
   for (const dict of orderedDicts) {
     const category = ROOT_CATEGORY[dict] ?? dict.replace(/_text$/, "");
@@ -233,7 +231,7 @@ function collectDialogue(dataRoot: string): {
 
 /** Écrit un artefact NDJSON gzippé (`[hashId, locale, category, value]` par ligne). */
 function writeNdjsonGz(outPath: string, entries: TextEntry[]): number {
-  const ndjson = entries.map((e) => JSON.stringify(e)).join("\n");
+  const ndjson = entries.map(e => JSON.stringify(e)).join("\n");
   const gz = gzipSync(Buffer.from(ndjson, "utf8"), { level: 9 });
   writeFileSync(outPath, gz);
   return gz.length;
@@ -294,14 +292,13 @@ async function main() {
 
   // --- Stats globales (hashId uniques, langues) ---
   const allEntries = [...root.entries, ...(dialogue?.entries ?? [])];
-  const uniqueHashes = new Set(allEntries.map((e) => e[0]));
+  const uniqueHashes = new Set(allEntries.map(e => e[0]));
   const perLocale = new Map<string, number>();
   for (const e of allEntries) perLocale.set(e[1], (perLocale.get(e[1]) ?? 0) + 1);
   console.log("[game-text] === STATS ===");
   console.log(`    entrées totales : ${fmt(allEntries.length)}`);
   console.log(`    hashId uniques  : ${fmt(uniqueHashes.size)}`);
-  for (const [loc, n] of [...perLocale.entries()].sort())
-    console.log(`    locale ${loc.padEnd(4)}: ${fmt(n)}`);
+  for (const [loc, n] of [...perLocale.entries()].sort()) console.log(`    locale ${loc.padEnd(4)}: ${fmt(n)}`);
 }
 
 await main();

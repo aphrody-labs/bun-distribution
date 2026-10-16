@@ -20,15 +20,8 @@ export default function RankedChallengePage({ code }: { code: string }) {
   const [notFound, setNotFound] = useState<boolean>(false);
   const [accepting, setAccepting] = useState<boolean>(false);
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    rawCode,
-    isAuthenticated,
-  ]);
-  if (
-    [rawCode, isAuthenticated].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
-  ) {
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([rawCode, isAuthenticated]);
+  if ([rawCode, isAuthenticated].some((value, position) => !Object.is(value, requestIdentity1[position]))) {
     setRequestIdentity1([rawCode, isAuthenticated]);
     (() => {
       if (!isAuthenticated) {
@@ -49,7 +42,7 @@ export default function RankedChallengePage({ code }: { code: string }) {
 
     client.ranked
       .getChallenge(rawCode)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value) {
           setPreview(res.value);
@@ -126,8 +119,8 @@ export default function RankedChallengePage({ code }: { code: string }) {
                 <h2 className="text-xl font-bold">Connexion requise pour accepter ce défi</h2>
                 <p className="text-xs text-muted-foreground">
                   Vous avez reçu une invitation de duel pour le code{" "}
-                  <span className="font-mono font-bold text-foreground">{rawCode}</span>.
-                  Connectez-vous avec Discord pour continuer.
+                  <span className="font-mono font-bold text-foreground">{rawCode}</span>. Connectez-vous avec Discord
+                  pour continuer.
                 </p>
               </div>
               <button
@@ -170,24 +163,16 @@ export default function RankedChallengePage({ code }: { code: string }) {
 
               {/* Challenger card */}
               <div className="p-4 rounded-xl bg-background/80 border border-border flex items-center gap-4 text-left">
-                <UserAvatar
-                  avatar={preview.fromAvatar}
-                  displayName={preview.fromDisplayName}
-                  className="w-12 h-12"
-                />
+                <UserAvatar avatar={preview.fromAvatar} displayName={preview.fromDisplayName} className="w-12 h-12" />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm truncate">{preview.fromDisplayName}</div>
-                  <div className="text-xs text-amber-400 font-mono font-semibold">
-                    {preview.fromElo} AP
-                  </div>
+                  <div className="text-xs text-amber-400 font-mono font-semibold">{preview.fromElo} AP</div>
                 </div>
                 <div className="text-right">
                   <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
                     {preview.mode === MatchMode.ONE_VS_ONE ? "1v1" : "2v2"}
                   </span>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {preview.ranked ? "Classé" : "Amical"}
-                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{preview.ranked ? "Classé" : "Amical"}</div>
                 </div>
               </div>
 
@@ -198,11 +183,7 @@ export default function RankedChallengePage({ code }: { code: string }) {
                   disabled={accepting}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-sm"
                 >
-                  {accepting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4" />
-                  )}
+                  {accepting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   Accepter le match
                 </button>
                 <button

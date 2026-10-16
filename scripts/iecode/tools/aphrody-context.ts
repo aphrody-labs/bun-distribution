@@ -13,13 +13,12 @@ export function operationsContext(
   if (authority !== "@aphrody/workspace") throw new Error("Unexpected operations authority");
   const configured = [environment.APHRODY_ROOT, environment.APHRODY_INFRA_ROOT]
     .filter((value): value is string => Boolean(value))
-    .map((value) => {
+    .map(value => {
       const path = resolve(root, value);
       if (!existsSync(path)) throw new Error(`Configured Aphrody checkout does not exist: ${path}`);
       return realpathSync(path);
     });
-  if (new Set(configured).size > 1)
-    throw new Error("APHRODY_ROOT and APHRODY_INFRA_ROOT select different checkouts");
+  if (new Set(configured).size > 1) throw new Error("APHRODY_ROOT and APHRODY_INFRA_ROOT select different checkouts");
   if (!configured.length) {
     let entry: string | undefined;
     try {
@@ -46,8 +45,7 @@ export function operationsContext(
   const packageFile = resolve(packageRoot, "package.json");
   if (!existsSync(packageFile)) throw new Error(`Missing operations owner: ${packageFile}`);
   const owner = JSON.parse(readFileSync(packageFile, "utf8"));
-  if (owner.name !== manifest.operations.authority)
-    throw new Error(`Unexpected operations owner: ${owner.name}`);
+  if (owner.name !== manifest.operations.authority) throw new Error(`Unexpected operations owner: ${owner.name}`);
   const entry = resolve(packageRoot, "src/ops.ts");
   if (!existsSync(entry)) throw new Error(`Missing operations entry: ${entry}`);
   return { repositoryRoot: root, operationsRoot, entry };

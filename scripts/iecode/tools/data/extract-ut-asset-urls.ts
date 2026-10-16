@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 
 const dbDir = "var/mirror/ievr-ut/db";
 const files = fs.readdirSync(dbDir).filter(f => f.endsWith(".json"));
@@ -7,7 +7,7 @@ const urls = new Set<string>();
 const urlRegex = /https?:\/\/[^\s"',]+\.(?:png|jpg|jpeg|webp|gif|svg|mp3|ogg|wav)/gi;
 
 for (const file of files) {
-  const content = fs.readFileSync(`${dbDir}/${file}`, "utf8");
+  const content = await Bun.file(`${dbDir}/${file}`).text();
   let match;
   while ((match = urlRegex.exec(content)) !== null) {
     urls.add(match[0]);

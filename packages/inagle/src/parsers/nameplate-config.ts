@@ -82,9 +82,7 @@ function parseContent(content: any): ParsedNameplate[] {
 // Loaders
 // ============================================================================
 
-export async function loadNameplateConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedNameplate[] | null> {
+export async function loadNameplateConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedNameplate[] | null> {
   const filename = findConfigFile("user_name_plate", "user_name_plate_config");
   if (!filename) return null;
 
@@ -93,9 +91,7 @@ export async function loadNameplateConfigAsync(
   return content ? parseContent(content) : null;
 }
 
-export async function buildNameplateDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<NameplateDatabase> {
+export async function buildNameplateDatabase(dataPath: string = DATA_ROOT): Promise<NameplateDatabase> {
   const nameplates = (await loadNameplateConfigAsync(dataPath)) || [];
   const byId = new Map<string, ParsedNameplate>();
   for (const n of nameplates) byId.set(n.nameplateId, n);

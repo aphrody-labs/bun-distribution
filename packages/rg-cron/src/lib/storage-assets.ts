@@ -30,14 +30,13 @@ import { resignerPiecesJointes } from "./discord-rest.js";
  * route réellement ; `:8811` n'est jamais écouté en production.
  */
 export function baseStorage(): string {
-	const brut = Bun.env.SUPABASE_INTERNAL_URL || "http://127.0.0.1:8800";
-	return brut.replace(/\/+$/, "");
+  const brut = Bun.env.SUPABASE_INTERNAL_URL || "http://127.0.0.1:8800";
+  return brut.replace(/\/+$/, "");
 }
 
 /** Résultat d'un téléchargement : les octets, ou le motif de l'échec. */
 export type TelechargementDiscord =
-	| { ok: true; octets: ArrayBuffer; typeMime: string; urlUtilisee: string }
-	| { ok: false; motif: string };
+  { ok: true; octets: ArrayBuffer; typeMime: string; urlUtilisee: string } | { ok: false; motif: string };
 
 /**
  * Télécharge une pièce jointe Discord, en re-signant son URL si elle a expiré.
@@ -47,49 +46,49 @@ export type TelechargementDiscord =
  * d'abandonner. `tailleMax` protège la mémoire du démon comme le bucket.
  */
 export async function telechargerPieceJointeDiscord(
-	salonId: string,
-	url: string,
-	tailleMax: number,
-	typeMimeAttendu?: string | null,
-	/**
-	 * Familles de types MIME acceptées, en préfixe.
-	 *
-	 * Défaut `image/` : c'est ce qu'attendent les visuels de sondage et tous les
-	 * appelants historiques. `campagnes-discord.ts` y ajoute `video/` — une
-	 * participation à une campagne peut être une vidéo, et la refuser ici la
-	 * faisait disparaître sans qu'aucun compteur ne bouge.
-	 */
-	prefixesAutorises: readonly string[] = ["image/"]
+  salonId: string,
+  url: string,
+  tailleMax: number,
+  typeMimeAttendu?: string | null,
+  /**
+   * Familles de types MIME acceptées, en préfixe.
+   *
+   * Défaut `image/` : c'est ce qu'attendent les visuels de sondage et tous les
+   * appelants historiques. `campagnes-discord.ts` y ajoute `video/` — une
+   * participation à une campagne peut être une vidéo, et la refuser ici la
+   * faisait disparaître sans qu'aucun compteur ne bouge.
+   */
+  prefixesAutorises: readonly string[] = ["image/"],
 ): Promise<TelechargementDiscord> {
-	let urlUtilisee = url;
-	let reponse = await fetch(urlUtilisee).catch(() => null);
+  let urlUtilisee = url;
+  let reponse = await fetch(urlUtilisee).catch(() => null);
 
-	if (!reponse || reponse.status === 403 || reponse.status === 404) {
-		const fraiches = await resignerPiecesJointes(salonId, [urlUtilisee]);
-		const fraiche = fraiches?.[0];
-		if (!fraiche) return { ok: false, motif: "URL Discord périmée et non re-signable" };
-		urlUtilisee = fraiche;
-		reponse = await fetch(urlUtilisee).catch(() => null);
-	}
+  if (!reponse || reponse.status === 403 || reponse.status === 404) {
+    const fraiches = await resignerPiecesJointes(salonId, [urlUtilisee]);
+    const fraiche = fraiches?.[0];
+    if (!fraiche) return { ok: false, motif: "URL Discord périmée et non re-signable" };
+    urlUtilisee = fraiche;
+    reponse = await fetch(urlUtilisee).catch(() => null);
+  }
 
-	if (!reponse?.ok) {
-		return { ok: false, motif: `téléchargement Discord ${reponse?.status ?? "injoignable"}` };
-	}
+  if (!reponse?.ok) {
+    return { ok: false, motif: `téléchargement Discord ${reponse?.status ?? "injoignable"}` };
+  }
 
-	const typeMime = reponse.headers.get("content-type") ?? typeMimeAttendu ?? "";
-	if (!prefixesAutorises.some((prefixe) => typeMime.startsWith(prefixe))) {
-		return {
-			ok: false,
-			motif: `type refusé (${typeMime || "inconnu"} ; attendu ${prefixesAutorises.join(" ou ")})`,
-		};
-	}
+  const typeMime = reponse.headers.get("content-type") ?? typeMimeAttendu ?? "";
+  if (!prefixesAutorises.some(prefixe => typeMime.startsWith(prefixe))) {
+    return {
+      ok: false,
+      motif: `type refusé (${typeMime || "inconnu"} ; attendu ${prefixesAutorises.join(" ou ")})`,
+    };
+  }
 
-	const octets = await reponse.arrayBuffer();
-	if (octets.byteLength > tailleMax) {
-		return { ok: false, motif: `fichier trop lourd (${octets.byteLength} o)` };
-	}
+  const octets = await reponse.arrayBuffer();
+  if (octets.byteLength > tailleMax) {
+    return { ok: false, motif: `fichier trop lourd (${octets.byteLength} o)` };
+  }
 
-	return { ok: true, octets, typeMime, urlUtilisee };
+  return { ok: true, octets, typeMime, urlUtilisee };
 }
 
 /**
@@ -100,33 +99,33 @@ export async function telechargerPieceJointeDiscord(
  * que de créer un doublon horodaté.
  */
 export async function televerserObjet(
-	bucket: string,
-	chemin: string,
-	octets: ArrayBuffer,
-	typeMime: string
+  bucket: string,
+  chemin: string,
+  octets: ArrayBuffer,
+  typeMime: string,
 ): Promise<{ ok: boolean; motif?: string }> {
-	const cle = Bun.env.SUPABASE_SERVICE_ROLE_KEY;
-	if (!cle) return { ok: false, motif: "SUPABASE_SERVICE_ROLE_KEY absente" };
+  const cle = Bun.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!cle) return { ok: false, motif: "SUPABASE_SERVICE_ROLE_KEY absente" };
 
-	const envoi = await fetch(`${baseStorage()}/storage/v1/object/${bucket}/${chemin}`, {
-		method: "POST",
-		headers: {
-			authorization: `Bearer ${cle}`,
-			apikey: cle,
-			"content-type": typeMime,
-			"x-upsert": "true",
-		},
-		body: octets,
-	}).catch(() => null);
+  const envoi = await fetch(`${baseStorage()}/storage/v1/object/${bucket}/${chemin}`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${cle}`,
+      apikey: cle,
+      "content-type": typeMime,
+      "x-upsert": "true",
+    },
+    body: octets,
+  }).catch(() => null);
 
-	if (!envoi?.ok) {
-		const texte = await envoi?.text().catch(() => "");
-		return {
-			ok: false,
-			motif: `Storage ${envoi?.status ?? "injoignable"} ${(texte ?? "").slice(0, 120)}`,
-		};
-	}
-	return { ok: true };
+  if (!envoi?.ok) {
+    const texte = await envoi?.text().catch(() => "");
+    return {
+      ok: false,
+      motif: `Storage ${envoi?.status ?? "injoignable"} ${(texte ?? "").slice(0, 120)}`,
+    };
+  }
+  return { ok: true };
 }
 
 /**
@@ -137,11 +136,11 @@ export async function televerserObjet(
  * garder en base donnerait l'illusion d'un lien utilisable.
  */
 export function urlSansSignature(url: string): string {
-	try {
-		const analysee = new URL(url);
-		analysee.search = "";
-		return analysee.toString();
-	} catch {
-		return url;
-	}
+  try {
+    const analysee = new URL(url);
+    analysee.search = "";
+    return analysee.toString();
+  } catch {
+    return url;
+  }
 }

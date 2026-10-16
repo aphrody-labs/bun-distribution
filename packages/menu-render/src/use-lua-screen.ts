@@ -105,10 +105,7 @@ export interface UseLuaMenuResult {
  * return <GameMenu layout={layout} assetBase="/assets" overrides={overrides} />;
  * ```
  */
-export function useLuaMenu(
-  source: string | null | undefined,
-  options: RunMenuStateOptions = {},
-): UseLuaMenuResult {
+export function useLuaMenu(source: string | null | undefined, options: RunMenuStateOptions = {}): UseLuaMenuResult {
   const [overrides, setOverrides] = useState<Record<string, MenuObjectOverride>>({});
   const [menuState, setMenuState] = useState<MenuState | null>(null);
   const [layerState, setLayerState] = useState<LuaLayerState | null>(null);

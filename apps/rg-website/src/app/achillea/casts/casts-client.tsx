@@ -21,22 +21,18 @@ export default function CastsPublicPage() {
 
     client.casts
       .listCasters()
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok) {
           setCasters(res.value);
         } else {
-          setLoadError(
-            "La liste des casters est temporairement indisponible. Réessaie dans quelques instants.",
-          );
+          setLoadError("La liste des casters est temporairement indisponible. Réessaie dans quelques instants.");
           signalerException("casts", new Error(`${res.kind}: ${res.detail}`));
         }
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
-        setLoadError(
-          "La liste des casters est temporairement indisponible. Réessaie dans quelques instants.",
-        );
+        setLoadError("La liste des casters est temporairement indisponible. Réessaie dans quelques instants.");
         signalerException("casts", cause);
       })
       .finally(() => {
@@ -78,8 +74,7 @@ export default function CastsPublicPage() {
           </a>
         </div>
         <p className="text-sm text-muted-foreground">
-          Découvrez l'équipe de commentateurs et streamers officiels d'Achilléa sur Inazuma Eleven:
-          Victory Road.
+          Découvrez l'équipe de commentateurs et streamers officiels d'Achilléa sur Inazuma Eleven: Victory Road.
         </p>
       </div>
 
@@ -89,10 +84,7 @@ export default function CastsPublicPage() {
           <p className="text-sm text-muted-foreground">Chargement des casters...</p>
         </div>
       ) : loadError ? (
-        <div
-          role="alert"
-          className="border border-amber-500/30 bg-amber-500/5 rounded-2xl p-8 text-center space-y-3"
-        >
+        <div role="alert" className="border border-amber-500/30 bg-amber-500/5 rounded-2xl p-8 text-center space-y-3">
           <p className="text-sm text-muted-foreground">{loadError}</p>
           <button
             type="button"
@@ -108,7 +100,7 @@ export default function CastsPublicPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {casters.map((caster) => (
+          {casters.map(caster => (
             <CastCard key={caster.id} caster={caster} />
           ))}
         </div>

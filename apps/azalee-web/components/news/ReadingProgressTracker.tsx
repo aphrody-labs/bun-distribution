@@ -59,7 +59,7 @@ export function ReadingProgressTracker({ articleId }: ReadingProgressTrackerProp
 
     if (marker) {
       observer = new IntersectionObserver(
-        (entries) => {
+        entries => {
           for (const entry of entries) {
             if (entry.isIntersecting && !trackedRef.current.has(100)) {
               trackedRef.current.add(100);

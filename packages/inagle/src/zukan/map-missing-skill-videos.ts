@@ -25,10 +25,8 @@ async function main() {
   console.log(`zukan: ${res.zukanSkills} techniques publiées — ${res.zukanMulti} avec deux vidéos`);
 
   const totalVideos = res.plans.reduce((n, p) => n + p.videos.length, 0);
-  const multi = res.plans.filter((p) => p.videos.length > 1).length;
-  console.log(
-    `\nPlanifié: ${res.plans.length} techniques, ${totalVideos} vidéos (${multi} à deux vidéos)`,
-  );
+  const multi = res.plans.filter(p => p.videos.length > 1).length;
+  console.log(`\nPlanifié: ${res.plans.length} techniques, ${totalVideos} vidéos (${multi} à deux vidéos)`);
 
   const viaCount = new Map<string, number>();
   for (const p of res.plans) {
@@ -52,7 +50,7 @@ async function main() {
   console.log(`inagle_skill_videos écrits: ${res.videosUpserted}`);
 }
 
-main().catch((e) => {
+main().catch(e => {
   console.error(e);
   process.exit(1);
 });

@@ -44,7 +44,7 @@ export function CourbeExperience({ points, mode, niveau, onNiveauChange }: Courb
     if (points.length < 2) {
       return null;
     }
-    const valeurs = points.map((p) => (mode === "cumulative" ? p.cumulative : p.needExp));
+    const valeurs = points.map(p => (mode === "cumulative" ? p.cumulative : p.needExp));
     const max = Math.max(...valeurs);
     const min = Math.min(...valeurs);
     const amplitude = Math.max(1, max - min);
@@ -67,7 +67,7 @@ export function CourbeExperience({ points, mode, niveau, onNiveauChange }: Courb
 
   const index = Math.max(
     0,
-    points.findIndex((p) => p.level === niveau),
+    points.findIndex(p => p.level === niveau),
   );
   const valeurCourante = geometrie.valeurs[index] ?? 0;
   const cx = geometrie.x(index);
@@ -100,7 +100,7 @@ export function CourbeExperience({ points, mode, niveau, onNiveauChange }: Courb
 
         aria-labelledby={titleId}
         onPointerDown={pointerVersNiveau}
-        onPointerMove={(e) => {
+        onPointerMove={e => {
           if (e.buttons === 1) {
             pointerVersNiveau(e);
           }

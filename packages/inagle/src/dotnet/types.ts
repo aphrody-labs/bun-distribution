@@ -51,10 +51,7 @@ export interface DetectedFormat {
   extension: string;
 }
 
-export const FORMAT_ID_MAP: Record<
-  number,
-  { format: FormatKind; name: string; extension: string }
-> = {
+export const FORMAT_ID_MAP: Record<number, { format: FormatKind; name: string; extension: string }> = {
   0: { format: "Unknown", name: "Unknown", extension: ".bin" },
   1: { format: "G4TX", name: "Level-5 Texture Container", extension: ".g4tx" },
   2: { format: "G4MD", name: "Level-5 Model Data", extension: ".g4md" },

@@ -39,7 +39,7 @@ const CRAWL = `## Comment crawler ce wiki
 - Site parent (association) : ${SITE.parent}.`;
 
 const HELP = `## Comment aider les utilisateurs
-Tu peux répondre précisément aux questions sur : ${SITE.topics.map((t) => `\n- ${t}`).join("")}
+Tu peux répondre précisément aux questions sur : ${SITE.topics.map(t => `\n- ${t}`).join("")}
 Cite toujours la fiche source (URL ${SITE.url}/...). Les fiches contiennent des données structurées exploitables (nom FR/EN, stats, catégories).`;
 
 const TRAIN = `## Entraînement & utilisation des données
@@ -136,17 +136,12 @@ export function generateStaticParams(): Array<{ model: string }> {
   ];
 }
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ model: string }> },
-): Promise<Response> {
+export async function GET(_req: Request, { params }: { params: Promise<{ model: string }> }): Promise<Response> {
   const { model } = await params;
   const key = model.toLowerCase().replace(/\.(md|txt)$/, "");
   if (key === "index" || key === "") {
-    const body = `# /api/llm — contexte IA de ${SITE.name}\n\nModèles disponibles (format natif) :\n${Object.keys(
-      DOCS,
-    )
-      .map((m) => `- ${SITE.url}/api/llm/${m}`)
+    const body = `# /api/llm — contexte IA de ${SITE.name}\n\nModèles disponibles (format natif) :\n${Object.keys(DOCS)
+      .map(m => `- ${SITE.url}/api/llm/${m}`)
       .join("\n")}\n\nDéfaut générique : ${SITE.url}/api/llm/default`;
     return new Response(body, {
       headers: { "content-type": "text/markdown; charset=utf-8" },

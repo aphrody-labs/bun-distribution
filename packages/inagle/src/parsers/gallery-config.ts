@@ -76,9 +76,7 @@ function parseContent(content: any): ParsedGallery[] {
 // Loaders
 // ============================================================================
 
-export async function loadGalleryConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedGallery[] | null> {
+export async function loadGalleryConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedGallery[] | null> {
   const filename = findConfigFile("gallery", "gallery_config");
   if (!filename) return null;
 

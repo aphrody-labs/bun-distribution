@@ -10,16 +10,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@rosegriffon/ui";
-import {
-  UserPlus,
-  Users,
-  Trophy,
-  Megaphone,
-  Palette,
-  ExternalLink,
-  ShieldCheck,
-  Scale,
-} from "lucide-react";
+import { UserPlus, Users, Trophy, Megaphone, Palette, ExternalLink, ShieldCheck, Scale } from "lucide-react";
 import { FaDiscord, FaXTwitter, FaYoutube, FaTwitch } from "react-icons/fa6";
 import { metadonneesAchillea } from "@/app/achillea/metadonnees";
 
@@ -28,8 +19,7 @@ export const metadata = metadonneesAchillea({
   // `title.template` du layout ajoute déjà « | Achilléa — Rose Griffon » :
   // l'onglet affichait la marque deux fois.
   titre: "Guide compétitif",
-  description:
-    "Règles officielles, création de clan, format des tournois et commandes Discord d'Achilléa.",
+  description: "Règles officielles, création de clan, format des tournois et commandes Discord d'Achilléa.",
   chemin: "/achillea/guide",
 });
 
@@ -41,8 +31,7 @@ export default function AchilleaGuidePage() {
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Guide Compétitif</h1>
             <p className="text-muted-foreground mt-1">
-              Fonctionnement d&apos;Achilléa, création de clans, règles officielles et commandes
-              Discord.
+              Fonctionnement d&apos;Achilléa, création de clans, règles officielles et commandes Discord.
             </p>
           </div>
           <Link
@@ -78,12 +67,11 @@ export default function AchilleaGuidePage() {
               .
             </li>
             <li>
-              Connecte-toi via Discord sur le site : ton profil est généré instantanément avec ton
-              avatar et ton pseudo.
+              Connecte-toi via Discord sur le site : ton profil est généré instantanément avec ton avatar et ton pseudo.
             </li>
             <li>
-              Tu peux ensuite associer ta chaîne Twitch, renseigner ta biographie et suivre tes
-              statistiques en temps réel.
+              Tu peux ensuite associer ta chaîne Twitch, renseigner ta biographie et suivre tes statistiques en temps
+              réel.
             </li>
           </ol>
         </CardContent>
@@ -116,8 +104,8 @@ export default function AchilleaGuidePage() {
                 .
               </li>
               <li>
-                Le staff du clan examine ta candidature. Si l&apos;approbation automatique est
-                activée, l&apos;intégration est immédiate.
+                Le staff du clan examine ta candidature. Si l&apos;approbation automatique est activée,
+                l&apos;intégration est immédiate.
               </li>
             </ol>
           </div>
@@ -127,10 +115,7 @@ export default function AchilleaGuidePage() {
             <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
               <li>Nécessite 4 membres fondateurs réunis.</li>
               <li>Nom (3-30 caractères) et sigle (2-3 lettres) uniques.</li>
-              <li>
-                Logo officiel PNG/JPG et au moins un réseau social officiel (X, Instagram ou
-                TikTok).
-              </li>
+              <li>Logo officiel PNG/JPG et au moins un réseau social officiel (X, Instagram ou TikTok).</li>
               <li>Vote d&apos;approbation des 4 fondateurs requis sous 24 heures.</li>
             </ul>
           </div>
@@ -144,10 +129,7 @@ export default function AchilleaGuidePage() {
               <Badge variant="outline" className="border-sky-500/30 text-sky-400 bg-sky-500/10">
                 Membre
               </Badge>
-              <Badge
-                variant="outline"
-                className="border-amber-500/30 text-amber-400 bg-amber-500/10"
-              >
+              <Badge variant="outline" className="border-amber-500/30 text-amber-400 bg-amber-500/10">
                 Vice-Président
               </Badge>
               <Badge variant="outline" className="border-rose-500/30 text-rose-400 bg-rose-500/10">
@@ -155,8 +137,8 @@ export default function AchilleaGuidePage() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              Maximum 30 joueurs et 7 membres de staff par clan. En dessous de 5 membres, un délai
-              de 24h est accordé pour recruter avant dissolution automatique.
+              Maximum 30 joueurs et 7 membres de staff par clan. En dessous de 5 membres, un délai de 24h est accordé
+              pour recruter avant dissolution automatique.
             </p>
           </div>
         </CardContent>
@@ -173,17 +155,11 @@ export default function AchilleaGuidePage() {
         <CardContent className="p-6 pt-2">
           <Accordion type="multiple" className="w-full">
             <AccordionItem value="clans">
-              <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-                Commandes Clan
-              </AccordionTrigger>
+              <AccordionTrigger className="text-sm font-semibold hover:no-underline">Commandes Clan</AccordionTrigger>
               <AccordionContent className="space-y-3 pt-2 text-xs">
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
-                  <div className="font-mono font-bold text-primary">
-                    /create-clan @m1 @m2 @m3 @m4
-                  </div>
-                  <div className="text-muted-foreground">
-                    Fonder un clan avec 4 membres fondateurs.
-                  </div>
+                  <div className="font-mono font-bold text-primary">/create-clan @m1 @m2 @m3 @m4</div>
+                  <div className="text-muted-foreground">Fonder un clan avec 4 membres fondateurs.</div>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
                   <div className="font-mono font-bold text-primary">/clan infos [sigle]</div>
@@ -196,18 +172,12 @@ export default function AchilleaGuidePage() {
                   <div className="text-muted-foreground">Déposer une candidature dans un clan.</div>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
-                  <div className="font-mono font-bold text-primary">
-                    /clan invite-member @joueur
-                  </div>
-                  <div className="text-muted-foreground">
-                    Inviter un joueur à rejoindre le clan (VP ou Président).
-                  </div>
+                  <div className="font-mono font-bold text-primary">/clan invite-member @joueur</div>
+                  <div className="text-muted-foreground">Inviter un joueur à rejoindre le clan (VP ou Président).</div>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
                   <div className="font-mono font-bold text-primary">/clan manage</div>
-                  <div className="text-muted-foreground">
-                    Gérer les membres, paramètres et candidatures.
-                  </div>
+                  <div className="text-muted-foreground">Gérer les membres, paramètres et candidatures.</div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -225,17 +195,11 @@ export default function AchilleaGuidePage() {
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
                   <div className="font-mono font-bold text-primary">/player settings</div>
-                  <div className="text-muted-foreground">
-                    Lier Twitch, mettre à jour sa bio ou son pseudo en jeu.
-                  </div>
+                  <div className="text-muted-foreground">Lier Twitch, mettre à jour sa bio ou son pseudo en jeu.</div>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/40 space-y-1">
-                  <div className="font-mono font-bold text-primary">
-                    /interclan request &lt;sigle&gt; &lt;date&gt;
-                  </div>
-                  <div className="text-muted-foreground">
-                    Défier un clan adverse en rencontre officielle 5v5.
-                  </div>
+                  <div className="font-mono font-bold text-primary">/interclan request &lt;sigle&gt; &lt;date&gt;</div>
+                  <div className="text-muted-foreground">Défier un clan adverse en rencontre officielle 5v5.</div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -258,9 +222,9 @@ export default function AchilleaGuidePage() {
               Éthique & Fair-play
             </div>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Tout usage de logiciels tiers, modification de sauvegarde (save editor) ou
-              exploitation volontaire de bugs entraîne la disqualification immédiate. Les
-              organisateurs peuvent exiger un partage d&apos;écran en cas de doute raisonnable.
+              Tout usage de logiciels tiers, modification de sauvegarde (save editor) ou exploitation volontaire de bugs
+              entraîne la disqualification immédiate. Les organisateurs peuvent exiger un partage d&apos;écran en cas de
+              doute raisonnable.
             </p>
           </div>
 
@@ -268,16 +232,15 @@ export default function AchilleaGuidePage() {
             <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-1">
               <div className="font-bold">Phase Suisse (Swiss Stage)</div>
               <p className="text-xs text-muted-foreground">
-                Matchs en <strong>BO3</strong>. En cas d&apos;égalité parfaite, 4e match décisif au
-                but en or.
+                Matchs en <strong>BO3</strong>. En cas d&apos;égalité parfaite, 4e match décisif au but en or.
               </p>
             </div>
 
             <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-1">
               <div className="font-bold">Playoffs & Arbre Final</div>
               <p className="text-xs text-muted-foreground">
-                Arbre éliminatoire en <strong>BO5</strong>. Matchs décisifs au but en or en cas
-                d&apos;égalité après la 5e manche.
+                Arbre éliminatoire en <strong>BO5</strong>. Matchs décisifs au but en or en cas d&apos;égalité après la
+                5e manche.
               </p>
             </div>
           </div>
@@ -289,16 +252,12 @@ export default function AchilleaGuidePage() {
               Restrictions d&apos;Équipe & Tactiques Bannies
             </div>
             <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-              <li>
-                Doublons stricts interdits : aucune version dupliquée d&apos;un même personnage.
-              </li>
+              <li>Doublons stricts interdits : aucune version dupliquée d&apos;un même personnage.</li>
               <li>Stades modifiant le gameplay ou la friction du terrain interdits.</li>
             </ul>
 
             <div className="pt-2 space-y-2">
-              <div className="text-xs font-semibold text-foreground">
-                Tactiques dropables bannies :
-              </div>
+              <div className="text-xs font-semibold text-foreground">Tactiques dropables bannies :</div>
               <div className="flex flex-wrap gap-1.5">
                 {[
                   "Tir Direct Ultime",
@@ -307,7 +266,7 @@ export default function AchilleaGuidePage() {
                   "Mur Infranchissable",
                   "Explosion",
                   "Bonne Étoile",
-                ].map((t) => (
+                ].map(t => (
                   <Badge
                     key={t}
                     variant="outline"
@@ -332,7 +291,7 @@ export default function AchilleaGuidePage() {
                   "Formation Carapace",
                   "Impulsion Circulaire",
                   "Blocage Spectral",
-                ].map((t) => (
+                ].map(t => (
                   <Badge
                     key={t}
                     variant="outline"

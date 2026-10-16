@@ -17,23 +17,19 @@ export function TableOfContents({ items }: TableOfContentsProps) {
       return;
     }
 
-    const headingElements = items
-      .map((item) => document.getElementById(item.id))
-      .filter(Boolean) as HTMLElement[];
+    const headingElements = items.map(item => document.getElementById(item.id)).filter(Boolean) as HTMLElement[];
 
     if (headingElements.length === 0) {
       return;
     }
 
     observerRef.current = new IntersectionObserver(
-      (entries) => {
+      entries => {
         // Find the first heading that is intersecting (visible)
-        const visible = entries.filter((e) => e.isIntersecting);
+        const visible = entries.filter(e => e.isIntersecting);
         if (visible.length > 0) {
           // Pick the one closest to the top
-          const sorted = visible.toSorted(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
+          const sorted = visible.toSorted((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
           setActiveId(sorted[0].target.id);
         }
       },
@@ -43,7 +39,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
       },
     );
 
-    headingElements.forEach((el) => observerRef.current?.observe(el));
+    headingElements.forEach(el => observerRef.current?.observe(el));
 
     return () => {
       observerRef.current?.disconnect();
@@ -58,16 +54,14 @@ export function TableOfContents({ items }: TableOfContentsProps) {
     <nav className="p-5 rounded-2xl bg-surface-container-low border border-outline-variant/10">
       <div className="flex items-center gap-2 mb-4">
         <List className="size-4 text-on-surface-variant/60" />
-        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">
-          Sommaire
-        </h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">Sommaire</h3>
       </div>
       <ul className="space-y-1">
-        {items.map((item) => (
+        {items.map(item => (
           <li key={item.id}>
             <a
               href={`#${item.id}`}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 const el = document.getElementById(item.id);
                 if (el) {

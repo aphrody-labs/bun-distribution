@@ -7,7 +7,7 @@ import { getPgPool } from "@/lib/db/pg";
 // le `.single()` Supabase pour le cas nominal.
 
 export interface ProfileMeta {
-	bio: string | null;
+  bio: string | null;
 }
 
 // Projection explicite sur les colonnes publiques.
@@ -22,58 +22,58 @@ export interface ProfileMeta {
 // pour être réclamés à la première connexion, pas pour publier 2043 pages au nom de
 // personnes qui ne se sont jamais inscrites.
 export interface ProfileRow {
-	id: string;
-	updated_at: string | null;
-	username: string | null;
-	avatar_url: string | null;
-	role: string | null;
-	website: string | null;
-	discord_id: string | null;
-	bio: string | null;
-	banner_url: string | null;
-	twitter_handle: string | null;
-	badges: string[] | null;
-	/**
-	 * Date de réclamation du compte — ce que la page affiche comme « a rejoint ».
-	 *
-	 * `profiles` n'a PAS de colonne `created_at` (vérifié en base) : la page la
-	 * lisait quand même et affichait donc « A rejoint en Date inconnue » à tout
-	 * le monde, depuis toujours. `claimed_at` est la vraie date : celle où la
-	 * personne a pris possession de son profil.
-	 */
-	claimed_at: string | null;
+  id: string;
+  updated_at: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  website: string | null;
+  discord_id: string | null;
+  bio: string | null;
+  banner_url: string | null;
+  twitter_handle: string | null;
+  badges: string[] | null;
+  /**
+   * Date de réclamation du compte — ce que la page affiche comme « a rejoint ».
+   *
+   * `profiles` n'a PAS de colonne `created_at` (vérifié en base) : la page la
+   * lisait quand même et affichait donc « A rejoint en Date inconnue » à tout
+   * le monde, depuis toujours. `claimed_at` est la vraie date : celle où la
+   * personne a pris possession de son profil.
+   */
+  claimed_at: string | null;
 }
 
 /** Les mêmes colonnes que `PUBLIC_PROFILE_COLUMNS` de `@rosegriffon/db`. */
 const COLONNES_PUBLIQUES =
-	"id, updated_at, claimed_at, username, avatar_url, role, website, discord_id, bio, banner_url, twitter_handle, badges";
+  "id, updated_at, claimed_at, username, avatar_url, role, website, discord_id, bio, banner_url, twitter_handle, badges";
 
 /** Utilisé par `generateMetadata` — mêmes colonnes que l'ancien `.select("full_name, bio")`. */
 export async function getProfileMetaByUsername(username: string): Promise<ProfileMeta | null> {
-	try {
-		const pool = getPgPool();
-		const { rows } = await pool.query<ProfileMeta>(
-			"SELECT bio FROM profiles WHERE username = $1 AND claimed_at IS NOT NULL LIMIT 1",
-			[username]
-		);
-		return rows[0] ?? null;
-	} catch (error) {
-		console.error(`Error fetching profile meta for ${username}:`, error);
-		return null;
-	}
+  try {
+    const pool = getPgPool();
+    const { rows } = await pool.query<ProfileMeta>(
+      "SELECT bio FROM profiles WHERE username = $1 AND claimed_at IS NOT NULL LIMIT 1",
+      [username],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    console.error(`Error fetching profile meta for ${username}:`, error);
+    return null;
+  }
 }
 
 /** Utilisé par la page — mêmes colonnes que l'ancien `.select("*")`. */
 export async function getProfileByUsername(username: string): Promise<ProfileRow | null> {
-	try {
-		const pool = getPgPool();
-		const { rows } = await pool.query<ProfileRow>(
-			`SELECT ${COLONNES_PUBLIQUES} FROM profiles WHERE username = $1 AND claimed_at IS NOT NULL LIMIT 1`,
-			[username]
-		);
-		return rows[0] ?? null;
-	} catch (error) {
-		console.error(`Error fetching profile for ${username}:`, error);
-		return null;
-	}
+  try {
+    const pool = getPgPool();
+    const { rows } = await pool.query<ProfileRow>(
+      `SELECT ${COLONNES_PUBLIQUES} FROM profiles WHERE username = $1 AND claimed_at IS NOT NULL LIMIT 1`,
+      [username],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    console.error(`Error fetching profile for ${username}:`, error);
+    return null;
+  }
 }

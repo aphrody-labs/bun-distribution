@@ -44,13 +44,7 @@ export type StatBlock = WikiStatBlock;
 
 export function statBlockTotal(stats: WikiStatBlock): number {
   return (
-    stats.kick +
-    stats.control +
-    stats.technique +
-    stats.pressure +
-    stats.physical +
-    stats.agility +
-    stats.intelligence
+    stats.kick + stats.control + stats.technique + stats.pressure + stats.physical + stats.agility + stats.intelligence
   );
 }
 

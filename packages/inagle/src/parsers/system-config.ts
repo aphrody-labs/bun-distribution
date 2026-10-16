@@ -23,7 +23,7 @@ export function buildMenuDatabase(dataPath: string) {
   const textFr = loadTextFile("menu", "fr");
   const textJa = loadTextFile("menu", "ja");
 
-  const files = readdirSync(dir).filter((f) => f.endsWith(".cfg.bin.json"));
+  const files = readdirSync(dir).filter(f => f.endsWith(".cfg.bin.json"));
   for (const file of files) {
     try {
       const content = JSON.parse(readFileSync(join(dir, file), "utf-8"));

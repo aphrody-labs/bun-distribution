@@ -15,8 +15,7 @@ export function decodeProjectionJson(text: string): unknown {
       const next = text[index + 1];
       const valid =
         next !== undefined &&
-        ('"\\/bfnrt'.includes(next) ||
-          (next === "u" && /^[0-9a-fA-F]{4}$/.test(text.slice(index + 2, index + 6))));
+        ('"\\/bfnrt'.includes(next) || (next === "u" && /^[0-9a-fA-F]{4}$/.test(text.slice(index + 2, index + 6))));
       if (valid) {
         output += character + next;
         index++;

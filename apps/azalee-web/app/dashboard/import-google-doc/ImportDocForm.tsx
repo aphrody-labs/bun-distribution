@@ -3,16 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from "@rosegriffon/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from "@rosegriffon/ui";
 import { importDriveFolder, importGoogleDoc } from "./actions";
 
 export function ImportDocForm() {
@@ -80,9 +71,8 @@ export function ImportDocForm() {
         <CardHeader>
           <CardTitle>Importer un Google Doc</CardTitle>
           <CardDescription>
-            Collez l&apos;URL complète ou l&apos;ID de votre Google Doc pour l&apos;importer comme
-            brouillon d&apos;article. Assurez-vous que le document est partagé avec le compte de
-            service ou qu&apos;il est public.
+            Collez l&apos;URL complète ou l&apos;ID de votre Google Doc pour l&apos;importer comme brouillon
+            d&apos;article. Assurez-vous que le document est partagé avec le compte de service ou qu&apos;il est public.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -92,7 +82,7 @@ export function ImportDocForm() {
               id="docId"
               placeholder="https://docs.google.com/document/d/..."
               value={docId}
-              onChange={(e) => setDocId(e.target.value)}
+              onChange={e => setDocId(e.target.value)}
             />
             <p className="text-sm text-on-surface-variant">
               Exemple : https://docs.google.com/document/d/<strong>1A2B3C...</strong>/edit
@@ -108,17 +98,11 @@ export function ImportDocForm() {
         <CardHeader>
           <CardTitle>Importation en masse</CardTitle>
           <CardDescription>
-            Importer automatiquement tous les nouveaux Google Docs présents dans le dossier Drive
-            partagé.
+            Importer automatiquement tous les nouveaux Google Docs présents dans le dossier Drive partagé.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            onClick={handleFolderImport}
-            disabled={loading}
-            variant="outline"
-            className="w-full rounded-full"
-          >
+          <Button onClick={handleFolderImport} disabled={loading} variant="outline" className="w-full rounded-full">
             {loading ? "Scan en cours..." : "Importer depuis le dossier Drive"}
           </Button>
         </CardContent>

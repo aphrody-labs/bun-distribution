@@ -185,11 +185,7 @@ export async function lsOrNull(dir: string, limit = 1000, offset = 0): Promise<V
  * @param format identifiant de format (`raw` rend les octets d'origine).
  * @param options `awbId` exporte un cue précis d'une banque audio.
  */
-export function exportUrl(
-  path: string,
-  format: string,
-  options: { awbId?: number | null } = {},
-): string {
+export function exportUrl(path: string, format: string, options: { awbId?: number | null } = {}): string {
   const q = new URLSearchParams({ format });
   if (options.awbId != null) q.set("id", String(options.awbId));
   return `${CDN_BASE}/export/${path}?${q}`;

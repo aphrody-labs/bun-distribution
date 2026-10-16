@@ -105,7 +105,7 @@ export default async function Image() {
 
         {/* Position pills */}
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-          {POSITIONS.map((p) => (
+          {POSITIONS.map(p => (
             <div
               key={p.abbr}
               style={{
@@ -118,14 +118,8 @@ export default async function Image() {
                 padding: "8px 18px",
               }}
             >
-              <div style={{ color: p.color, display: "flex", fontSize: 14, fontWeight: 800 }}>
-                {p.abbr}
-              </div>
-              <div
-                style={{ color: `${p.color}CC`, display: "flex", fontSize: 14, fontWeight: 600 }}
-              >
-                {p.label}
-              </div>
+              <div style={{ color: p.color, display: "flex", fontSize: 14, fontWeight: 800 }}>{p.abbr}</div>
+              <div style={{ color: `${p.color}CC`, display: "flex", fontSize: 14, fontWeight: 600 }}>{p.label}</div>
             </div>
           ))}
         </div>
@@ -143,45 +137,43 @@ export default async function Image() {
           width: 320,
         }}
       >
-        {["Frappe", "Controle", "Technique", "Pression", "Physique", "Agilite", "Intelligence"].map(
-          (s, i) => (
-            <div key={s} style={{ alignItems: "center", display: "flex", gap: 12, width: "100%" }}>
+        {["Frappe", "Controle", "Technique", "Pression", "Physique", "Agilite", "Intelligence"].map((s, i) => (
+          <div key={s} style={{ alignItems: "center", display: "flex", gap: 12, width: "100%" }}>
+            <div
+              style={{
+                color: "#6D5E50",
+                display: "flex",
+                fontSize: 13,
+                fontWeight: 600,
+                justifyContent: "flex-end",
+                textAlign: "right",
+                width: 90,
+              }}
+            >
+              {s}
+            </div>
+            <div
+              style={{
+                background: "#3D2E22",
+                borderRadius: 4,
+                display: "flex",
+                flex: 1,
+                height: 8,
+                overflow: "hidden",
+              }}
+            >
               <div
                 style={{
-                  color: "#6D5E50",
-                  display: "flex",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  justifyContent: "flex-end",
-                  textAlign: "right",
-                  width: 90,
-                }}
-              >
-                {s}
-              </div>
-              <div
-                style={{
-                  background: "#3D2E22",
+                  background: `linear-gradient(90deg, ${ACCENT}80, ${ACCENT})`,
                   borderRadius: 4,
                   display: "flex",
-                  flex: 1,
-                  height: 8,
-                  overflow: "hidden",
+                  height: "100%",
+                  width: `${55 + i * 6}%`,
                 }}
-              >
-                <div
-                  style={{
-                    background: `linear-gradient(90deg, ${ACCENT}80, ${ACCENT})`,
-                    borderRadius: 4,
-                    display: "flex",
-                    height: "100%",
-                    width: `${55 + i * 6}%`,
-                  }}
-                />
-              </div>
+              />
             </div>
-          ),
-        )}
+          </div>
+        ))}
       </div>
 
       {/* Branding */}
@@ -196,19 +188,9 @@ export default async function Image() {
         }}
       >
         {/* oxlint-disable-next-line next/no-img-element -- ImageResponse (next/og) ne supporte pas next/image */}
-        <img
-          src={getOgLogoDataUri()}
-          width={28}
-          height={28}
-          style={{ borderRadius: 7 }}
-          alt="Logo Azalée"
-        />
-        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>
-          azalee.rosegriffon.fr
-        </div>
-        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>
-          Inazuma Eleven: Victory Road
-        </div>
+        <img src={getOgLogoDataUri()} width={28} height={28} style={{ borderRadius: 7 }} alt="Logo Azalée" />
+        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>azalee.rosegriffon.fr</div>
+        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>Inazuma Eleven: Victory Road</div>
       </div>
     </div>,
     { ...size },

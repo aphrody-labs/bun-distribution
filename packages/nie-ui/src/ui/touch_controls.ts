@@ -324,8 +324,7 @@ export class TouchControls {
     const y = this.buttons.get("y")!;
 
     const faceButtonsAvgHalfWidth = (a.halfWidth + b.halfWidth + x.halfWidth + y.halfWidth) / 4;
-    const faceButtonsAvgHalfHeight =
-      (a.halfHeight + b.halfHeight + x.halfHeight + y.halfHeight) / 4;
+    const faceButtonsAvgHalfHeight = (a.halfHeight + b.halfHeight + x.halfHeight + y.halfHeight) / 4;
 
     const l = this.buttons.get("l")!;
     const r = this.buttons.get("r")!;

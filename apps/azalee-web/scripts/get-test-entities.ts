@@ -4,11 +4,7 @@ async function main() {
   const supabase = createPublicClient();
 
   // 1. Character
-  const { data: charData } = await supabase
-    .from("inagle_characters")
-    .select("base_slug, slug, id")
-    .limit(1)
-    .single();
+  const { data: charData } = await supabase.from("inagle_characters").select("base_slug, slug, id").limit(1).single();
 
   // 2. Skill
   const { data: skillData } = await supabase.from("inagle_skills").select("id").limit(1).single();
@@ -20,11 +16,7 @@ async function main() {
   const { data: tacticData } = await supabase.from("inagle_tactics").select("id").limit(1).single();
 
   // 5. Aura
-  const { data: auraData } = await supabase
-    .from("inagle_auras")
-    .select("id, category")
-    .limit(1)
-    .single();
+  const { data: auraData } = await supabase.from("inagle_auras").select("id, category").limit(1).single();
 
   // 6. News
   const { data: newsData } = await supabase
@@ -45,9 +37,7 @@ async function main() {
         skill: skillData?.id || "1",
         item: itemData?.id || "1",
         tactic: tacticData?.id || "1",
-        aura: auraData
-          ? { id: auraData.id, category: auraData.category }
-          : { id: "1", category: "keshin" },
+        aura: auraData ? { id: auraData.id, category: auraData.category } : { id: "1", category: "keshin" },
         news: newsData?.slug || "welcome",
         patchNote: patchData?.id || "1",
       },
@@ -57,7 +47,7 @@ async function main() {
   );
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err);
   process.exit(1);
 });

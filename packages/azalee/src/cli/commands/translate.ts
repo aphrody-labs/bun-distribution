@@ -109,10 +109,8 @@ export function registerTranslateCommand(program: Command): void {
           );
         } else {
           if (merged.length > 0) {
-            console.log(
-              `\n${colors.bold}${colors.blue}Entités trouvées dans la base & le glossaire :${colors.reset}`,
-            );
-            const rows = merged.slice(0, 15).map((r) => ({
+            console.log(`\n${colors.bold}${colors.blue}Entités trouvées dans la base & le glossaire :${colors.reset}`);
+            const rows = merged.slice(0, 15).map(r => ({
               Type: r.typeLabel,
               "Nom FR": r.name_fr || "—",
               "Nom EN": r.name_en || "—",

@@ -103,7 +103,7 @@ export function TranslatorClient() {
 
   // Recherche approximative : tous les résultats remontés sont marqués fuzzy
   // (aucun match exact/préfixe) → on l'indique discrètement à l'utilisateur.
-  const isApproximate = results.length > 0 && results.every((r) => r.fuzzy === true);
+  const isApproximate = results.length > 0 && results.every(r => r.fuzzy === true);
 
   return (
     <div className="w-full space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -130,7 +130,7 @@ export function TranslatorClient() {
           Filtrer par type d&apos;entité
         </p>
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Filtrer par type">
-          {ENTITY_TYPES.map((et) => {
+          {ENTITY_TYPES.map(et => {
             const isActive = entityType === et.value;
             return (
               <button
@@ -161,9 +161,7 @@ export function TranslatorClient() {
             <div className="flex items-center justify-between h-14 px-5 border-b border-outline/5 bg-surface-container/20">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="type-label-large font-bold text-on-surface/80">
-                  Recherche multilingue
-                </span>
+                <span className="type-label-large font-bold text-on-surface/80">Recherche multilingue</span>
               </div>
               {query && (
                 <button
@@ -181,7 +179,7 @@ export function TranslatorClient() {
               <textarea
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value.replaceAll("\n", ""))}
+                onChange={e => setQuery(e.target.value.replaceAll("\n", ""))}
                 placeholder="Saisissez un nom (ex: Mark Evans, Fire Tornado, 円堂守, endou...)"
                 aria-label="Rechercher un nom"
                 rows={4}
@@ -200,9 +198,7 @@ export function TranslatorClient() {
           <div className="bg-surface-container-low/20 flex flex-col min-h-[220px] sm:min-h-[280px]">
             {/* Header */}
             <div className="flex items-center h-14 px-5 border-b border-outline/5 bg-surface-container/20">
-              <span className="type-label-large font-bold text-on-surface/80">
-                Fiche de Traduction
-              </span>
+              <span className="type-label-large font-bold text-on-surface/80">Fiche de Traduction</span>
             </div>
 
             {/* Translation content */}
@@ -214,12 +210,9 @@ export function TranslatorClient() {
                     <Icon name="translate" size={32} />
                   </div>
                   <div>
-                    <p className="type-title-small text-on-surface-variant">
-                      En attente de saisie...
-                    </p>
+                    <p className="type-title-small text-on-surface-variant">En attente de saisie...</p>
                     <p className="text-xs text-on-surface-variant/65 mt-1 max-w-[280px]">
-                      Saisissez au moins 2 caractères dans le champ de gauche pour lancer la
-                      recherche.
+                      Saisissez au moins 2 caractères dans le champ de gauche pour lancer la recherche.
                     </p>
                   </div>
                 </div>
@@ -233,7 +226,7 @@ export function TranslatorClient() {
                     <Skeleton className="h-4 w-16" />
                   </div>
                   <div className="space-y-3">
-                    {LANGS.map((lang) => (
+                    {LANGS.map(lang => (
                       <div key={lang} className="flex items-center gap-4">
                         <Skeleton className="h-6 w-9 rounded-md" />
                         <Skeleton className="h-7 w-3/4 rounded-sm" />
@@ -252,9 +245,9 @@ export function TranslatorClient() {
                   <div className="max-w-[300px]">
                     <p className="type-title-small text-on-surface">Aucun résultat trouvé</p>
                     <p className="text-xs text-on-surface-variant/60 mt-1">
-                      Rien pour « <span className="font-semibold text-primary">{query}</span> ». La
-                      recherche tolère les fautes et accents : vérifiez l&apos;orthographe, essayez
-                      une autre langue (EN/JA) ou retirez le filtre de type.
+                      Rien pour « <span className="font-semibold text-primary">{query}</span> ». La recherche tolère les
+                      fautes et accents : vérifiez l&apos;orthographe, essayez une autre langue (EN/JA) ou retirez le
+                      filtre de type.
                     </p>
                     {entityType && (
                       <button
@@ -277,8 +270,7 @@ export function TranslatorClient() {
                     <span
                       className={cn(
                         "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                        TYPE_COLORS[active.type] ||
-                          "bg-surface-container-highest text-on-surface-variant",
+                        TYPE_COLORS[active.type] || "bg-surface-container-highest text-on-surface-variant",
                       )}
                     >
                       {active.typeLabel}
@@ -300,7 +292,7 @@ export function TranslatorClient() {
 
                   {/* Names list */}
                   <div className="space-y-2.5">
-                    {LANGS.map((lang) => {
+                    {LANGS.map(lang => {
                       const name =
                         lang === "FR"
                           ? active.name_fr
@@ -344,9 +336,7 @@ export function TranslatorClient() {
                                   {name}
                                 </span>
                               ) : (
-                                <span className="text-on-surface-variant/30 text-sm italic">
-                                  non renseigné
-                                </span>
+                                <span className="text-on-surface-variant/30 text-sm italic">non renseigné</span>
                               )}
                             </div>
                           </div>
@@ -357,11 +347,7 @@ export function TranslatorClient() {
                               className="shrink-0 inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-2 rounded-full cursor-pointer opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 focus/row:opacity-100 hover:bg-surface-container-high text-on-surface-variant/60 hover:text-primary transition-all duration-200"
                             >
                               {copiedLang === lang ? (
-                                <Icon
-                                  name="check"
-                                  size={14}
-                                  className="text-emerald-400 animate-bounce"
-                                />
+                                <Icon name="check" size={14} className="text-emerald-400 animate-bounce" />
                               ) : (
                                 <Icon name="content_copy" size={14} />
                               )}
@@ -399,7 +385,7 @@ export function TranslatorClient() {
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {results.map((result) => {
+            {results.map(result => {
               const isActive = active?.id === result.id && active?.type === result.type;
               return (
                 <button
@@ -416,8 +402,7 @@ export function TranslatorClient() {
                     <span
                       className={cn(
                         "shrink-0 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider select-none",
-                        TYPE_COLORS[result.type] ||
-                          "bg-surface-container-highest text-on-surface-variant",
+                        TYPE_COLORS[result.type] || "bg-surface-container-highest text-on-surface-variant",
                       )}
                     >
                       {result.typeLabel}
@@ -427,16 +412,14 @@ export function TranslatorClient() {
                         {result.name_fr || result.name_en || result.name_ja || "—"}
                       </span>
                       {result.name_en && result.name_en !== result.name_fr && (
-                        <span className="block text-xs text-on-surface-variant/50 truncate">
-                          {result.name_en}
-                        </span>
+                        <span className="block text-xs text-on-surface-variant/50 truncate">{result.name_en}</span>
                       )}
                     </div>
                   </div>
                   {result.url !== "#" && (
                     <Link
                       href={result.url}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                       className="shrink-0 p-1.5 rounded-full hover:bg-surface-container-high/80 text-on-surface-variant/30 hover:text-primary group-hover/item:text-primary/70 transition-colors"
                       aria-label={`Voir la fiche de ${result.name_fr || result.name_en}`}
                     >

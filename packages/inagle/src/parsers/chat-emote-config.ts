@@ -83,9 +83,7 @@ function parseContent(content: any): ParsedChatEmote[] {
 // Loaders
 // ============================================================================
 
-export async function loadChatEmoteConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedChatEmote[] | null> {
+export async function loadChatEmoteConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedChatEmote[] | null> {
   const filename = findConfigFile("chat_emote", "chat_emote_config");
   if (!filename) return null;
 
@@ -94,9 +92,7 @@ export async function loadChatEmoteConfigAsync(
   return content ? parseContent(content) : null;
 }
 
-export async function buildChatEmoteDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<ChatEmoteDatabase> {
+export async function buildChatEmoteDatabase(dataPath: string = DATA_ROOT): Promise<ChatEmoteDatabase> {
   const emotes = (await loadChatEmoteConfigAsync(dataPath)) || [];
   const byId = new Map<string, ParsedChatEmote>();
   const byType = new Map<number, ParsedChatEmote[]>();

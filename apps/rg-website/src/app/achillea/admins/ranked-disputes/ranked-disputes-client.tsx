@@ -19,16 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@rosegriffon/ui";
-import {
-  Gavel,
-  ArrowLeft,
-  RefreshCw,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  ImageIcon,
-  Scale,
-} from "lucide-react";
+import { Gavel, ArrowLeft, RefreshCw, Loader2, CheckCircle2, AlertTriangle, ImageIcon, Scale } from "lucide-react";
 
 export default function AchilleaAdminRankedDisputesPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAchilleaAuth();
@@ -48,7 +39,7 @@ export default function AchilleaAdminRankedDisputesPage() {
   const loadDisputes = () => {
     return client.ranked
       .adminDisputes()
-      .then((res) => {
+      .then(res => {
         if (res.ok && res.value) {
           setDisputes(res.value);
         }
@@ -129,8 +120,7 @@ export default function AchilleaAdminRankedDisputesPage() {
         </div>
         <h1 className="text-2xl font-bold">Accès Arbitre Requis</h1>
         <p className="text-sm text-muted-foreground">
-          L&apos;arbitrage des litiges de parties classées est restreint au staff compétitif
-          Achilléa.
+          L&apos;arbitrage des litiges de parties classées est restreint au staff compétitif Achilléa.
         </p>
         <Link href="/achillea/admins/dashboard">
           <Button variant="outline" className="mt-4">
@@ -156,9 +146,7 @@ export default function AchilleaAdminRankedDisputesPage() {
             <span className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Gavel className="size-5" />
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Chambre d&apos;Arbitrage Ranked
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Chambre d&apos;Arbitrage Ranked</h1>
           </div>
           <p className="text-xs text-muted-foreground">
             Résolution des contestations de score et validation des victoires au barème ELO.
@@ -195,7 +183,7 @@ export default function AchilleaAdminRankedDisputesPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {disputes.map((d) => (
+          {disputes.map(d => (
             <Card key={d.lobbyId} className="border-border/60 bg-card/50 shadow-sm overflow-hidden">
               <CardHeader className="p-5 pb-3 border-b border-border/40 bg-muted/20">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -221,11 +209,7 @@ export default function AchilleaAdminRankedDisputesPage() {
                     >
                       Annuler le match
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenArbitrage(d)}
-                      className="gap-1.5 text-xs"
-                    >
+                    <Button size="sm" onClick={() => handleOpenArbitrage(d)} className="gap-1.5 text-xs">
                       <Scale className="size-3.5" />
                       Trancher le litige
                     </Button>
@@ -246,23 +230,17 @@ export default function AchilleaAdminRankedDisputesPage() {
                   </div>
 
                   <div className="font-semibold text-base">
-                    <Link
-                      href={`/achillea/users/${d.player1.userId}`}
-                      className="hover:text-primary transition"
-                    >
+                    <Link href={`/achillea/users/${d.player1.userId}`} className="hover:text-primary transition">
                       {d.player1.displayName}
                     </Link>
                   </div>
 
-                  {d.player1.claimedOpponentScore !== null &&
-                    d.player1.claimedOpponentScore !== undefined && (
-                      <div className="text-xs text-muted-foreground">
-                        Revendique pour l&apos;adversaire :{" "}
-                        <span className="font-bold text-foreground">
-                          {d.player1.claimedOpponentScore}
-                        </span>
-                      </div>
-                    )}
+                  {d.player1.claimedOpponentScore !== null && d.player1.claimedOpponentScore !== undefined && (
+                    <div className="text-xs text-muted-foreground">
+                      Revendique pour l&apos;adversaire :{" "}
+                      <span className="font-bold text-foreground">{d.player1.claimedOpponentScore}</span>
+                    </div>
+                  )}
 
                   {d.player1.screenshotUrl ? (
                     <div className="space-y-1.5 pt-2">
@@ -305,23 +283,17 @@ export default function AchilleaAdminRankedDisputesPage() {
                   </div>
 
                   <div className="font-semibold text-base">
-                    <Link
-                      href={`/achillea/users/${d.player2.userId}`}
-                      className="hover:text-primary transition"
-                    >
+                    <Link href={`/achillea/users/${d.player2.userId}`} className="hover:text-primary transition">
                       {d.player2.displayName}
                     </Link>
                   </div>
 
-                  {d.player2.claimedOpponentScore !== null &&
-                    d.player2.claimedOpponentScore !== undefined && (
-                      <div className="text-xs text-muted-foreground">
-                        Revendique pour l&apos;adversaire :{" "}
-                        <span className="font-bold text-foreground">
-                          {d.player2.claimedOpponentScore}
-                        </span>
-                      </div>
-                    )}
+                  {d.player2.claimedOpponentScore !== null && d.player2.claimedOpponentScore !== undefined && (
+                    <div className="text-xs text-muted-foreground">
+                      Revendique pour l&apos;adversaire :{" "}
+                      <span className="font-bold text-foreground">{d.player2.claimedOpponentScore}</span>
+                    </div>
+                  )}
 
                   {d.player2.screenshotUrl ? (
                     <div className="space-y-1.5 pt-2">
@@ -358,7 +330,7 @@ export default function AchilleaAdminRankedDisputesPage() {
       )}
 
       {/* Dialogue de Décision d'Arbitrage */}
-      <Dialog open={!!selectedDispute} onOpenChange={(open) => !open && setSelectedDispute(null)}>
+      <Dialog open={!!selectedDispute} onOpenChange={open => !open && setSelectedDispute(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -366,8 +338,8 @@ export default function AchilleaAdminRankedDisputesPage() {
               Décision d&apos;Arbitrage — Lobby #{selectedDispute?.lobbyId}
             </DialogTitle>
             <DialogDescription>
-              Saisis les scores officiels constatés sur les captures de fin de match. Le calcul de
-              variation ELO sera appliqué immédiatement.
+              Saisis les scores officiels constatés sur les captures de fin de match. Le calcul de variation ELO sera
+              appliqué immédiatement.
             </DialogDescription>
           </DialogHeader>
 
@@ -382,7 +354,7 @@ export default function AchilleaAdminRankedDisputesPage() {
                   type="number"
                   min={0}
                   value={score1}
-                  onChange={(e) => setScore1(parseInt(e.target.value, 10) || 0)}
+                  onChange={e => setScore1(parseInt(e.target.value, 10) || 0)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-center text-lg font-bold font-mono"
                 />
               </div>
@@ -396,7 +368,7 @@ export default function AchilleaAdminRankedDisputesPage() {
                   type="number"
                   min={0}
                   value={score2}
-                  onChange={(e) => setScore2(parseInt(e.target.value, 10) || 0)}
+                  onChange={e => setScore2(parseInt(e.target.value, 10) || 0)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-center text-lg font-bold font-mono"
                 />
               </div>
@@ -409,7 +381,7 @@ export default function AchilleaAdminRankedDisputesPage() {
               <select
                 id="forfeit"
                 value={forfeitUser}
-                onChange={(e) => setForfeitUser(e.target.value)}
+                onChange={e => setForfeitUser(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">Aucun forfait (match régulier)</option>
@@ -428,11 +400,7 @@ export default function AchilleaAdminRankedDisputesPage() {
           </div>
 
           <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSelectedDispute(null)}
-              disabled={submitting}
-            >
+            <Button variant="outline" onClick={() => setSelectedDispute(null)} disabled={submitting}>
               Annuler
             </Button>
             <Button onClick={handleValidateScore} disabled={submitting} className="gap-2">

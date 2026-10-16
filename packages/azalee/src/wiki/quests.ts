@@ -125,24 +125,21 @@ export interface QuestListResult {
  * Liste filtrable (recherche plein-titre multilingue + filtre catégorie).
  * Filtrage côté serveur en mémoire — 182 lignes, pas de pagination nécessaire.
  */
-export async function getQuestsList(params?: {
-  q?: string;
-  kind?: QuestKind | "all";
-}): Promise<QuestListResult> {
+export async function getQuestsList(params?: { q?: string; kind?: QuestKind | "all" }): Promise<QuestListResult> {
   const all = await getAllQuests();
-  const main = all.filter((x) => x.kind === "main").length;
+  const main = all.filter(x => x.kind === "main").length;
   const side = all.length - main;
 
   let quests = all;
   const kind = params?.kind ?? "all";
   if (kind === "main" || kind === "side") {
-    quests = quests.filter((x) => x.kind === kind);
+    quests = quests.filter(x => x.kind === kind);
   }
 
   const q = params?.q?.trim().toLowerCase();
   if (q) {
     quests = quests.filter(
-      (x) =>
+      x =>
         x.titles.fr.toLowerCase().includes(q) ||
         x.titles.en.toLowerCase().includes(q) ||
         x.titles.ja.toLowerCase().includes(q) ||
@@ -157,15 +154,13 @@ export async function getQuestsList(params?: {
 export async function getQuest(id: string): Promise<Quest | null> {
   const all = await getAllQuests();
   const norm = id.trim().toLowerCase();
-  return all.find((x) => x.id.toLowerCase() === norm) ?? null;
+  return all.find(x => x.id.toLowerCase() === norm) ?? null;
 }
 
 /** Quêtes adjacentes (précédente/suivante par phase) pour la navigation du détail. */
-export async function getQuestNeighbors(
-  id: string,
-): Promise<{ prev: Quest | null; next: Quest | null }> {
+export async function getQuestNeighbors(id: string): Promise<{ prev: Quest | null; next: Quest | null }> {
   const all = await getAllQuests();
-  const idx = all.findIndex((x) => x.id.toLowerCase() === id.trim().toLowerCase());
+  const idx = all.findIndex(x => x.id.toLowerCase() === id.trim().toLowerCase());
   if (idx === -1) return { prev: null, next: null };
   return {
     prev: idx > 0 ? all[idx - 1] : null,

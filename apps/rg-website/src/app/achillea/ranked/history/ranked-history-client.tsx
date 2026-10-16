@@ -6,16 +6,7 @@ import { useAchilleaAuth, createAchilleaClient } from "@/lib/achillea";
 import { UserAvatar } from "@/components/achillea/UserAvatar";
 import { Sparkline } from "@/components/achillea/Sparkline";
 import { type RankedHistoryEntry, MatchMode } from "@rosegriffon/achillea-types";
-import {
-  History,
-  ArrowLeft,
-  Loader2,
-  ShieldAlert,
-  Calendar,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { History, ArrowLeft, Loader2, ShieldAlert, Calendar, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { signalerException } from "@/lib/achillea/signaler";
 
 type ResultFilter = "all" | "win" | "loss" | "draw" | "forfeit";
@@ -62,25 +53,15 @@ export default function RankedHistoryPage({
       setPeriod(params.get("period") === "7" ? 7 : params.get("period") === "30" ? 30 : 0);
       const result = params.get("result");
       setResultFilter(
-        result === "win" || result === "loss" || result === "draw" || result === "forfeit"
-          ? result
-          : "all",
+        result === "win" || result === "loss" || result === "draw" || result === "forfeit" ? result : "all",
       );
     };
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);
   }, []);
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    isAuthenticated,
-    mode,
-    playerId,
-  ]);
-  if (
-    [isAuthenticated, mode, playerId].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
-  ) {
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([isAuthenticated, mode, playerId]);
+  if ([isAuthenticated, mode, playerId].some((value, position) => !Object.is(value, requestIdentity1[position]))) {
     setRequestIdentity1([isAuthenticated, mode, playerId]);
     (() => {
       if (!playerId && !isAuthenticated) {
@@ -113,7 +94,7 @@ export default function RankedHistoryPage({
       ? client.users.rankedHistory(playerId, { mode: modeQuery, limit: 100 })
       : client.users.myRankedHistory({ mode: modeQuery, limit: 100 });
     request
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value) {
           setHistory(res.value);
@@ -123,7 +104,7 @@ export default function RankedHistoryPage({
           setError("Impossible de charger votre historique de matchs.");
         }
       })
-      .catch((cause) => {
+      .catch(cause => {
         signalerException("ranked/history", cause);
         if (!cancelled) setError("Impossible de charger votre historique de matchs.");
       })
@@ -152,16 +133,15 @@ export default function RankedHistoryPage({
         setLoadMoreError("Impossible de charger la suite des matchs.");
         return;
       }
-      setHistory((previous) => {
-        const seen = new Set(previous.map((match) => match.lobbyId));
-        return [...previous, ...response.value.filter((match) => !seen.has(match.lobbyId))];
+      setHistory(previous => {
+        const seen = new Set(previous.map(match => match.lobbyId));
+        return [...previous, ...response.value.filter(match => !seen.has(match.lobbyId))];
       });
       setHasMore(response.value.length === 100);
-      setNextOffset((previous) => previous + response.value.length);
+      setNextOffset(previous => previous + response.value.length);
     } catch (cause) {
       signalerException("ranked/history/load-more", cause);
-      if (generation === requestGeneration.current)
-        setLoadMoreError("Impossible de charger la suite des matchs.");
+      if (generation === requestGeneration.current) setLoadMoreError("Impossible de charger la suite des matchs.");
     } finally {
       if (generation === requestGeneration.current) setLoadingMore(false);
     }
@@ -170,7 +150,7 @@ export default function RankedHistoryPage({
   // Filter by period
   const filteredHistory = useMemo(() => {
     const cutoff = period === 0 ? 0 : filterTime - period * 24 * 3600 * 1000;
-    return history.filter((m) => {
+    return history.filter(m => {
       if (resultFilter !== "all" && m.result !== resultFilter) return false;
       if (period === 0) return true;
       const t = new Date(m.endedAt).getTime();
@@ -180,10 +160,10 @@ export default function RankedHistoryPage({
 
   // Calculate stats
   const stats = useMemo(() => {
-    const wins = filteredHistory.filter((m) => m.result === "win").length;
-    const losses = filteredHistory.filter((m) => m.result === "loss").length;
-    const draws = filteredHistory.filter((m) => m.result === "draw").length;
-    const forfeits = filteredHistory.filter((m) => m.result === "forfeit").length;
+    const wins = filteredHistory.filter(m => m.result === "win").length;
+    const losses = filteredHistory.filter(m => m.result === "loss").length;
+    const draws = filteredHistory.filter(m => m.result === "draw").length;
+    const forfeits = filteredHistory.filter(m => m.result === "forfeit").length;
     const total = filteredHistory.length;
     const totalDelta = filteredHistory.reduce((acc, m) => acc + (m.eloDelta ?? 0), 0);
     const winrate = total > 0 ? Math.round((wins / total) * 100) : 0;
@@ -192,7 +172,7 @@ export default function RankedHistoryPage({
 
   // Sparkline data (in chronological order, so reversed from history DESC)
   const sparklineData = useMemo(() => {
-    return [...filteredHistory].reverse().map((m) => m.eloDelta ?? 0);
+    return [...filteredHistory].reverse().map(m => m.eloDelta ?? 0);
   }, [filteredHistory]);
 
   const formatDate = (isoString: string) => {
@@ -325,7 +305,7 @@ export default function RankedHistoryPage({
             Résultat
             <select
               value={resultFilter}
-              onChange={(event) => changeFilter("result", event.target.value)}
+              onChange={event => changeFilter("result", event.target.value)}
               className="min-h-11 rounded-lg border border-border bg-card px-3 py-2 text-lg text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <option value="all">Tous les résultats</option>
@@ -344,18 +324,12 @@ export default function RankedHistoryPage({
        * un joueur pourtant connecté.
        */}
       {authLoading && !playerId ? (
-        <div className="py-20 text-center text-lg text-muted-foreground">
-          Vérification de la session…
-        </div>
+        <div className="py-20 text-center text-lg text-muted-foreground">Vérification de la session…</div>
       ) : authStatus === "error" && !playerId ? (
-        <div
-          role="alert"
-          className="p-8 border border-destructive bg-card rounded-2xl text-center space-y-4"
-        >
+        <div role="alert" className="p-8 border border-destructive bg-card rounded-2xl text-center space-y-4">
           <h2 className="text-xl font-bold">Session momentanément indisponible</h2>
           <p className="text-lg text-muted-foreground">
-            Le service de connexion ne répond pas. Réessayez pour consulter votre historique
-            personnel.
+            Le service de connexion ne répond pas. Réessayez pour consulter votre historique personnel.
           </p>
           <button
             type="button"
@@ -370,8 +344,8 @@ export default function RankedHistoryPage({
           <ShieldAlert className="w-12 h-12 text-amber-400 mx-auto opacity-80" />
           <h2 className="text-xl font-bold">Consulter les matchs classés</h2>
           <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            Choisissez un joueur dans le classement pour consulter son historique public.
-            Connectez-vous pour retrouver votre historique personnel.
+            Choisissez un joueur dans le classement pour consulter son historique public. Connectez-vous pour retrouver
+            votre historique personnel.
           </p>
           <Link
             href="/achillea/ranked/leaderboard"
@@ -393,10 +367,7 @@ export default function RankedHistoryPage({
           <p className="text-lg text-muted-foreground">Chargement de votre historique...</p>
         </div>
       ) : error ? (
-        <div
-          role="alert"
-          className="border border-rose-500/30 rounded-2xl p-8 text-center text-lg text-rose-400"
-        >
+        <div role="alert" className="border border-rose-500/30 rounded-2xl p-8 text-center text-lg text-rose-400">
           {error}
         </div>
       ) : (
@@ -412,8 +383,7 @@ export default function RankedHistoryPage({
                 </div>
                 {hasMore && (
                   <p className="text-lg text-muted-foreground">
-                    Bilan provisoire : d’autres matchs sont disponibles. Les filtres portent sur les
-                    matchs chargés.
+                    Bilan provisoire : d’autres matchs sont disponibles. Les filtres portent sur les matchs chargés.
                   </p>
                 )}
               </div>
@@ -478,7 +448,7 @@ export default function RankedHistoryPage({
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredHistory.map((match) => {
+              {filteredHistory.map(match => {
                 const isWin = match.result === "win";
                 const isDraw = match.result === "draw";
                 const isForfeit = match.result === "forfeit";
@@ -522,21 +492,13 @@ export default function RankedHistoryPage({
                                     : "text-rose-400"
                             }`}
                           >
-                            {isWin
-                              ? "Victoire"
-                              : isDraw
-                                ? "Match nul"
-                                : isForfeit
-                                  ? "Forfait"
-                                  : "Défaite"}
+                            {isWin ? "Victoire" : isDraw ? "Match nul" : isForfeit ? "Forfait" : "Défaite"}
                           </span>
                           <span className="px-1.5 py-0.5 rounded text-lg bg-muted text-muted-foreground font-mono">
                             {match.mode === MatchMode.ONE_VS_ONE ? "1v1" : "2v2"}
                           </span>
                         </div>
-                        <div className="text-lg text-muted-foreground mt-0.5">
-                          {formatDate(match.endedAt)}
-                        </div>
+                        <div className="text-lg text-muted-foreground mt-0.5">{formatDate(match.endedAt)}</div>
                       </div>
                     </div>
 
@@ -553,9 +515,7 @@ export default function RankedHistoryPage({
                             displayName={match.opponent.displayName}
                             className="w-6 h-6"
                           />
-                          <span className="truncate max-w-[120px]">
-                            {match.opponent.displayName}
-                          </span>
+                          <span className="truncate max-w-[120px]">{match.opponent.displayName}</span>
                         </Link>
                       </div>
 
@@ -567,11 +527,7 @@ export default function RankedHistoryPage({
                       {/* Delta AP */}
                       <div
                         className={`w-20 text-right font-mono font-bold text-lg ${
-                          delta > 0
-                            ? "text-emerald-400"
-                            : delta < 0
-                              ? "text-rose-400"
-                              : "text-muted-foreground"
+                          delta > 0 ? "text-emerald-400" : delta < 0 ? "text-rose-400" : "text-muted-foreground"
                         }`}
                       >
                         {delta > 0 ? `+${delta}` : delta} AP

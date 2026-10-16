@@ -72,9 +72,7 @@ export async function loadCtrlCharaConfigAsync(dataPath: string = DATA_ROOT) {
   return parseEntries(content.entries);
 }
 
-export async function buildCtrlCharaDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<CtrlCharaDatabase> {
+export async function buildCtrlCharaDatabase(dataPath: string = DATA_ROOT): Promise<CtrlCharaDatabase> {
   const characters = (await loadCtrlCharaConfigAsync(dataPath)) || [];
   const byParamId = new Map<string, CtrlCharaData>();
   for (const c of characters) byParamId.set(c.charaParamId, c);

@@ -22,7 +22,7 @@ const DATE_OPTIONS = [
 
 const ALL_CATEGORIES = [
   { label: "Toutes les catégories", value: "" },
-  ...CATEGORIES.map((c) => ({ label: c.label, value: c.value })),
+  ...CATEGORIES.map(c => ({ label: c.label, value: c.value })),
   { label: "Tweets", value: "Tweet" },
 ];
 
@@ -45,9 +45,7 @@ export function AdvancedFilters({
 
   // État local des filtres
   const [category, setCategory] = useState(currentCategory);
-  const [selectedTags, setSelectedTags] = useState<string[]>(
-    currentTag ? currentTag.split(",").filter(Boolean) : [],
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>(currentTag ? currentTag.split(",").filter(Boolean) : []);
   const [sort, setSort] = useState(currentSort || "recent");
   const [dateRange, setDateRange] = useState(searchParams.get("date") ?? "");
   const [popularTags, setPopularTags] = useState<string[]>([]);
@@ -59,7 +57,7 @@ export function AdvancedFilters({
         const res = await fetch("/api/tags/popular?limit=15");
         if (res.ok) {
           const data = (await res.json()) as Array<{ tag: string; count: number }>;
-          setPopularTags(data.map((t) => t.tag));
+          setPopularTags(data.map(t => t.tag));
         }
       } catch {
         // Fallback silencieux
@@ -86,9 +84,7 @@ export function AdvancedFilters({
   ].filter(Boolean).length;
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+    setSelectedTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
   };
 
   const buildParams = useCallback(() => {
@@ -145,7 +141,7 @@ export function AdvancedFilters({
     <div className="w-full">
       {/* Barre de déclenchement */}
       <button
-        onClick={() => setIsExpanded((v) => !v)}
+        onClick={() => setIsExpanded(v => !v)}
         aria-expanded={isExpanded}
         aria-controls="advanced-filters-panel"
         className={cn(
@@ -162,9 +158,7 @@ export function AdvancedFilters({
             {totalActiveFilters}
           </span>
         )}
-        <ChevronDown
-          className={cn("size-4 transition-transform duration-200", isExpanded && "rotate-180")}
-        />
+        <ChevronDown className={cn("size-4 transition-transform duration-200", isExpanded && "rotate-180")} />
       </button>
 
       {/* Panneau de filtres */}
@@ -189,10 +183,10 @@ export function AdvancedFilters({
                 <select
                   id="advanced-filters-category"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={e => setCategory(e.target.value)}
                   className="w-full appearance-none pl-8 pr-8 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-sm text-on-surface focus:outline-hidden focus:ring-2 focus:ring-primary/40"
                 >
-                  {ALL_CATEGORIES.map((c) => (
+                  {ALL_CATEGORIES.map(c => (
                     <option key={c.value} value={c.value}>
                       {c.label}
                     </option>
@@ -214,10 +208,10 @@ export function AdvancedFilters({
                 <select
                   id="advanced-filters-sort"
                   value={sort}
-                  onChange={(e) => setSort(e.target.value)}
+                  onChange={e => setSort(e.target.value)}
                   className="w-full appearance-none px-3 pr-8 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-sm text-on-surface focus:outline-hidden focus:ring-2 focus:ring-primary/40"
                 >
-                  {SORT_OPTIONS.map((o) => (
+                  {SORT_OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
@@ -230,11 +224,9 @@ export function AdvancedFilters({
 
           {/* Ligne 2 : Période */}
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">
-              Période
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">Période</span>
             <div className="flex flex-wrap gap-2">
-              {DATE_OPTIONS.map((opt) => (
+              {DATE_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setDateRange(opt.value)}
@@ -258,7 +250,7 @@ export function AdvancedFilters({
                 Tags populaires
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {popularTags.map((tag) => {
+                {popularTags.map(tag => {
                   const active = selectedTags.includes(tag);
                   return (
                     <button

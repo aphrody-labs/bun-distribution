@@ -76,12 +76,20 @@ le module qui la lit.
 texte, et expose l'API HTTP headless. Runtime Bun (ou Node ≥ 22).
 
 ```ts
-import { wikiService, resolveMirrorPath, resolveDataDir } from "@rosegriffon/azalee/server";
+import {
+  wikiService,
+  resolveMirrorPath,
+  resolveDataDir,
+} from "@rosegriffon/azalee/server";
 
 resolveMirrorPath(); // <iecode>/var/mirror.sqlite
 resolveDataDir(); // <aphrody>/apps/rg-website/data
 
-const { data, total } = await wikiService.getCharactersList({ q: "Mark", page: 1, limit: 2 });
+const { data, total } = await wikiService.getCharactersList({
+  q: "Mark",
+  page: 1,
+  limit: 2,
+});
 total; // 5130 personnages au total dans le miroir courant
 data[0]?.slug; // "mark-evans-0x3055CF22"
 data[0]?.names.fr; // "Mark Evans"
@@ -178,7 +186,11 @@ les modules `cpk` et `game-text` interrogent directement les projections Postgre
 Priorité maximale, au démarrage de l'hôte ou du CLI :
 
 ```ts
-import { configureAzalee, getAzaleeConfig, resetAzaleeConfig } from "@rosegriffon/azalee/config";
+import {
+  configureAzalee,
+  getAzaleeConfig,
+  resetAzaleeConfig,
+} from "@rosegriffon/azalee/config";
 
 configureAzalee({
   dataDir: "/srv/azalee/data",
@@ -194,7 +206,10 @@ application hôte peut injecter son propre client SQL ; le miroir SQLite est
 réservé aux tests, à l'extraction et au mode offline explicitement demandé.
 
 ```ts
-import { setDatabaseProvider, hasDatabaseProvider } from "@rosegriffon/azalee/db";
+import {
+  setDatabaseProvider,
+  hasDatabaseProvider,
+} from "@rosegriffon/azalee/db";
 import { createPostgresClient } from "@rosegriffon/db/service";
 
 setDatabaseProvider(createPostgresClient);
@@ -222,9 +237,16 @@ Options : `-p, --port` (défaut `3010`), `-H, --host` (défaut `127.0.0.1`),
 `--cors <origin>` (défaut `*`), `-j, --json`.
 
 ```ts
-import { createAzaleeServer, handleAzaleeRequest } from "@rosegriffon/azalee/server";
+import {
+  createAzaleeServer,
+  handleAzaleeRequest,
+} from "@rosegriffon/azalee/server";
 
-const server = createAzaleeServer({ port: 3010, hostname: "127.0.0.1", cors: true });
+const server = createAzaleeServer({
+  port: 3010,
+  hostname: "127.0.0.1",
+  cors: true,
+});
 console.log(server.url.href);
 
 // ou, dans un routeur existant :
@@ -333,7 +355,10 @@ Les mêmes 41 routes sont accessibles par un **client HTTP typé, client-safe**
 webview Tauri, ou le CLI d'une machine sans miroir SQLite ni dump du jeu.
 
 ```ts
-import { createAzaleeClient, isAzaleeNotFound } from "@rosegriffon/azalee/remote";
+import {
+  createAzaleeClient,
+  isAzaleeNotFound,
+} from "@rosegriffon/azalee/remote";
 
 // Défaut : AZALEE_API_URL, sinon https://api.rosegriffon.fr/azalee
 const api = createAzaleeClient();
@@ -372,11 +397,17 @@ Dans une webview, où `createAzaleeData` (serveur) n'est pas importable,
 `resolveAzaleeBaseUrl` joue le même rôle en HTTP pur :
 
 ```ts
-import { AZALEE_DEFAULT_API_URL, resolveAzaleeBaseUrl } from "@rosegriffon/azalee/remote";
+import {
+  AZALEE_DEFAULT_API_URL,
+  resolveAzaleeBaseUrl,
+} from "@rosegriffon/azalee/remote";
 
-const picked = await resolveAzaleeBaseUrl(["http://127.0.0.1:3010", AZALEE_DEFAULT_API_URL], {
-  requireLocalData: true, // écarte un sidecar dont /health renvoie mirror:null
-});
+const picked = await resolveAzaleeBaseUrl(
+  ["http://127.0.0.1:3010", AZALEE_DEFAULT_API_URL],
+  {
+    requireLocalData: true, // écarte un sidecar dont /health renvoie mirror:null
+  },
+);
 ```
 
 ## CLI `azalee`

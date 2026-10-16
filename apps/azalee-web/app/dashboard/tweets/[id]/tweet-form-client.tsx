@@ -39,16 +39,13 @@ export function TweetFormClient({ initialData }: { initialData?: any }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <label
-          htmlFor="tweet-text"
-          className="text-sm font-bold uppercase tracking-wider text-on-surface-variant"
-        >
+        <label htmlFor="tweet-text" className="text-sm font-bold uppercase tracking-wider text-on-surface-variant">
           Contenu du tweet
         </label>
         <Textarea
           id="tweet-text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={e => setText(e.target.value)}
           className="h-[70vh] bg-surface-container-high border-none rounded-xl text-lg resize-y"
           placeholder="Quoi de neuf ?"
         />

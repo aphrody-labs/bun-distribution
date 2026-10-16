@@ -17,11 +17,11 @@
  * évite qu'une future page reproduise l'une ou l'autre erreur.
  */
 export const SITE_URL: string = (process.env.NEXT_PUBLIC_BASE_URL || "https://rosegriffon.fr").replace(
-	"://www.",
-	"://",
+  "://www.",
+  "://",
 );
 
 /** Joint `SITE_URL` à un chemin absolu (`/wiki/chara`) sans double slash. */
 export function absoluteUrl(path: string): string {
-	return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }

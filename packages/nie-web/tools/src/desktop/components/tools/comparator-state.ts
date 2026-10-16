@@ -30,12 +30,7 @@ export function comparisonFromSearch(search: string): {
   };
 }
 
-export function comparisonSearch(
-  search: string,
-  left: string | null,
-  right: string | null,
-  level: number,
-): string {
+export function comparisonSearch(search: string, left: string | null, right: string | null, level: number): string {
   const params = new URLSearchParams(search);
   params.delete("char1");
   params.delete("char2");
@@ -87,11 +82,7 @@ export function parseComparisonShare(text: string): ComparisonShare {
   };
 }
 
-export function comparisonShareText(
-  left: ComparisonSelection,
-  right: ComparisonSelection,
-  level: number,
-): string {
+export function comparisonShareText(left: ComparisonSelection, right: ComparisonSelection, level: number): string {
   if (!Number.isFinite(level)) throw new Error("Invalid comparison level");
   const payload: ComparisonShare = {
     schema: "nie.compare.v1",

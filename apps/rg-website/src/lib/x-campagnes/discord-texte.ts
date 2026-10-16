@@ -33,12 +33,12 @@
 
 /** Ce que la base sait des identifiants croisés dans un texte. */
 export interface ResolutionDiscord {
-	/** `discord_id` → nom affiché (surnom de serveur, sinon nom global, sinon pseudo). */
-	membres: Readonly<Record<string, string>>;
-	/** `role_id` → nom du rôle. */
-	roles: Readonly<Record<string, string>>;
-	/** `channel_id` → nom du salon, sans le `#`. */
-	salons: Readonly<Record<string, string>>;
+  /** `discord_id` → nom affiché (surnom de serveur, sinon nom global, sinon pseudo). */
+  membres: Readonly<Record<string, string>>;
+  /** `role_id` → nom du rôle. */
+  roles: Readonly<Record<string, string>>;
+  /** `channel_id` → nom du salon, sans le `#`. */
+  salons: Readonly<Record<string, string>>;
 }
 
 /** Résolution vide : tout retombe sur les libellés neutres. */
@@ -64,23 +64,23 @@ const EMOJI = () => /<(a)?:([A-Za-z0-9_]{2,32}):(\d{15,20})>/g;
  * une par une ferait soixante requêtes là où trois suffisent.
  */
 export function collecterIdentifiantsDiscord(textes: readonly string[]): {
-	membres: string[];
-	roles: string[];
-	salons: string[];
+  membres: string[];
+  roles: string[];
+  salons: string[];
 } {
-	const membres = new Set<string>();
-	const roles = new Set<string>();
-	const salons = new Set<string>();
-	for (const texte of textes) {
-		if (!texte) continue;
-		// `matchAll` type ses groupes en `string | undefined` : ils sont ici garantis par la
-		// forme même de l'expression, mais on préfère un filtre à une assertion — une regex
-		// qu'on retouche un jour ne doit pas pouvoir glisser un `undefined` dans un Set.
-		for (const trouve of texte.matchAll(MENTION_MEMBRE())) if (trouve[1]) membres.add(trouve[1]);
-		for (const trouve of texte.matchAll(MENTION_ROLE())) if (trouve[1]) roles.add(trouve[1]);
-		for (const trouve of texte.matchAll(MENTION_SALON())) if (trouve[1]) salons.add(trouve[1]);
-	}
-	return { membres: [...membres], roles: [...roles], salons: [...salons] };
+  const membres = new Set<string>();
+  const roles = new Set<string>();
+  const salons = new Set<string>();
+  for (const texte of textes) {
+    if (!texte) continue;
+    // `matchAll` type ses groupes en `string | undefined` : ils sont ici garantis par la
+    // forme même de l'expression, mais on préfère un filtre à une assertion — une regex
+    // qu'on retouche un jour ne doit pas pouvoir glisser un `undefined` dans un Set.
+    for (const trouve of texte.matchAll(MENTION_MEMBRE())) if (trouve[1]) membres.add(trouve[1]);
+    for (const trouve of texte.matchAll(MENTION_ROLE())) if (trouve[1]) roles.add(trouve[1]);
+    for (const trouve of texte.matchAll(MENTION_SALON())) if (trouve[1]) salons.add(trouve[1]);
+  }
+  return { membres: [...membres], roles: [...roles], salons: [...salons] };
 }
 
 /**
@@ -91,15 +91,15 @@ export function collecterIdentifiantsDiscord(textes: readonly string[]): {
  * corriger. Une date qui ne bouge pas ne peut pas mentir.
  */
 function rendreHorodatage(secondes: number, style: string | undefined): string {
-	const date = new Date(secondes * 1000);
-	if (Number.isNaN(date.getTime())) return "";
-	const avecHeure = style === undefined || ["t", "T", "f", "F"].includes(style);
-	return date.toLocaleString("fr-FR", {
-		day: "numeric",
-		month: "long",
-		year: "numeric",
-		...(avecHeure ? { hour: "2-digit", minute: "2-digit" } : {}),
-	});
+  const date = new Date(secondes * 1000);
+  if (Number.isNaN(date.getTime())) return "";
+  const avecHeure = style === undefined || ["t", "T", "f", "F"].includes(style);
+  return date.toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...(avecHeure ? { hour: "2-digit", minute: "2-digit" } : {}),
+  });
 }
 
 /**
@@ -110,21 +110,20 @@ function rendreHorodatage(secondes: number, style: string | undefined): string {
  * donnerait à croire que quelqu'un a été nommé.
  */
 export function resoudreMentions(texte: string, resolution: ResolutionDiscord = RESOLUTION_VIDE): string {
-	if (!texte) return "";
-	return texte
-		.replace(MENTION_MEMBRE(), (_, id: string) => `@${resolution.membres[id] ?? "membre"}`)
-		.replace(MENTION_ROLE(), (_, id: string) => `@${resolution.roles[id] ?? "rôle"}`)
-		.replace(MENTION_SALON(), (_, id: string) => `#${resolution.salons[id] ?? "salon"}`)
-		.replace(HORODATAGE(), (brut, secondes: string, style: string | undefined) => {
-			const rendu = rendreHorodatage(Number.parseInt(secondes, 10), style);
-			return rendu || brut;
-		});
+  if (!texte) return "";
+  return texte
+    .replace(MENTION_MEMBRE(), (_, id: string) => `@${resolution.membres[id] ?? "membre"}`)
+    .replace(MENTION_ROLE(), (_, id: string) => `@${resolution.roles[id] ?? "rôle"}`)
+    .replace(MENTION_SALON(), (_, id: string) => `#${resolution.salons[id] ?? "salon"}`)
+    .replace(HORODATAGE(), (brut, secondes: string, style: string | undefined) => {
+      const rendu = rendreHorodatage(Number.parseInt(secondes, 10), style);
+      return rendu || brut;
+    });
 }
 
 /** Un morceau de texte Discord : du texte, ou un émoji personnalisé. */
 export type MorceauDiscord =
-	| { type: "texte"; valeur: string }
-	| { type: "emoji"; nom: string; id: string; anime: boolean };
+  { type: "texte"; valeur: string } | { type: "emoji"; nom: string; id: string; anime: boolean };
 
 /**
  * Découpe un texte en morceaux affichables.
@@ -133,24 +132,24 @@ export type MorceauDiscord =
  * déplacer l'émoji à la fin ni le perdre.
  */
 export function decouperTexteDiscord(texte: string): MorceauDiscord[] {
-	if (!texte) return [];
-	const morceaux: MorceauDiscord[] = [];
-	let curseur = 0;
-	for (const trouve of texte.matchAll(EMOJI())) {
-		const debut = trouve.index ?? 0;
-		if (debut > curseur) {
-			morceaux.push({ type: "texte", valeur: texte.slice(curseur, debut) });
-		}
-		const nom = trouve[2];
-		const id = trouve[3];
-		if (!nom || !id) continue;
-		morceaux.push({ anime: trouve[1] === "a", id, nom, type: "emoji" });
-		curseur = debut + trouve[0].length;
-	}
-	if (curseur < texte.length) {
-		morceaux.push({ type: "texte", valeur: texte.slice(curseur) });
-	}
-	return morceaux;
+  if (!texte) return [];
+  const morceaux: MorceauDiscord[] = [];
+  let curseur = 0;
+  for (const trouve of texte.matchAll(EMOJI())) {
+    const debut = trouve.index ?? 0;
+    if (debut > curseur) {
+      morceaux.push({ type: "texte", valeur: texte.slice(curseur, debut) });
+    }
+    const nom = trouve[2];
+    const id = trouve[3];
+    if (!nom || !id) continue;
+    morceaux.push({ anime: trouve[1] === "a", id, nom, type: "emoji" });
+    curseur = debut + trouve[0].length;
+  }
+  if (curseur < texte.length) {
+    morceaux.push({ type: "texte", valeur: texte.slice(curseur) });
+  }
+  return morceaux;
 }
 
 /**
@@ -161,7 +160,7 @@ export function decouperTexteDiscord(texte: string): MorceauDiscord[] {
  * aucun sens.
  */
 export function texteDiscordEnClair(texte: string, resolution?: ResolutionDiscord): string {
-	return resoudreMentions(texte, resolution).replace(EMOJI(), (_, __, nom: string) => `:${nom}:`);
+  return resoudreMentions(texte, resolution).replace(EMOJI(), (_, __, nom: string) => `:${nom}:`);
 }
 
 /**
@@ -173,7 +172,7 @@ export function texteDiscordEnClair(texte: string, resolution?: ResolutionDiscor
  * et rien dans la console ne parle d'émoji, seulement de « Refused to load the image ».
  */
 export function urlEmojiDiscord(id: string, anime: boolean): string {
-	return `https://cdn.discordapp.com/emojis/${id}.${anime ? "gif" : "webp"}?size=48&quality=lossless`;
+  return `https://cdn.discordapp.com/emojis/${id}.${anime ? "gif" : "webp"}?size=48&quality=lossless`;
 }
 
 /**
@@ -184,40 +183,36 @@ export function urlEmojiDiscord(id: string, anime: boolean): string {
  * rendu ne sait rattraper. Ici, un émoji compte pour DEUX caractères — sa largeur réelle à
  * l'écran — et la coupe tombe toujours entre deux morceaux.
  */
-export function extraitTexteDiscord(
-	texte: string,
-	maximum = 220,
-	resolution?: ResolutionDiscord
-): string {
-	const resolu = resoudreMentions(texte, resolution)
-		.replace(/https:\/\/t\.co\/\w+/g, "")
-		.replace(/\s+\n/g, "\n")
-		.trim();
+export function extraitTexteDiscord(texte: string, maximum = 220, resolution?: ResolutionDiscord): string {
+  const resolu = resoudreMentions(texte, resolution)
+    .replace(/https:\/\/t\.co\/\w+/g, "")
+    .replace(/\s+\n/g, "\n")
+    .trim();
 
-	const morceaux = decouperTexteDiscord(resolu);
-	let largeur = 0;
-	let sortie = "";
-	for (const morceau of morceaux) {
-		if (morceau.type === "emoji") {
-			if (largeur + 2 > maximum) return `${sortie.trimEnd()}…`;
-			largeur += 2;
-			sortie += `<${morceau.anime ? "a" : ""}:${morceau.nom}:${morceau.id}>`;
-			continue;
-		}
-		const reste = maximum - largeur;
-		if (morceau.valeur.length <= reste) {
-			largeur += morceau.valeur.length;
-			sortie += morceau.valeur;
-			continue;
-		}
-		const brut = morceau.valeur.slice(0, Math.max(1, reste - 1));
-		// Le caractère suivant est une espace → le dernier mot est complet, on le garde.
-		const motComplet = /\s/.test(morceau.valeur.charAt(Math.max(1, reste - 1)));
-		const coupe = motComplet ? brut : brut.replace(/\s+\S*$/, "");
-		// ⚠ `sortie` EN TÊTE. Sans elle, un texte dont le PREMIER morceau tient dans le budget
-		// et dont le second déborde perdait tout ce qui précédait : « Je crois que je suis pile
-		// dans les temps :mouahaha: Bellatrix… » se réduisait à « Bellatrix… ».
-		return `${sortie}${(coupe || brut).trimEnd()}…`;
-	}
-	return sortie.trim();
+  const morceaux = decouperTexteDiscord(resolu);
+  let largeur = 0;
+  let sortie = "";
+  for (const morceau of morceaux) {
+    if (morceau.type === "emoji") {
+      if (largeur + 2 > maximum) return `${sortie.trimEnd()}…`;
+      largeur += 2;
+      sortie += `<${morceau.anime ? "a" : ""}:${morceau.nom}:${morceau.id}>`;
+      continue;
+    }
+    const reste = maximum - largeur;
+    if (morceau.valeur.length <= reste) {
+      largeur += morceau.valeur.length;
+      sortie += morceau.valeur;
+      continue;
+    }
+    const brut = morceau.valeur.slice(0, Math.max(1, reste - 1));
+    // Le caractère suivant est une espace → le dernier mot est complet, on le garde.
+    const motComplet = /\s/.test(morceau.valeur.charAt(Math.max(1, reste - 1)));
+    const coupe = motComplet ? brut : brut.replace(/\s+\S*$/, "");
+    // ⚠ `sortie` EN TÊTE. Sans elle, un texte dont le PREMIER morceau tient dans le budget
+    // et dont le second déborde perdait tout ce qui précédait : « Je crois que je suis pile
+    // dans les temps :mouahaha: Bellatrix… » se réduisait à « Bellatrix… ».
+    return `${sortie}${(coupe || brut).trimEnd()}…`;
+  }
+  return sortie.trim();
 }

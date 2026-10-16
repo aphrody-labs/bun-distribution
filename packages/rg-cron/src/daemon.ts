@@ -25,13 +25,7 @@ import { runSeoIndexNow } from "./tasks/seo/indexnow";
 import { runSeoLlmsTxt } from "./tasks/seo/llms-txt";
 import { collecterAudienceAchillea } from "./tasks/stats/achillea";
 import { rafraichirVideosTechniques } from "./tasks/zukan-videos";
-import {
-  initDiscord,
-  getDiscordTelemetry,
-  onTelemetryUpdate,
-  getDiscordClient,
-  GUILD_ID,
-} from "./lib/discord";
+import { initDiscord, getDiscordTelemetry, onTelemetryUpdate, getDiscordClient, GUILD_ID } from "./lib/discord";
 import { runAchilleaSync } from "./tasks/achillea-sync";
 import { runAchilleaSeasonRollover } from "./tasks/achillea-seasons";
 import { runAchilleaWeeklyPayout } from "./tasks/achillea-weekly-payout";
@@ -82,8 +76,7 @@ console.log = function (message?: any, ...optionalParams: any[]) {
   const str =
     String(message) +
     (optionalParams.length
-      ? " " +
-        optionalParams.map((p) => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
+      ? " " + optionalParams.map(p => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
       : "");
   originalLog(message, ...optionalParams);
   broadcastLog("info", str);
@@ -93,8 +86,7 @@ console.error = function (message?: any, ...optionalParams: any[]) {
   const str =
     String(message) +
     (optionalParams.length
-      ? " " +
-        optionalParams.map((p) => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
+      ? " " + optionalParams.map(p => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
       : "");
   originalError(message, ...optionalParams);
   broadcastLog("error", str);
@@ -104,8 +96,7 @@ console.warn = function (message?: any, ...optionalParams: any[]) {
   const str =
     String(message) +
     (optionalParams.length
-      ? " " +
-        optionalParams.map((p) => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
+      ? " " + optionalParams.map(p => (typeof p === "object" ? JSON.stringify(p) : String(p))).join(" ")
       : "");
   originalWarn(message, ...optionalParams);
   broadcastLog("warn", str);
@@ -137,9 +128,7 @@ function exigeLaPasserelleDiscord(tache: string | undefined): boolean {
 // Initialisation du client Discord
 const clientDiscord = exigeLaPasserelleDiscord(tacheCli) ? await initDiscord() : null;
 if (!clientDiscord && tacheCli) {
-  console.log(
-    `[Cron Runner] Passerelle Discord non requise pour « ${tacheCli} » : démarrage direct.`,
-  );
+  console.log(`[Cron Runner] Passerelle Discord non requise pour « ${tacheCli} » : démarrage direct.`);
 }
 
 // Veille des salons Discord suivis : les événements de la passerelle écrivent
@@ -163,10 +152,7 @@ const metrics = {
   tasksSkipped: 0,
   /** Exécutions abandonnées sur dépassement du délai maximal. */
   tasksTimedOut: 0,
-  lastExecution: {} as Record<
-    string,
-    { time: string; durationMs: number; success: boolean; error?: string }
-  >,
+  lastExecution: {} as Record<string, { time: string; durationMs: number; success: boolean; error?: string }>,
 };
 
 /**
@@ -316,10 +302,7 @@ async function executeTask(
       success: false,
       error: errorMsg,
     };
-    console.error(
-      `[Cron Runner] Erreur critique lors de la tâche : ${name} en ${duration}ms :`,
-      err,
-    );
+    console.error(`[Cron Runner] Erreur critique lors de la tâche : ${name} en ${duration}ms :`, err);
     consignerExecution({
       nom: name,
       debutLe: start,
@@ -353,13 +336,9 @@ function consignerExecution(resultat: Parameters<typeof registreExecutions.noter
     console.warn("[Cron Runner] registre d'exécutions indisponible :", err);
     return;
   }
-  void enregistrerExecutionEnBase(resultat).catch((err) =>
-    console.warn("[Cron Runner] historique non écrit :", err),
-  );
+  void enregistrerExecutionEnBase(resultat).catch(err => console.warn("[Cron Runner] historique non écrit :", err));
   if (decision.type !== "aucune") {
-    void signalerDecisionAlerte(decision).catch((err) =>
-      console.warn("[Cron Runner] alerte non envoyée :", err),
-    );
+    void signalerDecisionAlerte(decision).catch(err => console.warn("[Cron Runner] alerte non envoyée :", err));
   }
 }
 
@@ -420,9 +399,7 @@ if (indexRun >= 0) {
   } else if (task === "campagnes:relais" || task === "campagnes-relais" || task === "relais") {
     // `--run campagnes:relais <slug>` restreint le relais à une seule campagne.
     const slug = Bun.argv[indexRun + 2];
-    await executeTask("campagnes:relais", () =>
-      relayerCampagnesDiscord(slug && !slug.startsWith("-") ? { slug } : {}),
-    );
+    await executeTask("campagnes:relais", () => relayerCampagnesDiscord(slug && !slug.startsWith("-") ? { slug } : {}));
   } else if (task === "discord:backfill" || task === "discord-backfill") {
     await executeTask("discord:backfill", runDiscordMessagesBackfill);
   } else if (task === "discord:polls" || task === "discord-polls" || task === "sondages") {
@@ -432,32 +409,18 @@ if (indexRun >= 0) {
   } else if (task === "x:campagnes" || task === "x-campagnes" || task === "campagnes") {
     // `--run x:campagnes <slug>` restreint la récolte à une seule campagne.
     const slug = args[taskIdx + 1];
-    await executeTask("x:campagnes", () =>
-      crawlHashtagCampaigns(slug && !slug.startsWith("-") ? { slug } : {}),
-    );
-  } else if (
-    task === "campagnes:discord" ||
-    task === "campagnes-discord" ||
-    task === "discord:campagnes"
-  ) {
+    await executeTask("x:campagnes", () => crawlHashtagCampaigns(slug && !slug.startsWith("-") ? { slug } : {}));
+  } else if (task === "campagnes:discord" || task === "campagnes-discord" || task === "discord:campagnes") {
     // `--run campagnes:discord <slug>` restreint la récolte à une seule campagne.
     const slugDiscord = args[taskIdx + 1];
     await executeTask("campagnes:discord", () =>
-      recolterCreationsDiscord(
-        slugDiscord && !slugDiscord.startsWith("-") ? { slug: slugDiscord } : {},
-      ),
+      recolterCreationsDiscord(slugDiscord && !slugDiscord.startsWith("-") ? { slug: slugDiscord } : {}),
     );
-  } else if (
-    task === "campagnes:instagram" ||
-    task === "campagnes-instagram" ||
-    task === "instagram"
-  ) {
+  } else if (task === "campagnes:instagram" || task === "campagnes-instagram" || task === "instagram") {
     // `--run campagnes:instagram <slug>` restreint la revalidation à une campagne.
     const slugInstagram = args[taskIdx + 1];
     await executeTask("campagnes:instagram", () =>
-      revaliderCreationsInstagram(
-        slugInstagram && !slugInstagram.startsWith("-") ? { slug: slugInstagram } : {},
-      ),
+      revaliderCreationsInstagram(slugInstagram && !slugInstagram.startsWith("-") ? { slug: slugInstagram } : {}),
     );
   } else if (task === "seo:indexnow") {
     await executeTask("seo:indexnow", runSeoIndexNow);
@@ -716,13 +679,10 @@ Bun.serve({
     if (url.pathname === "/discord-telemetry") {
       const telemetry = getDiscordTelemetry();
       if (!telemetry) {
-        return new Response(
-          JSON.stringify({ error: "Télémétrie Discord indisponible (non connecté ou désactivé)" }),
-          {
-            status: 503,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        return new Response(JSON.stringify({ error: "Télémétrie Discord indisponible (non connecté ou désactivé)" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       return Response.json(telemetry);
     }
@@ -795,11 +755,7 @@ Bun.serve({
     }
 
     // 5. Déclenchement manuel d'une tâche à la demande
-    if (
-      url.pathname.startsWith("/tasks/") &&
-      url.pathname.endsWith("/run") &&
-      req.method === "POST"
-    ) {
+    if (url.pathname.startsWith("/tasks/") && url.pathname.endsWith("/run") && req.method === "POST") {
       let taskName: string;
       try {
         taskName = decodeURIComponent(url.pathname.slice(7, -4));
@@ -886,9 +842,7 @@ Bun.serve({
   websocket: {
     open(ws) {
       wsConnections.add(ws);
-      ws.send(
-        JSON.stringify({ type: "system", text: "Connexion établie avec le flux de logs rg-cron." }),
-      );
+      ws.send(JSON.stringify({ type: "system", text: "Connexion établie avec le flux de logs rg-cron." }));
       const telemetry = getDiscordTelemetry();
       if (telemetry) {
         ws.send(JSON.stringify({ type: "discord-telemetry", data: telemetry }));
@@ -928,7 +882,7 @@ Bun.listen({
 });
 
 // ─── STREAMING DE LA TÉLÉMÉTRIE EN TEMPS RÉEL SUR LES WEBSOCKETS ─────────────
-onTelemetryUpdate((telemetry) => {
+onTelemetryUpdate(telemetry => {
   const payload = JSON.stringify({
     type: "discord-telemetry",
     data: telemetry,
@@ -985,9 +939,7 @@ Bun.serve({
     // Fail closed : pas de secret configuré, pas d'annonce. Jamais de valeur
     // de repli — un secret par défaut est un secret public.
     if (announceSecret === "") {
-      console.error(
-        "[announce-server] requête refusée : DISCORD_ANNOUNCE_SECRET n'est pas configuré.",
-      );
+      console.error("[announce-server] requête refusée : DISCORD_ANNOUNCE_SECRET n'est pas configuré.");
       return new Response("Announce service not configured", { status: 503 });
     }
 
@@ -1052,9 +1004,7 @@ Bun.serve({
 
       // Build Embed
       const articleUrl =
-        type === "wiki"
-          ? `https://azalee.rosegriffon.fr/news/${slug}`
-          : `https://rosegriffon.fr/chroniques/${slug}`;
+        type === "wiki" ? `https://azalee.rosegriffon.fr/news/${slug}` : `https://rosegriffon.fr/chroniques/${slug}`;
 
       const embedColor = type === "wiki" ? 0xf2a93b : 0xa14b3f; // Azalée orange vs Rose Griffon red
 
@@ -1069,21 +1019,16 @@ Bun.serve({
       };
 
       await channel.send({ embeds: [embed] });
-      console.log(
-        `[announce-server] Annonce envoyée pour : "${title}" dans le salon #${channel.name}`,
-      );
+      console.log(`[announce-server] Annonce envoyée pour : "${title}" dans le salon #${channel.name}`);
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
     } catch (err) {
       console.error("[announce-server] Erreur lors de l'annonce:", err);
-      return new Response(
-        JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
   },
 });

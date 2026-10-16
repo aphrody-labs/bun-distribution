@@ -63,46 +63,43 @@ export const NUMERO_DEPART = 86;
 
 /** Prochain numéro, à partir du plus grand déjà attribué (0 si la table est vide). */
 export function prochainNumero(dernierNumero: number | null | undefined): number {
-	const dernier =
-		typeof dernierNumero === "number" && Number.isFinite(dernierNumero)
-			? Math.floor(dernierNumero)
-			: 0;
-	return Math.max(NUMERO_DEPART, dernier + 1);
+  const dernier = typeof dernierNumero === "number" && Number.isFinite(dernierNumero) ? Math.floor(dernierNumero) : 0;
+  return Math.max(NUMERO_DEPART, dernier + 1);
 }
 
 // ─── Catégories ─────────────────────────────────────────────────────────────
 
 export interface CategorieTicket {
-	/** Clé technique — celle écrite en base et dans les identifiants de boutons. */
-	cle: string;
-	/** Libellé du bouton du panneau. */
-	libelle: string;
-	/** Émoji du bouton. Unicode uniquement : les deux bots servent deux serveurs. */
-	emoji: string;
-	/** Ce que le membre doit y mettre, en une phrase — affiché dans le panneau. */
-	description: string;
-	/**
-	 * Vrai quand le ticket parle d'une PERSONNE (signalement, conflit). Sert à
-	 * le signaler à l'œil — bouton rouge dans le panneau — pas à décider qui le
-	 * reçoit : c'est `pourLaDirection` qui en décide.
-	 */
-	sensible: boolean;
-	/**
-	 * Vrai quand SEULE la direction reçoit et traite le ticket : les rôles de
-	 * modération n'y sont ni invités, ni notifiés, ni habilités à le fermer.
-	 *
-	 * Les deux champs ont été distincts le 22/8/2026. « Signalement » les
-	 * portait tous les deux, au motif qu'un signalement peut viser un
-	 * modérateur — et la conséquence, sur le premier vrai signalement reçu
-	 * (`ticket-0088`), a été de notifier l'Administrateur, le
-	 * Vice-administrateur et le Resp. Modération pour un incident de vocal que
-	 * la modération traite tous les jours, sans prévenir les modérateurs. La
-	 * décision de l'admin : les signalements vont à `@Modérateurs`.
-	 *
-	 * Le mécanisme reste entier, testé, et à un booléen d'une catégorie
-	 * réservée à la direction si elle devient nécessaire.
-	 */
-	pourLaDirection: boolean;
+  /** Clé technique — celle écrite en base et dans les identifiants de boutons. */
+  cle: string;
+  /** Libellé du bouton du panneau. */
+  libelle: string;
+  /** Émoji du bouton. Unicode uniquement : les deux bots servent deux serveurs. */
+  emoji: string;
+  /** Ce que le membre doit y mettre, en une phrase — affiché dans le panneau. */
+  description: string;
+  /**
+   * Vrai quand le ticket parle d'une PERSONNE (signalement, conflit). Sert à
+   * le signaler à l'œil — bouton rouge dans le panneau — pas à décider qui le
+   * reçoit : c'est `pourLaDirection` qui en décide.
+   */
+  sensible: boolean;
+  /**
+   * Vrai quand SEULE la direction reçoit et traite le ticket : les rôles de
+   * modération n'y sont ni invités, ni notifiés, ni habilités à le fermer.
+   *
+   * Les deux champs ont été distincts le 22/8/2026. « Signalement » les
+   * portait tous les deux, au motif qu'un signalement peut viser un
+   * modérateur — et la conséquence, sur le premier vrai signalement reçu
+   * (`ticket-0088`), a été de notifier l'Administrateur, le
+   * Vice-administrateur et le Resp. Modération pour un incident de vocal que
+   * la modération traite tous les jours, sans prévenir les modérateurs. La
+   * décision de l'admin : les signalements vont à `@Modérateurs`.
+   *
+   * Le mécanisme reste entier, testé, et à un booléen d'une catégorie
+   * réservée à la direction si elle devient nécessaire.
+   */
+  pourLaDirection: boolean;
 }
 
 /**
@@ -114,58 +111,58 @@ export interface CategorieTicket {
  * nommées.
  */
 export const CATEGORIES_TICKET: readonly CategorieTicket[] = Object.freeze([
-	{
-		cle: "aide",
-		description: "Une question sur le serveur, un souci technique, une demande d'accès.",
-		emoji: "❓",
-		libelle: "Aide",
-		pourLaDirection: false,
-		sensible: false,
-	},
-	{
-		cle: "signalement",
-		description: "Signaler un comportement, un message, un conflit. Traité par la modération.",
-		emoji: "🛡️",
-		libelle: "Signalement",
-		pourLaDirection: false,
-		sensible: true,
-	},
-	{
-		cle: "patreon",
-		description: "Un palier, un avantage, une facturation ou un accès Patreon.",
-		emoji: "🧡",
-		libelle: "Patreon",
-		pourLaDirection: false,
-		sensible: false,
-	},
-	{
-		cle: "wiki",
-		description: "Contribuer au wiki Azalée, signaler une donnée fausse, demander un accès.",
-		emoji: "📚",
-		libelle: "Wiki Azalée",
-		pourLaDirection: false,
-		sensible: false,
-	},
-	{
-		cle: "partenariat",
-		description: "Partenariat, presse, collaboration, événement commun.",
-		emoji: "🤝",
-		libelle: "Partenariat",
-		pourLaDirection: false,
-		sensible: false,
-	},
+  {
+    cle: "aide",
+    description: "Une question sur le serveur, un souci technique, une demande d'accès.",
+    emoji: "❓",
+    libelle: "Aide",
+    pourLaDirection: false,
+    sensible: false,
+  },
+  {
+    cle: "signalement",
+    description: "Signaler un comportement, un message, un conflit. Traité par la modération.",
+    emoji: "🛡️",
+    libelle: "Signalement",
+    pourLaDirection: false,
+    sensible: true,
+  },
+  {
+    cle: "patreon",
+    description: "Un palier, un avantage, une facturation ou un accès Patreon.",
+    emoji: "🧡",
+    libelle: "Patreon",
+    pourLaDirection: false,
+    sensible: false,
+  },
+  {
+    cle: "wiki",
+    description: "Contribuer au wiki Azalée, signaler une donnée fausse, demander un accès.",
+    emoji: "📚",
+    libelle: "Wiki Azalée",
+    pourLaDirection: false,
+    sensible: false,
+  },
+  {
+    cle: "partenariat",
+    description: "Partenariat, presse, collaboration, événement commun.",
+    emoji: "🤝",
+    libelle: "Partenariat",
+    pourLaDirection: false,
+    sensible: false,
+  },
 ]);
 
 export function categorieTicket(cle: unknown): CategorieTicket | null {
-	if (typeof cle !== "string") {
-		return null;
-	}
-	return CATEGORIES_TICKET.find((categorie) => categorie.cle === cle) ?? null;
+  if (typeof cle !== "string") {
+    return null;
+  }
+  return CATEGORIES_TICKET.find(categorie => categorie.cle === cle) ?? null;
 }
 
 /** Libellé d'une catégorie ; la clé brute si elle vient d'une ligne ancienne. */
 export function libelleCategorieTicket(cle: string): string {
-	return categorieTicket(cle)?.libelle ?? cle;
+  return categorieTicket(cle)?.libelle ?? cle;
 }
 
 // ─── États ──────────────────────────────────────────────────────────────────
@@ -175,17 +172,17 @@ export const ETATS_TICKET = ["ouvert", "pris", "ferme"] as const;
 export type EtatTicket = (typeof ETATS_TICKET)[number];
 
 export function estEtatTicket(valeur: unknown): valeur is EtatTicket {
-	return typeof valeur === "string" && (ETATS_TICKET as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (ETATS_TICKET as readonly string[]).includes(valeur);
 }
 
 const LIBELLES_ETAT: Readonly<Record<EtatTicket, string>> = Object.freeze({
-	ferme: "⚫ Fermé",
-	ouvert: "🟢 En attente",
-	pris: "🟡 Pris en charge",
+  ferme: "⚫ Fermé",
+  ouvert: "🟢 En attente",
+  pris: "🟡 Pris en charge",
 });
 
 export function libelleEtatTicket(etat: string): string {
-	return estEtatTicket(etat) ? LIBELLES_ETAT[etat] : "⚪ État inconnu";
+  return estEtatTicket(etat) ? LIBELLES_ETAT[etat] : "⚪ État inconnu";
 }
 
 /**
@@ -198,27 +195,27 @@ export function libelleEtatTicket(etat: string): string {
  * charge qu'on ne peut pas rendre n'est jamais prise.
  */
 const TRANSITIONS: Readonly<Record<EtatTicket, readonly EtatTicket[]>> = Object.freeze({
-	ferme: [],
-	ouvert: ["pris", "ferme"],
-	pris: ["ouvert", "ferme"],
+  ferme: [],
+  ouvert: ["pris", "ferme"],
+  pris: ["ouvert", "ferme"],
 });
 
 export function transitionPermise(depuis: string, vers: string): boolean {
-	if (!estEtatTicket(depuis) || !estEtatTicket(vers)) {
-		return false;
-	}
-	return TRANSITIONS[depuis].includes(vers);
+  if (!estEtatTicket(depuis) || !estEtatTicket(vers)) {
+    return false;
+  }
+  return TRANSITIONS[depuis].includes(vers);
 }
 
 /** Pourquoi une transition est refusée, en une phrase adressée au staff. */
 export function refusTransition(depuis: string, vers: string): string {
-	if (depuis === "ferme") {
-		return "Ce ticket est déjà fermé. Son fil reste lisible, mais il ne se rouvre pas : ouvre-en un nouveau.";
-	}
-	if (depuis === vers) {
-		return `Ce ticket est déjà « ${libelleEtatTicket(depuis)} ».`;
-	}
-	return `Passage impossible de « ${libelleEtatTicket(depuis)} » à « ${libelleEtatTicket(vers)} ».`;
+  if (depuis === "ferme") {
+    return "Ce ticket est déjà fermé. Son fil reste lisible, mais il ne se rouvre pas : ouvre-en un nouveau.";
+  }
+  if (depuis === vers) {
+    return `Ce ticket est déjà « ${libelleEtatTicket(depuis)} ».`;
+  }
+  return `Passage impossible de « ${libelleEtatTicket(depuis)} » à « ${libelleEtatTicket(vers)} ».`;
 }
 
 // ─── Nommage ────────────────────────────────────────────────────────────────
@@ -244,14 +241,14 @@ export const LONGUEUR_NOM_SALON = 100;
  * alphabétique de Discord suive l'ordre chronologique.
  */
 export function nomSalonTicket(numero: number): string {
-	const borne = Number.isFinite(numero) ? Math.max(0, Math.floor(numero)) : 0;
-	return `ticket-${String(borne).padStart(4, "0")}`;
+  const borne = Number.isFinite(numero) ? Math.max(0, Math.floor(numero)) : 0;
+  return `ticket-${String(borne).padStart(4, "0")}`;
 }
 
 /** Le numéro lisible d'un ticket, tel qu'on le cite : `#0086`. */
 export function referenceTicket(numero: number): string {
-	const borne = Number.isFinite(numero) ? Math.max(0, Math.floor(numero)) : 0;
-	return `#${String(borne).padStart(4, "0")}`;
+  const borne = Number.isFinite(numero) ? Math.max(0, Math.floor(numero)) : 0;
+  return `#${String(borne).padStart(4, "0")}`;
 }
 
 // ─── Sujet et motif ─────────────────────────────────────────────────────────
@@ -263,14 +260,14 @@ export const LONGUEUR_SUJET = 100;
 export const LONGUEUR_MOTIF = 500;
 
 function nettoyer(brut: unknown, limite: number): string | null {
-	if (typeof brut !== "string") {
-		return null;
-	}
-	const propre = brut.replaceAll(/\s+/g, " ").trim();
-	if (propre.length === 0) {
-		return null;
-	}
-	return propre.length <= limite ? propre : `${propre.slice(0, limite - 1)}…`;
+  if (typeof brut !== "string") {
+    return null;
+  }
+  const propre = brut.replaceAll(/\s+/g, " ").trim();
+  if (propre.length === 0) {
+    return null;
+  }
+  return propre.length <= limite ? propre : `${propre.slice(0, limite - 1)}…`;
 }
 
 /**
@@ -283,7 +280,7 @@ function nettoyer(brut: unknown, limite: number): string | null {
  * donnée illisible en base.
  */
 export function sujetPropre(brut: unknown): string | null {
-	return nettoyer(brut, LONGUEUR_SUJET);
+  return nettoyer(brut, LONGUEUR_SUJET);
 }
 
 /**
@@ -295,7 +292,7 @@ export function sujetPropre(brut: unknown): string | null {
  * qu'aucun outil ne fait respecter n'est pas une consigne.
  */
 export function motifPropre(brut: unknown): string | null {
-	return nettoyer(brut, LONGUEUR_MOTIF);
+  return nettoyer(brut, LONGUEUR_MOTIF);
 }
 
 // ─── Garde d'ouverture ──────────────────────────────────────────────────────
@@ -304,8 +301,8 @@ export function motifPropre(brut: unknown): string | null {
 export const TICKETS_SIMULTANES = 1;
 
 export type ResultatOuverture =
-	| { ok: true; categorie: CategorieTicket; sujet: string | null }
-	| { ok: false; erreur: string; salonExistant?: string };
+  | { ok: true; categorie: CategorieTicket; sujet: string | null }
+  | { ok: false; erreur: string; salonExistant?: string };
 
 /**
  * Le membre peut-il ouvrir ce ticket ?
@@ -315,28 +312,28 @@ export type ResultatOuverture =
  * issue. C'est ce qui distingue une garde utile d'un mur.
  */
 export function verifierOuverture(
-	categorieCle: unknown,
-	sujetBrut: unknown,
-	salonsOuverts: readonly string[] = []
+  categorieCle: unknown,
+  sujetBrut: unknown,
+  salonsOuverts: readonly string[] = [],
 ): ResultatOuverture {
-	const categorie = categorieTicket(categorieCle);
-	if (!categorie) {
-		return {
-			erreur: `Catégorie inconnue. Choisis parmi : ${CATEGORIES_TICKET.map((c) => c.libelle).join(", ")}.`,
-			ok: false,
-		};
-	}
-	if (salonsOuverts.length >= TICKETS_SIMULTANES) {
-		const premier = salonsOuverts[0] as string;
-		return {
-			erreur:
-				"Tu as déjà un ticket ouvert. Continue dedans plutôt que d'en ouvrir un second : " +
-				"le staff y répond, et deux tickets en parallèle font perdre le fil.",
-			ok: false,
-			salonExistant: premier,
-		};
-	}
-	return { categorie, ok: true, sujet: sujetPropre(sujetBrut) };
+  const categorie = categorieTicket(categorieCle);
+  if (!categorie) {
+    return {
+      erreur: `Catégorie inconnue. Choisis parmi : ${CATEGORIES_TICKET.map(c => c.libelle).join(", ")}.`,
+      ok: false,
+    };
+  }
+  if (salonsOuverts.length >= TICKETS_SIMULTANES) {
+    const premier = salonsOuverts[0] as string;
+    return {
+      erreur:
+        "Tu as déjà un ticket ouvert. Continue dedans plutôt que d'en ouvrir un second : " +
+        "le staff y répond, et deux tickets en parallèle font perdre le fil.",
+      ok: false,
+      salonExistant: premier,
+    };
+  }
+  return { categorie, ok: true, sujet: sujetPropre(sujetBrut) };
 }
 
 // ─── Identifiants de composants ─────────────────────────────────────────────
@@ -356,31 +353,29 @@ const ACTIONS = new Set<string>(["ouvrir", "prendre", "rendre", "fermer", "confi
 
 /** `ticket:ouvrir:signalement` — borné à la limite dure de l'API (100). */
 export function identifiantComposant(action: ActionTicket, argument?: string): string {
-	const brut = [PREFIXE_COMPOSANT, action, argument].filter(Boolean).join(":");
-	return brut.length <= LIMITES.identifiantComposant
-		? brut
-		: brut.slice(0, LIMITES.identifiantComposant);
+  const brut = [PREFIXE_COMPOSANT, action, argument].filter(Boolean).join(":");
+  return brut.length <= LIMITES.identifiantComposant ? brut : brut.slice(0, LIMITES.identifiantComposant);
 }
 
 export interface ComposantTicket {
-	action: ActionTicket;
-	argument: string | null;
+  action: ActionTicket;
+  argument: string | null;
 }
 
 /** Relit un identifiant de composant. `null` si ce n'en est pas un des nôtres. */
 export function lireComposant(identifiant: unknown): ComposantTicket | null {
-	if (typeof identifiant !== "string") {
-		return null;
-	}
-	const morceaux = identifiant.split(":");
-	if (morceaux[0] !== PREFIXE_COMPOSANT || morceaux.length < 2) {
-		return null;
-	}
-	const action = morceaux[1] as ActionTicket;
-	if (!ACTIONS.has(action)) {
-		return null;
-	}
-	return { action, argument: morceaux.length > 2 ? morceaux.slice(2).join(":") : null };
+  if (typeof identifiant !== "string") {
+    return null;
+  }
+  const morceaux = identifiant.split(":");
+  if (morceaux[0] !== PREFIXE_COMPOSANT || morceaux.length < 2) {
+    return null;
+  }
+  const action = morceaux[1] as ActionTicket;
+  if (!ACTIONS.has(action)) {
+    return null;
+  }
+  return { action, argument: morceaux.length > 2 ? morceaux.slice(2).join(":") : null };
 }
 
 // ─── Qui voit le ticket ─────────────────────────────────────────────────────
@@ -398,25 +393,25 @@ export function lireComposant(identifiant: unknown): ComposantTicket | null {
  * s'approche.
  */
 export interface ContexteAcces {
-	auteurId: string;
-	/** Rôles qui prennent en charge les tickets ordinaires. */
-	rolesStaff: readonly string[];
-	/** Rôles qui voient AUSSI les tickets réservés à la direction. */
-	rolesDirection: readonly string[];
-	/** Le ticket est-il réservé à la direction ? (`CategorieTicket.pourLaDirection`) */
-	pourLaDirection: boolean;
+  auteurId: string;
+  /** Rôles qui prennent en charge les tickets ordinaires. */
+  rolesStaff: readonly string[];
+  /** Rôles qui voient AUSSI les tickets réservés à la direction. */
+  rolesDirection: readonly string[];
+  /** Le ticket est-il réservé à la direction ? (`CategorieTicket.pourLaDirection`) */
+  pourLaDirection: boolean;
 }
 
 export interface Invitation {
-	/**
-	 * `role` : mentionné une fois dans le fil, il y fait ENTRER tous ses
-	 * porteurs (Discord les ajoute à la liste des membres). Ne jamais y mettre
-	 * un rôle qui n'a pas à lire le ticket : la mention est une clé, pas un ping.
-	 */
-	genre: "role" | "membre";
-	id: string;
-	/** Pourquoi cette entrée existe — repris tel quel dans le journal d'audit. */
-	raison: string;
+  /**
+   * `role` : mentionné une fois dans le fil, il y fait ENTRER tous ses
+   * porteurs (Discord les ajoute à la liste des membres). Ne jamais y mettre
+   * un rôle qui n'a pas à lire le ticket : la mention est une clé, pas un ping.
+   */
+  genre: "role" | "membre";
+  id: string;
+  /** Pourquoi cette entrée existe — repris tel quel dans le journal d'audit. */
+  raison: string;
 }
 
 /**
@@ -442,22 +437,16 @@ export interface Invitation {
  * tout rôle de tickets) — elle ne reçoit simplement plus la notification.
  */
 export function invitations(contexte: ContexteAcces): Invitation[] {
-	const liste: Invitation[] = [
-		{ genre: "membre", id: contexte.auteurId, raison: "Auteur du ticket." },
-	];
-	const habilites = contexte.pourLaDirection
-		? contexte.rolesDirection
-		: [...new Set(contexte.rolesStaff)];
-	for (const roleId of habilites) {
-		liste.push({
-			genre: "role",
-			id: roleId,
-			raison: contexte.pourLaDirection
-				? "Ticket réservé à la direction."
-				: "Rôle de prise en charge des tickets.",
-		});
-	}
-	return liste;
+  const liste: Invitation[] = [{ genre: "membre", id: contexte.auteurId, raison: "Auteur du ticket." }];
+  const habilites = contexte.pourLaDirection ? contexte.rolesDirection : [...new Set(contexte.rolesStaff)];
+  for (const roleId of habilites) {
+    liste.push({
+      genre: "role",
+      id: roleId,
+      raison: contexte.pourLaDirection ? "Ticket réservé à la direction." : "Rôle de prise en charge des tickets.",
+    });
+  }
+  return liste;
 }
 
 /**
@@ -467,19 +456,19 @@ export function invitations(contexte: ContexteAcces): Invitation[] {
  * comprises), pas celle du rôle : c'est la seule qui dit la vérité.
  */
 export interface RoleObserve {
-	id: string;
-	nom: string;
-	administrateur: boolean;
-	gereLesFils: boolean;
-	/** Rôle géré par une intégration (bot) : sa permission vient de son application. */
-	integration: boolean;
-	/**
-	 * Combien d'HUMAINS le portent, `null` si la liste des membres n'est pas
-	 * connue. Un rôle que seuls des bots portent (« Robot de Garde ») n'est pas
-	 * une fuite : personne ne lit rien. Le signaler noierait les deux lignes qui
-	 * comptent vraiment sous du bruit qu'on ne corrigera jamais.
-	 */
-	porteursHumains: number | null;
+  id: string;
+  nom: string;
+  administrateur: boolean;
+  gereLesFils: boolean;
+  /** Rôle géré par une intégration (bot) : sa permission vient de son application. */
+  integration: boolean;
+  /**
+   * Combien d'HUMAINS le portent, `null` si la liste des membres n'est pas
+   * connue. Un rôle que seuls des bots portent (« Robot de Garde ») n'est pas
+   * une fuite : personne ne lit rien. Le signaler noierait les deux lignes qui
+   * comptent vraiment sous du bruit qu'on ne corrigera jamais.
+   */
+  porteursHumains: number | null;
 }
 
 /**
@@ -491,7 +480,7 @@ export interface RoleObserve {
  * leur fonctionnement.
  */
 export interface Fuites {
-	avertissements: string[];
+  avertissements: string[];
 }
 
 /**
@@ -516,34 +505,30 @@ export interface Fuites {
  * Les rôles d'intégration sont écartés : ce sont des bots, pas des lecteurs, et
  * leur retirer leur permission les casse.
  */
-export function fuitesDAcces(
-	roles: readonly RoleObserve[],
-	habilites: readonly string[],
-	nomDuSalon: string
-): Fuites {
-	const permis = new Set(habilites);
-	const fuites: Fuites = { avertissements: [] };
-	for (const role of roles) {
-		if (permis.has(role.id) || role.integration || role.porteursHumains === 0) {
-			continue;
-		}
-		if (role.administrateur) {
-			fuites.avertissements.push(
-				`${role.nom} porte « Administrateur » : ses membres voient tous les tickets, ` +
-					"signalements compris, et aucune permission de salon ne peut l'empêcher. " +
-					"Retire-lui « Administrateur » si ce n'est pas voulu."
-			);
-			continue;
-		}
-		if (role.gereLesFils) {
-			fuites.avertissements.push(
-				`${role.nom} a « Gérer les fils » sur ${nomDuSalon} sans être habilité : ` +
-					"ses membres LISENT tous les tickets. Retire-lui la permission sur ce salon, " +
-					"ou déclare-le avec `/gestion ticket role`."
-			);
-		}
-	}
-	return fuites;
+export function fuitesDAcces(roles: readonly RoleObserve[], habilites: readonly string[], nomDuSalon: string): Fuites {
+  const permis = new Set(habilites);
+  const fuites: Fuites = { avertissements: [] };
+  for (const role of roles) {
+    if (permis.has(role.id) || role.integration || role.porteursHumains === 0) {
+      continue;
+    }
+    if (role.administrateur) {
+      fuites.avertissements.push(
+        `${role.nom} porte « Administrateur » : ses membres voient tous les tickets, ` +
+          "signalements compris, et aucune permission de salon ne peut l'empêcher. " +
+          "Retire-lui « Administrateur » si ce n'est pas voulu.",
+      );
+      continue;
+    }
+    if (role.gereLesFils) {
+      fuites.avertissements.push(
+        `${role.nom} a « Gérer les fils » sur ${nomDuSalon} sans être habilité : ` +
+          "ses membres LISENT tous les tickets. Retire-lui la permission sur ce salon, " +
+          "ou déclare-le avec `/gestion ticket role`.",
+      );
+    }
+  }
+  return fuites;
 }
 
 /**
@@ -554,17 +539,17 @@ export function fuitesDAcces(
  * l'ouverture, en nommant le réglage à poser.
  */
 export function manqueDeConfiguration(
-	categorie: CategorieTicket,
-	contexte: Pick<ContexteAcces, "rolesStaff" | "rolesDirection">
+  categorie: CategorieTicket,
+  contexte: Pick<ContexteAcces, "rolesStaff" | "rolesDirection">,
 ): string | null {
-	if (categorie.pourLaDirection) {
-		return contexte.rolesDirection.length > 0
-			? null
-			: "Aucun rôle de direction n'est configuré : ce ticket n'aurait aucun destinataire. " +
-					"Pose-le avec `/gestion ticket reglages`.";
-	}
-	return contexte.rolesStaff.length > 0 || contexte.rolesDirection.length > 0
-		? null
-		: "Aucun rôle de prise en charge n'est configuré : le ticket n'aurait aucun destinataire. " +
-				"Pose-le avec `/gestion ticket reglages`.";
+  if (categorie.pourLaDirection) {
+    return contexte.rolesDirection.length > 0
+      ? null
+      : "Aucun rôle de direction n'est configuré : ce ticket n'aurait aucun destinataire. " +
+          "Pose-le avec `/gestion ticket reglages`.";
+  }
+  return contexte.rolesStaff.length > 0 || contexte.rolesDirection.length > 0
+    ? null
+    : "Aucun rôle de prise en charge n'est configuré : le ticket n'aurait aucun destinataire. " +
+        "Pose-le avec `/gestion ticket reglages`.";
 }

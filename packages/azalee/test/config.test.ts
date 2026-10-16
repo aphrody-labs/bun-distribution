@@ -12,20 +12,14 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import {
-  configureAzalee,
-  getAzaleeConfig,
-  resetAzaleeConfig,
-  resolveDataDir,
-  resolveMirrorPath,
-} from "../src/config";
+import { configureAzalee, getAzaleeConfig, resetAzaleeConfig, resolveDataDir, resolveMirrorPath } from "../src/config";
 
 /** Sauvegarde/restauration des variables d'environnement lues par le module. */
 const ENV_KEYS = ["AZALEE_DATA_DIR", "SQLITE_DB_PATH", "NIERS_MIRROR"] as const;
 let savedEnv: Record<string, string | undefined> = {};
 
 beforeEach(() => {
-  savedEnv = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
+  savedEnv = Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k]]));
   resetAzaleeConfig();
 });
 
@@ -51,7 +45,7 @@ describe("resolveDataDir — découverte du dossier d'artefacts", () => {
     // Au moins un des marqueurs Azalée doit exister — sinon c'est un `data/`
     // homonyme (dumps Postgres à la racine du monorepo) qu'on doit rejeter.
     const markers = ["backups/mirror.sqlite", "schema-snapshot"];
-    expect(markers.some((m) => existsSync(path.join(dataDir as string, m)))).toBe(true);
+    expect(markers.some(m => existsSync(path.join(dataDir as string, m)))).toBe(true);
   });
 
   test("un dossier sans marqueur Azalée n'est JAMAIS retenu", () => {

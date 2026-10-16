@@ -19,10 +19,7 @@ interface Version {
 interface VersionsListProps {
   versions: Version[];
   articleId: string;
-  restoreAction: (
-    articleId: string,
-    versionId: string,
-  ) => Promise<{ success: boolean; error?: string }>;
+  restoreAction: (articleId: string, versionId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -38,9 +35,7 @@ export function VersionsList({ versions, articleId, restoreAction }: VersionsLis
 
   const handleRestore = async (versionId: string, versionNumber: number) => {
     if (
-      !window.confirm(
-        `Restaurer la version ${versionNumber} ? La version actuelle sera sauvegardée automatiquement.`,
-      )
+      !window.confirm(`Restaurer la version ${versionNumber} ? La version actuelle sera sauvegardée automatiquement.`)
     ) {
       return;
     }
@@ -78,13 +73,9 @@ export function VersionsList({ versions, articleId, restoreAction }: VersionsLis
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-on-surface">
-                  Version {version.version_number}
-                </span>
+                <span className="text-sm font-bold text-on-surface">Version {version.version_number}</span>
                 {isLatest && (
-                  <Badge className="bg-primary/10 text-primary border-none text-[10px] rounded-lg">
-                    Dernière
-                  </Badge>
+                  <Badge className="bg-primary/10 text-primary border-none text-[10px] rounded-lg">Dernière</Badge>
                 )}
                 <Badge className={`${statusInfo.className} border-none text-[10px] rounded-lg`}>
                   {statusInfo.label}

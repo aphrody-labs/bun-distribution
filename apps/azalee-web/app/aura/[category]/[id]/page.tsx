@@ -60,11 +60,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function AuraDetailPage({
-  params,
-}: {
-  params: Promise<{ category: string; id: string }>;
-}) {
+export default async function AuraDetailPage({ params }: { params: Promise<{ category: string; id: string }> }) {
   const { id, category } = await params;
   const aura = await wikiService.getAura(id, category);
 
@@ -98,10 +94,7 @@ export default async function AuraDetailPage({
 
   return (
     <div className="w-full space-y-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
@@ -116,13 +109,7 @@ export default async function AuraDetailPage({
         <span className="text-on-surface">{aura.displayName}</span>
       </div>
 
-      <AuraDetail
-        aura={aura}
-        category={category}
-        subTypeInfo={subTypeInfo}
-        prevAura={null}
-        nextAura={null}
-      />
+      <AuraDetail aura={aura} category={category} subTypeInfo={subTypeInfo} prevAura={null} nextAura={null} />
     </div>
   );
 }

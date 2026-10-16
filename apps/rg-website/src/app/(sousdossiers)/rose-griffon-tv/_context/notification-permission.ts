@@ -14,7 +14,7 @@ function subscribe(listener: () => void) {
   if (navigator.permissions) {
     void navigator.permissions
       .query({ name: "notifications" })
-      .then((permission) => {
+      .then(permission => {
         if (disposed) return;
         status = permission;
         status.addEventListener("change", listener);

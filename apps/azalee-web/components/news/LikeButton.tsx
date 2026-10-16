@@ -29,7 +29,7 @@ export function LikeButton({ articleId, initialCount, initialLiked, compact }: L
     // Optimistic update
     const newLiked = !liked;
     setLiked(newLiked);
-    setCount((c) => c + (newLiked ? 1 : -1));
+    setCount(c => c + (newLiked ? 1 : -1));
 
     startTransition(async () => {
       try {
@@ -39,7 +39,7 @@ export function LikeButton({ articleId, initialCount, initialLiked, compact }: L
       } catch {
         // Revert on error
         setLiked(!newLiked);
-        setCount((c) => c + (newLiked ? -1 : 1));
+        setCount(c => c + (newLiked ? -1 : 1));
         toast.error("Erreur lors de la réaction");
       }
     });
@@ -48,7 +48,7 @@ export function LikeButton({ articleId, initialCount, initialLiked, compact }: L
   if (compact) {
     return (
       <button
-        onClick={(e) => {
+        onClick={e => {
           e.preventDefault();
           e.stopPropagation();
           handleToggle();

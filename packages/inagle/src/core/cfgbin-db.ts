@@ -34,11 +34,7 @@ import type { Database } from "bun:sqlite";
 import { createRequire } from "node:module";
 
 import type { Database as SqlDatabase } from "@rosegriffon/db/schema";
-import {
-  configuredDataSource,
-  localMirrorPath,
-  selectDataSource,
-} from "./data-source.js";
+import { configuredDataSource, localMirrorPath, selectDataSource } from "./data-source.js";
 import { decodeProjectionJson } from "../sql/projection-json.js";
 
 const require = createRequire(import.meta.url);
@@ -92,10 +88,7 @@ async function postgresDb() {
   return createInagleSql<SqlDatabase>();
 }
 
-export async function cfgbinPostgresFindLatest(
-  category: string,
-  prefix: string,
-): Promise<string | null> {
+export async function cfgbinPostgresFindLatest(category: string, prefix: string): Promise<string | null> {
   if (!cfgbinPostgresEnabled()) return null;
   try {
     const row = await (
@@ -125,8 +118,7 @@ export async function cfgbinPostgresLoadByPath(path: string): Promise<unknown> {
     .where("path", "=", path)
     .executeTakeFirst();
   if (!row) throw new Error(`cfgbin-postgres: row not found '${path}'`);
-  if (row.data == null)
-    throw new Error(`cfgbin-postgres: parse failed '${path}': ${row.error ?? "?"}`);
+  if (row.data == null) throw new Error(`cfgbin-postgres: parse failed '${path}': ${row.error ?? "?"}`);
   return row.data;
 }
 
@@ -288,9 +280,7 @@ export function cfgbinDbLoadText(locale: string, filename: string): unknown {
   const db = getDb();
   if (!db) throw new Error("cfgbin-db: DB unavailable");
   if (_cfgbinTable === "cfgbin" && process.env.IEVR_CFGBIN_DB_TEXT !== "1") {
-    throw new Error(
-      "cfgbin-db: text loading disabled (parser bug). Set IEVR_CFGBIN_DB_TEXT=1 to opt in.",
-    );
+    throw new Error("cfgbin-db: text loading disabled (parser bug). Set IEVR_CFGBIN_DB_TEXT=1 to opt in.");
   }
   const path = cfgbinDbTextPathFor(locale, filename);
   const row = loadStmt(db).get(path) as {
@@ -330,7 +320,7 @@ export function cfgbinDbList(pathPattern: string): string[] {
   const db = getDb();
   if (!db) return [];
   const rows = listStmt(db).all(pathPattern) as { path: string }[];
-  return rows.map((r) => r.path);
+  return rows.map(r => r.path);
 }
 
 /**

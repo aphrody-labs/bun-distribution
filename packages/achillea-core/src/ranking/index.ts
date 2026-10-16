@@ -8,10 +8,10 @@
 
 /** Palier de classement (intervalle d'Elo + métadonnées d'affichage). */
 export interface RankTier {
-	key: string;
-	minElo: number;
-	maxElo: number;
-	gradient: string[];
+  key: string;
+  minElo: number;
+  maxElo: number;
+  gradient: string[];
 }
 
 /** Clé renvoyée quand aucun palier ne couvre l'Elo fourni. */
@@ -25,10 +25,10 @@ export const UNRANKED_KEY = "Unranked";
  * l'Elo est renvoyé (les barèmes Achilléa sont disjoints).
  */
 export function eloToTier<T extends RankTier>(elo: number, tiers: readonly T[]): T | null {
-	for (const tier of tiers) {
-		if (elo >= tier.minElo && elo <= tier.maxElo) return tier;
-	}
-	return null;
+  for (const tier of tiers) {
+    if (elo >= tier.minElo && elo <= tier.maxElo) return tier;
+  }
+  return null;
 }
 
 /**
@@ -36,7 +36,7 @@ export function eloToTier<T extends RankTier>(elo: number, tiers: readonly T[]):
  * Pratique pour les vues qui n'ont besoin que du libellé.
  */
 export function eloToRankKey(elo: number, tiers: readonly RankTier[]): string {
-	return eloToTier(elo, tiers)?.key ?? UNRANKED_KEY;
+  return eloToTier(elo, tiers)?.key ?? UNRANKED_KEY;
 }
 
 /**
@@ -47,6 +47,6 @@ export function eloToRankKey(elo: number, tiers: readonly RankTier[]): string {
  * @returns `null` si le rang est inconnu ou s'il n'y a aucun joueur classé.
  */
 export function computePercentile(globalRank: number | null, totalPlayers: number): number | null {
-	if (!globalRank || totalPlayers <= 0) return null;
-	return Math.max(0.1, Math.round((globalRank / totalPlayers) * 1000) / 10);
+  if (!globalRank || totalPlayers <= 0) return null;
+  return Math.max(0.1, Math.round((globalRank / totalPlayers) * 1000) / 10);
 }

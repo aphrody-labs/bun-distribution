@@ -31,12 +31,12 @@ export const BASE_ADMIN = "/admin";
  * une URL valide pour `next/link` et cassait silencieusement le lien d'accueil.
  */
 export function wiki(chemin: string): string {
-	return chemin === "/" ? BASE_WIKI : `${BASE_WIKI}${chemin}`;
+  return chemin === "/" ? BASE_WIKI : `${BASE_WIKI}${chemin}`;
 }
 
 /** Compose un chemin de l'e-sport avec son préfixe. */
 export function esport(chemin: string): string {
-	return chemin === "/" ? BASE_ESPORT : `${BASE_ESPORT}${chemin}`;
+  return chemin === "/" ? BASE_ESPORT : `${BASE_ESPORT}${chemin}`;
 }
 
 /**
@@ -44,45 +44,45 @@ export function esport(chemin: string): string {
  * `activePaths` mobiles et les tests de non-régression des liens.
  */
 export const CHEMINS_WIKI = [
-	"/",
-	"/cross",
-	"/patch-notes",
-	"/chara",
-	"/skill",
-	"/tactic",
-	"/passive",
-	"/aura",
-	"/aura/esprits-guerriers",
-	"/aura/totems",
-	"/aura/miximax",
-	"/aura/eveil",
-	"/aura/changement-mode",
-	"/equipe",
-	"/entraineur",
-	"/stade",
-	"/item",
-	"/boutique",
-	"/capsule",
-	"/invocation",
-	"/drops",
-	"/quete",
-	"/niveau",
-	"/succes",
-	"/gallery",
-	"/textures",
-	"/sons",
-	"/videos",
-	"/modeles",
-	"/keshin",
-	"/mode",
-	"/tools",
-	"/tools/stats",
-	"/tools/compare",
-	"/tools/random-team",
-	"/tools/my-team",
-	"/tools/translator",
-	"/save",
-	"/demo",
+  "/",
+  "/cross",
+  "/patch-notes",
+  "/chara",
+  "/skill",
+  "/tactic",
+  "/passive",
+  "/aura",
+  "/aura/esprits-guerriers",
+  "/aura/totems",
+  "/aura/miximax",
+  "/aura/eveil",
+  "/aura/changement-mode",
+  "/equipe",
+  "/entraineur",
+  "/stade",
+  "/item",
+  "/boutique",
+  "/capsule",
+  "/invocation",
+  "/drops",
+  "/quete",
+  "/niveau",
+  "/succes",
+  "/gallery",
+  "/textures",
+  "/sons",
+  "/videos",
+  "/modeles",
+  "/keshin",
+  "/mode",
+  "/tools",
+  "/tools/stats",
+  "/tools/compare",
+  "/tools/random-team",
+  "/tools/my-team",
+  "/tools/translator",
+  "/save",
+  "/demo",
 ] as const;
 
 /**
@@ -104,45 +104,45 @@ export const CHEMINS_RACINE = ["/news", "/settings", "/search", "/login"] as con
  * échouer les tests plutôt que la production.
  */
 export const CHEMINS_ESPORT = [
-	"/",
-	"/clans",
-	"/clans/create",
-	"/clans/dashboard",
-	"/ranked",
-	"/ranked/leaderboard",
-	"/ranked/tiers",
-	"/ranked/history",
-	"/ranked/match",
-	"/tournaments",
-	"/tournaments/create",
-	"/tournaments/circuit/ranking",
-	"/leagues/astral",
-	"/casts",
-	"/licence",
-	"/wallet",
-	"/organizations/create",
-	"/guide",
-	"/guide/brand",
+  "/",
+  "/clans",
+  "/clans/create",
+  "/clans/dashboard",
+  "/ranked",
+  "/ranked/leaderboard",
+  "/ranked/tiers",
+  "/ranked/history",
+  "/ranked/match",
+  "/tournaments",
+  "/tournaments/create",
+  "/tournaments/circuit/ranking",
+  "/leagues/astral",
+  "/casts",
+  "/licence",
+  "/wallet",
+  "/organizations/create",
+  "/guide",
+  "/guide/brand",
 ] as const;
 
 /** Routes de l'espace association (portail Rose Griffon), montées à la racine. */
 export const CHEMINS_ASSOCIATION = [
-	"/",
-	"/chroniques",
-	"/news",
-	"/evenements",
-	"/shop",
-	"/community",
-	"/sondages",
-	"/iergday",
-	"/rose-griffon-tv",
-	"/projets",
-	"/a-propos",
-	"/nous-soutenir",
-	"/charte-engagements",
-	"/cellule-de-mediation",
-	"/emotes-showcase",
-	"/epita-map",
+  "/",
+  "/chroniques",
+  "/news",
+  "/evenements",
+  "/shop",
+  "/community",
+  "/sondages",
+  "/iergday",
+  "/rose-griffon-tv",
+  "/projets",
+  "/a-propos",
+  "/nous-soutenir",
+  "/charte-engagements",
+  "/cellule-de-mediation",
+  "/emotes-showcase",
+  "/epita-map",
 ] as const;
 
 export type CheminWiki = (typeof CHEMINS_WIKI)[number];
@@ -152,5 +152,5 @@ export type CheminAssociation = (typeof CHEMINS_ASSOCIATION)[number];
 
 /** Le chemin est-il dans l'espace d'administration ? */
 export function estSousAdministration(pathname: string): boolean {
-	return pathname === BASE_ADMIN || pathname.startsWith(`${BASE_ADMIN}/`);
+  return pathname === BASE_ADMIN || pathname.startsWith(`${BASE_ADMIN}/`);
 }

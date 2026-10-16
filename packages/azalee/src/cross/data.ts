@@ -17,13 +17,7 @@ import {
   crossSchema as schemaJson,
   crossTypeSchema as typeSchemaJson,
 } from "@rosegriffon/inagle-cross";
-import type {
-  CrossAudioManifest,
-  CrossEnums,
-  CrossExtractionStatus,
-  CrossSchema,
-  CrossTable,
-} from "./data-shared";
+import type { CrossAudioManifest, CrossEnums, CrossExtractionStatus, CrossSchema, CrossTable } from "./data-shared";
 import { tableSlug } from "./data-shared";
 
 const SCHEMA = schemaJson as unknown as CrossSchema;
@@ -60,16 +54,15 @@ export function getCrossTables(q?: string): CrossTableSummary[] {
   const out: CrossTableSummary[] = [];
   for (const [fullName, t] of Object.entries(SCHEMA)) {
     const short = fullName.split(".").pop() ?? fullName;
-    if (needle && !short.toLowerCase().includes(needle) && !t.file.toLowerCase().includes(needle))
-      continue;
+    if (needle && !short.toLowerCase().includes(needle) && !t.file.toLowerCase().includes(needle)) continue;
     out.push({
       slug: tableSlug(fullName),
       short,
       fullName,
       file: t.file,
       columnCount: t.columns.length,
-      refCount: t.columns.filter((c) => c.kind === "ref").length,
-      enumCount: t.columns.filter((c) => c.kind === "enum").length,
+      refCount: t.columns.filter(c => c.kind === "ref").length,
+      enumCount: t.columns.filter(c => c.kind === "enum").length,
       extends: t.extends,
     });
   }
@@ -96,7 +89,7 @@ export function getCrossEnums(
     short: name.split(".").pop() ?? name,
     members,
   }));
-  const filtered = needle ? out.filter((e) => e.short.toLowerCase().includes(needle)) : out;
+  const filtered = needle ? out.filter(e => e.short.toLowerCase().includes(needle)) : out;
   filtered.sort((a, b) => a.short.localeCompare(b.short));
   return filtered;
 }
@@ -112,7 +105,7 @@ export function getCrossDataCounts(): {
   let refs = 0;
   for (const t of Object.values(SCHEMA)) {
     columns += t.columns.length;
-    refs += t.columns.filter((c) => c.kind === "ref").length;
+    refs += t.columns.filter(c => c.kind === "ref").length;
   }
   return { tables: Object.keys(SCHEMA).length, columns, enums: Object.keys(ENUMS).length, refs };
 }
@@ -201,12 +194,8 @@ export function generateCSharpClass(t: CrossTable, typeFields: string[] | null):
         if (col) {
           const csType = getCSharpType(col);
           const isNullable = col.nullable ? "?" : "";
-          const inheritComment = col.inherited
-            ? ` // Hérité de ${col.from ?? "la classe de base"}`
-            : "";
-          properties.push(
-            `        public ${csType}${isNullable} ${propName} { get; set; }${inheritComment}`,
-          );
+          const inheritComment = col.inherited ? ` // Hérité de ${col.from ?? "la classe de base"}` : "";
+          properties.push(`        public ${csType}${isNullable} ${propName} { get; set; }${inheritComment}`);
           emitted.add(propName.toLowerCase());
         } else {
           properties.push(`        public object ${propName} { get; set; } // Propriété interne`);
@@ -216,9 +205,7 @@ export function generateCSharpClass(t: CrossTable, typeFields: string[] | null):
         if (col) {
           const csType = getCSharpType(col);
           const isNullable = col.nullable ? "?" : "";
-          const inheritComment = col.inherited
-            ? ` // Hérité de ${col.from ?? "la classe de base"}`
-            : "";
+          const inheritComment = col.inherited ? ` // Hérité de ${col.from ?? "la classe de base"}` : "";
           fields.push(`        public ${csType}${isNullable} ${field};${inheritComment}`);
           emitted.add(field.toLowerCase());
         } else {
@@ -236,12 +223,8 @@ export function generateCSharpClass(t: CrossTable, typeFields: string[] | null):
       if (!emitted.has(col.name.toLowerCase())) {
         const csType = getCSharpType(col);
         const isNullable = col.nullable ? "?" : "";
-        const inheritComment = col.inherited
-          ? ` // Hérité de ${col.from ?? "la classe de base"}`
-          : "";
-        missingProperties.push(
-          `        public ${csType}${isNullable} ${col.name} { get; set; }${inheritComment}`,
-        );
+        const inheritComment = col.inherited ? ` // Hérité de ${col.from ?? "la classe de base"}` : "";
+        missingProperties.push(`        public ${csType}${isNullable} ${col.name} { get; set; }${inheritComment}`);
       }
     }
 
@@ -266,12 +249,8 @@ export function generateCSharpClass(t: CrossTable, typeFields: string[] | null):
     for (const col of t.columns) {
       const csType = getCSharpType(col);
       const isNullable = col.nullable ? "?" : "";
-      const inheritComment = col.inherited
-        ? ` // Hérité de ${col.from ?? "la classe de base"}`
-        : "";
-      lines.push(
-        `        public ${csType}${isNullable} ${col.name} { get; set; }${inheritComment}`,
-      );
+      const inheritComment = col.inherited ? ` // Hérité de ${col.from ?? "la classe de base"}` : "";
+      lines.push(`        public ${csType}${isNullable} ${col.name} { get; set; }${inheritComment}`);
     }
   }
 

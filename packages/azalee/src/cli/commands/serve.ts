@@ -13,9 +13,7 @@ import type { ServeOptions } from "../types";
 export function registerServeCommand(program: Command): void {
   program
     .command("serve")
-    .description(
-      "Démarre l'API HTTP headless d'Azalée (JSON, sans Next) — sidecar d'une GUI Tauri ou client HTTP",
-    )
+    .description("Démarre l'API HTTP headless d'Azalée (JSON, sans Next) — sidecar d'une GUI Tauri ou client HTTP")
     .option("-p, --port <port>", "Port d'écoute", process.env.AZALEE_PORT ?? "3010")
     .option("-H, --host <host>", "Interface d'écoute", process.env.AZALEE_HOST ?? "127.0.0.1")
     .option("--cors <origin>", "Origine CORS autorisée (défaut: *)")
@@ -31,8 +29,6 @@ export function registerServeCommand(program: Command): void {
         hostname: options.host,
         cors: options.cors ?? true,
       });
-      console.log(
-        `azalee serve url=http://${server.hostname}:${server.port} routes=${listRoutes().length}`,
-      );
+      console.log(`azalee serve url=http://${server.hostname}:${server.port} routes=${listRoutes().length}`);
     });
 }

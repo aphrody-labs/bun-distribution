@@ -121,7 +121,7 @@ export function ZukanReviewClient({ issues, bySeverity, zukanCatalog, missingCha
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [resolvedIssues, setResolvedIssues] = useState<Set<string>>(new Set());
 
-  const filtered = issues.filter((i) => {
+  const filtered = issues.filter(i => {
     if (dismissed.has(i.code + i.hash)) {
       return false;
     }
@@ -135,11 +135,11 @@ export function ZukanReviewClient({ issues, bySeverity, zukanCatalog, missingCha
   });
 
   const dismiss = (issue: Issue) => {
-    setDismissed((prev) => new Set(prev).add(issue.code + issue.hash));
+    setDismissed(prev => new Set(prev).add(issue.code + issue.hash));
   };
 
   const markResolved = (code: string) => {
-    setResolvedIssues((prev) => new Set(prev).add(code));
+    setResolvedIssues(prev => new Set(prev).add(code));
   };
 
   return (
@@ -182,16 +182,13 @@ export function ZukanReviewClient({ issues, bySeverity, zukanCatalog, missingCha
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-xs text-on-surface-variant px-1">
         <span className="flex items-center gap-1">
-          <span className="size-2 rounded-full bg-orange-500" /> Stats inversées = probable mauvais
-          variant
+          <span className="size-2 rounded-full bg-orange-500" /> Stats inversées = probable mauvais variant
         </span>
         <span className="flex items-center gap-1">
-          <span className="size-2 rounded-full bg-yellow-500" /> Ère différente = image d&apos;une
-          autre série
+          <span className="size-2 rounded-full bg-yellow-500" /> Ère différente = image d&apos;une autre série
         </span>
         <span className="flex items-center gap-1">
-          <span className="size-2 rounded-full bg-yellow-500" /> Hash dupliqué = personnages
-          différents, même image
+          <span className="size-2 rounded-full bg-yellow-500" /> Hash dupliqué = personnages différents, même image
         </span>
       </div>
 
@@ -292,13 +289,7 @@ function IssueCard({
 
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={cn(
-                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                cfg.bg,
-                cfg.color,
-              )}
-            >
+            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", cfg.bg, cfg.color)}>
               {cfg.label}
             </span>
             <span className="text-xs text-on-surface-variant font-mono">{issue.code}</span>
@@ -313,9 +304,7 @@ function IssueCard({
             <span className="font-medium text-on-surface truncate">
               {issue.dbNameFr || issue.dbNameEn || issue.dbNameJa}
             </span>
-            {issue.dbNameJa && (
-              <span className="text-xs text-on-surface-variant">{issue.dbNameJa}</span>
-            )}
+            {issue.dbNameJa && <span className="text-xs text-on-surface-variant">{issue.dbNameJa}</span>}
           </div>
 
           <div className="space-y-0.5">
@@ -398,9 +387,7 @@ function IssueCard({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* DB side */}
               <div>
-                <h4 className="text-xs font-bold text-on-surface-variant uppercase mb-2">
-                  Base de données
-                </h4>
+                <h4 className="text-xs font-bold text-on-surface-variant uppercase mb-2">Base de données</h4>
                 <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
                   <span className="text-on-surface-variant">Nom EN</span>
                   <span className="font-medium">{issue.dbNameEn || "—"}</span>
@@ -432,9 +419,7 @@ function IssueCard({
 
               {/* Zukan side */}
               <div>
-                <h4 className="text-xs font-bold text-on-surface-variant uppercase mb-2">
-                  Zukan (image source)
-                </h4>
+                <h4 className="text-xs font-bold text-on-surface-variant uppercase mb-2">Zukan (image source)</h4>
                 <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
                   <span className="text-on-surface-variant">Nom EN</span>
                   <span className="font-medium">{issue.zukanNameEn || "—"}</span>
@@ -530,7 +515,7 @@ function CandidatePanel({
     }
     const q = search.toLowerCase().trim();
     return catalog
-      .filter((c) => {
+      .filter(c => {
         if (q && !c.name.toLowerCase().includes(q) && !c.nickname.toLowerCase().includes(q)) {
           return false;
         }
@@ -559,13 +544,13 @@ function CandidatePanel({
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom..."
           className="flex-1 min-w-[200px] px-3 py-1.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-hidden focus:border-primary"
         />
         <select
           value={posFilter}
-          onChange={(e) => setPosFilter(e.target.value)}
+          onChange={e => setPosFilter(e.target.value)}
           className="px-2 py-1.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface"
         >
           <option value="">Position</option>
@@ -576,7 +561,7 @@ function CandidatePanel({
         </select>
         <select
           value={elemFilter}
-          onChange={(e) => setElemFilter(e.target.value)}
+          onChange={e => setElemFilter(e.target.value)}
           className="px-2 py-1.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface"
         >
           <option value="">Élément</option>
@@ -587,11 +572,11 @@ function CandidatePanel({
         </select>
         <select
           value={gameFilter}
-          onChange={(e) => setGameFilter(e.target.value)}
+          onChange={e => setGameFilter(e.target.value)}
           className="px-2 py-1.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface"
         >
           <option value="">Jeu</option>
-          {GAMES.map((g) => (
+          {GAMES.map(g => (
             <option key={g} value={g}>
               {g}
             </option>
@@ -654,9 +639,7 @@ function CandidatePanel({
                           : "bg-surface-container-high text-on-surface-variant",
                       )}
                     >
-                      {ELEMENT_ICONS[c.element] && (
-                        <Icon name={ELEMENT_ICONS[c.element]} size={10} />
-                      )}
+                      {ELEMENT_ICONS[c.element] && <Icon name={ELEMENT_ICONS[c.element]} size={10} />}
                       {c.element}
                     </span>
                   </div>
@@ -669,9 +652,7 @@ function CandidatePanel({
       ) : search.trim() || posFilter || elemFilter || gameFilter ? (
         <p className="text-xs text-on-surface-variant py-4 text-center">Aucun résultat</p>
       ) : (
-        <p className="text-xs text-on-surface-variant py-4 text-center">
-          Tapez un nom pour chercher dans le catalogue
-        </p>
+        <p className="text-xs text-on-surface-variant py-4 text-center">Tapez un nom pour chercher dans le catalogue</p>
       )}
 
       {results.length >= 50 && (
@@ -696,14 +677,14 @@ function MissingCharactersTable({
   const [assignedIds, setAssignedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
-  const assigningChar = assigningId ? characters.find((c) => c.id === assigningId) : null;
+  const assigningChar = assigningId ? characters.find(c => c.id === assigningId) : null;
 
   const handleChoose = (characterId: string, hash: string) => {
     startTransition(async () => {
       const result = await updateZukanHash(characterId, hash);
       if (result.success) {
         toast.success("Image assignée");
-        setAssignedIds((prev) => new Set(prev).add(characterId));
+        setAssignedIds(prev => new Set(prev).add(characterId));
         setAssigningId(null);
       } else {
         toast.error(result.error || "Erreur");
@@ -711,7 +692,7 @@ function MissingCharactersTable({
     });
   };
 
-  const visibleChars = characters.filter((c) => !assignedIds.has(c.id));
+  const visibleChars = characters.filter(c => !assignedIds.has(c.id));
 
   return (
     <div className="rounded-[24px] bg-surface-container-lowest border border-outline-variant/20 p-6">
@@ -749,7 +730,7 @@ function MissingCharactersTable({
             currentHash=""
             dbPosition={assigningChar.position || undefined}
             dbElement={assigningChar.element || undefined}
-            onChoose={(hash) => handleChoose(assigningChar.id, hash)}
+            onChoose={hash => handleChoose(assigningChar.id, hash)}
           />
         </div>
       )}
@@ -785,28 +766,18 @@ function MissingCharactersTable({
             </tr>
           </thead>
           <tbody>
-            {visibleChars.map((char) => (
+            {visibleChars.map(char => (
               <tr
                 key={char.id}
                 className="border-b border-outline-variant/5 hover:bg-surface-container-low transition-colors"
               >
-                <td className="py-1.5 px-2 font-mono text-on-surface-variant">
-                  {char.internal_code}
-                </td>
+                <td className="py-1.5 px-2 font-mono text-on-surface-variant">{char.internal_code}</td>
                 <td className="py-1.5 px-2 font-medium text-on-surface">{char.name_fr || "—"}</td>
                 <td className="py-1.5 px-2 text-on-surface-variant">{char.name_en || "—"}</td>
-                <td className="py-1.5 px-2 text-on-surface-variant hidden sm:table-cell">
-                  {char.series || "—"}
-                </td>
-                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">
-                  {char.rarity_label || "—"}
-                </td>
-                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">
-                  {char.position || "—"}
-                </td>
-                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">
-                  {char.element || "—"}
-                </td>
+                <td className="py-1.5 px-2 text-on-surface-variant hidden sm:table-cell">{char.series || "—"}</td>
+                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">{char.rarity_label || "—"}</td>
+                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">{char.position || "—"}</td>
+                <td className="py-1.5 px-2 text-on-surface-variant hidden md:table-cell">{char.element || "—"}</td>
                 <td className="py-1.5 px-2">
                   <button
                     onClick={() => setAssigningId(char.id)}

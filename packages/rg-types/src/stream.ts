@@ -5,12 +5,12 @@ export type StreamSchedule = Database["public"]["Tables"]["stream_schedules"]["R
 
 /** Horaire pour affichage (alias avec types strings pour les colonnes time). */
 export interface PlanningRow {
-	day_of_week: number;
-	streamer_name: string;
-	start_time: string | null;
-	end_time: string | null;
-	category: string | null;
-	notes: string | null;
+  day_of_week: number;
+  streamer_name: string;
+  start_time: string | null;
+  end_time: string | null;
+  category: string | null;
+  notes: string | null;
 }
 
 /** Statut d'un horaire. */

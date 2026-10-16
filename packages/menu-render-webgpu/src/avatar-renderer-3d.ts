@@ -449,16 +449,13 @@ export class AvatarRenderer3d {
           const tex = device.createTexture({
             size: [part.textureBitmap.width, part.textureBitmap.height, 1],
             format: "rgba8unorm",
-            usage:
-              GPUTextureUsage.TEXTURE_BINDING |
-              GPUTextureUsage.COPY_DST |
-              GPUTextureUsage.RENDER_ATTACHMENT,
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
           });
-          device.queue.copyExternalImageToTexture(
-            { source: part.textureBitmap },
-            { texture: tex },
-            [part.textureBitmap.width, part.textureBitmap.height, 1],
-          );
+          device.queue.copyExternalImageToTexture({ source: part.textureBitmap }, { texture: tex }, [
+            part.textureBitmap.width,
+            part.textureBitmap.height,
+            1,
+          ]);
           textureView = tex.createView();
         }
 
@@ -548,22 +545,19 @@ export class AvatarRenderer3d {
   }
 
   private setupMouseEvents() {
-    this.canvas.addEventListener("mousedown", (e) => {
+    this.canvas.addEventListener("mousedown", e => {
       this.isDragging = true;
       this.lastMouseX = e.clientX;
       this.lastMouseY = e.clientY;
     });
 
-    window.addEventListener("mousemove", (e) => {
+    window.addEventListener("mousemove", e => {
       if (!this.isDragging) return;
       const deltaX = e.clientX - this.lastMouseX;
       const deltaY = e.clientY - this.lastMouseY;
 
       this.rotationY += deltaX * 0.007;
-      this.rotationX = Math.max(
-        -Math.PI / 3,
-        Math.min(Math.PI / 3, this.rotationX + deltaY * 0.007),
-      );
+      this.rotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.rotationX + deltaY * 0.007));
 
       this.lastMouseX = e.clientX;
       this.lastMouseY = e.clientY;

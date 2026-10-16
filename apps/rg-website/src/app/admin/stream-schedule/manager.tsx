@@ -178,17 +178,10 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
         <AlertTitle>Synchronisation Google Calendar</AlertTitle>
         <AlertDescription className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            Le planning est synchronisé automatiquement avec le calendrier Google &quot;Rose Griffon
-            TV&quot;. Les modifications manuelles ci-dessous seront écrasées lors de la prochaine
-            synchronisation.
+            Le planning est synchronisé automatiquement avec le calendrier Google &quot;Rose Griffon TV&quot;. Les
+            modifications manuelles ci-dessous seront écrasées lors de la prochaine synchronisation.
           </span>
-          <Button
-            onClick={handleSync}
-            disabled={syncing}
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-          >
+          <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm" className="shrink-0">
             <RefreshCw className={`mr-2 size-4 ${syncing ? "animate-spin" : ""}`} />
             {syncing ? "Synchro..." : "Forcer la synchro"}
           </Button>
@@ -206,13 +199,13 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
               <Label htmlFor="day">Jour</Label>
               <Select
                 value={formData.day_of_week}
-                onValueChange={(value) => setFormData({ ...formData, day_of_week: value })}
+                onValueChange={value => setFormData({ ...formData, day_of_week: value })}
               >
                 <SelectTrigger id="day">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DAYS.map((day) => (
+                  {DAYS.map(day => (
                     <SelectItem key={day.value} value={day.value}>
                       {day.label}
                     </SelectItem>
@@ -226,7 +219,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
               <Input
                 id="streamer"
                 value={formData.streamer_name}
-                onChange={(e) => setFormData({ ...formData, streamer_name: e.target.value })}
+                onChange={e => setFormData({ ...formData, streamer_name: e.target.value })}
                 placeholder="Nom du streamer"
               />
             </div>
@@ -237,7 +230,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
                 id="start-time"
                 type="time"
                 value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
               />
             </div>
 
@@ -247,7 +240,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
                 id="end-time"
                 type="time"
                 value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
               />
             </div>
 
@@ -256,7 +249,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
               <Input
                 id="category"
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={e => setFormData({ ...formData, category: e.target.value })}
                 placeholder="Ex: Gameplay, Art, Débat"
               />
             </div>
@@ -265,7 +258,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
               <Label htmlFor="status">Statut</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) =>
+                onValueChange={value =>
                   setFormData({
                     ...formData,
                     status: value as "active" | "inactive" | "coming_soon",
@@ -276,7 +269,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((status) => (
+                  {STATUSES.map(status => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
                     </SelectItem>
@@ -291,7 +284,7 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
             <Input
               id="notes"
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={e => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Ajouter des notes"
             />
           </div>
@@ -310,32 +303,23 @@ export function StreamScheduleManager({ initialSchedules }: StreamScheduleManage
       </AdminCard>
 
       {/* Liste des horaires */}
-      <AdminCard
-        title={`Horaires existants (${schedules.length})`}
-        icon={<Calendar className="size-5" />}
-      >
+      <AdminCard title={`Horaires existants (${schedules.length})`} icon={<Calendar className="size-5" />}>
         <div className="space-y-2">
           {schedules.length === 0 ? (
             <p className="text-muted-foreground">Aucun horaire</p>
           ) : (
-            schedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="flex items-center justify-between p-3 border rounded-lg border-border"
-              >
+            schedules.map(schedule => (
+              <div key={schedule.id} className="flex items-center justify-between p-3 border rounded-lg border-border">
                 <div className="flex-1">
                   <p className="font-semibold">
-                    {DAYS.find((d) => d.value === String(schedule.day_of_week))?.label || "Inconnu"}{" "}
-                    - {schedule.streamer_name}
+                    {DAYS.find(d => d.value === String(schedule.day_of_week))?.label || "Inconnu"} -{" "}
+                    {schedule.streamer_name}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {schedule.start_time}
-                    {schedule.end_time && ` - ${schedule.end_time}`} • {schedule.category} •{" "}
-                    {schedule.status}
+                    {schedule.end_time && ` - ${schedule.end_time}`} • {schedule.category} • {schedule.status}
                   </p>
-                  {schedule.notes && (
-                    <p className="text-xs text-muted-foreground italic">Notes: {schedule.notes}</p>
-                  )}
+                  {schedule.notes && <p className="text-xs text-muted-foreground italic">Notes: {schedule.notes}</p>}
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(schedule)}>

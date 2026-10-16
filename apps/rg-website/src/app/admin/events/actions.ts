@@ -29,12 +29,12 @@ const eventSchema = z.object({
     .string()
     .optional()
     .nullable()
-    .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
+    .refine(val => !val || !Number.isNaN(Date.parse(val)), {
       message: "Date de fin invalide",
     }),
   image_url: z.string().optional(),
   location: z.string().optional(),
-  start_time: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+  start_time: z.string().refine(val => !Number.isNaN(Date.parse(val)), {
     message: "Date de début invalide",
   }),
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères"),
@@ -51,15 +51,13 @@ export async function syncGoogleEvents() {
   const db = createPostgresClient();
   const googleEvents = await getCalendarEvents();
 
-  const validEvents = googleEvents.filter((event) => event.summary && event.start);
+  const validEvents = googleEvents.filter(event => event.summary && event.start);
   if (validEvents.length === 0) {
     return { imported: 0, skipped: 0, success: true };
   }
 
   // Extract all start times
-  const startTimes = validEvents
-    .map((event) => event.start?.dateTime || event.start?.date)
-    .filter(Boolean) as string[];
+  const startTimes = validEvents.map(event => event.start?.dateTime || event.start?.date).filter(Boolean) as string[];
 
   if (startTimes.length === 0) {
     return { imported: 0, skipped: 0, success: true };
@@ -83,9 +81,7 @@ export async function syncGoogleEvents() {
   }
 
   const existingSet = new Set(
-    (existingEvents || []).map(
-      (e: { title: string; start_time: string }) => `${e.title}|${e.start_time}`,
-    ),
+    (existingEvents || []).map((e: { title: string; start_time: string }) => `${e.title}|${e.start_time}`),
   );
 
   const eventsToInsert: Insert<"events">[] = [];

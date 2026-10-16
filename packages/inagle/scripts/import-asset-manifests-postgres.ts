@@ -5,13 +5,13 @@ import { ASSET_MANIFEST } from "../src/data/asset-manifest.generated";
 
 const db = createInagleSql<Database>();
 const now = new Date().toISOString();
-await db.transaction().execute(async (tx) => {
+await db.transaction().execute(async tx => {
   for (const [name, data] of Object.entries(ASSET_MANIFEST)) {
     const jsonData = JSON.stringify(data);
     await tx
       .insertInto("inagle_asset_manifests")
       .values({ name, data: jsonData, updated_at: now })
-      .onConflict((oc) => oc.column("name").doUpdateSet({ data: jsonData, updated_at: now }))
+      .onConflict(oc => oc.column("name").doUpdateSet({ data: jsonData, updated_at: now }))
       .execute();
   }
 });

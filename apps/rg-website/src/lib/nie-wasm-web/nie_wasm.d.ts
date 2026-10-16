@@ -14,42 +14,42 @@
  * jouable : ce qu'elle prouve, c'est que la logique portée tourne en wasm.
  */
 export class WasmGame {
-    free(): void;
-    [Symbol.dispose](): void;
-    /**
-     * Commande de menu IEVR (CMD_FCS_*, CMD_ENTER, CMD_BACK…). Le mapping clavier/souris/manette
-     * → commande vit côté front ; la FSM (transitions) vit dans `nie_app::flow` (dédup Phase 5).
-     */
-    input(cmd: string): void;
-    /**
-     * Construit le jeu depuis les octets de la police (`font.cfg.bin` + `font.g4tx`, fetchés par JS).
-     * Démarre sur l'écran-titre.
-     */
-    constructor(font_cfg: Uint8Array, font_g4tx: Uint8Array);
-    /**
-     * Rend l'écran courant en framebuffer RGBA8 `W*H*4`.
-     */
-    render(): Uint8Array;
-    /**
-     * Score du match en cours `[domicile, extérieur]` (zéros hors match).
-     */
-    score(): Uint32Array;
-    /**
-     * Avance le temps de `dt` s : la physique du match tourne quand un match est en cours.
-     */
-    update(dt: number): void;
-    /**
-     * Hauteur du framebuffer (px).
-     */
-    readonly height: number;
-    /**
-     * `true` si un match est en cours (pour l'overlay de score côté UI).
-     */
-    readonly in_match: boolean;
-    /**
-     * Largeur du framebuffer (px).
-     */
-    readonly width: number;
+  free(): void;
+  [Symbol.dispose](): void;
+  /**
+   * Commande de menu IEVR (CMD_FCS_*, CMD_ENTER, CMD_BACK…). Le mapping clavier/souris/manette
+   * → commande vit côté front ; la FSM (transitions) vit dans `nie_app::flow` (dédup Phase 5).
+   */
+  input(cmd: string): void;
+  /**
+   * Construit le jeu depuis les octets de la police (`font.cfg.bin` + `font.g4tx`, fetchés par JS).
+   * Démarre sur l'écran-titre.
+   */
+  constructor(font_cfg: Uint8Array, font_g4tx: Uint8Array);
+  /**
+   * Rend l'écran courant en framebuffer RGBA8 `W*H*4`.
+   */
+  render(): Uint8Array;
+  /**
+   * Score du match en cours `[domicile, extérieur]` (zéros hors match).
+   */
+  score(): Uint32Array;
+  /**
+   * Avance le temps de `dt` s : la physique du match tourne quand un match est en cours.
+   */
+  update(dt: number): void;
+  /**
+   * Hauteur du framebuffer (px).
+   */
+  readonly height: number;
+  /**
+   * `true` si un match est en cours (pour l'overlay de score côté UI).
+   */
+  readonly in_match: boolean;
+  /**
+   * Largeur du framebuffer (px).
+   */
+  readonly width: number;
 }
 
 /**
@@ -100,7 +100,14 @@ export function aura_lookup(aura_config_json: string, skill_config_json: string)
  * }
  * ```
  */
-export function calculate_stats(main_position: number, sub_position: number, growth_pattern: number, chara_rank: number, play_style: number, level: number): string;
+export function calculate_stats(
+  main_position: number,
+  sub_position: number,
+  growth_pattern: number,
+  chara_rank: number,
+  play_style: number,
+  level: number,
+): string;
 
 /**
  * Parse un fichier cfg.bin (T2B) et retourne son JSON structurel.
@@ -279,7 +286,13 @@ export function rarity_to_growth_rank(rarity_code: number): number;
  * Expose directement `nie_core::stats::calculate_single_stat`. Les niveaux hors
  * plage sont clampés (lv≤1 → `stat_lv1`, lv≥99 → `stat_lv99`).
  */
-export function single_stat(level: number, stat_lv1: number, stat_lv30: number, stat_lv50: number, stat_lv99: number): number;
+export function single_stat(
+  level: number,
+  stat_lv1: number,
+  stat_lv30: number,
+  stat_lv50: number,
+  stat_lv99: number,
+): number;
 
 /**
  * Parse un `skill_config.cfg.bin.json` (et un `skill_text.cfg.bin.json` optionnel)
@@ -319,52 +332,59 @@ export function utf_table_json(bytes: Uint8Array): string;
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
-    readonly memory: WebAssembly.Memory;
-    readonly __wbg_wasmgame_free: (a: number, b: number) => void;
-    readonly audio_to_wav: (a: number, b: number) => [number, number, number, number];
-    readonly aura_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly calculate_stats: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
-    readonly cfgbin_parse_json: (a: number, b: number) => [number, number, number, number];
-    readonly cfgbin_typed_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly cpk_extract_file: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
-    readonly cpk_parse_entries: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly crilayla_decompress: (a: number, b: number) => [number, number, number, number];
-    readonly detect_format: (a: number, b: number) => [number, number];
-    readonly final_score: (a: number, b: number) => number;
-    readonly g4md_parse_json: (a: number, b: number) => [number, number, number, number];
-    readonly g4mg_extract_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly g4pk_parse_json: (a: number, b: number) => [number, number, number, number];
-    readonly g4tx_info_json: (a: number, b: number) => [number, number, number, number];
-    readonly g4tx_named_to_png: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly g4tx_sprite_sheet_json: (a: number, b: number) => [number, number, number, number];
-    readonly g4tx_to_png: (a: number, b: number) => [number, number, number, number];
-    readonly is_lua_bytecode: (a: number, b: number) => number;
-    readonly item_lookup: (a: number, b: number) => [number, number, number, number];
-    readonly lip_to_json: (a: number, b: number) => [number, number, number, number];
-    readonly lua_bytecode_json: (a: number, b: number) => [number, number, number, number];
-    readonly match_tick: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly model_to_glb: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly parse_save_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly rarity_to_growth_rank: (a: number) => number;
-    readonly single_stat: (a: number, b: number, c: number, d: number, e: number) => number;
-    readonly skill_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-    readonly utf_table_json: (a: number, b: number) => [number, number, number, number];
-    readonly wasmgame_height: (a: number) => number;
-    readonly wasmgame_in_match: (a: number) => number;
-    readonly wasmgame_input: (a: number, b: number, c: number) => void;
-    readonly wasmgame_new: (a: number, b: number, c: number, d: number) => [number, number, number];
-    readonly wasmgame_render: (a: number) => [number, number];
-    readonly wasmgame_score: (a: number) => [number, number];
-    readonly wasmgame_update: (a: number, b: number) => void;
-    readonly wasmgame_width: (a: number) => number;
-    readonly __wasm_start: () => void;
-    readonly init_panic_hook: () => void;
-    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-    readonly __wbindgen_malloc: (a: number, b: number) => number;
-    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-    readonly __wbindgen_externrefs: WebAssembly.Table;
-    readonly __externref_table_dealloc: (a: number) => void;
-    readonly __wbindgen_start: () => void;
+  readonly memory: WebAssembly.Memory;
+  readonly __wbg_wasmgame_free: (a: number, b: number) => void;
+  readonly audio_to_wav: (a: number, b: number) => [number, number, number, number];
+  readonly aura_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly calculate_stats: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
+  readonly cfgbin_parse_json: (a: number, b: number) => [number, number, number, number];
+  readonly cfgbin_typed_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly cpk_extract_file: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ) => [number, number, number, number];
+  readonly cpk_parse_entries: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly crilayla_decompress: (a: number, b: number) => [number, number, number, number];
+  readonly detect_format: (a: number, b: number) => [number, number];
+  readonly final_score: (a: number, b: number) => number;
+  readonly g4md_parse_json: (a: number, b: number) => [number, number, number, number];
+  readonly g4mg_extract_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly g4pk_parse_json: (a: number, b: number) => [number, number, number, number];
+  readonly g4tx_info_json: (a: number, b: number) => [number, number, number, number];
+  readonly g4tx_named_to_png: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly g4tx_sprite_sheet_json: (a: number, b: number) => [number, number, number, number];
+  readonly g4tx_to_png: (a: number, b: number) => [number, number, number, number];
+  readonly is_lua_bytecode: (a: number, b: number) => number;
+  readonly item_lookup: (a: number, b: number) => [number, number, number, number];
+  readonly lip_to_json: (a: number, b: number) => [number, number, number, number];
+  readonly lua_bytecode_json: (a: number, b: number) => [number, number, number, number];
+  readonly match_tick: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly model_to_glb: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly parse_save_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly rarity_to_growth_rank: (a: number) => number;
+  readonly single_stat: (a: number, b: number, c: number, d: number, e: number) => number;
+  readonly skill_lookup: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+  readonly utf_table_json: (a: number, b: number) => [number, number, number, number];
+  readonly wasmgame_height: (a: number) => number;
+  readonly wasmgame_in_match: (a: number) => number;
+  readonly wasmgame_input: (a: number, b: number, c: number) => void;
+  readonly wasmgame_new: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly wasmgame_render: (a: number) => [number, number];
+  readonly wasmgame_score: (a: number) => [number, number];
+  readonly wasmgame_update: (a: number, b: number) => void;
+  readonly wasmgame_width: (a: number) => number;
+  readonly __wasm_start: () => void;
+  readonly init_panic_hook: () => void;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_malloc: (a: number, b: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_externrefs: WebAssembly.Table;
+  readonly __externref_table_dealloc: (a: number) => void;
+  readonly __wbindgen_start: () => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
@@ -387,4 +407,6 @@ export function initSync(module: { module: SyncInitInput } | SyncInitInput): Ini
  *
  * @returns {Promise<InitOutput>}
  */
-export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;
+export default function __wbg_init(
+  module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>,
+): Promise<InitOutput>;

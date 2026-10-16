@@ -156,7 +156,7 @@ export async function getReports(status?: ReportStatus): Promise<CommentReport[]
         avatar_url: string | null;
       } | null;
     }>
-  ).map((row) => ({
+  ).map(row => ({
     id: row.id,
     comment_id: row.comment_id,
     reason: row.reason,

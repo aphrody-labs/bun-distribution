@@ -46,9 +46,7 @@ export async function GET() {
   }
 
   // Récupérer les profils auteurs en bloc (pas de FK déclarée → join manuel).
-  const authorIds = [
-    ...new Set(articles.map((a) => a.author_id).filter((id): id is string => Boolean(id))),
-  ];
+  const authorIds = [...new Set(articles.map(a => a.author_id).filter((id): id is string => Boolean(id)))];
 
   let authorMap = new Map<string, { full_name: string | null }>();
   if (authorIds.length > 0) {
@@ -58,14 +56,14 @@ export async function GET() {
         `SELECT id, full_name FROM profiles WHERE id = ANY($1::uuid[])`,
         [authorIds],
       );
-      authorMap = new Map(profiles.map((p) => [p.id, { full_name: p.full_name }]));
+      authorMap = new Map(profiles.map(p => [p.id, { full_name: p.full_name }]));
     } catch (error) {
       console.error("Error fetching author profiles for feed.xml:", error);
     }
   }
 
   const items = articles
-    .map((a) => {
+    .map(a => {
       const dateSrc = a.published_at || a.created_at;
       const pubDate = dateSrc ? new Date(dateSrc).toUTCString() : "";
       const imageTag = a.featured_image_url

@@ -41,9 +41,9 @@ export const revalidate = 86_400;
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-	title: "Éditeur d'avatar — Azalée",
-	description:
-		"Les 502 parts, 470 couleurs, 218 curseurs et 38 visages prédéfinis de l'éditeur de personnage d'Inazuma Eleven: Victory Road, lus dans les fichiers du jeu.",
+  title: "Éditeur d'avatar — Azalée",
+  description:
+    "Les 502 parts, 470 couleurs, 218 curseurs et 38 visages prédéfinis de l'éditeur de personnage d'Inazuma Eleven: Victory Road, lus dans les fichiers du jeu.",
 };
 
 /** Origine qui sert le catalogue et les vignettes (nie-model-serve derrière le CDN). */
@@ -54,40 +54,34 @@ const CDN = cdnOrigin(process.env.NEXT_PUBLIC_CDN_ORIGIN);
  * cadre en le disant, plutôt qu'une 500 : une source absente n'est pas une page cassée.
  */
 async function chargerCatalogue(): Promise<Catalogue | null> {
-	try {
-		const reponse = await fetch(`${CDN}/avatar/catalog.json`, {
-			next: { revalidate: 86_400 },
-			signal: AbortSignal.timeout(8_000),
-		});
-		if (!reponse.ok) return null;
-		return (await reponse.json()) as Catalogue;
-	} catch {
-		return null;
-	}
+  try {
+    const reponse = await fetch(`${CDN}/avatar/catalog.json`, {
+      next: { revalidate: 86_400 },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!reponse.ok) return null;
+    return (await reponse.json()) as Catalogue;
+  } catch {
+    return null;
+  }
 }
 
-export default async function Page({
-	searchParams,
-}: {
-	searchParams: Promise<{ code?: string | string[] }>;
-}) {
-	const catalogue = await chargerCatalogue();
-	const codeBrut = (await searchParams).code;
-	const codeInitial = typeof codeBrut === "string" && codeBrut.length <= 128 ? codeBrut : "";
+export default async function Page({ searchParams }: { searchParams: Promise<{ code?: string | string[] }> }) {
+  const catalogue = await chargerCatalogue();
+  const codeBrut = (await searchParams).code;
+  const codeInitial = typeof codeBrut === "string" && codeBrut.length <= 128 ? codeBrut : "";
 
-	if (!catalogue) {
-		return (
-			<div
-				className="
+  if (!catalogue) {
+    return (
+      <div
+        className="
      rounded-[32px] border border-dashed border-outline-variant bg-surface-container-low py-20 text-center
    "
-			>
-				<p className="italic text-on-surface-variant">
-					Catalogue injoignable pour le moment.
-				</p>
-			</div>
-		);
-	}
+      >
+        <p className="italic text-on-surface-variant">Catalogue injoignable pour le moment.</p>
+      </div>
+    );
+  }
 
-	return <Editeur catalogue={catalogue} cdn={CDN} codeInitial={codeInitial} />;
+  return <Editeur catalogue={catalogue} cdn={CDN} codeInitial={codeInitial} />;
 }

@@ -8,13 +8,7 @@
  */
 
 import type { ConfigNode } from "../core/config-parser.js";
-import {
-  type Locale,
-  loadCharaText,
-  loadCharaTextRoma,
-  sanitizeText,
-  toHex,
-} from "../core/data-loader.js";
+import { type Locale, loadCharaText, loadCharaTextRoma, sanitizeText, toHex } from "../core/data-loader.js";
 
 /**
  * Parsed noun (name) entry from text file

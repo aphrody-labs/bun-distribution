@@ -22,9 +22,7 @@ export function getAuraHashSet(svc: InagleService): Set<string> {
   return new Set(
     svc.skills
       .auraAll()
-      .flatMap((a: any) =>
-        [a.auraId, a.auraIdStr, a.id].filter((value): value is string => typeof value === "string"),
-      ),
+      .flatMap((a: any) => [a.auraId, a.auraIdStr, a.id].filter((value): value is string => typeof value === "string")),
   );
 }
 
@@ -71,9 +69,8 @@ interface SkillLike {
 
 /** Résout un identifiant dans les trois familles, dans l'ordre historique. */
 function lookupSkill(svc: InagleService, skillId: string): SkillLike | undefined {
-  return (svc.skills.get(skillId) ||
-    svc.skills.passiveGet(skillId) ||
-    svc.skills.auraGet(skillId)) as SkillLike | undefined;
+  return (svc.skills.get(skillId) || svc.skills.passiveGet(skillId) || svc.skills.auraGet(skillId)) as
+    SkillLike | undefined;
 }
 
 /** Nom affichable d'une technique à partir de son identifiant. */
@@ -144,16 +141,9 @@ export function getAurasForChara(charaId: string, charaParamId: string): Resolve
 
     // 2. Projections SQL des auras : le payload JSONB/SQLite est interrogé,
     // mais aucun fichier JSON n'est utilisé comme source runtime.
-    for (const table of [
-      "inagle_auras",
-      "inagle_keshins",
-      "inagle_souls",
-      "inagle_miximax",
-    ] as const) {
+    for (const table of ["inagle_auras", "inagle_keshins", "inagle_souls", "inagle_miximax"] as const) {
       const auraRows = db
-        .query(
-          `SELECT id, data FROM ${table} WHERE lower(json_extract(data, '$.ownerCharaParamId')) IN (?, ?)`,
-        )
+        .query(`SELECT id, data FROM ${table} WHERE lower(json_extract(data, '$.ownerCharaParamId')) IN (?, ?)`)
         .all(charaId.toLowerCase(), charaParamId.toLowerCase()) as Array<{
         id: string;
         data?: string | null;
@@ -181,9 +171,7 @@ export function getAurasForChara(charaId: string, charaParamId: string): Resolve
 
         const placeHolders = possibleIds.map(() => "?").join(",");
         const auraRows = db
-          .query(
-            `SELECT id, name_fr, name_en, name_ja FROM ${t.table} WHERE id IN (${placeHolders})`,
-          )
+          .query(`SELECT id, name_fr, name_en, name_ja FROM ${t.table} WHERE id IN (${placeHolders})`)
           .all(...possibleIds) as AuraRow[];
 
         if (auraRows && auraRows.length > 0) {

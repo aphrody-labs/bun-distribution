@@ -69,7 +69,7 @@ export async function getCommentsAction(
       [targetId, targetType],
     );
 
-    const data: CommentWithProfile[] = rows.map((row) => ({
+    const data: CommentWithProfile[] = rows.map(row => ({
       content: row.content,
       created_at: row.created_at,
       id: row.id,
@@ -159,11 +159,7 @@ export async function deleteCommentAction(commentId: string) {
   }
 
   if (comment.user_id !== user.id) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
 
     if (profile?.role !== "admin" && profile?.role !== "staff") {
       return { error: "Vous n'êtes pas autorisé à supprimer ce commentaire." };
@@ -275,10 +271,7 @@ export async function getComments(
     }
   }
 
-  const { data: repliesData } = await client
-    .from("article_comments")
-    .select("parent_id")
-    .in("parent_id", commentIds);
+  const { data: repliesData } = await client.from("article_comments").select("parent_id").in("parent_id", commentIds);
 
   const replyCountMap = new Map<string, number>();
   if (repliesData) {
@@ -287,7 +280,7 @@ export async function getComments(
     }
   }
 
-  const commentRefIds = commentIds.map((id) => `comment:${id}`);
+  const commentRefIds = commentIds.map(id => `comment:${id}`);
 
   const { data: likesData } = await client
     .from("article_reactions")
@@ -374,7 +367,7 @@ export async function getReplies(parentId: string): Promise<Reply[]> {
   }
 
   const userIds: string[] = [
-    ...new Set<string>((data as Array<{ user_id: string }>).map((c) => c.user_id).filter(Boolean)),
+    ...new Set<string>((data as Array<{ user_id: string }>).map(c => c.user_id).filter(Boolean)),
   ];
 
   const profilesMap = new Map<
@@ -409,7 +402,7 @@ export async function getReplies(parentId: string): Promise<Reply[]> {
       parent_id: string | null;
       user_id: string;
     }>
-  ).map((c) => {
+  ).map(c => {
     const prof = profilesMap.get(c.user_id);
     return {
       author: {
@@ -429,11 +422,7 @@ export async function getReplies(parentId: string): Promise<Reply[]> {
   });
 }
 
-export async function createComment(
-  articleId: string,
-  content: string,
-  parentId?: string,
-): Promise<Comment> {
+export async function createComment(articleId: string, content: string, parentId?: string): Promise<Comment> {
   const session = await getServerSession();
   if (!session?.user) {
     throw new Error("Non authentifié");
@@ -569,15 +558,8 @@ export async function updateComment(commentId: string, content: string): Promise
   }
 
   const [{ count: replyCount }, { data: authorProfile }] = await Promise.all([
-    client
-      .from("article_comments")
-      .select("id", { count: "exact", head: true })
-      .eq("parent_id", commentId),
-    client
-      .from("profiles")
-      .select("id, username, full_name, avatar_url")
-      .eq("id", userId)
-      .maybeSingle(),
+    client.from("article_comments").select("id", { count: "exact", head: true }).eq("parent_id", commentId),
+    client.from("profiles").select("id, username, full_name, avatar_url").eq("id", userId).maybeSingle(),
   ]);
 
   const c = updated as {
@@ -633,11 +615,7 @@ export async function deleteComment(commentId: string): Promise<void> {
   }
 
   if (comment.user_id !== userId) {
-    const { data: profile } = await client
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data: profile } = await client.from("profiles").select("role").eq("id", userId).maybeSingle();
 
     if (!profile || !isAdminRole(profile.role)) {
       throw new Error("Non autorisé");
@@ -663,11 +641,7 @@ export async function pinComment(commentId: string): Promise<{ is_pinned: boolea
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const client = supabase as any;
 
-  const { data: profile } = await client
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data: profile } = await client.from("profiles").select("role").eq("id", userId).maybeSingle();
 
   if (!profile || !isAdminRole(profile.role)) {
     throw new Error("Non autorisé");
@@ -746,9 +720,7 @@ export async function getCommentCounts(articleIds: string[]): Promise<Record<str
   }
 }
 
-export async function toggleCommentLike(
-  commentId: string,
-): Promise<{ liked: boolean; count: number }> {
+export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
   const session = await getServerSession();
   if (!session?.user) {
     throw new Error("Non authentifié");

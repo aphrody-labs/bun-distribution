@@ -3,14 +3,7 @@
 import { LogIn } from "lucide-react";
 import { useState } from "react";
 import { LoginForm } from "@/components/auth/login-form";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@rosegriffon/ui";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@rosegriffon/ui";
 
 export function LoginDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);

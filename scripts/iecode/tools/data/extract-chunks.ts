@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
 
-const js = fs.readFileSync("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js", "utf8");
+const js = await Bun.file("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js").text();
 
 const chunkRegex = /"assets\/([^"]+\.(?:js|css))"/g;
 const chunks = new Set<string>();

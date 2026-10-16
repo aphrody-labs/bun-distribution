@@ -78,9 +78,7 @@ export async function loadChangeAuraSkillConfigAsync(dataPath: string = DATA_ROO
   return content ? parseContent(content) : null;
 }
 
-export async function buildChangeAuraSkillDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<ChangeAuraSkillDatabase> {
+export async function buildChangeAuraSkillDatabase(dataPath: string = DATA_ROOT): Promise<ChangeAuraSkillDatabase> {
   const result = await loadChangeAuraSkillConfigAsync(dataPath);
   const data = result?.data || [];
   const info = result?.info || [];

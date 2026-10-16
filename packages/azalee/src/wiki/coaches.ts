@@ -172,19 +172,11 @@ function normalizeRole(role: string | null): CoachRole {
 }
 
 /** Convertit une ligne brute + son passif résolu en `Coach`. */
-function toCoach(
-  raw: RawCoordinator,
-  scaling: PassiveScaling | null,
-  internalCode: string | null,
-): Coach {
+function toCoach(raw: RawCoordinator, scaling: PassiveScaling | null, internalCode: string | null): Coach {
   const role = normalizeRole(raw.role);
   const elementKanji = cleanCell(raw.element);
   const playstyle = cleanCell(raw.playstyle);
-  const name =
-    cleanCell(raw.name_localised) ||
-    cleanCell(raw.name_romaji) ||
-    cleanCell(raw.name_kanji) ||
-    `#${raw.id}`;
+  const name = cleanCell(raw.name_localised) || cleanCell(raw.name_romaji) || cleanCell(raw.name_kanji) || `#${raw.id}`;
 
   return {
     buff: cleanCell(raw.buff),
@@ -288,14 +280,14 @@ export async function getCoachesList(params: CoachListParams = {}): Promise<Coac
   const passiveIndex = indexPassives(rawPassives);
   const codeByName = indexCharacterCodes(charRows);
 
-  let coaches = rawCoords.map((raw) => {
+  let coaches = rawCoords.map(raw => {
     const scaling = raw.passive_no != null ? (passiveIndex.get(raw.passive_no) ?? null) : null;
     return toCoach(raw, scaling, resolveInternalCode(raw, codeByName));
   });
 
   const q = params.q?.trim().toLowerCase();
   if (q) {
-    coaches = coaches.filter((c) => {
+    coaches = coaches.filter(c => {
       const haystack = [c.name, c.nameRomaji, c.nameKanji, c.nameLocalised, c.stat]
         .filter(Boolean)
         .join(" ")
@@ -305,15 +297,15 @@ export async function getCoachesList(params: CoachListParams = {}): Promise<Coac
   }
 
   if (params.role) {
-    coaches = coaches.filter((c) => c.role === params.role);
+    coaches = coaches.filter(c => c.role === params.role);
   }
 
   if (params.element) {
-    coaches = coaches.filter((c) => c.elementKey === params.element);
+    coaches = coaches.filter(c => c.elementKey === params.element);
   }
 
   if (params.playstyle) {
-    coaches = coaches.filter((c) => c.playstyle === params.playstyle);
+    coaches = coaches.filter(c => c.playstyle === params.playstyle);
   }
 
   return coaches;

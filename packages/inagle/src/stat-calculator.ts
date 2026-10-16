@@ -128,12 +128,9 @@ export function calculateSingleStat(
 // Lookup Functions (Pure)
 // ============================================================================
 
-export function findLv1Entry(
-  tables: GrowthTables,
-  params: CharacterGrowthParams,
-): GrowthTableLv1Entry | undefined {
+export function findLv1Entry(tables: GrowthTables, params: CharacterGrowthParams): GrowthTableLv1Entry | undefined {
   let entry = tables.lv1.find(
-    (e) =>
+    e =>
       e.mainPosition === params.mainPosition &&
       e.subPosition === params.subPosition &&
       e.playStyle === (params.playStyle ?? 0),
@@ -141,35 +138,27 @@ export function findLv1Entry(
 
   if (!entry && params.playStyle !== undefined && params.playStyle !== 0) {
     entry = tables.lv1.find(
-      (e) =>
-        e.mainPosition === params.mainPosition &&
-        e.subPosition === params.subPosition &&
-        e.playStyle === 0,
+      e => e.mainPosition === params.mainPosition && e.subPosition === params.subPosition && e.playStyle === 0,
     );
   }
 
   if (!entry && params.subPosition !== 0) {
-    entry = tables.lv1.find(
-      (e) => e.mainPosition === params.mainPosition && e.subPosition === 0 && e.playStyle === 0,
-    );
+    entry = tables.lv1.find(e => e.mainPosition === params.mainPosition && e.subPosition === 0 && e.playStyle === 0);
   }
 
   if (!entry) {
-    entry = tables.lv1.find((e) => e.mainPosition === params.mainPosition);
+    entry = tables.lv1.find(e => e.mainPosition === params.mainPosition);
   }
 
   return entry;
 }
 
-export function findLv30Entry(
-  tables: GrowthTables,
-  params: CharacterGrowthParams,
-): GrowthTableLv30Entry | undefined {
+export function findLv30Entry(tables: GrowthTables, params: CharacterGrowthParams): GrowthTableLv30Entry | undefined {
   const growthRank = rarityToGrowthRank(params.charaRank);
 
   // Try exact pattern first
   let entry = tables.lv30.find(
-    (e) =>
+    e =>
       e.mainPosition === params.mainPosition &&
       e.subPosition === params.subPosition &&
       e.growthPattern === params.growthPattern &&
@@ -179,7 +168,7 @@ export function findLv30Entry(
   // Fallback: growth table only has patterns 0 and 1
   if (!entry && params.growthPattern >= 2) {
     entry = tables.lv30.find(
-      (e) =>
+      e =>
         e.mainPosition === params.mainPosition &&
         e.subPosition === params.subPosition &&
         e.growthPattern === 0 &&
@@ -190,7 +179,7 @@ export function findLv30Entry(
   // Fallback: subPosition = 0
   if (!entry && params.subPosition !== 0) {
     entry = tables.lv30.find(
-      (e) =>
+      e =>
         e.mainPosition === params.mainPosition &&
         e.subPosition === 0 &&
         e.growthPattern === 0 &&
@@ -201,54 +190,40 @@ export function findLv30Entry(
   // Fallback: charaRank = 0 (Normal)
   if (!entry && growthRank !== 0) {
     entry = tables.lv30.find(
-      (e) =>
-        e.mainPosition === params.mainPosition &&
-        e.subPosition === 0 &&
-        e.growthPattern === 0 &&
-        e.charaRank === 0,
+      e => e.mainPosition === params.mainPosition && e.subPosition === 0 && e.growthPattern === 0 && e.charaRank === 0,
     );
   }
 
   if (!entry) {
-    entry = tables.lv30.find((e) => e.mainPosition === params.mainPosition);
+    entry = tables.lv30.find(e => e.mainPosition === params.mainPosition);
   }
 
   return entry;
 }
 
-export function findMainEntry(
-  tables: GrowthTables,
-  params: CharacterGrowthParams,
-): GrowthTableMainEntry | undefined {
+export function findMainEntry(tables: GrowthTables, params: CharacterGrowthParams): GrowthTableMainEntry | undefined {
   const growthRank = rarityToGrowthRank(params.charaRank);
 
   // Try exact pattern first
   let entry = tables.main.find(
-    (e) =>
-      e.mainPosition === params.mainPosition &&
-      e.growthPattern === params.growthPattern &&
-      e.charaRank === growthRank,
+    e =>
+      e.mainPosition === params.mainPosition && e.growthPattern === params.growthPattern && e.charaRank === growthRank,
   );
 
   // Fallback: growth table only has patterns 0 and 1
   if (!entry && params.growthPattern >= 2) {
     entry = tables.main.find(
-      (e) =>
-        e.mainPosition === params.mainPosition &&
-        e.growthPattern === 0 &&
-        e.charaRank === growthRank,
+      e => e.mainPosition === params.mainPosition && e.growthPattern === 0 && e.charaRank === growthRank,
     );
   }
 
   // Fallback: charaRank = 0 (Normal)
   if (!entry && growthRank !== 0) {
-    entry = tables.main.find(
-      (e) => e.mainPosition === params.mainPosition && e.growthPattern === 0 && e.charaRank === 0,
-    );
+    entry = tables.main.find(e => e.mainPosition === params.mainPosition && e.growthPattern === 0 && e.charaRank === 0);
   }
 
   if (!entry) {
-    entry = tables.main.find((e) => e.mainPosition === params.mainPosition);
+    entry = tables.main.find(e => e.mainPosition === params.mainPosition);
   }
 
   return entry;
@@ -257,11 +232,7 @@ export function findMainEntry(
 /**
  * Calcule toutes les stats d'un personnage à un niveau donné (Pure)
  */
-export function calculateStats(
-  tables: GrowthTables,
-  params: CharacterGrowthParams,
-  level: number,
-): StatBlock {
+export function calculateStats(tables: GrowthTables, params: CharacterGrowthParams, level: number): StatBlock {
   const lv1 = findLv1Entry(tables, params);
   const lv30 = findLv30Entry(tables, params);
   const main = findMainEntry(tables, params);

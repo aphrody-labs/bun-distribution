@@ -10,9 +10,7 @@ export default function CastAvailabilityPage({ id }: { id: string }) {
   const eventId = id;
 
   const { user, isAuthenticated, login, isLoading: authLoading } = useAchilleaAuth();
-  const [statusValue, setStatusValue] = useState<CastAvailabilityStatus>(
-    CastAvailabilityStatus.Available,
-  );
+  const [statusValue, setStatusValue] = useState<CastAvailabilityStatus>(CastAvailabilityStatus.Available);
   const [note, setNote] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
@@ -114,10 +112,7 @@ export default function CastAvailabilityPage({ id }: { id: string }) {
           </Link>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="border border-border bg-card rounded-2xl p-6 md:p-8 space-y-6"
-        >
+        <form onSubmit={handleSubmit} className="border border-border bg-card rounded-2xl p-6 md:p-8 space-y-6">
           {error && (
             <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
               {error}
@@ -135,7 +130,7 @@ export default function CastAvailabilityPage({ id }: { id: string }) {
               <select
                 id="route-availability-cast-availability-client-tsx-1"
                 value={statusValue}
-                onChange={(e) => setStatusValue(e.target.value as CastAvailabilityStatus)}
+                onChange={e => setStatusValue(e.target.value as CastAvailabilityStatus)}
                 className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value={CastAvailabilityStatus.Available}>Disponible (prêt à caster)</option>
@@ -156,7 +151,7 @@ export default function CastAvailabilityPage({ id }: { id: string }) {
                 rows={3}
                 placeholder="Ex: Dispo à partir de 15h30, préférence pour le stream secondaire..."
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={e => setNote(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -168,11 +163,7 @@ export default function CastAvailabilityPage({ id }: { id: string }) {
               disabled={submitting}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-primary/90 transition shadow-sm"
             >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Valider ma disponibilité
             </button>
           </div>

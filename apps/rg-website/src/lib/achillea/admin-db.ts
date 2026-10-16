@@ -28,22 +28,22 @@ import "server-only";
 import { getPgPool } from "@/lib/db/pg";
 
 export interface RecoupementComptes {
-	/** Profils Rose Griffon. */
-	profilsRg: number;
-	/** Utilisateurs Achilléa. */
-	joueursAchillea: number;
-	/** Comptes présents des deux côtés, appariés par identifiant Discord. */
-	communs: number;
-	/** Joueurs Achilléa sans profil RG — cible de la passerelle d'inscription. */
-	achilleaSeuls: number;
+  /** Profils Rose Griffon. */
+  profilsRg: number;
+  /** Utilisateurs Achilléa. */
+  joueursAchillea: number;
+  /** Comptes présents des deux côtés, appariés par identifiant Discord. */
+  communs: number;
+  /** Joueurs Achilléa sans profil RG — cible de la passerelle d'inscription. */
+  achilleaSeuls: number;
 }
 
 export interface VolumesAchillea {
-	clans: number;
-	tournois: number;
-	licencesActives: number;
-	sanctionsOuvertes: number;
-	matchsClasses: number;
+  clans: number;
+  tournois: number;
+  licencesActives: number;
+  sanctionsOuvertes: number;
+  matchsClasses: number;
 }
 
 /**
@@ -54,14 +54,14 @@ export interface VolumesAchillea {
  * On préfère une page qui dit « données absentes » à une trace d'exception.
  */
 export async function schemaAchilleaPresent(): Promise<boolean> {
-	const pool = getPgPool();
-	const { rows } = await pool.query<{ present: boolean }>(
-		`SELECT EXISTS (
+  const pool = getPgPool();
+  const { rows } = await pool.query<{ present: boolean }>(
+    `SELECT EXISTS (
 			SELECT 1 FROM information_schema.tables
 			WHERE table_schema = 'achillea' AND table_name = 'clan'
-		) AS present`
-	);
-	return rows[0]?.present ?? false;
+		) AS present`,
+  );
+  return rows[0]?.present ?? false;
 }
 
 /**
@@ -72,45 +72,45 @@ export async function schemaAchilleaPresent(): Promise<boolean> {
  * clé commune : pas d'e-mail partagé, pas d'identifiant interne unifié.
  */
 export async function recouperComptes(): Promise<RecoupementComptes> {
-	const pool = getPgPool();
-	const { rows } = await pool.query<{
-		profils_rg: string;
-		joueurs_achillea: string;
-		communs: string;
-	}>(
-		`SELECT
+  const pool = getPgPool();
+  const { rows } = await pool.query<{
+    profils_rg: string;
+    joueurs_achillea: string;
+    communs: string;
+  }>(
+    `SELECT
 			(SELECT count(*) FROM public.profiles)                                  AS profils_rg,
 			(SELECT count(*) FROM achillea."user")                                  AS joueurs_achillea,
 			(SELECT count(*) FROM public.profiles p
-			  JOIN achillea."user" a ON a.id = p.discord_id)                        AS communs`
-	);
+			  JOIN achillea."user" a ON a.id = p.discord_id)                        AS communs`,
+  );
 
-	const ligne = rows[0];
-	const profilsRg = Number(ligne?.profils_rg ?? 0);
-	const joueursAchillea = Number(ligne?.joueurs_achillea ?? 0);
-	const communs = Number(ligne?.communs ?? 0);
+  const ligne = rows[0];
+  const profilsRg = Number(ligne?.profils_rg ?? 0);
+  const joueursAchillea = Number(ligne?.joueurs_achillea ?? 0);
+  const communs = Number(ligne?.communs ?? 0);
 
-	return { profilsRg, joueursAchillea, communs, achilleaSeuls: joueursAchillea - communs };
+  return { profilsRg, joueursAchillea, communs, achilleaSeuls: joueursAchillea - communs };
 }
 
 /** Volumes bruts d'Achilléa, pour la vue d'ensemble de `/admin`. */
 export async function volumesAchillea(): Promise<VolumesAchillea> {
-	const pool = getPgPool();
-	const { rows } = await pool.query<Record<string, string>>(
-		`SELECT
+  const pool = getPgPool();
+  const { rows } = await pool.query<Record<string, string>>(
+    `SELECT
 			(SELECT count(*) FROM achillea.clan)                                    AS clans,
 			(SELECT count(*) FROM achillea.event WHERE internal_state = 'Finished') AS tournois,
 			(SELECT count(*) FROM achillea.license WHERE status = 'Active')         AS licences_actives,  -- l'énum distant est capitalisé ('Active'), pas 'active'
 			(SELECT count(*) FROM achillea.sanction)                                AS sanctions,
-			(SELECT count(*) FROM achillea.lobby_match)                             AS matchs_classes`
-	);
+			(SELECT count(*) FROM achillea.lobby_match)                             AS matchs_classes`,
+  );
 
-	const l = rows[0];
-	return {
-		clans: Number(l?.["clans"] ?? 0),
-		tournois: Number(l?.["tournois"] ?? 0),
-		licencesActives: Number(l?.["licences_actives"] ?? 0),
-		sanctionsOuvertes: Number(l?.["sanctions"] ?? 0),
-		matchsClasses: Number(l?.["matchs_classes"] ?? 0),
-	};
+  const l = rows[0];
+  return {
+    clans: Number(l?.["clans"] ?? 0),
+    tournois: Number(l?.["tournois"] ?? 0),
+    licencesActives: Number(l?.["licences_actives"] ?? 0),
+    sanctionsOuvertes: Number(l?.["sanctions"] ?? 0),
+    matchsClasses: Number(l?.["matchs_classes"] ?? 0),
+  };
 }

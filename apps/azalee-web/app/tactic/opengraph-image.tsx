@@ -102,7 +102,7 @@ export default async function Image() {
             { label: "Duree", value: "Variable" },
             { label: "Cooldown", value: "Par match" },
             { label: "Effets", value: "Boost/Debuff" },
-          ].map((p) => (
+          ].map(p => (
             <div
               key={p.label}
               style={{
@@ -128,9 +128,7 @@ export default async function Image() {
               >
                 {p.label}
               </div>
-              <div style={{ color: ACCENT, display: "flex", fontSize: 16, fontWeight: 800 }}>
-                {p.value}
-              </div>
+              <div style={{ color: ACCENT, display: "flex", fontSize: 16, fontWeight: 800 }}>{p.value}</div>
             </div>
           ))}
         </div>
@@ -226,19 +224,9 @@ export default async function Image() {
         }}
       >
         {/* oxlint-disable-next-line next/no-img-element -- ImageResponse (next/og) ne supporte pas next/image */}
-        <img
-          src={getOgLogoDataUri()}
-          width={28}
-          height={28}
-          style={{ borderRadius: 7 }}
-          alt="Logo Azalée"
-        />
-        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>
-          azalee.rosegriffon.fr
-        </div>
-        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>
-          Inazuma Eleven: Victory Road
-        </div>
+        <img src={getOgLogoDataUri()} width={28} height={28} style={{ borderRadius: 7 }} alt="Logo Azalée" />
+        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>azalee.rosegriffon.fr</div>
+        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>Inazuma Eleven: Victory Road</div>
       </div>
     </div>,
     { ...size },

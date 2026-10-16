@@ -16,9 +16,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
     <div className="flex flex-col gap-4 pb-6 px-1">
       {/* Element */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.element")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.element")}</h4>
         <FilterChips
           paramName="element"
           className="flex flex-wrap gap-1.5"
@@ -36,9 +34,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
 
       {/* Position */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.position")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.position")}</h4>
         <FilterChips
           paramName="position"
           className="flex flex-wrap gap-1.5"
@@ -72,9 +68,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
 
       {/* Gender */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.gender")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.gender")}</h4>
         <FilterChips
           paramName="gender"
           className="flex flex-wrap gap-1.5"
@@ -90,9 +84,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
 
       {/* Playstyle */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.playstyle")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.playstyle")}</h4>
         <FilterChips
           paramName="playstyle"
           className="flex flex-wrap gap-1.5"
@@ -118,9 +110,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
 			    8 valeurs réelles mesurées en base après crawl (le zukan-wide catalogue
 			    en a d'autres, mais seules celles-ci apparaissent sur nos personnages). */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.age_group")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.age_group")}</h4>
         <FilterChips
           paramName="ageGroup"
           className="flex flex-wrap gap-1.5"
@@ -157,9 +147,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
 
       {/* Rarity */}
       <section className="space-y-2">
-        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-          {t("wiki.filters.rarity")}
-        </h4>
+        <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.rarity")}</h4>
         <RarityFilterChips />
       </section>
 
@@ -205,9 +193,7 @@ export function CharacterFilters({ teams = [] }: CharacterFiltersProps) {
           <hr className="border-outline-variant/20" />
           {/* Team Filter */}
           <section className="space-y-2">
-            <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-              {t("wiki.filters.team")}
-            </h4>
+            <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t("wiki.filters.team")}</h4>
             <TeamFilter teams={teams} />
           </section>
         </>

@@ -67,7 +67,7 @@ export function useRankedQueue(): EtatFileClasse {
   // était précisément ce qui donnait l'illusion d'une file en marche.
   useEffect(() => {
     if (!recherche) return;
-    const id = setInterval(() => setEcoulees((n) => n + 1), 1000);
+    const id = setInterval(() => setEcoulees(n => n + 1), 1000);
     return () => clearInterval(id);
   }, [recherche]);
 
@@ -105,14 +105,13 @@ export function useRankedQueue(): EtatFileClasse {
       })) as unknown as SalleColyseus;
       salle.current = salleFile;
 
-      salleFile.onMessage("eta", (payload) => {
+      salleFile.onMessage("eta", payload => {
         const secondes = (payload as { seconds?: unknown })?.seconds;
         setEta(typeof secondes === "number" ? secondes : null);
       });
 
-      salleFile.onMessage("matched", (payload) => {
-        const reservation = (payload as { reservation?: { room?: { roomId?: string } } })
-          ?.reservation;
+      salleFile.onMessage("matched", payload => {
+        const reservation = (payload as { reservation?: { room?: { roomId?: string } } })?.reservation;
         const idSalle = reservation?.room?.roomId;
         salle.current = null;
         setRecherche(false);
@@ -120,9 +119,7 @@ export function useRankedQueue(): EtatFileClasse {
         // peut rien afficher de réel — c'est exactement ce qui l'avait fait
         // naître entièrement simulée.
         window.location.assign(
-          idSalle
-            ? `/achillea/ranked/match?salle=${encodeURIComponent(idSalle)}`
-            : "/achillea/ranked/match",
+          idSalle ? `/achillea/ranked/match?salle=${encodeURIComponent(idSalle)}` : "/achillea/ranked/match",
         );
       });
 

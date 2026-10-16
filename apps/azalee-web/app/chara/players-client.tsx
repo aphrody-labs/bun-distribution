@@ -88,7 +88,7 @@ export function PlayersClient({
       "ageGroup",
       "schoolYear",
     ];
-    filterKeys.forEach((key) => params.delete(key));
+    filterKeys.forEach(key => params.delete(key));
     params.delete("page");
     filterTransition.startTransition(() => {
       router.replace(`?${params.toString()}`, { scroll: false });
@@ -125,7 +125,7 @@ export function PlayersClient({
         return value === "Coordinator" ? "Coordinateur" : "Entraîneur";
       }
       case "team": {
-        return teams?.find((t) => t.id === value)?.name || value;
+        return teams?.find(t => t.id === value)?.name || value;
       }
       case "ageGroup": {
         if (value === "Child") return t("wiki.age_groups.child");
@@ -164,7 +164,7 @@ export function PlayersClient({
     "schoolYear",
   ];
   const activeFilters = filterKeys
-    .map((key) => {
+    .map(key => {
       const value = searchParams.get(key);
       if (!value) return null;
       return { key, value, label: getFilterLabel(key, value) };
@@ -205,7 +205,7 @@ export function PlayersClient({
               <span className="text-[11px] font-bold text-on-surface-variant/60 uppercase tracking-wider mr-1">
                 Filtres actifs :
               </span>
-              {activeFilters.map((filter) => (
+              {activeFilters.map(filter => (
                 <button
                   key={filter.key}
                   onClick={() => removeFilter(filter.key)}
@@ -243,14 +243,8 @@ export function PlayersClient({
               isPending && "opacity-50 pointer-events-none",
             )}
           >
-            {showIncomplete ? (
-              <Eye size={13} aria-hidden="true" />
-            ) : (
-              <EyeOff size={13} aria-hidden="true" />
-            )}
-            <span className="hidden sm:inline">
-              {showIncomplete ? "Tous affichés" : "Incomplets masqués"}
-            </span>
+            {showIncomplete ? <Eye size={13} aria-hidden="true" /> : <EyeOff size={13} aria-hidden="true" />}
+            <span className="hidden sm:inline">{showIncomplete ? "Tous affichés" : "Incomplets masqués"}</span>
             <span className="sm:hidden">{showIncomplete ? "Tous" : "Incomplets"}</span>
           </button>
           <button

@@ -73,9 +73,7 @@ export function ArticleCard({ item, reactionData, commentCount }: ArticleCardPro
           </h3>
 
           {item.excerpt && (
-            <p className="line-clamp-2 text-on-surface-variant/70 text-sm leading-relaxed">
-              {item.excerpt}
-            </p>
+            <p className="line-clamp-2 text-on-surface-variant/70 text-sm leading-relaxed">{item.excerpt}</p>
           )}
 
           <div className="flex items-center justify-between pt-1">
@@ -142,9 +140,7 @@ export function ArticleCard({ item, reactionData, commentCount }: ArticleCardPro
         )}
         <div className="flex flex-col gap-2 p-4">
           <h4 className="font-bold text-on-surface text-sm leading-snug">{item.title}</h4>
-          <p className="line-clamp-4 text-on-surface-variant text-xs leading-relaxed">
-            {item.excerpt}
-          </p>
+          <p className="line-clamp-4 text-on-surface-variant text-xs leading-relaxed">{item.excerpt}</p>
           <div className="flex items-center justify-between border-outline-variant/20 border-t pt-2 text-on-surface-variant/70 text-xs">
             <span title={format(date, "PPPp", { locale: fr })}>
               {formatDistanceToNow(date, { addSuffix: true, locale: fr })}

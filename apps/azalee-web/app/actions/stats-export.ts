@@ -115,9 +115,7 @@ export async function exportAuthorStatsCSV(): Promise<string> {
   const articleIds: string[] = articles.map((a: { id: string }) => a.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const authorIds: string[] = [
-    ...new Set<string>(
-      articles.map((a: any) => a.author_id).filter((id: unknown): id is string => Boolean(id)),
-    ),
+    ...new Set<string>(articles.map((a: any) => a.author_id).filter((id: unknown): id is string => Boolean(id))),
   ];
 
   const [{ data: reactions }, { data: comments }, { data: profiles }] = await Promise.all([
@@ -305,7 +303,7 @@ export async function getAuthorDashboard(): Promise<{
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const enrichedArticles = (articles as any[]).map((a) => ({
+  const enrichedArticles = (articles as any[]).map(a => ({
     bookmark_count: bookmarkCounts.get(a.id) ?? 0,
     comment_count: commentCounts.get(a.id) ?? 0,
     id: a.id,
@@ -325,7 +323,7 @@ export async function getAuthorDashboard(): Promise<{
       : null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestComments = ((comments ?? []) as any[]).slice(0, 5).map((c) => ({
+  const latestComments = ((comments ?? []) as any[]).slice(0, 5).map(c => ({
     article_id: c.article_id,
     article_title: articleTitles.get(c.article_id) ?? "",
     content: c.content,

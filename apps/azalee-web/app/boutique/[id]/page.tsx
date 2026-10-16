@@ -21,11 +21,7 @@ function parseShopId(raw: string): number | null {
   return Number.isSafeInteger(id) ? id : null;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const shopId = parseShopId(id);
   const shop = shopId === null ? null : await getShop(shopId);
@@ -84,10 +80,7 @@ export default async function ShopDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="w-full space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Fil d'Ariane */}
       <div className="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
@@ -106,9 +99,7 @@ export default async function ShopDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-on-surface leading-tight">{shop.name}</h1>
-            {shop.nameJa ? (
-              <p className="text-sm text-on-surface-variant mt-0.5">{shop.nameJa}</p>
-            ) : null}
+            {shop.nameJa ? <p className="text-sm text-on-surface-variant mt-0.5">{shop.nameJa}</p> : null}
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-xs font-bold text-primary">
                 <Icon name="inventory_2" size={14} />

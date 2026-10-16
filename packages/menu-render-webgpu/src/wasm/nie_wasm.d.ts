@@ -54,11 +54,7 @@ export function cfgbin_parse_json(bytes: Uint8Array): string;
 /**
  * Extrait et décompresse un fichier d'un CPK.
  */
-export function cpk_extract_file(
-  cpk_bytes: Uint8Array,
-  cpk_filename: string,
-  entry_json: string,
-): Uint8Array;
+export function cpk_extract_file(cpk_bytes: Uint8Array, cpk_filename: string, entry_json: string): Uint8Array;
 
 /**
  * Parse un fichier CPK et retourne son TOC (Table of Contents) au format JSON.

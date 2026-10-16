@@ -13,19 +13,19 @@ export const dynamic = "force-dynamic";
  * must not be used to authorize mutations.
  */
 export async function GET(request: NextRequest) {
-	const denied = assertBotAuth(request);
-	if (denied) {
-		return denied;
-	}
+  const denied = assertBotAuth(request);
+  if (denied) {
+    return denied;
+  }
 
-	const discordId = request.nextUrl.searchParams.get("discord_id");
-	if (!discordId) {
-		return NextResponse.json({ error: "Missing discord_id" }, { status: 400 });
-	}
+  const discordId = request.nextUrl.searchParams.get("discord_id");
+  if (!discordId) {
+    return NextResponse.json({ error: "Missing discord_id" }, { status: 400 });
+  }
 
-	const identity = await resolveBotDiscordIdentity(discordId);
-	return NextResponse.json(
-		{ found: Boolean(identity), identity },
-		{ headers: { "cache-control": "private, max-age=10" } }
-	);
+  const identity = await resolveBotDiscordIdentity(discordId);
+  return NextResponse.json(
+    { found: Boolean(identity), identity },
+    { headers: { "cache-control": "private, max-age=10" } },
+  );
 }

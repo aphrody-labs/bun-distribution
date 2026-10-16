@@ -98,7 +98,7 @@ function renderParagraphContent(paragraph: Paragraph, doc: docs_v1.Schema$Docume
   }
 
   return paragraph.elements
-    .map((el) => {
+    .map(el => {
       if (el.textRun) {
         return formatTextRun(el.textRun);
       } else if (el.inlineObjectElement) {
@@ -110,13 +110,10 @@ function renderParagraphContent(paragraph: Paragraph, doc: docs_v1.Schema$Docume
 }
 
 function hasImage(paragraph: Paragraph): boolean {
-  return paragraph.elements?.some((el) => Boolean(el.inlineObjectElement)) ?? false;
+  return paragraph.elements?.some(el => Boolean(el.inlineObjectElement)) ?? false;
 }
 
-function renderImage(
-  element: docs_v1.Schema$InlineObjectElement,
-  doc: docs_v1.Schema$Document,
-): string {
+function renderImage(element: docs_v1.Schema$InlineObjectElement, doc: docs_v1.Schema$Document): string {
   const objectId = element.inlineObjectId;
   if (!objectId || !doc.inlineObjects) {
     return "";
@@ -172,12 +169,11 @@ function renderTable(table: Table, doc: docs_v1.Schema$Document): string {
     '<div class="w-full overflow-auto my-6 rounded-[16px] border border-outline-variant/50"><table class="w-full caption-bottom text-sm border-collapse">';
 
   table.tableRows.forEach((row, rowIndex) => {
-    html +=
-      '<tr class="border-b border-outline-variant/20 hover:bg-surface-container-high/50 transition-colors">';
-    row.tableCells?.forEach((cell) => {
+    html += '<tr class="border-b border-outline-variant/20 hover:bg-surface-container-high/50 transition-colors">';
+    row.tableCells?.forEach(cell => {
       // Render cell content (can contain paragraphs)
       let cellContent = "";
-      cell.content?.forEach((element) => {
+      cell.content?.forEach(element => {
         if (element.paragraph) {
           // Inside tables, simplify paragraphs to avoid huge margins
           const pContent = renderParagraphContent(element.paragraph, doc);

@@ -34,8 +34,7 @@ function chanceTone(chance: number): string {
 export function DropsCard({ drop, className }: DropsCardProps) {
   const [imgError, setImgError] = useState(false);
   const resolvedSrc =
-    resolveAssetUrl(drop.itemImageUrl) ||
-    (drop.itemInternalCode ? getItemIconUrl(drop.itemInternalCode) : null);
+    resolveAssetUrl(drop.itemImageUrl) || (drop.itemInternalCode ? getItemIconUrl(drop.itemInternalCode) : null);
   const hasRealImage = !!resolvedSrc && resolvedSrc !== PLACEHOLDERS.item && !imgError;
 
   // Les Hyper Tactiques sont des objets `super_tactics`/`special_tactics` → fiche /tactic,
@@ -103,10 +102,7 @@ export function DropsCard({ drop, className }: DropsCardProps) {
           </div>
 
           {/* Groupe source (hash) */}
-          <p
-            className="mt-2 text-[10px] text-on-surface-variant/70 font-mono truncate"
-            title={drop.sourceId}
-          >
+          <p className="mt-2 text-[10px] text-on-surface-variant/70 font-mono truncate" title={drop.sourceId}>
             Groupe {drop.sourceId}
           </p>
         </div>

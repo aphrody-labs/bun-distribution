@@ -88,9 +88,7 @@ function parseContent(content: any): ParsedTrick[] {
 // Loaders
 // ============================================================================
 
-export async function loadTrickConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedTrick[] | null> {
+export async function loadTrickConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedTrick[] | null> {
   const filename = findConfigFile("skill", "trick_config");
   if (!filename) return null;
 

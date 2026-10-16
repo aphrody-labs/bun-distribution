@@ -6,12 +6,7 @@
 import { FFIType, ptr, suffix, type Pointer } from "bun:ffi";
 import { resolve } from "node:path";
 import { nativeLibrary, readNativeBytes } from "@aphrody/runtime-sdk/ffi";
-import {
-  type DetectedFormat,
-  type DotnetBridgeStatus,
-  FORMAT_ID_MAP,
-  type IDotnetBridge,
-} from "./types.js";
+import { type DetectedFormat, type DotnetBridgeStatus, FORMAT_ID_MAP, type IDotnetBridge } from "./types.js";
 
 const IECODE_FFI_SYMBOLS = {
   iecode_core_version: { args: [], returns: FFIType.cstring },
@@ -60,12 +55,7 @@ function dotnetLibrary(path?: string) {
     envPaths: ["IECODE_FFI_PATH", "IECODE_CORE_NATIVE_PATH"],
     symbols: IECODE_FFI_SYMBOLS,
     searchDirs: [
-      ...(rid
-        ? [
-            resolve(dir, "../../../..", publish, rid, "publish"),
-            resolve(cwd, publish, rid, "publish"),
-          ]
-        : []),
+      ...(rid ? [resolve(dir, "../../../..", publish, rid, "publish"), resolve(cwd, publish, rid, "publish")] : []),
       resolve(dir, "native"),
     ],
   });
@@ -81,12 +71,7 @@ type NativeSymbols = NonNullable<ReturnType<ReturnType<typeof dotnetLibrary>["lo
 export class NativeDotnetBridge implements IDotnetBridge {
   private readonly _lib: { symbols: NativeSymbols };
   private readonly _status: DotnetBridgeStatus;
-  private constructor(
-    lib: { symbols: NativeSymbols },
-    libraryPath: string,
-    version: string,
-    schema: string,
-  ) {
+  private constructor(lib: { symbols: NativeSymbols }, libraryPath: string, version: string, schema: string) {
     this._lib = lib;
     this._status = {
       available: true,
@@ -174,18 +159,13 @@ export class NativeDotnetBridge implements IDotnetBridge {
     const outPtrBuf = new BigUint64Array(1);
     const outLenBuf = new Int32Array(1);
 
-    const code = this._lib.symbols.iecode_crilayla_decompress(
-      ptr(data),
-      data.length,
-      ptr(outPtrBuf),
-      ptr(outLenBuf),
-    );
+    const code = this._lib.symbols.iecode_crilayla_decompress(ptr(data), data.length, ptr(outPtrBuf), ptr(outLenBuf));
 
     if (code !== 0) {
       throw new Error(`Native CRILAYLA decompression failed with error code: ${code}`);
     }
 
-    return readNativeBytes(outPtrBuf[0]!, outLenBuf[0]!, (address) =>
+    return readNativeBytes(outPtrBuf[0]!, outLenBuf[0]!, address =>
       this._lib.symbols.iecode_bytes_free(address as unknown as Pointer),
     );
   }
@@ -194,18 +174,13 @@ export class NativeDotnetBridge implements IDotnetBridge {
     const outPtrBuf = new BigUint64Array(1);
     const outLenBuf = new Int32Array(1);
 
-    const code = this._lib.symbols.iecode_crilayla_compress(
-      ptr(data),
-      data.length,
-      ptr(outPtrBuf),
-      ptr(outLenBuf),
-    );
+    const code = this._lib.symbols.iecode_crilayla_compress(ptr(data), data.length, ptr(outPtrBuf), ptr(outLenBuf));
 
     if (code !== 0) {
       throw new Error(`Native CRILAYLA compression failed with error code: ${code}`);
     }
 
-    return readNativeBytes(outPtrBuf[0]!, outLenBuf[0]!, (address) =>
+    return readNativeBytes(outPtrBuf[0]!, outLenBuf[0]!, address =>
       this._lib.symbols.iecode_bytes_free(address as unknown as Pointer),
     );
   }

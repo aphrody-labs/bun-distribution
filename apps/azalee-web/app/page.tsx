@@ -12,12 +12,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  description:
-    "L'information la plus précise autour d'Inazuma Eleven. Stats, techniques, et actualités en français.",
+  description: "L'information la plus précise autour d'Inazuma Eleven. Stats, techniques, et actualités en français.",
   openGraph: {
     title: "Azalée - Inazuma Eleven: Victory Road",
-    description:
-      "L'information la plus précise autour d'Inazuma Eleven. Stats, techniques, et actualités en français.",
+    description: "L'information la plus précise autour d'Inazuma Eleven. Stats, techniques, et actualités en français.",
     url: "https://azalee.rosegriffon.fr",
     siteName: "Azalée",
     locale: "fr_FR",
@@ -138,10 +136,7 @@ export default async function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "VideoGame",
-      alternateName: [
-        "Inazuma Eleven: Heroes' Great Road",
-        "Inazuma Eleven: Eiyuutachi no Great Road",
-      ],
+      alternateName: ["Inazuma Eleven: Heroes' Great Road", "Inazuma Eleven: Eiyuutachi no Great Road"],
       applicationCategory: "Game",
       description:
         "Jeu de football RPG développé par Level-5. Recrutez des joueurs, maîtrisez les techniques spéciales et menez votre équipe à la victoire.",
@@ -164,10 +159,7 @@ export default async function HomePage() {
 
   return (
     <div className="animate-in fade-in duration-700">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Dynamic Landing Hero */}
       <LandingHero stats={wikiStats} />
@@ -180,9 +172,7 @@ export default async function HomePage() {
         {/* Latest News (3 items) */}
         <AnimatedSection direction="up">
           <section className="md:px-8 lg:px-12">
-            <Suspense
-              fallback={<div className="h-96 animate-pulse bg-surface-container rounded-3xl" />}
-            >
+            <Suspense fallback={<div className="h-96 animate-pulse bg-surface-container rounded-3xl" />}>
               <LatestNewsSection articles={standardNews} tweets={recentTweets} />
             </Suspense>
           </section>

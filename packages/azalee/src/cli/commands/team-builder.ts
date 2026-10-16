@@ -30,11 +30,11 @@ import type { TeamBuilderOptions } from "../types";
  * héritées de la lib : une seule table de vérité, plus de copie locale.
  */
 const FORMATION_POSITIONS: Record<string, PositionCoord[]> = Object.fromEntries(
-  LEGACY_FORMATIONS.map((f) => [f.id, f.positions]),
+  LEGACY_FORMATIONS.map(f => [f.id, f.positions]),
 );
 
 /** Formations proposées au tirage de l'action `generate`. */
-const GENERATABLE_FORMATIONS = LEGACY_FORMATIONS.map((f) => f.id);
+const GENERATABLE_FORMATIONS = LEGACY_FORMATIONS.map(f => f.id);
 
 /** Éléments jouables, thème possible d'une composition générée. */
 const ELEMENTS = ["Fire", "Forest", "Mountain", "Wind"] as const;
@@ -55,10 +55,7 @@ export function registerTeamBuilderCommand(program: Command): void {
       "Gère et génère des compositions d'équipes (actions: list, show <id>, delete <id>, save <name> <encoded-team>, generate)",
     )
     .option("-j, --json", "Format de sortie en JSON brute")
-    .option(
-      "-f, --formation <formation>",
-      "Spécifie la formation pour l'action 'generate' (ex: diamond442)",
-    )
+    .option("-f, --formation <formation>", "Spécifie la formation pour l'action 'generate' (ex: diamond442)")
     .action(async (action: string, args: string[], options: TeamBuilderOptions) => {
       suppressLogs(!!options.json);
       try {
@@ -82,9 +79,7 @@ export function registerTeamBuilderCommand(program: Command): void {
           if (options.json) {
             console.log(JSON.stringify(res.rows, null, 2));
           } else {
-            console.log(
-              `\n${colors.bold}${colors.green}=== Compositions d'Équipes Sauvegardées ===${colors.reset}`,
-            );
+            console.log(`\n${colors.bold}${colors.green}=== Compositions d'Équipes Sauvegardées ===${colors.reset}`);
             if (res.rows.length === 0) {
               console.log("Aucune équipe enregistrée.");
             } else {
@@ -105,9 +100,7 @@ export function registerTeamBuilderCommand(program: Command): void {
           }
           const team = res.rows[0];
           const formationData =
-            typeof team.formation_data === "string"
-              ? JSON.parse(team.formation_data)
-              : team.formation_data;
+            typeof team.formation_data === "string" ? JSON.parse(team.formation_data) : team.formation_data;
 
           // Les membres persistés ne stockent qu'un charaId : on réhydrate
           // depuis inagle pour afficher des données à jour.
@@ -134,7 +127,7 @@ export function registerTeamBuilderCommand(program: Command): void {
           const dominance = Object.entries(elements)
             .filter(([, count]) => count >= 4)
             .map(([el]) => el);
-          const harmony = Object.values(elements).every((c) => c > 0);
+          const harmony = Object.values(elements).every(c => c > 0);
 
           // Liens de proximité : même élément et distance euclidienne courte.
           const links: Array<[string, string]> = [];
@@ -142,7 +135,7 @@ export function registerTeamBuilderCommand(program: Command): void {
           for (let i = 0; i < fieldMembers.length; i++) {
             const m1 = fieldMembers[i];
             const slotIdx1 = parseInt(m1.slot.replace("field-", ""), 10);
-            const pos1 = positions.find((p) => p.index === slotIdx1);
+            const pos1 = positions.find(p => p.index === slotIdx1);
             if (!pos1 || pos1.role === "GK") continue;
 
             for (let j = i + 1; j < fieldMembers.length; j++) {
@@ -150,12 +143,10 @@ export function registerTeamBuilderCommand(program: Command): void {
               if (m1.element !== m2.element) continue;
 
               const slotIdx2 = parseInt(m2.slot.replace("field-", ""), 10);
-              const pos2 = positions.find((p) => p.index === slotIdx2);
+              const pos2 = positions.find(p => p.index === slotIdx2);
               if (!pos2 || pos2.role === "GK") continue;
 
-              const dist = Math.sqrt(
-                Math.pow(pos1.top - pos2.top, 2) + Math.pow(pos1.left - pos2.left, 2),
-              );
+              const dist = Math.sqrt(Math.pow(pos1.top - pos2.top, 2) + Math.pow(pos1.left - pos2.left, 2));
               if (dist < LINK_DISTANCE) {
                 links.push([m1.name, m2.name]);
               }
@@ -184,9 +175,7 @@ export function registerTeamBuilderCommand(program: Command): void {
               ),
             );
           } else {
-            console.log(
-              `\n${colors.bold}${colors.green}=== Fiche d'Équipe : ${team.name} ===${colors.reset}`,
-            );
+            console.log(`\n${colors.bold}${colors.green}=== Fiche d'Équipe : ${team.name} ===${colors.reset}`);
             console.log(`ID : ${colors.cyan}${team.id}${colors.reset}`);
             console.log(`Formation : ${colors.yellow}${team.formation_id}${colors.reset}`);
             console.log(`Mise à jour : ${team.updated_at}`);
@@ -210,14 +199,10 @@ export function registerTeamBuilderCommand(program: Command): void {
               );
             }
             if (harmony) {
-              console.log(
-                `  - ${colors.green}Harmonie élémentaire active${colors.reset} (+3% stats globales)`,
-              );
+              console.log(`  - ${colors.green}Harmonie élémentaire active${colors.reset} (+3% stats globales)`);
             }
             if (links.length > 0) {
-              console.log(
-                `  - ${colors.green}Liens de proximité élémentaires (${links.length}) :${colors.reset}`,
-              );
+              console.log(`  - ${colors.green}Liens de proximité élémentaires (${links.length}) :${colors.reset}`);
               for (const [n1, n2] of links) {
                 console.log(`    * ${n1} <-> ${n2}`);
               }
@@ -284,15 +269,12 @@ export function registerTeamBuilderCommand(program: Command): void {
           if (options.json) {
             console.log(JSON.stringify({ success: true, id, name }));
           } else {
-            console.log(
-              `\n${colors.green}Équipe "${name}" sauvegardée avec succès sous l'ID: ${id}.${colors.reset}`,
-            );
+            console.log(`\n${colors.green}Équipe "${name}" sauvegardée avec succès sous l'ID: ${id}.${colors.reset}`);
           }
         } else if (action === "generate") {
           // Génération cohérente : une formation, un thème d'élément.
           const chosenFormationId =
-            options.formation ||
-            GENERATABLE_FORMATIONS[Math.floor(Math.random() * GENERATABLE_FORMATIONS.length)];
+            options.formation || GENERATABLE_FORMATIONS[Math.floor(Math.random() * GENERATABLE_FORMATIONS.length)];
 
           const chosenElement = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
 
@@ -313,8 +295,7 @@ export function registerTeamBuilderCommand(program: Command): void {
             }
           }
 
-          const positions =
-            FORMATION_POSITIONS[chosenFormationId] || FORMATION_POSITIONS.diamond442;
+          const positions = FORMATION_POSITIONS[chosenFormationId] || FORMATION_POSITIONS.diamond442;
           const selectedCharaIds = new Set<string>();
           const members: any[] = [];
 
@@ -322,9 +303,9 @@ export function registerTeamBuilderCommand(program: Command): void {
           const selectChara = (role: string) => {
             const candidates = charsByPosition[role] || [];
             const elementCandidates = candidates.filter(
-              (c) => c.element === chosenElement && !selectedCharaIds.has(c.charaId),
+              c => c.element === chosenElement && !selectedCharaIds.has(c.charaId),
             );
-            const fallbackCandidates = candidates.filter((c) => !selectedCharaIds.has(c.charaId));
+            const fallbackCandidates = candidates.filter(c => !selectedCharaIds.has(c.charaId));
 
             const pool = elementCandidates.length > 0 ? elementCandidates : fallbackCandidates;
             if (pool.length === 0) return null;
@@ -376,9 +357,7 @@ export function registerTeamBuilderCommand(program: Command): void {
           const resCoordinators = await client.query<any>("SELECT * FROM inagle_coordinators");
           await client.end();
 
-          const coaches = resCoordinators.rows.filter(
-            (r: any) => r.role === "Manager" || r.role === "Coach",
-          );
+          const coaches = resCoordinators.rows.filter((r: any) => r.role === "Manager" || r.role === "Coach");
           const managers = resCoordinators.rows.filter((r: any) => r.role === "Coordinator");
 
           const matchedCoach = coaches[Math.floor(Math.random() * coaches.length)];
@@ -414,8 +393,8 @@ export function registerTeamBuilderCommand(program: Command): void {
           const encodedTeam = encodeTeamCode(
             chosenFormationId,
             members
-              .filter((m) => !m.slot.startsWith("manager-") && !m.slot.startsWith("support-"))
-              .map((m) => ({ slot: m.slot, charaId: m.charaId })),
+              .filter(m => !m.slot.startsWith("manager-") && !m.slot.startsWith("support-"))
+              .map(m => ({ slot: m.slot, charaId: m.charaId })),
           );
 
           restoreLogs(!!options.json);
@@ -438,9 +417,7 @@ export function registerTeamBuilderCommand(program: Command): void {
             );
             console.log(`Formation : ${chosenFormationId}`);
             console.log(`Chaîne d'encodage : ${colors.yellow}${encodedTeam}${colors.reset}`);
-            console.log(
-              `\n${colors.bold}${colors.blue}Joueurs terrain et remplaçants :${colors.reset}`,
-            );
+            console.log(`\n${colors.bold}${colors.blue}Joueurs terrain et remplaçants :${colors.reset}`);
             const tableRows = members.map((m: any) => ({
               Emplacement: m.slot,
               Joueur: m.name,
@@ -451,9 +428,7 @@ export function registerTeamBuilderCommand(program: Command): void {
             console.log(renderAsciiTable(tableRows));
           }
         } else {
-          throw new Error(
-            `Action inconnue: ${action}. Utilisez list, show, delete, save ou generate.`,
-          );
+          throw new Error(`Action inconnue: ${action}. Utilisez list, show, delete, save ou generate.`);
         }
       } catch (e) {
         reportError(

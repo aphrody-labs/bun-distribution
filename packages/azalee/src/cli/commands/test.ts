@@ -103,19 +103,13 @@ export function registerTestCommand(program: Command): void {
     .description("Exécute l'intégralité des tests natifs (filtres, API, pages et boutons)")
     .option("-p, --playwright", "Délègue la suite à Playwright")
     .action(async (_options: TestOptions) => {
-      console.log(
-        `${colors.bold}${colors.magenta}=== RUNNING NATIVE VERIFICATION SUITE ===${colors.reset}\n`,
-      );
+      console.log(`${colors.bold}${colors.magenta}=== RUNNING NATIVE VERIFICATION SUITE ===${colors.reset}\n`);
 
       // ─── SUITE 1 : filtres de base de données ───
-      console.log(
-        `${colors.bold}${colors.blue}SUITE 1: FILTRES DE BASE DE DONNÉES (SQLITE)${colors.reset}`,
-      );
+      console.log(`${colors.bold}${colors.blue}SUITE 1: FILTRES DE BASE DE DONNÉES (SQLITE)${colors.reset}`);
       const dbPath = getSqlitePath();
       if (!dbPath) {
-        console.error(
-          `${colors.red}Erreur: Base de données SQLite introuvable pour les tests.${colors.reset}`,
-        );
+        console.error(`${colors.red}Erreur: Base de données SQLite introuvable pour les tests.${colors.reset}`);
         process.exit(1);
       }
 
@@ -128,8 +122,7 @@ export function registerTestCommand(program: Command): void {
             const rows = db.query(queryStr).all(...(params as never[])) as Array<{
               count?: number;
             }>;
-            const count =
-              rows.length > 0 && rows[0].count !== undefined ? rows[0].count : rows.length;
+            const count = rows.length > 0 && rows[0].count !== undefined ? rows[0].count : rows.length;
             const duration = (performance.now() - start).toFixed(1);
             console.log(
               `  ${colors.green}✓${colors.reset} ${name.padEnd(65)} | ${colors.bold}${count.toString().padStart(4)} matches${colors.reset} | ${colors.yellow}${duration}ms${colors.reset}`,
@@ -216,9 +209,7 @@ export function registerTestCommand(program: Command): void {
         db.close();
         console.log(`\n  ${colors.green}🎉 Suite 1 réussie (11/11 étapes).${colors.reset}\n`);
       } catch (e) {
-        console.error(
-          `\n${colors.bold}${colors.red}❌ ÉCHEC DE LA SUITE 1 : ${errorMessage(e)}${colors.reset}\n`,
-        );
+        console.error(`\n${colors.bold}${colors.red}❌ ÉCHEC DE LA SUITE 1 : ${errorMessage(e)}${colors.reset}\n`);
         process.exit(1);
       }
 
@@ -278,12 +269,7 @@ export function registerTestCommand(program: Command): void {
           console.log(
             `${colors.cyan}Aucune origine saine parmi ${ORIGINES_CANDIDATES.join(", ")}. Démarrage de 'bun run dev'...${colors.reset}`,
           );
-          const homeBun = path.join(
-            userHome(),
-            ".bun",
-            "bin",
-            process.platform === "win32" ? "bun.exe" : "bun",
-          );
+          const homeBun = path.join(userHome(), ".bun", "bin", process.platform === "win32" ? "bun.exe" : "bun");
           const bunPath = homeBun && existsSync(homeBun) ? homeBun : "bun";
           devServerProcess = Bun.spawn([bunPath, "run", "dev"], {
             cwd: rgWebsiteRoot(),
@@ -343,9 +329,7 @@ export function registerTestCommand(program: Command): void {
           }
         })();
         if (prefixeWiki) {
-          console.log(
-            `${colors.cyan}Wiki monté sous ${prefixeWiki} sur cette origine.${colors.reset}`,
-          );
+          console.log(`${colors.cyan}Wiki monté sous ${prefixeWiki} sur cette origine.${colors.reset}`);
         }
 
         /** Applique le préfixe aux routes du wiki, jamais aux routes racine. */
@@ -361,19 +345,14 @@ export function registerTestCommand(program: Command): void {
             "/charte",
             "/maintenance",
           ];
-          const estRacine = RACINES.some((r) => chemin === r || chemin.startsWith(`${r}/`));
+          const estRacine = RACINES.some(r => chemin === r || chemin.startsWith(`${r}/`));
           const dejaSousPrefixe =
-            prefixeWiki.length > 0 &&
-            (chemin === prefixeWiki || chemin.startsWith(`${prefixeWiki}/`));
-          return estRacine || chemin === "/" || dejaSousPrefixe
-            ? chemin
-            : `${prefixeWiki}${chemin}`;
+            prefixeWiki.length > 0 && (chemin === prefixeWiki || chemin.startsWith(`${prefixeWiki}/`));
+          return estRacine || chemin === "/" || dejaSousPrefixe ? chemin : `${prefixeWiki}${chemin}`;
         };
 
         // ─── SUITE 2 : endpoints API & GraphQL ───
-        console.log(
-          `${colors.bold}${colors.blue}SUITE 2: API & GRAPHQL ENDPOINTS (HTTP)${colors.reset}`,
-        );
+        console.log(`${colors.bold}${colors.blue}SUITE 2: API & GRAPHQL ENDPOINTS (HTTP)${colors.reset}`);
 
         // 1. GET /api/health
         {
@@ -487,9 +466,7 @@ export function registerTestCommand(program: Command): void {
         console.log(`\n  ${colors.green}🎉 Suite 3 réussie (1/1 étape).${colors.reset}\n`);
 
         // ─── SUITE 4 : éléments interactifs servis ───
-        console.log(
-          `${colors.bold}${colors.blue}SUITE 4: INTERACTIVE PAGE ELEMENTS (DOM SURVEY)${colors.reset}`,
-        );
+        console.log(`${colors.bold}${colors.blue}SUITE 4: INTERACTIVE PAGE ELEMENTS (DOM SURVEY)${colors.reset}`);
 
         // 1. Bouton de bascule de thème
         {
@@ -541,9 +518,7 @@ export function registerTestCommand(program: Command): void {
         console.log(`\n  ${colors.green}🎉 Suite 4 réussie (3/3 étapes).${colors.reset}\n`);
 
         // ─── SUITE 5 : rendu des routes ───
-        console.log(
-          `${colors.bold}${colors.blue}SUITE 5: PAGE RENDER VERIFICATION (29 ROUTES)${colors.reset}`,
-        );
+        console.log(`${colors.bold}${colors.blue}SUITE 5: PAGE RENDER VERIFICATION (29 ROUTES)${colors.reset}`);
 
         const allPages = [...STATIC_PAGES, ...DYNAMIC_PAGES];
         const startPages = performance.now();

@@ -58,7 +58,7 @@ export function QuestFilterBar({ counts }: QuestFilterBarProps) {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Onglets catégorie */}
       <div className="flex flex-wrap gap-2">
-        {KIND_TABS.map((tab) => {
+        {KIND_TABS.map(tab => {
           const active = activeKind === tab.value;
           return (
             <button
@@ -97,7 +97,7 @@ export function QuestFilterBar({ counts }: QuestFilterBarProps) {
         <Search size={20} aria-hidden="true" className="ml-2 text-on-surface-variant" />
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           placeholder="Rechercher une quête..."
           aria-label="Rechercher une quête"
           className="h-8 flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-variant/60"

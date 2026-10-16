@@ -6,13 +6,12 @@ import ClanDashboardClient from "./clan-dashboard-client";
  * interdit. L'interface, inchangée, vit dans `clan-dashboard-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Tableau de bord de mon clan",
-	description:
-		"Gestion des membres, des candidatures et des invitations de votre clan Achilléa.",
-	chemin: "/achillea/clans/dashboard",
-	indexable: false,
+  titre: "Tableau de bord de mon clan",
+  description: "Gestion des membres, des candidatures et des invitations de votre clan Achilléa.",
+  chemin: "/achillea/clans/dashboard",
+  indexable: false,
 });
 
 export default function ClanDashboardPage() {
-	return <ClanDashboardClient />;
+  return <ClanDashboardClient />;
 }

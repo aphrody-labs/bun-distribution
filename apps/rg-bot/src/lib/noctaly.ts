@@ -81,17 +81,17 @@ export const MARGE_ATTENTE_MS = 250;
 
 /** Le profil de niveau d'un membre, tel que le rend `GET …/level-profile`. */
 export interface ProfilNoctaly {
-	/** Niveau atteint sur la courbe de Noctaly (jamais écrit tel quel chez nous). */
-	niveau: number;
-	/** XP à l'intérieur du niveau courant. */
-	xp: number;
-	/** XP encore nécessaire pour monter. */
-	xpRestante: number;
-	/** XP cumulée depuis le début — la SEULE valeur qu'on importe. */
-	xpTotale: number;
-	messages: number;
-	minutesVocal: number;
-	reactions: number;
+  /** Niveau atteint sur la courbe de Noctaly (jamais écrit tel quel chez nous). */
+  niveau: number;
+  /** XP à l'intérieur du niveau courant. */
+  xp: number;
+  /** XP encore nécessaire pour monter. */
+  xpRestante: number;
+  /** XP cumulée depuis le début — la SEULE valeur qu'on importe. */
+  xpTotale: number;
+  messages: number;
+  minutesVocal: number;
+  reactions: number;
 }
 
 /**
@@ -126,35 +126,35 @@ export const CODE_MODULE_DESACTIVE = "module_disabled";
  * Rend `null` pour un corps absent, illisible ou sans code.
  */
 export function codeErreur(corps: unknown): string | null {
-	if (typeof corps !== "object" || corps === null) {
-		return null;
-	}
-	const code = (corps as Record<string, unknown>).code;
-	return typeof code === "string" ? code : null;
+  if (typeof corps !== "object" || corps === null) {
+    return null;
+  }
+  const code = (corps as Record<string, unknown>).code;
+  return typeof code === "string" ? code : null;
 }
 
 export function classerReponse(statut: number, corps?: unknown): Issue {
-	if (statut === 200) {
-		return "ok";
-	}
-	if (statut === 404) {
-		return "absent";
-	}
-	if (statut === 401 || statut === 403) {
-		return "refuse";
-	}
-	if (statut === 429) {
-		return "quota";
-	}
-	if (statut === 400 && codeErreur(corps) === CODE_MODULE_DESACTIVE) {
-		return "module-desactive";
-	}
-	return "panne";
+  if (statut === 200) {
+    return "ok";
+  }
+  if (statut === 404) {
+    return "absent";
+  }
+  if (statut === 401 || statut === 403) {
+    return "refuse";
+  }
+  if (statut === 429) {
+    return "quota";
+  }
+  if (statut === 400 && codeErreur(corps) === CODE_MODULE_DESACTIVE) {
+    return "module-desactive";
+  }
+  return "panne";
 }
 
 /** L'URL du profil de niveau d'un membre. */
 export function urlProfilNiveau(guildId: string, discordId: string): string {
-	return `${BASE_API_NOCTALY}/guilds/${guildId}/users/${discordId}/level-profile`;
+  return `${BASE_API_NOCTALY}/guilds/${guildId}/users/${discordId}/level-profile`;
 }
 
 /**
@@ -170,27 +170,27 @@ export function urlProfilNiveau(guildId: string, discordId: string): string {
  */
 /** Un entier positif, ou zéro — pour les champs annexes qu'on n'écrit pas. */
 function entier(valeur: unknown): number {
-	return typeof valeur === "number" && Number.isFinite(valeur) && valeur >= 0 ? Math.floor(valeur) : 0;
+  return typeof valeur === "number" && Number.isFinite(valeur) && valeur >= 0 ? Math.floor(valeur) : 0;
 }
 
 export function lireProfil(brut: unknown): ProfilNoctaly | null {
-	if (typeof brut !== "object" || brut === null) {
-		return null;
-	}
-	const objet = brut as Record<string, unknown>;
-	const xpTotale = objet.totalXp;
-	if (typeof xpTotale !== "number" || !Number.isFinite(xpTotale) || xpTotale < 0) {
-		return null;
-	}
-	return {
-		messages: entier(objet.messages),
-		minutesVocal: entier(objet.voiceMinutes),
-		niveau: entier(objet.level),
-		reactions: entier(objet.reactions),
-		xp: entier(objet.xp),
-		xpRestante: entier(objet.neededXp),
-		xpTotale: Math.floor(xpTotale),
-	};
+  if (typeof brut !== "object" || brut === null) {
+    return null;
+  }
+  const objet = brut as Record<string, unknown>;
+  const xpTotale = objet.totalXp;
+  if (typeof xpTotale !== "number" || !Number.isFinite(xpTotale) || xpTotale < 0) {
+    return null;
+  }
+  return {
+    messages: entier(objet.messages),
+    minutesVocal: entier(objet.voiceMinutes),
+    niveau: entier(objet.level),
+    reactions: entier(objet.reactions),
+    xp: entier(objet.xp),
+    xpRestante: entier(objet.neededXp),
+    xpTotale: Math.floor(xpTotale),
+  };
 }
 
 /**
@@ -202,31 +202,30 @@ export function lireProfil(brut: unknown): ProfilNoctaly | null {
  * perdu — un import ne se rejoue pas quand le bot tiers a été retiré.
  */
 export interface ProfilEconomieNoctaly {
-	monnaie: number;
-	/** Série de récupérations quotidiennes, `null` si jamais réclamée. */
-	serieQuotidienne: number | null;
-	/** Nombre d'objets distincts détenus (le détail vit dans l'archive brute). */
-	objets: number;
-	/** Nombre de coffres distincts détenus. */
-	coffres: number;
+  monnaie: number;
+  /** Série de récupérations quotidiennes, `null` si jamais réclamée. */
+  serieQuotidienne: number | null;
+  /** Nombre d'objets distincts détenus (le détail vit dans l'archive brute). */
+  objets: number;
+  /** Nombre de coffres distincts détenus. */
+  coffres: number;
 }
 
 /** L'URL du profil d'économie, avec les trois relations optionnelles. */
 export function urlProfilEconomie(guildId: string, discordId: string): string {
-	return (
-		`${BASE_API_NOCTALY}/guilds/${guildId}/users/${discordId}/eco-profile` +
-		`?items=true&chests=true&dailyStreak=true`
-	);
+  return (
+    `${BASE_API_NOCTALY}/guilds/${guildId}/users/${discordId}/eco-profile` + `?items=true&chests=true&dailyStreak=true`
+  );
 }
 
 /** L'URL du catalogue d'objets de la guilde — une seule requête pour tout. */
 export function urlObjetsGuilde(guildId: string): string {
-	return `${BASE_API_NOCTALY}/guilds/${guildId}/items`;
+  return `${BASE_API_NOCTALY}/guilds/${guildId}/items`;
 }
 
 /** L'URL du catalogue de coffres de la guilde. */
 export function urlCoffresGuilde(guildId: string): string {
-	return `${BASE_API_NOCTALY}/guilds/${guildId}/chests`;
+  return `${BASE_API_NOCTALY}/guilds/${guildId}/chests`;
 }
 
 /**
@@ -238,24 +237,24 @@ export function urlCoffresGuilde(guildId: string): string {
  * valide — c'est `meriteEcritureEconomie` qui décide s'il vaut une ligne.
  */
 export function lireProfilEconomie(brut: unknown): ProfilEconomieNoctaly | null {
-	if (typeof brut !== "object" || brut === null) {
-		return null;
-	}
-	const objet = brut as Record<string, unknown>;
-	const monnaie = objet.money;
-	if (typeof monnaie !== "number" || !Number.isFinite(monnaie)) {
-		return null;
-	}
-	const serie = objet.dailyStreak;
-	return {
-		coffres: Array.isArray(objet.chests) ? objet.chests.length : 0,
-		monnaie: Math.max(0, Math.floor(monnaie)),
-		objets: Array.isArray(objet.items) ? objet.items.length : 0,
-		serieQuotidienne:
-			typeof serie === "object" && serie !== null
-				? entier((serie as Record<string, unknown>).streak ?? (serie as Record<string, unknown>).count)
-				: null,
-	};
+  if (typeof brut !== "object" || brut === null) {
+    return null;
+  }
+  const objet = brut as Record<string, unknown>;
+  const monnaie = objet.money;
+  if (typeof monnaie !== "number" || !Number.isFinite(monnaie)) {
+    return null;
+  }
+  const serie = objet.dailyStreak;
+  return {
+    coffres: Array.isArray(objet.chests) ? objet.chests.length : 0,
+    monnaie: Math.max(0, Math.floor(monnaie)),
+    objets: Array.isArray(objet.items) ? objet.items.length : 0,
+    serieQuotidienne:
+      typeof serie === "object" && serie !== null
+        ? entier((serie as Record<string, unknown>).streak ?? (serie as Record<string, unknown>).count)
+        : null,
+  };
 }
 
 /**
@@ -272,15 +271,15 @@ export function lireProfilEconomie(brut: unknown): ProfilEconomieNoctaly | null 
  * d'abord en `--essai` pour voir la distribution réelle avant d'écrire.
  */
 export function convertirMonnaie(monnaie: number, taux: number): number {
-	if (!Number.isFinite(monnaie) || monnaie <= 0 || !Number.isFinite(taux) || taux <= 0) {
-		return 0;
-	}
-	return Math.floor(monnaie * taux);
+  if (!Number.isFinite(monnaie) || monnaie <= 0 || !Number.isFinite(taux) || taux <= 0) {
+    return 0;
+  }
+  return Math.floor(monnaie * taux);
 }
 
 /** Un profil d'économie vaut une écriture s'il porte quelque chose. */
 export function meriteEcritureEconomie(profil: ProfilEconomieNoctaly): boolean {
-	return profil.monnaie > 0 || (profil.serieQuotidienne ?? 0) > 0;
+  return profil.monnaie > 0 || (profil.serieQuotidienne ?? 0) > 0;
 }
 
 /**
@@ -289,55 +288,55 @@ export function meriteEcritureEconomie(profil: ProfilEconomieNoctaly): boolean {
  * moyenne, pas la médiane.
  */
 export function distribution(valeurs: readonly number[]): {
-	compte: number;
-	total: number;
-	median: number;
-	maximum: number;
+  compte: number;
+  total: number;
+  median: number;
+  maximum: number;
 } {
-	const triees = valeurs.filter((valeur) => valeur > 0).toSorted((a, b) => a - b);
-	if (triees.length === 0) {
-		return { compte: 0, maximum: 0, median: 0, total: 0 };
-	}
-	const milieu = Math.floor(triees.length / 2);
-	const median =
-		triees.length % 2 === 0
-			? Math.floor(((triees[milieu - 1] ?? 0) + (triees[milieu] ?? 0)) / 2)
-			: (triees[milieu] ?? 0);
-	return {
-		compte: triees.length,
-		maximum: triees.at(-1) ?? 0,
-		median,
-		total: triees.reduce((somme, valeur) => somme + valeur, 0),
-	};
+  const triees = valeurs.filter(valeur => valeur > 0).toSorted((a, b) => a - b);
+  if (triees.length === 0) {
+    return { compte: 0, maximum: 0, median: 0, total: 0 };
+  }
+  const milieu = Math.floor(triees.length / 2);
+  const median =
+    triees.length % 2 === 0
+      ? Math.floor(((triees[milieu - 1] ?? 0) + (triees[milieu] ?? 0)) / 2)
+      : (triees[milieu] ?? 0);
+  return {
+    compte: triees.length,
+    maximum: triees.at(-1) ?? 0,
+    median,
+    total: triees.reduce((somme, valeur) => somme + valeur, 0),
+  };
 }
 
 /** L'état du quota tel qu'annoncé par les en-têtes de la dernière réponse. */
 export interface Quota {
-	limite: number | null;
-	restant: number | null;
-	/** Secondes avant remise à zéro, d'après `X-RateLimit-Reset-After`. */
-	dansSecondes: number | null;
+  limite: number | null;
+  restant: number | null;
+  /** Secondes avant remise à zéro, d'après `X-RateLimit-Reset-After`. */
+  dansSecondes: number | null;
 }
 
 /** Une source d'en-têtes — `Headers` en vrai, un objet simple dans les tests. */
 export interface SourceEnTetes {
-	get(nom: string): string | null;
+  get(nom: string): string | null;
 }
 
 export function lireQuota(entetes: SourceEnTetes): Quota {
-	const nombre = (nom: string): number | null => {
-		const brut = entetes.get(nom);
-		if (brut === null || brut.trim() === "") {
-			return null;
-		}
-		const valeur = Number(brut);
-		return Number.isFinite(valeur) ? valeur : null;
-	};
-	return {
-		dansSecondes: nombre("X-RateLimit-Reset-After"),
-		limite: nombre("X-RateLimit-Limit"),
-		restant: nombre("X-RateLimit-Remaining"),
-	};
+  const nombre = (nom: string): number | null => {
+    const brut = entetes.get(nom);
+    if (brut === null || brut.trim() === "") {
+      return null;
+    }
+    const valeur = Number(brut);
+    return Number.isFinite(valeur) ? valeur : null;
+  };
+  return {
+    dansSecondes: nombre("X-RateLimit-Reset-After"),
+    limite: nombre("X-RateLimit-Limit"),
+    restant: nombre("X-RateLimit-Remaining"),
+  };
 }
 
 /**
@@ -351,11 +350,11 @@ export function lireQuota(entetes: SourceEnTetes): Quota {
  * 40 s alors que la cadence dirait 100 ms, c'est l'API qui a raison.
  */
 export function attenteAvantSuivante(quota: Quota, cadence: number = CADENCE_DEFAUT): number {
-	const parCadence = Math.ceil(1_000 / Math.max(1, Math.min(PLAFOND_DOCUMENTE, cadence)));
-	if (quota.restant !== null && quota.restant <= MARGE_QUOTA && quota.dansSecondes !== null) {
-		return Math.max(parCadence, Math.ceil(quota.dansSecondes * 1_000) + MARGE_ATTENTE_MS);
-	}
-	return parCadence;
+  const parCadence = Math.ceil(1_000 / Math.max(1, Math.min(PLAFOND_DOCUMENTE, cadence)));
+  if (quota.restant !== null && quota.restant <= MARGE_QUOTA && quota.dansSecondes !== null) {
+    return Math.max(parCadence, Math.ceil(quota.dansSecondes * 1_000) + MARGE_ATTENTE_MS);
+  }
+  return parCadence;
 }
 
 /**
@@ -367,44 +366,44 @@ export function attenteAvantSuivante(quota: Quota, cadence: number = CADENCE_DEF
  * message chez nous (`ajouterExperience`), avec la bonne date.
  */
 export function meriteEcriture(profil: ProfilNoctaly): boolean {
-	return profil.xpTotale > 0;
+  return profil.xpTotale > 0;
 }
 
 /** Le décompte d'un import, tel qu'on le rend à la fin. */
 export interface Bilan {
-	interroges: number;
-	ecrits: number;
-	vides: number;
-	absents: number;
-	illisibles: number;
-	pannes: number;
-	/** Profils d'économie porteurs de quelque chose (monnaie ou série). */
-	economies: number;
-	/** Lignes d'archive brute écrites — une par membre ayant répondu. */
-	archives: number;
-	/**
-	 * Profils repris du classement public faute de réponse d'API.
-	 *
-	 * Compté à part parce que ce n'est pas la même qualité de donnée : le
-	 * classement ne porte pas l'XP intra-niveau, et il date du dernier rendu de
-	 * la page. Savoir combien de lignes en viennent, c'est savoir ce qu'un import
-	 * ultérieur avec clé aurait encore à affiner.
-	 */
-	classes: number;
+  interroges: number;
+  ecrits: number;
+  vides: number;
+  absents: number;
+  illisibles: number;
+  pannes: number;
+  /** Profils d'économie porteurs de quelque chose (monnaie ou série). */
+  economies: number;
+  /** Lignes d'archive brute écrites — une par membre ayant répondu. */
+  archives: number;
+  /**
+   * Profils repris du classement public faute de réponse d'API.
+   *
+   * Compté à part parce que ce n'est pas la même qualité de donnée : le
+   * classement ne porte pas l'XP intra-niveau, et il date du dernier rendu de
+   * la page. Savoir combien de lignes en viennent, c'est savoir ce qu'un import
+   * ultérieur avec clé aurait encore à affiner.
+   */
+  classes: number;
 }
 
 export function bilanVide(): Bilan {
-	return {
-		absents: 0,
-		archives: 0,
-		classes: 0,
-		economies: 0,
-		ecrits: 0,
-		illisibles: 0,
-		interroges: 0,
-		pannes: 0,
-		vides: 0,
-	};
+  return {
+    absents: 0,
+    archives: 0,
+    classes: 0,
+    economies: 0,
+    ecrits: 0,
+    illisibles: 0,
+    interroges: 0,
+    pannes: 0,
+    vides: 0,
+  };
 }
 
 /**
@@ -415,28 +414,28 @@ export function bilanVide(): Bilan {
  * une catégorie est à zéro.
  */
 export function resumerBilan(bilan: Bilan): string {
-	const morceaux = [
-		`${bilan.interroges} membre(s) interrogé(s)`,
-		`${bilan.ecrits} profil(s) importé(s)`,
-		`${bilan.vides} sans XP`,
-		`${bilan.absents} inconnu(s) de Noctaly`,
-	];
-	if (bilan.classes > 0) {
-		morceaux.push(`${bilan.classes} repris du classement public`);
-	}
-	if (bilan.economies > 0) {
-		morceaux.push(`${bilan.economies} économie(s)`);
-	}
-	if (bilan.archives > 0) {
-		morceaux.push(`${bilan.archives} archive(s) brute(s)`);
-	}
-	if (bilan.illisibles > 0) {
-		morceaux.push(`${bilan.illisibles} réponse(s) illisible(s)`);
-	}
-	if (bilan.pannes > 0) {
-		morceaux.push(`${bilan.pannes} erreur(s) réseau`);
-	}
-	return morceaux.join(" · ");
+  const morceaux = [
+    `${bilan.interroges} membre(s) interrogé(s)`,
+    `${bilan.ecrits} profil(s) importé(s)`,
+    `${bilan.vides} sans XP`,
+    `${bilan.absents} inconnu(s) de Noctaly`,
+  ];
+  if (bilan.classes > 0) {
+    morceaux.push(`${bilan.classes} repris du classement public`);
+  }
+  if (bilan.economies > 0) {
+    morceaux.push(`${bilan.economies} économie(s)`);
+  }
+  if (bilan.archives > 0) {
+    morceaux.push(`${bilan.archives} archive(s) brute(s)`);
+  }
+  if (bilan.illisibles > 0) {
+    morceaux.push(`${bilan.illisibles} réponse(s) illisible(s)`);
+  }
+  if (bilan.pannes > 0) {
+    morceaux.push(`${bilan.pannes} erreur(s) réseau`);
+  }
+  return morceaux.join(" · ");
 }
 
 /**
@@ -453,12 +452,12 @@ export function resumerBilan(bilan: Bilan): string {
  * fois, à la création.
  */
 export const AIDE_CLE_MANQUANTE = [
-	"NOCTALY_API_KEY manquante.",
-	"  1. https://noctaly.com/dashboard?next=/settings (compte avec « Gérer le serveur »)",
-	"  2. sélectionner Rose Griffon → Paramètres → « Développeurs (Avancé) » → « Créer une clé API »",
-	"  3. copier la valeur AU MOMENT DE LA CRÉATION (elle n'est plus jamais affichée en clair)",
-	"  4. la poser dans apps/bot/.env :  NOCTALY_API_KEY=…",
-	"Sans clé, l'import se rabat sur le classement public : voir SOURCE_CLASSEMENT.",
+  "NOCTALY_API_KEY manquante.",
+  "  1. https://noctaly.com/dashboard?next=/settings (compte avec « Gérer le serveur »)",
+  "  2. sélectionner Rose Griffon → Paramètres → « Développeurs (Avancé) » → « Créer une clé API »",
+  "  3. copier la valeur AU MOMENT DE LA CRÉATION (elle n'est plus jamais affichée en clair)",
+  "  4. la poser dans apps/bot/.env :  NOCTALY_API_KEY=…",
+  "Sans clé, l'import se rabat sur le classement public : voir SOURCE_CLASSEMENT.",
 ].join("\n");
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -508,19 +507,19 @@ export const SOURCE_CLASSEMENT = "classement public";
 
 /** URL de la page de classement d'une guilde. */
 export function urlClassementPublic(guildId: string, tri?: TriClassement): string {
-	const base = `https://noctaly.com/fr/leaderboard/${guildId}`;
-	return tri === undefined ? base : `${base}?sort=${tri}`;
+  const base = `https://noctaly.com/fr/leaderboard/${guildId}`;
+  return tri === undefined ? base : `${base}?sort=${tri}`;
 }
 
 /** Un profil lu dans le classement, avec l'identité que la page publie. */
 export interface ProfilClasse {
-	discordId: string;
-	pseudo: string;
-	/** Empreinte d'avatar Discord, `null` si le membre n'en a pas. */
-	avatarId: string | null;
-	profil: ProfilNoctaly;
-	/** L'entrée BRUTE, telle que la page l'a publiée — c'est elle qu'on archive. */
-	brut: unknown;
+  discordId: string;
+  pseudo: string;
+  /** Empreinte d'avatar Discord, `null` si le membre n'en a pas. */
+  avatarId: string | null;
+  profil: ProfilNoctaly;
+  /** L'entrée BRUTE, telle que la page l'a publiée — c'est elle qu'on archive. */
+  brut: unknown;
 }
 
 /**
@@ -535,16 +534,16 @@ export interface ProfilClasse {
  * marqueurs de flux et casseraient la lecture s'ils étaient concaténés.
  */
 export function extraireFluxRsc(html: string): string {
-	const morceaux: string[] = [];
-	for (const trouve of html.matchAll(/self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)/g)) {
-		try {
-			morceaux.push(JSON.parse(`"${trouve[1]}"`) as string);
-		} catch {
-			// Un fragment illisible ne doit pas emporter les autres : la page reste
-			// exploitable tant que celui qui porte `initProfiles` est intact.
-		}
-	}
-	return morceaux.join("");
+  const morceaux: string[] = [];
+  for (const trouve of html.matchAll(/self\.__next_f\.push\(\[1,\s*"((?:[^"\\]|\\.)*)"\]\)/g)) {
+    try {
+      morceaux.push(JSON.parse(`"${trouve[1]}"`) as string);
+    } catch {
+      // Un fragment illisible ne doit pas emporter les autres : la page reste
+      // exploitable tant que celui qui porte `initProfiles` est intact.
+    }
+  }
+  return morceaux.join("");
 }
 
 /**
@@ -559,39 +558,39 @@ export function extraireFluxRsc(html: string): string {
  * comme « [RG] Yoyo » ferait fermer le tableau trop tôt.
  */
 export function extraireTableau(source: string, clef: string): string | null {
-	const marque = `"${clef}":[`;
-	const debut = source.indexOf(marque);
-	if (debut < 0) {
-		return null;
-	}
-	const ouvrant = debut + marque.length - 1;
-	let profondeur = 0;
-	let dansChaine = false;
-	let echappe = false;
-	for (let i = ouvrant; i < source.length; i++) {
-		const caractere = source[i]!;
-		if (dansChaine) {
-			if (echappe) {
-				echappe = false;
-			} else if (caractere === "\\") {
-				echappe = true;
-			} else if (caractere === '"') {
-				dansChaine = false;
-			}
-			continue;
-		}
-		if (caractere === '"') {
-			dansChaine = true;
-		} else if (caractere === "[") {
-			profondeur++;
-		} else if (caractere === "]") {
-			profondeur--;
-			if (profondeur === 0) {
-				return source.slice(ouvrant, i + 1);
-			}
-		}
-	}
-	return null;
+  const marque = `"${clef}":[`;
+  const debut = source.indexOf(marque);
+  if (debut < 0) {
+    return null;
+  }
+  const ouvrant = debut + marque.length - 1;
+  let profondeur = 0;
+  let dansChaine = false;
+  let echappe = false;
+  for (let i = ouvrant; i < source.length; i++) {
+    const caractere = source[i]!;
+    if (dansChaine) {
+      if (echappe) {
+        echappe = false;
+      } else if (caractere === "\\") {
+        echappe = true;
+      } else if (caractere === '"') {
+        dansChaine = false;
+      }
+      continue;
+    }
+    if (caractere === '"') {
+      dansChaine = true;
+    } else if (caractere === "[") {
+      profondeur++;
+    } else if (caractere === "]") {
+      profondeur--;
+      if (profondeur === 0) {
+        return source.slice(ouvrant, i + 1);
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -603,35 +602,35 @@ export function extraireTableau(source: string, clef: string): string | null {
  * elle ne fait pas tomber les 99 autres.
  */
 function lireEntreeClassement(brut: unknown): ProfilClasse | null {
-	if (typeof brut !== "object" || brut === null) {
-		return null;
-	}
-	const objet = brut as Record<string, unknown>;
-	const discordId = objet.userID;
-	const xpTotale = objet.xp;
-	if (typeof discordId !== "string" || !/^\d{15,25}$/.test(discordId)) {
-		return null;
-	}
-	if (typeof xpTotale !== "number" || !Number.isFinite(xpTotale) || xpTotale < 0) {
-		return null;
-	}
-	return {
-		avatarId: typeof objet.avatarID === "string" ? objet.avatarID : null,
-		brut,
-		discordId,
-		profil: {
-			messages: entier(objet.messages),
-			minutesVocal: entier(objet.voiceMinutes),
-			niveau: entier(objet.level),
-			reactions: entier(objet.reactions),
-			// Le classement ne publie ni l'XP intra-niveau ni le reste à parcourir.
-			// L'import ne s'en sert pas : il ne reporte que `xpTotale`.
-			xp: 0,
-			xpRestante: 0,
-			xpTotale: Math.floor(xpTotale),
-		},
-		pseudo: typeof objet.username === "string" ? objet.username : discordId,
-	};
+  if (typeof brut !== "object" || brut === null) {
+    return null;
+  }
+  const objet = brut as Record<string, unknown>;
+  const discordId = objet.userID;
+  const xpTotale = objet.xp;
+  if (typeof discordId !== "string" || !/^\d{15,25}$/.test(discordId)) {
+    return null;
+  }
+  if (typeof xpTotale !== "number" || !Number.isFinite(xpTotale) || xpTotale < 0) {
+    return null;
+  }
+  return {
+    avatarId: typeof objet.avatarID === "string" ? objet.avatarID : null,
+    brut,
+    discordId,
+    profil: {
+      messages: entier(objet.messages),
+      minutesVocal: entier(objet.voiceMinutes),
+      niveau: entier(objet.level),
+      reactions: entier(objet.reactions),
+      // Le classement ne publie ni l'XP intra-niveau ni le reste à parcourir.
+      // L'import ne s'en sert pas : il ne reporte que `xpTotale`.
+      xp: 0,
+      xpRestante: 0,
+      xpTotale: Math.floor(xpTotale),
+    },
+    pseudo: typeof objet.username === "string" ? objet.username : discordId,
+  };
 }
 
 /**
@@ -643,23 +642,23 @@ function lireEntreeClassement(brut: unknown): ProfilClasse | null {
  * pouvoir le distinguer d'une panne — c'est le nombre de profils qui le dit.
  */
 export function lireClassement(html: string): ProfilClasse[] {
-	const flux = extraireFluxRsc(html);
-	const tableau = extraireTableau(flux, "initProfiles");
-	if (tableau === null) {
-		return [];
-	}
-	let entrees: unknown;
-	try {
-		entrees = JSON.parse(tableau);
-	} catch {
-		return [];
-	}
-	if (!Array.isArray(entrees)) {
-		return [];
-	}
-	return entrees
-		.map((entree) => lireEntreeClassement(entree))
-		.filter((entree): entree is ProfilClasse => entree !== null);
+  const flux = extraireFluxRsc(html);
+  const tableau = extraireTableau(flux, "initProfiles");
+  if (tableau === null) {
+    return [];
+  }
+  let entrees: unknown;
+  try {
+    entrees = JSON.parse(tableau);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(entrees)) {
+    return [];
+  }
+  return entrees
+    .map(entree => lireEntreeClassement(entree))
+    .filter((entree): entree is ProfilClasse => entree !== null);
 }
 
 /**
@@ -672,35 +671,33 @@ export function lireClassement(html: string): ProfilClasse[] {
  * qu'aucune valeur ne régresse. C'est la même règle que le `GREATEST` du SQL
  * d'import, appliquée un cran plus tôt.
  */
-export function fusionnerClassements(
-	listes: readonly (readonly ProfilClasse[])[]
-): ProfilClasse[] {
-	const parMembre = new Map<string, ProfilClasse>();
-	for (const liste of listes) {
-		for (const entree of liste) {
-			const connu = parMembre.get(entree.discordId);
-			if (!connu) {
-				parMembre.set(entree.discordId, entree);
-				continue;
-			}
-			parMembre.set(entree.discordId, {
-				avatarId: entree.avatarId ?? connu.avatarId,
-				// On garde le brut de l'instantané le plus riche en XP : c'est celui
-				// qui fera foi dans l'archive.
-				brut: entree.profil.xpTotale >= connu.profil.xpTotale ? entree.brut : connu.brut,
-				discordId: connu.discordId,
-				profil: {
-					messages: Math.max(connu.profil.messages, entree.profil.messages),
-					minutesVocal: Math.max(connu.profil.minutesVocal, entree.profil.minutesVocal),
-					niveau: Math.max(connu.profil.niveau, entree.profil.niveau),
-					reactions: Math.max(connu.profil.reactions, entree.profil.reactions),
-					xp: 0,
-					xpRestante: 0,
-					xpTotale: Math.max(connu.profil.xpTotale, entree.profil.xpTotale),
-				},
-				pseudo: entree.pseudo || connu.pseudo,
-			});
-		}
-	}
-	return [...parMembre.values()].toSorted((a, b) => b.profil.xpTotale - a.profil.xpTotale);
+export function fusionnerClassements(listes: readonly (readonly ProfilClasse[])[]): ProfilClasse[] {
+  const parMembre = new Map<string, ProfilClasse>();
+  for (const liste of listes) {
+    for (const entree of liste) {
+      const connu = parMembre.get(entree.discordId);
+      if (!connu) {
+        parMembre.set(entree.discordId, entree);
+        continue;
+      }
+      parMembre.set(entree.discordId, {
+        avatarId: entree.avatarId ?? connu.avatarId,
+        // On garde le brut de l'instantané le plus riche en XP : c'est celui
+        // qui fera foi dans l'archive.
+        brut: entree.profil.xpTotale >= connu.profil.xpTotale ? entree.brut : connu.brut,
+        discordId: connu.discordId,
+        profil: {
+          messages: Math.max(connu.profil.messages, entree.profil.messages),
+          minutesVocal: Math.max(connu.profil.minutesVocal, entree.profil.minutesVocal),
+          niveau: Math.max(connu.profil.niveau, entree.profil.niveau),
+          reactions: Math.max(connu.profil.reactions, entree.profil.reactions),
+          xp: 0,
+          xpRestante: 0,
+          xpTotale: Math.max(connu.profil.xpTotale, entree.profil.xpTotale),
+        },
+        pseudo: entree.pseudo || connu.pseudo,
+      });
+    }
+  }
+  return [...parMembre.values()].toSorted((a, b) => b.profil.xpTotale - a.profil.xpTotale);
 }

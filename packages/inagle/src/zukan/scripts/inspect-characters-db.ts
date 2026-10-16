@@ -31,16 +31,11 @@ async function main() {
     }
     let count = 0;
     for (const [charaId, list] of byCharaId) {
-      if (
-        list.length < 2 ||
-        !list.some((char) => char.rarity_label === "Héros" || char.rarity_label === "BASARA")
-      )
+      if (list.length < 2 || !list.some(char => char.rarity_label === "Héros" || char.rarity_label === "BASARA"))
         continue;
       count++;
       if (count > 5) continue;
-      console.log(
-        `\nCharacter: ${list[0]?.name_fr ?? list[0]?.name_en ?? charaId} (chara_id: ${charaId})`,
-      );
+      console.log(`\nCharacter: ${list[0]?.name_fr ?? list[0]?.name_en ?? charaId} (chara_id: ${charaId})`);
       for (const char of list)
         console.log(
           `  - ParamID: ${char.id}\n    Code: ${char.internal_code}, Rarity: ${char.rarity_label}, HeroType: ${char.hero_type}\n    ImageUrl: ${char.image_url}, ZukanHash: ${char.zukan_hash}, Order: ${char.zukan_order}`,

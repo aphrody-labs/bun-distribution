@@ -113,18 +113,13 @@ export class StaffWebCommand {
     try {
       const reponse = await appelerVerbe("scrape.page", { url });
       if (!reponse.success) {
-        await repondre(
-          interaction,
-          echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)),
-        );
+        await repondre(interaction, echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)));
         return;
       }
       const adresse = typeof reponse.url === "string" ? reponse.url : url;
       const markdown = typeof reponse.markdown === "string" ? reponse.markdown : "";
       const embed = rgEmbed()
-        .setTitle(
-          borner(typeof reponse.titre === "string" && reponse.titre ? reponse.titre : adresse, 250),
-        )
+        .setTitle(borner(typeof reponse.titre === "string" && reponse.titre ? reponse.titre : adresse, 250))
         .setURL(adresse)
         // Le markdown vient d'une page tierce : le contrat le borne déjà à
         // 3500 caractères, on garde la marge sous les 4096 de Discord.
@@ -190,25 +185,15 @@ export class StaffWebCommand {
     try {
       const reponse = await appelerVerbe("scrape.google", { requete, limite });
       if (!reponse.success) {
-        await repondre(
-          interaction,
-          echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)),
-        );
+        await repondre(interaction, echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)));
         return;
       }
-      const resultats = Array.isArray(reponse.resultats)
-        ? (reponse.resultats as ResultatRechercheWeb[])
-        : [];
+      const resultats = Array.isArray(reponse.resultats) ? (reponse.resultats as ResultatRechercheWeb[]) : [];
       const embed = rgEmbed()
         .setTitle(`Recherche web — ${resultats.length} résultat${resultats.length > 1 ? "s" : ""}`)
         .setDescription(
           resultats.length > 0
-            ? borner(
-                resultats
-                  .map((resultat, rang) => ligneResultatWeb(resultat, rang + 1))
-                  .join("\n\n"),
-                3_900,
-              )
+            ? borner(resultats.map((resultat, rang) => ligneResultatWeb(resultat, rang + 1)).join("\n\n"), 3_900)
             : "Aucun résultat.",
         )
         .addFields({
@@ -249,18 +234,13 @@ export class StaffWebCommand {
     try {
       const reponse = await appelerVerbe("scrape.recon", { url });
       if (!reponse.success) {
-        await repondre(
-          interaction,
-          echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)),
-        );
+        await repondre(interaction, echec("Lecture impossible", expliquerRefusScrape(reponse.code, reponse.error)));
         return;
       }
       const adresse = typeof reponse.urlFinale === "string" ? reponse.urlFinale : url;
       const liens = (reponse.liens ?? {}) as Record<string, unknown>;
       const embed = rgEmbed()
-        .setTitle(
-          borner(typeof reponse.titre === "string" && reponse.titre ? reponse.titre : adresse, 250),
-        )
+        .setTitle(borner(typeof reponse.titre === "string" && reponse.titre ? reponse.titre : adresse, 250))
         .setURL(adresse)
         .setDescription(
           [
@@ -290,9 +270,7 @@ export class StaffWebCommand {
               typeof liens.total === "number"
                 ? `${formaterNombre(liens.total)} au total\n${formaterNombre(
                     typeof liens.internes === "number" ? liens.internes : null,
-                  )} internes · ${formaterNombre(
-                    typeof liens.externes === "number" ? liens.externes : null,
-                  )} externes`
+                  )} internes · ${formaterNombre(typeof liens.externes === "number" ? liens.externes : null)} externes`
                 : "—",
             inline: true,
           },
@@ -313,7 +291,7 @@ export class StaffWebCommand {
           value: borner(
             exemples
               .filter((lien): lien is string => typeof lien === "string")
-              .map((lien) => `• ${echapperMarkdown(lien)}`)
+              .map(lien => `• ${echapperMarkdown(lien)}`)
               .join("\n"),
             1_000,
           ),

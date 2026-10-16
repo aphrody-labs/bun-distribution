@@ -98,99 +98,99 @@ try {
 </script>`;
 
 interface Rendu {
-	ok: boolean;
-	detail: string;
-	dossier: string;
+  ok: boolean;
+  detail: string;
+  dossier: string;
 }
 
 async function rendre(code: string, dossier: string): Promise<Rendu> {
-	mkdirSync(dossier, { recursive: true });
-	let resoudre!: (r: Rendu) => void;
-	const fini = new Promise<Rendu>((r) => {
-		resoudre = r;
-	});
-	let recus = 0;
+  mkdirSync(dossier, { recursive: true });
+  let resoudre!: (r: Rendu) => void;
+  const fini = new Promise<Rendu>(r => {
+    resoudre = r;
+  });
+  let recus = 0;
 
-	const serveur = Bun.serve({
-		hostname: "127.0.0.1",
-		port: 0,
-		idleTimeout: 240,
-		async fetch(req) {
-			const u = new URL(req.url);
-			if (u.pathname === "/") return new Response(PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
-			if (u.pathname === "/mv.js") {
-				return new Response(Bun.file(MODEL_VIEWER), { headers: { "Content-Type": "text/javascript" } });
-			}
-			if (u.pathname === "/m.glb") {
-				const amont = await fetch(`${BASE_SERVICE}/model-full/${code}.glb`);
-				if (!amont.ok) {
-					resoudre({ ok: false, detail: `service : HTTP ${amont.status}`, dossier });
-					return new Response("amont", { status: 502 });
-				}
-				return new Response(amont.body, { headers: { "Content-Type": "model/gltf-binary" } });
-			}
-			if (u.pathname === "/shot") {
-				const i = Number(u.searchParams.get("i"));
-				const data = await req.text();
-				const b64 = data.slice(data.indexOf(",") + 1);
-				await Bun.write(join(dossier, `rendu_r${i}.png`), Buffer.from(b64, "base64"));
-				recus++;
-				return new Response("ok");
-			}
-			if (u.pathname === "/journal") {
-				const m = u.searchParams.get("m") ?? "";
-				resoudre(
-					m.startsWith("FINI")
-						? { ok: recus === ANGLES, detail: `${recus}/${ANGLES} vues · ${m.slice(5)}`, dossier }
-						: { ok: false, detail: m, dossier },
-				);
-				return new Response("ok");
-			}
-			return new Response("absent", { status: 404 });
-		},
-	});
+  const serveur = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    idleTimeout: 240,
+    async fetch(req) {
+      const u = new URL(req.url);
+      if (u.pathname === "/") return new Response(PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+      if (u.pathname === "/mv.js") {
+        return new Response(Bun.file(MODEL_VIEWER), { headers: { "Content-Type": "text/javascript" } });
+      }
+      if (u.pathname === "/m.glb") {
+        const amont = await fetch(`${BASE_SERVICE}/model-full/${code}.glb`);
+        if (!amont.ok) {
+          resoudre({ ok: false, detail: `service : HTTP ${amont.status}`, dossier });
+          return new Response("amont", { status: 502 });
+        }
+        return new Response(amont.body, { headers: { "Content-Type": "model/gltf-binary" } });
+      }
+      if (u.pathname === "/shot") {
+        const i = Number(u.searchParams.get("i"));
+        const data = await req.text();
+        const b64 = data.slice(data.indexOf(",") + 1);
+        await Bun.write(join(dossier, `rendu_r${i}.png`), Buffer.from(b64, "base64"));
+        recus++;
+        return new Response("ok");
+      }
+      if (u.pathname === "/journal") {
+        const m = u.searchParams.get("m") ?? "";
+        resoudre(
+          m.startsWith("FINI")
+            ? { ok: recus === ANGLES, detail: `${recus}/${ANGLES} vues · ${m.slice(5)}`, dossier }
+            : { ok: false, detail: m, dossier },
+        );
+        return new Response("ok");
+      }
+      return new Response("absent", { status: 404 });
+    },
+  });
 
-	const url = `http://127.0.0.1:${serveur.port}/`;
-	const chrome = Bun.spawn(
-		[
-			CHROME,
-			"--headless=new",
-			"--no-sandbox",
-			"--disable-gpu",
-			"--use-gl=angle",
-			"--use-angle=swiftshader",
-			// Sans ce drapeau, Chromium 147 REFUSE le repli logiciel WebGL (« Automatic fallback to
-			// software WebGL has been deprecated ») : la page se charge, model-viewer n'obtient
-			// jamais de contexte, et l'attente expire sans un mot. L'échec est totalement muet —
-			// c'est ce qui a fait passer la première version de cette gate pour un blocage réseau.
-			"--enable-unsafe-swiftshader",
-			"--hide-scrollbars",
-			`--window-size=${TAILLE},${TAILLE}`,
-			"--disable-dev-shm-usage",
-			url,
-		],
-		{ stdout: "ignore", stderr: "ignore" },
-	);
+  const url = `http://127.0.0.1:${serveur.port}/`;
+  const chrome = Bun.spawn(
+    [
+      CHROME,
+      "--headless=new",
+      "--no-sandbox",
+      "--disable-gpu",
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      // Sans ce drapeau, Chromium 147 REFUSE le repli logiciel WebGL (« Automatic fallback to
+      // software WebGL has been deprecated ») : la page se charge, model-viewer n'obtient
+      // jamais de contexte, et l'attente expire sans un mot. L'échec est totalement muet —
+      // c'est ce qui a fait passer la première version de cette gate pour un blocage réseau.
+      "--enable-unsafe-swiftshader",
+      "--hide-scrollbars",
+      `--window-size=${TAILLE},${TAILLE}`,
+      "--disable-dev-shm-usage",
+      url,
+    ],
+    { stdout: "ignore", stderr: "ignore" },
+  );
 
-	const garde = setTimeout(() => resoudre({ ok: false, detail: "délai global dépassé", dossier }), 240_000);
-	const r = await fini;
-	clearTimeout(garde);
-	chrome.kill();
-	await chrome.exited.catch(() => {});
-	serveur.stop(true);
-	return r;
+  const garde = setTimeout(() => resoudre({ ok: false, detail: "délai global dépassé", dossier }), 240_000);
+  const r = await fini;
+  clearTimeout(garde);
+  chrome.kill();
+  await chrome.exited.catch(() => {});
+  serveur.stop(true);
+  return r;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Normalisation et métriques (ImageMagick)
 
 async function im(args: string[]): Promise<string> {
-	const p = Bun.spawn(args, { stdout: "pipe", stderr: "pipe" });
-	const [out, err] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
-	await p.exited;
-	// `compare` écrit sa métrique sur stderr et sort en code non nul dès que les images diffèrent :
-	// un code non nul n'est PAS une panne ici, c'est le résultat.
-	return (out + err).trim();
+  const p = Bun.spawn(args, { stdout: "pipe", stderr: "pipe" });
+  const [out, err] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
+  await p.exited;
+  // `compare` écrit sa métrique sur stderr et sort en code non nul dès que les images diffèrent :
+  // un code non nul n'est PAS une panne ici, c'est le résultat.
+  return (out + err).trim();
 }
 
 /**
@@ -200,45 +200,56 @@ async function im(args: string[]): Promise<string> {
  * Shawn en dépend), notre rendu est déjà transparent.
  */
 async function normaliser(entree: string, sortie: string, origine: "zukan" | "rendu"): Promise<void> {
-	const commun = ["-trim", "+repage", "-resize", `${TOILE}x${TOILE}`, "-background", "none", "-gravity", "center", "-extent", `${TOILE}x${TOILE}`];
-	if (origine === "zukan") {
-		await im([
-			"convert",
-			entree,
-			"-alpha",
-			"set",
-			"-fuzz",
-			"6%",
-			"-fill",
-			"none",
-			"-floodfill",
-			"+0+0",
-			"white",
-			...commun,
-			`PNG32:${sortie}`,
-		]);
-	} else {
-		await im(["convert", entree, "-alpha", "set", ...commun, `PNG32:${sortie}`]);
-	}
+  const commun = [
+    "-trim",
+    "+repage",
+    "-resize",
+    `${TOILE}x${TOILE}`,
+    "-background",
+    "none",
+    "-gravity",
+    "center",
+    "-extent",
+    `${TOILE}x${TOILE}`,
+  ];
+  if (origine === "zukan") {
+    await im([
+      "convert",
+      entree,
+      "-alpha",
+      "set",
+      "-fuzz",
+      "6%",
+      "-fill",
+      "none",
+      "-floodfill",
+      "+0+0",
+      "white",
+      ...commun,
+      `PNG32:${sortie}`,
+    ]);
+  } else {
+    await im(["convert", entree, "-alpha", "set", ...commun, `PNG32:${sortie}`]);
+  }
 }
 
 async function masque(entree: string, sortie: string): Promise<void> {
-	await im(["convert", entree, "-alpha", "extract", "-threshold", "50%", `PNG8:${sortie}`]);
+  await im(["convert", entree, "-alpha", "extract", "-threshold", "50%", `PNG8:${sortie}`]);
 }
 
 async function moyenne(chemin: string): Promise<number> {
-	const s = await im(["convert", chemin, "-format", "%[fx:mean]", "info:"]);
-	return Number.parseFloat(s) || 0;
+  const s = await im(["convert", chemin, "-format", "%[fx:mean]", "info:"]);
+  return Number.parseFloat(s) || 0;
 }
 
 /** Intersection sur union des deux silhouettes. */
 async function iou(a: string, b: string, tmp: string): Promise<number> {
-	const inter = join(tmp, "inter.png");
-	const union = join(tmp, "union.png");
-	await im(["convert", a, b, "-compose", "multiply", "-composite", inter]);
-	await im(["convert", a, b, "-compose", "lighten", "-composite", union]);
-	const [mi, mu] = await Promise.all([moyenne(inter), moyenne(union)]);
-	return mu > 0 ? mi / mu : 0;
+  const inter = join(tmp, "inter.png");
+  const union = join(tmp, "union.png");
+  await im(["convert", a, b, "-compose", "multiply", "-composite", inter]);
+  await im(["convert", a, b, "-compose", "lighten", "-composite", union]);
+  const [mi, mu] = await Promise.all([moyenne(inter), moyenne(union)]);
+  return mu > 0 ? mi / mu : 0;
 }
 
 /**
@@ -246,155 +257,169 @@ async function iou(a: string, b: string, tmp: string): Promise<number> {
  * On passe par ImageMagick pour le décodage seulement — le calcul, lui, se fait ici.
  */
 async function grisBrut(chemin: string, cote: number): Promise<Uint8Array> {
-	const p = Bun.spawn(
-		["magick", chemin, "-background", "white", "-alpha", "remove", "-alpha", "off", "-colorspace", "Gray", "-depth", "8", `gray:-`],
-		{ stdout: "pipe", stderr: "ignore" },
-	);
-	const buf = new Uint8Array(await new Response(p.stdout).arrayBuffer());
-	await p.exited;
-	if (buf.length !== cote * cote) {
-		throw new Error(`${chemin} : ${buf.length} octets pour ${cote}×${cote} attendus`);
-	}
-	return buf;
+  const p = Bun.spawn(
+    [
+      "magick",
+      chemin,
+      "-background",
+      "white",
+      "-alpha",
+      "remove",
+      "-alpha",
+      "off",
+      "-colorspace",
+      "Gray",
+      "-depth",
+      "8",
+      `gray:-`,
+    ],
+    { stdout: "pipe", stderr: "ignore" },
+  );
+  const buf = new Uint8Array(await new Response(p.stdout).arrayBuffer());
+  await p.exited;
+  if (buf.length !== cote * cote) {
+    throw new Error(`${chemin} : ${buf.length} octets pour ${cote}×${cote} attendus`);
+  }
+  return buf;
 }
 
 async function ssim(a: string, b: string): Promise<number> {
-	const [ga, gb] = await Promise.all([grisBrut(a, TOILE), grisBrut(b, TOILE)]);
-	return ssimGris(ga, gb, TOILE);
+  const [ga, gb] = await Promise.all([grisBrut(a, TOILE), grisBrut(b, TOILE)]);
+  return ssimGris(ga, gb, TOILE);
 }
 
 // ---------------------------------------------------------------------------------------------
 
 interface Score {
-	code: string;
-	statut: "compare" | "sans-reference" | "rendu-echoue";
-	detail?: string;
-	angles?: { i: number; iou: number; ssim: number }[];
-	iou_moyen?: number;
-	ssim_moyen?: number;
-	iou_min?: number;
+  code: string;
+  statut: "compare" | "sans-reference" | "rendu-echoue";
+  detail?: string;
+  angles?: { i: number; iou: number; ssim: number }[];
+  iou_moyen?: number;
+  ssim_moyen?: number;
+  iou_min?: number;
 }
 
 async function evaluer(code: string): Promise<Score> {
-	const refDir = join(REFS, code);
-	if (!existsSync(join(refDir, "manifest.json"))) {
-		return { code, statut: "sans-reference", detail: "aucune planche zukan récupérée" };
-	}
-	const dossier = join(SORTIE, code);
-	mkdirSync(dossier, { recursive: true });
-	const r = await rendre(code, dossier);
-	if (!r.ok) return { code, statut: "rendu-echoue", detail: r.detail };
+  const refDir = join(REFS, code);
+  if (!existsSync(join(refDir, "manifest.json"))) {
+    return { code, statut: "sans-reference", detail: "aucune planche zukan récupérée" };
+  }
+  const dossier = join(SORTIE, code);
+  mkdirSync(dossier, { recursive: true });
+  const r = await rendre(code, dossier);
+  if (!r.ok) return { code, statut: "rendu-echoue", detail: r.detail };
 
-	const tmp = join(dossier, "tmp");
-	mkdirSync(tmp, { recursive: true });
-	const angles: { i: number; iou: number; ssim: number }[] = [];
-	for (let i = 0; i < ANGLES; i++) {
-		const ref = join(refDir, `${code}_r${i}_fullbody.png`);
-		const rend = join(dossier, `rendu_r${i}.png`);
-		if (!existsSync(ref) || !existsSync(rend)) continue;
-		const refN = join(dossier, `norm_ref_r${i}.png`);
-		const rendN = join(dossier, `norm_rendu_r${i}.png`);
-		await normaliser(ref, refN, "zukan");
-		await normaliser(rend, rendN, "rendu");
-		const mRef = join(tmp, `mref${i}.png`);
-		const mRend = join(tmp, `mrend${i}.png`);
-		await masque(refN, mRef);
-		await masque(rendN, mRend);
-		angles.push({
-			i,
-			iou: Number((await iou(mRef, mRend, tmp)).toFixed(4)),
-			ssim: Number((await ssim(refN, rendN)).toFixed(4)),
-		});
-	}
-	rmSync(tmp, { recursive: true, force: true });
-	if (!angles.length) return { code, statut: "rendu-echoue", detail: "aucun couple d'images comparable" };
+  const tmp = join(dossier, "tmp");
+  mkdirSync(tmp, { recursive: true });
+  const angles: { i: number; iou: number; ssim: number }[] = [];
+  for (let i = 0; i < ANGLES; i++) {
+    const ref = join(refDir, `${code}_r${i}_fullbody.png`);
+    const rend = join(dossier, `rendu_r${i}.png`);
+    if (!existsSync(ref) || !existsSync(rend)) continue;
+    const refN = join(dossier, `norm_ref_r${i}.png`);
+    const rendN = join(dossier, `norm_rendu_r${i}.png`);
+    await normaliser(ref, refN, "zukan");
+    await normaliser(rend, rendN, "rendu");
+    const mRef = join(tmp, `mref${i}.png`);
+    const mRend = join(tmp, `mrend${i}.png`);
+    await masque(refN, mRef);
+    await masque(rendN, mRend);
+    angles.push({
+      i,
+      iou: Number((await iou(mRef, mRend, tmp)).toFixed(4)),
+      ssim: Number((await ssim(refN, rendN)).toFixed(4)),
+    });
+  }
+  rmSync(tmp, { recursive: true, force: true });
+  if (!angles.length) return { code, statut: "rendu-echoue", detail: "aucun couple d'images comparable" };
 
-	// Planche de contrôle : la mesure ne remplace pas l'œil, elle le guide.
-	await im([
-		"montage",
-		...angles.flatMap((a) => [join(dossier, `norm_ref_r${a.i}.png`), join(dossier, `norm_rendu_r${a.i}.png`)]),
-		"-tile",
-		"4x",
-		"-geometry",
-		"192x192+2+2",
-		"-background",
-		"white",
-		join(dossier, `${code}_planche.png`),
-	]);
+  // Planche de contrôle : la mesure ne remplace pas l'œil, elle le guide.
+  await im([
+    "montage",
+    ...angles.flatMap(a => [join(dossier, `norm_ref_r${a.i}.png`), join(dossier, `norm_rendu_r${a.i}.png`)]),
+    "-tile",
+    "4x",
+    "-geometry",
+    "192x192+2+2",
+    "-background",
+    "white",
+    join(dossier, `${code}_planche.png`),
+  ]);
 
-	const moy = (f: (a: (typeof angles)[number]) => number) => angles.reduce((n, a) => n + f(a), 0) / angles.length;
-	return {
-		code,
-		statut: "compare",
-		angles,
-		iou_moyen: Number(moy((a) => a.iou).toFixed(4)),
-		ssim_moyen: Number(moy((a) => a.ssim).toFixed(4)),
-		iou_min: Number(Math.min(...angles.map((a) => a.iou)).toFixed(4)),
-	};
+  const moy = (f: (a: (typeof angles)[number]) => number) => angles.reduce((n, a) => n + f(a), 0) / angles.length;
+  return {
+    code,
+    statut: "compare",
+    angles,
+    iou_moyen: Number(moy(a => a.iou).toFixed(4)),
+    ssim_moyen: Number(moy(a => a.ssim).toFixed(4)),
+    iou_min: Number(Math.min(...angles.map(a => a.iou)).toFixed(4)),
+  };
 }
 
 async function main() {
-	const argv = process.argv.slice(2);
-	let codes: string[] = [];
-	for (let i = 0; i < argv.length; i++) {
-		const a = argv[i];
-		if (a === "--codes") codes = (argv[++i] ?? "").split(/[,\s]+/).filter(Boolean);
-		else if (a === "--tous") {
-			codes = readdirSync(REFS).filter((d) => existsSync(join(REFS, d, "manifest.json")));
-		} else if (a === "-h" || a === "--help") {
-			console.log("gate-zukan — SSIM + IoU entre le GLB assemblé et les 8 vues du zukan\n  --codes a,b\n  --tous");
-			return;
-		}
-	}
-	if (!codes.length) codes = readdirSync(REFS).filter((d) => existsSync(join(REFS, d, "manifest.json")));
-	if (!existsSync(CHROME)) throw new Error(`Chromium introuvable : ${CHROME} (poser NIE_CHROME)`);
-	mkdirSync(SORTIE, { recursive: true });
+  const argv = process.argv.slice(2);
+  let codes: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--codes") codes = (argv[++i] ?? "").split(/[,\s]+/).filter(Boolean);
+    else if (a === "--tous") {
+      codes = readdirSync(REFS).filter(d => existsSync(join(REFS, d, "manifest.json")));
+    } else if (a === "-h" || a === "--help") {
+      console.log("gate-zukan — SSIM + IoU entre le GLB assemblé et les 8 vues du zukan\n  --codes a,b\n  --tous");
+      return;
+    }
+  }
+  if (!codes.length) codes = readdirSync(REFS).filter(d => existsSync(join(REFS, d, "manifest.json")));
+  if (!existsSync(CHROME)) throw new Error(`Chromium introuvable : ${CHROME} (poser NIE_CHROME)`);
+  mkdirSync(SORTIE, { recursive: true });
 
-	// Auto-test de la métrique : SSIM(x, x) doit valoir 1. C'est ce contrôle qui a démasqué le
-	// `compare -metric SSIM` d'ImageMagick, lequel rendait 0 sur deux images identiques.
-	{
-		const t = join(SORTIE, ".autotest.png");
-		await im(["magick", "-size", `${TOILE}x${TOILE}`, "plasma:", t]);
-		const g = await grisBrut(t, TOILE);
-		const un = ssimGris(g, g, TOILE);
-		// Témoin négatif : du bruit DÉCORRÉLÉ. Un simple décalage modulaire ne convient pas —
-		// il est bijectif, préserve la variance locale, et rend un SSIM de 0,51 qui ne prouve rien.
-		const bruit = new Uint8Array(g.length);
-		crypto.getRandomValues(bruit);
-		const bas = ssimGris(g, bruit, TOILE);
-		rmSync(t, { force: true });
-		if (!(un > 0.999 && bas < 0.2)) {
-			throw new Error(`SSIM invalide : identité=${un.toFixed(4)}, bruit=${bas.toFixed(4)}`);
-		}
-	}
+  // Auto-test de la métrique : SSIM(x, x) doit valoir 1. C'est ce contrôle qui a démasqué le
+  // `compare -metric SSIM` d'ImageMagick, lequel rendait 0 sur deux images identiques.
+  {
+    const t = join(SORTIE, ".autotest.png");
+    await im(["magick", "-size", `${TOILE}x${TOILE}`, "plasma:", t]);
+    const g = await grisBrut(t, TOILE);
+    const un = ssimGris(g, g, TOILE);
+    // Témoin négatif : du bruit DÉCORRÉLÉ. Un simple décalage modulaire ne convient pas —
+    // il est bijectif, préserve la variance locale, et rend un SSIM de 0,51 qui ne prouve rien.
+    const bruit = new Uint8Array(g.length);
+    crypto.getRandomValues(bruit);
+    const bas = ssimGris(g, bruit, TOILE);
+    rmSync(t, { force: true });
+    if (!(un > 0.999 && bas < 0.2)) {
+      throw new Error(`SSIM invalide : identité=${un.toFixed(4)}, bruit=${bas.toFixed(4)}`);
+    }
+  }
 
-	const scores: Score[] = [];
-	for (const c of codes.sort()) {
-		const s = await evaluer(c);
-		scores.push(s);
-		console.error(
-			s.statut === "compare"
-				? `  ${c} : IoU ${s.iou_moyen} (min ${s.iou_min}) · SSIM ${s.ssim_moyen}`
-				: `  ${c} : ${s.statut} — ${s.detail}`,
-		);
-	}
+  const scores: Score[] = [];
+  for (const c of codes.sort()) {
+    const s = await evaluer(c);
+    scores.push(s);
+    console.error(
+      s.statut === "compare"
+        ? `  ${c} : IoU ${s.iou_moyen} (min ${s.iou_min}) · SSIM ${s.ssim_moyen}`
+        : `  ${c} : ${s.statut} — ${s.detail}`,
+    );
+  }
 
-	const comparés = scores.filter((s) => s.statut === "compare");
-	const resume = {
-		horodatage: new Date().toISOString(),
-		demandes: codes.length,
-		compares: comparés.length,
-		iou_moyen_global: comparés.length
-			? Number((comparés.reduce((n, s) => n + (s.iou_moyen ?? 0), 0) / comparés.length).toFixed(4))
-			: null,
-		ssim_moyen_global: comparés.length
-			? Number((comparés.reduce((n, s) => n + (s.ssim_moyen ?? 0), 0) / comparés.length).toFixed(4))
-			: null,
-		scores: scores.sort((a, b) => (a.iou_moyen ?? -1) - (b.iou_moyen ?? -1)),
-	};
-	await Bun.write(join(SORTIE, "resume.json"), `${JSON.stringify(resume, null, 2)}\n`);
-	console.log(JSON.stringify({ ...resume, scores: undefined }, null, 2));
-	console.log(`Détail : ${join(SORTIE, "resume.json")}`);
+  const comparés = scores.filter(s => s.statut === "compare");
+  const resume = {
+    horodatage: new Date().toISOString(),
+    demandes: codes.length,
+    compares: comparés.length,
+    iou_moyen_global: comparés.length
+      ? Number((comparés.reduce((n, s) => n + (s.iou_moyen ?? 0), 0) / comparés.length).toFixed(4))
+      : null,
+    ssim_moyen_global: comparés.length
+      ? Number((comparés.reduce((n, s) => n + (s.ssim_moyen ?? 0), 0) / comparés.length).toFixed(4))
+      : null,
+    scores: scores.sort((a, b) => (a.iou_moyen ?? -1) - (b.iou_moyen ?? -1)),
+  };
+  await Bun.write(join(SORTIE, "resume.json"), `${JSON.stringify(resume, null, 2)}\n`);
+  console.log(JSON.stringify({ ...resume, scores: undefined }, null, 2));
+  console.log(`Détail : ${join(SORTIE, "resume.json")}`);
 }
 
 await main();

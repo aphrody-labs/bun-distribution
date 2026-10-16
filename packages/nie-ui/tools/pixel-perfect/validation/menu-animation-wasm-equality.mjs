@@ -8,10 +8,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import {
-  initSync,
-  menu_animation_bindings_json,
-} from "../../../packages/nie-web/src/wasm/nie_wasm.js";
+import { initSync, menu_animation_bindings_json } from "../../../packages/nie-web/src/wasm/nie_wasm.js";
 
 const args = process.argv.slice(2);
 assert(
@@ -21,30 +18,17 @@ assert(
 const payload = readFileSync(args[0]);
 const expected = JSON.parse(readFileSync(args[1], "utf8"));
 assert.equal(expected.schemaVersion, 1, "Unsupported native report schema");
-assert(
-  expected.bindings && typeof expected.bindings === "object",
-  "Native report must contain decoded bindings",
-);
+assert(expected.bindings && typeof expected.bindings === "object", "Native report must contain decoded bindings");
 const wasmBytes = readFileSync(
-  args[3] ??
-    new URL("../../../packages/nie-web/public/static/game/nie_wasm_bg.wasm", import.meta.url),
+  args[3] ?? new URL("../../../packages/nie-web/public/static/game/nie_wasm_bg.wasm", import.meta.url),
 );
 initSync({ module: wasmBytes });
 const actual = JSON.parse(menu_animation_bindings_json(payload));
 assert.deepStrictEqual(actual, expected, "Native and WebAssembly animation bindings differ");
 const { state_hashes, skeletal_bindings, material_bindings } = actual.bindings;
-assert(
-  Array.isArray(state_hashes) && state_hashes.length > 0,
-  "Native export must contain observed states",
-);
-assert(
-  Array.isArray(skeletal_bindings) && Array.isArray(material_bindings),
-  "Missing binding categories",
-);
-assert(
-  skeletal_bindings.length + material_bindings.length > 0,
-  "At least one observed binding is required",
-);
+assert(Array.isArray(state_hashes) && state_hashes.length > 0, "Native export must contain observed states");
+assert(Array.isArray(skeletal_bindings) && Array.isArray(material_bindings), "Missing binding categories");
+assert(skeletal_bindings.length + material_bindings.length > 0, "At least one observed binding is required");
 
 const badMagic = new Uint8Array(payload);
 badMagic.fill(0, 0, Math.min(4, badMagic.length));

@@ -12,11 +12,11 @@ import { XIcon } from "@rosegriffon/ui";
  * n'apporterait rien de plus que ce ré-export.
  */
 interface TwitterIconProps {
-	width?: number;
-	height?: number;
-	className?: string;
+  width?: number;
+  height?: number;
+  className?: string;
 }
 
 export default function TwitterIcon({ width, height, className }: TwitterIconProps) {
-	return <XIcon title="X" width={width ?? 24} height={height ?? 24} className={className} />;
+  return <XIcon title="X" width={width ?? 24} height={height ?? 24} className={className} />;
 }

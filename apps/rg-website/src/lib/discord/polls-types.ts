@@ -25,64 +25,64 @@ export type SourceSondage = "embed" | "reactions" | "api";
 export type FournisseurSondage = "easypoll" | "discord";
 
 export interface OptionSondage {
-	/** Rang d'origine dans l'encart, 0-indexé. C'est la CLÉ d'une option : deux
-	 *  choix peuvent porter exactement le même libellé dans un même sondage. */
-	position: number;
-	/** Emoji de vote : soit un caractère Unicode, soit `<:nom:id>` / `<a:nom:id>`. */
-	emoji: string | null;
-	label: string;
-	/** `null` quand le sondage n'a jamais publié ses résultats. */
-	votes: number | null;
-	/** Pourcentage TEL QUE PUBLIÉ par le bot (arrondi maison, somme 99 → 101). */
-	percentage: number | null;
+  /** Rang d'origine dans l'encart, 0-indexé. C'est la CLÉ d'une option : deux
+   *  choix peuvent porter exactement le même libellé dans un même sondage. */
+  position: number;
+  /** Emoji de vote : soit un caractère Unicode, soit `<:nom:id>` / `<a:nom:id>`. */
+  emoji: string | null;
+  label: string;
+  /** `null` quand le sondage n'a jamais publié ses résultats. */
+  votes: number | null;
+  /** Pourcentage TEL QUE PUBLIÉ par le bot (arrondi maison, somme 99 → 101). */
+  percentage: number | null;
 }
 
 export interface VisuelSondage {
-	/** URL absolue https, construite côté serveur depuis le chemin de stockage.
-	 *  Jamais une URL `cdn.discordapp.com` : celles-ci sont signées et expirent. */
-	url: string;
-	width: number | null;
-	height: number | null;
-	/** Texte alternatif saisi par l'autrice sur Discord. `null` = rien d'honnête
-	 *  à dire, on rend alors un `alt=""` (image décorative). */
-	alt: string | null;
-	message_id: string | null;
+  /** URL absolue https, construite côté serveur depuis le chemin de stockage.
+   *  Jamais une URL `cdn.discordapp.com` : celles-ci sont signées et expirent. */
+  url: string;
+  width: number | null;
+  height: number | null;
+  /** Texte alternatif saisi par l'autrice sur Discord. `null` = rien d'honnête
+   *  à dire, on rend alors un `alt=""` (image décorative). */
+  alt: string | null;
+  message_id: string | null;
 }
 
 export interface Sondage {
-	poll_id: string;
-	provider: FournisseurSondage;
-	source: SourceSondage;
-	/**
-	 * Langue d'INTERFACE de l'encart EasyPoll, jamais celle de la question.
-	 *
-	 * Elle est déduite des en-têtes du bot (« Choices » ⇒ en, « Choix » ⇒ fr,
-	 * défaut « en ») : deux sondages portant la MÊME question française sont
-	 * classés l'un « fr », l'autre « en ». Valeur de DIAGNOSTIC — ne jamais la
-	 * recâbler sur un attribut `lang`, ce serait annoncer 48 questions françaises
-	 * comme anglaises. Pour marquer vraiment la langue du texte, il faudrait la
-	 * détecter sur `question`.
-	 */
-	language: "fr" | "en" | null;
-	message_id: string | null;
-	channel_id: string;
-	guild_id: string;
-	question: string;
-	/** Texte de présentation posté avec l'encart, mentions de rôle nues retirées. */
-	chapo: string | null;
-	creator_username: string | null;
-	command: string | null;
-	/** 0 = choix illimités. */
-	max_choices: number;
-	locked: boolean;
-	ended: boolean;
-	ends_at: string | null;
-	created_at: string;
-	total_votes: number | null;
-	total_voters: number | null;
-	results_hidden: boolean;
-	visuel: VisuelSondage | null;
-	options: OptionSondage[];
+  poll_id: string;
+  provider: FournisseurSondage;
+  source: SourceSondage;
+  /**
+   * Langue d'INTERFACE de l'encart EasyPoll, jamais celle de la question.
+   *
+   * Elle est déduite des en-têtes du bot (« Choices » ⇒ en, « Choix » ⇒ fr,
+   * défaut « en ») : deux sondages portant la MÊME question française sont
+   * classés l'un « fr », l'autre « en ». Valeur de DIAGNOSTIC — ne jamais la
+   * recâbler sur un attribut `lang`, ce serait annoncer 48 questions françaises
+   * comme anglaises. Pour marquer vraiment la langue du texte, il faudrait la
+   * détecter sur `question`.
+   */
+  language: "fr" | "en" | null;
+  message_id: string | null;
+  channel_id: string;
+  guild_id: string;
+  question: string;
+  /** Texte de présentation posté avec l'encart, mentions de rôle nues retirées. */
+  chapo: string | null;
+  creator_username: string | null;
+  command: string | null;
+  /** 0 = choix illimités. */
+  max_choices: number;
+  locked: boolean;
+  ended: boolean;
+  ends_at: string | null;
+  created_at: string;
+  total_votes: number | null;
+  total_voters: number | null;
+  results_hidden: boolean;
+  visuel: VisuelSondage | null;
+  options: OptionSondage[];
 }
 
 /**
@@ -92,8 +92,8 @@ export interface Sondage {
  * lirait « personne n'a voté ».
  */
 export function aDesResultats(sondage: Sondage): boolean {
-	if (sondage.total_votes === null) return false;
-	return sondage.options.some((option) => option.votes !== null);
+  if (sondage.total_votes === null) return false;
+  return sondage.options.some(option => option.votes !== null);
 }
 
 /**
@@ -107,17 +107,17 @@ export function aDesResultats(sondage: Sondage): boolean {
  *    167 votes), et diviser par lui donnerait des barres au-delà de 100 %.
  */
 export function pourcentage(option: OptionSondage, sondage: Sondage): number {
-	const total = sondage.total_votes;
-	if (option.votes === null || total === null || total <= 0) return 0;
-	return (option.votes / total) * 100;
+  const total = sondage.total_votes;
+  if (option.votes === null || total === null || total <= 0) return 0;
+  return (option.votes / total) * 100;
 }
 
 /** Options triées par votes décroissants ; ex æquo départagés par `position`. */
 export function classement(sondage: Sondage): OptionSondage[] {
-	return sondage.options.toSorted((a, b) => {
-		const ecart = (b.votes ?? -1) - (a.votes ?? -1);
-		return ecart === 0 ? a.position - b.position : ecart;
-	});
+  return sondage.options.toSorted((a, b) => {
+    const ecart = (b.votes ?? -1) - (a.votes ?? -1);
+    return ecart === 0 ? a.position - b.position : ecart;
+  });
 }
 
 /**
@@ -125,10 +125,10 @@ export function classement(sondage: Sondage): OptionSondage[] {
  * seul choix, ou une égalité en tête ⇒ `null` (on ne couronne pas un ex æquo).
  */
 export function gagnant(sondage: Sondage): OptionSondage | null {
-	if (!aDesResultats(sondage) || sondage.options.length < 2) return null;
-	const [premier, second] = classement(sondage);
-	if (!premier || !second || premier.votes === null || premier.votes <= 0) return null;
-	return premier.votes === second.votes ? null : premier;
+  if (!aDesResultats(sondage) || sondage.options.length < 2) return null;
+  const [premier, second] = classement(sondage);
+  if (!premier || !second || premier.votes === null || premier.votes <= 0) return null;
+  return premier.votes === second.votes ? null : premier;
 }
 
 /**
@@ -145,23 +145,23 @@ export function gagnant(sondage: Sondage): OptionSondage | null {
 export type EtatSondage = "termine" | "en-cours" | "inconnu";
 
 export function etatSondage(sondage: Sondage): EtatSondage {
-	if (sondage.ended) return "termine";
-	return sondage.ends_at === null ? "inconnu" : "en-cours";
+  if (sondage.ended) return "termine";
+  return sondage.ends_at === null ? "inconnu" : "en-cours";
 }
 
 /** « Terminé » / « En cours » / « État non publié ». */
 export function libelleEtat(sondage: Sondage): string {
-	switch (etatSondage(sondage)) {
-		case "termine": {
-			return "Terminé";
-		}
-		case "en-cours": {
-			return "En cours";
-		}
-		default: {
-			return "État non publié";
-		}
-	}
+  switch (etatSondage(sondage)) {
+    case "termine": {
+      return "Terminé";
+    }
+    case "en-cours": {
+      return "En cours";
+    }
+    default: {
+      return "État non publié";
+    }
+  }
 }
 
 /**
@@ -169,25 +169,23 @@ export function libelleEtat(sondage: Sondage): string {
  * tourne VRAIMENT. Un état non publié prend une pastille neutre.
  */
 export function varianteBadgeEtat(sondage: Sondage): "secondary" | "success" | "outline" {
-	switch (etatSondage(sondage)) {
-		case "termine": {
-			return "secondary";
-		}
-		case "en-cours": {
-			return "success";
-		}
-		default: {
-			return "outline";
-		}
-	}
+  switch (etatSondage(sondage)) {
+    case "termine": {
+      return "secondary";
+    }
+    case "en-cours": {
+      return "success";
+    }
+    default: {
+      return "outline";
+    }
+  }
 }
 
 /** Libellé du nombre de choix autorisés par personne (0 = illimité). */
 export function libelleChoixAutorises(sondage: Sondage): string {
-	if (sondage.max_choices <= 0) return "Choix illimités";
-	return sondage.max_choices === 1
-		? "1 choix par personne"
-		: `${sondage.max_choices} choix par personne`;
+  if (sondage.max_choices <= 0) return "Choix illimités";
+  return sondage.max_choices === 1 ? "1 choix par personne" : `${sondage.max_choices} choix par personne`;
 }
 
 /**
@@ -195,13 +193,13 @@ export function libelleChoixAutorises(sondage: Sondage): string {
  * chiffres sont exactement ceux publiés par le bot.
  */
 export function mentionSource(sondage: Sondage): string | null {
-	if (sondage.source === "reactions") {
-		return "Décompte reconstitué à partir des réactions archivées du salon : à un vote près.";
-	}
-	if (sondage.results_hidden) {
-		return "Résultats masqués : le bot ne les a pas publiés tant que le sondage tourne.";
-	}
-	return null;
+  if (sondage.source === "reactions") {
+    return "Décompte reconstitué à partir des réactions archivées du salon : à un vote près.";
+  }
+  if (sondage.results_hidden) {
+    return "Résultats masqués : le bot ne les a pas publiés tant que le sondage tourne.";
+  }
+  return null;
 }
 
 /**
@@ -210,13 +208,13 @@ export function mentionSource(sondage: Sondage): string | null {
  * reconstitués — on ne l'invente pas).
  */
 export function libelleParticipation(sondage: Sondage): string | null {
-	const votes = sondage.total_votes;
-	if (votes === null) return null;
-	const motVotes = votes === 1 ? "vote" : "votes";
-	const votants = sondage.total_voters;
-	if (votants === null) return `${votes} ${motVotes}`;
-	const motVotants = votants === 1 ? "participant" : "participants";
-	return `${votes} ${motVotes} de ${votants} ${motVotants}`;
+  const votes = sondage.total_votes;
+  if (votes === null) return null;
+  const motVotes = votes === 1 ? "vote" : "votes";
+  const votants = sondage.total_voters;
+  if (votants === null) return `${votes} ${motVotes}`;
+  const motVotants = votants === 1 ? "participant" : "participants";
+  return `${votes} ${motVotes} de ${votants} ${motVotants}`;
 }
 
 /**
@@ -225,7 +223,7 @@ export function libelleParticipation(sondage: Sondage): string | null {
  * laisse l'Unicode tel quel — rien à réimplémenter ici.
  */
 export function libelleAvecEmoji(option: OptionSondage): string {
-	return option.emoji ? `${option.emoji} ${option.label}` : option.label;
+  return option.emoji ? `${option.emoji} ${option.label}` : option.label;
 }
 
 /**
@@ -235,15 +233,13 @@ export function libelleAvecEmoji(option: OptionSondage): string {
  * approximative.
  */
 export function resumeQuestion(question: string, longueurMax = 80): string {
-	const brut = texteBrut(analyserInline(question, CONTEXTE_MENTIONS_VIDE))
-		.replace(/\s+/g, " ")
-		.trim();
-	if (brut.length <= longueurMax) return brut;
-	return `${brut.slice(0, longueurMax - 1).trimEnd()}…`;
+  const brut = texteBrut(analyserInline(question, CONTEXTE_MENTIONS_VIDE)).replace(/\s+/g, " ").trim();
+  if (brut.length <= longueurMax) return brut;
+  return `${brut.slice(0, longueurMax - 1).trimEnd()}…`;
 }
 
 /** Lien vers le message d'origine, uniquement si les trois identifiants existent. */
 export function lienMessageDiscord(sondage: Sondage): string | null {
-	if (!sondage.message_id || !sondage.channel_id || !sondage.guild_id) return null;
-	return `https://discord.com/channels/${sondage.guild_id}/${sondage.channel_id}/${sondage.message_id}`;
+  if (!sondage.message_id || !sondage.channel_id || !sondage.guild_id) return null;
+  return `https://discord.com/channels/${sondage.guild_id}/${sondage.channel_id}/${sondage.message_id}`;
 }

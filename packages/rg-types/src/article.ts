@@ -17,7 +17,7 @@ export type Article = Database["public"]["Tables"]["articles"]["Row"];
 
 /** Article avec status typé. */
 export type ArticleWithStatus = Omit<Article, "status"> & {
-	status: ArticleStatus | null;
+  status: ArticleStatus | null;
 };
 
 /** Catégorie d'article. */
@@ -37,21 +37,21 @@ export type Chronicle = Database["public"]["Tables"]["chronicles"]["Row"];
 
 /** Résultat de recherche unifié. */
 export interface SearchHit {
-	kind: "article" | "chronique";
-	id: string;
-	title: string;
-	slug: string;
-	excerpt: string | null;
-	app: string | null;
-	created_at: string | Date;
+  kind: "article" | "chronique";
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  app: string | null;
+  created_at: string | Date;
 }
 
 // --- Helpers --------------------------------------------------------------
 
 export function isArticleStatus(value: unknown): value is ArticleStatus {
-	return typeof value === "string" && (ARTICLE_STATUS as readonly string[]).includes(value);
+  return typeof value === "string" && (ARTICLE_STATUS as readonly string[]).includes(value);
 }
 
 export function isPublished(article: { status: string | null }): boolean {
-	return article.status === "published";
+  return article.status === "published";
 }

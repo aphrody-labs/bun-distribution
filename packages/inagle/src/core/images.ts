@@ -240,41 +240,29 @@ export function createImageAPI(options?: { baseUrl?: string; useRawPaths?: boole
     faceUrl: (charaIdStr: string) => formatUrl(buildImageIndex().faces.get(charaIdStr)),
 
     uniform: (charaIdStr: string) =>
-      buildImageIndex().uniforms.get(charaIdStr) ||
-      `200_icon/10_icon_chr/uniform/${charaIdStr}_0.webp`,
+      buildImageIndex().uniforms.get(charaIdStr) || `200_icon/10_icon_chr/uniform/${charaIdStr}_0.webp`,
     uniformUrl: (charaIdStr: string) =>
-      formatUrl(
-        buildImageIndex().uniforms.get(charaIdStr) ||
-          `200_icon/10_icon_chr/uniform/${charaIdStr}_0.webp`,
-      ),
+      formatUrl(buildImageIndex().uniforms.get(charaIdStr) || `200_icon/10_icon_chr/uniform/${charaIdStr}_0.webp`),
 
     // === Skills ===
     skill: (skillIdStr: string) =>
       buildImageIndex().skills.get(skillIdStr) || `220_img/telop_waza/fr/${skillIdStr}_0.webp`,
     skillUrl: (skillIdStr: string) =>
-      formatUrl(
-        buildImageIndex().skills.get(skillIdStr) || `220_img/telop_waza/fr/${skillIdStr}_0.webp`,
-      ),
+      formatUrl(buildImageIndex().skills.get(skillIdStr) || `220_img/telop_waza/fr/${skillIdStr}_0.webp`),
 
     // === Auras ===
     aura: (auraIdStr: string) => buildImageIndex().auras.get(auraIdStr),
     auraUrl: (auraIdStr: string) => formatUrl(buildImageIndex().auras.get(auraIdStr)),
 
     // === Items ===
-    item: (itemIdStr: string) =>
-      buildImageIndex().items.get(itemIdStr) || `200_icon/02_icon_item/${itemIdStr}.webp`,
+    item: (itemIdStr: string) => buildImageIndex().items.get(itemIdStr) || `200_icon/02_icon_item/${itemIdStr}.webp`,
     itemUrl: (itemIdStr: string) =>
-      formatUrl(
-        buildImageIndex().items.get(itemIdStr) || `200_icon/02_icon_item/${itemIdStr}.webp`,
-      ),
+      formatUrl(buildImageIndex().items.get(itemIdStr) || `200_icon/02_icon_item/${itemIdStr}.webp`),
 
     // === Emblems ===
-    emblem: (emblemId: string) =>
-      buildImageIndex().emblems.get(emblemId) || `200_icon/01_icon_emblem/${emblemId}.webp`,
+    emblem: (emblemId: string) => buildImageIndex().emblems.get(emblemId) || `200_icon/01_icon_emblem/${emblemId}.webp`,
     emblemUrl: (emblemId: string) =>
-      formatUrl(
-        buildImageIndex().emblems.get(emblemId) || `200_icon/01_icon_emblem/${emblemId}.webp`,
-      ),
+      formatUrl(buildImageIndex().emblems.get(emblemId) || `200_icon/01_icon_emblem/${emblemId}.webp`),
 
     // === Classes & Common ===
     class: (classId: string) => buildImageIndex().classes.get(classId),

@@ -6,13 +6,12 @@ import WalletClient from "./wallet-client";
  * interdit. L'interface, inchangée, vit dans `wallet-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Mon portefeuille",
-	description:
-		"Solde d'Achilléa Points, historique des transactions et récompenses de tournoi.",
-	chemin: "/achillea/wallet",
-	indexable: false,
+  titre: "Mon portefeuille",
+  description: "Solde d'Achilléa Points, historique des transactions et récompenses de tournoi.",
+  chemin: "/achillea/wallet",
+  indexable: false,
 });
 
 export default function WalletPage() {
-	return <WalletClient />;
+  return <WalletClient />;
 }

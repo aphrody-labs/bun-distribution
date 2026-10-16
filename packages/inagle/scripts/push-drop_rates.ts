@@ -20,7 +20,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 
 const rows = loadAllDropRates();
 
-const records = rows.map((r) => ({
+const records = rows.map(r => ({
   id: r.id,
   source: r.source,
   source_id: r.sourceId,

@@ -16,9 +16,7 @@
         },
         "mcp": {
           "kind": "adapter",
-          "evidence": [
-            ["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]
-          ]
+          "evidence": [["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]]
         },
         "browser": {
           "kind": "not-exposed",
@@ -37,9 +35,7 @@
         },
         "mcp": {
           "kind": "adapter",
-          "evidence": [
-            ["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]
-          ]
+          "evidence": [["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]]
         },
         "browser": {
           "kind": "not-exposed",
@@ -61,9 +57,7 @@
         },
         "mcp": {
           "kind": "adapter",
-          "evidence": [
-            ["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]
-          ]
+          "evidence": [["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]]
         },
         "browser": {
           "kind": "not-exposed",
@@ -85,9 +79,7 @@
         },
         "mcp": {
           "kind": "adapter",
-          "evidence": [
-            ["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]
-          ]
+          "evidence": [["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]]
         },
         "browser": {
           "kind": "not-exposed",
@@ -106,9 +98,7 @@
         },
         "mcp": {
           "kind": "adapter",
-          "evidence": [
-            ["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]
-          ]
+          "evidence": [["crates/nie/aphrody-nie-mcp/src/main.rs", "aphrody_nie_cli::main_entry_with"]]
         },
         "browser": {
           "kind": "not-exposed",

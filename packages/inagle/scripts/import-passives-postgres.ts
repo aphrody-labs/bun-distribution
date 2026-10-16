@@ -17,7 +17,7 @@ const rows = payload.player ?? [];
 const db = createInagleSql<Database>();
 
 for (let offset = 0; offset < rows.length; offset += 200) {
-  const batch = rows.slice(offset, offset + 200).map((row) => {
+  const batch = rows.slice(offset, offset + 200).map(row => {
     const name = (row.name ?? {}) as Record<string, string | null>;
     const description = (row.description ?? {}) as Record<string, string | null>;
     return {
@@ -40,7 +40,7 @@ for (let offset = 0; offset < rows.length; offset += 200) {
   await db
     .insertInto("inagle_passives")
     .values(batch)
-    .onConflict((oc) =>
+    .onConflict(oc =>
       oc.column("id").doUpdateSet(({ ref }) => ({
         name_fr: ref("excluded.name_fr"),
         name_en: ref("excluded.name_en"),

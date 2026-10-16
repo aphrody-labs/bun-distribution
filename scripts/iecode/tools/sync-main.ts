@@ -32,8 +32,7 @@ export function decideRelation(
 }
 
 export function allowedArtifactPath(path: string): boolean {
-  if (!path || path.startsWith("/") || path.includes("\\") || path.split("/").includes(".."))
-    return false;
+  if (!path || path.startsWith("/") || path.includes("\\") || path.split("/").includes("..")) return false;
   return /^(?:bin\/(?:nie|nie-site|nie-model-serve)|bundle\/[A-Za-z0-9._/-]+)$/u.test(path);
 }
 
@@ -50,25 +49,18 @@ if (import.meta.main && (args.includes("--help") || args.includes("-h"))) {
   );
   process.exit(0);
 }
-const unknown = args.filter((arg) => arg !== "--apply" && arg !== "--local-only");
+const unknown = args.filter(arg => arg !== "--apply" && arg !== "--local-only");
 if (import.meta.main && unknown.length) throw new Error(`Unknown option(s): ${unknown.join(", ")}`);
 
 const sshAlias = process.env["IECODE_VPS_ALIAS"] ?? process.env["NIE_VPS_ALIAS"] ?? "vps";
 const remoteRepo = process.env["IECODE_VPS_REPO"] ?? process.env["NIE_VPS_REPO"] ?? "";
-if (
-  import.meta.main &&
-  (!remoteRepo.startsWith("/") || remoteRepo.includes("\n") || remoteRepo.includes("\0"))
-)
-  throw new Error(
-    "IECODE_VPS_REPO (or NIE_VPS_REPO) must be the absolute path of the remote checkout.",
-  );
+if (import.meta.main && (!remoteRepo.startsWith("/") || remoteRepo.includes("\n") || remoteRepo.includes("\0")))
+  throw new Error("IECODE_VPS_REPO (or NIE_VPS_REPO) must be the absolute path of the remote checkout.");
 if (import.meta.main && !/^[A-Za-z0-9_.@-]+$/u.test(sshAlias))
   throw new Error("NIE_VPS_ALIAS contains unsafe characters.");
 
 const nieRoot = resolve(
-  process.env["IECODE_REPO_ROOT"] ||
-    process.env["NIE_REPO_ROOT"] ||
-    resolve(import.meta.dir, "..", ".."),
+  process.env["IECODE_REPO_ROOT"] || process.env["NIE_REPO_ROOT"] || resolve(import.meta.dir, "..", ".."),
 );
 if (import.meta.main) process.chdir(nieRoot);
 
@@ -79,13 +71,8 @@ let sequence = 0;
 
 async function run(argv: string[], mutate = false): Promise<Result> {
   const label = String(++sequence).padStart(3, "0");
-  const display = argv
-    .map((part) => (/^[A-Za-z0-9_./:@=-]+$/u.test(part) ? part : JSON.stringify(part)))
-    .join(" ");
-  await writeFile(
-    `${logDir}/${label}.command.txt`,
-    `${mutate && !apply ? "DRY-RUN " : ""}${display}\n`,
-  );
+  const display = argv.map(part => (/^[A-Za-z0-9_./:@=-]+$/u.test(part) ? part : JSON.stringify(part))).join(" ");
+  await writeFile(`${logDir}/${label}.command.txt`, `${mutate && !apply ? "DRY-RUN " : ""}${display}\n`);
   if (mutate && !apply) {
     await Promise.all([
       writeFile(`${logDir}/${label}.stdout.txt`, ""),
@@ -106,8 +93,7 @@ async function run(argv: string[], mutate = false): Promise<Result> {
     writeFile(`${logDir}/${label}.stderr.txt`, stderr),
     writeFile(`${logDir}/${label}.exit.txt`, `${code}\n`),
   ]);
-  if (code !== 0)
-    throw new Error(`${argv[0]} failed with exit ${code}; see ${logDir}/${label}.stderr.txt`);
+  if (code !== 0) throw new Error(`${argv[0]} failed with exit ${code}; see ${logDir}/${label}.stderr.txt`);
   return { code, stdout: stdout.trim(), stderr: stderr.trim() };
 }
 
@@ -124,12 +110,7 @@ async function isAncestor(older: string, newer: string): Promise<boolean> {
 }
 
 async function localRelation(local: string, remote: string): Promise<Relation> {
-  return decideRelation(
-    local,
-    remote,
-    await isAncestor(remote, local),
-    await isAncestor(local, remote),
-  );
+  return decideRelation(local, remote, await isAncestor(remote, local), await isAncestor(local, remote));
 }
 
 async function remoteHash(): Promise<string> {
@@ -195,8 +176,7 @@ async function copyFromVps(remote: string, local: string, expected: string): Pro
     true,
   );
   if (apply) {
-    if ((await sha256(temporary)) !== expected)
-      throw new Error(`Downloaded checksum mismatch for ${local}`);
+    if ((await sha256(temporary)) !== expected) throw new Error(`Downloaded checksum mismatch for ${local}`);
     await rename(temporary, local);
   }
 }
@@ -206,15 +186,11 @@ async function copyToVps(local: string, remote: string, expected: string): Promi
   if (await commandExists("vps-upload")) {
     await run(["vps-upload", local, temporary], true);
   } else {
-    await run(
-      ["ssh", "--", sshAlias, "bash", "-lc", `mkdir -p -- ${quote(dirname(remote))}`],
-      true,
-    );
+    await run(["ssh", "--", sshAlias, "bash", "-lc", `mkdir -p -- ${quote(dirname(remote))}`], true);
     await run(["scp", "--", local, `${sshAlias}:${temporary}`], true);
   }
   if (apply) {
-    if ((await remoteSha256(temporary)) !== expected)
-      throw new Error(`Uploaded checksum mismatch for ${remote}`);
+    if ((await remoteSha256(temporary)) !== expected) throw new Error(`Uploaded checksum mismatch for ${remote}`);
     await run(["ssh", "--", sshAlias, "mv", "--", temporary, remote], true);
   }
 }
@@ -227,8 +203,7 @@ async function reconcileArtifacts(commit: string): Promise<void> {
     const remote = `${remoteRepo}/var/releases/${commit}/${artifact.path}`;
     const [localHash, vpsHash] = await Promise.all([sha256(local), remoteSha256(remote)]);
     if (localHash === artifact.sha256 && vpsHash === artifact.sha256) continue;
-    if (vpsHash === artifact.sha256 && localHash !== artifact.sha256)
-      await copyFromVps(remote, local, artifact.sha256);
+    if (vpsHash === artifact.sha256 && localHash !== artifact.sha256) await copyFromVps(remote, local, artifact.sha256);
     else if (localHash === artifact.sha256 && vpsHash !== artifact.sha256)
       await copyToVps(local, remote, artifact.sha256);
     else throw new Error(`No verified same-commit source for ${artifact.path}`);
@@ -239,14 +214,10 @@ async function main(): Promise<void> {
   const branch = (await git("branch", "--show-current")).stdout;
   if (branch !== "main") throw new Error(`Expected local main, found ${branch || "detached HEAD"}`);
   const dirty = (await git("status", "--porcelain", "--untracked-files=all")).stdout;
-  if (dirty && apply)
-    throw new Error("Working tree must be clean before applying source reconciliation.");
-  if (dirty)
-    process.stdout.write("DRY-RUN warning: working tree is dirty; --apply would refuse.\n");
+  if (dirty && apply) throw new Error("Working tree must be clean before applying source reconciliation.");
+  if (dirty) process.stdout.write("DRY-RUN warning: working tree is dirty; --apply would refuse.\n");
   const local = (await git("rev-parse", "HEAD")).stdout;
-  let origin = (await run(["git", "ls-remote", "origin", "refs/heads/main"])).stdout.split(
-    /\s+/u,
-  )[0];
+  let origin = (await run(["git", "ls-remote", "origin", "refs/heads/main"])).stdout.split(/\s+/u)[0];
   if (!origin) throw new Error("origin/main was not returned by git ls-remote.");
   const vps = await remoteHash();
   process.stdout.write(`local=${local}\norigin=${origin}\nvps=${vps}\n`);
@@ -259,9 +230,7 @@ async function main(): Promise<void> {
       () => false,
     ));
   if (!originKnown)
-    throw new Error(
-      "origin/main commit is not local; rerun with --apply to fetch before ancestry decisions.",
-    );
+    throw new Error("origin/main commit is not local; rerun with --apply to fetch before ancestry decisions.");
   const localVsOrigin = await localRelation(local, origin);
   if (localVsOrigin === "diverged") throw new Error("local main and origin/main diverged.");
   if (localVsOrigin === "local-ahead") {
@@ -274,8 +243,7 @@ async function main(): Promise<void> {
       origin = local;
     }
   }
-  if (localVsOrigin === "remote-ahead")
-    await run(["git", "merge", "--ff-only", "origin/main"], true);
+  if (localVsOrigin === "remote-ahead") await run(["git", "merge", "--ff-only", "origin/main"], true);
 
   if (!localOnly && vps !== origin) {
     const vpsKnown = await git("cat-file", "-e", `${vps}^{commit}`).then(
@@ -294,9 +262,7 @@ async function main(): Promise<void> {
 
   const target = localVsOrigin === "local-ahead" ? local : origin;
   if (!localOnly && vps !== target) {
-    const remoteDirty = (
-      await ssh(`cd ${quote(remoteRepo)} && git status --porcelain --untracked-files=all`)
-    ).stdout;
+    const remoteDirty = (await ssh(`cd ${quote(remoteRepo)} && git status --porcelain --untracked-files=all`)).stdout;
     if (remoteDirty) throw new Error("VPS checkout must be clean before fast-forwarding.");
     await run(
       [
@@ -311,13 +277,11 @@ async function main(): Promise<void> {
     );
   }
   await reconcileArtifacts(target);
-  process.stdout.write(
-    `${apply ? "Applied" : "Planned"} reconciliation for ${target}. Logs: ${logDir}\n`,
-  );
+  process.stdout.write(`${apply ? "Applied" : "Planned"} reconciliation for ${target}. Logs: ${logDir}\n`);
 }
 
 if (import.meta.main) {
-  main().catch((error) => {
+  main().catch(error => {
     process.stderr.write(
       `sync-main failed: ${error instanceof Error ? error.message : String(error)}\nLogs: ${logDir}\n`,
     );

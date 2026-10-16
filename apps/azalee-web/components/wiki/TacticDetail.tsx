@@ -80,9 +80,7 @@ export function TacticDetail({ tactic }: TacticDetailProps) {
                 <p className="text-sm text-on-surface-variant mt-0.5">{tactic.name}</p>
               )}
               {tactic.name_ja && (
-                <p className="text-xs text-on-surface-variant/50 mt-0.5 font-light">
-                  {tactic.name_ja}
-                </p>
+                <p className="text-xs text-on-surface-variant/50 mt-0.5 font-light">{tactic.name_ja}</p>
               )}
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary/10 text-xs font-bold text-tertiary">
@@ -102,18 +100,14 @@ export function TacticDetail({ tactic }: TacticDetailProps) {
         </div>
 
         {/* Stats Row — masquée si aucune stat (sinon rangée fantôme bordée/paddée). */}
-        {((tactic.power != null && tactic.power > 0) ||
-          tactic.duration != null ||
-          tactic.cooldown != null) && (
+        {((tactic.power != null && tactic.power > 0) || tactic.duration != null || tactic.cooldown != null) && (
           <div className="px-4 sm:px-6 py-4 border-t border-outline-variant/20">
             <div className="flex flex-wrap gap-4">
               {tactic.power != null && tactic.power > 0 && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
                   <Flame size={20} className="text-primary" aria-hidden="true" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">
-                      Puissance
-                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Puissance</p>
                     <p className="text-sm font-black text-on-surface">{tactic.power}</p>
                   </div>
                 </div>
@@ -122,9 +116,7 @@ export function TacticDetail({ tactic }: TacticDetailProps) {
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
                   <Timer size={20} className="text-tertiary" aria-hidden="true" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">
-                      Durée
-                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Durée</p>
                     <p className="text-sm font-black text-on-surface">{tactic.duration}s</p>
                   </div>
                 </div>
@@ -133,9 +125,7 @@ export function TacticDetail({ tactic }: TacticDetailProps) {
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
                   <Hourglass size={20} className="text-error" aria-hidden="true" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">
-                      Recharge
-                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Recharge</p>
                     <p className="text-sm font-black text-on-surface">{tactic.cooldown}s</p>
                   </div>
                 </div>

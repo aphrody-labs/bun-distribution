@@ -76,24 +76,20 @@ export function EditorMetadata({
             <div className="space-y-8">
               {/* Titre */}
               <section className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Titre
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Titre</h3>
                 <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4">
                   <input
                     className="w-full bg-transparent text-xl font-bold font-sans placeholder:text-muted-foreground/40 border-none outline-hidden focus:ring-0 p-0 leading-tight"
                     placeholder="Titre de l'article"
                     value={title}
-                    onChange={(e) => onTitleChange(e.target.value)}
+                    onChange={e => onTitleChange(e.target.value)}
                   />
                 </div>
               </section>
 
               {/* Publication */}
               <section className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Publication
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Publication</h3>
                 <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4">
                   <PublicationSection
                     status={status}
@@ -108,9 +104,7 @@ export function EditorMetadata({
 
               {/* Tags */}
               <section className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Tags
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tags</h3>
                 <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4">
                   <TagsSection tags={tags} onTagsChange={onTagsChange} />
                 </div>
@@ -118,9 +112,7 @@ export function EditorMetadata({
 
               {/* Extrait */}
               <section className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Extrait
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extrait</h3>
                 <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4">
                   <ExcerptSection excerpt={excerpt} onExcerptChange={onExcerptChange} />
                 </div>
@@ -149,9 +141,7 @@ export function EditorMetadata({
 
               {/* URL & SEO */}
               <section className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  URL & SEO
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL & SEO</h3>
                 <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-4">
                   <SeoSection
                     slug={slug}

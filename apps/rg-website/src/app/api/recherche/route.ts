@@ -5,5 +5,5 @@ import { respondreRecherche } from "./search-response";
 export const dynamic = "force-dynamic";
 
 export async function GET(requete: Request) {
-	return respondreRecherche(requete, searchExecutors);
+  return respondreRecherche(requete, searchExecutors);
 }

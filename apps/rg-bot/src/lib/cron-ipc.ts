@@ -49,34 +49,34 @@ export const CHEMIN_SOCKET_CRON_DEFAUT = "/var/lib/rg/cron.sock";
  * par connexion est nul devant celui d'un test qui ment.
  */
 export function cheminSocketCron(): string {
-	return Bun.env.RG_CRON_SOCKET ?? CHEMIN_SOCKET_CRON_DEFAUT;
+  return Bun.env.RG_CRON_SOCKET ?? CHEMIN_SOCKET_CRON_DEFAUT;
 }
 
 /** Requête JSON, une par ligne. `cmd` est le verbe. */
 export interface RequeteIpc {
-	cmd: string;
-	[clef: string]: unknown;
+  cmd: string;
+  [clef: string]: unknown;
 }
 
 /** Réponse du cron. `success` est toujours présent. */
 export interface ReponseIpc {
-	success: boolean;
-	error?: string;
-	code?: string;
-	[clef: string]: unknown;
+  success: boolean;
+  error?: string;
+  code?: string;
+  [clef: string]: unknown;
 }
 
 /** Poussée spontanée du cron vers le bot abonné. */
 export interface EvenementIpc {
-	event: string;
-	[clef: string]: unknown;
+  event: string;
+  [clef: string]: unknown;
 }
 
 export class CronInjoignableError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "CronInjoignableError";
-	}
+  constructor(message: string) {
+    super(message);
+    this.name = "CronInjoignableError";
+  }
 }
 
 const DELAI_DEFAUT_MS = 10_000;
@@ -89,91 +89,89 @@ const DELAI_DEFAUT_MS = 10_000;
  * une socket UNIX est négligeable devant le tour de réseau Discord.
  */
 export async function appelerCron<T extends ReponseIpc = ReponseIpc>(
-	requete: RequeteIpc,
-	options: { timeoutMs?: number } = {}
+  requete: RequeteIpc,
+  options: { timeoutMs?: number } = {},
 ): Promise<T> {
-	const delai = options.timeoutMs ?? DELAI_DEFAUT_MS;
+  const delai = options.timeoutMs ?? DELAI_DEFAUT_MS;
 
-	return await new Promise<T>((resoudre, rejeter) => {
-		let tampon = "";
-		let termine = false;
-		let socket: Socket<undefined> | null = null;
+  return await new Promise<T>((resoudre, rejeter) => {
+    let tampon = "";
+    let termine = false;
+    let socket: Socket<undefined> | null = null;
 
-		const minuteur = setTimeout(() => {
-			finir(() => rejeter(new CronInjoignableError(`Aucune réponse du cron en ${delai} ms.`)));
-		}, delai);
+    const minuteur = setTimeout(() => {
+      finir(() => rejeter(new CronInjoignableError(`Aucune réponse du cron en ${delai} ms.`)));
+    }, delai);
 
-		function finir(action: () => void): void {
-			if (termine) {
-				return;
-			}
-			termine = true;
-			clearTimeout(minuteur);
-			try {
-				socket?.end();
-			} catch {
-				/* socket déjà fermée */
-			}
-			action();
-		}
+    function finir(action: () => void): void {
+      if (termine) {
+        return;
+      }
+      termine = true;
+      clearTimeout(minuteur);
+      try {
+        socket?.end();
+      } catch {
+        /* socket déjà fermée */
+      }
+      action();
+    }
 
-		Bun.connect<undefined>({
-			unix: cheminSocketCron(),
-			socket: {
-				open(ouverte) {
-					socket = ouverte;
-					ouverte.write(`${JSON.stringify(requete)}\n`);
-				},
-				data(_ouverte, donnees) {
-					tampon += donnees.toString();
-					const coupure = tampon.indexOf("\n");
-					if (coupure < 0) {
-						return;
-					}
-					const ligne = tampon.slice(0, coupure);
-					try {
-						finir(() => resoudre(JSON.parse(ligne) as T));
-					} catch (err) {
-						finir(() =>
-							rejeter(
-								new CronInjoignableError(
-									`Réponse illisible du cron : ${err instanceof Error ? err.message : String(err)}`
-								)
-							)
-						);
-					}
-				},
-				error(_ouverte, err) {
-					finir(() => rejeter(new CronInjoignableError(err.message)));
-				},
-				close() {
-					finir(() =>
-						rejeter(new CronInjoignableError("Le cron a fermé la connexion sans répondre."))
-					);
-				},
-			},
-		}).catch((err: unknown) => {
-			finir(() =>
-				rejeter(
-					new CronInjoignableError(
-						`Socket ${cheminSocketCron()} injoignable — rg-cron.service n'expose le pont qu'après un redémarrage (${
-							err instanceof Error ? err.message : String(err)
-						}).`
-					)
-				)
-			);
-		});
-	});
+    Bun.connect<undefined>({
+      unix: cheminSocketCron(),
+      socket: {
+        open(ouverte) {
+          socket = ouverte;
+          ouverte.write(`${JSON.stringify(requete)}\n`);
+        },
+        data(_ouverte, donnees) {
+          tampon += donnees.toString();
+          const coupure = tampon.indexOf("\n");
+          if (coupure < 0) {
+            return;
+          }
+          const ligne = tampon.slice(0, coupure);
+          try {
+            finir(() => resoudre(JSON.parse(ligne) as T));
+          } catch (err) {
+            finir(() =>
+              rejeter(
+                new CronInjoignableError(
+                  `Réponse illisible du cron : ${err instanceof Error ? err.message : String(err)}`,
+                ),
+              ),
+            );
+          }
+        },
+        error(_ouverte, err) {
+          finir(() => rejeter(new CronInjoignableError(err.message)));
+        },
+        close() {
+          finir(() => rejeter(new CronInjoignableError("Le cron a fermé la connexion sans répondre.")));
+        },
+      },
+    }).catch((err: unknown) => {
+      finir(() =>
+        rejeter(
+          new CronInjoignableError(
+            `Socket ${cheminSocketCron()} injoignable — rg-cron.service n'expose le pont qu'après un redémarrage (${
+              err instanceof Error ? err.message : String(err)
+            }).`,
+          ),
+        ),
+      );
+    });
+  });
 }
 
 /** Vrai si le pont répond. Sert aux commandes pour distinguer « refusé » de « absent ». */
 export async function cronDisponible(): Promise<boolean> {
-	try {
-		const reponse = await appelerCron({ cmd: "health" }, { timeoutMs: 2_000 });
-		return reponse.success === true;
-	} catch {
-		return false;
-	}
+  try {
+    const reponse = await appelerCron({ cmd: "health" }, { timeoutMs: 2_000 });
+    return reponse.success === true;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Abonnement aux poussées du cron ────────────────────────────────────────
@@ -196,85 +194,85 @@ let minuteurReconnexion: ReturnType<typeof setTimeout> | null = null;
  * @returns une fonction qui coupe l'abonnement.
  */
 export function abonnerCron(surEvenement: (evenement: EvenementIpc) => void): () => void {
-	abonnementActif = true;
-	tentatives = 0;
-	connecter();
+  abonnementActif = true;
+  tentatives = 0;
+  connecter();
 
-	function planifierReconnexion(): void {
-		if (!abonnementActif || minuteurReconnexion) {
-			return;
-		}
-		// 2 s, 4 s, 8 s… plafonné à 2 min : une socket absente ne doit pas faire
-		// tourner le processus en boucle serrée pendant des heures.
-		const attente = Math.min(120_000, 2_000 * 2 ** Math.min(tentatives, 6));
-		tentatives += 1;
-		minuteurReconnexion = setTimeout(() => {
-			minuteurReconnexion = null;
-			connecter();
-		}, attente);
-	}
+  function planifierReconnexion(): void {
+    if (!abonnementActif || minuteurReconnexion) {
+      return;
+    }
+    // 2 s, 4 s, 8 s… plafonné à 2 min : une socket absente ne doit pas faire
+    // tourner le processus en boucle serrée pendant des heures.
+    const attente = Math.min(120_000, 2_000 * 2 ** Math.min(tentatives, 6));
+    tentatives += 1;
+    minuteurReconnexion = setTimeout(() => {
+      minuteurReconnexion = null;
+      connecter();
+    }, attente);
+  }
 
-	function connecter(): void {
-		if (!abonnementActif) {
-			return;
-		}
-		let tampon = "";
-		Bun.connect<undefined>({
-			unix: cheminSocketCron(),
-			socket: {
-				open(ouverte) {
-					socketAbonnement = ouverte;
-					tentatives = 0;
-					ouverte.write(`${JSON.stringify({ cmd: "subscribe" })}\n`);
-					console.info("[cron-ipc] abonné au pont", cheminSocketCron());
-				},
-				data(_ouverte, donnees) {
-					tampon += donnees.toString();
-					let coupure = tampon.indexOf("\n");
-					while (coupure >= 0) {
-						const ligne = tampon.slice(0, coupure).trim();
-						tampon = tampon.slice(coupure + 1);
-						coupure = tampon.indexOf("\n");
-						if (ligne.length === 0) {
-							continue;
-						}
-						try {
-							const charge = JSON.parse(ligne) as Partial<EvenementIpc>;
-							if (typeof charge.event === "string") {
-								surEvenement(charge as EvenementIpc);
-							}
-						} catch (err) {
-							console.warn("[cron-ipc] ligne illisible :", err);
-						}
-					}
-				},
-				error(_ouverte, err) {
-					console.warn("[cron-ipc] abonnement en erreur :", err.message);
-				},
-				close() {
-					socketAbonnement = null;
-					planifierReconnexion();
-				},
-			},
-		}).catch(() => {
-			// Silencieux : tant que le cron n'a pas redémarré avec le pont, la
-			// socket n'existe pas. En journaliser l'absence toutes les 2 s
-			// noierait le journal sans rien apprendre.
-			planifierReconnexion();
-		});
-	}
+  function connecter(): void {
+    if (!abonnementActif) {
+      return;
+    }
+    let tampon = "";
+    Bun.connect<undefined>({
+      unix: cheminSocketCron(),
+      socket: {
+        open(ouverte) {
+          socketAbonnement = ouverte;
+          tentatives = 0;
+          ouverte.write(`${JSON.stringify({ cmd: "subscribe" })}\n`);
+          console.info("[cron-ipc] abonné au pont", cheminSocketCron());
+        },
+        data(_ouverte, donnees) {
+          tampon += donnees.toString();
+          let coupure = tampon.indexOf("\n");
+          while (coupure >= 0) {
+            const ligne = tampon.slice(0, coupure).trim();
+            tampon = tampon.slice(coupure + 1);
+            coupure = tampon.indexOf("\n");
+            if (ligne.length === 0) {
+              continue;
+            }
+            try {
+              const charge = JSON.parse(ligne) as Partial<EvenementIpc>;
+              if (typeof charge.event === "string") {
+                surEvenement(charge as EvenementIpc);
+              }
+            } catch (err) {
+              console.warn("[cron-ipc] ligne illisible :", err);
+            }
+          }
+        },
+        error(_ouverte, err) {
+          console.warn("[cron-ipc] abonnement en erreur :", err.message);
+        },
+        close() {
+          socketAbonnement = null;
+          planifierReconnexion();
+        },
+      },
+    }).catch(() => {
+      // Silencieux : tant que le cron n'a pas redémarré avec le pont, la
+      // socket n'existe pas. En journaliser l'absence toutes les 2 s
+      // noierait le journal sans rien apprendre.
+      planifierReconnexion();
+    });
+  }
 
-	return () => {
-		abonnementActif = false;
-		if (minuteurReconnexion) {
-			clearTimeout(minuteurReconnexion);
-			minuteurReconnexion = null;
-		}
-		try {
-			socketAbonnement?.end();
-		} catch {
-			/* socket déjà fermée */
-		}
-		socketAbonnement = null;
-	};
+  return () => {
+    abonnementActif = false;
+    if (minuteurReconnexion) {
+      clearTimeout(minuteurReconnexion);
+      minuteurReconnexion = null;
+    }
+    try {
+      socketAbonnement?.end();
+    } catch {
+      /* socket déjà fermée */
+    }
+    socketAbonnement = null;
+  };
 }

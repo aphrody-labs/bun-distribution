@@ -44,9 +44,7 @@ export default function ClanProfilePage({
   const [activeTab, setActiveTab] = useState<"members" | "orgchart">("members");
 
   const [applicationOpen, setApplicationOpen] = useState(false);
-  const [selectedDistinction, setSelectedDistinction] = useState<ClanMemberDistinction>(
-    ClanMemberDistinction.Player,
-  );
+  const [selectedDistinction, setSelectedDistinction] = useState<ClanMemberDistinction>(ClanMemberDistinction.Player);
   const [applying, setApplying] = useState(false);
   const [applicationError, setApplicationError] = useState<string | null>(null);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
@@ -150,9 +148,7 @@ export default function ClanProfilePage({
     0: 3, // À l'essai
   };
   const sortedMembers = [...members].sort(
-    (a, b) =>
-      (roleWeights[a.clanRole as unknown as number] ?? 9) -
-      (roleWeights[b.clanRole as unknown as number] ?? 9),
+    (a, b) => (roleWeights[a.clanRole as unknown as number] ?? 9) - (roleWeights[b.clanRole as unknown as number] ?? 9),
   );
 
   const roleLabel = (r: number) => {
@@ -198,13 +194,7 @@ export default function ClanProfilePage({
         {/* Clan Banner Image */}
         <div className="relative h-44 sm:h-64 w-full bg-surface-variant">
           {clan.avatarUrl ? (
-            <Image
-              src={clan.avatarUrl}
-              alt={`Avatar ${clan.name}`}
-              fill
-              unoptimized
-              className="object-cover"
-            />
+            <Image src={clan.avatarUrl} alt={`Avatar ${clan.name}`} fill unoptimized className="object-cover" />
           ) : (
             <div className="size-full bg-gradient-to-br from-[#6d00ce]/30 to-[#DFFF57]/20 flex items-center justify-center opacity-70" />
           )}
@@ -216,13 +206,7 @@ export default function ClanProfilePage({
           {/* Logo */}
           <div className="relative size-28 sm:size-36 rounded-2xl overflow-hidden border-4 border-surface bg-surface-variant shrink-0 shadow-2xl">
             {clan.avatarUrl ? (
-              <Image
-                src={clan.avatarUrl}
-                alt={clan.name}
-                fill
-                unoptimized
-                className="object-cover"
-              />
+              <Image src={clan.avatarUrl} alt={clan.name} fill unoptimized className="object-cover" />
             ) : (
               <div className="size-full flex items-center justify-center font-black text-3xl text-on-surface-variant">
                 {clan.shortName}
@@ -262,9 +246,7 @@ export default function ClanProfilePage({
                 onClick={() =>
                   isAuthenticated
                     ? setApplicationOpen(true)
-                    : window.location.assign(
-                        `/login?redirect=${encodeURIComponent(`/achillea/clans/${clanId}`)}`,
-                      )
+                    : window.location.assign(`/login?redirect=${encodeURIComponent(`/achillea/clans/${clanId}`)}`)
                 }
                 className="rounded-xl font-bold text-xs shadow-md"
               >
@@ -280,9 +262,7 @@ export default function ClanProfilePage({
         <Card className="rounded-2xl border-outline/20">
           <CardContent className="p-6 space-y-2">
             <h2 className="font-bold text-base text-on-surface">À propos du clan</h2>
-            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">
-              {clan.biography}
-            </p>
+            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">{clan.biography}</p>
           </CardContent>
         </Card>
       )}
@@ -323,18 +303,13 @@ export default function ClanProfilePage({
           </output>
         ) : activeTab === "members" ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sortedMembers.map((m) => (
+            {sortedMembers.map(m => (
               <div
                 key={m.user?.id}
                 className="flex items-center justify-between p-3.5 rounded-2xl border border-outline/20 bg-surface hover:border-primary/40 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <UserAvatar
-                    userId={m.user?.id}
-                    avatar={m.user?.avatar}
-                    name={m.user?.username}
-                    size="md"
-                  />
+                  <UserAvatar userId={m.user?.id} avatar={m.user?.avatar} name={m.user?.username} size="md" />
                   <div className="min-w-0">
                     <Link
                       href={`/achillea/users/${m.user?.id}`}
@@ -367,9 +342,7 @@ export default function ClanProfilePage({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Rejoindre {clan.name}</DialogTitle>
-            <DialogDescription>
-              Choisis le rôle que tu souhaites rejoindre dans ce clan.
-            </DialogDescription>
+            <DialogDescription>Choisis le rôle que tu souhaites rejoindre dans ce clan.</DialogDescription>
           </DialogHeader>
 
           {applicationSuccess ? (
@@ -380,16 +353,14 @@ export default function ClanProfilePage({
           ) : (
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-on-surface">
-                  Poste souhaité au sein du clan
-                </p>
+                <p className="text-xs font-semibold text-on-surface">Poste souhaité au sein du clan</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: "Joueur compétitif", value: ClanMemberDistinction.Player },
                     { label: "Staff / Encadrement", value: ClanMemberDistinction.Staff },
                     { label: "Artiste / Graphiste", value: ClanMemberDistinction.Artist },
                     { label: "Créateur de contenu", value: ClanMemberDistinction.ContentCreator },
-                  ].map((role) => (
+                  ].map(role => (
                     <button
                       key={role.value}
                       type="button"

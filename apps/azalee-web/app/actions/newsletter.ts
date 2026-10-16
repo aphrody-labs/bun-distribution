@@ -11,13 +11,8 @@ function generateUnsubscribeToken(): string {
 const VALID_FREQUENCIES = ["instant", "daily", "weekly", "monthly"] as const;
 type NewsletterFrequency = (typeof VALID_FREQUENCIES)[number];
 
-function normalizeFrequency(
-  value: string | undefined,
-  fallback: NewsletterFrequency = "weekly",
-): NewsletterFrequency {
-  return VALID_FREQUENCIES.includes(value as NewsletterFrequency)
-    ? (value as NewsletterFrequency)
-    : fallback;
+function normalizeFrequency(value: string | undefined, fallback: NewsletterFrequency = "weekly"): NewsletterFrequency {
+  return VALID_FREQUENCIES.includes(value as NewsletterFrequency) ? (value as NewsletterFrequency) : fallback;
 }
 
 export async function subscribeNewsletter(
@@ -83,9 +78,7 @@ export async function subscribeNewsletter(
   return { success: true };
 }
 
-export async function unsubscribeNewsletter(
-  token: string,
-): Promise<{ success: boolean; error?: string }> {
+export async function unsubscribeNewsletter(token: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const client = supabase as any;

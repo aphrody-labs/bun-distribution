@@ -65,7 +65,7 @@ export function ModelToolbar({ base, q, view }: { base: string; q: string; view:
         <input
           type="search"
           value={texte}
-          onChange={(e) => setTexte(e.target.value)}
+          onChange={e => setTexte(e.target.value)}
           placeholder="Rechercher un modèle — nom ou code"
           aria-label="Rechercher un modèle"
           className="w-full rounded-full border border-outline-variant bg-surface-container-low py-2 pl-10 pr-4 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant focus:border-primary"

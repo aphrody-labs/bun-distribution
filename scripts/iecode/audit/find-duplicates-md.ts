@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 const proc = Bun.spawnSync(["git", "ls-files", "*.md"]);
 const files = proc.stdout.toString().trim().split("\n").filter(Boolean);
@@ -8,7 +8,10 @@ const phraseMap = new Map<string, string[]>();
 
 for (const f of files) {
   const text = readFileSync(f, "utf-8");
-  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 120);
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(p => p.length > 120);
   for (const p of paragraphs) {
     // normaliser un peu
     const clean = p.replace(/\s+/g, " ").slice(0, 150);

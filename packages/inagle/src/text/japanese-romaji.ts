@@ -10,14 +10,14 @@ export function japaneseToRomaji(name: string | undefined | null): string | null
     return null;
   }
 
-  const hasKana = [...name].some((ch) => isKana(ch));
+  const hasKana = [...name].some(ch => isKana(ch));
   if (!hasKana) {
     return null;
   }
 
   const parts = name.split(/[・\s]+/).filter(Boolean);
   const romaji = parts
-    .map((p) => {
+    .map(p => {
       const r = toRomaji(p);
       return r.charAt(0).toUpperCase() + r.slice(1);
     })

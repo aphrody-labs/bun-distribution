@@ -27,12 +27,12 @@ export const HOTE_IMAGES_VROID = "vroid-hub.pximg.net";
 
 /** Configuration OAuth résolue de l'application VRoid Hub. */
 export interface ConfigVroid {
-	/** Application ID (le « ClientID » d'OAuth 2.0). Public par nature. */
-	applicationId: string;
-	/** Secret client — ne doit jamais quitter le serveur. */
-	secret: string;
-	/** URI de redirection déclarée sur hub.vroid.com. */
-	redirectUri: string;
-	/** Scopes demandés, séparés par des espaces. */
-	scope: string;
+  /** Application ID (le « ClientID » d'OAuth 2.0). Public par nature. */
+  applicationId: string;
+  /** Secret client — ne doit jamais quitter le serveur. */
+  secret: string;
+  /** URI de redirection déclarée sur hub.vroid.com. */
+  redirectUri: string;
+  /** Scopes demandés, séparés par des espaces. */
+  scope: string;
 }

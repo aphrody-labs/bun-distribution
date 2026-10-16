@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync } from "node:fs";
 
 const proc = Bun.spawnSync(["git", "ls-files", "*.md"]);
 const files = proc.stdout.toString().trim().split("\n").filter(Boolean);
@@ -19,7 +19,7 @@ for (const f of files) {
     file: f,
     size: content.length,
     lines: lines.length,
-    firstLine: lines[0]?.slice(0, 80) || ""
+    firstLine: lines[0]?.slice(0, 80) || "",
   });
 }
 

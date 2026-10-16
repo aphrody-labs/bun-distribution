@@ -90,7 +90,7 @@ export const MODEL_FAMILIES: ModelFamilyDef[] = [
 
 /** La définition d'une famille, ou `undefined` si l'identifiant est inconnu. */
 export function modelFamily(id: string): ModelFamilyDef | undefined {
-  return MODEL_FAMILIES.find((f) => f.id === id);
+  return MODEL_FAMILIES.find(f => f.id === id);
 }
 
 /**
@@ -102,9 +102,7 @@ export function modelFamily(id: string): ModelFamilyDef | undefined {
  * autrement rend un 404 « sous-domaine chr non servable ».
  */
 export function modelGlbUrl(famille: ModelFamily, code: string): string {
-  return famille === "chara"
-    ? `${CDN_BASE}/model-full/${code}.glb`
-    : `${CDN_BASE}/model-chr/${famille}/${code}.glb`;
+  return famille === "chara" ? `${CDN_BASE}/model-full/${code}.glb` : `${CDN_BASE}/model-chr/${famille}/${code}.glb`;
 }
 
 /**

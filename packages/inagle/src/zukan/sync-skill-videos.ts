@@ -83,12 +83,7 @@ export interface SyncZukanSkillVideosResult {
   applied: boolean;
 }
 
-function planFor(
-  row: SkillRow,
-  skill: ZukanSkill,
-  via: string,
-  source: "zukan" | "dreamscape",
-): SkillVideoPlan | null {
+function planFor(row: SkillRow, skill: ZukanSkill, via: string, source: "zukan" | "dreamscape"): SkillVideoPlan | null {
   if (skill.videos.length === 0) return null;
   return {
     id: row.id,
@@ -117,12 +112,12 @@ export async function syncZukanSkillVideos(
 			order by internal_code
 		`) as unknown as SkillRow[];
 
-    const targets = options.onlyMissing ? rows.filter((r) => !r.video_url) : rows;
+    const targets = options.onlyMissing ? rows.filter(r => !r.video_url) : rows;
     const index = await fetchZukanSkillIndex();
 
     const plans: SkillVideoPlan[] = [];
     const planById = new Map<string, SkillVideoPlan>();
-    const byCode = new Map(rows.map((r) => [r.internal_code ?? "", r]));
+    const byCode = new Map(rows.map(r => [r.internal_code ?? "", r]));
     const pendingDreamscape: SkillRow[] = [];
     const unresolved: SyncZukanSkillVideosResult["unresolved"] = [];
 
@@ -151,10 +146,7 @@ export async function syncZukanSkillVideos(
       const baseCode = row.internal_code ? DREAMSCAPE_BASE[row.internal_code] : undefined;
       const base = baseCode ? byCode.get(baseCode) : undefined;
       const basePlan = base ? planById.get(base.id) : undefined;
-      const baseEn =
-        !basePlan && base?.name_en
-          ? index.byNameEn.get(normalizeSkillName(base.name_en))
-          : undefined;
+      const baseEn = !basePlan && base?.name_en ? index.byNameEn.get(normalizeSkillName(base.name_en)) : undefined;
       const inherited = basePlan ?? (baseEn?.videos.length ? baseEn : undefined);
       if (!inherited) {
         unresolved.push({
@@ -216,7 +208,7 @@ export async function syncZukanSkillVideos(
       skillsUpdated,
       unresolved,
       videosUpserted,
-      zukanMulti: index.en.filter((s) => s.videos.length > 1).length,
+      zukanMulti: index.en.filter(s => s.videos.length > 1).length,
       zukanSkills: index.en.length,
     };
   } finally {

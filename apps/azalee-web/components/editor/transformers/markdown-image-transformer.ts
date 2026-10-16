@@ -4,7 +4,7 @@ import { $createImageNode, $isImageNode, ImageNode } from "@/components/editor/n
 
 export const IMAGE: TextMatchTransformer = {
   dependencies: [ImageNode],
-  export: (node) => {
+  export: node => {
     if (!$isImageNode(node)) {
       return null;
     }

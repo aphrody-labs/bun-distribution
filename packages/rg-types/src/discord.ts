@@ -35,24 +35,24 @@ export const ACHILLEA_GUILD_ID = "1055585286320554055" as const;
  * Discord role IDs publics/utilitaires.
  */
 export const DISCORD_ROLES = {
-	ADMIN: "1072993826400124958",
-	VICE_ADMIN: "1371547071362105374",
-	MOD_RESP: "1267847004919300096",
-	MEDAILLE_AZALEE: "1364903623783612498",
-	NIVEAU_ROY: "1371177169216077864",
-	NIVEAU_GAELLE: "1371176894791159819",
-	NIVEAU_EVANS: "1371176241213870131",
-	STAFF_RG: "1072991720268111892", // Souvent lié au STAFF_ROLE_ID env
+  ADMIN: "1072993826400124958",
+  VICE_ADMIN: "1371547071362105374",
+  MOD_RESP: "1267847004919300096",
+  MEDAILLE_AZALEE: "1364903623783612498",
+  NIVEAU_ROY: "1371177169216077864",
+  NIVEAU_GAELLE: "1371176894791159819",
+  NIVEAU_EVANS: "1371176241213870131",
+  STAFF_RG: "1072991720268111892", // Souvent lié au STAFF_ROLE_ID env
 } as const;
 
 /**
  * Discord channel IDs (salons) importants.
  */
 export const DISCORD_CHANNELS = {
-	NEWS: "1252886898988192266", // DISCORD_NEWS_CHANNEL_ID
-	LOGS_BOT: "1252886898988192266",
-	BIENVENUE: "1252886898988192266",
-	ANNONCES: "1252886898988192266",
+  NEWS: "1252886898988192266", // DISCORD_NEWS_CHANNEL_ID
+  LOGS_BOT: "1252886898988192266",
+  BIENVENUE: "1252886898988192266",
+  ANNONCES: "1252886898988192266",
 } as const;
 
 /** Backward compat */
@@ -60,10 +60,10 @@ export const MEDAILLE_AZALEE_ROLE_ID = DISCORD_ROLES.MEDAILLE_AZALEE;
 
 /** Helper : résout le guild ID depuis env avec fallback constant. */
 export function resolveGuildId(env: Record<string, string | undefined>): string {
-	const fromEnv = env.GUILD_ID || env.DISCORD_GUILD_ID;
-	// Filtre les valeurs qui ressemblent à $VAR non-expanded (Bun .env piège)
-	if (fromEnv && !fromEnv.startsWith("$")) return fromEnv;
-	return RG_GUILD_ID;
+  const fromEnv = env.GUILD_ID || env.DISCORD_GUILD_ID;
+  // Filtre les valeurs qui ressemblent à $VAR non-expanded (Bun .env piège)
+  if (fromEnv && !fromEnv.startsWith("$")) return fromEnv;
+  return RG_GUILD_ID;
 }
 
 /**
@@ -79,23 +79,23 @@ export function resolveGuildId(env: Record<string, string | undefined>): string 
  * non-numériques sont écartés (même piège `$VAR` non substitué que ci-dessus).
  */
 export function resolveGuildIds(env: Record<string, string | undefined>): string[] {
-	const principale = resolveGuildId(env);
-	const supplementaires = (env.DISCORD_EXTRA_GUILD_IDS ?? "")
-		.split(",")
-		.map((v) => v.trim())
-		.filter((v) => /^\d{15,25}$/.test(v));
+  const principale = resolveGuildId(env);
+  const supplementaires = (env.DISCORD_EXTRA_GUILD_IDS ?? "")
+    .split(",")
+    .map(v => v.trim())
+    .filter(v => /^\d{15,25}$/.test(v));
 
-	// Achillea rejoint la liste par défaut le 14/8/2026 : le bot Rose Griffon y est
-	// réellement présent (`GET /users/@me/guilds`), et sans cette ligne il y était en
-	// ligne et muet — exactement le symptôme décrit plus haut. Le poser ici plutôt que
-	// dans `DISCORD_EXTRA_GUILD_IDS` le rend visible, testé et versionné : une variable
-	// d'environnement posée à la main sur une seule machine se perd au redéploiement
-	// suivant, et personne ne sait plus pourquoi les commandes ont disparu.
-	//
-	// Lister une guilde que le bot n'a pas rejointe reste sans danger : `src/index.ts`
-	// intersecte cette liste avec les guildes réellement rejointes avant d'enregistrer
-	// quoi que ce soit.
-	return [...new Set([principale, AZALEE_GUILD_ID, ACHILLEA_GUILD_ID, ...supplementaires])];
+  // Achillea rejoint la liste par défaut le 14/8/2026 : le bot Rose Griffon y est
+  // réellement présent (`GET /users/@me/guilds`), et sans cette ligne il y était en
+  // ligne et muet — exactement le symptôme décrit plus haut. Le poser ici plutôt que
+  // dans `DISCORD_EXTRA_GUILD_IDS` le rend visible, testé et versionné : une variable
+  // d'environnement posée à la main sur une seule machine se perd au redéploiement
+  // suivant, et personne ne sait plus pourquoi les commandes ont disparu.
+  //
+  // Lister une guilde que le bot n'a pas rejointe reste sans danger : `src/index.ts`
+  // intersecte cette liste avec les guildes réellement rejointes avant d'enregistrer
+  // quoi que ce soit.
+  return [...new Set([principale, AZALEE_GUILD_ID, ACHILLEA_GUILD_ID, ...supplementaires])];
 }
 
 /* ── LIMITES DURES DE L'API DISCORD ────────────────────────────────────────
@@ -160,13 +160,13 @@ export const EMOTE_FETE_DEFAUT = "<:RG_roy_confetti:1412136639303520380>";
  * dans le module casserait le bundle de l'un des trois.
  */
 export function emotesRoseGriffon(env: Record<string, string | undefined>): {
-	annonce: string;
-	fete: string;
+  annonce: string;
+  fete: string;
 } {
-	return {
-		annonce: env.RG_EMOTE_ANNONCE || EMOTE_ANNONCE_DEFAUT,
-		fete: env.RG_EMOTE_FETE || EMOTE_FETE_DEFAUT,
-	};
+  return {
+    annonce: env.RG_EMOTE_ANNONCE || EMOTE_ANNONCE_DEFAUT,
+    fete: env.RG_EMOTE_FETE || EMOTE_FETE_DEFAUT,
+  };
 }
 
 /**
@@ -178,8 +178,8 @@ export function emotesRoseGriffon(env: Record<string, string | undefined>): {
  * chaîne d'un caractère de TROP, c'est-à-dire exactement le rejet qu'on évite.
  */
 export function borner(texte: string, limite: number): string {
-	if (texte.length <= limite) {
-		return texte;
-	}
-	return `${texte.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
+  if (texte.length <= limite) {
+    return texte;
+  }
+  return `${texte.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
 }

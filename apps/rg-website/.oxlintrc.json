@@ -10,6 +10,17 @@
     "nextjs/no-img-element": "warn",
     "jsx-a11y/anchor-is-valid": "off",
     "typescript/no-non-null-assertion": "warn",
-    "react/exhaustive-deps": "warn"
+    "react/exhaustive-deps": "warn",
+    "react/set-state-in-effect": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/prefer-tag-over-role": "warn",
+    "jsx-a11y/no-noninteractive-tabindex": "warn",
+    "jsx-a11y/media-has-caption": "warn",
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "oxc/erasing-op": "warn",
+    "unicorn/no-empty-file": "warn",
+    "import/namespace": "warn",
+    "no-irregular-whitespace": "warn"
   }
 }

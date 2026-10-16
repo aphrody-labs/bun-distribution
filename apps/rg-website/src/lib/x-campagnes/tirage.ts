@@ -86,90 +86,90 @@ export type GraineOrigine = "balise" | "locale";
 
 /** Une entrée du roster, réduite à ce qui entre dans l'empreinte : la clé et le poids. */
 export interface EntreeRoster {
-	/**
-	 * ⚠ IDENTIFIANT IMMUABLE, JAMAIS UN PSEUDO. `discord:908269053347504170`,
-	 * `x:2870776923`, `instagram:orphelinalius`.
-	 *
-	 * Pourquoi c'est structurel et pas conventionnel : `u = HMAC(graine, cle)`. Si
-	 * `cle` était un pseudo affiché, un participant qui change de pseudo APRÈS la
-	 * révélation de la graine se refabrique un ticket — même coût que l'attaque
-	 * mesurée au point 1, soit 8 essais. Le CHECK
-	 * `x_campagne_participants_cle_immuable` refuse `x:San_La_Vraie` en base, et le
-	 * corpus prouve que le besoin est réel : l'`author_id` X `1451855639592849409`
-	 * y porte DEUX handles historiques (`yukun_0073DQ` puis `yukun073DQ`).
-	 *
-	 * Instagram est le seul point fragile : `campagne_creations_instagram` n'a pas
-	 * de colonne d'identifiant numérique, seulement `auteur_pseudo`. Cette clé-là
-	 * ne survivrait donc PAS à un changement de pseudo. C'est écrit, pas caché.
-	 */
-	cle: string;
-	/** Entier de 1 à 64 — le plafond est justifié au-dessus de `MAX_POIDS`. */
-	poids: number;
+  /**
+   * ⚠ IDENTIFIANT IMMUABLE, JAMAIS UN PSEUDO. `discord:908269053347504170`,
+   * `x:2870776923`, `instagram:orphelinalius`.
+   *
+   * Pourquoi c'est structurel et pas conventionnel : `u = HMAC(graine, cle)`. Si
+   * `cle` était un pseudo affiché, un participant qui change de pseudo APRÈS la
+   * révélation de la graine se refabrique un ticket — même coût que l'attaque
+   * mesurée au point 1, soit 8 essais. Le CHECK
+   * `x_campagne_participants_cle_immuable` refuse `x:San_La_Vraie` en base, et le
+   * corpus prouve que le besoin est réel : l'`author_id` X `1451855639592849409`
+   * y porte DEUX handles historiques (`yukun_0073DQ` puis `yukun073DQ`).
+   *
+   * Instagram est le seul point fragile : `campagne_creations_instagram` n'a pas
+   * de colonne d'identifiant numérique, seulement `auteur_pseudo`. Cette clé-là
+   * ne survivrait donc PAS à un changement de pseudo. C'est écrit, pas caché.
+   */
+  cle: string;
+  /** Entier de 1 à 64 — le plafond est justifié au-dessus de `MAX_POIDS`. */
+  poids: number;
 }
 
 /** Un participant tel que le roster gelé le connaît, avant calcul des poids. */
 export interface ParticipantTirage {
-	cle: string;
-	pseudoAffichage: string;
-	nbOeuvres: number;
-	/** Identifiants d'œuvres, en ordre canonique (trié) : `tirerOeuvre` en dépend. */
-	oeuvres: string[];
+  cle: string;
+  pseudoAffichage: string;
+  nbOeuvres: number;
+  /** Identifiants d'œuvres, en ordre canonique (trié) : `tirerOeuvre` en dépend. */
+  oeuvres: string[];
 }
 
 /** Une entrée après calcul — c'est exactement ce que `x_campagne_tirage_entrees` gèle. */
 export interface EntreeCalculee {
-	cle: string;
-	pseudoAffichage: string;
-	poids: number;
-	oeuvres: string[];
-	/** Les 32 octets du HMAC, en hexadécimal minuscule (64 caractères). */
-	empreinte: string;
-	u: number;
-	cleTri: number;
-	/** 1 = mieux classé. Rempli par `executerTirage`. */
-	rang: number;
+  cle: string;
+  pseudoAffichage: string;
+  poids: number;
+  oeuvres: string[];
+  /** Les 32 octets du HMAC, en hexadécimal minuscule (64 caractères). */
+  empreinte: string;
+  u: number;
+  cleTri: number;
+  /** 1 = mieux classé. Rempli par `executerTirage`. */
+  rang: number;
 }
 
 /** Un gagnant, avec l'œuvre TIRÉE (pas choisie) et son lot. */
 export interface Gagnant {
-	rang: number;
-	cle: string;
-	pseudoAffichage: string;
-	/** L'œuvre mise en avant, tirée par `tirerOeuvre`. `null` si la personne n'en a aucune. */
-	oeuvreId: string | null;
-	lot: string | null;
+  rang: number;
+  cle: string;
+  pseudoAffichage: string;
+  /** L'œuvre mise en avant, tirée par `tirerOeuvre`. `null` si la personne n'en a aucune. */
+  oeuvreId: string | null;
+  lot: string | null;
 }
 
 export interface ParametresTirage {
-	/** Graine en hexadécimal, 64 caractères (32 octets). */
-	graine: string;
-	nbGagnants: number;
-	poidsMode: PoidsMode;
+  /** Graine en hexadécimal, 64 caractères (32 octets). */
+  graine: string;
+  nbGagnants: number;
+  poidsMode: PoidsMode;
 }
 
 export interface ResultatTirage {
-	/** TOUTES les entrées, triées, `rang` de 1 à n. */
-	classement: EntreeCalculee[];
-	/** Les `nbGagnants` premières. */
-	gagnants: Gagnant[];
-	empreinteParticipants: string;
-	empreinteGraine: string;
-	nbParticipants: number;
+  /** TOUTES les entrées, triées, `rang` de 1 à n. */
+  classement: EntreeCalculee[];
+  /** Les `nbGagnants` premières. */
+  gagnants: Gagnant[];
+  empreinteParticipants: string;
+  empreinteGraine: string;
+  nbParticipants: number;
 }
 
 /** Le contenu d'un ENGAGEMENT : ce qui est figé AVANT que le round visé n'existe. */
 export interface Engagement {
-	campagneSlug: string;
-	poidsMode: PoidsMode;
-	nbGagnants: number;
-	/** Un libellé par rang, dans l'ordre. `[]` = classement nu, explicitement vide. */
-	lots: string[];
-	/** Poids DÉJÀ résolus par le mode. */
-	entrees: EntreeRoster[];
-	baliseReseau: string;
-	baliseChaine: string;
-	/** Le round VISÉ, dans le futur. */
-	baliseRound: number;
+  campagneSlug: string;
+  poidsMode: PoidsMode;
+  nbGagnants: number;
+  /** Un libellé par rang, dans l'ordre. `[]` = classement nu, explicitement vide. */
+  lots: string[];
+  /** Poids DÉJÀ résolus par le mode. */
+  entrees: EntreeRoster[];
+  baliseReseau: string;
+  baliseChaine: string;
+  /** Le round VISÉ, dans le futur. */
+  baliseRound: number;
 }
 
 /* ── PRIMITIVES ────────────────────────────────────────────────────────────
@@ -185,45 +185,45 @@ export interface Engagement {
  * saisies visuellement identiques du même pseudo casseraient la vérification.
  */
 export function octetsUtf8(texte: string): Uint8Array {
-	return new TextEncoder().encode(texte.normalize("NFC"));
+  return new TextEncoder().encode(texte.normalize("NFC"));
 }
 
 /** Hexadécimal minuscule, deux chiffres par octet. */
 export function hex(octets: Uint8Array): string {
-	let sortie = "";
-	for (const octet of octets) {
-		sortie += octet.toString(16).padStart(2, "0");
-	}
-	return sortie;
+  let sortie = "";
+  for (const octet of octets) {
+    sortie += octet.toString(16).padStart(2, "0");
+  }
+  return sortie;
 }
 
 /** Lève sur longueur impaire ou caractère hors `[0-9a-f]` — un hexa douteux est un bug, pas une donnée. */
 export function depuisHex(hexa: string): Uint8Array {
-	if (hexa.length % 2 !== 0) {
-		throw new Error(`Hexadécimal de longueur impaire (${hexa.length}) : impossible à décoder en octets.`);
-	}
-	if (!/^[0-9a-f]*$/.test(hexa)) {
-		throw new Error("Hexadécimal invalide : seuls les chiffres 0-9 et les lettres a-f minuscules sont acceptés.");
-	}
-	const octets = new Uint8Array(hexa.length / 2);
-	for (let i = 0; i < octets.length; i += 1) {
-		octets[i] = Number.parseInt(hexa.slice(i * 2, i * 2 + 2), 16);
-	}
-	return octets;
+  if (hexa.length % 2 !== 0) {
+    throw new Error(`Hexadécimal de longueur impaire (${hexa.length}) : impossible à décoder en octets.`);
+  }
+  if (!/^[0-9a-f]*$/.test(hexa)) {
+    throw new Error("Hexadécimal invalide : seuls les chiffres 0-9 et les lettres a-f minuscules sont acceptés.");
+  }
+  const octets = new Uint8Array(hexa.length / 2);
+  for (let i = 0; i < octets.length; i += 1) {
+    octets[i] = Number.parseInt(hexa.slice(i * 2, i * 2 + 2), 16);
+  }
+  return octets;
 }
 
 export function concat(...morceaux: readonly Uint8Array[]): Uint8Array {
-	let total = 0;
-	for (const morceau of morceaux) {
-		total += morceau.length;
-	}
-	const sortie = new Uint8Array(total);
-	let decalage = 0;
-	for (const morceau of morceaux) {
-		sortie.set(morceau, decalage);
-		decalage += morceau.length;
-	}
-	return sortie;
+  let total = 0;
+  for (const morceau of morceaux) {
+    total += morceau.length;
+  }
+  const sortie = new Uint8Array(total);
+  let decalage = 0;
+  for (const morceau of morceaux) {
+    sortie.set(morceau, decalage);
+    decalage += morceau.length;
+  }
+  return sortie;
 }
 
 /**
@@ -236,30 +236,30 @@ export function concat(...morceaux: readonly Uint8Array[]): Uint8Array {
  * forcément la même. L'ordre des octets, lui, est le même partout.
  */
 export function comparerOctets(a: Uint8Array, b: Uint8Array): number {
-	const minimum = Math.min(a.length, b.length);
-	for (let i = 0; i < minimum; i += 1) {
-		// Les `?? 0` sont inatteignables (boucle bornée) mais exigés par
-		// `noUncheckedIndexedAccess`, actif sur tout le monorepo.
-		const oa = a[i] ?? 0;
-		const ob = b[i] ?? 0;
-		if (oa !== ob) {
-			return oa < ob ? -1 : 1;
-		}
-	}
-	if (a.length === b.length) {
-		return 0;
-	}
-	return a.length < b.length ? -1 : 1;
+  const minimum = Math.min(a.length, b.length);
+  for (let i = 0; i < minimum; i += 1) {
+    // Les `?? 0` sont inatteignables (boucle bornée) mais exigés par
+    // `noUncheckedIndexedAccess`, actif sur tout le monorepo.
+    const oa = a[i] ?? 0;
+    const ob = b[i] ?? 0;
+    if (oa !== ob) {
+      return oa < ob ? -1 : 1;
+    }
+  }
+  if (a.length === b.length) {
+    return 0;
+  }
+  return a.length < b.length ? -1 : 1;
 }
 
 /** Entier 32 bits non signé, gros-boutiste. Le SEUL encodage d'entier du module. */
 export function u32be(valeur: number): Uint8Array {
-	if (!Number.isInteger(valeur) || valeur < 0 || valeur > 0xff_ff_ff_ff) {
-		throw new Error(`u32be attend un entier de 0 à 4294967295, reçu ${String(valeur)}.`);
-	}
-	const octets = new Uint8Array(4);
-	new DataView(octets.buffer).setUint32(0, valeur, false);
-	return octets;
+  if (!Number.isInteger(valeur) || valeur < 0 || valeur > 0xff_ff_ff_ff) {
+    throw new Error(`u32be attend un entier de 0 à 4294967295, reçu ${String(valeur)}.`);
+  }
+  const octets = new Uint8Array(4);
+  new DataView(octets.buffer).setUint32(0, valeur, false);
+  return octets;
 }
 
 /**
@@ -271,25 +271,25 @@ export function u32be(valeur: number): Uint8Array {
  * of undefined (reading 'digest') », ce qui n'aide personne.
  */
 function exigerSubtle(): SubtleCrypto {
-	const sous = globalThis.crypto?.subtle;
-	if (!sous) {
-		throw new Error(
-			"crypto.subtle indisponible : la Web Crypto API n'existe qu'en contexte sécurisé (HTTPS ou localhost). " +
-				"Pour vérifier un tirage hors ligne, servez la page (par exemple `bunx serve`) au lieu de l'ouvrir en file://."
-		);
-	}
-	return sous;
+  const sous = globalThis.crypto?.subtle;
+  if (!sous) {
+    throw new Error(
+      "crypto.subtle indisponible : la Web Crypto API n'existe qu'en contexte sécurisé (HTTPS ou localhost). " +
+        "Pour vérifier un tirage hors ligne, servez la page (par exemple `bunx serve`) au lieu de l'ouvrir en file://.",
+    );
+  }
+  return sous;
 }
 
 /** SHA-256, 32 octets. Asynchrone : WebCrypto n'offre aucune variante synchrone. */
 export async function sha256(message: Uint8Array): Promise<Uint8Array> {
-	const condensat = await exigerSubtle().digest("SHA-256", message as BufferSource);
-	return new Uint8Array(condensat);
+  const condensat = await exigerSubtle().digest("SHA-256", message as BufferSource);
+  return new Uint8Array(condensat);
 }
 
 /** SHA-256 rendu directement en hexadécimal — le format de toutes nos empreintes. */
 export async function sha256Hex(message: Uint8Array): Promise<string> {
-	return hex(await sha256(message));
+  return hex(await sha256(message));
 }
 
 /**
@@ -323,20 +323,20 @@ export async function sha256Hex(message: Uint8Array): Promise<string> {
  * un mauvais marché ici.
  */
 export async function hmacSha256(cle: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
-	if (cle.length === 0) {
-		// WebCrypto refuse une clé HMAC vide. Le dire ici plutôt que de laisser
-		// remonter un `OperationError` sans contexte.
-		throw new Error("Clé HMAC vide : la graine doit faire 32 octets.");
-	}
-	const cleImportee = await exigerSubtle().importKey(
-		"raw",
-		cle as BufferSource,
-		{ hash: "SHA-256", name: "HMAC" },
-		false,
-		["sign"]
-	);
-	const signature = await exigerSubtle().sign("HMAC", cleImportee, message as BufferSource);
-	return new Uint8Array(signature);
+  if (cle.length === 0) {
+    // WebCrypto refuse une clé HMAC vide. Le dire ici plutôt que de laisser
+    // remonter un `OperationError` sans contexte.
+    throw new Error("Clé HMAC vide : la graine doit faire 32 octets.");
+  }
+  const cleImportee = await exigerSubtle().importKey(
+    "raw",
+    cle as BufferSource,
+    { hash: "SHA-256", name: "HMAC" },
+    false,
+    ["sign"],
+  );
+  const signature = await exigerSubtle().sign("HMAC", cleImportee, message as BufferSource);
+  return new Uint8Array(signature);
 }
 
 /* ── SÉRIALISATION CANONIQUE À PRÉFIXE DE LONGUEUR ─────────────────────────── */
@@ -376,12 +376,12 @@ export const MAX_ENTREES = 100_000;
  * champ. C'est la même raison qui fait préfixer les longueurs dans TLS.
  */
 export function serialiserChamps(champs: readonly string[]): Uint8Array {
-	const morceaux: Uint8Array[] = [u32be(champs.length)];
-	for (const champ of champs) {
-		const octets = octetsUtf8(champ);
-		morceaux.push(u32be(octets.length), octets);
-	}
-	return concat(...morceaux);
+  const morceaux: Uint8Array[] = [u32be(champs.length)];
+  for (const champ of champs) {
+    const octets = octetsUtf8(champ);
+    morceaux.push(u32be(octets.length), octets);
+  }
+  return concat(...morceaux);
 }
 
 /**
@@ -392,7 +392,7 @@ export function serialiserChamps(champs: readonly string[]): Uint8Array {
  * deux empreintes différentes, et l'engagement publié ne se recalculerait plus.
  */
 export function trierRoster(entrees: readonly EntreeRoster[]): EntreeRoster[] {
-	return entrees.toSorted((a, b) => comparerOctets(octetsUtf8(a.cle), octetsUtf8(b.cle)));
+  return entrees.toSorted((a, b) => comparerOctets(octetsUtf8(a.cle), octetsUtf8(b.cle)));
 }
 
 /**
@@ -411,35 +411,35 @@ export function trierRoster(entrees: readonly EntreeRoster[]): EntreeRoster[] {
  * dirait pas.
  */
 export function serialiserRoster(entrees: readonly EntreeRoster[]): Uint8Array {
-	if (entrees.length > MAX_ENTREES) {
-		throw new Error(`Roster de ${entrees.length} entrées : plafond ${MAX_ENTREES}.`);
-	}
-	const triees = trierRoster(entrees);
-	const morceaux: Uint8Array[] = [octetsUtf8(DOMAINE_ROSTER), u32be(triees.length)];
-	const vues = new Set<string>();
-	for (const entree of triees) {
-		const cleNfc = entree.cle.normalize("NFC");
-		if (cleNfc.length === 0) {
-			throw new Error("Clé de participant vide dans le roster.");
-		}
-		if (vues.has(cleNfc)) {
-			throw new Error(`Clé de participant en double dans le roster : ${cleNfc}`);
-		}
-		vues.add(cleNfc);
-		if (!Number.isInteger(entree.poids) || entree.poids < 1 || entree.poids > MAX_POIDS) {
-			throw new Error(
-				`Poids invalide pour ${cleNfc} : ${String(entree.poids)} (attendu un entier de 1 à ${MAX_POIDS}).`
-			);
-		}
-		const octetsCle = octetsUtf8(cleNfc);
-		morceaux.push(u32be(octetsCle.length), octetsCle, u32be(entree.poids));
-	}
-	return concat(...morceaux);
+  if (entrees.length > MAX_ENTREES) {
+    throw new Error(`Roster de ${entrees.length} entrées : plafond ${MAX_ENTREES}.`);
+  }
+  const triees = trierRoster(entrees);
+  const morceaux: Uint8Array[] = [octetsUtf8(DOMAINE_ROSTER), u32be(triees.length)];
+  const vues = new Set<string>();
+  for (const entree of triees) {
+    const cleNfc = entree.cle.normalize("NFC");
+    if (cleNfc.length === 0) {
+      throw new Error("Clé de participant vide dans le roster.");
+    }
+    if (vues.has(cleNfc)) {
+      throw new Error(`Clé de participant en double dans le roster : ${cleNfc}`);
+    }
+    vues.add(cleNfc);
+    if (!Number.isInteger(entree.poids) || entree.poids < 1 || entree.poids > MAX_POIDS) {
+      throw new Error(
+        `Poids invalide pour ${cleNfc} : ${String(entree.poids)} (attendu un entier de 1 à ${MAX_POIDS}).`,
+      );
+    }
+    const octetsCle = octetsUtf8(cleNfc);
+    morceaux.push(u32be(octetsCle.length), octetsCle, u32be(entree.poids));
+  }
+  return concat(...morceaux);
 }
 
 /** Empreinte du roster, 64 hexa. C'est elle qui entre dans la graine. */
 export async function empreinteRoster(entrees: readonly EntreeRoster[]): Promise<string> {
-	return sha256Hex(serialiserRoster(entrees));
+  return sha256Hex(serialiserRoster(entrees));
 }
 
 /**
@@ -460,26 +460,26 @@ export async function empreinteRoster(entrees: readonly EntreeRoster[]): Promise
  * elle ne se recalcule pas à l'identique.
  */
 export function serialiserEngagement(engagement: Engagement, empreinteParticipants: string): Uint8Array {
-	return concat(
-		octetsUtf8(DOMAINE_ENGAGEMENT),
-		serialiserChamps([
-			engagement.campagneSlug,
-			engagement.poidsMode,
-			String(engagement.nbGagnants),
-			String(engagement.lots.length),
-			...engagement.lots,
-			engagement.baliseReseau,
-			engagement.baliseChaine,
-			String(engagement.baliseRound),
-			empreinteParticipants,
-		])
-	);
+  return concat(
+    octetsUtf8(DOMAINE_ENGAGEMENT),
+    serialiserChamps([
+      engagement.campagneSlug,
+      engagement.poidsMode,
+      String(engagement.nbGagnants),
+      String(engagement.lots.length),
+      ...engagement.lots,
+      engagement.baliseReseau,
+      engagement.baliseChaine,
+      String(engagement.baliseRound),
+      empreinteParticipants,
+    ]),
+  );
 }
 
 /** Empreinte d'engagement, 64 hexa. Recalcule l'empreinte de roster au passage. */
 export async function empreinteEngagement(engagement: Engagement): Promise<string> {
-	const empreinteParticipants = await empreinteRoster(engagement.entrees);
-	return sha256Hex(serialiserEngagement(engagement, empreinteParticipants));
+  const empreinteParticipants = await empreinteRoster(engagement.entrees);
+  return sha256Hex(serialiserEngagement(engagement, empreinteParticipants));
 }
 
 /**
@@ -500,8 +500,8 @@ export async function empreinteEngagement(engagement: Engagement): Promise<strin
  * deux campagnes entre elles.
  */
 export async function clePublique(campagneSlug: string, cle: string): Promise<string> {
-	const condensat = await sha256Hex(serialiserChamps([DOMAINE_CLE_PUBLIQUE, campagneSlug, cle]));
-	return condensat.slice(0, 16);
+  const condensat = await sha256Hex(serialiserChamps([DOMAINE_CLE_PUBLIQUE, campagneSlug, cle]));
+  return condensat.slice(0, 16);
 }
 
 /* ── BALISE PUBLIQUE drand ─────────────────────────────────────────────────── */
@@ -523,16 +523,16 @@ export async function clePublique(campagneSlug: string, cle: string): Promise<st
  * `randomness == SHA-256(signature)`.
  */
 export const DRAND_QUICKNET = {
-	api: "https://api.drand.sh",
-	chaine: "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
-	clePublique:
-		"83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c" +
-		"8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb" +
-		"5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a",
-	genesisSec: 1_692_803_367,
-	periodeSec: 3,
-	reseau: "drand",
-	schema: "bls-unchained-g1-rfc9380",
+  api: "https://api.drand.sh",
+  chaine: "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+  clePublique:
+    "83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c" +
+    "8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb" +
+    "5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a",
+  genesisSec: 1_692_803_367,
+  periodeSec: 3,
+  reseau: "drand",
+  schema: "bls-unchained-g1-rfc9380",
 } as const;
 
 /**
@@ -547,12 +547,12 @@ export const BALISE_LOCALE = { chaine: "", reseau: "locale", round: 0 } as const
 
 /** Round drand couvrant un instant donné. L'instant est un PARAMÈTRE : ce module n'a pas d'horloge. */
 export function roundPour(instantMs: number, genesisSec: number, periodeSec: number): number {
-	return Math.floor((instantMs / 1000 - genesisSec) / periodeSec) + 1;
+  return Math.floor((instantMs / 1000 - genesisSec) / periodeSec) + 1;
 }
 
 /** Instant (ms) auquel un round tombe — sert au compte à rebours et à la garde « pas encore ». */
 export function instantDuRound(round: number, genesisSec: number, periodeSec: number): number {
-	return (genesisSec + (round - 1) * periodeSec) * 1000;
+  return (genesisSec + (round - 1) * periodeSec) * 1000;
 }
 
 /**
@@ -568,32 +568,32 @@ export function instantDuRound(round: number, genesisSec: number, periodeSec: nu
  * même round n'aient pas la même graine.
  */
 export async function graineDepuisBalise(signatureHex: string, empreinteParticipants: string): Promise<string> {
-	return sha256Hex(concat(depuisHex(signatureHex), depuisHex(empreinteParticipants)));
+  return sha256Hex(concat(depuisHex(signatureHex), depuisHex(empreinteParticipants)));
 }
 
 /** Graine de répétition, depuis 32 octets fournis par l'appelant (jamais tirés ici). */
 export function graineLocaleDepuis(octets: Uint8Array): string {
-	if (octets.length !== 32) {
-		throw new Error(`Graine locale de ${octets.length} octets : 32 sont exigés.`);
-	}
-	return hex(octets);
+  if (octets.length !== 32) {
+    throw new Error(`Graine locale de ${octets.length} octets : 32 sont exigés.`);
+  }
+  return hex(octets);
 }
 
 /** Empreinte de la graine — publiée à part, elle atteste la graine sans la révéler. */
 export async function empreinteGraine(graineHex: string): Promise<string> {
-	return sha256Hex(depuisHex(graineHex));
+  return sha256Hex(depuisHex(graineHex));
 }
 
 /** Seule une graine issue d'une balise publique peut être publiée. La base le refuse aussi. */
 export function estGrainePubliable(origine: GraineOrigine): boolean {
-	return origine === "balise";
+  return origine === "balise";
 }
 
 /* ── DÉRIVATION DE u ───────────────────────────────────────────────────────── */
 
 /** Empreinte d'un participant : `HMAC(graine, cle)`. Voir le sens des arguments sur `hmacSha256`. */
 export async function empreinteParticipant(graineHex: string, cle: string): Promise<Uint8Array> {
-	return hmacSha256(depuisHex(graineHex), octetsUtf8(cle));
+  return hmacSha256(depuisHex(graineHex), octetsUtf8(cle));
 }
 
 /**
@@ -605,18 +605,18 @@ export async function empreinteParticipant(graineHex: string, cle: string): Prom
  * serait exactement le genre de repli qu'on ne veut pas dans un tirage.
  */
 export function kDepuisEmpreinte(empreinte: Uint8Array): number {
-	if (empreinte.length < 8) {
-		throw new Error(`Empreinte de ${empreinte.length} octets : au moins 8 sont nécessaires.`);
-	}
-	const vue = new DataView(empreinte.buffer, empreinte.byteOffset, empreinte.byteLength);
-	const haut = vue.getUint32(0, false) >>> 6; // 26 bits de tête
-	const bas = vue.getUint32(4, false) >>> 6; // 26 bits suivants
-	return haut * 67_108_864 + bas; // 52 bits : 0 ≤ k < 2^52
+  if (empreinte.length < 8) {
+    throw new Error(`Empreinte de ${empreinte.length} octets : au moins 8 sont nécessaires.`);
+  }
+  const vue = new DataView(empreinte.buffer, empreinte.byteOffset, empreinte.byteLength);
+  const haut = vue.getUint32(0, false) >>> 6; // 26 bits de tête
+  const bas = vue.getUint32(4, false) >>> 6; // 26 bits suivants
+  return haut * 67_108_864 + bas; // 52 bits : 0 ≤ k < 2^52
 }
 
 /** Idem depuis l'empreinte hexadécimale gelée en base. */
 export function kDepuisHex(empreinteHex: string): number {
-	return kDepuisEmpreinte(depuisHex(empreinteHex.slice(0, 16)));
+  return kDepuisEmpreinte(depuisHex(empreinteHex.slice(0, 16)));
 }
 
 /**
@@ -644,7 +644,7 @@ export function kDepuisHex(empreinteHex: string): number {
  * à 1,360e-3) ; `-ln u` de moyenne 0,99854 et de variance 0,99619 (attendu 1 et 1).
  */
 export function uDepuisEmpreinte(empreinte: Uint8Array): number {
-	return (2 * kDepuisEmpreinte(empreinte) + 1) / 9_007_199_254_740_992;
+  return (2 * kDepuisEmpreinte(empreinte) + 1) / 9_007_199_254_740_992;
 }
 
 /**
@@ -663,7 +663,7 @@ export function uDepuisEmpreinte(empreinte: Uint8Array): number {
  * devient du bruit d'arrondi.
  */
 export function cleDeTri(u: number, poids: number): number {
-	return -Math.log(u) / poids;
+  return -Math.log(u) / poids;
 }
 
 /* ── COMPARATEUR ───────────────────────────────────────────────────────────── */
@@ -693,22 +693,22 @@ export function cleDeTri(u: number, poids: number): number {
  *    spécification, sans clause « et sinon, on ne sait pas ».
  */
 export function comparerEntrees(a: EntreeCalculee, b: EntreeCalculee): number {
-	const ka = BigInt(2 * kDepuisHex(a.empreinte) + 1);
-	const kb = BigInt(2 * kDepuisHex(b.empreinte) + 1);
-	const wa = BigInt(a.poids);
-	const wb = BigInt(b.poids);
-	const gauche = (1n << (53n * wa)) * ka ** wb;
-	const droite = (1n << (53n * wb)) * kb ** wa;
-	if (gauche > droite) {
-		return -1;
-	}
-	if (gauche < droite) {
-		return 1;
-	}
-	if (a.empreinte !== b.empreinte) {
-		return a.empreinte < b.empreinte ? -1 : 1;
-	}
-	return comparerOctets(octetsUtf8(a.cle), octetsUtf8(b.cle));
+  const ka = BigInt(2 * kDepuisHex(a.empreinte) + 1);
+  const kb = BigInt(2 * kDepuisHex(b.empreinte) + 1);
+  const wa = BigInt(a.poids);
+  const wb = BigInt(b.poids);
+  const gauche = (1n << (53n * wa)) * ka ** wb;
+  const droite = (1n << (53n * wb)) * kb ** wa;
+  if (gauche > droite) {
+    return -1;
+  }
+  if (gauche < droite) {
+    return 1;
+  }
+  if (a.empreinte !== b.empreinte) {
+    return a.empreinte < b.empreinte ? -1 : 1;
+  }
+  return comparerOctets(octetsUtf8(a.cle), octetsUtf8(b.cle));
 }
 
 /* ── EXÉCUTION ─────────────────────────────────────────────────────────────── */
@@ -731,22 +731,22 @@ export function comparerEntrees(a: EntreeCalculee, b: EntreeCalculee): number {
  * ticket, tirés un par un sans remise ».
  */
 export function poidsDe(participant: ParticipantTirage, mode: PoidsMode): number {
-	if (mode === "un_par_personne") {
-		return 1;
-	}
-	// `Math.max(1, …)` : une personne sans œuvre rattachée reste une personne. Un
-	// poids 0 la retirerait du tirage en silence, ce qui n'est pas une décision
-	// qu'un calcul de poids a le droit de prendre — c'est un acte de modération,
-	// et il passe par `eligible` avec un motif obligatoire.
-	return Math.min(MAX_POIDS, Math.max(1, participant.nbOeuvres));
+  if (mode === "un_par_personne") {
+    return 1;
+  }
+  // `Math.max(1, …)` : une personne sans œuvre rattachée reste une personne. Un
+  // poids 0 la retirerait du tirage en silence, ce qui n'est pas une décision
+  // qu'un calcul de poids a le droit de prendre — c'est un acte de modération,
+  // et il passe par `eligible` avec un motif obligatoire.
+  return Math.min(MAX_POIDS, Math.max(1, participant.nbOeuvres));
 }
 
 /** Le roster réduit à (clé, poids), prêt à être haché. */
 export function rosterDe(participants: readonly ParticipantTirage[], mode: PoidsMode): EntreeRoster[] {
-	return participants.map((participant) => ({
-		cle: participant.cle,
-		poids: poidsDe(participant, mode),
-	}));
+  return participants.map(participant => ({
+    cle: participant.cle,
+    poids: poidsDe(participant, mode),
+  }));
 }
 
 /**
@@ -764,18 +764,14 @@ export function rosterDe(participants: readonly ParticipantTirage[], mode: Poids
  * en accord sur 10^6 valeurs ; on garde la forme entière, qui n'a pas d'arrondi
  * à expliquer.
  */
-export async function tirerOeuvre(
-	graineHex: string,
-	cle: string,
-	oeuvres: readonly string[]
-): Promise<string | null> {
-	if (oeuvres.length === 0) {
-		return null;
-	}
-	const empreinte = await hmacSha256(depuisHex(graineHex), serialiserChamps([DOMAINE_OEUVRE, cle]));
-	const k = BigInt(kDepuisEmpreinte(empreinte));
-	const index = Number((k * BigInt(oeuvres.length)) >> 52n);
-	return oeuvres[index] ?? null;
+export async function tirerOeuvre(graineHex: string, cle: string, oeuvres: readonly string[]): Promise<string | null> {
+  if (oeuvres.length === 0) {
+    return null;
+  }
+  const empreinte = await hmacSha256(depuisHex(graineHex), serialiserChamps([DOMAINE_OEUVRE, cle]));
+  const k = BigInt(kDepuisEmpreinte(empreinte));
+  const index = Number((k * BigInt(oeuvres.length)) >> 52n);
+  return oeuvres[index] ?? null;
 }
 
 /**
@@ -787,159 +783,159 @@ export async function tirerOeuvre(
  * volontaire — cette décision-là est un acte de modération tracé, pas un `where`.
  */
 export async function executerTirage(
-	participants: readonly ParticipantTirage[],
-	parametres: ParametresTirage,
-	lots: readonly string[] = []
+  participants: readonly ParticipantTirage[],
+  parametres: ParametresTirage,
+  lots: readonly string[] = [],
 ): Promise<ResultatTirage> {
-	if (participants.length === 0) {
-		throw new Error("Tirage impossible : le roster est vide.");
-	}
-	if (!Number.isInteger(parametres.nbGagnants) || parametres.nbGagnants < 1) {
-		throw new Error(`Nombre de gagnants invalide : ${String(parametres.nbGagnants)}.`);
-	}
-	if (!/^[0-9a-f]{64}$/.test(parametres.graine)) {
-		throw new Error("Graine invalide : 64 caractères hexadécimaux minuscules sont attendus.");
-	}
+  if (participants.length === 0) {
+    throw new Error("Tirage impossible : le roster est vide.");
+  }
+  if (!Number.isInteger(parametres.nbGagnants) || parametres.nbGagnants < 1) {
+    throw new Error(`Nombre de gagnants invalide : ${String(parametres.nbGagnants)}.`);
+  }
+  if (!/^[0-9a-f]{64}$/.test(parametres.graine)) {
+    throw new Error("Graine invalide : 64 caractères hexadécimaux minuscules sont attendus.");
+  }
 
-	const roster = rosterDe(participants, parametres.poidsMode);
-	// `serialiserRoster` (appelée par `empreinteRoster`) valide les poids, les clés
-	// vides et les doublons NFC. On la fait passer AVANT tout calcul : un roster
-	// malformé doit échouer sans qu'aucun rang n'ait été produit.
-	const empreinteParticipants = await empreinteRoster(roster);
-	const empreinteDeLaGraine = await empreinteGraine(parametres.graine);
+  const roster = rosterDe(participants, parametres.poidsMode);
+  // `serialiserRoster` (appelée par `empreinteRoster`) valide les poids, les clés
+  // vides et les doublons NFC. On la fait passer AVANT tout calcul : un roster
+  // malformé doit échouer sans qu'aucun rang n'ait été produit.
+  const empreinteParticipants = await empreinteRoster(roster);
+  const empreinteDeLaGraine = await empreinteGraine(parametres.graine);
 
-	const parCle = new Map(participants.map((participant) => [participant.cle, participant]));
-	const poidsParCle = new Map(roster.map((entree) => [entree.cle, entree.poids]));
+  const parCle = new Map(participants.map(participant => [participant.cle, participant]));
+  const poidsParCle = new Map(roster.map(entree => [entree.cle, entree.poids]));
 
-	// On part de l'ordre CANONIQUE, pas de l'ordre d'arrivée : le comparateur étant
-	// total, le tri final en est déjà indépendant, mais partir du canonique rend les
-	// journaux et les diffs comparables d'une exécution à l'autre.
-	//
-	// Les HMAC sont calculés EN PARALLÈLE : ils sont mutuellement indépendants, et
-	// `Promise.all` préserve l'ordre du tableau — le déterminisme n'y perd rien,
-	// alors qu'une chaîne d'`await` sérialiserait autant d'allers-retours WebCrypto.
-	const classement: EntreeCalculee[] = await Promise.all(
-		trierRoster(roster).map(async (entree): Promise<EntreeCalculee> => {
-			const participant = parCle.get(entree.cle);
-			if (!participant) {
-				throw new Error(`Incohérence interne : la clé ${entree.cle} n'a pas de participant.`);
-			}
-			const empreinte = await empreinteParticipant(parametres.graine, entree.cle);
-			const u = uDepuisEmpreinte(empreinte);
-			const poids = poidsParCle.get(entree.cle) ?? entree.poids;
-			return {
-				cle: participant.cle,
-				cleTri: cleDeTri(u, poids),
-				empreinte: hex(empreinte),
-				oeuvres: [...participant.oeuvres],
-				poids,
-				pseudoAffichage: participant.pseudoAffichage,
-				rang: 0,
-				u,
-			};
-		})
-	);
+  // On part de l'ordre CANONIQUE, pas de l'ordre d'arrivée : le comparateur étant
+  // total, le tri final en est déjà indépendant, mais partir du canonique rend les
+  // journaux et les diffs comparables d'une exécution à l'autre.
+  //
+  // Les HMAC sont calculés EN PARALLÈLE : ils sont mutuellement indépendants, et
+  // `Promise.all` préserve l'ordre du tableau — le déterminisme n'y perd rien,
+  // alors qu'une chaîne d'`await` sérialiserait autant d'allers-retours WebCrypto.
+  const classement: EntreeCalculee[] = await Promise.all(
+    trierRoster(roster).map(async (entree): Promise<EntreeCalculee> => {
+      const participant = parCle.get(entree.cle);
+      if (!participant) {
+        throw new Error(`Incohérence interne : la clé ${entree.cle} n'a pas de participant.`);
+      }
+      const empreinte = await empreinteParticipant(parametres.graine, entree.cle);
+      const u = uDepuisEmpreinte(empreinte);
+      const poids = poidsParCle.get(entree.cle) ?? entree.poids;
+      return {
+        cle: participant.cle,
+        cleTri: cleDeTri(u, poids),
+        empreinte: hex(empreinte),
+        oeuvres: [...participant.oeuvres],
+        poids,
+        pseudoAffichage: participant.pseudoAffichage,
+        rang: 0,
+        u,
+      };
+    }),
+  );
 
-	classement.sort(comparerEntrees);
-	for (let i = 0; i < classement.length; i += 1) {
-		const entree = classement[i];
-		if (entree) {
-			entree.rang = i + 1;
-		}
-	}
+  classement.sort(comparerEntrees);
+  for (let i = 0; i < classement.length; i += 1) {
+    const entree = classement[i];
+    if (entree) {
+      entree.rang = i + 1;
+    }
+  }
 
-	// Tirage SANS REMISE : les `nbGagnants` premiers rangs, jamais deux fois la
-	// même personne. Le plafonnement par la taille du classement évite qu'un N mal
-	// saisi produise des rangs vides — la base refuse déjà `nbGagnants > nbParticipants`,
-	// ceci est la ceinture par-dessus les bretelles.
-	const nbGagnants = Math.min(parametres.nbGagnants, classement.length);
-	const gagnants: Gagnant[] = await Promise.all(
-		classement.slice(0, nbGagnants).map(async (entree, i): Promise<Gagnant> => {
-			return {
-				cle: entree.cle,
-				lot: lots[i] ?? null,
-				oeuvreId: await tirerOeuvre(parametres.graine, entree.cle, entree.oeuvres),
-				pseudoAffichage: entree.pseudoAffichage,
-				rang: entree.rang,
-			};
-		})
-	);
+  // Tirage SANS REMISE : les `nbGagnants` premiers rangs, jamais deux fois la
+  // même personne. Le plafonnement par la taille du classement évite qu'un N mal
+  // saisi produise des rangs vides — la base refuse déjà `nbGagnants > nbParticipants`,
+  // ceci est la ceinture par-dessus les bretelles.
+  const nbGagnants = Math.min(parametres.nbGagnants, classement.length);
+  const gagnants: Gagnant[] = await Promise.all(
+    classement.slice(0, nbGagnants).map(async (entree, i): Promise<Gagnant> => {
+      return {
+        cle: entree.cle,
+        lot: lots[i] ?? null,
+        oeuvreId: await tirerOeuvre(parametres.graine, entree.cle, entree.oeuvres),
+        pseudoAffichage: entree.pseudoAffichage,
+        rang: entree.rang,
+      };
+    }),
+  );
 
-	return {
-		classement,
-		empreinteGraine: empreinteDeLaGraine,
-		empreinteParticipants,
-		gagnants,
-		nbParticipants: classement.length,
-	};
+  return {
+    classement,
+    empreinteGraine: empreinteDeLaGraine,
+    empreinteParticipants,
+    gagnants,
+    nbParticipants: classement.length,
+  };
 }
 
 /* ── VÉRIFICATION ──────────────────────────────────────────────────────────── */
 
 export type CodeAnomalie =
-	| "roster_vide"
-	| "poids_invalide"
-	| "cle_dupliquee"
-	| "empreinte_participants"
-	| "empreinte_engagement"
-	| "empreinte_graine"
-	| "graine_balise"
-	| "hmac"
-	| "u"
-	| "cle_tri"
-	| "ordre"
-	| "rang"
-	| "gagnants"
-	| "nb_gagnants"
-	| "oeuvre_gagnante"
-	| "mode_locale_publie";
+  | "roster_vide"
+  | "poids_invalide"
+  | "cle_dupliquee"
+  | "empreinte_participants"
+  | "empreinte_engagement"
+  | "empreinte_graine"
+  | "graine_balise"
+  | "hmac"
+  | "u"
+  | "cle_tri"
+  | "ordre"
+  | "rang"
+  | "gagnants"
+  | "nb_gagnants"
+  | "oeuvre_gagnante"
+  | "mode_locale_publie";
 
 export interface Anomalie {
-	code: CodeAnomalie;
-	cle?: string;
-	rang?: number;
-	attendu: string;
-	trouve: string;
-	/** En français, adressée à un humain : un code seul n'aide personne à comprendre. */
-	explication: string;
+  code: CodeAnomalie;
+  cle?: string;
+  rang?: number;
+  attendu: string;
+  trouve: string;
+  /** En français, adressée à un humain : un code seul n'aide personne à comprendre. */
+  explication: string;
 }
 
 export interface VerdictVerification {
-	valide: boolean;
-	/**
-	 * Nombre de contrôles PASSÉS. Un « valide » nu ne dit pas ce qui a été
-	 * vérifié : « 12 contrôles concordants » est une affirmation, « vrai » n'en est
-	 * pas une. L'écran d'admin l'affiche tel quel.
-	 */
-	controles: number;
-	anomalies: Anomalie[];
+  valide: boolean;
+  /**
+   * Nombre de contrôles PASSÉS. Un « valide » nu ne dit pas ce qui a été
+   * vérifié : « 12 contrôles concordants » est une affirmation, « vrai » n'en est
+   * pas une. L'écran d'admin l'affiche tel quel.
+   */
+  controles: number;
+  anomalies: Anomalie[];
 }
 
 /** Un tirage tel qu'il est GELÉ en base — la seule entrée de `verifierTirage`. */
 export interface TirageGele {
-	campagneSlug: string;
-	numero: number;
-	graine: string;
-	empreinteGraine: string;
-	empreinteParticipants: string;
-	empreinteEngagement: string;
-	poidsMode: PoidsMode;
-	nbGagnants: number;
-	lots: string[];
-	graineOrigine: GraineOrigine;
-	publie: boolean;
-	balise: { reseau: string; chaine: string; round: number; signature: string } | null;
-	entrees: Array<{
-		cle: string;
-		pseudoAffichage: string;
-		poids: number;
-		oeuvres: string[];
-		u: number;
-		cleTri: number;
-		empreinte: string;
-		rang: number;
-	}>;
-	gagnants: Array<{ rang: number; cle: string; oeuvreId: string | null }>;
+  campagneSlug: string;
+  numero: number;
+  graine: string;
+  empreinteGraine: string;
+  empreinteParticipants: string;
+  empreinteEngagement: string;
+  poidsMode: PoidsMode;
+  nbGagnants: number;
+  lots: string[];
+  graineOrigine: GraineOrigine;
+  publie: boolean;
+  balise: { reseau: string; chaine: string; round: number; signature: string } | null;
+  entrees: Array<{
+    cle: string;
+    pseudoAffichage: string;
+    poids: number;
+    oeuvres: string[];
+    u: number;
+    cleTri: number;
+    empreinte: string;
+    rang: number;
+  }>;
+  gagnants: Array<{ rang: number; cle: string; oeuvreId: string | null }>;
 }
 
 /**
@@ -951,17 +947,17 @@ export interface TirageGele {
  * honnête se déclarerait invalide et l'on chercherait l'erreur dans la crypto.
  */
 export function engagementDeTirage(gele: TirageGele): Engagement {
-	const balise = gele.balise ?? BALISE_LOCALE;
-	return {
-		baliseChaine: balise.chaine,
-		baliseReseau: balise.reseau,
-		baliseRound: balise.round,
-		campagneSlug: gele.campagneSlug,
-		entrees: gele.entrees.map((entree) => ({ cle: entree.cle, poids: entree.poids })),
-		lots: [...gele.lots],
-		nbGagnants: gele.nbGagnants,
-		poidsMode: gele.poidsMode,
-	};
+  const balise = gele.balise ?? BALISE_LOCALE;
+  return {
+    baliseChaine: balise.chaine,
+    baliseReseau: balise.reseau,
+    baliseRound: balise.round,
+    campagneSlug: gele.campagneSlug,
+    entrees: gele.entrees.map(entree => ({ cle: entree.cle, poids: entree.poids })),
+    lots: [...gele.lots],
+    nbGagnants: gele.nbGagnants,
+    poidsMode: gele.poidsMode,
+  };
 }
 
 /**
@@ -973,20 +969,20 @@ export function engagementDeTirage(gele: TirageGele): Engagement {
  * puissance de deux : il est exact partout et se compare à l'identique.
  */
 function ecartUlp(a: number, b: number): number {
-	if (a === b) {
-		return 0;
-	}
-	if (!Number.isFinite(a) || !Number.isFinite(b)) {
-		return Number.POSITIVE_INFINITY;
-	}
-	const tampon = new Float64Array(1);
-	const bits = new BigInt64Array(tampon.buffer);
-	tampon[0] = a;
-	const ba = bits[0] ?? 0n;
-	tampon[0] = b;
-	const bb = bits[0] ?? 0n;
-	const delta = ba > bb ? ba - bb : bb - ba;
-	return delta > 9_007_199_254_740_992n ? Number.POSITIVE_INFINITY : Number(delta);
+  if (a === b) {
+    return 0;
+  }
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const tampon = new Float64Array(1);
+  const bits = new BigInt64Array(tampon.buffer);
+  tampon[0] = a;
+  const ba = bits[0] ?? 0n;
+  tampon[0] = b;
+  const bb = bits[0] ?? 0n;
+  const delta = ba > bb ? ba - bb : bb - ba;
+  return delta > 9_007_199_254_740_992n ? Number.POSITIVE_INFINITY : Number(delta);
 }
 
 /**
@@ -1000,11 +996,11 @@ function ecartUlp(a: number, b: number): number {
  * l'humain ce qui a été refusé — au lieu d'un « attendu X, trouvé (vide) ».
  */
 async function empreinteOuRefus(calcul: () => Promise<string>): Promise<string> {
-	try {
-		return await calcul();
-	} catch (erreur) {
-		return `<refusé: ${erreur instanceof Error ? erreur.message : String(erreur)}>`;
-	}
+  try {
+    return await calcul();
+  } catch (erreur) {
+    return `<refusé: ${erreur instanceof Error ? erreur.message : String(erreur)}>`;
+  }
 }
 
 /**
@@ -1020,324 +1016,324 @@ async function empreinteOuRefus(calcul: () => Promise<string>): Promise<string> 
  * chaîne et le round visés, la graine, et l'ordre.
  */
 export async function verifierTirage(gele: TirageGele): Promise<VerdictVerification> {
-	const anomalies: Anomalie[] = [];
-	let controles = 0;
+  const anomalies: Anomalie[] = [];
+  let controles = 0;
 
-	// ── 1. Forme du roster ─────────────────────────────────────────────────
-	if (gele.entrees.length === 0) {
-		anomalies.push({
-			attendu: "au moins une entrée",
-			code: "roster_vide",
-			explication: "Le roster gelé est vide : il n'y a rien à vérifier, donc rien à croire.",
-			trouve: "0",
-		});
-		return { anomalies, controles, valide: false };
-	}
-	controles += 1;
+  // ── 1. Forme du roster ─────────────────────────────────────────────────
+  if (gele.entrees.length === 0) {
+    anomalies.push({
+      attendu: "au moins une entrée",
+      code: "roster_vide",
+      explication: "Le roster gelé est vide : il n'y a rien à vérifier, donc rien à croire.",
+      trouve: "0",
+    });
+    return { anomalies, controles, valide: false };
+  }
+  controles += 1;
 
-	let formeValide = true;
-	const vues = new Set<string>();
-	for (const entree of gele.entrees) {
-		if (!Number.isInteger(entree.poids) || entree.poids < 1 || entree.poids > MAX_POIDS) {
-			formeValide = false;
-			anomalies.push({
-				attendu: `un entier de 1 à ${MAX_POIDS}`,
-				cle: entree.cle,
-				code: "poids_invalide",
-				explication: "Un poids hors bornes fausse la proportionnalité et fait exploser le comparateur exact.",
-				trouve: String(entree.poids),
-			});
-		}
-		const cleNfc = entree.cle.normalize("NFC");
-		if (vues.has(cleNfc)) {
-			formeValide = false;
-			anomalies.push({
-				attendu: "une seule ligne par identifiant",
-				cle: entree.cle,
-				code: "cle_dupliquee",
-				explication:
-					"Deux lignes portant le même identifiant après normalisation NFC donneraient deux tickets au même humain.",
-				trouve: "deux lignes ou plus",
-			});
-		}
-		vues.add(cleNfc);
-	}
-	if (formeValide) {
-		controles += 1;
-	}
+  let formeValide = true;
+  const vues = new Set<string>();
+  for (const entree of gele.entrees) {
+    if (!Number.isInteger(entree.poids) || entree.poids < 1 || entree.poids > MAX_POIDS) {
+      formeValide = false;
+      anomalies.push({
+        attendu: `un entier de 1 à ${MAX_POIDS}`,
+        cle: entree.cle,
+        code: "poids_invalide",
+        explication: "Un poids hors bornes fausse la proportionnalité et fait exploser le comparateur exact.",
+        trouve: String(entree.poids),
+      });
+    }
+    const cleNfc = entree.cle.normalize("NFC");
+    if (vues.has(cleNfc)) {
+      formeValide = false;
+      anomalies.push({
+        attendu: "une seule ligne par identifiant",
+        cle: entree.cle,
+        code: "cle_dupliquee",
+        explication:
+          "Deux lignes portant le même identifiant après normalisation NFC donneraient deux tickets au même humain.",
+        trouve: "deux lignes ou plus",
+      });
+    }
+    vues.add(cleNfc);
+  }
+  if (formeValide) {
+    controles += 1;
+  }
 
-	const roster: EntreeRoster[] = gele.entrees.map((entree) => ({ cle: entree.cle, poids: entree.poids }));
+  const roster: EntreeRoster[] = gele.entrees.map(entree => ({ cle: entree.cle, poids: entree.poids }));
 
-	// ── 2. Empreinte du roster ─────────────────────────────────────────────
-	const empreinteRecalculee = await empreinteOuRefus(() => empreinteRoster(roster));
-	if (empreinteRecalculee === gele.empreinteParticipants) {
-		controles += 1;
-	} else {
-		anomalies.push({
-			attendu: gele.empreinteParticipants,
-			code: "empreinte_participants",
-			explication:
-				"Le roster gelé ne redonne pas l'empreinte publiée à l'engagement : la liste des participants ou un poids a changé depuis.",
-			trouve: empreinteRecalculee,
-		});
-	}
+  // ── 2. Empreinte du roster ─────────────────────────────────────────────
+  const empreinteRecalculee = await empreinteOuRefus(() => empreinteRoster(roster));
+  if (empreinteRecalculee === gele.empreinteParticipants) {
+    controles += 1;
+  } else {
+    anomalies.push({
+      attendu: gele.empreinteParticipants,
+      code: "empreinte_participants",
+      explication:
+        "Le roster gelé ne redonne pas l'empreinte publiée à l'engagement : la liste des participants ou un poids a changé depuis.",
+      trouve: empreinteRecalculee,
+    });
+  }
 
-	// ── 3. Empreinte d'engagement (N, lots, mode, round visé) ──────────────
-	const engagementRecalcule = await empreinteOuRefus(() => empreinteEngagement(engagementDeTirage(gele)));
-	if (engagementRecalcule === gele.empreinteEngagement) {
-		controles += 1;
-	} else {
-		anomalies.push({
-			attendu: gele.empreinteEngagement,
-			code: "empreinte_engagement",
-			explication:
-				"Le nombre de gagnants, un lot, le mode de poids ou le round visé diffère de ce qui avait été engagé AVANT le tirage.",
-			trouve: engagementRecalcule,
-		});
-	}
+  // ── 3. Empreinte d'engagement (N, lots, mode, round visé) ──────────────
+  const engagementRecalcule = await empreinteOuRefus(() => empreinteEngagement(engagementDeTirage(gele)));
+  if (engagementRecalcule === gele.empreinteEngagement) {
+    controles += 1;
+  } else {
+    anomalies.push({
+      attendu: gele.empreinteEngagement,
+      code: "empreinte_engagement",
+      explication:
+        "Le nombre de gagnants, un lot, le mode de poids ou le round visé diffère de ce qui avait été engagé AVANT le tirage.",
+      trouve: engagementRecalcule,
+    });
+  }
 
-	// ── 4. La graine vient bien de la balise annoncée ──────────────────────
-	if (gele.balise) {
-		const balise = gele.balise;
-		const graineRecalculee = await empreinteOuRefus(() =>
-			graineDepuisBalise(balise.signature, gele.empreinteParticipants)
-		);
-		if (graineRecalculee === gele.graine) {
-			controles += 1;
-		} else {
-			anomalies.push({
-				attendu: gele.graine,
-				code: "graine_balise",
-				explication:
-					"La graine n'est pas SHA-256(signature du round ‖ empreinte des participants) : elle n'a pas été dérivée de la balise annoncée.",
-				trouve: graineRecalculee,
-			});
-		}
-	}
+  // ── 4. La graine vient bien de la balise annoncée ──────────────────────
+  if (gele.balise) {
+    const balise = gele.balise;
+    const graineRecalculee = await empreinteOuRefus(() =>
+      graineDepuisBalise(balise.signature, gele.empreinteParticipants),
+    );
+    if (graineRecalculee === gele.graine) {
+      controles += 1;
+    } else {
+      anomalies.push({
+        attendu: gele.graine,
+        code: "graine_balise",
+        explication:
+          "La graine n'est pas SHA-256(signature du round ‖ empreinte des participants) : elle n'a pas été dérivée de la balise annoncée.",
+        trouve: graineRecalculee,
+      });
+    }
+  }
 
-	// ── 5. Empreinte de la graine ──────────────────────────────────────────
-	const empreinteGraineRecalculee = await empreinteOuRefus(() => empreinteGraine(gele.graine));
-	if (empreinteGraineRecalculee === gele.empreinteGraine) {
-		controles += 1;
-	} else {
-		anomalies.push({
-			attendu: gele.empreinteGraine,
-			code: "empreinte_graine",
-			explication: "L'empreinte de graine publiée ne correspond pas à la graine : l'une des deux a été modifiée.",
-			trouve: empreinteGraineRecalculee,
-		});
-	}
+  // ── 5. Empreinte de la graine ──────────────────────────────────────────
+  const empreinteGraineRecalculee = await empreinteOuRefus(() => empreinteGraine(gele.graine));
+  if (empreinteGraineRecalculee === gele.empreinteGraine) {
+    controles += 1;
+  } else {
+    anomalies.push({
+      attendu: gele.empreinteGraine,
+      code: "empreinte_graine",
+      explication: "L'empreinte de graine publiée ne correspond pas à la graine : l'une des deux a été modifiée.",
+      trouve: empreinteGraineRecalculee,
+    });
+  }
 
-	// ── 6. HMAC, u et clé de tri, entrée par entrée ────────────────────────
-	let hmacOk = true;
-	let uOk = true;
-	let cleTriOk = true;
-	// Mêmes HMAC indépendants qu'à l'exécution, donc même parallélisme. Les
-	// anomalies sont poussées dans l'ordre du tableau : `Promise.all` le préserve.
-	const empreintesRecalculees = await Promise.all(
-		gele.entrees.map(async (entree) => {
-			try {
-				return await empreinteParticipant(gele.graine, entree.cle);
-			} catch {
-				// Une graine illisible a déjà produit son anomalie au contrôle 5 ; on
-				// continue avec 32 octets nuls pour que TOUS les autres contrôles soient
-				// quand même rendus, plutôt que d'arrêter la vérification au premier trou.
-				return new Uint8Array(32);
-			}
-		})
-	);
-	const recalculees: EntreeCalculee[] = [];
-	for (const [index, entree] of gele.entrees.entries()) {
-		const empreinte = empreintesRecalculees[index] ?? new Uint8Array(32);
-		const empreinteHex = hex(empreinte);
-		if (empreinteHex !== entree.empreinte) {
-			hmacOk = false;
-			anomalies.push({
-				attendu: entree.empreinte,
-				cle: entree.cle,
-				code: "hmac",
-				explication:
-					"HMAC(graine, identifiant) ne redonne pas l'empreinte gelée : l'identifiant ou la graine n'est pas celui qui a servi.",
-				trouve: empreinteHex,
-			});
-		}
-		const u = uDepuisEmpreinte(empreinte);
-		if (u !== entree.u) {
-			uOk = false;
-			anomalies.push({
-				attendu: String(entree.u),
-				cle: entree.cle,
-				code: "u",
-				explication:
-					"u = (2k+1)/2^53 est de l'arithmétique exacte : il doit être identique au bit près sur tout moteur. Une différence est une modification.",
-				trouve: String(u),
-			});
-		}
-		const cleTri = cleDeTri(u, entree.poids);
-		// Tolérance de 4 ULP, et uniquement ici : ECMA-262 autorise 1 ULP d'écart
-		// sur `Math.log` d'un moteur à l'autre. Elle ne peut rien masquer, pour deux
-		// raisons mesurées : l'écart minimal jamais observé entre deux clés de tri
-		// distinctes vaut 2,68e8 ULP, et l'ORDRE est de toute façon revérifié au
-		// contrôle 7 par le comparateur BigInt, qui n'utilise aucun logarithme.
-		if (ecartUlp(cleTri, entree.cleTri) > 4) {
-			cleTriOk = false;
-			anomalies.push({
-				attendu: String(entree.cleTri),
-				cle: entree.cle,
-				code: "cle_tri",
-				explication:
-					"-ln(u)/poids ne redonne pas la clé de tri gelée, au-delà de l'écart d'arrondi tolérable entre moteurs.",
-				trouve: String(cleTri),
-			});
-		}
-		recalculees.push({
-			cle: entree.cle,
-			cleTri,
-			empreinte: empreinteHex,
-			oeuvres: [...entree.oeuvres],
-			poids: entree.poids,
-			pseudoAffichage: entree.pseudoAffichage,
-			rang: entree.rang,
-			u,
-		});
-	}
-	if (hmacOk) {
-		controles += 1;
-	}
-	if (uOk) {
-		controles += 1;
-	}
-	if (cleTriOk) {
-		controles += 1;
-	}
+  // ── 6. HMAC, u et clé de tri, entrée par entrée ────────────────────────
+  let hmacOk = true;
+  let uOk = true;
+  let cleTriOk = true;
+  // Mêmes HMAC indépendants qu'à l'exécution, donc même parallélisme. Les
+  // anomalies sont poussées dans l'ordre du tableau : `Promise.all` le préserve.
+  const empreintesRecalculees = await Promise.all(
+    gele.entrees.map(async entree => {
+      try {
+        return await empreinteParticipant(gele.graine, entree.cle);
+      } catch {
+        // Une graine illisible a déjà produit son anomalie au contrôle 5 ; on
+        // continue avec 32 octets nuls pour que TOUS les autres contrôles soient
+        // quand même rendus, plutôt que d'arrêter la vérification au premier trou.
+        return new Uint8Array(32);
+      }
+    }),
+  );
+  const recalculees: EntreeCalculee[] = [];
+  for (const [index, entree] of gele.entrees.entries()) {
+    const empreinte = empreintesRecalculees[index] ?? new Uint8Array(32);
+    const empreinteHex = hex(empreinte);
+    if (empreinteHex !== entree.empreinte) {
+      hmacOk = false;
+      anomalies.push({
+        attendu: entree.empreinte,
+        cle: entree.cle,
+        code: "hmac",
+        explication:
+          "HMAC(graine, identifiant) ne redonne pas l'empreinte gelée : l'identifiant ou la graine n'est pas celui qui a servi.",
+        trouve: empreinteHex,
+      });
+    }
+    const u = uDepuisEmpreinte(empreinte);
+    if (u !== entree.u) {
+      uOk = false;
+      anomalies.push({
+        attendu: String(entree.u),
+        cle: entree.cle,
+        code: "u",
+        explication:
+          "u = (2k+1)/2^53 est de l'arithmétique exacte : il doit être identique au bit près sur tout moteur. Une différence est une modification.",
+        trouve: String(u),
+      });
+    }
+    const cleTri = cleDeTri(u, entree.poids);
+    // Tolérance de 4 ULP, et uniquement ici : ECMA-262 autorise 1 ULP d'écart
+    // sur `Math.log` d'un moteur à l'autre. Elle ne peut rien masquer, pour deux
+    // raisons mesurées : l'écart minimal jamais observé entre deux clés de tri
+    // distinctes vaut 2,68e8 ULP, et l'ORDRE est de toute façon revérifié au
+    // contrôle 7 par le comparateur BigInt, qui n'utilise aucun logarithme.
+    if (ecartUlp(cleTri, entree.cleTri) > 4) {
+      cleTriOk = false;
+      anomalies.push({
+        attendu: String(entree.cleTri),
+        cle: entree.cle,
+        code: "cle_tri",
+        explication:
+          "-ln(u)/poids ne redonne pas la clé de tri gelée, au-delà de l'écart d'arrondi tolérable entre moteurs.",
+        trouve: String(cleTri),
+      });
+    }
+    recalculees.push({
+      cle: entree.cle,
+      cleTri,
+      empreinte: empreinteHex,
+      oeuvres: [...entree.oeuvres],
+      poids: entree.poids,
+      pseudoAffichage: entree.pseudoAffichage,
+      rang: entree.rang,
+      u,
+    });
+  }
+  if (hmacOk) {
+    controles += 1;
+  }
+  if (uOk) {
+    controles += 1;
+  }
+  if (cleTriOk) {
+    controles += 1;
+  }
 
-	// ── 7. L'ordre publié est bien celui du comparateur ────────────────────
-	const attendu = recalculees.toSorted(comparerEntrees);
-	let ordreOk = true;
-	for (let i = 0; i < attendu.length; i += 1) {
-		const calculee = attendu[i];
-		if (!calculee) {
-			continue;
-		}
-		if (calculee.rang !== i + 1) {
-			ordreOk = false;
-			anomalies.push({
-				attendu: String(i + 1),
-				cle: calculee.cle,
-				code: "ordre",
-				explication:
-					"Le classement rejoué ne place pas cette entrée au rang publié : l'ordre des gagnants a été modifié après coup.",
-				rang: calculee.rang,
-				trouve: String(calculee.rang),
-			});
-		}
-	}
-	if (ordreOk) {
-		controles += 1;
-	}
+  // ── 7. L'ordre publié est bien celui du comparateur ────────────────────
+  const attendu = recalculees.toSorted(comparerEntrees);
+  let ordreOk = true;
+  for (let i = 0; i < attendu.length; i += 1) {
+    const calculee = attendu[i];
+    if (!calculee) {
+      continue;
+    }
+    if (calculee.rang !== i + 1) {
+      ordreOk = false;
+      anomalies.push({
+        attendu: String(i + 1),
+        cle: calculee.cle,
+        code: "ordre",
+        explication:
+          "Le classement rejoué ne place pas cette entrée au rang publié : l'ordre des gagnants a été modifié après coup.",
+        rang: calculee.rang,
+        trouve: String(calculee.rang),
+      });
+    }
+  }
+  if (ordreOk) {
+    controles += 1;
+  }
 
-	// Les rangs doivent former exactement 1..n, sans trou ni doublon — un contrôle
-	// distinct de l'ordre : deux entrées au rang 3 passeraient le test précédent si
-	// l'une d'elles portait le bon.
-	const rangs = new Set(gele.entrees.map((entree) => entree.rang));
-	if (rangs.size === gele.entrees.length && Math.min(...rangs) === 1 && Math.max(...rangs) === gele.entrees.length) {
-		controles += 1;
-	} else {
-		anomalies.push({
-			attendu: `les rangs 1 à ${gele.entrees.length}, une seule fois chacun`,
-			code: "rang",
-			explication: "Les rangs gelés ne forment pas une numérotation complète : il y a un trou ou un doublon.",
-			trouve: `${rangs.size} rangs distincts`,
-		});
-	}
+  // Les rangs doivent former exactement 1..n, sans trou ni doublon — un contrôle
+  // distinct de l'ordre : deux entrées au rang 3 passeraient le test précédent si
+  // l'une d'elles portait le bon.
+  const rangs = new Set(gele.entrees.map(entree => entree.rang));
+  if (rangs.size === gele.entrees.length && Math.min(...rangs) === 1 && Math.max(...rangs) === gele.entrees.length) {
+    controles += 1;
+  } else {
+    anomalies.push({
+      attendu: `les rangs 1 à ${gele.entrees.length}, une seule fois chacun`,
+      code: "rang",
+      explication: "Les rangs gelés ne forment pas une numérotation complète : il y a un trou ou un doublon.",
+      trouve: `${rangs.size} rangs distincts`,
+    });
+  }
 
-	// ── 8. Les gagnants sont les premiers rangs, dans l'ordre ──────────────
-	const nbAttendu = Math.min(gele.nbGagnants, attendu.length);
-	if (gele.gagnants.length === nbAttendu) {
-		controles += 1;
-	} else {
-		anomalies.push({
-			attendu: String(nbAttendu),
-			code: "nb_gagnants",
-			explication: "Le nombre de gagnants publiés ne correspond pas au nombre engagé.",
-			trouve: String(gele.gagnants.length),
-		});
-	}
-	let gagnantsOk = true;
-	for (let i = 0; i < nbAttendu; i += 1) {
-		const attenduIci = attendu[i];
-		const publie = gele.gagnants[i];
-		if (!attenduIci || !publie) {
-			continue;
-		}
-		if (publie.cle !== attenduIci.cle || publie.rang !== i + 1) {
-			gagnantsOk = false;
-			anomalies.push({
-				attendu: `${attenduIci.cle} au rang ${i + 1}`,
-				cle: publie.cle,
-				code: "gagnants",
-				explication:
-					"Le gagnant publié à ce rang n'est pas celui que le classement désigne : la liste a été remplacée.",
-				rang: publie.rang,
-				trouve: `${publie.cle} au rang ${publie.rang}`,
-			});
-		}
-	}
-	if (gagnantsOk) {
-		controles += 1;
-	}
+  // ── 8. Les gagnants sont les premiers rangs, dans l'ordre ──────────────
+  const nbAttendu = Math.min(gele.nbGagnants, attendu.length);
+  if (gele.gagnants.length === nbAttendu) {
+    controles += 1;
+  } else {
+    anomalies.push({
+      attendu: String(nbAttendu),
+      code: "nb_gagnants",
+      explication: "Le nombre de gagnants publiés ne correspond pas au nombre engagé.",
+      trouve: String(gele.gagnants.length),
+    });
+  }
+  let gagnantsOk = true;
+  for (let i = 0; i < nbAttendu; i += 1) {
+    const attenduIci = attendu[i];
+    const publie = gele.gagnants[i];
+    if (!attenduIci || !publie) {
+      continue;
+    }
+    if (publie.cle !== attenduIci.cle || publie.rang !== i + 1) {
+      gagnantsOk = false;
+      anomalies.push({
+        attendu: `${attenduIci.cle} au rang ${i + 1}`,
+        cle: publie.cle,
+        code: "gagnants",
+        explication:
+          "Le gagnant publié à ce rang n'est pas celui que le classement désigne : la liste a été remplacée.",
+        rang: publie.rang,
+        trouve: `${publie.cle} au rang ${publie.rang}`,
+      });
+    }
+  }
+  if (gagnantsOk) {
+    controles += 1;
+  }
 
-	// ── 9. L'œuvre mise en avant a bien été TIRÉE ──────────────────────────
-	let oeuvresOk = true;
-	const oeuvresRecalculees = await Promise.all(
-		gele.gagnants.map(async (gagnant) => {
-			const entree = recalculees.find((candidate) => candidate.cle === gagnant.cle);
-			if (!entree) {
-				return undefined;
-			}
-			try {
-				return await tirerOeuvre(gele.graine, gagnant.cle, entree.oeuvres);
-			} catch {
-				return null;
-			}
-		})
-	);
-	for (const [index, gagnant] of gele.gagnants.entries()) {
-		const oeuvre = oeuvresRecalculees[index];
-		// `undefined` = le gagnant n'a aucune entrée gelée ; c'est déjà signalé par le
-		// contrôle 8, inutile de l'accuser une seconde fois sous un autre code.
-		if (oeuvre === undefined) {
-			continue;
-		}
-		if (oeuvre !== gagnant.oeuvreId) {
-			oeuvresOk = false;
-			anomalies.push({
-				attendu: oeuvre ?? "aucune",
-				cle: gagnant.cle,
-				code: "oeuvre_gagnante",
-				explication:
-					"L'œuvre mise en avant n'est pas celle que l'aléa désigne : elle a été choisie, alors qu'elle doit être tirée.",
-				rang: gagnant.rang,
-				trouve: gagnant.oeuvreId ?? "aucune",
-			});
-		}
-	}
-	if (oeuvresOk) {
-		controles += 1;
-	}
+  // ── 9. L'œuvre mise en avant a bien été TIRÉE ──────────────────────────
+  let oeuvresOk = true;
+  const oeuvresRecalculees = await Promise.all(
+    gele.gagnants.map(async gagnant => {
+      const entree = recalculees.find(candidate => candidate.cle === gagnant.cle);
+      if (!entree) {
+        return undefined;
+      }
+      try {
+        return await tirerOeuvre(gele.graine, gagnant.cle, entree.oeuvres);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  for (const [index, gagnant] of gele.gagnants.entries()) {
+    const oeuvre = oeuvresRecalculees[index];
+    // `undefined` = le gagnant n'a aucune entrée gelée ; c'est déjà signalé par le
+    // contrôle 8, inutile de l'accuser une seconde fois sous un autre code.
+    if (oeuvre === undefined) {
+      continue;
+    }
+    if (oeuvre !== gagnant.oeuvreId) {
+      oeuvresOk = false;
+      anomalies.push({
+        attendu: oeuvre ?? "aucune",
+        cle: gagnant.cle,
+        code: "oeuvre_gagnante",
+        explication:
+          "L'œuvre mise en avant n'est pas celle que l'aléa désigne : elle a été choisie, alors qu'elle doit être tirée.",
+        rang: gagnant.rang,
+        trouve: gagnant.oeuvreId ?? "aucune",
+      });
+    }
+  }
+  if (oeuvresOk) {
+    controles += 1;
+  }
 
-	// ── 10. Un tirage de répétition n'est jamais public ────────────────────
-	if (gele.graineOrigine === "locale" && gele.publie) {
-		anomalies.push({
-			attendu: "non publié",
-			code: "mode_locale_publie",
-			explication:
-				"Un tirage à graine locale est un journal de répétition, pas une preuve d'équité : c'est nous qui avons tiré la graine, donc nous aurions pu recommencer jusqu'au résultat voulu (902 essais, 0,03 s, mesuré).",
-			trouve: "publié",
-		});
-	} else {
-		controles += 1;
-	}
+  // ── 10. Un tirage de répétition n'est jamais public ────────────────────
+  if (gele.graineOrigine === "locale" && gele.publie) {
+    anomalies.push({
+      attendu: "non publié",
+      code: "mode_locale_publie",
+      explication:
+        "Un tirage à graine locale est un journal de répétition, pas une preuve d'équité : c'est nous qui avons tiré la graine, donc nous aurions pu recommencer jusqu'au résultat voulu (902 essais, 0,03 s, mesuré).",
+      trouve: "publié",
+    });
+  } else {
+    controles += 1;
+  }
 
-	return { anomalies, controles, valide: anomalies.length === 0 };
+  return { anomalies, controles, valide: anomalies.length === 0 };
 }

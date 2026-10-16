@@ -6,19 +6,14 @@ import { createClient } from "@supabase/supabase-js";
 // I'll skip strict typing for DB for now to speed up, or copy the type file if needed.
 
 function isValidHttpUrl(v: string | undefined | null): v is string {
-  return Boolean(
-    v && v !== "undefined" && v !== "null" && v.startsWith("http") && !v.startsWith("eyJ2Ijo"),
-  );
+  return Boolean(v && v !== "undefined" && v !== "null" && v.startsWith("http") && !v.startsWith("eyJ2Ijo"));
 }
 
 function isValidKey(v: string | undefined | null): v is string {
-  return Boolean(
-    v && v !== "undefined" && v !== "null" && !v.startsWith("{") && !v.startsWith("eyJ2Ijo"),
-  );
+  return Boolean(v && v !== "undefined" && v !== "null" && !v.startsWith("{") && !v.startsWith("eyJ2Ijo"));
 }
 
-const PLACEHOLDER_URL =
-  typeof window === "undefined" ? "http://127.0.0.1:8811" : window.location.origin;
+const PLACEHOLDER_URL = typeof window === "undefined" ? "http://127.0.0.1:8811" : window.location.origin;
 const PLACEHOLDER_SERVICE_KEY = "***REDACTED-SERVICE-ROLE***";
 
 export function getSupabaseClient() {

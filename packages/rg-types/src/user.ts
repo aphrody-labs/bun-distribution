@@ -15,7 +15,7 @@ export type User = Profile;
 
 /** Profile avec role typé (au lieu de `string | null`). */
 export type ProfileWithRole = Omit<Profile, "role"> & {
-	role: RgRole | null;
+  role: RgRole | null;
 };
 
 /** Insert payload pour création (timestamps + id optionnels). */

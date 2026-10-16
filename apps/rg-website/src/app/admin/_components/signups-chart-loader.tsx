@@ -12,16 +12,16 @@ import type { SignupPoint } from "./signups-chart";
  * bibliothèque partait dans le bundle de la route — pour une seule courbe
  * située sous la ligne de flottaison. Même motif que `ElementChartLoader`.
  */
-const SignupsChart = dynamic(() => import("./signups-chart").then((m) => m.SignupsChart), {
-	loading: () => (
-		<div
-			className="h-64 animate-pulse rounded-2xl bg-surface-container"
-			aria-label="Chargement du graphique des inscriptions"
-		/>
-	),
-	ssr: false,
+const SignupsChart = dynamic(() => import("./signups-chart").then(m => m.SignupsChart), {
+  loading: () => (
+    <div
+      className="h-64 animate-pulse rounded-2xl bg-surface-container"
+      aria-label="Chargement du graphique des inscriptions"
+    />
+  ),
+  ssr: false,
 });
 
 export function SignupsChartLoader({ data }: { data: SignupPoint[] }) {
-	return <SignupsChart data={data} />;
+  return <SignupsChart data={data} />;
 }

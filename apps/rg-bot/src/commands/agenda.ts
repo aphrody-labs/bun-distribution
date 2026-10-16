@@ -28,24 +28,20 @@
  * justesse au pixel.
  */
 import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
-import {
-	ApplicationCommandOptionType,
-	type ChatInputCommandInteraction,
-	type EmbedBuilder,
-} from "discord.js";
+import { ApplicationCommandOptionType, type ChatInputCommandInteraction, type EmbedBuilder } from "discord.js";
 
 import { cached } from "../lib/cache";
 import {
-	choisirEvenements,
-	formaterPlageEvenement,
-	grouperParJour,
-	libelleJour,
-	ligneStream,
-	nettoyerHtml,
-	normaliserEvenement,
-	type EvenementCalendrier,
-	type LigneStream,
-	type PeriodeAgenda,
+  choisirEvenements,
+  formaterPlageEvenement,
+  grouperParJour,
+  libelleJour,
+  ligneStream,
+  nettoyerHtml,
+  normaliserEvenement,
+  type EvenementCalendrier,
+  type LigneStream,
+  type PeriodeAgenda,
 } from "../lib/communaute-format";
 import { sql } from "../lib/db";
 import { rgEmbed, truncate } from "../lib/embeds";
@@ -54,8 +50,8 @@ import { pied } from "../lib/ui";
 
 /** Enveloppe de `apiSuccess()` côté site : `{ success, data: { events } }`. */
 interface ReponseCalendrier {
-	success?: boolean;
-	data?: { events?: EvenementCalendrier[] } | null;
+  success?: boolean;
+  data?: { events?: EvenementCalendrier[] } | null;
 }
 
 const URL_EVENEMENTS = "https://rosegriffon.fr/evenements";
@@ -76,8 +72,8 @@ const TTL_AGENDA_MS = 10 * 60_000;
 const BUDGET_EMBED = 5800;
 
 interface ChampEmbed {
-	name: string;
-	value: string;
+  name: string;
+  value: string;
 }
 
 /**
@@ -87,36 +83,36 @@ interface ChampEmbed {
  * dire au lecteur plutôt que de laisser croire à une liste complète.
  */
 function ajouterChamps(embed: EmbedBuilder, champs: readonly ChampEmbed[], deja: number): number {
-	let reste = BUDGET_EMBED - deja;
-	let poses = 0;
-	for (const champ of champs) {
-		if (poses >= 25) break;
-		const cout = champ.name.length + champ.value.length;
-		if (cout > reste) break;
-		reste -= cout;
-		embed.addFields({ ...champ, inline: false });
-		poses++;
-	}
-	return poses;
+  let reste = BUDGET_EMBED - deja;
+  let poses = 0;
+  for (const champ of champs) {
+    if (poses >= 25) break;
+    const cout = champ.name.length + champ.value.length;
+    if (cout > reste) break;
+    reste -= cout;
+    embed.addFields({ ...champ, inline: false });
+    poses++;
+  }
+  return poses;
 }
 
 async function agendaDuSite(): Promise<EvenementCalendrier[]> {
-	return await cached("agenda:evenements", TTL_AGENDA_MS, async () => {
-		const reponse = await appelService<ReponseCalendrier>("site", "/api/calendar-events");
-		return reponse.data?.events ?? [];
-	});
+  return await cached("agenda:evenements", TTL_AGENDA_MS, async () => {
+    const reponse = await appelService<ReponseCalendrier>("site", "/api/calendar-events");
+    return reponse.data?.events ?? [];
+  });
 }
 
 async function planningActif(jour: number | null): Promise<LigneStream[]> {
-	if (jour === null) {
-		return await sql<LigneStream[]>`
+  if (jour === null) {
+    return await sql<LigneStream[]>`
 			SELECT day_of_week, streamer_name, start_time::text, end_time::text, category, notes
 			FROM stream_schedules
 			WHERE status = 'active'
 			ORDER BY day_of_week, start_time
 		`;
-	}
-	return await sql<LigneStream[]>`
+  }
+  return await sql<LigneStream[]>`
 		SELECT day_of_week, streamer_name, start_time::text, end_time::text, category, notes
 		FROM stream_schedules
 		WHERE status = 'active' AND day_of_week = ${jour}
@@ -125,163 +121,161 @@ async function planningActif(jour: number | null): Promise<LigneStream[]> {
 }
 
 function messageErreur(err: unknown): string {
-	if (err instanceof ServiceIndisponibleError) return err.messageLisible;
-	return `Impossible de lire l'agenda : ${err instanceof Error ? err.message : String(err)}`;
+  if (err instanceof ServiceIndisponibleError) return err.messageLisible;
+  return `Impossible de lire l'agenda : ${err instanceof Error ? err.message : String(err)}`;
 }
 
 @Discord()
 @SlashGroup({
-	name: "agenda",
-	description: "Les rendez-vous de l'association et le planning des streams",
+  name: "agenda",
+  description: "Les rendez-vous de l'association et le planning des streams",
 })
 @SlashGroup("agenda")
 export class AgendaCommand {
-	@Slash({
-		name: "evenements",
-		description: "Les rendez-vous Rose Griffon (conventions, meet-ups)",
-	})
-	async evenements(
-		@SlashChoice(
-			{ name: "À venir", value: "a-venir" },
-			{ name: "Passés", value: "passes" },
-			{ name: "Tous", value: "tous" }
-		)
-		@SlashOption({
-			name: "periode",
-			description: "Quels événements afficher (par défaut : à venir)",
-			type: ApplicationCommandOptionType.String,
-			required: false,
-		})
-		periode: string | undefined,
-		@SlashOption({
-			name: "nombre",
-			description: "Nombre d'événements (1 à 10, 5 par défaut)",
-			type: ApplicationCommandOptionType.Integer,
-			required: false,
-			minValue: 1,
-			maxValue: 10,
-		})
-		nombre: number | undefined,
-		interaction: ChatInputCommandInteraction
-	) {
-		await interaction.deferReply();
-		try {
-			const brut = await agendaDuSite();
-			const tous = brut.map(normaliserEvenement).filter((e) => e !== null);
-			const demande: PeriodeAgenda =
-				periode === "passes" ? "passes" : periode === "tous" ? "tous" : "a-venir";
-			const choix = choisirEvenements(tous, demande, nombre ?? 5, new Date());
+  @Slash({
+    name: "evenements",
+    description: "Les rendez-vous Rose Griffon (conventions, meet-ups)",
+  })
+  async evenements(
+    @SlashChoice(
+      { name: "À venir", value: "a-venir" },
+      { name: "Passés", value: "passes" },
+      { name: "Tous", value: "tous" },
+    )
+    @SlashOption({
+      name: "periode",
+      description: "Quels événements afficher (par défaut : à venir)",
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    })
+    periode: string | undefined,
+    @SlashOption({
+      name: "nombre",
+      description: "Nombre d'événements (1 à 10, 5 par défaut)",
+      type: ApplicationCommandOptionType.Integer,
+      required: false,
+      minValue: 1,
+      maxValue: 10,
+    })
+    nombre: number | undefined,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await interaction.deferReply();
+    try {
+      const brut = await agendaDuSite();
+      const tous = brut.map(normaliserEvenement).filter(e => e !== null);
+      const demande: PeriodeAgenda = periode === "passes" ? "passes" : periode === "tous" ? "tous" : "a-venir";
+      const choix = choisirEvenements(tous, demande, nombre ?? 5, new Date());
 
-			if (choix.evenements.length === 0) {
-				await interaction.editReply({
-					content: "L'agenda de l'association est vide pour le moment.",
-				});
-				return;
-			}
+      if (choix.evenements.length === 0) {
+        await interaction.editReply({
+          content: "L'agenda de l'association est vide pour le moment.",
+        });
+        return;
+      }
 
-			const titre =
-				choix.periode === "a-venir"
-					? "Prochains rendez-vous Rose Griffon"
-					: choix.periode === "tous"
-						? "Agenda Rose Griffon"
-						: "Derniers rendez-vous Rose Griffon";
+      const titre =
+        choix.periode === "a-venir"
+          ? "Prochains rendez-vous Rose Griffon"
+          : choix.periode === "tous"
+            ? "Agenda Rose Griffon"
+            : "Derniers rendez-vous Rose Griffon";
 
-			const embed = rgEmbed().setTitle(titre).setURL(URL_EVENEMENTS);
+      const embed = rgEmbed().setTitle(titre).setURL(URL_EVENEMENTS);
 
-			// Le repli est ANNONCÉ : sans cette phrase, un membre qui demande « à
-			// venir » et reçoit des dates de 2025 croit à un bug d'affichage.
-			const avertissement = choix.repli
-				? "Aucun rendez-vous à venir n'est encore inscrit à l'agenda. Voici les derniers passés."
-				: "";
-			if (avertissement) embed.setDescription(avertissement);
+      // Le repli est ANNONCÉ : sans cette phrase, un membre qui demande « à
+      // venir » et reçoit des dates de 2025 croit à un bug d'affichage.
+      const avertissement = choix.repli
+        ? "Aucun rendez-vous à venir n'est encore inscrit à l'agenda. Voici les derniers passés."
+        : "";
+      if (avertissement) embed.setDescription(avertissement);
 
-			const champs = choix.evenements.map((evenement) => {
-				const details = [formaterPlageEvenement(evenement)];
-				if (evenement.lieu) details.push(`📍 ${evenement.lieu}`);
-				const description = nettoyerHtml(evenement.description);
-				if (description) details.push(description);
-				return {
-					name: truncate(evenement.titre, 250),
-					value: truncate(details.join("\n"), 1000),
-				};
-			});
-			const poses = ajouterChamps(embed, champs, titre.length + avertissement.length);
+      const champs = choix.evenements.map(evenement => {
+        const details = [formaterPlageEvenement(evenement)];
+        if (evenement.lieu) details.push(`📍 ${evenement.lieu}`);
+        const description = nettoyerHtml(evenement.description);
+        if (description) details.push(description);
+        return {
+          name: truncate(evenement.titre, 250),
+          value: truncate(details.join("\n"), 1000),
+        };
+      });
+      const poses = ajouterChamps(embed, champs, titre.length + avertissement.length);
 
-			// Le pied dit ce qui est affiché ET ce qui existe : une liste tronquée
-			// par le budget de l'embed ne doit pas passer pour l'agenda complet.
-			const reste = champs.length - poses;
-			pied(embed, {
-				note: truncate(
-					`${choix.total} événement${choix.total > 1 ? "s" : ""} à l'agenda${reste > 0 ? ` · ${reste} non affiché${reste > 1 ? "s" : ""}, faute de place` : ""} · rosegriffon.fr`,
-					2000
-				),
-			});
-			await interaction.editReply({ embeds: [embed] });
-		} catch (err) {
-			await interaction.editReply({ content: messageErreur(err) });
-		}
-	}
+      // Le pied dit ce qui est affiché ET ce qui existe : une liste tronquée
+      // par le budget de l'embed ne doit pas passer pour l'agenda complet.
+      const reste = champs.length - poses;
+      pied(embed, {
+        note: truncate(
+          `${choix.total} événement${choix.total > 1 ? "s" : ""} à l'agenda${reste > 0 ? ` · ${reste} non affiché${reste > 1 ? "s" : ""}, faute de place` : ""} · rosegriffon.fr`,
+          2000,
+        ),
+      });
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      await interaction.editReply({ content: messageErreur(err) });
+    }
+  }
 
-	@Slash({ name: "streams", description: "Le planning hebdomadaire de Rose Griffon TV" })
-	async streams(
-		@SlashChoice(
-			{ name: "Lundi", value: 1 },
-			{ name: "Mardi", value: 2 },
-			{ name: "Mercredi", value: 3 },
-			{ name: "Jeudi", value: 4 },
-			{ name: "Vendredi", value: 5 },
-			{ name: "Samedi", value: 6 },
-			{ name: "Dimanche", value: 0 }
-		)
-		@SlashOption({
-			name: "jour",
-			description: "N'afficher qu'un jour (par défaut : la semaine entière)",
-			type: ApplicationCommandOptionType.Integer,
-			required: false,
-		})
-		jour: number | undefined,
-		interaction: ChatInputCommandInteraction
-	) {
-		await interaction.deferReply();
-		try {
-			const lignes = await planningActif(jour ?? null);
-			if (lignes.length === 0) {
-				await interaction.editReply({
-					content:
-						jour === undefined
-							? "Aucun stream n'est programmé pour l'instant."
-							: `Aucun stream programmé le ${libelleJour(jour).toLowerCase()}.`,
-				});
-				return;
-			}
+  @Slash({ name: "streams", description: "Le planning hebdomadaire de Rose Griffon TV" })
+  async streams(
+    @SlashChoice(
+      { name: "Lundi", value: 1 },
+      { name: "Mardi", value: 2 },
+      { name: "Mercredi", value: 3 },
+      { name: "Jeudi", value: 4 },
+      { name: "Vendredi", value: 5 },
+      { name: "Samedi", value: 6 },
+      { name: "Dimanche", value: 0 },
+    )
+    @SlashOption({
+      name: "jour",
+      description: "N'afficher qu'un jour (par défaut : la semaine entière)",
+      type: ApplicationCommandOptionType.Integer,
+      required: false,
+    })
+    jour: number | undefined,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await interaction.deferReply();
+    try {
+      const lignes = await planningActif(jour ?? null);
+      if (lignes.length === 0) {
+        await interaction.editReply({
+          content:
+            jour === undefined
+              ? "Aucun stream n'est programmé pour l'instant."
+              : `Aucun stream programmé le ${libelleJour(jour).toLowerCase()}.`,
+        });
+        return;
+      }
 
-			const titre =
-				jour === undefined ? "Planning hebdomadaire" : `Planning — ${libelleJour(jour)}`;
-			const embed = rgEmbed().setTitle(titre).setURL(URL_STREAMS);
+      const titre = jour === undefined ? "Planning hebdomadaire" : `Planning — ${libelleJour(jour)}`;
+      const embed = rgEmbed().setTitle(titre).setURL(URL_STREAMS);
 
-			// Un champ par jour : au pire 7, très loin des 25 autorisés, chacun borné
-			// à 1 024 caractères — et l'ensemble borné au budget global de l'embed,
-			// car 7 × 1 024 dépasserait les 6 000 caractères tolérés au total.
-			const sections = grouperParJour(lignes);
-			const poses = ajouterChamps(
-				embed,
-				sections.map((section) => ({
-					name: section.libelle,
-					value: truncate(section.lignes.map(ligneStream).join("\n"), 1000),
-				})),
-				titre.length
-			);
-			const reste = sections.length - poses;
-			pied(embed, {
-				note: truncate(
-					`${lignes.length} stream${lignes.length > 1 ? "s" : ""} programmé${lignes.length > 1 ? "s" : ""}${reste > 0 ? ` · ${reste} jour${reste > 1 ? "s" : ""} non affiché${reste > 1 ? "s" : ""}, faute de place` : ""} · rosegriffon.fr`,
-					2000
-				),
-			});
+      // Un champ par jour : au pire 7, très loin des 25 autorisés, chacun borné
+      // à 1 024 caractères — et l'ensemble borné au budget global de l'embed,
+      // car 7 × 1 024 dépasserait les 6 000 caractères tolérés au total.
+      const sections = grouperParJour(lignes);
+      const poses = ajouterChamps(
+        embed,
+        sections.map(section => ({
+          name: section.libelle,
+          value: truncate(section.lignes.map(ligneStream).join("\n"), 1000),
+        })),
+        titre.length,
+      );
+      const reste = sections.length - poses;
+      pied(embed, {
+        note: truncate(
+          `${lignes.length} stream${lignes.length > 1 ? "s" : ""} programmé${lignes.length > 1 ? "s" : ""}${reste > 0 ? ` · ${reste} jour${reste > 1 ? "s" : ""} non affiché${reste > 1 ? "s" : ""}, faute de place` : ""} · rosegriffon.fr`,
+          2000,
+        ),
+      });
 
-			await interaction.editReply({ embeds: [embed] });
-		} catch (err) {
-			await interaction.editReply({ content: messageErreur(err) });
-		}
-	}
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      await interaction.editReply({ content: messageErreur(err) });
+    }
+  }
 }

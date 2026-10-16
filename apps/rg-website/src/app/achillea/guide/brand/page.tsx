@@ -6,8 +6,7 @@ import { metadonneesAchillea } from "@/app/achillea/metadonnees";
 
 export const metadata = metadonneesAchillea({
   titre: "Brand kit & direction artistique",
-  description:
-    "Charte graphique, palette des 11 paliers de ranking, typographies et logos d'Achilléa.",
+  description: "Charte graphique, palette des 11 paliers de ranking, typographies et logos d'Achilléa.",
   chemin: "/achillea/guide/brand",
 });
 
@@ -112,8 +111,7 @@ export default function AchilleaBrandPage() {
         </Link>
         <h1 className="text-3xl font-extrabold tracking-tight">Brand Kit & Direction Artistique</h1>
         <p className="text-muted-foreground">
-          Charte visuelle d&apos;Achilléa : palettes chromatiques des 11 paliers, typographies et
-          assets officiels.
+          Charte visuelle d&apos;Achilléa : palettes chromatiques des 11 paliers, typographies et assets officiels.
         </p>
       </div>
 
@@ -125,14 +123,13 @@ export default function AchilleaBrandPage() {
             Palette des 11 Paliers de Ranking
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Définies dans <code className="text-primary font-mono">achillea.css</code> sous forme de
-            gradients et variables CSS{" "}
-            <code className="font-mono">--achillea-rank-[1-11]-stops</code>.
+            Définies dans <code className="text-primary font-mono">achillea.css</code> sous forme de gradients et
+            variables CSS <code className="font-mono">--achillea-rank-[1-11]-stops</code>.
           </p>
         </CardHeader>
         <CardContent className="p-6 pt-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {PALETTES.map((p) => (
+            {PALETTES.map(p => (
               <div
                 key={p.rank}
                 className="rounded-xl overflow-hidden border border-border/60 bg-muted/20 flex flex-col"
@@ -153,9 +150,7 @@ export default function AchilleaBrandPage() {
                       {p.primary}
                     </Badge>
                   </div>
-                  <code className="text-[11px] font-mono text-muted-foreground truncate block">
-                    var({p.stopsVar})
-                  </code>
+                  <code className="text-[11px] font-mono text-muted-foreground truncate block">var({p.stopsVar})</code>
                 </div>
               </div>
             ))}
@@ -173,23 +168,16 @@ export default function AchilleaBrandPage() {
         </CardHeader>
         <CardContent className="p-6 pt-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {FONTS.map((font) => (
-              <div
-                key={font.family}
-                className="border border-border/60 rounded-xl p-4 bg-muted/20 space-y-2"
-              >
+            {FONTS.map(font => (
+              <div key={font.family} className="border border-border/60 rounded-xl p-4 bg-muted/20 space-y-2">
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-bold text-sm">{font.label}</div>
                   <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground">
                     {font.fallback}
                   </Badge>
                 </div>
-                <div className="text-xl font-bold tracking-wide">
-                  Achilléa — Aa Bb Cc 0123456789
-                </div>
-                <div className="text-xs text-muted-foreground font-mono truncate">
-                  Source : {font.source}
-                </div>
+                <div className="text-xl font-bold tracking-wide">Achilléa — Aa Bb Cc 0123456789</div>
+                <div className="text-xs text-muted-foreground font-mono truncate">Source : {font.source}</div>
               </div>
             ))}
           </div>
@@ -206,7 +194,7 @@ export default function AchilleaBrandPage() {
         </CardHeader>
         <CardContent className="p-6 pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {LOGOS.map((logo) => (
+            {LOGOS.map(logo => (
               <div
                 key={logo.path}
                 className="border border-border/60 rounded-xl p-4 bg-muted/20 flex flex-col items-center text-center space-y-3"
@@ -224,9 +212,7 @@ export default function AchilleaBrandPage() {
                   <div className="font-bold text-sm">{logo.label}</div>
                   {logo.note && <div className="text-xs text-muted-foreground">{logo.note}</div>}
                 </div>
-                <code className="text-[11px] font-mono text-muted-foreground/80 break-all">
-                  {logo.path}
-                </code>
+                <code className="text-[11px] font-mono text-muted-foreground/80 break-all">{logo.path}</code>
               </div>
             ))}
           </div>

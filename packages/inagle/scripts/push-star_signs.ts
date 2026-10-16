@@ -18,7 +18,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importStarSigns(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("[push-star_signs] échec :", e);
     process.exit(1);
   });

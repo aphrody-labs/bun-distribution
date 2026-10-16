@@ -15,11 +15,7 @@ import { loadJsonAsync } from "../core/async-loader.js";
 import { findConfigFile } from "../core/data-loader.js";
 import { EntityExporters, type ExportableEntity } from "../core/exporters.js";
 import { DATA_ROOT } from "../core/paths.js";
-import {
-  buildEventCrcLookup,
-  decodeUnlockCondition,
-  type UnlockCondition,
-} from "./unlock-condition.js";
+import { buildEventCrcLookup, decodeUnlockCondition, type UnlockCondition } from "./unlock-condition.js";
 
 // ============================================================================
 // Types
@@ -69,7 +65,7 @@ function parseContent(content: any): ParsedSceneArchive[] {
     if (list.name === "m_sceneArchiveDataList") {
       // 1re passe : index CRC32 -> event_id pour resoudre les feuilles event-flag.
       const crcLookup = buildEventCrcLookup(
-        (list.values as any[]).map((v) => v.event_id_text).filter(Boolean) as string[],
+        (list.values as any[]).map(v => v.event_id_text).filter(Boolean) as string[],
       );
       const resolveEvent = (crc: number) => crcLookup.get(crc >>> 0);
 
@@ -105,9 +101,7 @@ function parseContent(content: any): ParsedSceneArchive[] {
 // Loaders
 // ============================================================================
 
-export async function loadSceneArchiveConfigAsync(
-  dataPath: string = DATA_ROOT,
-): Promise<ParsedSceneArchive[] | null> {
+export async function loadSceneArchiveConfigAsync(dataPath: string = DATA_ROOT): Promise<ParsedSceneArchive[] | null> {
   const filename = findConfigFile("scene_archive", "scene_archive_config");
   if (!filename) return null;
 
@@ -116,9 +110,7 @@ export async function loadSceneArchiveConfigAsync(
   return content ? parseContent(content) : null;
 }
 
-export async function buildSceneArchiveDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<SceneArchiveDatabase> {
+export async function buildSceneArchiveDatabase(dataPath: string = DATA_ROOT): Promise<SceneArchiveDatabase> {
   const scenes = (await loadSceneArchiveConfigAsync(dataPath)) || [];
   const byId = new Map<string, ParsedSceneArchive>();
   const byCategory = new Map<number, ParsedSceneArchive[]>();

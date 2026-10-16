@@ -15,31 +15,29 @@ import type { ParticipantDTO, Tournament, TournamentSeries } from "./tournament"
 import type { UserDTO } from "./user";
 
 /** `TournamentSeries` sans sa récursion de tournois peuplés. */
-export interface WireTournamentSeries
-	extends Omit<TournamentSeries, "organization" | "tournaments"> {
-	organization: EntityRef<OrganizationDTO>;
-	tournaments?: Array<EntityRef<WireTournament>>;
+export interface WireTournamentSeries extends Omit<TournamentSeries, "organization" | "tournaments"> {
+  organization: EntityRef<OrganizationDTO>;
+  tournaments?: Array<EntityRef<WireTournament>>;
 }
 
 /** `Tournament` tel qu'il circule (relations éventuellement réduites à un id). */
-export interface WireTournament
-	extends Omit<Tournament, "series" | "organization" | "managers" | "participants"> {
-	series?: EntityRef<WireTournamentSeries> | null;
-	organization: EntityRef<OrganizationDTO>;
-	/**
-	 * Relations OPTIONNELLES sur la liste.
-	 *
-	 * `GET /tournaments` ne les peuple pas — seul `GET /tournaments/:id` le
-	 * fait. Les exiger faisait rejeter les 9 tournois de la liste et affichait
-	 * « Aucun tournoi trouvé » sur une API qui en servait neuf.
-	 */
-	managers?: Array<EntityRef<UserDTO>>;
-	participants?: Array<EntityRef<WireParticipant>>;
+export interface WireTournament extends Omit<Tournament, "series" | "organization" | "managers" | "participants"> {
+  series?: EntityRef<WireTournamentSeries> | null;
+  organization: EntityRef<OrganizationDTO>;
+  /**
+   * Relations OPTIONNELLES sur la liste.
+   *
+   * `GET /tournaments` ne les peuple pas — seul `GET /tournaments/:id` le
+   * fait. Les exiger faisait rejeter les 9 tournois de la liste et affichait
+   * « Aucun tournoi trouvé » sur une API qui en servait neuf.
+   */
+  managers?: Array<EntityRef<UserDTO>>;
+  participants?: Array<EntityRef<WireParticipant>>;
 }
 
 /** `ParticipantDTO` tel qu'il circule (le tournoi n'est souvent qu'un id). */
 export interface WireParticipant extends Omit<ParticipantDTO, "tournament"> {
-	tournament: EntityRef<WireTournament>;
+  tournament: EntityRef<WireTournament>;
 }
 
 /**
@@ -52,58 +50,58 @@ export interface WireParticipant extends Omit<ParticipantDTO, "tournament"> {
 export type TournamentDetail = [WireTournament, WireParticipant[], unknown];
 
 export interface OpenRegistrationsResult {
-	success: boolean;
-	id: number;
-	internalState: TournamentState;
+  success: boolean;
+  id: number;
+  internalState: TournamentState;
 }
 
 export interface ScorePolicyResult {
-	success: boolean;
-	scoreReportPolicy: ScoreReportPolicy;
-	error?: string;
+  success: boolean;
+  scoreReportPolicy: ScoreReportPolicy;
+  error?: string;
 }
 
 export interface DisqualifyResult extends SuccessResponse {
-	forfeitedLobbies?: number;
-	promoted?: string | null;
+  forfeitedLobbies?: number;
+  promoted?: string | null;
 }
 
 export interface ParticipantMutationResult extends SuccessResponse {
-	participant?: WireParticipant;
+  participant?: WireParticipant;
 }
 
 export interface CloseTournamentResult extends SuccessResponse {
-	openLobbies?: number;
+  openLobbies?: number;
 }
 
 export interface CancelTournamentResult extends SuccessResponse {
-	notified?: number;
+  notified?: number;
 }
 
 export interface RestoreTournamentResult extends SuccessResponse {
-	internalState?: TournamentState;
+  internalState?: TournamentState;
 }
 
 export interface PlacementPrizesResult extends SuccessResponse {
-	applied?: boolean;
-	reason?: string;
-	deltas?: Record<string, number>;
-	tournamentSize?: number;
+  applied?: boolean;
+  reason?: string;
+  deltas?: Record<string, number>;
+  tournamentSize?: number;
 }
 
 export interface SeedingResult {
-	participantId: number;
-	seed: number | null;
-	previousSeed: number | null;
-	swappedWith: string | null;
-	bracketUpdated: boolean;
+  participantId: number;
+  seed: number | null;
+  previousSeed: number | null;
+  swappedWith: string | null;
+  bracketUpdated: boolean;
 }
 
 export interface SeedBatchResult {
-	mode: string;
-	bracketUpdated: boolean;
-	assignments?: unknown[];
-	cleared?: number;
+  mode: string;
+  bracketUpdated: boolean;
+  assignments?: unknown[];
+  cleared?: number;
 }
 
 /** Enveloppe générique des mutations de tournoi. */

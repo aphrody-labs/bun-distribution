@@ -14,11 +14,7 @@ export function standaloneServer(root: string, app: string): string {
   return join(app, ".next", "standalone", member, "server.js");
 }
 
-export async function assertFreshStandalone(
-  app: string,
-  server: string,
-  startedAt: number,
-): Promise<void> {
+export async function assertFreshStandalone(app: string, server: string, startedAt: number): Promise<void> {
   for (const path of [join(app, ".next", "BUILD_ID"), server]) {
     const artifact = await stat(path);
     if (!artifact.isFile() || artifact.mtimeMs < startedAt)
@@ -30,12 +26,7 @@ export async function buildNext(root: string, app: string, args: string[]): Prom
   await checkBunRuntime(root);
   const server = standaloneServer(root, app);
   const sync = Bun.spawn(
-    [
-      process.execPath,
-      join(root, "packages/rg-assets/scripts/sync-website-public.ts"),
-      "--to",
-      join(app, "public"),
-    ],
+    [process.execPath, join(root, "packages/rg-assets/scripts/sync-website-public.ts"), "--to", join(app, "public")],
     { cwd: app, stdout: "inherit", stderr: "inherit" },
   );
   const syncExit = await sync.exited;
@@ -44,9 +35,7 @@ export async function buildNext(root: string, app: string, args: string[]): Prom
   const runner = (await import(Bun.resolveSync("@aphrody/next-bun/run", app))) as {
     runNext(args: string[], cwd: string): Promise<number>;
   };
-  const selectedBundler = args.some((arg) => ["--webpack", "--turbopack", "--turbo"].includes(arg))
-    ? []
-    : ["--webpack"];
+  const selectedBundler = args.some(arg => ["--webpack", "--turbopack", "--turbo"].includes(arg)) ? [] : ["--webpack"];
   const exitCode = await runner.runNext(["build", ...selectedBundler, ...args], app);
   if (exitCode !== 0) return exitCode;
   await assertFreshStandalone(app, server, startedAt);
@@ -59,6 +48,6 @@ if (import.meta.main) {
   process.exitCode = await buildNext(
     resolve(import.meta.dir, "../../.."),
     process.cwd(),
-    args.filter((arg) => arg !== "--analyze"),
+    args.filter(arg => arg !== "--analyze"),
   );
 }

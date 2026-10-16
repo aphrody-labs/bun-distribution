@@ -99,7 +99,7 @@ describe("buildDrawList", () => {
       }),
     ]);
     const list = buildDrawList(l);
-    expect(list.map((d) => d.name)).toEqual(["bg", "top"]);
+    expect(list.map(d => d.name)).toEqual(["bg", "top"]);
   });
 
   test("ignore les objets sans sprite/text/primitive", () => {
@@ -108,9 +108,7 @@ describe("buildDrawList", () => {
   });
 
   test("override visible:false omet l'instance", () => {
-    const l = layout([
-      obj({ name: "s", sprite: { logicalPath: "a", pngUrl: "/a.png", w: 1, h: 1 } }),
-    ]);
+    const l = layout([obj({ name: "s", sprite: { logicalPath: "a", pngUrl: "/a.png", w: 1, h: 1 } })]);
     expect(buildDrawList(l, { s: { visible: false } })).toHaveLength(0);
     expect(buildDrawList(l, { s: { visible: true } })).toHaveLength(1);
   });
@@ -179,7 +177,7 @@ describe("buildDrawList", () => {
         sprite: { logicalPath: "b", pngUrl: "/b.png", w: 1, h: 1 },
       }),
     ]);
-    expect(buildDrawList(l).map((d) => d.name)).toEqual(["first", "second"]);
+    expect(buildDrawList(l).map(d => d.name)).toEqual(["first", "second"]);
   });
 });
 
@@ -314,10 +312,10 @@ describe("mapWithConcurrency", () => {
     const seen: number[] = [];
     let inFlight = 0;
     let peak = 0;
-    await mapWithConcurrency(items, 6, async (n) => {
+    await mapWithConcurrency(items, 6, async n => {
       inFlight += 1;
       peak = Math.max(peak, inFlight);
-      await new Promise((r) => setTimeout(r, 1));
+      await new Promise(r => setTimeout(r, 1));
       seen.push(n);
       inFlight -= 1;
     });

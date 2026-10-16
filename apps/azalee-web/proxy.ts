@@ -11,8 +11,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isProtectedPage = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
-  const isProtectedApi = API_PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  const isProtectedPage = PROTECTED_PATHS.some(p => pathname.startsWith(p));
+  const isProtectedApi = API_PROTECTED_PATHS.some(p => pathname.startsWith(p));
 
   if (!isProtectedPage && !isProtectedApi) {
     return NextResponse.next();
@@ -20,8 +20,7 @@ export async function proxy(request: NextRequest) {
 
   // Quick guard: check cookie presence (full validation happens server-side in layouts/pages)
   const sessionCookie =
-    request.cookies.get("better-auth.session_token") ||
-    request.cookies.get("__Secure-better-auth.session_token");
+    request.cookies.get("better-auth.session_token") || request.cookies.get("__Secure-better-auth.session_token");
 
   if (!sessionCookie) {
     if (isProtectedApi) {

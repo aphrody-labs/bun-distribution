@@ -41,8 +41,7 @@ const createCanvas = (w: number, h: number): HTMLCanvasElement | OffscreenCanvas
   return c;
 };
 
-const cssFont = (text: MenuText): string =>
-  `${text.size}px "${text.font}", "Noto Sans JP", sans-serif`;
+const cssFont = (text: MenuText): string => `${text.size}px "${text.font}", "Noto Sans JP", sans-serif`;
 
 /**
  * Mesure puis rend un `MenuText` (ou une valeur override) dans un canvas2d.
@@ -60,10 +59,7 @@ export function renderTextBitmap(text: MenuText, value: string, dpr = 1): TextBi
 
   // 1er passage : mesure (canvas minimal).
   const probe = createCanvas(1, 1);
-  const pctx = probe.getContext("2d") as
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D
-    | null;
+  const pctx = probe.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   if (!pctx) {
     return null;
   }
@@ -73,10 +69,7 @@ export function renderTextBitmap(text: MenuText, value: string, dpr = 1): TextBi
   const textH = Math.ceil(text.size * LINE_HEIGHT_FACTOR) + TEXT_PADDING * 2;
 
   const canvas = createCanvas(Math.ceil(textW * scale), Math.ceil(textH * scale));
-  const ctx = canvas.getContext("2d") as
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D
-    | null;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   if (!ctx) {
     return null;
   }

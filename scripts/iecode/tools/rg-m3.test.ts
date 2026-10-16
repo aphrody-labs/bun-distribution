@@ -17,15 +17,9 @@ const config = {
 
 test("brand configuration rejects duplicate selectors and malformed seeds", () => {
   expect(parseBrandConfig(config).themes).toHaveLength(1);
-  expect(() => parseBrandConfig({ ...config, themes: [theme, { ...theme, id: "other" }] })).toThrow(
-    "repeated",
-  );
-  expect(() => parseBrandConfig({ ...config, themes: [{ ...theme, seed: "#wrong" }] })).toThrow(
-    "theme",
-  );
-  expect(() =>
-    parseBrandConfig({ ...config, themes: [{ ...theme, selectors: ["body; :root"] }] }),
-  ).toThrow("selector");
+  expect(() => parseBrandConfig({ ...config, themes: [theme, { ...theme, id: "other" }] })).toThrow("repeated");
+  expect(() => parseBrandConfig({ ...config, themes: [{ ...theme, seed: "#wrong" }] })).toThrow("theme");
+  expect(() => parseBrandConfig({ ...config, themes: [{ ...theme, selectors: ["body; :root"] }] })).toThrow("selector");
   expect(() => parseBrandConfig({ ...config, contrast: Number.NaN })).toThrow("contract");
 });
 
@@ -38,13 +32,9 @@ test("native scheme scoping retains every role, aliases and Tailwind declaration
   expect(scoped).toContain("--primary: var(--md-sys-color-primary);");
   expect(scoped).toContain("@theme inline");
   expect(scoped).not.toContain(":root {");
-  expect(() => scopeNativeSheet(sheet.replace("--primary:", "--invalid:"), theme)).toThrow(
-    "contract",
-  );
+  expect(() => scopeNativeSheet(sheet.replace("--primary:", "--invalid:"), theme)).toThrow("contract");
 });
 
 test("generation refuses an unavailable native executable without producing fallback colors", async () => {
-  await expect(
-    generateBrandCss(parseBrandConfig(config), "missing-qualified-native-m3-generator"),
-  ).rejects.toThrow();
+  await expect(generateBrandCss(parseBrandConfig(config), "missing-qualified-native-m3-generator")).rejects.toThrow();
 });

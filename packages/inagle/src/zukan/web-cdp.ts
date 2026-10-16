@@ -55,7 +55,7 @@ async function defaultFactory(): Promise<CdpPageFactory> {
   if (!page || typeof page.connect !== "function") {
     throw new Error(`${APHRODY_CDP_MODULE} does not export WebCdpPage.connect`);
   }
-  return (endpoint) => page.connect(endpoint);
+  return endpoint => page.connect(endpoint);
 }
 
 export class WebCdpPage implements CdpPageLike {
@@ -88,16 +88,12 @@ export class WebCdpPage implements CdpPageLike {
   }
 }
 
-export async function waitForSelector(
-  page: WebCdpPage,
-  selector: string,
-  timeoutMs = 15_000,
-): Promise<void> {
+export async function waitForSelector(page: WebCdpPage, selector: string, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   const expression = `Boolean(document.querySelector(${JSON.stringify(selector)}))`;
   while (Date.now() < deadline) {
     if (await page.evaluate<boolean>(expression)) return;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
   throw new Error(`Selector ${JSON.stringify(selector)} was not found within ${timeoutMs} ms`);
 }

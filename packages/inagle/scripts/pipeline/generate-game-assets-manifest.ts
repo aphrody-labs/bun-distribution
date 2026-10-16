@@ -32,8 +32,7 @@ import { homedir } from "node:os";
 
 const REPO_ROOT = iecodeRoot();
 const DUMP_ROOT =
-  process.env.DUMP_ROOT ||
-  join(homedir(), ".local", "share", "Steam", "iecode", "inazuma", "data", "dx11");
+  process.env.DUMP_ROOT || join(homedir(), ".local", "share", "Steam", "iecode", "inazuma", "data", "dx11");
 const CROSS_REF_PATH = join(REPO_ROOT, "packages/inagle/data/asset-cross-reference.json");
 const STEAM_BUILDID = 22792000; // appmanifest_2799860.acf (INAZUMA ELEVEN: Victory Road)
 const DRY = process.argv.includes("--dry");
@@ -139,9 +138,7 @@ async function main(): Promise<void> {
   const all = [...rows.values()];
   const pct = expectedTotal > 0 ? ((expectedCovered / expectedTotal) * 100).toFixed(1) : "n/a";
   console.log(`Manifeste : ${all.length} fichiers réels (tous exists=true)`);
-  console.log(
-    `Couverture cross-ref : ${expectedCovered}/${expectedTotal} assets attendus couverts (${pct}%)`,
-  );
+  console.log(`Couverture cross-ref : ${expectedCovered}/${expectedTotal} assets attendus couverts (${pct}%)`);
 
   if (DRY) {
     console.log("--dry : aucune écriture DB. Échantillon :");
@@ -190,7 +187,7 @@ async function main(): Promise<void> {
   console.log("== Terminé ==");
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err);
   process.exit(1);
 });

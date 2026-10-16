@@ -1,10 +1,5 @@
 import { readVfsConfig } from "./vfs-data.js";
-import {
-  cfgbinDataSource,
-  cfgbinDbAvailable,
-  cfgbinDbLoadByPath,
-  cfgbinPostgresLoadByPath,
-} from "./cfgbin-db.js";
+import { cfgbinDataSource, cfgbinDbAvailable, cfgbinDbLoadByPath, cfgbinPostgresLoadByPath } from "./cfgbin-db.js";
 
 const fileCache = new Map<string, any>();
 

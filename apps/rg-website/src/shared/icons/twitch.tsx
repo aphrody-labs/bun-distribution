@@ -7,5 +7,5 @@ import type { SVGProps } from "react";
  * caractère. Voir `twitter.tsx` pour le raisonnement.
  */
 export function TwitchIcon(props: SVGProps<SVGSVGElement>) {
-	return <TwitchIconPartage title="Twitch" {...props} />;
+  return <TwitchIconPartage title="Twitch" {...props} />;
 }

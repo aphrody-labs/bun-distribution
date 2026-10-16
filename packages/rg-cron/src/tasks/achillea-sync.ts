@@ -27,47 +27,46 @@ import { sql } from "../lib/db.js";
 import { GUILDES_SUIVIES } from "../lib/discord.js";
 
 export interface ResultatSyncAchillea {
-	success: boolean;
-	/** Membres projetés dans `achillea.guild_member_meta`. */
-	membres?: number;
-	/** Rôles projetés dans `achillea.guild_role`. */
-	roles?: number;
-	/** Comptes `achillea."user"` dont l'identité affichée a été rafraîchie. */
-	comptes?: number;
-	error?: string;
+  success: boolean;
+  /** Membres projetés dans `achillea.guild_member_meta`. */
+  membres?: number;
+  /** Rôles projetés dans `achillea.guild_role`. */
+  roles?: number;
+  /** Comptes `achillea."user"` dont l'identité affichée a été rafraîchie. */
+  comptes?: number;
+  error?: string;
 }
 
 /** Guilde d'Achilléa : la seule dont le bot Achilléa a besoin. */
-const GUILDE_ACHILLEA =
-	GUILDES_SUIVIES.find((guilde) => guilde.cle === "achillea")?.id ?? "1055585286320554055";
+const GUILDE_ACHILLEA = GUILDES_SUIVIES.find(guilde => guilde.cle === "achillea")?.id ?? "1055585286320554055";
 
 export async function runAchilleaSync(): Promise<ResultatSyncAchillea> {
-	try {
-		// Les tables d'Achilléa portent la RLS de leur ancienne base : leurs
-		// politiques n'ouvrent que le SELECT, à `anon` et `authenticated`. Le
-		// démon se connecte en rôle `rg`, qui n'a pas `BYPASSRLS` — d'où un
-		// « new row violates row-level security policy » sur le premier INSERT.
-		// On emprunte `service_role`, dont `rg` est membre, le temps de la
-		// projection : c'est le rôle de service déjà utilisé pour toute écriture
-		// qui doit traverser une RLS. SET LOCAL reste lié à cette transaction.
-		const resultat = await sql.begin(async (tx) => {
-			await tx`SET LOCAL ROLE service_role`;
-			const [source] = await tx`
+  try {
+    // Les tables d'Achilléa portent la RLS de leur ancienne base : leurs
+    // politiques n'ouvrent que le SELECT, à `anon` et `authenticated`. Le
+    // démon se connecte en rôle `rg`, qui n'a pas `BYPASSRLS` — d'où un
+    // « new row violates row-level security policy » sur le premier INSERT.
+    // On emprunte `service_role`, dont `rg` est membre, le temps de la
+    // projection : c'est le rôle de service déjà utilisé pour toute écriture
+    // qui doit traverser une RLS. SET LOCAL reste lié à cette transaction.
+    const resultat = await sql.begin(async tx => {
+      await tx`SET LOCAL ROLE service_role`;
+      const [source] = await tx`
 				SELECT count(*)::integer AS membres
 				  FROM public.discord_appartenances
 				 WHERE guild_id = ${GUILDE_ACHILLEA} AND left_at IS NULL`;
-			if (!source || Number(source.membres) === 0) {
-				throw new Error("Aucune appartenance Achilléa active en source : projection annulée.");
-			}
+      if (!source || Number(source.membres) === 0) {
+        throw new Error("Aucune appartenance Achilléa active en source : projection annulée.");
+      }
 
-			// La ligne de guilde doit exister avant ses rôles : `guild_role.guild_id`
-			// et `guild_member_meta.guild_id` la référencent en clé étrangère.
-			await tx`
+      // La ligne de guilde doit exister avant ses rôles : `guild_role.guild_id`
+      // et `guild_member_meta.guild_id` la référencent en clé étrangère.
+      await tx`
 			INSERT INTO achillea.guild (id, created_at, updated_at, last_interact, deleted)
 			VALUES (${GUILDE_ACHILLEA}, now(), now(), now(), false)
 			ON CONFLICT (id) DO NOTHING`;
 
-			const roles = await tx`
+      const roles = await tx`
 			INSERT INTO achillea.guild_role (
 				id, guild_id, name, color, position, permissions, hoist, mentionable, scanned_at
 			)
@@ -85,14 +84,14 @@ export async function runAchilleaSync(): Promise<ResultatSyncAchillea> {
 				scanned_at = now()
 			RETURNING id`;
 
-			// Un rôle supprimé sur Discord disparaît aussi côté Achilléa : le laisser
-			// ferait porter à des membres des rôles qui n'existent plus.
-			await tx`
+      // Un rôle supprimé sur Discord disparaît aussi côté Achilléa : le laisser
+      // ferait porter à des membres des rôles qui n'existent plus.
+      await tx`
 			DELETE FROM achillea.guild_role
 			 WHERE guild_id = ${GUILDE_ACHILLEA}
 			   AND id NOT IN (SELECT role_id FROM public.discord_roles WHERE guild_id = ${GUILDE_ACHILLEA})`;
 
-			const membres = await tx`
+      const membres = await tx`
 			INSERT INTO achillea.guild_member_meta (
 				guild_id, user_id, nick, joined_at, premium_since, roles, pending, scanned_at
 			)
@@ -109,7 +108,7 @@ export async function runAchilleaSync(): Promise<ResultatSyncAchillea> {
 				scanned_at = now()
 			RETURNING user_id`;
 
-			await tx`
+      await tx`
 			DELETE FROM achillea.guild_member_meta
 			 WHERE guild_id = ${GUILDE_ACHILLEA}
 			   AND user_id NOT IN (
@@ -117,9 +116,9 @@ export async function runAchilleaSync(): Promise<ResultatSyncAchillea> {
 			        WHERE guild_id = ${GUILDE_ACHILLEA} AND left_at IS NULL
 			   )`;
 
-			// Identité affichée seulement, et seulement si elle a changé : un UPDATE
-			// inconditionnel réécrirait 3 315 lignes toutes les demi-heures.
-			const comptes = await tx`
+      // Identité affichée seulement, et seulement si elle a changé : un UPDATE
+      // inconditionnel réécrirait 3 315 lignes toutes les demi-heures.
+      const comptes = await tx`
 			UPDATE achillea."user" u
 			   SET username = COALESCE(a.username, u.username),
 			       avatar = COALESCE(a.avatar_url, u.avatar),
@@ -131,20 +130,20 @@ export async function runAchilleaSync(): Promise<ResultatSyncAchillea> {
 			   AND (u.username IS DISTINCT FROM a.username OR u.avatar IS DISTINCT FROM a.avatar_url)
 			RETURNING u.id`;
 
-			return { comptes: comptes.length, membres: membres.length, roles: roles.length };
-		});
+      return { comptes: comptes.length, membres: membres.length, roles: roles.length };
+    });
 
-		console.log(
-			`[achillea] projection Discord → Achilléa : ${resultat.roles} rôles, ${resultat.membres} membres, ${resultat.comptes} comptes rafraîchis`
-		);
+    console.log(
+      `[achillea] projection Discord → Achilléa : ${resultat.roles} rôles, ${resultat.membres} membres, ${resultat.comptes} comptes rafraîchis`,
+    );
 
-		return {
-			...resultat,
-			success: true,
-		};
-	} catch (err) {
-		const motif = err instanceof Error ? err.message : String(err);
-		console.error("[achillea] projection impossible :", motif);
-		return { error: motif, success: false };
-	}
+    return {
+      ...resultat,
+      success: true,
+    };
+  } catch (err) {
+    const motif = err instanceof Error ? err.message : String(err);
+    console.error("[achillea] projection impossible :", motif);
+    return { error: motif, success: false };
+  }
 }

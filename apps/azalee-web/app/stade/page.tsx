@@ -40,15 +40,9 @@ export default async function StadiumsPage({
       {/* Grid */}
       {stadiums.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {stadiums.map((s) => (
+          {stadiums.map(s => (
             <FadeInItem key={s.id}>
-              <StadiumCard
-                id={s.id}
-                code={s.code}
-                title={s.title}
-                index={s.index}
-                thumb={s.thumb}
-              />
+              <StadiumCard id={s.id} code={s.code} title={s.title} index={s.index} thumb={s.thumb} />
             </FadeInItem>
           ))}
         </FadeInStagger>

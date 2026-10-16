@@ -40,10 +40,7 @@ describe("webhook utilities", () => {
     });
 
     test("parse request", async () => {
-      const result = await parseWebhookRequest<PatreonWebhookTrigger.PostPublished>(
-        validRequest,
-        "secret",
-      );
+      const result = await parseWebhookRequest<PatreonWebhookTrigger.PostPublished>(validRequest, "secret");
       expect(result.verified).toEqual(true);
       expect(result.event).toEqual(PatreonWebhookTrigger.PostPublished);
       expect(result.payload).toBeDefined();
@@ -75,7 +72,7 @@ describe("webhook utilities", () => {
               },
             }),
             "secret",
-          ).catch((err) => {
+          ).catch(err => {
             console.error(err.message);
             return err.message;
           });

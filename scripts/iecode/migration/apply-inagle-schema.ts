@@ -58,7 +58,7 @@ export function applySqlite(dbPath: string): { tables: string[]; count: number }
     )
     .all();
 
-  const tables = rows.map((r) => r.name);
+  const tables = rows.map(r => r.name);
   db.close();
 
   console.log(`✅ SQLite schema applied successfully: ${tables.length} tables verified.`);
@@ -66,10 +66,7 @@ export function applySqlite(dbPath: string): { tables: string[]; count: number }
 }
 
 export function resolveInaglePostgresUrl(connectionUrl?: string): string | undefined {
-  const url =
-    connectionUrl?.trim() ||
-    process.env.INAGLE_DATABASE_URL?.trim() ||
-    process.env.NIE_PG_URL?.trim();
+  const url = connectionUrl?.trim() || process.env.INAGLE_DATABASE_URL?.trim() || process.env.NIE_PG_URL?.trim();
 
   if (!url) return undefined;
 
@@ -79,33 +76,22 @@ export function resolveInaglePostgresUrl(connectionUrl?: string): string | undef
   } catch {
     throw new Error("Inagle/NIE migrations require a valid PostgreSQL connection URL");
   }
-  if (
-    !["postgres:", "postgresql:"].includes(parsed.protocol) ||
-    !parsed.hostname ||
-    parsed.pathname.length <= 1
-  )
+  if (!["postgres:", "postgresql:"].includes(parsed.protocol) || !parsed.hostname || parsed.pathname.length <= 1)
     throw new Error("Inagle/NIE migrations require a valid PostgreSQL connection URL");
 
   const hostname = parsed.hostname.toLowerCase();
-  if (
-    hostname === "supabase.co" ||
-    hostname.endsWith(".supabase.co") ||
-    hostname.endsWith(".supabase.com")
-  )
+  if (hostname === "supabase.co" || hostname.endsWith(".supabase.co") || hostname.endsWith(".supabase.com"))
     throw new Error("Inagle/NIE migrations cannot target Supabase; use the Neon gameplay database");
 
   const isLoopback = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(hostname);
   const isNeon = hostname.endsWith(".neon.tech");
   if (!isLoopback && !isNeon)
-    throw new Error(
-      "Inagle/NIE migrations require the dedicated Neon project or a loopback PostgreSQL target",
-    );
+    throw new Error("Inagle/NIE migrations require the dedicated Neon project or a loopback PostgreSQL target");
 
   if (isNeon && hostname.includes("-pooler."))
     throw new Error("Neon schema migrations require a direct, non-pooler endpoint");
 
-  if (isNeon && parsed.pathname !== "/inagle")
-    throw new Error("Neon gameplay migrations require the inagle database");
+  if (isNeon && parsed.pathname !== "/inagle") throw new Error("Neon gameplay migrations require the inagle database");
 
   return url;
 }
@@ -173,7 +159,7 @@ export function verifySchemas(): boolean {
     console.error(`❌ PostgreSQL migrations dir not found: ${pgMigrationsDir}`);
     return false;
   }
-  const pgFiles = readdirSync(pgMigrationsDir).filter((f) => f.endsWith(".sql"));
+  const pgFiles = readdirSync(pgMigrationsDir).filter(f => f.endsWith(".sql"));
   if (pgFiles.length === 0) {
     console.error("❌ No PostgreSQL migration files found.");
     return false;
@@ -230,7 +216,7 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.main) {
-  main().catch((err) => {
+  main().catch(err => {
     console.error("❌ Migration error:", err);
     process.exit(1);
   });

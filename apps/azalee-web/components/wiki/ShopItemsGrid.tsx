@@ -28,16 +28,12 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 function normalize(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
 function ShopItemTile({ item }: { item: ShopItem }) {
   const [imgError, setImgError] = useState(false);
-  const resolvedSrc =
-    resolveAssetUrl(item.icon) || (item.internalCode ? getItemIconUrl(item.internalCode) : null);
+  const resolvedSrc = resolveAssetUrl(item.icon) || (item.internalCode ? getItemIconUrl(item.internalCode) : null);
   const hasRealImage = !!resolvedSrc && resolvedSrc !== PLACEHOLDERS.item && !imgError;
   const catIcon = (item.category && CATEGORY_ICON[item.category]) || "backpack";
 
@@ -75,9 +71,7 @@ function ShopItemTile({ item }: { item: ShopItem }) {
 
   const cls = cn(
     "block rounded-xl border border-outline-variant/30 bg-surface-container-low transition-all duration-200 group",
-    item.resolved && item.id
-      ? "hover:bg-surface-container hover:shadow-md hover:-translate-y-0.5"
-      : "opacity-80",
+    item.resolved && item.id ? "hover:bg-surface-container hover:shadow-md hover:-translate-y-0.5" : "opacity-80",
   );
 
   if (item.resolved && item.id) {
@@ -106,7 +100,7 @@ export function ShopItemsGrid({ items }: { items: ShopItem[] }) {
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
-    return items.filter((it) => {
+    return items.filter(it => {
       if (activeCat && it.category !== activeCat) return false;
       if (q && !normalize(it.name).includes(q)) return false;
       return true;
@@ -125,7 +119,7 @@ export function ShopItemsGrid({ items }: { items: ShopItem[] }) {
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher un objet dans cette boutique…"
             className="w-full h-11 pl-10 pr-3 rounded-full bg-surface-container-low border border-outline-variant text-sm text-on-surface placeholder:text-on-surface-variant outline-none focus:border-primary transition-colors"
           />

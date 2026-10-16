@@ -73,9 +73,7 @@ export function ItemCard({
   // (stat1/stat2 = codes non interprétables) ne sont PLUS affichés tels quels :
   // on ne garde que les clés de stats reconnues.
   const bonusEntries = bonuses
-    ? Object.entries(bonuses).filter(
-        ([k, v]) => k in STAT_SHORT && typeof v === "number" && v !== 0,
-      )
+    ? Object.entries(bonuses).filter(([k, v]) => k in STAT_SHORT && typeof v === "number" && v !== 0)
     : [];
   const fallbackStatEntries =
     bonusEntries.length === 0 && stats
@@ -86,8 +84,7 @@ export function ItemCard({
 
   // Tactic effects
   const isTactic = category === "special_tactics";
-  const effects =
-    isTactic && stats ? [stats.effect1, stats.effect2, stats.effect3].filter(Boolean) : [];
+  const effects = isTactic && stats ? [stats.effect1, stats.effect2, stats.effect3].filter(Boolean) : [];
 
   return (
     <Link
@@ -162,11 +159,7 @@ export function ItemCard({
           {effects.length > 0 && (
             <div className="mt-2 space-y-1">
               {effects.slice(0, 2).map((eff, i) => (
-                <p
-                  key={i}
-                  className="text-[10px] text-on-surface-variant leading-tight truncate"
-                  title={eff}
-                >
+                <p key={i} className="text-[10px] text-on-surface-variant leading-tight truncate" title={eff}>
                   • {eff}
                 </p>
               ))}

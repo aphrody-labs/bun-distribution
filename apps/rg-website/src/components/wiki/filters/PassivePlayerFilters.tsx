@@ -31,11 +31,7 @@ interface PassivePlayerFiltersProps {
   rarityCounts?: Record<string, number>;
 }
 
-export function PassivePlayerFilters({
-  elementCounts,
-  categoryCounts,
-  rarityCounts,
-}: PassivePlayerFiltersProps) {
+export function PassivePlayerFilters({ elementCounts, categoryCounts, rarityCounts }: PassivePlayerFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -69,7 +65,7 @@ export function PassivePlayerFilters({
 
         aria-label="Filtrer par catégorie de passif"
       >
-        {CATEGORY_OPTIONS.map((opt) => {
+        {CATEGORY_OPTIONS.map(opt => {
           const isActive = activeCategory === opt.value;
           const count = categoryCounts?.[opt.value];
           if (count === 0) return null;
@@ -87,9 +83,7 @@ export function PassivePlayerFilters({
               )}
             >
               {opt.label}
-              {count !== undefined && (
-                <span className="text-[9px] opacity-60 ml-0.5">({count})</span>
-              )}
+              {count !== undefined && <span className="text-[9px] opacity-60 ml-0.5">({count})</span>}
             </button>
           );
         })}
@@ -97,7 +91,7 @@ export function PassivePlayerFilters({
 
       {/* Élément */}
       <fieldset className="flex flex-wrap gap-1.5" aria-label="Filtrer par élément">
-        {ELEMENT_OPTIONS.map((opt) => {
+        {ELEMENT_OPTIONS.map(opt => {
           const isActive = activeElement === opt.value;
           const count = elementCounts?.[opt.value];
           if (count === 0) return null;
@@ -116,9 +110,7 @@ export function PassivePlayerFilters({
             >
               <span className={cn("size-2 rounded-full", opt.dot)} aria-hidden="true" />
               {opt.label}
-              {count !== undefined && (
-                <span className="text-[9px] opacity-60 ml-0.5">({count})</span>
-              )}
+              {count !== undefined && <span className="text-[9px] opacity-60 ml-0.5">({count})</span>}
             </button>
           );
         })}
@@ -127,7 +119,7 @@ export function PassivePlayerFilters({
       {/* Rareté */}
       {rarityOptions.length > 1 && (
         <fieldset className="flex flex-wrap gap-1.5" aria-label="Filtrer par rareté">
-          {rarityOptions.map((r) => {
+          {rarityOptions.map(r => {
             const isActive = activeRarity === r;
             const count = rarityCounts?.[r];
             return (
@@ -144,9 +136,7 @@ export function PassivePlayerFilters({
                 )}
               >
                 Rareté {r}
-                {count !== undefined && (
-                  <span className="text-[9px] opacity-60 ml-0.5">({count})</span>
-                )}
+                {count !== undefined && <span className="text-[9px] opacity-60 ml-0.5">({count})</span>}
               </button>
             );
           })}

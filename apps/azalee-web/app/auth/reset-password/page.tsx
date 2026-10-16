@@ -65,10 +65,7 @@ function ResetPasswordContent() {
           <p className="type-body-medium text-on-surface-variant">
             Ce lien de réinitialisation est invalide ou a expiré.
           </p>
-          <Button
-            onClick={() => router.push("/login")}
-            className="rounded-full bg-primary text-on-primary"
-          >
+          <Button onClick={() => router.push("/login")} className="rounded-full bg-primary text-on-primary">
             Retour à la connexion
           </Button>
         </div>
@@ -84,9 +81,7 @@ function ResetPasswordContent() {
             <CheckCircle className="size-8 text-primary" />
           </div>
           <h1 className="type-headline-small text-on-surface">Mot de passe modifié</h1>
-          <p className="type-body-medium text-on-surface-variant">
-            Tu vas être redirigé vers la page de connexion...
-          </p>
+          <p className="type-body-medium text-on-surface-variant">Tu vas être redirigé vers la page de connexion...</p>
         </div>
       </div>
     );
@@ -116,10 +111,7 @@ function ResetPasswordContent() {
           <div className="px-8 pb-8">
             <form onSubmit={handleReset} className="space-y-4">
               <div className="space-y-3">
-                <label
-                  htmlFor="new-password"
-                  className="type-body-small text-on-surface-variant block"
-                >
+                <label htmlFor="new-password" className="type-body-small text-on-surface-variant block">
                   Nouveau mot de passe
                 </label>
                 <div className="relative group">
@@ -130,7 +122,7 @@ function ResetPasswordContent() {
                     placeholder="••••••••"
                     className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={e => setNewPassword(e.target.value)}
                     disabled={loading}
                     required
                     minLength={8}
@@ -139,10 +131,7 @@ function ResetPasswordContent() {
               </div>
 
               <div className="space-y-3">
-                <label
-                  htmlFor="confirm-password"
-                  className="type-body-small text-on-surface-variant block"
-                >
+                <label htmlFor="confirm-password" className="type-body-small text-on-surface-variant block">
                   Confirmer le mot de passe
                 </label>
                 <div className="relative group">
@@ -153,7 +142,7 @@ function ResetPasswordContent() {
                     placeholder="••••••••"
                     className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={e => setConfirmPassword(e.target.value)}
                     disabled={loading}
                     required
                     minLength={8}
@@ -182,9 +171,7 @@ function ResetPasswordContent() {
           </div>
         </div>
 
-        <p className="type-body-small text-center text-on-surface-variant/60 mt-6">
-          Azalée &mdash; Rose Griffon
-        </p>
+        <p className="type-body-small text-center text-on-surface-variant/60 mt-6">Azalée &mdash; Rose Griffon</p>
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ export default function InlineModelViewer({ glbUrl, name }: InlineModelViewerPro
     const host = hostRef.current;
     if (!host) return;
     const io = new IntersectionObserver(
-      (entries) => {
+      entries => {
         for (const e of entries) setVisible(e.isIntersecting);
       },
       { rootMargin: "200px" },

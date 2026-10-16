@@ -13,10 +13,10 @@ import type { PublicProfile } from "@rosegriffon/db";
 type Profile = PublicProfile;
 
 interface ProfileContextType {
-	profile: Profile | null;
-	isLoading: boolean;
-	error: string | null;
-	refreshProfile: () => Promise<void>;
+  profile: Profile | null;
+  isLoading: boolean;
+  error: string | null;
+  refreshProfile: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -26,78 +26,78 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
  * Écoute les changements broadcast du profil
  */
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
-	const { user, isLoading: authLoading } = useAuth();
-	const [profile, setProfile] = useState<Profile | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-	// Récupérer le profil initial
-	const fetchProfile = useCallback(async () => {
-		if (!user) {
-			setProfile(null);
-			setIsLoading(false);
-			return;
-		}
+  // Récupérer le profil initial
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      setIsLoading(false);
+      return;
+    }
 
-		try {
-			setIsLoading(true);
-			setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-			const data = await getCurrentPublicProfile();
-			if (!data) {
-				console.error("[ProfileProvider] Profil introuvable");
-				setError("Profil introuvable");
-				setProfile(null);
-				return;
-			}
+      const data = await getCurrentPublicProfile();
+      if (!data) {
+        console.error("[ProfileProvider] Profil introuvable");
+        setError("Profil introuvable");
+        setProfile(null);
+        return;
+      }
 
-			setProfile(data);
-			setError(null);
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-			console.error("[ProfileProvider] Erreur inattendue:", error);
-			setError(errorMessage);
-			setProfile(null);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [user]);
+      setProfile(data);
+      setError(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+      console.error("[ProfileProvider] Erreur inattendue:", error);
+      setError(errorMessage);
+      setProfile(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
-	// Charger le profil au montage et quand l'utilisateur change
-	useEffect(() => {
-		fetchProfile();
-	}, [fetchProfile]);
+  // Charger le profil au montage et quand l'utilisateur change
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
-	// Écouter les changements broadcast du profil
-	useProfileSync({
-		enabled: !!user?.id,
-		onProfileChange: (updatedProfile) => {
-			console.warn("[ProfileProvider] Profil mis à jour via broadcast:", updatedProfile);
-			setProfile(updatedProfile);
-			setError(null);
-		},
-		userId: user?.id,
-	});
+  // Écouter les changements broadcast du profil
+  useProfileSync({
+    enabled: !!user?.id,
+    onProfileChange: updatedProfile => {
+      console.warn("[ProfileProvider] Profil mis à jour via broadcast:", updatedProfile);
+      setProfile(updatedProfile);
+      setError(null);
+    },
+    userId: user?.id,
+  });
 
-	const value: ProfileContextType = {
-		error,
-		isLoading: authLoading || isLoading,
-		profile,
-		refreshProfile: fetchProfile,
-	};
+  const value: ProfileContextType = {
+    error,
+    isLoading: authLoading || isLoading,
+    profile,
+    refreshProfile: fetchProfile,
+  };
 
-	return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
+  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
 
 /**
  * Hook pour accéder au contexte du profil
  */
 export function useProfile(): ProfileContextType {
-	const context = useContext(ProfileContext);
+  const context = useContext(ProfileContext);
 
-	if (context === undefined) {
-		throw new Error("useProfile doit être utilisé dans un ProfileProvider");
-	}
+  if (context === undefined) {
+    throw new Error("useProfile doit être utilisé dans un ProfileProvider");
+  }
 
-	return context;
+  return context;
 }

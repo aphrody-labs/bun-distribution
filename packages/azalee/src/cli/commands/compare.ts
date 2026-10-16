@@ -5,13 +5,7 @@ import type { Command } from "commander";
 import { interpolateVariantStats } from "../../game/stats-interpolation";
 import type { CharaStats } from "../../wiki/chara-stats-shared";
 import { colors, errorMessage, reportError, restoreLogs, suppressLogs } from "../context";
-import {
-  createInagleService,
-  getAuraHashSet,
-  getSkillDetails,
-  type InagleService,
-  type SkillDetails,
-} from "../inagle";
+import { createInagleService, getAuraHashSet, getSkillDetails, type InagleService, type SkillDetails } from "../inagle";
 import { exitUnlessRepl } from "../repl-state";
 import type { CompareOptions } from "../types";
 
@@ -77,9 +71,7 @@ export function registerCompareCommand(program: Command): void {
             const nameEn = c.names?.en?.toLowerCase() || "";
             const nameJa = c.names?.ja?.toLowerCase() || "";
             const slug = c.slug?.toLowerCase() || "";
-            return (
-              nameFr.includes(q) || nameEn.includes(q) || nameJa.includes(q) || slug.includes(q)
-            );
+            return nameFr.includes(q) || nameEn.includes(q) || nameJa.includes(q) || slug.includes(q);
           });
         };
 
@@ -189,9 +181,7 @@ export function registerCompareCommand(program: Command): void {
         const borderDivider = `├─${"─".repeat(colWidthL)}─┼─${"─".repeat(colWidthM)}─┼─${"─".repeat(colWidthR)}─┤`;
         const borderBottom = `└─${"─".repeat(colWidthL)}─┴─${"─".repeat(colWidthM)}─┴─${"─".repeat(colWidthR)}─┘`;
 
-        console.log(
-          `\n${colors.cyan}=== COMPARAISON DE JOUEURS (Niveau ${level}) ===${colors.reset}`,
-        );
+        console.log(`\n${colors.cyan}=== COMPARAISON DE JOUEURS (Niveau ${level}) ===${colors.reset}`);
         console.log(borderTop);
 
         const name1 = c1.names.fr || c1.names.en || c1.names.ja || c1.charaId;
@@ -255,9 +245,7 @@ export function registerCompareCommand(program: Command): void {
           totalCR = colors.green + colors.bold;
           showTotal2 = "(▲) " + showTotal2;
         }
-        console.log(
-          formatRow(showTotal1, "TOTAL", showTotal2, totalCL, colors.bold + colors.yellow, totalCR),
-        );
+        console.log(formatRow(showTotal1, "TOTAL", showTotal2, totalCL, colors.bold + colors.yellow, totalCR));
         console.log(borderDivider);
 
         const maxMoves = Math.max(skills1.length, skills2.length);
@@ -267,12 +255,8 @@ export function registerCompareCommand(program: Command): void {
           const sk1 = skills1[i];
           const sk2 = skills2[i];
 
-          const text1 = sk1
-            ? `${sk1.name} (L. ${sk1.learnLevel}${sk1.power ? `, ${sk1.power}P` : ""})`
-            : "";
-          const text2 = sk2
-            ? `${sk2.name} (L. ${sk2.learnLevel}${sk2.power ? `, ${sk2.power}P` : ""})`
-            : "";
+          const text1 = sk1 ? `${sk1.name} (L. ${sk1.learnLevel}${sk1.power ? `, ${sk1.power}P` : ""})` : "";
+          const text2 = sk2 ? `${sk2.name} (L. ${sk2.learnLevel}${sk2.power ? `, ${sk2.power}P` : ""})` : "";
 
           console.log(formatRow(text1, `Slot ${i + 1}`, text2));
         }
@@ -305,8 +289,7 @@ function resolveMoves(svc: InagleService, variant: any, baseChara: any): Moveset
     for (const sibling of baseChara.variants) {
       if (sibling.skills && sibling.skills.length > 0) {
         const sibSkills = sibling.skills.filter(
-          (sk: any) =>
-            sk.skillId && !PHANTOM_SKILL_IDS.has(sk.skillId) && !auraHashes.has(sk.skillId),
+          (sk: any) => sk.skillId && !PHANTOM_SKILL_IDS.has(sk.skillId) && !auraHashes.has(sk.skillId),
         );
         if (sibSkills.length > 0) {
           skillList = sibSkills;

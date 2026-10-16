@@ -54,9 +54,9 @@ const STATUTS: readonly StatutSondage[] = ["tous", "en-cours", "termines"];
 
 /** Valide un statut venu de l'URL contre la liste blanche (défaut : « tous »). */
 export function normaliserStatut(valeur: unknown): StatutSondage {
-	return typeof valeur === "string" && (STATUTS as readonly string[]).includes(valeur)
-		? (valeur as StatutSondage)
-		: "tous";
+  return typeof valeur === "string" && (STATUTS as readonly string[]).includes(valeur)
+    ? (valeur as StatutSondage)
+    : "tous";
 }
 
 /**
@@ -65,7 +65,7 @@ export function normaliserStatut(valeur: unknown): StatutSondage {
  * même toucher la base.
  */
 export function estIdentifiantSondage(valeur: string): boolean {
-	return /^[0-9a-f]{6,32}$/.test(valeur) || /^\d{15,25}$/.test(valeur);
+  return /^[0-9a-f]{6,32}$/.test(valeur) || /^\d{15,25}$/.test(valeur);
 }
 
 // ── Origine publique des visuels ────────────────────────────────────────────
@@ -79,11 +79,11 @@ export function estIdentifiantSondage(valeur: string): boolean {
  * navigateur. Cette origine est déjà autorisée dans `images.remotePatterns`.
  */
 const ORIGINE_STOCKAGE = (() => {
-	const brut = process.env.NEXT_PUBLIC_SUPABASE_URL;
-	if (!brut || brut.startsWith("eyJ2Ijo") || brut.startsWith("http://127.")) {
-		return SITE_URL;
-	}
-	return brut.replace(/\/+$/, "");
+  const brut = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!brut || brut.startsWith("eyJ2Ijo") || brut.startsWith("http://127.")) {
+    return SITE_URL;
+  }
+  return brut.replace(/\/+$/, "");
 })();
 
 /**
@@ -93,95 +93,95 @@ const ORIGINE_STOCKAGE = (() => {
  * public `assets`, c'est ce chemin-là que la base conserve.
  */
 function urlVisuel(chemin: string): string {
-	return `${ORIGINE_STOCKAGE}/storage/v1/object/public/assets/${chemin}`;
+  return `${ORIGINE_STOCKAGE}/storage/v1/object/public/assets/${chemin}`;
 }
 
 // ── Normalisation défensive des lignes ──────────────────────────────────────
 
 interface LigneSondage {
-	poll_id: string;
-	provider: string | null;
-	source: string | null;
-	language: string | null;
-	message_id: string | null;
-	channel_id: string;
-	guild_id: string;
-	question: string;
-	message_content: string | null;
-	creator_username: string | null;
-	command: string | null;
-	max_choices: number | string | null;
-	locked: boolean;
-	ended: boolean;
-	ends_at: Date | string | null;
-	created_at: Date | string;
-	total_votes: number | string | null;
-	total_voters: number | string | null;
-	results_hidden: boolean;
-	visual_path: string | null;
-	visual_width: number | string | null;
-	visual_height: number | string | null;
-	visual_alt: string | null;
-	visual_message_id: string | null;
-	options: unknown;
-	total?: number | string;
+  poll_id: string;
+  provider: string | null;
+  source: string | null;
+  language: string | null;
+  message_id: string | null;
+  channel_id: string;
+  guild_id: string;
+  question: string;
+  message_content: string | null;
+  creator_username: string | null;
+  command: string | null;
+  max_choices: number | string | null;
+  locked: boolean;
+  ended: boolean;
+  ends_at: Date | string | null;
+  created_at: Date | string;
+  total_votes: number | string | null;
+  total_voters: number | string | null;
+  results_hidden: boolean;
+  visual_path: string | null;
+  visual_width: number | string | null;
+  visual_height: number | string | null;
+  visual_alt: string | null;
+  visual_message_id: string | null;
+  options: unknown;
+  total?: number | string;
 }
 
 function entierOuNull(valeur: unknown): number | null {
-	if (typeof valeur === "number") return Number.isFinite(valeur) ? Math.trunc(valeur) : null;
-	if (typeof valeur === "string" && valeur.trim().length > 0) {
-		const nombre = Number(valeur);
-		return Number.isFinite(nombre) ? Math.trunc(nombre) : null;
-	}
-	return null;
+  if (typeof valeur === "number") return Number.isFinite(valeur) ? Math.trunc(valeur) : null;
+  if (typeof valeur === "string" && valeur.trim().length > 0) {
+    const nombre = Number(valeur);
+    return Number.isFinite(nombre) ? Math.trunc(nombre) : null;
+  }
+  return null;
 }
 
 function nombreOuNull(valeur: unknown): number | null {
-	if (typeof valeur === "number") return Number.isFinite(valeur) ? valeur : null;
-	// `numeric(5,2)` remonte en chaîne avec le pilote `pg` : « 25.80 ».
-	if (typeof valeur === "string" && valeur.trim().length > 0) {
-		const nombre = Number(valeur);
-		return Number.isFinite(nombre) ? nombre : null;
-	}
-	return null;
+  if (typeof valeur === "number") return Number.isFinite(valeur) ? valeur : null;
+  // `numeric(5,2)` remonte en chaîne avec le pilote `pg` : « 25.80 ».
+  if (typeof valeur === "string" && valeur.trim().length > 0) {
+    const nombre = Number(valeur);
+    return Number.isFinite(nombre) ? nombre : null;
+  }
+  return null;
 }
 
 function isoOuNull(valeur: unknown): string | null {
-	if (valeur instanceof Date) return Number.isNaN(valeur.getTime()) ? null : valeur.toISOString();
-	if (typeof valeur === "string" && valeur.length > 0) {
-		const date = new Date(valeur);
-		return Number.isNaN(date.getTime()) ? null : date.toISOString();
-	}
-	return null;
+  if (valeur instanceof Date) return Number.isNaN(valeur.getTime()) ? null : valeur.toISOString();
+  if (typeof valeur === "string" && valeur.length > 0) {
+    const date = new Date(valeur);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+  return null;
 }
 
 function normaliserOptions(valeur: unknown): OptionSondage[] {
-	const brut: unknown = typeof valeur === "string" ? safeJson(valeur) : valeur;
-	if (!Array.isArray(brut)) return [];
-	return brut
-		.map((entree): OptionSondage | null => {
-			if (typeof entree !== "object" || entree === null) return null;
-			const ligne = entree as Record<string, unknown>;
-			const position = entierOuNull(ligne.position);
-			if (position === null) return null;
-			return {
-				emoji: typeof ligne.emoji === "string" && ligne.emoji.length > 0 ? ligne.emoji : null,
-				label: typeof ligne.label === "string" ? ligne.label : "",
-				percentage: nombreOuNull(ligne.percentage),
-				position,
-				votes: entierOuNull(ligne.votes),
-			};
-		})
-		.filter((option): option is OptionSondage => option !== null)
-		.toSorted((a, b) => a.position - b.position);
+  const brut: unknown = typeof valeur === "string" ? safeJson(valeur) : valeur;
+  if (!Array.isArray(brut)) return [];
+  return brut
+    .map((entree): OptionSondage | null => {
+      if (typeof entree !== "object" || entree === null) return null;
+      const ligne = entree as Record<string, unknown>;
+      const position = entierOuNull(ligne.position);
+      if (position === null) return null;
+      return {
+        emoji: typeof ligne.emoji === "string" && ligne.emoji.length > 0 ? ligne.emoji : null,
+        label: typeof ligne.label === "string" ? ligne.label : "",
+        percentage: nombreOuNull(ligne.percentage),
+        position,
+        votes: entierOuNull(ligne.votes),
+      };
+    })
+    .filter((option): option is OptionSondage => option !== null)
+    .toSorted((a, b) => a.position - b.position);
 }
 
 function safeJson(valeur: string): unknown {
-	try {
-		return JSON.parse(valeur);
-	} catch {
-		return null;
-	}
+  try {
+    return JSON.parse(valeur);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -190,46 +190,45 @@ function safeJson(valeur: string): unknown {
  * rôle notifié) : republier « @Sondages » tout seul n'apporte rien.
  */
 function chapoUtilisable(contenu: string | null): string | null {
-	if (!contenu) return null;
-	const nettoye = contenu.replace(/<@&\d+>/g, "").trim();
-	return nettoye.length > 0 ? nettoye : null;
+  if (!contenu) return null;
+  const nettoye = contenu.replace(/<@&\d+>/g, "").trim();
+  return nettoye.length > 0 ? nettoye : null;
 }
 
 function normaliserSondage(ligne: LigneSondage): Sondage {
-	const visuel: VisuelSondage | null = ligne.visual_path
-		? {
-				alt: ligne.visual_alt && ligne.visual_alt.trim().length > 0 ? ligne.visual_alt : null,
-				height: entierOuNull(ligne.visual_height),
-				message_id: ligne.visual_message_id,
-				url: urlVisuel(ligne.visual_path),
-				width: entierOuNull(ligne.visual_width),
-			}
-		: null;
+  const visuel: VisuelSondage | null = ligne.visual_path
+    ? {
+        alt: ligne.visual_alt && ligne.visual_alt.trim().length > 0 ? ligne.visual_alt : null,
+        height: entierOuNull(ligne.visual_height),
+        message_id: ligne.visual_message_id,
+        url: urlVisuel(ligne.visual_path),
+        width: entierOuNull(ligne.visual_width),
+      }
+    : null;
 
-	return {
-		chapo: chapoUtilisable(ligne.message_content),
-		channel_id: ligne.channel_id,
-		command: ligne.command,
-		created_at: isoOuNull(ligne.created_at) ?? new Date(0).toISOString(),
-		creator_username: ligne.creator_username,
-		ended: ligne.ended === true,
-		ends_at: isoOuNull(ligne.ends_at),
-		guild_id: ligne.guild_id,
-		language: ligne.language === "fr" || ligne.language === "en" ? ligne.language : null,
-		locked: ligne.locked === true,
-		max_choices: entierOuNull(ligne.max_choices) ?? 1,
-		message_id: ligne.message_id,
-		options: normaliserOptions(ligne.options),
-		poll_id: ligne.poll_id,
-		provider: ligne.provider === "discord" ? "discord" : "easypoll",
-		question: ligne.question,
-		results_hidden: ligne.results_hidden === true,
-		source:
-			ligne.source === "reactions" ? "reactions" : ligne.source === "api" ? "api" : "embed",
-		total_votes: entierOuNull(ligne.total_votes),
-		total_voters: entierOuNull(ligne.total_voters),
-		visuel,
-	};
+  return {
+    chapo: chapoUtilisable(ligne.message_content),
+    channel_id: ligne.channel_id,
+    command: ligne.command,
+    created_at: isoOuNull(ligne.created_at) ?? new Date(0).toISOString(),
+    creator_username: ligne.creator_username,
+    ended: ligne.ended === true,
+    ends_at: isoOuNull(ligne.ends_at),
+    guild_id: ligne.guild_id,
+    language: ligne.language === "fr" || ligne.language === "en" ? ligne.language : null,
+    locked: ligne.locked === true,
+    max_choices: entierOuNull(ligne.max_choices) ?? 1,
+    message_id: ligne.message_id,
+    options: normaliserOptions(ligne.options),
+    poll_id: ligne.poll_id,
+    provider: ligne.provider === "discord" ? "discord" : "easypoll",
+    question: ligne.question,
+    results_hidden: ligne.results_hidden === true,
+    source: ligne.source === "reactions" ? "reactions" : ligne.source === "api" ? "api" : "embed",
+    total_votes: entierOuNull(ligne.total_votes),
+    total_voters: entierOuNull(ligne.total_voters),
+    visuel,
+  };
 }
 
 // Colonnes communes aux deux lectures — `p.*` serait fragile : une colonne
@@ -260,43 +259,44 @@ const lateralOptions = (alias: string) => `
 // ── Lectures ────────────────────────────────────────────────────────────────
 
 export interface OptionsListeSondages {
-	/** Page 1-indexée. */
-	page?: number;
-	/** Recherche simple sur le texte de la question. */
-	q?: string;
-	statut?: StatutSondage;
-	parPage?: number;
+  /** Page 1-indexée. */
+  page?: number;
+  /** Recherche simple sur le texte de la question. */
+  q?: string;
+  statut?: StatutSondage;
+  parPage?: number;
 }
 
 export interface ResultatListeSondages {
-	sondages: Sondage[];
-	total: number;
+  sondages: Sondage[];
+  total: number;
 }
 
 /**
  * Sondages visibles, du plus récent au plus ancien.
  * En cas de panne de base : liste vide, jamais une page en erreur.
  */
-export async function listerSondages(
-	options: OptionsListeSondages = {}
-): Promise<ResultatListeSondages> {
-	const parPage = Math.min(
-		Math.max(Math.trunc(options.parPage ?? SONDAGES_PAR_PAGE) || SONDAGES_PAR_PAGE, 1),
-		SONDAGES_PAR_PAGE_MAX
-	);
-	const page = Math.max(Math.trunc(options.page ?? 1) || 1, 1);
-	const statut = normaliserStatut(options.statut);
+export async function listerSondages(options: OptionsListeSondages = {}): Promise<ResultatListeSondages> {
+  const parPage = Math.min(
+    Math.max(Math.trunc(options.parPage ?? SONDAGES_PAR_PAGE) || SONDAGES_PAR_PAGE, 1),
+    SONDAGES_PAR_PAGE_MAX,
+  );
+  const page = Math.max(Math.trunc(options.page ?? 1) || 1, 1);
+  const statut = normaliserStatut(options.statut);
 
-	// `%` et `_` sont des jokers ILIKE : une recherche « 100_% » ne doit pas se
-	// transformer en motif. On échappe, puis on borne la longueur.
-	const recherche =
-		typeof options.q === "string" && options.q.trim().length > 0
-			? options.q.trim().slice(0, RECHERCHE_MAX).replace(/[\\%_]/g, "\\$&")
-			: null;
+  // `%` et `_` sont des jokers ILIKE : une recherche « 100_% » ne doit pas se
+  // transformer en motif. On échappe, puis on borne la longueur.
+  const recherche =
+    typeof options.q === "string" && options.q.trim().length > 0
+      ? options.q
+          .trim()
+          .slice(0, RECHERCHE_MAX)
+          .replace(/[\\%_]/g, "\\$&")
+      : null;
 
-	try {
-		const { rows } = await getPgPool().query<LigneSondage>(
-			`WITH base AS (
+  try {
+    const { rows } = await getPgPool().query<LigneSondage>(
+      `WITH base AS (
 				SELECT ${COLONNES_SONDAGE}, m.content AS message_content
 				FROM discord_polls p
 				JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true
@@ -314,53 +314,53 @@ export async function listerSondages(
 			${lateralOptions("b")}
 			ORDER BY b.created_at DESC, b.poll_id
 			LIMIT $3 OFFSET $4`,
-			[recherche, statut, parPage, (page - 1) * parPage]
-		);
+      [recherche, statut, parPage, (page - 1) * parPage],
+    );
 
-		return {
-			sondages: rows.map((ligne) => normaliserSondage(ligne)),
-			total: entierOuNull(rows[0]?.total) ?? 0,
-		};
-	} catch (error) {
-		console.error("[sondages] lecture de la liste impossible", error);
-		return { sondages: [], total: 0 };
-	}
+    return {
+      sondages: rows.map(ligne => normaliserSondage(ligne)),
+      total: entierOuNull(rows[0]?.total) ?? 0,
+    };
+  } catch (error) {
+    console.error("[sondages] lecture de la liste impossible", error);
+    return { sondages: [], total: 0 };
+  }
 }
 
 export interface CompteursSondages {
-	total: number;
-	enCours: number;
-	termines: number;
-	/** Sondages dont l'encart n'a jamais publié d'état (ni clôture, ni date de fin). */
-	etatInconnu: number;
+  total: number;
+  enCours: number;
+  termines: number;
+  /** Sondages dont l'encart n'a jamais publié d'état (ni clôture, ni date de fin). */
+  etatInconnu: number;
 }
 
 /** Compteurs d'en-tête, en une seule requête. */
 export async function compterSondages(): Promise<CompteursSondages> {
-	try {
-		const { rows } = await getPgPool().query<{
-			total: string;
-			en_cours: string;
-			termines: string;
-			etat_inconnu: string;
-		}>(
-			`SELECT count(*) AS total,
+  try {
+    const { rows } = await getPgPool().query<{
+      total: string;
+      en_cours: string;
+      termines: string;
+      etat_inconnu: string;
+    }>(
+      `SELECT count(*) AS total,
 				count(*) FILTER (WHERE p.ended = false AND p.ends_at IS NOT NULL) AS en_cours,
 				count(*) FILTER (WHERE p.ended = true) AS termines,
 				count(*) FILTER (WHERE p.ended = false AND p.ends_at IS NULL) AS etat_inconnu
 			FROM discord_polls p
-			JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true`
-		);
-		return {
-			enCours: entierOuNull(rows[0]?.en_cours) ?? 0,
-			etatInconnu: entierOuNull(rows[0]?.etat_inconnu) ?? 0,
-			termines: entierOuNull(rows[0]?.termines) ?? 0,
-			total: entierOuNull(rows[0]?.total) ?? 0,
-		};
-	} catch (error) {
-		console.error("[sondages] comptage impossible", error);
-		return { enCours: 0, etatInconnu: 0, termines: 0, total: 0 };
-	}
+			JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true`,
+    );
+    return {
+      enCours: entierOuNull(rows[0]?.en_cours) ?? 0,
+      etatInconnu: entierOuNull(rows[0]?.etat_inconnu) ?? 0,
+      termines: entierOuNull(rows[0]?.termines) ?? 0,
+      total: entierOuNull(rows[0]?.total) ?? 0,
+    };
+  } catch (error) {
+    console.error("[sondages] comptage impossible", error);
+    return { enCours: 0, etatInconnu: 0, termines: 0, total: 0 };
+  }
 }
 
 /**
@@ -369,65 +369,65 @@ export async function compterSondages(): Promise<CompteursSondages> {
  * propre côté page, jamais une page vide.
  */
 export async function lireSondage(pollId: string): Promise<Sondage | null> {
-	if (!estIdentifiantSondage(pollId)) return null;
-	try {
-		const { rows } = await getPgPool().query<LigneSondage>(
-			`SELECT ${COLONNES_SONDAGE}, m.content AS message_content, o.options
+  if (!estIdentifiantSondage(pollId)) return null;
+  try {
+    const { rows } = await getPgPool().query<LigneSondage>(
+      `SELECT ${COLONNES_SONDAGE}, m.content AS message_content, o.options
 			FROM discord_polls p
 			JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true
 			LEFT JOIN discord_messages m
 				ON m.message_id = p.message_id AND m.deleted_at IS NULL
 			${lateralOptions("p")}
 			WHERE p.poll_id = $1`,
-			[pollId]
-		);
-		return rows[0] ? normaliserSondage(rows[0]) : null;
-	} catch (error) {
-		console.error("[sondages] lecture du sondage impossible", error);
-		return null;
-	}
+      [pollId],
+    );
+    return rows[0] ? normaliserSondage(rows[0]) : null;
+  } catch (error) {
+    console.error("[sondages] lecture du sondage impossible", error);
+    return null;
+  }
 }
 
 /** Identifiants de tous les sondages visibles — pour `generateStaticParams`. */
 export async function listerIdentifiantsSondages(): Promise<string[]> {
-	try {
-		const { rows } = await getPgPool().query<{ poll_id: string }>(
-			`SELECT p.poll_id
+  try {
+    const { rows } = await getPgPool().query<{ poll_id: string }>(
+      `SELECT p.poll_id
 			FROM discord_polls p
 			JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true
-			ORDER BY p.created_at DESC`
-		);
-		return rows.map((ligne) => ligne.poll_id);
-	} catch (error) {
-		console.error("[sondages] lecture des identifiants impossible", error);
-		return [];
-	}
+			ORDER BY p.created_at DESC`,
+    );
+    return rows.map(ligne => ligne.poll_id);
+  } catch (error) {
+    console.error("[sondages] lecture des identifiants impossible", error);
+    return [];
+  }
 }
 
 export interface VoisinSondage {
-	poll_id: string;
-	question: string;
+  poll_id: string;
+  question: string;
 }
 
 export interface VoisinsSondage {
-	/** Sondage publié juste après celui-ci. */
-	plusRecent: VoisinSondage | null;
-	/** Sondage publié juste avant celui-ci. */
-	plusAncien: VoisinSondage | null;
+  /** Sondage publié juste après celui-ci. */
+  plusRecent: VoisinSondage | null;
+  /** Sondage publié juste avant celui-ci. */
+  plusAncien: VoisinSondage | null;
 }
 
 /** Sondages voisins dans l'ordre chronologique, pour la navigation de détail. */
 export async function lireVoisins(pollId: string): Promise<VoisinsSondage> {
-	const vide: VoisinsSondage = { plusAncien: null, plusRecent: null };
-	if (!estIdentifiantSondage(pollId)) return vide;
-	try {
-		const { rows } = await getPgPool().query<{
-			recent_id: string | null;
-			recent_question: string | null;
-			ancien_id: string | null;
-			ancien_question: string | null;
-		}>(
-			`WITH visibles AS (
+  const vide: VoisinsSondage = { plusAncien: null, plusRecent: null };
+  if (!estIdentifiantSondage(pollId)) return vide;
+  try {
+    const { rows } = await getPgPool().query<{
+      recent_id: string | null;
+      recent_question: string | null;
+      ancien_id: string | null;
+      ancien_question: string | null;
+    }>(
+      `WITH visibles AS (
 				SELECT p.poll_id, p.question, p.created_at
 				FROM discord_polls p
 				JOIN discord_channels c ON c.channel_id = p.channel_id AND c.suivi = true
@@ -442,24 +442,24 @@ export async function lireVoisins(pollId: string): Promise<VoisinsSondage> {
 			)
 			SELECT recent_id, recent_question, ancien_id, ancien_question
 			FROM voisins WHERE poll_id = $1`,
-			[pollId]
-		);
-		const ligne = rows[0];
-		if (!ligne) return vide;
-		return {
-			plusAncien:
-				ligne.ancien_id && ligne.ancien_question !== null
-					? { poll_id: ligne.ancien_id, question: ligne.ancien_question }
-					: null,
-			plusRecent:
-				ligne.recent_id && ligne.recent_question !== null
-					? { poll_id: ligne.recent_id, question: ligne.recent_question }
-					: null,
-		};
-	} catch (error) {
-		console.error("[sondages] lecture des voisins impossible", error);
-		return vide;
-	}
+      [pollId],
+    );
+    const ligne = rows[0];
+    if (!ligne) return vide;
+    return {
+      plusAncien:
+        ligne.ancien_id && ligne.ancien_question !== null
+          ? { poll_id: ligne.ancien_id, question: ligne.ancien_question }
+          : null,
+      plusRecent:
+        ligne.recent_id && ligne.recent_question !== null
+          ? { poll_id: ligne.recent_id, question: ligne.recent_question }
+          : null,
+    };
+  } catch (error) {
+    console.error("[sondages] lecture des voisins impossible", error);
+    return vide;
+  }
 }
 
 /**
@@ -472,26 +472,24 @@ export async function lireVoisins(pollId: string): Promise<VoisinsSondage> {
  * `mentions` des messages EasyPoll ne résout pas (elle vaut `{"roles":[]…}`), la
  * résolution passe donc forcément par la table `discord_roles`.
  */
-export async function construireContexteSondages(
-	sondages: Sondage[]
-): Promise<ContexteMentions> {
-	if (sondages.length === 0) return CONTEXTE_MENTIONS_VIDE;
+export async function construireContexteSondages(sondages: Sondage[]): Promise<ContexteMentions> {
+  if (sondages.length === 0) return CONTEXTE_MENTIONS_VIDE;
 
-	const messages = sondages
-		.map((sondage) =>
-			normaliserMessage({
-				// Un identifiant de message valide est exigé par le normaliseur ; celui
-				// de l'encart fait l'affaire, à défaut celui du salon.
-				channel_id: sondage.channel_id,
-				content: [
-					sondage.question,
-					sondage.chapo ?? "",
-					...sondage.options.map((option) => `${option.emoji ?? ""} ${option.label}`),
-				].join("\n"),
-				message_id: sondage.message_id ?? sondage.channel_id,
-			})
-		)
-		.filter((message): message is MessageDiscord => message !== null);
+  const messages = sondages
+    .map(sondage =>
+      normaliserMessage({
+        // Un identifiant de message valide est exigé par le normaliseur ; celui
+        // de l'encart fait l'affaire, à défaut celui du salon.
+        channel_id: sondage.channel_id,
+        content: [
+          sondage.question,
+          sondage.chapo ?? "",
+          ...sondage.options.map(option => `${option.emoji ?? ""} ${option.label}`),
+        ].join("\n"),
+        message_id: sondage.message_id ?? sondage.channel_id,
+      }),
+    )
+    .filter((message): message is MessageDiscord => message !== null);
 
-	return construireContexteMentions(messages);
+  return construireContexteMentions(messages);
 }

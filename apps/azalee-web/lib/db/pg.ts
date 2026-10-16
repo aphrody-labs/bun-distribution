@@ -12,9 +12,7 @@ import { Pool } from "pg";
 export const getDatabaseURL = (): string => {
   const url = process.env.DATABASE_URL;
   if (!url || url.startsWith("eyJ2Ijo") || url === "undefined" || url === "null") {
-    throw new Error(
-      "DATABASE_URL absent ou corrompu : une chaîne de connexion Postgres valide est requise.",
-    );
+    throw new Error("DATABASE_URL absent ou corrompu : une chaîne de connexion Postgres valide est requise.");
   }
   return url;
 };

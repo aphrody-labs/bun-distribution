@@ -116,15 +116,8 @@ export function registerRandomTeamCommand(program: Command): void {
   program
     .command("random-team")
     .description("Génère une équipe aléatoire complète de 11 joueurs, coach et managers")
-    .option(
-      "-f, --formation <formation>",
-      "Configuration de la formation (ex: 4-4-2, 4-3-3, 3-5-2)",
-      "4-4-2",
-    )
-    .option(
-      "-e, --element <element>",
-      "Filtrer de préférence par élément (Feu, Vent, Forêt, Montagne)",
-    )
+    .option("-f, --formation <formation>", "Configuration de la formation (ex: 4-4-2, 4-3-3, 3-5-2)", "4-4-2")
+    .option("-e, --element <element>", "Filtrer de préférence par élément (Feu, Vent, Forêt, Montagne)")
     .option(
       "-p, --playstyle <playstyle>",
       "Filtrer de préférence par style (Lien, Justice, Percée, Tension, Jeu violent, Contre)",
@@ -146,13 +139,10 @@ export function registerRandomTeamCommand(program: Command): void {
         const db = openReadonlyDatabase(dbPath);
 
         const elVal = options.element ? ELEMENT_ALIASES[options.element.toLowerCase()] : undefined;
-        const psVal = options.playstyle
-          ? PLAYSTYLE_ALIASES[options.playstyle.toLowerCase()]
-          : undefined;
+        const psVal = options.playstyle ? PLAYSTYLE_ALIASES[options.playstyle.toLowerCase()] : undefined;
 
         const layout = options.formation || "4-4-2";
-        const formation =
-          LAYOUTS.find((f) => f.name === layout || f.layout === layout) || LAYOUTS[0];
+        const formation = LAYOUTS.find(f => f.name === layout || f.layout === layout) || LAYOUTS[0];
 
         function pickRandom<T>(arr: T[], n: number): T[] {
           const copy = [...arr];
@@ -231,10 +221,10 @@ export function registerRandomTeamCommand(program: Command): void {
           restoreLogs(true);
           const teamJson = {
             formation: formation.layout,
-            gk: gk.map((p) => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
-            df: df.map((p) => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
-            mf: mf.map((p) => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
-            fw: fw.map((p) => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
+            gk: gk.map(p => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
+            df: df.map(p => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
+            mf: mf.map(p => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
+            fw: fw.map(p => ({ id: p.id, name: p.name_fr || p.name_en, element: p.element })),
             coach: coach
               ? {
                   id: coach.id,
@@ -244,7 +234,7 @@ export function registerRandomTeamCommand(program: Command): void {
                   buff: coach.buff,
                 }
               : null,
-            managers: managers.map((m) => ({
+            managers: managers.map(m => ({
               id: m.id,
               name: m.name_localised || m.name_romaji,
               element: m.element,
@@ -388,11 +378,7 @@ export function registerRandomTeamCommand(program: Command): void {
           return { display, length: raw.length };
         }
 
-        function centerRowOfPlayers(
-          players: PlayerRow[],
-          positionCode: string,
-          totalWidth: number = 78,
-        ): string {
+        function centerRowOfPlayers(players: PlayerRow[], positionCode: string, totalWidth: number = 78): string {
           const n = players.length;
           if (n === 0) return "";
           const colWidth = Math.floor(totalWidth / n);
@@ -426,51 +412,29 @@ export function registerRandomTeamCommand(program: Command): void {
         const padRight = padTotal - padLeft;
         const titleRowText = " ".repeat(padLeft) + titleColored + " ".repeat(padRight);
 
-        console.log(
-          `${colors.green}║${colors.reset}${titleRowText}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${titleRowText}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}╠${"═".repeat(78)}╣${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${fwRowText}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         const lineSepRaw = "─".repeat(60);
         const lineSepPad = centerText(lineSepRaw, 78);
         console.log(`${colors.green}║${colors.reset}${lineSepPad}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${mfRowText}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${lineSepPad}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${dfRowText}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${lineSepPad}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}║${colors.reset}${gkRowText}${colors.green}║${colors.reset}`);
-        console.log(
-          `${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`,
-        );
+        console.log(`${colors.green}║${colors.reset}${" ".repeat(78)}${colors.green}║${colors.reset}`);
         console.log(`${colors.green}╚${"═".repeat(78)}╝${colors.reset}`);
 
-        console.log(
-          `\n${colors.bold}${colors.cyan}⚙️  CARACTÉRISTIQUES DE L'ÉQUIPE :${colors.reset}`,
-        );
-        console.log(
-          `  · ${colors.bold}Formation :${colors.reset} ${formation.name} (${formation.layout})`,
-        );
+        console.log(`\n${colors.bold}${colors.cyan}⚙️  CARACTÉRISTIQUES DE L'ÉQUIPE :${colors.reset}`);
+        console.log(`  · ${colors.bold}Formation :${colors.reset} ${formation.name} (${formation.layout})`);
         console.log(`  · ${colors.bold}Moyennes de stats (Lv 99) :${colors.reset}`);
         console.log(
           `      Frappe: ${colors.yellow}${statsAvg.frappe}${colors.reset} | Contrôle: ${colors.yellow}${statsAvg.controle}${colors.reset} | Technique: ${colors.yellow}${statsAvg.technique}${colors.reset}`,
@@ -480,7 +444,7 @@ export function registerRandomTeamCommand(program: Command): void {
         );
 
         console.log(
-          `  · ${colors.bold}Synergies d'éléments :${colors.reset} ${synergies.length > 0 ? synergies.map((s) => `${colors.green}${s}${colors.reset}`).join(", ") : "Aucune synergie active (3+ du même élément)"}`,
+          `  · ${colors.bold}Synergies d'éléments :${colors.reset} ${synergies.length > 0 ? synergies.map(s => `${colors.green}${s}${colors.reset}`).join(", ") : "Aucune synergie active (3+ du même élément)"}`,
         );
 
         console.log(`\n${colors.bold}${colors.cyan}👔 STAFF TECHNIQUE :${colors.reset}`);

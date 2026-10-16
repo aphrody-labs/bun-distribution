@@ -43,7 +43,7 @@ export async function scrapePatchNoteList(
         const absoluteUrl = href.startsWith("http") ? href : `https://www.inazuma.jp${href}`;
         const id = absoluteUrl.split("/").filter(Boolean).pop() || "";
 
-        if (!notes.find((n) => n.id === id)) {
+        if (!notes.find(n => n.id === id)) {
           notes.push({
             id,
             title: title || "Patch Note",

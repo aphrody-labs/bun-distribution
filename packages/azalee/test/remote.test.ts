@@ -11,14 +11,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-const PRIMITIVES_RESEAU = [
-  "fetch",
-  "Headers",
-  "Request",
-  "Response",
-  "AbortController",
-  "AbortSignal",
-] as const;
+const PRIMITIVES_RESEAU = ["fetch", "Headers", "Request", "Response", "AbortController", "AbortSignal"] as const;
 
 // Descripteurs natifs capturés avant toute inscription happy-dom du fichier.
 const descripteursNatifs = new Map<string, PropertyDescriptor>();
@@ -82,7 +75,7 @@ beforeAll(async () => {
   server = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
-    fetch: (request) => handleAzaleeRequest(request),
+    fetch: request => handleAzaleeRequest(request),
   });
   client = createAzaleeClient({ baseUrl: `http://127.0.0.1:${server.port}`, attempts: 1 });
 });
@@ -120,9 +113,7 @@ describe("resolveAzaleeApiUrl — base d'URL", () => {
   });
 
   test("le / final est retiré — sinon les routes produiraient un double séparateur", () => {
-    expect(resolveAzaleeApiUrl("https://example.test/azalee///")).toBe(
-      "https://example.test/azalee",
-    );
+    expect(resolveAzaleeApiUrl("https://example.test/azalee///")).toBe("https://example.test/azalee");
   });
 
   test("les candidates par défaut placent le sidecar avant l'API publique", () => {
@@ -181,7 +172,7 @@ describe("couverture — une méthode par route de serve.ts", () => {
     const seen: string[] = [];
     const recorder = createAzaleeClient({
       baseUrl: "http://recorder.test",
-      transport: (request) => {
+      transport: request => {
         seen.push(new URL(request.url).pathname);
         return Promise.resolve(Response.json(null));
       },
@@ -245,7 +236,7 @@ describe("couverture — une méthode par route de serve.ts", () => {
     let captured = "";
     const recorder = createAzaleeClient({
       baseUrl: "http://recorder.test",
-      transport: (request) => {
+      transport: request => {
         captured = new URL(request.url).pathname;
         return Promise.resolve(Response.json(null));
       },
@@ -280,16 +271,13 @@ describe("bout en bout — Bun.serve + handleAzaleeRequest", () => {
     expect(typeof list.data[0]?.charaId).toBe("string");
   });
 
-  test.skipIf(!hasPostgres)(
-    "fiche personnage résolue depuis le baseSlug publié par la liste",
-    async () => {
-      const list = await client.characters({ q: "Mark", limit: 1 });
-      const slug = (list.data[0] as { baseSlug?: string; id?: string }).baseSlug;
-      expect(slug).toBeString();
-      const character = await client.character(slug as string);
-      expect(character.names).toBeDefined();
-    },
-  );
+  test.skipIf(!hasPostgres)("fiche personnage résolue depuis le baseSlug publié par la liste", async () => {
+    const list = await client.characters({ q: "Mark", limit: 1 });
+    const slug = (list.data[0] as { baseSlug?: string; id?: string }).baseSlug;
+    expect(slug).toBeString();
+    const character = await client.character(slug as string);
+    expect(character.names).toBeDefined();
+  });
 
   test.skipIf(!hasPostgres)("les 208 équipes remontent en un appel", async () => {
     const teams = await client.teams();
@@ -297,16 +285,13 @@ describe("bout en bout — Bun.serve + handleAzaleeRequest", () => {
     expect(teams[0]?.id).toBeString();
   });
 
-  test.skipIf(!hasPostgres)(
-    "recherche transverse : personnages + techniques + objets",
-    async () => {
-      const result = await client.search({ q: "ma", limit: 3 });
-      expect(result.q).toBe("ma");
-      expect(Array.isArray(result.characters)).toBe(true);
-      expect(Array.isArray(result.skills)).toBe(true);
-      expect(Array.isArray(result.items)).toBe(true);
-    },
-  );
+  test.skipIf(!hasPostgres)("recherche transverse : personnages + techniques + objets", async () => {
+    const result = await client.search({ q: "ma", limit: 3 });
+    expect(result.q).toBe("ma");
+    expect(Array.isArray(result.characters)).toBe(true);
+    expect(Array.isArray(result.skills)).toBe(true);
+    expect(Array.isArray(result.items)).toBe(true);
+  });
 
   test.skipIf(!hasPostgres)("statistiques de l'index de texte", async () => {
     const stats = await client.textStats();
@@ -342,12 +327,9 @@ describe("bout en bout — Bun.serve + handleAzaleeRequest", () => {
   });
 
   test("resolveAzaleeBaseUrl choisit la première base vivante", async () => {
-    const picked = await resolveAzaleeBaseUrl(
-      ["http://127.0.0.1:1", `http://127.0.0.1:${server.port}/`],
-      {
-        timeoutMs: 500,
-      },
-    );
+    const picked = await resolveAzaleeBaseUrl(["http://127.0.0.1:1", `http://127.0.0.1:${server.port}/`], {
+      timeoutMs: 500,
+    });
     expect(picked?.baseUrl).toBe(`http://127.0.0.1:${server.port}`);
     expect(picked?.health.ok).toBe(true);
     expect(await resolveAzaleeBaseUrl(["http://127.0.0.1:1"], { timeoutMs: 300 })).toBeNull();
@@ -363,7 +345,7 @@ describe("robustesse du transport", () => {
       baseUrl: "http://slow.test",
       attempts: 1,
       timeoutMs: 25,
-      transport: (request) =>
+      transport: request =>
         new Promise((_resolve, reject) => {
           request.signal.addEventListener("abort", () => reject(request.signal.reason), {
             once: true,
@@ -383,7 +365,7 @@ describe("robustesse du transport", () => {
     const controller = new AbortController();
     const hanging = createAzaleeClient({
       baseUrl: "http://hang.test",
-      transport: (request) =>
+      transport: request =>
         new Promise((_resolve, reject) => {
           request.signal.addEventListener("abort", () => reject(request.signal.reason), {
             once: true,
@@ -425,9 +407,7 @@ describe("robustesse du transport", () => {
       transport: () => {
         calls++;
         return Promise.resolve(
-          calls < 3
-            ? Response.json({ error: "indisponible" }, { status: 503 })
-            : Response.json({ ok: true }),
+          calls < 3 ? Response.json({ error: "indisponible" }, { status: 503 }) : Response.json({ ok: true }),
         );
       },
     });

@@ -37,7 +37,7 @@ describe("contenu vide", () => {
 describe("mise en forme", () => {
   it("reconnait le gras", () => {
     const noeuds = analyserInline("un **mot** fort", CTX);
-    expect(noeuds.some((n) => n.type === "gras")).toBe(true);
+    expect(noeuds.some(n => n.type === "gras")).toBe(true);
     expect(texteBrut(noeuds)).toBe("un mot fort");
   });
 
@@ -66,7 +66,7 @@ describe("mise en forme", () => {
 
   it("reconnait un bloc de code avec son langage", () => {
     const blocs = parseDiscordMarkdown("avant\n```ts\nconst a = 1;\n```", CTX);
-    const code = blocs.find((bloc) => bloc.type === "bloc-code");
+    const code = blocs.find(bloc => bloc.type === "bloc-code");
     expect(code).toBeDefined();
     expect(code && code.type === "bloc-code" && code.langage).toBe("ts");
     expect(code && code.type === "bloc-code" && code.code).toBe("const a = 1;");
@@ -74,13 +74,13 @@ describe("mise en forme", () => {
 
   it("respecte l'echappement par antislash", () => {
     const noeuds = analyserInline(String.raw`\*\*pas gras\*\*`, CTX);
-    expect(noeuds.every((n) => n.type === "texte")).toBe(true);
+    expect(noeuds.every(n => n.type === "texte")).toBe(true);
     expect(texteBrut(noeuds)).toBe("**pas gras**");
   });
 
   it("decoupe titres, citations et listes", () => {
     const blocs = parseDiscordMarkdown("# Titre\n> cite\n- un\n- deux", CTX);
-    expect(blocs.map((bloc) => bloc.type)).toEqual(["titre", "citation", "liste"]);
+    expect(blocs.map(bloc => bloc.type)).toEqual(["titre", "citation", "liste"]);
     const liste = blocs[2];
     expect(liste?.type === "liste" ? liste.elements : []).toHaveLength(2);
   });
@@ -166,7 +166,7 @@ describe("liens", () => {
 
   it("REJETTE un lien javascript: et le laisse en texte brut", () => {
     const noeuds = analyserInline("[clique](javascript:alert(1))", CTX);
-    expect(noeuds.some((n) => n.type === "lien")).toBe(false);
+    expect(noeuds.some(n => n.type === "lien")).toBe(false);
     expect(texteBrut(noeuds)).toContain("javascript:alert(1)");
   });
 
@@ -177,7 +177,7 @@ describe("liens", () => {
       "[x](JavaScript:alert(1))",
       "[x](file:///etc/passwd)",
     ]) {
-      expect(analyserInline(dangereux, CTX).some((n) => n.type === "lien")).toBe(false);
+      expect(analyserInline(dangereux, CTX).some(n => n.type === "lien")).toBe(false);
     }
     expect(estUrlSure("javascript:alert(1)")).toBe(false);
     expect(estUrlSure("https://rosegriffon.fr")).toBe(true);

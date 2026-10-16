@@ -30,13 +30,7 @@
 import { XClient, XSession, type Tweet } from "@aphrody/x";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 import type { SQL } from "bun";
-import {
-	compterImages,
-	porteUneImage,
-	tweetToRow,
-	type DBTweetRow,
-	type MediaItem,
-} from "./tweet-row";
+import { compterImages, porteUneImage, tweetToRow, type DBTweetRow, type MediaItem } from "./tweet-row";
 import { fermerStockage, rehebergerMediasTweet } from "./tweet-media-storage";
 import { apparierHashtag, requetesVariantes, variantesRecherche } from "./hashtag-variantes";
 import { loadXCookieHeader } from "./x-accounts";
@@ -91,81 +85,81 @@ const LOT_ECRITURE = 50;
 export type ArretRecolte = "epuise" | "max_pages" | "rate_limit" | "erreur";
 
 export interface StatsCampagne {
-	slug: string;
-	/** Nombre de couples (requête × produit) balayés. */
-	requetes: number;
-	pages: number;
-	/** Tweets reçus de X, doublons compris. */
-	recus: number;
-	/** Tweets uniques retenus (image + hashtag présent). */
-	avecImage: number;
-	/** Parmi eux, ceux retenus sur une graphie FAUTIVE du hashtag. */
-	surFaute: number;
-	tweetsUpsert: number;
-	rattachements: number;
-	imagesRehebergees: number;
-	imagesTelechargees: number;
-	arret: ArretRecolte;
-	erreur?: string;
+  slug: string;
+  /** Nombre de couples (requête × produit) balayés. */
+  requetes: number;
+  pages: number;
+  /** Tweets reçus de X, doublons compris. */
+  recus: number;
+  /** Tweets uniques retenus (image + hashtag présent). */
+  avecImage: number;
+  /** Parmi eux, ceux retenus sur une graphie FAUTIVE du hashtag. */
+  surFaute: number;
+  tweetsUpsert: number;
+  rattachements: number;
+  imagesRehebergees: number;
+  imagesTelechargees: number;
+  arret: ArretRecolte;
+  erreur?: string;
 }
 
 export interface StatsRecolte {
-	success: boolean;
-	campagnes: number;
-	details: StatsCampagne[];
-	totalRattachements: number;
-	totalImages: number;
-	dry: boolean;
-	error?: string;
+  success: boolean;
+  campagnes: number;
+  details: StatsCampagne[];
+  totalRattachements: number;
+  totalImages: number;
+  dry: boolean;
+  error?: string;
 }
 
 export interface OptionsRecolte {
-	/** Restreint la récolte à une seule campagne. */
-	slug?: string;
-	/** Plafond de tweets retenus par campagne. */
-	limite?: number;
-	/** Simulation : interroge X, n'écrit rien (ni base, ni disque). */
-	dry?: boolean;
+  /** Restreint la récolte à une seule campagne. */
+  slug?: string;
+  /** Plafond de tweets retenus par campagne. */
+  limite?: number;
+  /** Simulation : interroge X, n'écrit rien (ni base, ni disque). */
+  dry?: boolean;
 }
 
 interface LigneCampagne {
-	slug: string;
-	titre: string;
-	hashtags: string[];
-	/**
-	 * Hashtags récoltés MAIS JAMAIS AFFICHÉS (`x_campagnes.hashtags_rattrapage`) :
-	 * la coquille d'un visuel, une variante orthographique répandue. Un participant
-	 * qui recopie l'affiche fautive doit quand même rejoindre la galerie ; en
-	 * revanche la page ne montre jamais ces hashtags — `queries.ts` ne les
-	 * sélectionne pas et ramène `hashtag_trouve` à NULL quand il en vient un.
-	 */
-	hashtags_rattrapage: string[];
-	requetes: string[];
-	/**
-	 * Comptes X de l'organisateur (`x_campagnes.comptes_organisateurs`).
-	 *
-	 * ⚠ L'ANNONCE D'UNE CAMPAGNE N'EST PAS UNE CRÉATION DE LA CAMPAGNE. Le tweet
-	 * qui lance l'opération porte le hashtag ET l'affiche : sans cette liste, il
-	 * devient la première « création » de la galerie, et le compteur public
-	 * annonce « 1 création, 1 participant » avant que quiconque ait participé.
-	 * (Mesuré le 13/8/2026 sur `#IERGDay` : le seul post retenu à l'ouverture
-	 * était l'annonce de `@rose_griffon`, dont l'image est déjà publiée comme
-	 * `image_affiche`.)
-	 *
-	 * Le pendant Discord de cette règle existe depuis le 12/8/2026 dans
-	 * `tasks/campagnes-discord.ts` — les salons d'annonces (type 5) y sont
-	 * écartés pour exactement la même raison.
-	 */
-	comptes_organisateurs: string[];
+  slug: string;
+  titre: string;
+  hashtags: string[];
+  /**
+   * Hashtags récoltés MAIS JAMAIS AFFICHÉS (`x_campagnes.hashtags_rattrapage`) :
+   * la coquille d'un visuel, une variante orthographique répandue. Un participant
+   * qui recopie l'affiche fautive doit quand même rejoindre la galerie ; en
+   * revanche la page ne montre jamais ces hashtags — `queries.ts` ne les
+   * sélectionne pas et ramène `hashtag_trouve` à NULL quand il en vient un.
+   */
+  hashtags_rattrapage: string[];
+  requetes: string[];
+  /**
+   * Comptes X de l'organisateur (`x_campagnes.comptes_organisateurs`).
+   *
+   * ⚠ L'ANNONCE D'UNE CAMPAGNE N'EST PAS UNE CRÉATION DE LA CAMPAGNE. Le tweet
+   * qui lance l'opération porte le hashtag ET l'affiche : sans cette liste, il
+   * devient la première « création » de la galerie, et le compteur public
+   * annonce « 1 création, 1 participant » avant que quiconque ait participé.
+   * (Mesuré le 13/8/2026 sur `#IERGDay` : le seul post retenu à l'ouverture
+   * était l'annonce de `@rose_griffon`, dont l'image est déjà publiée comme
+   * `image_affiche`.)
+   *
+   * Le pendant Discord de cette règle existe depuis le 12/8/2026 dans
+   * `tasks/campagnes-discord.ts` — les salons d'annonces (type 5) y sont
+   * écartés pour exactement la même raison.
+   */
+  comptes_organisateurs: string[];
 }
 
 /** Tweet retenu, avec le hashtag de la campagne qui l'a fait mordre. */
 interface Retenu {
-	tweet: Tweet;
-	hashtag: string;
-	/** Graphie réellement écrite par l'auteur, et son nombre de fautes. */
-	ecrit: string;
-	fautes: number;
+  tweet: Tweet;
+  hashtag: string;
+  /** Graphie réellement écrite par l'auteur, et son nombre de fautes. */
+  ecrit: string;
+  fautes: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -173,7 +167,7 @@ interface Retenu {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function dormir(ms: number): Promise<void> {
-	return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }
 
 /**
@@ -182,30 +176,30 @@ function dormir(ms: number): Promise<void> {
  * programme de se terminer tout seul.
  */
 async function avecDelaiMax<T>(promesse: Promise<T>, ms: number, quoi: string): Promise<T> {
-	let minuteur: ReturnType<typeof setTimeout> | undefined;
-	try {
-		return await Promise.race([
-			promesse,
-			new Promise<never>((_, rejeter) => {
-				minuteur = setTimeout(() => rejeter(new Error(`${quoi} : délai dépassé`)), ms);
-			}),
-		]);
-	} finally {
-		if (minuteur) clearTimeout(minuteur);
-	}
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promesse,
+      new Promise<never>((_, rejeter) => {
+        minuteur = setTimeout(() => rejeter(new Error(`${quoi} : délai dépassé`)), ms);
+      }),
+    ]);
+  } finally {
+    if (minuteur) clearTimeout(minuteur);
+  }
 }
 
 /** Reconnaît un rate-limit X, quelle que soit la forme sous laquelle il remonte. */
 function estRateLimit(err: unknown): boolean {
-	if (typeof err !== "object" || err === null) return false;
-	const e = err as { status?: number; code?: number; message?: string };
-	if (e.status === 429) return true;
-	if (e.code === 88) return true; // code historique « Rate limit exceeded »
-	return /429|rate.?limit|too many requests/i.test(e.message ?? "");
+  if (typeof err !== "object" || err === null) return false;
+  const e = err as { status?: number; code?: number; message?: string };
+  if (e.status === 429) return true;
+  if (e.code === 88) return true; // code historique « Rate limit exceeded »
+  return /429|rate.?limit|too many requests/i.test(e.message ?? "");
 }
 
 function message(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
+  return err instanceof Error ? err.message : String(err);
 }
 
 /**
@@ -217,10 +211,10 @@ function message(err: unknown): string {
  * l'histoire du hashtag, y compris les éditions précédentes de la campagne.
  */
 export function filtresDeRequete(requete: string): string {
-	return (requete || "")
-		.replace(/^\s*\([^)]*\)\s*/, "") // groupe `(#a OR #b)` en tête
-		.replace(/^\s*#[\p{L}\p{N}_]+\s*/u, "") // ou hashtag simple en tête
-		.trim();
+  return (requete || "")
+    .replace(/^\s*\([^)]*\)\s*/, "") // groupe `(#a OR #b)` en tête
+    .replace(/^\s*#[\p{L}\p{N}_]+\s*/u, "") // ou hashtag simple en tête
+    .trim();
 }
 
 /**
@@ -231,14 +225,14 @@ export function filtresDeRequete(requete: string): string {
  * main depuis l'écran d'administration.
  */
 export function estCompteOrganisateur(
-	tweet: { username?: string | null; author?: { username?: string | null } | null },
-	campagne: { comptes_organisateurs?: readonly string[] | null }
+  tweet: { username?: string | null; author?: { username?: string | null } | null },
+  campagne: { comptes_organisateurs?: readonly string[] | null },
 ): boolean {
-	const comptes = campagne.comptes_organisateurs ?? [];
-	if (comptes.length === 0) return false;
-	const pseudo = (tweet.username ?? tweet.author?.username ?? "").replace(/^@+/, "").toLowerCase();
-	if (!pseudo) return false;
-	return comptes.some((c) => (c || "").replace(/^@+/, "").toLowerCase() === pseudo);
+  const comptes = campagne.comptes_organisateurs ?? [];
+  if (comptes.length === 0) return false;
+  const pseudo = (tweet.username ?? tweet.author?.username ?? "").replace(/^@+/, "").toLowerCase();
+  if (!pseudo) return false;
+  return comptes.some(c => (c || "").replace(/^@+/, "").toLowerCase() === pseudo);
 }
 
 /**
@@ -252,7 +246,7 @@ export function estCompteOrganisateur(
  * d'atteindre l'écran, jamais cette fonction.
  */
 function hashtagsRecoltes(campagne: LigneCampagne): string[] {
-	return [...(campagne.hashtags ?? []), ...(campagne.hashtags_rattrapage ?? [])];
+  return [...(campagne.hashtags ?? []), ...(campagne.hashtags_rattrapage ?? [])];
 }
 
 /**
@@ -262,7 +256,7 @@ function hashtagsRecoltes(campagne: LigneCampagne): string[] {
  * curseur de sa jumelle — c'est-à-dire au mauvais endroit d'une autre timeline.
  */
 function cleCurseur(requete: string, produit: Produit): string {
-	return `${requete} [${produit}]`;
+  return `${requete} [${produit}]`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,255 +270,260 @@ function cleCurseur(requete: string, produit: Produit): string {
  *                pour ne rien écrire.
  */
 export async function crawlHashtagCampaigns(options: OptionsRecolte = {}): Promise<StatsRecolte> {
-	const { slug, limite = MAX_TWEETS_PAR_CAMPAGNE, dry = false } = options;
-	const sql = createBunSql();
-	const details: StatsCampagne[] = [];
+  const { slug, limite = MAX_TWEETS_PAR_CAMPAGNE, dry = false } = options;
+  const sql = createBunSql();
+  const details: StatsCampagne[] = [];
 
-	try {
-		const campagnes: LigneCampagne[] = await sql`
+  try {
+    const campagnes: LigneCampagne[] = await sql`
 			select slug, titre, hashtags, hashtags_rattrapage, requetes, comptes_organisateurs
 			  from public.x_campagnes
 			 where actif and (${slug ?? null}::text is null or slug = ${slug ?? null}::text)
 			 order by principale desc, debut_le desc nulls last, slug`;
 
-		if (campagnes.length === 0) {
-			const quoi = slug ? `la campagne « ${slug} »` : "aucune campagne active";
-			console.log(`[Campagnes X] Rien à récolter : ${quoi} (inexistante ou inactive).`);
-			return {
-				success: true,
-				campagnes: 0,
-				details: [],
-				totalRattachements: 0,
-				totalImages: 0,
-				dry,
-			};
-		}
+    if (campagnes.length === 0) {
+      const quoi = slug ? `la campagne « ${slug} »` : "aucune campagne active";
+      console.log(`[Campagnes X] Rien à récolter : ${quoi} (inexistante ou inactive).`);
+      return {
+        success: true,
+        campagnes: 0,
+        details: [],
+        totalRattachements: 0,
+        totalImages: 0,
+        dry,
+      };
+    }
 
-		console.log(
-			`[Campagnes X] ${campagnes.length} campagne(s) active(s)${dry ? " — MODE SIMULATION, aucune écriture" : ""}.`
-		);
+    console.log(
+      `[Campagnes X] ${campagnes.length} campagne(s) active(s)${dry ? " — MODE SIMULATION, aucune écriture" : ""}.`,
+    );
 
-		// UN SEUL client pour tout le run : il accumule l'état de rate-limit, ce qui
-		// permet au backoff interne d'attendre la bonne fenêtre. Deux clients, ce
-		// sont deux boucles à l'aveugle qui prennent chacune leur 429.
-		const cookie = loadXCookieHeader();
-		const session = cookie ? XSession.fromCookieString(cookie) : XSession.loadOrEnv();
-		const client = new XClient(session);
+    // UN SEUL client pour tout le run : il accumule l'état de rate-limit, ce qui
+    // permet au backoff interne d'attendre la bonne fenêtre. Deux clients, ce
+    // sont deux boucles à l'aveugle qui prennent chacune leur 429.
+    const cookie = loadXCookieHeader();
+    const session = cookie ? XSession.fromCookieString(cookie) : XSession.loadOrEnv();
+    const client = new XClient(session);
 
-		for (const campagne of campagnes) {
-			details.push(await recolterCampagne(sql, client, campagne, limite, dry));
-		}
+    for (const campagne of campagnes) {
+      details.push(await recolterCampagne(sql, client, campagne, limite, dry));
+    }
 
-		const totalRattachements = details.reduce((n, d) => n + d.rattachements, 0);
-		const totalImages = details.reduce((n, d) => n + d.imagesRehebergees, 0);
-		return {
-			success: true,
-			campagnes: campagnes.length,
-			details,
-			totalRattachements,
-			totalImages,
-			dry,
-		};
-	} catch (err) {
-		console.error("[Campagnes X] Échec global :", message(err));
-		return {
-			success: false,
-			campagnes: details.length,
-			details,
-			totalRattachements: details.reduce((n, d) => n + d.rattachements, 0),
-			totalImages: details.reduce((n, d) => n + d.imagesRehebergees, 0),
-			dry,
-			error: message(err),
-		};
-	} finally {
-		await sql.end();
-		await fermerStockage();
-	}
+    const totalRattachements = details.reduce((n, d) => n + d.rattachements, 0);
+    const totalImages = details.reduce((n, d) => n + d.imagesRehebergees, 0);
+    return {
+      success: true,
+      campagnes: campagnes.length,
+      details,
+      totalRattachements,
+      totalImages,
+      dry,
+    };
+  } catch (err) {
+    console.error("[Campagnes X] Échec global :", message(err));
+    return {
+      success: false,
+      campagnes: details.length,
+      details,
+      totalRattachements: details.reduce((n, d) => n + d.rattachements, 0),
+      totalImages: details.reduce((n, d) => n + d.imagesRehebergees, 0),
+      dry,
+      error: message(err),
+    };
+  } finally {
+    await sql.end();
+    await fermerStockage();
+  }
 }
 
 /** Récolte une campagne : pagination X, sélection, ré-hébergement, écriture. */
 async function recolterCampagne(
-	sql: SQL,
-	client: XClient,
-	campagne: LigneCampagne,
-	limite: number,
-	dry: boolean
+  sql: SQL,
+  client: XClient,
+  campagne: LigneCampagne,
+  limite: number,
+  dry: boolean,
 ): Promise<StatsCampagne> {
-	const stats: StatsCampagne = {
-		slug: campagne.slug,
-		requetes: 0,
-		pages: 0,
-		recus: 0,
-		avecImage: 0,
-		surFaute: 0,
-		tweetsUpsert: 0,
-		rattachements: 0,
-		imagesRehebergees: 0,
-		imagesTelechargees: 0,
-		arret: "epuise",
-	};
+  const stats: StatsCampagne = {
+    slug: campagne.slug,
+    requetes: 0,
+    pages: 0,
+    recus: 0,
+    avecImage: 0,
+    surFaute: 0,
+    tweetsUpsert: 0,
+    rattachements: 0,
+    imagesRehebergees: 0,
+    imagesTelechargees: 0,
+    arret: "epuise",
+  };
 
-	// Le repli sur `hashtags.map(…)` couvre TOUS les hashtags recherchés, rattrapage
-	// compris : une campagne sans `requetes` doit tout de même interroger X sur ses
-	// variantes, sinon le filet ne récolte rien.
-	const hashtags = hashtagsRecoltes(campagne);
-	const declarees = campagne.requetes?.length ? campagne.requetes : hashtags.map((h) => `#${h}`);
-	if ((campagne.hashtags ?? []).length === 0) {
-		stats.arret = "erreur";
-		stats.erreur = "campagne sans hashtag";
-		return stats;
-	}
+  // Le repli sur `hashtags.map(…)` couvre TOUS les hashtags recherchés, rattrapage
+  // compris : une campagne sans `requetes` doit tout de même interroger X sur ses
+  // variantes, sinon le filet ne récolte rien.
+  const hashtags = hashtagsRecoltes(campagne);
+  const declarees = campagne.requetes?.length ? campagne.requetes : hashtags.map(h => `#${h}`);
+  if ((campagne.hashtags ?? []).length === 0) {
+    stats.arret = "erreur";
+    stats.erreur = "campagne sans hashtag";
+    return stats;
+  }
 
-	// ── LES FAUTES DE FRAPPE SE DEMANDENT, ELLES NE SE DEVINENT PAS ────────────
-	// L'index de X est EXACT : `#IERGDay` ne rendra jamais `#IERGDya`. Une faute
-	// qu'on n'a pas demandée est une création perdue, définitivement. On ajoute
-	// donc UNE requête par campagne, groupée en `OR` — X facture la page, pas le
-	// terme, donc douze graphies coûtent le prix d'une. Les requêtes déclarées en
-	// base restent en tête et ne sont jamais remplacées : ce sont elles qui
-	// portent la vérité éditoriale de la campagne.
-	const filtres = filtresDeRequete(declarees[0] ?? "");
-	const dejaDemandees = new Set(declarees.map((r) => r.toLowerCase()));
-	const variantes = hashtags.flatMap((h) => variantesRecherche(h));
-	const requetesFautes = requetesVariantes(variantes, filtres).filter(
-		(r) => !dejaDemandees.has(r.toLowerCase())
-	);
-	const requetes = [...declarees, ...requetesFautes];
+  // ── LES FAUTES DE FRAPPE SE DEMANDENT, ELLES NE SE DEVINENT PAS ────────────
+  // L'index de X est EXACT : `#IERGDay` ne rendra jamais `#IERGDya`. Une faute
+  // qu'on n'a pas demandée est une création perdue, définitivement. On ajoute
+  // donc UNE requête par campagne, groupée en `OR` — X facture la page, pas le
+  // terme, donc douze graphies coûtent le prix d'une. Les requêtes déclarées en
+  // base restent en tête et ne sont jamais remplacées : ce sont elles qui
+  // portent la vérité éditoriale de la campagne.
+  const filtres = filtresDeRequete(declarees[0] ?? "");
+  const dejaDemandees = new Set(declarees.map(r => r.toLowerCase()));
+  const variantes = hashtags.flatMap(h => variantesRecherche(h));
+  const requetesFautes = requetesVariantes(variantes, filtres).filter(r => !dejaDemandees.has(r.toLowerCase()));
+  const requetes = [...declarees, ...requetesFautes];
 
-	const rattrapage = campagne.hashtags_rattrapage ?? [];
-	console.log(
-		`[Campagnes X] « ${campagne.titre} » (${campagne.slug}) — ${requetes.length} requête(s) × ${PRODUITS.length} produit(s), hashtags : ${(campagne.hashtags ?? []).map((h) => `#${h}`).join(", ")}${rattrapage.length > 0 ? ` (+ rattrapage silencieux : ${rattrapage.map((h) => `#${h}`).join(", ")})` : ""}${requetesFautes.length > 0 ? ` (+ ${requetesFautes.length} requête(s) de fautes de frappe : ${variantes.slice(1, 6).map((v) => `#${v}`).join(", ")}…)` : ""}`
-	);
+  const rattrapage = campagne.hashtags_rattrapage ?? [];
+  console.log(
+    `[Campagnes X] « ${campagne.titre} » (${campagne.slug}) — ${requetes.length} requête(s) × ${PRODUITS.length} produit(s), hashtags : ${(campagne.hashtags ?? []).map(h => `#${h}`).join(", ")}${rattrapage.length > 0 ? ` (+ rattrapage silencieux : ${rattrapage.map(h => `#${h}`).join(", ")})` : ""}${
+      requetesFautes.length > 0
+        ? ` (+ ${requetesFautes.length} requête(s) de fautes de frappe : ${variantes
+            .slice(1, 6)
+            .map(v => `#${v}`)
+            .join(", ")}…)`
+        : ""
+    }`,
+  );
 
-	// Dédoublonnage à l'échelle de la campagne : un même post remonte presque
-	// toujours à la fois dans « Latest » et dans « Top ».
-	const retenus = new Map<string, Retenu>();
+  // Dédoublonnage à l'échelle de la campagne : un même post remonte presque
+  // toujours à la fois dans « Latest » et dans « Top ».
+  const retenus = new Map<string, Retenu>();
 
-	for (const requete of requetes) {
-		for (const produit of PRODUITS) {
-			if (retenus.size >= limite) break;
-			stats.requetes++;
-			const resultat = await paginer(sql, client, campagne, requete, produit, retenus, limite, dry);
-			stats.pages += resultat.pages;
-			stats.recus += resultat.recus;
-			// Un rate-limit sur une requête n'invalide pas les précédentes : on
-			// conserve tout ce qui a été accumulé et on note la raison de l'arrêt.
-			if (resultat.arret !== "epuise") stats.arret = resultat.arret;
-			await dormir(DELAI_ENTRE_REQUETES_MS);
-		}
-	}
+  for (const requete of requetes) {
+    for (const produit of PRODUITS) {
+      if (retenus.size >= limite) break;
+      stats.requetes++;
+      const resultat = await paginer(sql, client, campagne, requete, produit, retenus, limite, dry);
+      stats.pages += resultat.pages;
+      stats.recus += resultat.recus;
+      // Un rate-limit sur une requête n'invalide pas les précédentes : on
+      // conserve tout ce qui a été accumulé et on note la raison de l'arrêt.
+      if (resultat.arret !== "epuise") stats.arret = resultat.arret;
+      await dormir(DELAI_ENTRE_REQUETES_MS);
+    }
+  }
 
-	stats.avecImage = retenus.size;
-	stats.surFaute = [...retenus.values()].filter((r) => r.fautes > 0).length;
-	console.log(
-		`[Campagnes X] ${campagne.slug} : ${stats.recus} reçus, ${retenus.size} post(s) unique(s) avec image${stats.surFaute > 0 ? `, dont ${stats.surFaute} sur une graphie fautive du hashtag` : ""}.`
-	);
+  stats.avecImage = retenus.size;
+  stats.surFaute = [...retenus.values()].filter(r => r.fautes > 0).length;
+  console.log(
+    `[Campagnes X] ${campagne.slug} : ${stats.recus} reçus, ${retenus.size} post(s) unique(s) avec image${stats.surFaute > 0 ? `, dont ${stats.surFaute} sur une graphie fautive du hashtag` : ""}.`,
+  );
 
-	if (retenus.size === 0) {
-		// Chemin nominal d'une campagne annoncée mais pas encore lancée (#IERGDay).
-		// Rien à écrire — on horodate quand même le passage, pour que la page publique
-		// puisse afficher « dernière mise à jour ».
-		if (!dry) await marquerCollecte(sql, campagne.slug);
-		console.log(
-			`[Campagnes X] ${campagne.slug} : aucune publication à ce jour — le hashtag ne renvoie encore rien. Rien écrit.`
-		);
-		return stats;
-	}
+  if (retenus.size === 0) {
+    // Chemin nominal d'une campagne annoncée mais pas encore lancée (#IERGDay).
+    // Rien à écrire — on horodate quand même le passage, pour que la page publique
+    // puisse afficher « dernière mise à jour ».
+    if (!dry) await marquerCollecte(sql, campagne.slug);
+    console.log(
+      `[Campagnes X] ${campagne.slug} : aucune publication à ce jour — le hashtag ne renvoie encore rien. Rien écrit.`,
+    );
+    return stats;
+  }
 
-	if (dry) {
-		console.log(
-			`[Campagnes X] ${campagne.slug} : SIMULATION — ${retenus.size} post(s) auraient été enregistrés, aucune image téléchargée.`
-		);
-		return stats;
-	}
+  if (dry) {
+    console.log(
+      `[Campagnes X] ${campagne.slug} : SIMULATION — ${retenus.size} post(s) auraient été enregistrés, aucune image téléchargée.`,
+    );
+    return stats;
+  }
 
-	// Les posts déjà masqués par la modération sont écartés de l'écriture dans
-	// `public.tweets` — et pas seulement du ré-hébergement de leurs images.
-	//
-	// ⚠ C'EST UN POINT DE CORRECTION, PAS UNE OPTIMISATION. `public.tweets` est une
-	// table PARTAGÉE (process-tweets.ts, FrenchTweet, refetch-tweet-media.ts) dont la
-	// colonne `media` contient, pour un tweet déjà récolté, le jsonb ENRICHI des
-	// `storage_path`/`storage_url` du Storage self-host. Ne sauter que le
-	// ré-hébergement tout en gardant la ligne dans le lot d'upsert réécrivait
-	// `media = excluded.media` avec les URL pbs.twimg.com brutes : le masquage d'un
-	// post détruisait donc, à la récolte suivante, le lien vers les fichiers déjà
-	// ré-hébergés pour TOUS ses consommateurs. Un post masqué ne doit plus rien
-	// écrire du tout côté `tweets`.
-	const masques = new Set(
-		(
-			(await sql`
+  // Les posts déjà masqués par la modération sont écartés de l'écriture dans
+  // `public.tweets` — et pas seulement du ré-hébergement de leurs images.
+  //
+  // ⚠ C'EST UN POINT DE CORRECTION, PAS UNE OPTIMISATION. `public.tweets` est une
+  // table PARTAGÉE (process-tweets.ts, FrenchTweet, refetch-tweet-media.ts) dont la
+  // colonne `media` contient, pour un tweet déjà récolté, le jsonb ENRICHI des
+  // `storage_path`/`storage_url` du Storage self-host. Ne sauter que le
+  // ré-hébergement tout en gardant la ligne dans le lot d'upsert réécrivait
+  // `media = excluded.media` avec les URL pbs.twimg.com brutes : le masquage d'un
+  // post détruisait donc, à la récolte suivante, le lien vers les fichiers déjà
+  // ré-hébergés pour TOUS ses consommateurs. Un post masqué ne doit plus rien
+  // écrire du tout côté `tweets`.
+  const masques = new Set(
+    (
+      (await sql`
 				select tweet_id from public.x_campagne_posts
 				 where campagne_slug = ${campagne.slug} and masque`) as Array<{ tweet_id: string }>
-		).map((r) => r.tweet_id)
-	);
+    ).map(r => r.tweet_id),
+  );
 
-	// 1) Conversion + ré-hébergement des images.
-	const lignesTweets: DBTweetRow[] = [];
-	const lignesPosts: Array<{
-		campagne_slug: string;
-		tweet_id: string;
-		hashtag_trouve: string;
-		a_media: boolean;
-		nb_images: number;
-		publie_le: Date;
-		collecte_le: Date;
-	}> = [];
+  // 1) Conversion + ré-hébergement des images.
+  const lignesTweets: DBTweetRow[] = [];
+  const lignesPosts: Array<{
+    campagne_slug: string;
+    tweet_id: string;
+    hashtag_trouve: string;
+    a_media: boolean;
+    nb_images: number;
+    publie_le: Date;
+    collecte_le: Date;
+  }> = [];
 
-	let ignoresMasques = 0;
-	for (const { tweet, hashtag } of retenus.values()) {
-		const row = tweetToRow(tweet);
-		// `author_username` est NULLable en base mais inutilisable côté site (l'URL
-		// d'un post se construit avec) : on écarte les rares tweets sans auteur.
-		if (!row.author_username) continue;
+  let ignoresMasques = 0;
+  for (const { tweet, hashtag } of retenus.values()) {
+    const row = tweetToRow(tweet);
+    // `author_username` est NULLable en base mais inutilisable côté site (l'URL
+    // d'un post se construit avec) : on écarte les rares tweets sans auteur.
+    if (!row.author_username) continue;
 
-		if (masques.has(row.id)) {
-			// Ni ré-hébergement, ni upsert `tweets` : on laisse la ligne existante
-			// intacte (voir le commentaire du `select … where masque` ci-dessus).
-			ignoresMasques++;
-		} else {
-			const res = await rehebergerMediasTweet(row.id, row.media as MediaItem[] | null);
-			row.media = res.media;
-			stats.imagesRehebergees += res.rehberges;
-			stats.imagesTelechargees += res.telecharges;
-			lignesTweets.push(row);
-		}
+    if (masques.has(row.id)) {
+      // Ni ré-hébergement, ni upsert `tweets` : on laisse la ligne existante
+      // intacte (voir le commentaire du `select … where masque` ci-dessus).
+      ignoresMasques++;
+    } else {
+      const res = await rehebergerMediasTweet(row.id, row.media as MediaItem[] | null);
+      row.media = res.media;
+      stats.imagesRehebergees += res.rehberges;
+      stats.imagesTelechargees += res.telecharges;
+      lignesTweets.push(row);
+    }
 
-		lignesPosts.push({
-			campagne_slug: campagne.slug,
-			tweet_id: row.id,
-			hashtag_trouve: hashtag,
-			a_media: true,
-			nb_images: compterImages(row.media as MediaItem[] | null),
-			publie_le: new Date(row.created_at),
-			collecte_le: new Date(),
-		});
-	}
+    lignesPosts.push({
+      campagne_slug: campagne.slug,
+      tweet_id: row.id,
+      hashtag_trouve: hashtag,
+      a_media: true,
+      nb_images: compterImages(row.media as MediaItem[] | null),
+      publie_le: new Date(row.created_at),
+      collecte_le: new Date(),
+    });
+  }
 
-	// 2) Upsert `public.tweets`.
-	for (let i = 0; i < lignesTweets.length; i += LOT_ECRITURE) {
-		const lot = lignesTweets.slice(i, i + LOT_ECRITURE).map((r) => ({
-			...r,
-			created_at: new Date(r.created_at),
-			updated_at: new Date(r.updated_at),
-		}));
-		// ⚠ `translation` et `category` sont ABSENTES de la clause `do update` :
-		// elles sont renseignées après coup par process-tweets.ts et seraient
-		// écrasées à chaque récolte.
-		await sql`
+  // 2) Upsert `public.tweets`.
+  for (let i = 0; i < lignesTweets.length; i += LOT_ECRITURE) {
+    const lot = lignesTweets.slice(i, i + LOT_ECRITURE).map(r => ({
+      ...r,
+      created_at: new Date(r.created_at),
+      updated_at: new Date(r.updated_at),
+    }));
+    // ⚠ `translation` et `category` sont ABSENTES de la clause `do update` :
+    // elles sont renseignées après coup par process-tweets.ts et seraient
+    // écrasées à chaque récolte.
+    await sql`
 			insert into public.tweets ${sql(
-				lot,
-				"id",
-				"author_id",
-				"author_name",
-				"author_username",
-				"created_at",
-				"text",
-				"is_thread",
-				"tweet_count",
-				"metrics",
-				"media",
-				"quoted_tweets",
-				"updated_at"
-			)}
+        lot,
+        "id",
+        "author_id",
+        "author_name",
+        "author_username",
+        "created_at",
+        "text",
+        "is_thread",
+        "tweet_count",
+        "metrics",
+        "media",
+        "quoted_tweets",
+        "updated_at",
+      )}
 			on conflict (id) do update set
 				text            = excluded.text,
 				media           = excluded.media,
@@ -532,170 +531,170 @@ async function recolterCampagne(
 				author_name     = excluded.author_name,
 				author_username = excluded.author_username,
 				updated_at      = now()`;
-		stats.tweetsUpsert += lot.length;
-	}
+    stats.tweetsUpsert += lot.length;
+  }
 
-	// 3) Upsert `public.x_campagne_posts`.
-	for (let i = 0; i < lignesPosts.length; i += LOT_ECRITURE) {
-		const lot = lignesPosts.slice(i, i + LOT_ECRITURE);
-		// ⚠⚠ NE JAMAIS ajouter `masque`, `motif_masquage` ni `mis_en_avant` à cette
-		// clause `do update` : ce sont les décisions humaines de modération et de
-		// mise en avant. Les y mettre ferait réapparaître sur le site, à la récolte
-		// suivante, tout post qu'un modérateur vient de retirer.
-		await sql`
+  // 3) Upsert `public.x_campagne_posts`.
+  for (let i = 0; i < lignesPosts.length; i += LOT_ECRITURE) {
+    const lot = lignesPosts.slice(i, i + LOT_ECRITURE);
+    // ⚠⚠ NE JAMAIS ajouter `masque`, `motif_masquage` ni `mis_en_avant` à cette
+    // clause `do update` : ce sont les décisions humaines de modération et de
+    // mise en avant. Les y mettre ferait réapparaître sur le site, à la récolte
+    // suivante, tout post qu'un modérateur vient de retirer.
+    await sql`
 			insert into public.x_campagne_posts ${sql(
-				lot,
-				"campagne_slug",
-				"tweet_id",
-				"hashtag_trouve",
-				"a_media",
-				"nb_images",
-				"publie_le",
-				"collecte_le"
-			)}
+        lot,
+        "campagne_slug",
+        "tweet_id",
+        "hashtag_trouve",
+        "a_media",
+        "nb_images",
+        "publie_le",
+        "collecte_le",
+      )}
 			on conflict (campagne_slug, tweet_id) do update set
 				hashtag_trouve = excluded.hashtag_trouve,
 				a_media        = excluded.a_media,
 				nb_images      = excluded.nb_images,
 				publie_le      = excluded.publie_le,
 				collecte_le    = now()`;
-		stats.rattachements += lot.length;
-	}
+    stats.rattachements += lot.length;
+  }
 
-	await marquerCollecte(sql, campagne.slug);
-	console.log(
-		`[Campagnes X] ${campagne.slug} : ${stats.tweetsUpsert} tweet(s) upsert, ${stats.rattachements} rattachement(s), ${stats.imagesRehebergees} image(s) ré-hébergée(s) dont ${stats.imagesTelechargees} nouvelle(s)${ignoresMasques > 0 ? `, ${ignoresMasques} post(s) masqué(s) laissé(s) intact(s)` : ""}.`
-	);
+  await marquerCollecte(sql, campagne.slug);
+  console.log(
+    `[Campagnes X] ${campagne.slug} : ${stats.tweetsUpsert} tweet(s) upsert, ${stats.rattachements} rattachement(s), ${stats.imagesRehebergees} image(s) ré-hébergée(s) dont ${stats.imagesTelechargees} nouvelle(s)${ignoresMasques > 0 ? `, ${ignoresMasques} post(s) masqué(s) laissé(s) intact(s)` : ""}.`,
+  );
 
-	return stats;
+  return stats;
 }
 
 /** Boucle de pagination d'un couple (requête × produit). */
 async function paginer(
-	sql: SQL,
-	client: XClient,
-	campagne: LigneCampagne,
-	requete: string,
-	produit: Produit,
-	retenus: Map<string, Retenu>,
-	limite: number,
-	dry: boolean
+  sql: SQL,
+  client: XClient,
+  campagne: LigneCampagne,
+  requete: string,
+  produit: Produit,
+  retenus: Map<string, Retenu>,
+  limite: number,
+  dry: boolean,
 ): Promise<{ pages: number; recus: number; arret: ArretRecolte }> {
-	const cle = cleCurseur(requete, produit);
+  const cle = cleCurseur(requete, produit);
 
-	// Reprise : uniquement après un rate-limit. Après un `epuise`, repartir du
-	// curseur sauterait les nouveautés — elles arrivent EN TÊTE du flux.
-	const [precedent] = (await sql`
+  // Reprise : uniquement après un rate-limit. Après un `epuise`, repartir du
+  // curseur sauterait les nouveautés — elles arrivent EN TÊTE du flux.
+  const [precedent] = (await sql`
 		select curseur, dernier_arret from public.x_campagne_curseurs
 		 where campagne_slug = ${campagne.slug} and requete = ${cle}`) as Array<{
-		curseur: string | null;
-		dernier_arret: string | null;
-	}>;
-	let curseur: string | undefined =
-		precedent?.dernier_arret === "rate_limit" ? (precedent.curseur ?? undefined) : undefined;
+    curseur: string | null;
+    dernier_arret: string | null;
+  }>;
+  let curseur: string | undefined =
+    precedent?.dernier_arret === "rate_limit" ? (precedent.curseur ?? undefined) : undefined;
 
-	const vus = new Set<string>();
-	let pages = 0;
-	let recus = 0;
-	let arret: ArretRecolte = "epuise";
+  const vus = new Set<string>();
+  let pages = 0;
+  let recus = 0;
+  let arret: ArretRecolte = "epuise";
 
-	while (pages < MAX_PAGES_PAR_REQUETE) {
-		let page: Awaited<ReturnType<XClient["search"]>>;
-		try {
-			page = await avecDelaiMax(
-				client.search(requete, TWEETS_PAR_PAGE, curseur, produit),
-				TIMEOUT_RECHERCHE_MS,
-				`recherche « ${requete.slice(0, 40)}… » (${produit})`
-			);
-		} catch (err) {
-			// Rate-limit : on CONSERVE l'accumulé et on mémorise le curseur pour
-			// reprendre exactement ici au prochain run.
-			arret = estRateLimit(err) ? "rate_limit" : "erreur";
-			console.warn(
-				`[Campagnes X] ${campagne.slug} « ${requete.slice(0, 40)}… » (${produit}) : arrêt page ${pages + 1} (${arret}) —`,
-				message(err)
-			);
-			break;
-		}
+  while (pages < MAX_PAGES_PAR_REQUETE) {
+    let page: Awaited<ReturnType<XClient["search"]>>;
+    try {
+      page = await avecDelaiMax(
+        client.search(requete, TWEETS_PAR_PAGE, curseur, produit),
+        TIMEOUT_RECHERCHE_MS,
+        `recherche « ${requete.slice(0, 40)}… » (${produit})`,
+      );
+    } catch (err) {
+      // Rate-limit : on CONSERVE l'accumulé et on mémorise le curseur pour
+      // reprendre exactement ici au prochain run.
+      arret = estRateLimit(err) ? "rate_limit" : "erreur";
+      console.warn(
+        `[Campagnes X] ${campagne.slug} « ${requete.slice(0, 40)}… » (${produit}) : arrêt page ${pages + 1} (${arret}) —`,
+        message(err),
+      );
+      break;
+    }
 
-		pages++;
-		const tweets = page.tweets ?? [];
-		recus += tweets.length;
+    pages++;
+    const tweets = page.tweets ?? [];
+    recus += tweets.length;
 
-		let nouveaux = 0;
-		let ajoutes = 0;
-		for (const t of tweets) {
-			if (!t?.id) continue;
-			if (!vus.has(t.id)) {
-				vus.add(t.id);
-				nouveaux++;
-			}
-			if (retenus.has(t.id)) continue;
-			// Deux filtres, tous deux nécessaires : au moins une image, ET le hashtag
-			// réellement présent dans le texte du post.
-			//
-			// L'appariement TOLÈRE LES FAUTES DE FRAPPE (`#IERGDya`, `#IERG_Day`,
-			// `#iergday2026`) : un participant qui recopie le hashtag d'une affiche
-			// sur un téléphone n'a pas à perdre sa création pour une lettre. Le filet
-			// s'applique à TOUT ce que X renvoie, y compris aux posts ramenés par
-			// ricochet par une autre requête.
-			if (!porteUneImage(t)) continue;
-			// L'annonce de la campagne porte le hashtag et l'affiche : sans ce
-			// filtre, elle devient la première « création » du mur.
-			if (estCompteOrganisateur(t, campagne)) continue;
-			const appariement = apparierHashtag(t.text, hashtagsRecoltes(campagne));
-			if (!appariement) continue;
-			retenus.set(t.id, {
-				tweet: t,
-				hashtag: appariement.hashtag,
-				ecrit: appariement.ecrit,
-				fautes: appariement.fautes,
-			});
-			ajoutes++;
-			if (retenus.size >= limite) break;
-		}
+    let nouveaux = 0;
+    let ajoutes = 0;
+    for (const t of tweets) {
+      if (!t?.id) continue;
+      if (!vus.has(t.id)) {
+        vus.add(t.id);
+        nouveaux++;
+      }
+      if (retenus.has(t.id)) continue;
+      // Deux filtres, tous deux nécessaires : au moins une image, ET le hashtag
+      // réellement présent dans le texte du post.
+      //
+      // L'appariement TOLÈRE LES FAUTES DE FRAPPE (`#IERGDya`, `#IERG_Day`,
+      // `#iergday2026`) : un participant qui recopie le hashtag d'une affiche
+      // sur un téléphone n'a pas à perdre sa création pour une lettre. Le filet
+      // s'applique à TOUT ce que X renvoie, y compris aux posts ramenés par
+      // ricochet par une autre requête.
+      if (!porteUneImage(t)) continue;
+      // L'annonce de la campagne porte le hashtag et l'affiche : sans ce
+      // filtre, elle devient la première « création » du mur.
+      if (estCompteOrganisateur(t, campagne)) continue;
+      const appariement = apparierHashtag(t.text, hashtagsRecoltes(campagne));
+      if (!appariement) continue;
+      retenus.set(t.id, {
+        tweet: t,
+        hashtag: appariement.hashtag,
+        ecrit: appariement.ecrit,
+        fautes: appariement.fautes,
+      });
+      ajoutes++;
+      if (retenus.size >= limite) break;
+    }
 
-		console.log(
-			`[Campagnes X]   ${produit} p${pages} : ${tweets.length} reçus, ${nouveaux} nouveaux, ${ajoutes} retenus (total ${retenus.size}).`
-		);
+    console.log(
+      `[Campagnes X]   ${produit} p${pages} : ${tweets.length} reçus, ${nouveaux} nouveaux, ${ajoutes} retenus (total ${retenus.size}).`,
+    );
 
-		const suivant = page.next_cursor;
-		// ⚠ X renvoie un `next_cursor` NON NUL même sur zéro résultat (vérifié sur
-		// #iergday). S'arrêter sur `!next_cursor` seul boucle indéfiniment : il faut
-		// aussi tester le nombre de tweets ET le nombre d'ids NOUVEAUX (deux pages
-		// consécutives peuvent réémettre le même contenu sous un curseur différent).
-		if (tweets.length === 0 || !suivant || nouveaux === 0) {
-			arret = "epuise";
-			break;
-		}
-		if (retenus.size >= limite) {
-			arret = "max_pages";
-			break;
-		}
-		curseur = suivant;
+    const suivant = page.next_cursor;
+    // ⚠ X renvoie un `next_cursor` NON NUL même sur zéro résultat (vérifié sur
+    // #iergday). S'arrêter sur `!next_cursor` seul boucle indéfiniment : il faut
+    // aussi tester le nombre de tweets ET le nombre d'ids NOUVEAUX (deux pages
+    // consécutives peuvent réémettre le même contenu sous un curseur différent).
+    if (tweets.length === 0 || !suivant || nouveaux === 0) {
+      arret = "epuise";
+      break;
+    }
+    if (retenus.size >= limite) {
+      arret = "max_pages";
+      break;
+    }
+    curseur = suivant;
 
-		// Curseur persisté après CHAQUE page : un 429 en milieu de parcours ne doit
-		// pas faire perdre la progression déjà payée en quota.
-		if (!dry) await persisterCurseur(sql, campagne.slug, cle, suivant, pages, "max_pages");
-		await dormir(DELAI_ENTRE_PAGES_MS);
-	}
+    // Curseur persisté après CHAQUE page : un 429 en milieu de parcours ne doit
+    // pas faire perdre la progression déjà payée en quota.
+    if (!dry) await persisterCurseur(sql, campagne.slug, cle, suivant, pages, "max_pages");
+    await dormir(DELAI_ENTRE_PAGES_MS);
+  }
 
-	if (pages >= MAX_PAGES_PAR_REQUETE && arret === "epuise") arret = "max_pages";
-	if (!dry) await persisterCurseur(sql, campagne.slug, cle, curseur ?? null, pages, arret);
+  if (pages >= MAX_PAGES_PAR_REQUETE && arret === "epuise") arret = "max_pages";
+  if (!dry) await persisterCurseur(sql, campagne.slug, cle, curseur ?? null, pages, arret);
 
-	return { pages, recus, arret };
+  return { pages, recus, arret };
 }
 
 /** Écrit (ou met à jour) le curseur de reprise d'un couple (campagne, requête). */
 async function persisterCurseur(
-	sql: SQL,
-	slug: string,
-	cle: string,
-	curseur: string | null,
-	pages: number,
-	arret: ArretRecolte
+  sql: SQL,
+  slug: string,
+  cle: string,
+  curseur: string | null,
+  pages: number,
+  arret: ArretRecolte,
 ): Promise<void> {
-	await sql`
+  await sql`
 		insert into public.x_campagne_curseurs
 			(campagne_slug, requete, curseur, pages_lues, dernier_arret, maj_le)
 		values (${slug}, ${cle}, ${curseur}, ${pages}, ${arret}, now())
@@ -708,7 +707,7 @@ async function persisterCurseur(
 
 /** Horodate le passage de récolte, succès comme échec. */
 async function marquerCollecte(sql: SQL, slug: string): Promise<void> {
-	await sql`
+  await sql`
 		update public.x_campagnes
 		   set collecte_le = now(), updated_at = now()
 		 where slug = ${slug}`;
@@ -719,46 +718,46 @@ async function marquerCollecte(sql: SQL, slug: string): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function lireOptions(argv: readonly string[]): OptionsRecolte {
-	const valeur = (nom: string): string | undefined => {
-		const i = argv.indexOf(nom);
-		return i === -1 ? undefined : argv[i + 1];
-	};
-	const limiteBrute = Number(valeur("--limite"));
-	return {
-		slug: valeur("--campagne"),
-		limite: Number.isFinite(limiteBrute) && limiteBrute > 0 ? limiteBrute : undefined,
-		dry: argv.includes("--dry"),
-	};
+  const valeur = (nom: string): string | undefined => {
+    const i = argv.indexOf(nom);
+    return i === -1 ? undefined : argv[i + 1];
+  };
+  const limiteBrute = Number(valeur("--limite"));
+  return {
+    slug: valeur("--campagne"),
+    limite: Number.isFinite(limiteBrute) && limiteBrute > 0 ? limiteBrute : undefined,
+    dry: argv.includes("--dry"),
+  };
 }
 
 if (import.meta.main) {
-	const argv = Bun.argv.slice(2);
-	if (argv.includes("--help") || argv.includes("-h")) {
-		console.log(
-			[
-				"Récolte des campagnes à hashtag X vers public.x_campagne_posts.",
-				"",
-				"  bun packages/cron/src/tasks/ie-crawl/hashtag-harvest.ts [options]",
-				"",
-				"  --campagne <slug>  ne traite que cette campagne (défaut : toutes les actives)",
-				"  --limite <n>       plafond de posts retenus par campagne (défaut : 600)",
-				"  --dry              simulation : interroge X, n'écrit ni en base ni sur disque",
-			].join("\n")
-		);
-		process.exit(0);
-	}
+  const argv = Bun.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(
+      [
+        "Récolte des campagnes à hashtag X vers public.x_campagne_posts.",
+        "",
+        "  bun packages/cron/src/tasks/ie-crawl/hashtag-harvest.ts [options]",
+        "",
+        "  --campagne <slug>  ne traite que cette campagne (défaut : toutes les actives)",
+        "  --limite <n>       plafond de posts retenus par campagne (défaut : 600)",
+        "  --dry              simulation : interroge X, n'écrit ni en base ni sur disque",
+      ].join("\n"),
+    );
+    process.exit(0);
+  }
 
-	const res = await crawlHashtagCampaigns(lireOptions(argv));
+  const res = await crawlHashtagCampaigns(lireOptions(argv));
 
-	console.log("\n[Campagnes X] ── Résumé ──");
-	for (const d of res.details) {
-		console.log(
-			`  ${d.slug.padEnd(20)} reçus=${d.recus} avec_image=${d.avecImage} tweets=${d.tweetsUpsert} rattachements=${d.rattachements} images=${d.imagesRehebergees}(+${d.imagesTelechargees}) arrêt=${d.arret}${d.erreur ? ` erreur=${d.erreur}` : ""}`
-		);
-	}
-	console.log(
-		`  TOTAL campagnes=${res.campagnes} rattachements=${res.totalRattachements} images=${res.totalImages}${res.dry ? " (simulation)" : ""}`
-	);
-	if (res.error) console.error(`  ERREUR : ${res.error}`);
-	process.exit(res.success ? 0 : 1);
+  console.log("\n[Campagnes X] ── Résumé ──");
+  for (const d of res.details) {
+    console.log(
+      `  ${d.slug.padEnd(20)} reçus=${d.recus} avec_image=${d.avecImage} tweets=${d.tweetsUpsert} rattachements=${d.rattachements} images=${d.imagesRehebergees}(+${d.imagesTelechargees}) arrêt=${d.arret}${d.erreur ? ` erreur=${d.erreur}` : ""}`,
+    );
+  }
+  console.log(
+    `  TOTAL campagnes=${res.campagnes} rattachements=${res.totalRattachements} images=${res.totalImages}${res.dry ? " (simulation)" : ""}`,
+  );
+  if (res.error) console.error(`  ERREUR : ${res.error}`);
+  process.exit(res.success ? 0 : 1);
 }

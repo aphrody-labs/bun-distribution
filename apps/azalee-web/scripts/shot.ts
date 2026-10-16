@@ -14,9 +14,7 @@ import { chromium } from "@playwright/test";
 
 const [url, sortie, largeur, hauteur] = process.argv.slice(2);
 if (!url || !sortie) {
-  console.error(
-    "usage: bun --bun apps/azalee/scripts/shot.ts <url> <sortie.png> [largeur] [hauteur]",
-  );
+  console.error("usage: bun --bun apps/azalee/scripts/shot.ts <url> <sortie.png> [largeur] [hauteur]");
   process.exit(1);
 }
 

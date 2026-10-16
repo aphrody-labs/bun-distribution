@@ -253,9 +253,7 @@ export function formatDuree(secondes: number | null | undefined): string | null 
 /** Taille en unités binaires, telle qu'on l'annonce à côté d'un lien de téléchargement. */
 export function formatOctets(octets: number): string {
   const mio = octets / 1024 ** 2;
-  return mio >= 1024
-    ? `${(mio / 1024).toFixed(1).replace(".", ",")} Gio`
-    : `${Math.round(mio)} Mio`;
+  return mio >= 1024 ? `${(mio / 1024).toFixed(1).replace(".", ",")} Gio` : `${Math.round(mio)} Mio`;
 }
 
 /** Définition `1920×1080`, ou `null` si le conteneur ne la déclare pas. */

@@ -87,14 +87,7 @@ export type ItemCategory =
  */
 export type ItemStatBonuses = Partial<Record<StatBonusKey, number>>;
 
-export type StatBonusKey =
-  | "kick"
-  | "control"
-  | "technique"
-  | "intelligence"
-  | "pressure"
-  | "agility"
-  | "physical";
+export type StatBonusKey = "kick" | "control" | "technique" | "intelligence" | "pressure" | "agility" | "physical";
 
 export interface ParsedItem extends ExportableEntity {
   itemId: string; // Hex
@@ -171,10 +164,7 @@ export async function loadFashionItemMappingAsync(dataPath: string): Promise<Map
           const itemIdStr = vars[0].value;
           const uniformIdStr = vars[vars.length - 1].value;
           if (itemIdStr && uniformIdStr) {
-            mapping.set(
-              Number.parseInt(itemIdStr, 10) >>> 0,
-              Number.parseInt(uniformIdStr, 10) >>> 0,
-            );
+            mapping.set(Number.parseInt(itemIdStr, 10) >>> 0, Number.parseInt(uniformIdStr, 10) >>> 0);
           }
         }
       }
@@ -212,8 +202,7 @@ export async function buildItemDatabaseAsync(
   const configPath = join(dataPath, "common", "gamedata", "item", filename);
 
   // Charge la base de bonus décodés (synchrone, fichier statique bundlé).
-  const bonusDb =
-    projectionSource() !== "vfs" ? await loadItemBonusDb() : new Map<string, ItemStatBonuses>();
+  const bonusDb = projectionSource() !== "vfs" ? await loadItemBonusDb() : new Map<string, ItemStatBonuses>();
 
   // Load Texts (Parallel).
   // NOTE: il n'existe PAS de fichier `item_explain_text` dans le jeu — les
@@ -232,10 +221,7 @@ export async function buildItemDatabaseAsync(
     const content = await loadJsonAsync<any>(configPath);
 
     if (!content?.entries) {
-      console.error(
-        "[ItemParser] Invalid config structure:",
-        content ? Object.keys(content) : "null",
-      );
+      console.error("[ItemParser] Invalid config structure:", content ? Object.keys(content) : "null");
       return { items, byId, byCategory, stats, toMarkdown: () => null, toReact: () => null };
     }
 
@@ -313,8 +299,7 @@ export async function buildItemDatabaseAsync(
 
             // Bonus de stats RÉELS (relevé communautaire) — joint sur le nameId.
             // Couvre chaussures/bracelets/accessoires : kick +6, control +5, …
-            const bonuses =
-              bonusDb.get(bonusKey) ?? bonusDb.get(itemIdHex.toUpperCase().replace(/^0X/, ""));
+            const bonuses = bonusDb.get(bonusKey) ?? bonusDb.get(itemIdHex.toUpperCase().replace(/^0X/, ""));
             if (bonuses && Object.keys(bonuses).length > 0) {
               item.bonuses = bonuses;
               for (const entry of Object.entries(bonuses)) {

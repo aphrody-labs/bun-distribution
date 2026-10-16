@@ -27,9 +27,7 @@ function getArgValue(flag: string): string | undefined {
 }
 
 export async function pullLatestDump(destPath: string): Promise<void> {
-  console.log(
-    "📥 Pulling freshest PostgreSQL dump from production VPS (vps:/var/backups/postgres/)...",
-  );
+  console.log("📥 Pulling freshest PostgreSQL dump from production VPS (vps:/var/backups/postgres/)...");
   const dir = dirname(destPath);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
@@ -47,11 +45,7 @@ export async function pullLatestDump(destPath: string): Promise<void> {
 
 function unescapePgValue(val: string): string | null {
   if (val === "\\N") return null;
-  return val
-    .replace(/\\n/g, "\n")
-    .replace(/\\r/g, "\r")
-    .replace(/\\t/g, "\t")
-    .replace(/\\\\/g, "\\");
+  return val.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t").replace(/\\\\/g, "\\");
 }
 
 export async function restoreDumpToSqlite(
@@ -79,16 +73,14 @@ export async function restoreDumpToSqlite(
 
   // Discover valid SQLite tables and columns
   const tableRows = db
-    .query<{ name: string }, []>(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'inagle_%'",
-    )
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'inagle_%'")
     .all();
-  const knownTables = new Set(tableRows.map((r) => r.name));
+  const knownTables = new Set(tableRows.map(r => r.name));
 
   const tableColumns = new Map<string, Set<string>>();
   for (const t of knownTables) {
     const cols = db.query<{ name: string }, []>(`PRAGMA table_info(${t})`).all();
-    tableColumns.set(t, new Set(cols.map((c) => c.name)));
+    tableColumns.set(t, new Set(cols.map(c => c.name)));
   }
 
   console.log(`   Found ${knownTables.size} canonical target tables in SQLite schema.`);
@@ -142,7 +134,7 @@ export async function restoreDumpToSqlite(
       }
 
       currentTable = tableName;
-      copyColumns = copyMatch[2].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+      copyColumns = copyMatch[2].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
       const availableCols = tableColumns.get(tableName)!;
 
       colIndicesToKeep = [];
@@ -208,10 +200,7 @@ export async function restoreDumpToSqlite(
 async function main(): Promise<void> {
   const dumpPath = getArgValue("--dump") || process.env.PG_DUMP_PATH || defaultDumpPath;
   const sqlitePath =
-    getArgValue("--sqlite") ||
-    process.env.SQLITE_DB_PATH ||
-    process.env.NIE_MIRROR_DB ||
-    defaultSqlitePath;
+    getArgValue("--sqlite") || process.env.SQLITE_DB_PATH || process.env.NIE_MIRROR_DB || defaultSqlitePath;
 
   if (args.includes("--pull") || !existsSync(dumpPath)) {
     await pullLatestDump(dumpPath);
@@ -221,7 +210,7 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.main) {
-  main().catch((err) => {
+  main().catch(err => {
     console.error("❌ Restore error:", err);
     process.exit(1);
   });

@@ -15,16 +15,14 @@ export const NIE_CRYPTO_CONSTANTS: NieCryptoConstant[] = [
     name: "VIOLA_FIXED_KEY",
     hexValue: "0x1717E18E",
     intValue: 0x1717e18e,
-    usage:
-      "Fixed CRI XOR encryption key for cpk_list.cfg.bin and standalone Level-5 packages (discovered by Viola).",
+    usage: "Fixed CRI XOR encryption key for cpk_list.cfg.bin and standalone Level-5 packages (discovered by Viola).",
     verifiedInGameDump: true,
   },
   {
     name: "LEVEL5_CRC32_POLYNOMIAL",
     hexValue: "0xEDB88320",
     intValue: 0xedb88320,
-    usage:
-      "Standard IEEE 802.3 reflected CRC32 polynomial for RDBN hash dictionaries and CPK filename key derivation.",
+    usage: "Standard IEEE 802.3 reflected CRC32 polynomial for RDBN hash dictionaries and CPK filename key derivation.",
     verifiedInGameDump: true,
   },
   {
@@ -59,8 +57,7 @@ export const NIE_CRYPTO_CONSTANTS: NieCryptoConstant[] = [
     name: "STEAM_APP_ID",
     hexValue: "0x2AB8F4",
     intValue: 2799860,
-    usage:
-      "Official Steam App ID for Inazuma Eleven: Victory Road (hexadecimal prefix for save files: 002AB8F4).",
+    usage: "Official Steam App ID for Inazuma Eleven: Victory Road (hexadecimal prefix for save files: 002AB8F4).",
     verifiedInGameDump: true,
   },
 ];
@@ -84,19 +81,16 @@ export const NIE_CRITICAL_OFFSETS: NieMemoryOffset[] = [
     addressHex: "0x1404ecd60",
     runtimePc: 0x1404ecd60n,
     subsystem: "controller",
-    description:
-      "Player movement, kinematic resolution, ball possession calculations, and user input mapping.",
+    description: "Player movement, kinematic resolution, ball possession calculations, and user input mapping.",
     callingConvention: "__fastcall",
-    signature:
-      "void __fastcall CharaControllerUpdate(void* playerEntity, void* inputState, float dt)",
+    signature: "void __fastcall CharaControllerUpdate(void* playerEntity, void* inputState, float dt)",
   },
   {
     symbol: "CriFsStreamDecryptBlock",
     addressHex: "0x1405a1120",
     runtimePc: 0x1405a1120n,
     subsystem: "crypto",
-    description:
-      "Position-aware XOR stream cipher implementation decrypting 4-byte quads based on file offset.",
+    description: "Position-aware XOR stream cipher implementation decrypting 4-byte quads based on file offset.",
     callingConvention: "__fastcall",
     signature:
       "void __fastcall CriFsStreamDecryptBlock(uint8_t* buffer, size_t length, uint64_t fileOffset, uint32_t key)",
@@ -117,11 +111,9 @@ export const NIE_CRITICAL_OFFSETS: NieMemoryOffset[] = [
     addressHex: "0x1403c8040",
     runtimePc: 0x1403c8040n,
     subsystem: "vfs",
-    description:
-      "Binary search in RDBN table header resolving 32-bit CRC hashes to column offsets and row pointers.",
+    description: "Binary search in RDBN table header resolving 32-bit CRC hashes to column offsets and row pointers.",
     callingConvention: "__fastcall",
-    signature:
-      "void* __fastcall RdbnTableLookup(const uint8_t* rdbnBuffer, uint32_t tableHash, uint32_t entryHash)",
+    signature: "void* __fastcall RdbnTableLookup(const uint8_t* rdbnBuffer, uint32_t tableHash, uint32_t entryHash)",
   },
   {
     symbol: "G4txDecodeTexture",
@@ -130,8 +122,7 @@ export const NIE_CRITICAL_OFFSETS: NieMemoryOffset[] = [
     subsystem: "render",
     description: "G4TX header parsing, DDS texture extraction, and GPU resource registration.",
     callingConvention: "__fastcall",
-    signature:
-      "void* __fastcall G4txDecodeTexture(const uint8_t* g4txData, size_t dataSize, int32_t textureIndex)",
+    signature: "void* __fastcall G4txDecodeTexture(const uint8_t* g4txData, size_t dataSize, int32_t textureIndex)",
   },
   {
     symbol: "LuaHostInit",
@@ -148,8 +139,7 @@ export const NIE_CRITICAL_OFFSETS: NieMemoryOffset[] = [
     addressHex: "0x14081c200",
     runtimePc: 0x14081c200n,
     subsystem: "prng",
-    description:
-      "Deterministic Mersenne Twister MT19937 pseudorandom number generator step function.",
+    description: "Deterministic Mersenne Twister MT19937 pseudorandom number generator step function.",
     callingConvention: "__fastcall",
     signature: "uint32_t __fastcall CRand_MT19937_Next(void* crandState)",
   },
@@ -171,48 +161,42 @@ export const NIE_RTTI_CLASSES: NieRttiClass[] = [
     namespace: "Level5::Game",
     vtableOffsetHex: "0x140AC68A0",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "High-level player controller managing motion states (dash, dribble, slide tackle, shoot charge).",
+    description: "High-level player controller managing motion states (dash, dribble, slide tackle, shoot charge).",
   },
   {
     name: "BallPhysics",
     namespace: "Level5::Game",
     vtableOffsetHex: "0x140AC7120",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "Aerodynamic and turf friction simulation for the soccer ball, including spin and pass trajectories.",
+    description: "Aerodynamic and turf friction simulation for the soccer ball, including spin and pass trajectories.",
   },
   {
     name: "VfsManager",
     namespace: "Level5::Resource",
     vtableOffsetHex: "0x140AD1400",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "Global filesystem coordinator mounting CPK pack archives and routing relative logical paths.",
+    description: "Global filesystem coordinator mounting CPK pack archives and routing relative logical paths.",
   },
   {
     name: "CpkArchive",
     namespace: "Level5::Resource",
     vtableOffsetHex: "0x140AD2200",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "CRI Middleware CPK container handle with memory-mapped file views and decryption context.",
+    description: "CRI Middleware CPK container handle with memory-mapped file views and decryption context.",
   },
   {
     name: "RenderScene",
     namespace: "Level5::Graphics",
     vtableOffsetHex: "0x140AE0100",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "Scene graph renderer managing camera viewports, shadow cascades, and lighting buffers.",
+    description: "Scene graph renderer managing camera viewports, shadow cascades, and lighting buffers.",
   },
   {
     name: "SkinnedMesh",
     namespace: "Level5::Graphics",
     vtableOffsetHex: "0x140AE1880",
     baseClasses: ["Level5::Engine::Object"],
-    description:
-      "GPU skinning mesh processor packing 32 bones into 96 vec4 matrix registers (renderObj + 0x1D98).",
+    description: "GPU skinning mesh processor packing 32 bones into 96 vec4 matrix registers (renderObj + 0x1D98).",
   },
   {
     name: "SoundPlayer",
@@ -236,8 +220,7 @@ export const NIE_MEMORY_STRUCTURES: Record<
     description:
       "Uniform buffer layout for skinned character meshes (32 bones × 3 vec4 matrices = 96 vec4, 1536 bytes).",
     fields: {
-      "0x000..0x600":
-        "Array of 32 mat3x4 (row-major affine transforms without homogeneous row [0,0,0,1]).",
+      "0x000..0x600": "Array of 32 mat3x4 (row-major affine transforms without homogeneous row [0,0,0,1]).",
     },
   },
   FontGlyph: {

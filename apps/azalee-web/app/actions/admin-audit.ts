@@ -120,7 +120,7 @@ export async function getAuditLog(options: GetAuditLogOptions = {}): Promise<Aud
         avatar_url: string | null;
       } | null;
     }>
-  ).map((row) => ({
+  ).map(row => ({
     action: row.action,
     created_at: row.created_at,
     details: row.details,
@@ -185,17 +185,7 @@ export async function exportAuditLogCSV(options: ExportAuditLogOptions = {}): Pr
     }>) || [];
 
   // En-têtes CSV
-  const headers = [
-    "id",
-    "date",
-    "action",
-    "entity_type",
-    "entity_id",
-    "user_id",
-    "username",
-    "full_name",
-    "details",
-  ];
+  const headers = ["id", "date", "action", "entity_type", "entity_id", "user_id", "username", "full_name", "details"];
 
   const escapeCSV = (value: string | null | undefined): string => {
     if (value === null || value === undefined) {

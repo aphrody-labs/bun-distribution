@@ -110,8 +110,7 @@ async function main() {
     process.exit(1);
   }
 
-  const endpoint =
-    (args.endpoint as string) || process.env.AZALEE_BASE_URL || "https://azalee.rosegriffon.fr";
+  const endpoint = (args.endpoint as string) || process.env.AZALEE_BASE_URL || "https://azalee.rosegriffon.fr";
   const apiKey = (args["api-key"] as string) || process.env.CLAUDE_API_KEY;
   if (!apiKey) {
     console.error("ERREUR: API key manquante. Précise --api-key=<…> ou définit $CLAUDE_API_KEY.");
@@ -131,7 +130,7 @@ async function main() {
     typeof args.tags === "string"
       ? args.tags
           .split(",")
-          .map((t) => t.trim())
+          .map(t => t.trim())
           .filter(Boolean)
       : undefined;
 
@@ -182,7 +181,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error(`ERREUR: ${(error as Error).message}`);
   process.exit(1);
 });

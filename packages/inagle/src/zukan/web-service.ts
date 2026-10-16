@@ -39,11 +39,7 @@ export async function createZukanWebService(): Promise<ZukanWebService> {
 }
 
 /** Require complete original HTML before domain parsing or writing source evidence. */
-export async function zukanResponseHtml(
-  service: ZukanWebService,
-  url: string,
-  context: string,
-): Promise<string> {
+export async function zukanResponseHtml(service: ZukanWebService, url: string, context: string): Promise<string> {
   const response = await service.response(url, { maxBytes: 16_000_000 });
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`${context}: HTTP ${response.status}`);

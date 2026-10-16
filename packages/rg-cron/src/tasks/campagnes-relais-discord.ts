@@ -176,7 +176,7 @@ export interface Creation {
 }
 
 function dormir(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }
 
 function message(err: unknown): string {
@@ -208,9 +208,7 @@ async function appelDiscord<T>(chemin: string, init: RequestInit = {}): Promise<
   }
 
   if (!reponse.ok) {
-    throw new Error(
-      `${init.method ?? "GET"} ${chemin} → ${reponse.status} ${await reponse.text()}`,
-    );
+    throw new Error(`${init.method ?? "GET"} ${chemin} → ${reponse.status} ${await reponse.text()}`);
   }
   // 204 sur les réactions : pas de corps à lire.
   return (reponse.status === 204 ? undefined : await reponse.json()) as T;
@@ -300,10 +298,7 @@ const LIBELLE_SOURCE: Record<SourceCreation, string> = {
  * embed compris. Personne ne voit alors rien, pas même une erreur partielle, et
  * la création est silencieusement perdue.
  */
-export function chargeRelais(
-  creation: Creation,
-  campagne: { titre: string; slug: string },
-): Record<string, unknown> {
+export function chargeRelais(creation: Creation, campagne: { titre: string; slug: string }): Record<string, unknown> {
   const etiquette = creation.hashtag ? `#${creation.hashtag}` : campagne.titre;
 
   return {
@@ -379,7 +374,7 @@ async function creationsX(campagne: LigneCampagne): Promise<Creation[]> {
     media: unknown;
   }>;
 
-  return lignes.map((l) => ({
+  return lignes.map(l => ({
     source: "x" as const,
     reference: l.tweet_id,
     lien: urlPublication(l.author_username ?? "i", l.tweet_id),
@@ -432,7 +427,7 @@ async function creationsDiscord(campagne: LigneCampagne): Promise<Creation[]> {
     author_display_name: string | null;
   }>;
 
-  return lignes.map((l) => ({
+  return lignes.map(l => ({
     source: "discord" as const,
     reference: l.message_id,
     lien: urlMessageDiscord(l.guild_id ?? GUILD_ID ?? "@me", l.channel_id, l.message_id),
@@ -487,7 +482,7 @@ async function creationsInstagram(campagne: LigneCampagne): Promise<Creation[]> 
     auteur_pseudo: string | null;
   }>;
 
-  return lignes.map((l) => ({
+  return lignes.map(l => ({
     source: "instagram" as const,
     reference: l.shortcode,
     lien: l.permalink,
@@ -548,11 +543,7 @@ export async function relayerCampagnesDiscord(options: OptionsRelais = {}): Prom
   }
 }
 
-async function relayerCampagne(
-  campagne: LigneCampagne,
-  limite: number,
-  dry: boolean,
-): Promise<StatsRelaisCampagne> {
+async function relayerCampagne(campagne: LigneCampagne, limite: number, dry: boolean): Promise<StatsRelaisCampagne> {
   const stats: StatsRelaisCampagne = {
     slug: campagne.slug,
     salon: campagne.relais_salon,
@@ -606,10 +597,10 @@ async function relayerCampagne(
     }
 
     try {
-      const envoye = await appelDiscord<{ id: string }>(
-        `/channels/${campagne.relais_salon}/messages`,
-        { method: "POST", body: JSON.stringify(chargeRelais(creation, campagne)) },
-      );
+      const envoye = await appelDiscord<{ id: string }>(`/channels/${campagne.relais_salon}/messages`, {
+        method: "POST",
+        body: JSON.stringify(chargeRelais(creation, campagne)),
+      });
       // La ligne est écrite APRÈS l'accusé de réception : l'écrire avant
       // perdrait définitivement toute création dont l'envoi échoue.
       await sql`
@@ -645,11 +636,7 @@ async function relayerCampagne(
 }
 
 /** Range une création volontairement non relayée, avec son motif. */
-async function marquerSaute(
-  campagne: LigneCampagne,
-  creation: Creation,
-  motif: string,
-): Promise<void> {
+async function marquerSaute(campagne: LigneCampagne, creation: Creation, motif: string): Promise<void> {
   await sql`
 		insert into public.x_campagne_relais
 			(campagne_slug, source, reference_id, salon_id, saute_motif)
@@ -668,10 +655,9 @@ async function marquerSaute(
 async function poserReactions(salon: string, messageId: string): Promise<void> {
   for (const emote of REACTIONS) {
     try {
-      await appelDiscord<void>(
-        `/channels/${salon}/messages/${messageId}/reactions/${encodeURIComponent(emote)}/@me`,
-        { method: "PUT" },
-      );
+      await appelDiscord<void>(`/channels/${salon}/messages/${messageId}/reactions/${encodeURIComponent(emote)}/@me`, {
+        method: "PUT",
+      });
     } catch (err) {
       console.warn(`${PREFIXE} Réaction « ${emote} » impossible :`, message(err));
     }

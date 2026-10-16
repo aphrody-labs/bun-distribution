@@ -7,10 +7,7 @@ async function main() {
 
     // Filter out categories 6 and 9
     const activeSkills = skills.filter(
-      (s: any) =>
-        (s.internalCode || s.skillIDStr || s.skillID || s.id) &&
-        s.category !== 6 &&
-        s.category !== 9,
+      (s: any) => (s.internalCode || s.skillIDStr || s.skillID || s.id) && s.category !== 6 && s.category !== 9,
     );
 
     console.log(`Active skills in JSON dump: ${activeSkills.length}`);
@@ -50,7 +47,7 @@ async function main() {
         if (nameDupCount <= 10) {
           console.log(
             `Duplicate name: "${name}" occurs ${list.length} times, IDs:`,
-            list.map((x) => x.internalCode || x.skillIDStr || x.id),
+            list.map(x => x.internalCode || x.skillIDStr || x.id),
           );
         }
       }

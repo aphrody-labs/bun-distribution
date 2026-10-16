@@ -3,9 +3,9 @@ import { useEffect } from "react";
 import { subscribeTable } from "@/lib/realtime";
 
 export interface BroadcastProfileEvent {
-	type: "INSERT" | "UPDATE" | "DELETE";
-	new: Record<string, unknown>;
-	old?: Record<string, unknown>;
+  type: "INSERT" | "UPDATE" | "DELETE";
+  new: Record<string, unknown>;
+  old?: Record<string, unknown>;
 }
 
 /**
@@ -15,18 +15,18 @@ export interface BroadcastProfileEvent {
  * hors Supabase — la signature est inchangée pour les appelants.
  */
 export function useProfileBroadcast(
-	userId: string | undefined,
-	onProfileUpdate?: (event: BroadcastProfileEvent) => void
+  userId: string | undefined,
+  onProfileUpdate?: (event: BroadcastProfileEvent) => void,
 ) {
-	useEffect(() => {
-		if (!userId) return;
+  useEffect(() => {
+    if (!userId) return;
 
-		return subscribeTable({ filter: `id=eq.${userId}`, table: "profiles" }, (payload) => {
-			onProfileUpdate?.({
-				new: payload.new ?? {},
-				old: payload.old ?? undefined,
-				type: payload.eventType,
-			});
-		});
-	}, [userId, onProfileUpdate]);
+    return subscribeTable({ filter: `id=eq.${userId}`, table: "profiles" }, payload => {
+      onProfileUpdate?.({
+        new: payload.new ?? {},
+        old: payload.old ?? undefined,
+        type: payload.eventType,
+      });
+    });
+  }, [userId, onProfileUpdate]);
 }

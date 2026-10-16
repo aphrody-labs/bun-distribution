@@ -105,10 +105,7 @@ export async function getStadiumsList(params: { q?: string } = {}): Promise<{
 }> {
   let data: StadiumRow[];
   try {
-    data = await sql
-      .selectFrom("inagle_stadiums")
-      .select(["id", "field_index", "image_path", "condition"])
-      .execute();
+    data = await sql.selectFrom("inagle_stadiums").select(["id", "field_index", "image_path", "condition"]).execute();
   } catch {
     return { data: [], total: 0 };
   }
@@ -117,9 +114,7 @@ export async function getStadiumsList(params: { q?: string } = {}): Promise<{
 
   const q = params.q?.trim().toLowerCase();
   if (q) {
-    stadiums = stadiums.filter(
-      (s) => s.code.toLowerCase().includes(q) || s.title.toLowerCase().includes(q),
-    );
+    stadiums = stadiums.filter(s => s.code.toLowerCase().includes(q) || s.title.toLowerCase().includes(q));
   }
 
   stadiums.sort((a, b) => {

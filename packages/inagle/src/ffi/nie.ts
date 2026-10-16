@@ -16,13 +16,7 @@
 
 import { dlopen, FFIType, ptr } from "bun:ffi";
 import { resolve } from "node:path";
-import {
-  nativeLibrary,
-  readOwnedBytes,
-  readOwnedJson,
-  readOwnedString,
-  toCString,
-} from "@aphrody/runtime-sdk/ffi";
+import { nativeLibrary, readOwnedBytes, readOwnedJson, readOwnedString, toCString } from "@aphrody/runtime-sdk/ffi";
 import { resolveFormat } from "../docs/vfs-catalog.js";
 import { iecodePath } from "../core/roots.js";
 import {
@@ -541,11 +535,7 @@ export function nieCpkKeyFromFilename(filename: string): number {
 /**
  * Decrypts a CPK buffer in place using CRI position-aware XOR.
  */
-export function nieDecryptCpkBlock(
-  buffer: Uint8Array,
-  fileOffset: number | bigint = 0,
-  key?: number,
-): void {
+export function nieDecryptCpkBlock(buffer: Uint8Array, fileOffset: number | bigint = 0, key?: number): void {
   if (key === undefined) {
     throw new Error("nieDecryptCpkBlock requires an explicit key");
   }
@@ -676,13 +666,7 @@ export function nieCpkProbe(buffer: Uint8Array): boolean {
   if (lib) {
     return lib.nie_cpk_probe(ptr(buffer), buffer.length) === 1;
   }
-  return (
-    buffer.length >= 4 &&
-    buffer[0] === 0x43 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4b &&
-    buffer[3] === 0x20
-  );
+  return buffer.length >= 4 && buffer[0] === 0x43 && buffer[1] === 0x50 && buffer[2] === 0x4b && buffer[3] === 0x20;
 }
 
 /**
@@ -712,11 +696,7 @@ export function nieCpkList(buffer: Uint8Array, filename = ""): NieCpkArchive | n
 /**
  * Extracts a specific entry by its index from a CPK buffer.
  */
-export function nieCpkExtractEntry(
-  buffer: Uint8Array,
-  entryIndex: number,
-  filename = "",
-): Uint8Array | null {
+export function nieCpkExtractEntry(buffer: Uint8Array, entryIndex: number, filename = ""): Uint8Array | null {
   const lib = getNativeLib();
   if (!lib) return null;
   const slot = new Uint8Array(24);
@@ -728,11 +708,7 @@ export function nieCpkExtractEntry(
 /**
  * Extracts a file by internal path/name from a CPK buffer.
  */
-export function nieCpkExtractByName(
-  buffer: Uint8Array,
-  entryName: string,
-  filename = "",
-): Uint8Array | null {
+export function nieCpkExtractByName(buffer: Uint8Array, entryName: string, filename = ""): Uint8Array | null {
   const lib = getNativeLib();
   if (!lib) return null;
   const slot = new Uint8Array(24);
@@ -750,13 +726,7 @@ export function nieCfgBinProbe(buffer: Uint8Array): number {
   if (lib) {
     return lib.nie_cfgbin_probe(ptr(buffer), buffer.length);
   }
-  if (
-    buffer.length >= 4 &&
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x44 &&
-    buffer[2] === 0x42 &&
-    buffer[3] === 0x4e
-  ) {
+  if (buffer.length >= 4 && buffer[0] === 0x52 && buffer[1] === 0x44 && buffer[2] === 0x42 && buffer[3] === 0x4e) {
     return 1;
   }
   return 0;
@@ -804,13 +774,7 @@ export function nieG4txProbe(buffer: Uint8Array): boolean {
   if (lib) {
     return lib.nie_g4tx_probe(ptr(buffer), buffer.length) === 1;
   }
-  return (
-    buffer.length >= 4 &&
-    buffer[0] === 0x47 &&
-    buffer[1] === 0x34 &&
-    buffer[2] === 0x54 &&
-    buffer[3] === 0x58
-  );
+  return buffer.length >= 4 && buffer[0] === 0x47 && buffer[1] === 0x34 && buffer[2] === 0x54 && buffer[3] === 0x58;
 }
 
 /**
@@ -850,9 +814,7 @@ export function nieG4txSubtextureToPng(buffer: Uint8Array, subName: string): Uin
 /**
  * Decodes the main texture of a G4TX container to raw RGBA8 pixels.
  */
-export function nieG4txToRgba(
-  buffer: Uint8Array,
-): { width: number; height: number; rgba: Uint8Array } | null {
+export function nieG4txToRgba(buffer: Uint8Array): { width: number; height: number; rgba: Uint8Array } | null {
   const lib = getNativeLib();
   if (!lib) return null;
   const slot = new Uint8Array(24);
@@ -897,11 +859,7 @@ export function nieSaveSummary(buffer: Uint8Array, filename: string): NieSaveSum
 /**
  * Extracts a decrypted blob from a Lives save file.
  */
-export function nieSaveExtractBlob(
-  buffer: Uint8Array,
-  filename: string,
-  blobIndex: number,
-): Uint8Array | null {
+export function nieSaveExtractBlob(buffer: Uint8Array, filename: string, blobIndex: number): Uint8Array | null {
   const lib = getNativeLib();
   if (!lib) return null;
   const slot = new Uint8Array(24);
@@ -1088,8 +1046,7 @@ export class NieVfsHandle {
       const slot = new Uint8Array(24);
       library.symbols.nie_vfs_query_json_out(this.#handle, ptr(input), input.length, ptr(slot));
       const result = readAndFreeNieBytesJson<any>(library.symbols, slot);
-      if (!result || result.error)
-        throw new Error(result?.error ?? `Native VFS ${request.domain} query failed.`);
+      if (!result || result.error) throw new Error(result?.error ?? `Native VFS ${request.domain} query failed.`);
       return result;
     } finally {
       library.close();

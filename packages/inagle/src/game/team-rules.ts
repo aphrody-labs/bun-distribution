@@ -11,16 +11,12 @@ export function getPositionMatchFactor(
   formation: Formation,
 ): { factor: number; status: "match" | "adjacent" | "mismatch" | "none" } {
   if (!playerPos || !slotId) return { factor: 1.0, status: "none" };
-  if (
-    slotId.startsWith("reserve-") ||
-    slotId.startsWith("manager-") ||
-    slotId.startsWith("support-")
-  ) {
+  if (slotId.startsWith("reserve-") || slotId.startsWith("manager-") || slotId.startsWith("support-")) {
     return { factor: 1.0, status: "match" };
   }
 
   const slotIndex = parseInt(slotId.replace("field-", ""), 10);
-  const posCoord = formation.positions.find((p) => p.index === slotIndex);
+  const posCoord = formation.positions.find(p => p.index === slotIndex);
   if (!posCoord) return { factor: 1.0, status: "none" };
 
   const p = playerPos.toUpperCase();
@@ -129,7 +125,7 @@ export function calculateElementSynergies(
   }
 
   // Harmony: all 4 elements represented on field
-  const hasHarmony = Object.values(elementsCount).every((count) => count > 0);
+  const hasHarmony = Object.values(elementsCount).every(count => count > 0);
 
   // Links: same element, distance < 25 between field slots (excluding GK since GK doesn't link)
   const links: ElementLink[] = [];
@@ -137,7 +133,7 @@ export function calculateElementSynergies(
   for (let i = 0; i < fieldMembers.length; i++) {
     const [slotIdA, mA] = fieldMembers[i];
     const idxA = parseInt(slotIdA.replace("field-", ""), 10);
-    const coordA = formation.positions.find((p) => p.index === idxA);
+    const coordA = formation.positions.find(p => p.index === idxA);
     if (!coordA || coordA.role === "GK") continue;
 
     for (let j = i + 1; j < fieldMembers.length; j++) {
@@ -145,12 +141,10 @@ export function calculateElementSynergies(
       if (mA.element !== mB.element) continue;
 
       const idxB = parseInt(slotIdB.replace("field-", ""), 10);
-      const coordB = formation.positions.find((p) => p.index === idxB);
+      const coordB = formation.positions.find(p => p.index === idxB);
       if (!coordB || coordB.role === "GK") continue;
 
-      const distance = Math.sqrt(
-        Math.pow(coordA.top - coordB.top, 2) + Math.pow(coordA.left - coordB.left, 2),
-      );
+      const distance = Math.sqrt(Math.pow(coordA.top - coordB.top, 2) + Math.pow(coordA.left - coordB.left, 2));
 
       if (distance < 25) {
         links.push({

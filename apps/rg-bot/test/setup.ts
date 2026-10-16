@@ -4,9 +4,7 @@ function fixtureUrl(name: string): string | undefined {
   const value = process.env[name];
   if (!value) return undefined;
   if (process.env.RG_TEST_DATABASE_IS_DISPOSABLE !== "1")
-    throw new Error(
-      "SQL tests require RG_TEST_DATABASE_IS_DISPOSABLE=1 in addition to their fixture URL.",
-    );
+    throw new Error("SQL tests require RG_TEST_DATABASE_IS_DISPOSABLE=1 in addition to their fixture URL.");
   const url = new URL(value);
   if (
     !["postgres:", "postgresql:"].includes(url.protocol) ||

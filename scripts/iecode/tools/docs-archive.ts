@@ -1,15 +1,6 @@
 #!/usr/bin/env bun
 /** Full documentation snapshot with compact historical/research projections. */
-import {
-  existsSync,
-  statSync,
-  lstatSync,
-  writeFileSync,
-  mkdtempSync,
-  renameSync,
-  rmSync,
-  readdirSync,
-} from "node:fs";
+import { existsSync, statSync, lstatSync, writeFileSync, mkdtempSync, renameSync, rmSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { documentationSourceFiles } from "../validation/docs-files";
 
@@ -30,8 +21,8 @@ export function listArchivedDocs(): string[] {
   if (!existsSync(archivePath)) return [];
   return run7z(["l", "-slt", "-ba", archivePath])
     .split(/\r?\n\r?\n/)
-    .filter((entry) => !/^Attributes = D/m.test(entry))
-    .map((entry) => /^Path = (.+)$/m.exec(entry)?.[1]?.replaceAll("\\", "/"))
+    .filter(entry => !/^Attributes = D/m.test(entry))
+    .map(entry => /^Path = (.+)$/m.exec(entry)?.[1]?.replaceAll("\\", "/"))
     .filter((path): path is string => Boolean(path?.startsWith("docs/")));
 }
 
@@ -47,21 +38,20 @@ export function unpackDocs(): void {
 }
 
 export function packDocs(): void {
-  if (!existsSync(docsDir))
-    throw new Error("Restore documentation with bun run docs:unpack first.");
+  if (!existsSync(docsDir)) throw new Error("Restore documentation with bun run docs:unpack first.");
   // Cold files live in the archive; merge local edits without dropping absent history.
   if (existsSync(archivePath)) {
-    run7z(["x", "-aos", "-y", archivePath, ...archivedDocPrefixes.map((prefix) => `${prefix}*`)]);
+    run7z(["x", "-aos", "-y", archivePath, ...archivedDocPrefixes.map(prefix => `${prefix}*`)]);
   }
   const stage = mkdtempSync(join(root, ".docs-archive-"));
   try {
     // Only tracked source and existing archive projections are publication inputs.
     // Ignored private notes and concurrent untracked drafts stay outside the snapshot.
-    const coldProjections = listArchivedDocs().filter((path) =>
-      archivedDocPrefixes.some((prefix) => path.startsWith(prefix)),
+    const coldProjections = listArchivedDocs().filter(path =>
+      archivedDocPrefixes.some(prefix => path.startsWith(prefix)),
     );
     const files = documentationSourceFiles(root, coldProjections, false)
-      .filter((path) => path.startsWith("docs/") && existsSync(join(root, path)))
+      .filter(path => path.startsWith("docs/") && existsSync(join(root, path)))
       .sort();
     for (const path of files) {
       if (/[\r\n\0]/.test(path) || path.split("/").includes("..") || resolve(root, path) === root)
@@ -100,23 +90,18 @@ export async function compactDocs(): Promise<void> {
   const stage = mkdtempSync(join(root, ".docs-archive-"));
   let files = 0;
   try {
-    run7z(["x", "-y", archivePath, ...archivedDocPrefixes.map((prefix) => `${prefix}*`)], stage);
+    run7z(["x", "-y", archivePath, ...archivedDocPrefixes.map(prefix => `${prefix}*`)], stage);
     for (const prefix of archivedDocPrefixes) {
       const directory = join(root, prefix);
       if (!existsSync(directory)) continue;
       for (const entry of readdirSync(directory, { recursive: true, withFileTypes: true })) {
         if (entry.isDirectory()) continue;
-        if (!entry.isFile())
-          throw new Error(`Refusing to compact a non-regular file: ${entry.name}`);
+        if (!entry.isFile()) throw new Error(`Refusing to compact a non-regular file: ${entry.name}`);
         const path = join(entry.parentPath, entry.name);
         const relativePath = path.slice(root.length + 1);
         if (!packed.has(relativePath.replaceAll("\\", "/")))
-          throw new Error(
-            "Cannot compact a cold tree containing files excluded from the source archive",
-          );
-        const source = new Bun.CryptoHasher("sha256")
-          .update(await Bun.file(path).arrayBuffer())
-          .digest("hex");
+          throw new Error("Cannot compact a cold tree containing files excluded from the source archive");
+        const source = new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
         const restored = new Bun.CryptoHasher("sha256")
           .update(await Bun.file(join(stage, relativePath)).arrayBuffer())
           .digest("hex");
@@ -125,8 +110,7 @@ export async function compactDocs(): Promise<void> {
       }
     }
     // Remove projections only after every source file survives an actual extraction.
-    for (const prefix of archivedDocPrefixes)
-      rmSync(join(root, prefix), { recursive: true, force: true });
+    for (const prefix of archivedDocPrefixes) rmSync(join(root, prefix), { recursive: true, force: true });
   } finally {
     rmSync(stage, { recursive: true, force: true });
   }
@@ -146,8 +130,7 @@ if (import.meta.main) {
       break;
     case "sync":
       if (!existsSync(docsDir)) unpackDocs();
-      else if (archivedDocPrefixes.some((prefix) => !existsSync(join(root, prefix))))
-        await compactDocs();
+      else if (archivedDocPrefixes.some(prefix => !existsSync(join(root, prefix)))) await compactDocs();
       else packDocs();
       break;
     default:

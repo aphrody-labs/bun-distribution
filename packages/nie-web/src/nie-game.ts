@@ -61,8 +61,8 @@ export async function loadGame(): Promise<GameHandle> {
   return {
     width: w,
     height: h,
-    input: (cmd) => game.input(cmd),
-    update: (dt) => game.update(dt),
+    input: cmd => game.input(cmd),
+    update: dt => game.update(dt),
     frame: () => toImage(game.render()),
     score: () => {
       const s = game.score();

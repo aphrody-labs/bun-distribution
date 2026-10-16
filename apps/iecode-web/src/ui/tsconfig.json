@@ -1,21 +1,21 @@
 {
-    "compilerOptions": {
-        "exactOptionalPropertyTypes": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noImplicitReturns": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
-        "strict": true,
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true,
 
-        "module": "ES2020",
-        "types": [],
+    "module": "ES2020",
+    "types": [],
 
-        "noEmitOnError": true,
+    "noEmitOnError": true,
 
-        "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true,
 
-        "target": "ES6",
-        "lib": ["ES6", "DOM"]
-    }
+    "target": "ES6",
+    "lib": ["ES6", "DOM"]
+  }
 }

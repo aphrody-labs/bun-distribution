@@ -82,8 +82,7 @@ export function SaveUploader() {
       // (déchiffrement XOR + lecture des blobs) est 100% client-side (wasm).
       summary = await parseSave(bytes, file.name);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Impossible de lire ce fichier de sauvegarde.";
+      const message = err instanceof Error ? err.message : "Impossible de lire ce fichier de sauvegarde.";
       // Message d'aide : la cause la plus fréquente est un nom de fichier renommé
       // (la clé CRC32 ne correspond plus) ou un fichier qui n'est pas une save IEVR.
       setStatus({
@@ -147,7 +146,7 @@ export function SaveUploader() {
       {/* Zone de dépôt */}
       {status.kind !== "done" && (
         <button
-          onDragOver={(e) => {
+          onDragOver={e => {
             e.preventDefault();
             setDragging(true);
           }}
@@ -175,17 +174,10 @@ export function SaveUploader() {
           <div
             className={cn(
               "flex size-16 items-center justify-center rounded-full transition-colors",
-              dragging
-                ? "bg-primary text-on-primary"
-                : "bg-primary-container text-on-primary-container",
+              dragging ? "bg-primary text-on-primary" : "bg-primary-container text-on-primary-container",
             )}
           >
-            <Icon
-              name={
-                status.kind === "parsing" || status.kind === "resolving" ? "hourglass_top" : "add"
-              }
-              size={32}
-            />
+            <Icon name={status.kind === "parsing" || status.kind === "resolving" ? "hourglass_top" : "add"} size={32} />
           </div>
           {status.kind === "parsing" ? (
             <>
@@ -210,13 +202,7 @@ export function SaveUploader() {
         </button>
       )}
 
-      <input
-        ref={inputRef}
-        type="file"
-        className="sr-only"
-        aria-label="Fichier de sauvegarde"
-        onChange={onPick}
-      />
+      <input ref={inputRef} type="file" className="sr-only" aria-label="Fichier de sauvegarde" onChange={onPick} />
 
       {/* Erreur */}
       {status.kind === "error" && (
@@ -300,9 +286,7 @@ function SaveResume({
   // Temps de jeu : priorité aux scalaires AUTOSAVE (validés au réel), sinon
   // le premier slot HEADERSAVE horodaté.
   const playtimeSecs =
-    as?.scalars?.playtime_secs ??
-    hs?.slots.find((s) => s.playtime_secs != null)?.playtime_secs ??
-    null;
+    as?.scalars?.playtime_secs ?? hs?.slots.find(s => s.playtime_secs != null)?.playtime_secs ?? null;
 
   // Dernière sauvegarde : l'AUTOSAVE porte un horodatage scalaire plus récent que
   // le timestamp HEADERSAVE (souvent figé à la création du profil). On affiche les
@@ -320,7 +304,7 @@ function SaveResume({
     : null;
   const lastSave = autosaveDt ?? hs?.save_timestamp ?? null;
 
-  const named = roster.filter((r) => r.name !== null);
+  const named = roster.filter(r => r.name !== null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -359,18 +343,8 @@ function SaveResume({
        sm:grid-cols-2 md:grid-cols-3
      "
         >
-          <StatCard
-            icon="person"
-            label="Joueur"
-            value={hs?.player_name || "—"}
-            soon={!hs?.player_name}
-          />
-          <StatCard
-            icon="stars"
-            label="Niveau"
-            value={hs?.level_str || "—"}
-            soon={!hs?.level_str}
-          />
+          <StatCard icon="person" label="Joueur" value={hs?.player_name || "—"} soon={!hs?.player_name} />
+          <StatCard icon="stars" label="Niveau" value={hs?.level_str || "—"} soon={!hs?.level_str} />
           <StatCard
             icon="schedule"
             label="Temps de jeu"
@@ -382,20 +356,14 @@ function SaveResume({
             icon="groups"
             label="Personnages possédés"
             value={as ? fmt(as.owned_count) : "—"}
-            hint={
-              as ? `${fmt(matched)} résolus · sur ${fmt(as.roster_slots)} emplacements` : undefined
-            }
+            hint={as ? `${fmt(matched)} résolus · sur ${fmt(as.roster_slots)} emplacements` : undefined}
             soon={!as}
           />
           <StatCard
             icon="save"
             label="Dernière sauvegarde"
             value={lastSave ? formatDateTime(lastSave) : "—"}
-            hint={
-              hs?.save_timestamp && autosaveDt
-                ? `Profil créé le ${formatDateTime(hs.save_timestamp)}`
-                : undefined
-            }
+            hint={hs?.save_timestamp && autosaveDt ? `Profil créé le ${formatDateTime(hs.save_timestamp)}` : undefined}
             soon={!lastSave}
           />
           <StatCard
@@ -409,9 +377,7 @@ function SaveResume({
         {/* Identité + version du format */}
         {hs && (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {hs.unique_id && (
-              <KeyVal icon="tag" label="Identifiant unique" mono value={hs.unique_id} />
-            )}
+            {hs.unique_id && <KeyVal icon="tag" label="Identifiant unique" mono value={hs.unique_id} />}
             <KeyVal
               icon="memory"
               label="Version du format"
@@ -438,7 +404,7 @@ function SaveResume({
       )}
 
       {/* --- Slots de sauvegarde (HEADERSAVE) --- */}
-      {hs && hs.slots.some((s) => s.is_active || s.slot_datetime || s.playtime_secs != null) && (
+      {hs && hs.slots.some(s => s.is_active || s.slot_datetime || s.playtime_secs != null) && (
         <Section
           icon="inventory_2"
           title="Emplacements de sauvegarde"
@@ -456,8 +422,8 @@ function SaveResume({
               </thead>
               <tbody className="text-on-surface">
                 {hs.slots
-                  .filter((s) => s.is_active || s.slot_datetime || s.playtime_secs != null)
-                  .map((s) => (
+                  .filter(s => s.is_active || s.slot_datetime || s.playtime_secs != null)
+                  .map(s => (
                     <tr key={s.index} className="border-t border-outline-variant/20">
                       <td className="py-1.5 pr-4">#{s.index}</td>
                       <td className="py-1.5 pr-4">
@@ -470,12 +436,8 @@ function SaveResume({
                           <span className="text-on-surface-variant">Inactif</span>
                         )}
                       </td>
-                      <td className="py-1.5 pr-4">
-                        {s.slot_datetime ? formatDateTime(s.slot_datetime) : "—"}
-                      </td>
-                      <td className="py-1.5">
-                        {s.playtime_secs != null ? formatPlaytime(s.playtime_secs) : "—"}
-                      </td>
+                      <td className="py-1.5 pr-4">{s.slot_datetime ? formatDateTime(s.slot_datetime) : "—"}</td>
+                      <td className="py-1.5">{s.playtime_secs != null ? formatPlaytime(s.playtime_secs) : "—"}</td>
                     </tr>
                   ))}
               </tbody>
@@ -491,9 +453,9 @@ function SaveResume({
           <span className="type-title-small">Non encore décodé</span>
         </div>
         <p className="mb-3 type-body-small text-on-surface-variant/80">
-          Ces données existent dans la section principale de l&apos;AUTOSAVE (TLV entrelacé), mais
-          leur format n&apos;est pas encore reversé. Rien n&apos;est inventé : seuls les champs
-          validés sur octets réels sont affichés ci-dessus.
+          Ces données existent dans la section principale de l&apos;AUTOSAVE (TLV entrelacé), mais leur format
+          n&apos;est pas encore reversé. Rien n&apos;est inventé : seuls les champs validés sur octets réels sont
+          affichés ci-dessus.
         </p>
         <ul className="grid gap-1.5 type-body-small text-on-surface-variant sm:grid-cols-2">
           <li className="flex items-center gap-2">
@@ -523,9 +485,8 @@ function SaveResume({
         </ul>
         {as && (
           <p className="mt-3 type-body-small text-on-surface-variant/70">
-            Section principale brute : {formatBytes(as.main_data_range[1] - as.main_data_range[0])}{" "}
-            · {fmt(as.scalar_record_count)} enregistrements scalaires · {as.chara_slot_count} slots
-            CharaParam.
+            Section principale brute : {formatBytes(as.main_data_range[1] - as.main_data_range[0])} ·{" "}
+            {fmt(as.scalar_record_count)} enregistrements scalaires · {as.chara_slot_count} slots CharaParam.
           </p>
         )}
       </div>
@@ -547,7 +508,7 @@ function SaveResume({
               </tr>
             </thead>
             <tbody className="text-on-surface">
-              {summary.blobs.map((b) => (
+              {summary.blobs.map(b => (
                 <tr key={b.filename} className="border-t border-outline-variant/20">
                   <td className="py-1.5 pr-4">{b.filename}</td>
                   <td className="py-1.5 pr-4">{b.subtype}</td>
@@ -563,10 +524,8 @@ function SaveResume({
           {summary.key != null && (
             <p className="mt-3 type-body-small text-on-surface-variant/70">
               Clé XOR dérivée du nom :{" "}
-              <code className="font-mono">
-                0x{(summary.key >>> 0).toString(16).toUpperCase().padStart(8, "0")}
-              </code>{" "}
-              · conteneur {summary.slot_name}
+              <code className="font-mono">0x{(summary.key >>> 0).toString(16).toUpperCase().padStart(8, "0")}</code> ·
+              conteneur {summary.slot_name}
             </p>
           )}
         </div>
@@ -606,28 +565,14 @@ function Section({
 }
 
 /** Couple clé/valeur inline (identité de la save). */
-function KeyVal({
-  icon,
-  label,
-  value,
-  mono = false,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function KeyVal({ icon, label, value, mono = false }: { icon: string; label: string; value: string; mono?: boolean }) {
   return (
     <div className="rounded-xl bg-surface-container p-3">
       <div className="flex items-center gap-2 text-on-surface-variant">
         <Icon name={icon} size={16} />
         <span className="type-label-medium uppercase tracking-wide">{label}</span>
       </div>
-      <span
-        className={cn("mt-1 block break-all type-body-small text-on-surface", mono && "font-mono")}
-      >
-        {value}
-      </span>
+      <span className={cn("mt-1 block break-all type-body-small text-on-surface", mono && "font-mono")}>{value}</span>
     </div>
   );
 }
@@ -674,9 +619,7 @@ function RosterBreakdown({ roster }: { roster: ResolvedChara[] }) {
 const RosterGroup = ({ label, entries }: { label: string; entries: [string, number][] }) =>
   entries.length === 0 ? null : (
     <div>
-      <p className="mb-1.5 type-label-medium uppercase tracking-wide text-on-surface-variant">
-        {label}
-      </p>
+      <p className="mb-1.5 type-label-medium uppercase tracking-wide text-on-surface-variant">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {entries.map(([k, n]) => (
           <span
@@ -705,7 +648,7 @@ function RosterGrid({ roster }: { roster: ResolvedChara[] }) {
     if (!q) {
       return roster;
     }
-    return roster.filter((c) => (c.name ?? "").toLowerCase().includes(q));
+    return roster.filter(c => (c.name ?? "").toLowerCase().includes(q));
   }, [roster, query]);
 
   const shown = expanded || query ? filtered : filtered.slice(0, LIMIT);
@@ -717,13 +660,13 @@ function RosterGrid({ roster }: { roster: ResolvedChara[] }) {
         <input
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           placeholder="Filtrer un personnage…"
           className="w-full bg-transparent type-body-small text-on-surface outline-hidden placeholder:text-on-surface-variant"
         />
       </div>
       <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
-        {shown.map((c) => {
+        {shown.map(c => {
           const tint = (c.element && ELEMENT_TINT[c.element]) || "text-on-surface";
           const inner = (
             <span className="flex min-w-0 items-center gap-1.5">
@@ -754,7 +697,7 @@ function RosterGrid({ roster }: { roster: ResolvedChara[] }) {
       {!query && filtered.length > LIMIT && (
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => setExpanded(v => !v)}
           className="mt-3 inline-flex min-h-11 items-center type-label-large text-primary underline underline-offset-2 sm:min-h-0"
         >
           {expanded ? "Réduire" : `Afficher les ${fmt(filtered.length)} personnages`}

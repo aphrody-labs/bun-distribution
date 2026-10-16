@@ -60,9 +60,7 @@ export function QuestCard({ quest, className }: QuestCardProps) {
           {quest.title}
         </h3>
         {quest.titles.en && quest.titles.en !== quest.title && (
-          <p className="mt-0.5 line-clamp-1 text-xs text-on-surface-variant/70">
-            {quest.titles.en}
-          </p>
+          <p className="mt-0.5 line-clamp-1 text-xs text-on-surface-variant/70">{quest.titles.en}</p>
         )}
       </div>
     </Link>

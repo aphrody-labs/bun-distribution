@@ -216,9 +216,7 @@ let seriesCache: Map<string, Series> | null = null;
 function loadBelongTeamInfo(): BelongTeamInfo[] {
   if (process.env.INAGLE_DATA_SOURCE !== "postgres") {
     const filename = findVfsConfig("character", "belong_team_config_");
-    const data = filename
-      ? (readVfsConfig(`data/common/gamedata/character/${filename}`) as any)
-      : null;
+    const data = filename ? (readVfsConfig(`data/common/gamedata/character/${filename}`) as any) : null;
     return data?.lists?.flatMap((list: any) => list.values ?? []) ?? [];
   }
   const filePath = join(PATHS.allGamedata, "belongTeamInfo.json");
@@ -246,9 +244,7 @@ function loadBelongTeamInfo(): BelongTeamInfo[] {
 function loadCharaSeriesInfo(): CharaSeriesInfo[] {
   if (process.env.INAGLE_DATA_SOURCE !== "postgres") {
     const filename = findVfsConfig("character", "chara_series_config_");
-    const data = filename
-      ? (readVfsConfig(`data/common/gamedata/character/${filename}`) as any)
-      : null;
+    const data = filename ? (readVfsConfig(`data/common/gamedata/character/${filename}`) as any) : null;
     return data?.lists?.flatMap((list: any) => list.values ?? []) ?? [];
   }
   const filePath = join(PATHS.allGamedata, "charaSeriesInfo.json");
@@ -397,7 +393,7 @@ export function getSeriesById(seriesId: string): Series | undefined {
  * Get teams by season
  */
 export function getTeamsBySeason(season: Season): Team[] {
-  return getAllTeams().filter((t) => t.seasons[season] !== undefined);
+  return getAllTeams().filter(t => t.seasons[season] !== undefined);
 }
 
 /**
@@ -406,10 +402,7 @@ export function getTeamsBySeason(season: Season): Team[] {
 export function searchTeams(query: string): Team[] {
   const q = query.toLowerCase();
   return getAllTeams().filter(
-    (t) =>
-      t.names.fr?.toLowerCase().includes(q) ||
-      t.names.en?.toLowerCase().includes(q) ||
-      t.names.ja?.includes(query),
+    t => t.names.fr?.toLowerCase().includes(q) || t.names.en?.toLowerCase().includes(q) || t.names.ja?.includes(query),
   );
 }
 

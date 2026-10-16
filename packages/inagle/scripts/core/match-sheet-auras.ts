@@ -12,19 +12,12 @@ const HEADERS = {
   "Content-Type": "application/json",
 };
 
-const TABLES = [
-  "inagle_keshins",
-  "inagle_souls",
-  "inagle_awakenings",
-  "inagle_miximax",
-  "inagle_mode_changes",
-];
+const TABLES = ["inagle_keshins", "inagle_souls", "inagle_awakenings", "inagle_miximax", "inagle_mode_changes"];
 
 async function fetchAll(table: string) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/${table}?select=id,name_fr,name_en,sheet_data&limit=1000`,
-    { headers: HEADERS },
-  );
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id,name_fr,name_en,sheet_data&limit=1000`, {
+    headers: HEADERS,
+  });
   return (await res.json()) as any[];
 }
 
@@ -63,7 +56,7 @@ async function main() {
   }
   const sheetRaw = await sheetFile.json();
   const rows: string[][] = sheetRaw.sheets["Hyper Moves"];
-  const dataRows = rows.slice(2).filter((r) => r[0]?.trim());
+  const dataRows = rows.slice(2).filter(r => r[0]?.trim());
 
   console.log(`Sheet: ${dataRows.length} lignes`);
 

@@ -125,28 +125,24 @@ export function CrossGallery() {
   const [selectedTable, setSelectedTable] = useState<string>("CharacterMaster");
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  const activeTableData =
-    MASTERDATA_TABLES.find((t) => t.name === selectedTable) || MASTERDATA_TABLES[0];
+  const activeTableData = MASTERDATA_TABLES.find(t => t.name === selectedTable) || MASTERDATA_TABLES[0];
 
   return (
-    <Card
-      className="border-2 bg-surface-container-low shadow-md"
-      style={{ borderColor: "#00aeef80" }}
-    >
+    <Card className="border-2 bg-surface-container-low shadow-md" style={{ borderColor: "#00aeef80" }}>
       <CardHeader className="pb-4 border-b border-outline-variant/20">
         <CardTitle className="type-headline-small flex items-center gap-3 text-primary">
           <Database className="size-6 text-[#00aeef]" />
           Démonstrateur d'Assets & Données de l'APK
         </CardTitle>
         <p className="type-body-medium text-on-surface-variant">
-          Visualisez les fichiers réels, les atlases de polices et la structure de la base de
-          données extraits directement de l'APK d'Inazuma Eleven Cross.
+          Visualisez les fichiers réels, les atlases de polices et la structure de la base de données extraits
+          directement de l'APK d'Inazuma Eleven Cross.
         </p>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
         {/* Onglets */}
         <div className="flex flex-wrap gap-2 border-b border-outline-variant/10 pb-4">
-          {TABS.map((tab) => (
+          {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -166,15 +162,13 @@ export function CrossGallery() {
         {activeTab === "apk-icons" && (
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-on-surface-variant">
-              <Badge className="bg-primary-container text-on-primary-container">
-                Véridique APK
-              </Badge>
+              <Badge className="bg-primary-container text-on-primary-container">Véridique APK</Badge>
               <span className="type-body-medium">
                 Images d'icônes et lanceurs extraites du répertoire de ressources mipmap de l'APK.
               </span>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              {APK_ICONS.map((img) => (
+              {APK_ICONS.map(img => (
                 <Card
                   key={img.name}
                   className="overflow-hidden border border-outline-variant/20 bg-surface-container-low shadow-sm"
@@ -198,9 +192,7 @@ export function CrossGallery() {
                     </div>
                   </button>
                   <CardHeader className="p-4">
-                    <CardTitle className="type-title-medium font-mono text-[#00aeef]">
-                      {img.name}
-                    </CardTitle>
+                    <CardTitle className="type-title-medium font-mono text-[#00aeef]">{img.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-4 pb-4 pt-0">
                     <p className="type-body-small text-on-surface-variant">{img.desc}</p>
@@ -215,16 +207,13 @@ export function CrossGallery() {
         {activeTab === "apk-textures" && (
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-on-surface-variant">
-              <Badge className="bg-primary-container text-on-primary-container">
-                Véridique APK
-              </Badge>
+              <Badge className="bg-primary-container text-on-primary-container">Véridique APK</Badge>
               <span className="type-body-medium">
-                Atlases de polices TextMeshPro extraites des bundles Addressables intégrés dans
-                l'APK.
+                Atlases de polices TextMeshPro extraites des bundles Addressables intégrés dans l'APK.
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {APK_TEXTURES.map((tex) => (
+              {APK_TEXTURES.map(tex => (
                 <Card
                   key={tex.name}
                   className="overflow-hidden border border-outline-variant/20 bg-surface-container-low shadow-sm"
@@ -246,17 +235,12 @@ export function CrossGallery() {
                     </div>
                   </button>
                   <CardHeader className="p-3">
-                    <CardTitle
-                      className="type-title-small font-mono text-[#00aeef] truncate"
-                      title={tex.name}
-                    >
+                    <CardTitle className="type-title-small font-mono text-[#00aeef] truncate" title={tex.name}>
                       {tex.name}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 pb-3 pt-0">
-                    <p className="type-body-small text-on-surface-variant text-[11px] leading-tight">
-                      {tex.desc}
-                    </p>
+                    <p className="type-body-small text-on-surface-variant text-[11px] leading-tight">{tex.desc}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -268,19 +252,16 @@ export function CrossGallery() {
         {activeTab === "apk-masterdata" && (
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-on-surface-variant">
-              <Badge className="bg-secondary-container text-on-secondary-container">
-                SQLite & IL2CPP
-              </Badge>
+              <Badge className="bg-secondary-container text-on-secondary-container">SQLite & IL2CPP</Badge>
               <span className="type-body-medium">
-                Schéma et taxonomie de la base de données masterdata de <strong>153 tables</strong>{" "}
-                extraite de l'APK.
+                Schéma et taxonomie de la base de données masterdata de <strong>153 tables</strong> extraite de l'APK.
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[250px_1fr]">
               {/* Menu latéral tables */}
               <div className="flex flex-col gap-1.5 max-h-[350px] overflow-y-auto pr-2 border-r border-outline-variant/10">
-                {MASTERDATA_TABLES.map((t) => (
+                {MASTERDATA_TABLES.map(t => (
                   <button
                     key={t.name}
                     onClick={() => setSelectedTable(t.name)}
@@ -298,18 +279,14 @@ export function CrossGallery() {
               {/* Détail table sélectionnée */}
               <Card className="bg-surface border border-outline-variant/20 p-5 space-y-4">
                 <div>
-                  <h4 className="type-headline-small font-mono text-[#00aeef]">
-                    {activeTableData.name}
-                  </h4>
+                  <h4 className="type-headline-small font-mono text-[#00aeef]">{activeTableData.name}</h4>
                   <Badge className="mt-2 bg-secondary text-on-secondary font-mono">
                     {activeTableData.columns} colonnes typées
                   </Badge>
                 </div>
                 <p className="type-body-medium text-on-surface-variant">{activeTableData.desc}</p>
                 <div className="rounded-xl bg-slate-950 p-4 font-mono text-xs text-green-400 overflow-x-auto">
-                  <span className="text-gray-500">
-                    // Structure DDL PostgreSQL générée depuis l'APK
-                  </span>
+                  <span className="text-gray-500">// Structure DDL PostgreSQL générée depuis l'APK</span>
                   <br />
                   <span className="text-blue-400">CREATE TABLE</span> public.inagle_cross_
                   {activeTableData.name.toLowerCase()} (
@@ -320,8 +297,7 @@ export function CrossGallery() {
                   &nbsp;&nbsp;data <span className="text-yellow-400">jsonb</span>{" "}
                   <span className="text-blue-400">NOT NULL</span>,
                   <br />
-                  &nbsp;&nbsp;created_at{" "}
-                  <span className="text-yellow-400">timestamp with time zone</span>{" "}
+                  &nbsp;&nbsp;created_at <span className="text-yellow-400">timestamp with time zone</span>{" "}
                   <span className="text-blue-400">DEFAULT</span> now()
                   <br />
                   );
@@ -335,21 +311,16 @@ export function CrossGallery() {
         {activeTab === "apk-engine3d" && (
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-on-surface-variant">
-              <Badge className="bg-tertiary-container text-on-tertiary-container">
-                Unity & Addressables
-              </Badge>
+              <Badge className="bg-tertiary-container text-on-tertiary-container">Unity & Addressables</Badge>
               <span className="type-body-medium">
-                Cartographie de l'index des fichiers binaires physiques constituant le client de jeu
-                APK.
+                Cartographie de l'index des fichiers binaires physiques constituant le client de jeu APK.
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="bg-surface px-4 py-5 rounded-2xl text-center border border-outline-variant/30">
                 <div className="type-headline-medium font-bold text-[#00aeef]">1 263</div>
-                <div className="type-label-large text-on-surface-variant/80 font-bold uppercase mt-1">
-                  Meshes 3D
-                </div>
+                <div className="type-label-large text-on-surface-variant/80 font-bold uppercase mt-1">Meshes 3D</div>
                 <p className="type-body-small text-on-surface-variant/60 mt-1">
                   Modèles 3D géométriques référencés dans l'index de l'APK.
                 </p>
@@ -365,9 +336,7 @@ export function CrossGallery() {
               </div>
               <div className="bg-surface px-4 py-5 rounded-2xl text-center border border-outline-variant/30">
                 <div className="type-headline-medium font-bold text-[#00aeef]">175 Mo</div>
-                <div className="type-label-large text-on-surface-variant/80 font-bold uppercase mt-1">
-                  libil2cpp.so
-                </div>
+                <div className="type-label-large text-on-surface-variant/80 font-bold uppercase mt-1">libil2cpp.so</div>
                 <p className="type-body-small text-on-surface-variant/60 mt-1">
                   Librairie système native contenant le code machine compilé.
                 </p>
@@ -390,11 +359,10 @@ export function CrossGallery() {
                   Preuve de Concept Technique (Spécification Unity APK)
                 </h4>
                 <p className="type-body-medium text-on-surface-variant mt-1">
-                  Le client de jeu tourne sous le moteur <strong>Unity 6000.0.62f1</strong> avec
-                  compilation native <strong>IL2CPP (arm64-v8a)</strong>. Les modèles 3D et meshes
-                  géométriques sont empaquetés au sein de <strong>2 081 AssetBundles</strong>. La
-                  taxonomie décryptée compte 14 283 classes de code associant la physique 3D et le
-                  rendu aux données masterdata.
+                  Le client de jeu tourne sous le moteur <strong>Unity 6000.0.62f1</strong> avec compilation native{" "}
+                  <strong>IL2CPP (arm64-v8a)</strong>. Les modèles 3D et meshes géométriques sont empaquetés au sein de{" "}
+                  <strong>2 081 AssetBundles</strong>. La taxonomie décryptée compte 14 283 classes de code associant la
+                  physique 3D et le rendu aux données masterdata.
                 </p>
               </div>
             </div>
@@ -407,7 +375,7 @@ export function CrossGallery() {
             role="presentation"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 transition-all duration-300"
             onClick={() => setLightboxImage(null)}
-            onKeyDown={(e) => e.key === "Escape" && setLightboxImage(null)}
+            onKeyDown={e => e.key === "Escape" && setLightboxImage(null)}
           >
             <button
               type="button"
@@ -420,16 +388,10 @@ export function CrossGallery() {
             <div
               role="presentation"
               className="relative aspect-auto max-h-[85vh] max-w-[95vw] w-full h-full"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
+              onKeyDown={e => e.stopPropagation()}
             >
-              <Image
-                src={lightboxImage}
-                alt="Zoom asset"
-                fill
-                sizes="95vw"
-                className="object-contain"
-              />
+              <Image src={lightboxImage} alt="Zoom asset" fill sizes="95vw" className="object-contain" />
             </div>
           </div>
         )}

@@ -3,60 +3,60 @@ import nodemailer from "nodemailer";
 import { absoluteUrl } from "@/lib/site-url";
 
 interface OrderConfirmationData {
-	orderId: string;
-	customerEmail: string;
-	customerName?: string;
-	totalAmount: number;
-	items: {
-		productName: string;
-		variantName: string;
-		quantity: number;
-		price: number;
-	}[];
-	shippingAddress?: {
-		address_line1?: string;
-		address_line2?: string;
-		city?: string;
-		postal_code?: string;
-		country?: string;
-	};
+  orderId: string;
+  customerEmail: string;
+  customerName?: string;
+  totalAmount: number;
+  items: {
+    productName: string;
+    variantName: string;
+    quantity: number;
+    price: number;
+  }[];
+  shippingAddress?: {
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    postal_code?: string;
+    country?: string;
+  };
 }
 
 // Créer le transporteur SMTP
 const transporter = nodemailer.createTransport({
-	auth: {
-		pass: process.env.SMTP_PASSWORD,
-		user: process.env.SMTP_USER || "contact@aphrody.com",
-	},
-	host: process.env.SMTP_HOST || "ssl0.ovh.net",
-	port: parseInt(process.env.SMTP_PORT || "465", 10),
-	secure: process.env.SMTP_SECURE === "true" || process.env.SMTP_PORT === "465" || !process.env.SMTP_PORT, // true pour 465 (OVH), false pour 587
-	connectionTimeout: 5000,
-	greetingTimeout: 5000,
-	socketTimeout: 5000,
+  auth: {
+    pass: process.env.SMTP_PASSWORD,
+    user: process.env.SMTP_USER || "contact@aphrody.com",
+  },
+  host: process.env.SMTP_HOST || "ssl0.ovh.net",
+  port: parseInt(process.env.SMTP_PORT || "465", 10),
+  secure: process.env.SMTP_SECURE === "true" || process.env.SMTP_PORT === "465" || !process.env.SMTP_PORT, // true pour 465 (OVH), false pour 587
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
 });
 
 export interface SendEmailOptions {
-	to: string | string[];
-	subject: string;
-	html: string;
-	text?: string;
-	from?: string;
-	replyTo?: string;
-	cc?: string | string[];
-	bcc?: string | string[];
-	attachments?: {
-		filename: string;
-		content?: Buffer | string;
-		path?: string;
-		contentType?: string;
-	}[];
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+  from?: string;
+  replyTo?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
+  attachments?: {
+    filename: string;
+    content?: Buffer | string;
+    path?: string;
+    contentType?: string;
+  }[];
 }
 
 export interface SendEmailResult {
-	messageId: string;
-	success: boolean;
-	mocked?: boolean;
+  messageId: string;
+  success: boolean;
+  mocked?: boolean;
 }
 
 /**
@@ -65,67 +65,71 @@ export interface SendEmailResult {
  * boutique ci-dessous gardent leur propre gabarit.
  */
 export async function sendEmail({
-	to,
-	subject,
-	html,
-	text,
-	from,
-	replyTo,
-	cc,
-	bcc,
-	attachments,
+  to,
+  subject,
+  html,
+  text,
+  from,
+  replyTo,
+  cc,
+  bcc,
+  attachments,
 }: SendEmailOptions): Promise<SendEmailResult> {
-	if (
-		process.env.NODE_ENV === "test" ||
-		process.env.MOCK_EMAIL === "true" ||
-		!process.env.SMTP_USER ||
-		!process.env.SMTP_PASSWORD
-	) {
-		return {
-			messageId: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-			mocked: true,
-			success: true,
-		};
-	}
-	try {
-		const defaultFrom =
-			process.env.SMTP_FROM ||
-			process.env.MAIL_FROM ||
-			(process.env.NEXT_PUBLIC_APP_NAME === "Rose Griffon"
-				? '"Rose Griffon" <contact@rosegriffon.fr>'
-				: '"Aphrody" <contact@aphrody.com>');
-		const defaultReplyTo =
-			replyTo || process.env.SMTP_REPLY_TO || process.env.MAIL_REPLY_TO || "contact@aphrody.com";
-		const info = await transporter.sendMail({
-			from: from || defaultFrom,
-			html,
-			subject,
-			// Repli texte brut : certains clients refusent un message sans partie texte.
-			text: text ?? html.replaceAll(/<[^>]*>/g, " ").replaceAll(/\s+/g, " ").trim(),
-			to,
-			replyTo: defaultReplyTo,
-			cc,
-			bcc,
-			attachments,
-		});
-		return {
-			messageId: info.messageId,
-			success: true,
-		};
-	} catch (error) {
-		console.error("[email] envoi impossible", error);
-		throw error;
-	}
+  if (
+    process.env.NODE_ENV === "test" ||
+    process.env.MOCK_EMAIL === "true" ||
+    !process.env.SMTP_USER ||
+    !process.env.SMTP_PASSWORD
+  ) {
+    return {
+      messageId: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      mocked: true,
+      success: true,
+    };
+  }
+  try {
+    const defaultFrom =
+      process.env.SMTP_FROM ||
+      process.env.MAIL_FROM ||
+      (process.env.NEXT_PUBLIC_APP_NAME === "Rose Griffon"
+        ? '"Rose Griffon" <contact@rosegriffon.fr>'
+        : '"Aphrody" <contact@aphrody.com>');
+    const defaultReplyTo = replyTo || process.env.SMTP_REPLY_TO || process.env.MAIL_REPLY_TO || "contact@aphrody.com";
+    const info = await transporter.sendMail({
+      from: from || defaultFrom,
+      html,
+      subject,
+      // Repli texte brut : certains clients refusent un message sans partie texte.
+      text:
+        text ??
+        html
+          .replaceAll(/<[^>]*>/g, " ")
+          .replaceAll(/\s+/g, " ")
+          .trim(),
+      to,
+      replyTo: defaultReplyTo,
+      cc,
+      bcc,
+      attachments,
+    });
+    return {
+      messageId: info.messageId,
+      success: true,
+    };
+  } catch (error) {
+    console.error("[email] envoi impossible", error);
+    throw error;
+  }
 }
 
 /**
  * Envoyer un email de confirmation de commande
  */
 export async function sendOrderConfirmationEmail(data: OrderConfirmationData) {
-	try {
-		const itemsHtml = data.items
-			.map(
-				(item) => `
+  try {
+    const itemsHtml = data.items
+      .map(
+        item => `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${item.productName}</td>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${item.variantName}</td>
@@ -133,12 +137,12 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationData) {
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${item.price.toFixed(2)}€</td>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right;">${(item.price * item.quantity).toFixed(2)}€</td>
       </tr>
-    `
-			)
-			.join("");
+    `,
+      )
+      .join("");
 
-		const addressHtml = data.shippingAddress
-			? `
+    const addressHtml = data.shippingAddress
+      ? `
       <p style="margin: 8px 0;">
         <strong>Adresse de livraison:</strong><br/>
         ${data.shippingAddress.address_line1 || ""}<br/>
@@ -147,9 +151,9 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationData) {
         ${data.shippingAddress.country || ""}
       </p>
     `
-			: "";
+      : "";
 
-		const htmlContent = `
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -221,36 +225,30 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationData) {
       </html>
     `;
 
-		const mailOptions = {
-			from: process.env.SMTP_USER,
-			html: htmlContent,
-			subject: `🐉 Confirmation de commande #${data.orderId}`,
-			to: data.customerEmail,
-		};
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      html: htmlContent,
+      subject: `🐉 Confirmation de commande #${data.orderId}`,
+      to: data.customerEmail,
+    };
 
-		const info = await transporter.sendMail(mailOptions);
-		// Email envoyé avec succès
-		return { messageId: info.messageId, success: true };
-	} catch (error) {
-		console.error("Erreur lors de l'envoi de l'email:", error);
-		throw error;
-	}
+    const info = await transporter.sendMail(mailOptions);
+    // Email envoyé avec succès
+    return { messageId: info.messageId, success: true };
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email:", error);
+    throw error;
+  }
 }
 
 /**
  * Envoyer un email d'avis d'expédition
  */
-export async function sendShippingNotificationEmail(
-	customerEmail: string,
-	orderId: string,
-	trackingNumber?: string
-) {
-	try {
-		const trackingHtml = trackingNumber
-			? `<p><strong>Numéro de suivi:</strong> ${trackingNumber}</p>`
-			: "";
+export async function sendShippingNotificationEmail(customerEmail: string, orderId: string, trackingNumber?: string) {
+  try {
+    const trackingHtml = trackingNumber ? `<p><strong>Numéro de suivi:</strong> ${trackingNumber}</p>` : "";
 
-		const htmlContent = `
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -284,27 +282,27 @@ export async function sendShippingNotificationEmail(
       </html>
     `;
 
-		const mailOptions = {
-			from: process.env.SMTP_USER,
-			html: htmlContent,
-			subject: `📦 Votre commande #${orderId} a été expédiée`,
-			to: customerEmail,
-		};
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      html: htmlContent,
+      subject: `📦 Votre commande #${orderId} a été expédiée`,
+      to: customerEmail,
+    };
 
-		const info = await transporter.sendMail(mailOptions);
-		return { messageId: info.messageId, success: true };
-	} catch (error) {
-		console.error("Erreur lors de l'envoi de l'email d'expédition:", error);
-		throw error;
-	}
+    const info = await transporter.sendMail(mailOptions);
+    return { messageId: info.messageId, success: true };
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email d'expédition:", error);
+    throw error;
+  }
 }
 
 /**
  * Envoyer un email de confirmation de livraison
  */
 export async function sendDeliveryConfirmationEmail(customerEmail: string, orderId: string) {
-	try {
-		const htmlContent = `
+  try {
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -336,33 +334,29 @@ export async function sendDeliveryConfirmationEmail(customerEmail: string, order
       </html>
     `;
 
-		const mailOptions = {
-			from: process.env.SMTP_USER,
-			html: htmlContent,
-			subject: `✅ Votre commande #${orderId} a été livrée`,
-			to: customerEmail,
-		};
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      html: htmlContent,
+      subject: `✅ Votre commande #${orderId} a été livrée`,
+      to: customerEmail,
+    };
 
-		const info = await transporter.sendMail(mailOptions);
-		return { messageId: info.messageId, success: true };
-	} catch (error) {
-		console.error("Erreur lors de l'envoi de l'email de livraison:", error);
-		throw error;
-	}
+    const info = await transporter.sendMail(mailOptions);
+    return { messageId: info.messageId, success: true };
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email de livraison:", error);
+    throw error;
+  }
 }
 
 /**
  * Envoyer un email d'annulation de commande
  */
-export async function sendOrderCancellationEmail(
-	customerEmail: string,
-	orderId: string,
-	reason?: string
-) {
-	try {
-		const reasonHtml = reason ? `<p><strong>Raison:</strong> ${reason}</p>` : "";
+export async function sendOrderCancellationEmail(customerEmail: string, orderId: string, reason?: string) {
+  try {
+    const reasonHtml = reason ? `<p><strong>Raison:</strong> ${reason}</p>` : "";
 
-		const htmlContent = `
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -396,39 +390,39 @@ export async function sendOrderCancellationEmail(
       </html>
     `;
 
-		const mailOptions = {
-			from: process.env.SMTP_USER,
-			html: htmlContent,
-			subject: `❌ Votre commande #${orderId} a été annulée`,
-			to: customerEmail,
-		};
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      html: htmlContent,
+      subject: `❌ Votre commande #${orderId} a été annulée`,
+      to: customerEmail,
+    };
 
-		const info = await transporter.sendMail(mailOptions);
-		return { messageId: info.messageId, success: true };
-	} catch (error) {
-		console.error("Erreur lors de l'envoi de l'email d'annulation:", error);
-		throw error;
-	}
+    const info = await transporter.sendMail(mailOptions);
+    return { messageId: info.messageId, success: true };
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email d'annulation:", error);
+    throw error;
+  }
 }
 
 /**
  * Envoyer un message depuis le formulaire de contact officiel
  */
 export async function sendContactFormEmail(data: {
-	title: string;
-	subject: string;
-	description: string;
-	senderEmail?: string;
-	senderName?: string;
-	attachments?: {
-		filename: string;
-		content: Buffer;
-		contentType: string;
-	}[];
+  title: string;
+  subject: string;
+  description: string;
+  senderEmail?: string;
+  senderName?: string;
+  attachments?: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }[];
 }): Promise<SendEmailResult> {
-	const recipient = process.env.SMTP_TO_CONTACT || process.env.SMTP_USER || "contact@rosegriffon.fr";
+  const recipient = process.env.SMTP_TO_CONTACT || process.env.SMTP_USER || "contact@rosegriffon.fr";
 
-	const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:24px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
     <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
@@ -450,28 +444,28 @@ ${data.description}
   </td></tr></table>
 </body></html>`;
 
-	return await sendEmail({
-		to: recipient,
-		replyTo: data.senderEmail,
-		subject: `[Contact RG] ${data.subject} — ${data.title}`,
-		html,
-		text: `Titre: ${data.title}\nSujet: ${data.subject}\nDe: ${data.senderEmail || "anonyme"}\n\n${data.description}`,
-		attachments: data.attachments,
-	});
+  return await sendEmail({
+    to: recipient,
+    replyTo: data.senderEmail,
+    subject: `[Contact RG] ${data.subject} — ${data.title}`,
+    html,
+    text: `Titre: ${data.title}\nSujet: ${data.subject}\nDe: ${data.senderEmail || "anonyme"}\n\n${data.description}`,
+    attachments: data.attachments,
+  });
 }
 
 /**
  * Envoyer un message confidentiel à la cellule de médiation
  */
 export async function sendMediationRequestEmail(data: {
-	subject: string;
-	message: string;
-	senderEmail?: string;
-	senderName?: string;
+  subject: string;
+  message: string;
+  senderEmail?: string;
+  senderName?: string;
 }): Promise<SendEmailResult> {
-	const recipient = process.env.RG_MEDIATION_EMAIL?.trim() || "contact@rosegriffon.fr";
+  const recipient = process.env.RG_MEDIATION_EMAIL?.trim() || "contact@rosegriffon.fr";
 
-	const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:24px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
     <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;border-top:4px solid #d97706">
@@ -490,37 +484,37 @@ ${data.message}
   </td></tr></table>
 </body></html>`;
 
-	return await sendEmail({
-		to: recipient,
-		replyTo: data.senderEmail,
-		subject: `[Médiation Confidentielle] ${data.subject}`,
-		html,
-		text: `Médiation Confidentielle\nObjet: ${data.subject}\nDe: ${data.senderEmail || "anonyme"}\n\n${data.message}`,
-	});
+  return await sendEmail({
+    to: recipient,
+    replyTo: data.senderEmail,
+    subject: `[Médiation Confidentielle] ${data.subject}`,
+    html,
+    text: `Médiation Confidentielle\nObjet: ${data.subject}\nDe: ${data.senderEmail || "anonyme"}\n\n${data.message}`,
+  });
 }
 
 /**
  * Envoyer un email de notification tournoi / e-sport Achilléa
  */
 export async function sendTournamentNotificationEmail(data: {
-	recipientEmail: string;
-	playerName: string;
-	tournamentName: string;
-	type: "registration_confirmed" | "match_ready" | "dispute_alert" | "podium";
-	details?: string;
-	tournamentUrl?: string;
+  recipientEmail: string;
+  playerName: string;
+  tournamentName: string;
+  type: "registration_confirmed" | "match_ready" | "dispute_alert" | "podium";
+  details?: string;
+  tournamentUrl?: string;
 }): Promise<SendEmailResult> {
-	const titles: Record<string, string> = {
-		registration_confirmed: "Inscription confirmée !",
-		match_ready: "Votre prochain match est prêt",
-		dispute_alert: "Signalement ouvert sur votre match",
-		podium: "Félicitations pour votre podium !",
-	};
+  const titles: Record<string, string> = {
+    registration_confirmed: "Inscription confirmée !",
+    match_ready: "Votre prochain match est prêt",
+    dispute_alert: "Signalement ouvert sur votre match",
+    podium: "Félicitations pour votre podium !",
+  };
 
-	const title = titles[data.type] || "Information tournoi";
-	const url = data.tournamentUrl || absoluteUrl("/achillea/tournaments");
+  const title = titles[data.type] || "Information tournoi";
+  const url = data.tournamentUrl || absoluteUrl("/achillea/tournaments");
 
-	const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:24px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
     <table role="presentation" width="100%" style="max-width:500px;background:#ffffff;border-radius:16px;overflow:hidden">
@@ -547,9 +541,9 @@ export async function sendTournamentNotificationEmail(data: {
   </td></tr></table>
 </body></html>`;
 
-	return await sendEmail({
-		to: data.recipientEmail,
-		subject: `⚔️ [Achilléa] ${title} — ${data.tournamentName}`,
-		html,
-	});
+  return await sendEmail({
+    to: data.recipientEmail,
+    subject: `⚔️ [Achilléa] ${title} — ${data.tournamentName}`,
+    html,
+  });
 }

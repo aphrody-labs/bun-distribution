@@ -29,48 +29,48 @@ const MAX_LIMIT = 5000;
 
 /** Parse un entier de query borné à `[min, max]`, repli `fallback`. */
 function clampInt(raw: string | null, fallback: number, min: number, max: number): number {
-	const n = Number.parseInt(raw ?? "", 10);
-	if (!Number.isFinite(n)) return fallback;
-	return Math.min(max, Math.max(min, n));
+  const n = Number.parseInt(raw ?? "", 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-	const { searchParams } = new URL(request.url);
-	const rawPath = searchParams.get("path") ?? "";
-	const wantMeta = searchParams.get("meta") === "1";
-	const query = searchParams.get("q");
-	const offset = clampInt(searchParams.get("offset"), 0, 0, Number.MAX_SAFE_INTEGER);
-	const limit = clampInt(searchParams.get("limit"), DEFAULT_LIMIT, 1, MAX_LIMIT);
+  const { searchParams } = new URL(request.url);
+  const rawPath = searchParams.get("path") ?? "";
+  const wantMeta = searchParams.get("meta") === "1";
+  const query = searchParams.get("q");
+  const offset = clampInt(searchParams.get("offset"), 0, 0, Number.MAX_SAFE_INTEGER);
+  const limit = clampInt(searchParams.get("limit"), DEFAULT_LIMIT, 1, MAX_LIMIT);
 
-	// Garde-fou : pas de `..`, on borne au sous-arbre `data/` de l'index.
-	if (rawPath.includes("..")) {
-		return NextResponse.json({ error: "invalid path" }, { status: 400 });
-	}
+  // Garde-fou : pas de `..`, on borne au sous-arbre `data/` de l'index.
+  if (rawPath.includes("..")) {
+    return NextResponse.json({ error: "invalid path" }, { status: 400 });
+  }
 
-	try {
-		if (query != null) {
-			const files = await searchFiles(query, 200);
-			return NextResponse.json(
-				{ query, files, count: files.length },
-				{ headers: { "Cache-Control": "public, max-age=60" } },
-			);
-		}
-		if (wantMeta) {
-			const meta = await fileMeta(rawPath);
-			if (!meta) {
-				return NextResponse.json({ error: "not found", path: rawPath }, { status: 404 });
-			}
-			return NextResponse.json(meta, {
-				headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
-			});
-		}
+  try {
+    if (query != null) {
+      const files = await searchFiles(query, 200);
+      return NextResponse.json(
+        { query, files, count: files.length },
+        { headers: { "Cache-Control": "public, max-age=60" } },
+      );
+    }
+    if (wantMeta) {
+      const meta = await fileMeta(rawPath);
+      if (!meta) {
+        return NextResponse.json({ error: "not found", path: rawPath }, { status: 404 });
+      }
+      return NextResponse.json(meta, {
+        headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
+      });
+    }
 
-		const listing = await listDirPaged(rawPath, limit, offset);
-		return NextResponse.json(listing, {
-			headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
-		});
-	} catch (error) {
-		const message = error instanceof Error ? error.message : "internal error";
-		return NextResponse.json({ error: message }, { status: 500 });
-	}
+    const listing = await listDirPaged(rawPath, limit, offset);
+    return NextResponse.json(listing, {
+      headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "internal error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

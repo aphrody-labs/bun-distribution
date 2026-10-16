@@ -83,10 +83,7 @@ export async function getComments(
   const commentIds: string[] = rawComments.map((c: { id: string }) => c.id);
 
   // Compter les réponses groupées par parent_id
-  const { data: repliesData } = await client
-    .from("article_comments")
-    .select("parent_id")
-    .in("parent_id", commentIds);
+  const { data: repliesData } = await client.from("article_comments").select("parent_id").in("parent_id", commentIds);
 
   const replyCountMap = new Map<string, number>();
   if (repliesData) {
@@ -97,7 +94,7 @@ export async function getComments(
 
   // Récupérer les likes (article_reactions avec reaction_type = 'comment_like'
   // Et article_id formaté comme `comment:{commentId}`)
-  const commentRefIds = commentIds.map((id) => `comment:${id}`);
+  const commentRefIds = commentIds.map(id => `comment:${id}`);
 
   const { data: likesData } = await client
     .from("article_reactions")
@@ -210,7 +207,7 @@ export async function getReplies(parentId: string): Promise<Reply[]> {
         avatar_url: string | null;
       } | null;
     }>
-  ).map((c) => ({
+  ).map(c => ({
     author: {
       avatar_url: c.profiles?.avatar_url ?? null,
       full_name: c.profiles?.full_name ?? null,
@@ -230,11 +227,7 @@ export async function getReplies(parentId: string): Promise<Reply[]> {
 /**
  * Crée un commentaire ou une réponse à un commentaire existant.
  */
-export async function createComment(
-  articleId: string,
-  content: string,
-  parentId?: string,
-): Promise<Comment> {
+export async function createComment(articleId: string, content: string, parentId?: string): Promise<Comment> {
   const session = await getServerSession();
   if (!session?.user) {
     throw new Error("Non authentifié");
@@ -449,11 +442,7 @@ export async function deleteComment(commentId: string): Promise<void> {
 
   // Vérifier si l'utilisateur est l'auteur ou un admin
   if (comment.author_id !== userId) {
-    const { data: profile } = await client
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
+    const { data: profile } = await client.from("profiles").select("role").eq("id", userId).single();
 
     if (!profile || !isAdminRole(profile.role)) {
       throw new Error("Non autorisé");
@@ -575,9 +564,7 @@ export async function getCommentCounts(articleIds: string[]): Promise<Record<str
 /**
  * Ajoute ou retire un like sur un commentaire pour l'utilisateur connecté.
  */
-export async function toggleCommentLike(
-  commentId: string,
-): Promise<{ liked: boolean; count: number }> {
+export async function toggleCommentLike(commentId: string): Promise<{ liked: boolean; count: number }> {
   const session = await getServerSession();
   if (!session?.user) {
     throw new Error("Non authentifié");

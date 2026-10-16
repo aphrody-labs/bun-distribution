@@ -67,8 +67,8 @@ export async function getReadingHistory(limit = 10): Promise<ReadingHistoryEntry
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data as any[])
-    .filter((row) => row.articles !== null)
-    .map((row) => ({
+    .filter(row => row.articles !== null)
+    .map(row => ({
       article_id: row.article_id,
       category: row.articles.category,
       excerpt: row.articles.excerpt,
@@ -110,8 +110,8 @@ export async function getContinueReading(limit = 4): Promise<ReadingHistoryEntry
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data as any[])
-    .filter((row) => row.articles !== null)
-    .map((row) => ({
+    .filter(row => row.articles !== null)
+    .map(row => ({
       article_id: row.article_id,
       category: row.articles.category,
       excerpt: row.articles.excerpt,
@@ -161,7 +161,7 @@ export async function getReadingStats(): Promise<ReadingStats> {
     // Construire un Set des jours (format YYYY-MM-DD) ayant une activité
     const activeDays = new Set<string>(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (history as any[]).map((row) => new Date(row.last_read_at).toISOString().slice(0, 10)),
+      (history as any[]).map(row => new Date(row.last_read_at).toISOString().slice(0, 10)),
     );
 
     const today = new Date();

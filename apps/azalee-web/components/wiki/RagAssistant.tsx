@@ -21,11 +21,7 @@ interface RagAssistantProps {
   className?: string;
 }
 
-export function RagAssistant({
-  initialQuery = "",
-  suggestions = [],
-  className,
-}: RagAssistantProps) {
+export function RagAssistant({ initialQuery = "", suggestions = [], className }: RagAssistantProps) {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<RagDocument[]>([]);
   const [loading, startSearch] = useTransition();
@@ -150,9 +146,7 @@ export function RagAssistant({
           <Icon name="wand" size={22} />
         </div>
         <div>
-          <h3 className="font-[BradBunR] text-base sm:text-lg text-on-surface tracking-wide">
-            Assistant Tactique
-          </h3>
+          <h3 className="font-[BradBunR] text-base sm:text-lg text-on-surface tracking-wide">Assistant Tactique</h3>
           <p className="text-[10px] sm:text-xs text-on-surface-variant">
             Recherchez en direct dans la base de connaissances (actus, patch notes, tweets)
           </p>
@@ -161,7 +155,7 @@ export function RagAssistant({
 
       {/* Form */}
       <form
-        onSubmit={(e) => {
+        onSubmit={e => {
           e.preventDefault();
           handleSearch(query);
         }}
@@ -171,7 +165,7 @@ export function RagAssistant({
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Ex: Effets du style de jeu Percée, stats d'Axel Blaze..."
             className="w-full h-11 px-3 pl-10 rounded-xl bg-surface-container-high border border-outline-variant/30 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-hidden focus:ring-2 focus:ring-primary/50 transition-all"
           />
@@ -241,7 +235,7 @@ export function RagAssistant({
             {results.length} résultats trouvés
           </p>
           <div className="space-y-3">
-            {results.map((doc) => {
+            {results.map(doc => {
               const typeInfo = getTypeStyles(doc.type);
               const isExpanded = expandedDoc === doc.id;
               const scorePercent = Math.min(100, Math.round((doc.score || 0) * 100));
@@ -264,9 +258,7 @@ export function RagAssistant({
                         {typeInfo.label}
                       </span>
                       {doc.date && (
-                        <span className="text-[9px] sm:text-[10px] text-on-surface-variant/60">
-                          {doc.date}
-                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-on-surface-variant/60">{doc.date}</span>
                       )}
                     </div>
 
@@ -288,9 +280,7 @@ export function RagAssistant({
                   </div>
 
                   {/* Title */}
-                  <h4 className="text-xs sm:text-sm font-bold text-on-surface leading-snug">
-                    {doc.title}
-                  </h4>
+                  <h4 className="text-xs sm:text-sm font-bold text-on-surface leading-snug">{doc.title}</h4>
 
                   {/* Text excerpt or full content */}
                   <div className="text-[11px] sm:text-xs text-on-surface-variant/90 leading-relaxed whitespace-pre-line">

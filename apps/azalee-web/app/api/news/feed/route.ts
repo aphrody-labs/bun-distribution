@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       params,
     );
 
-    const items = rows.map((a) => ({
+    const items = rows.map(a => ({
       author_id: a.author_id,
       category: a.category,
       date: a.published_at || a.created_at,

@@ -14,15 +14,7 @@ import {
   formatDiscordTimestamp,
   type BotNotification,
 } from "../src/bot/index.js";
-import {
-  FORMATIONS,
-  encodeTeamCode,
-  decodeTeamCode,
-  translateEffect,
-  GAIJI,
-  news,
-  bot,
-} from "../src/index.js";
+import { FORMATIONS, encodeTeamCode, decodeTeamCode, translateEffect, GAIJI, news, bot } from "../src/index.js";
 
 describe("Azalée News Module", () => {
   test("calculates reading time accurately", () => {
@@ -34,9 +26,7 @@ describe("Azalée News Module", () => {
   });
 
   test("slugifies titles cleanly", () => {
-    expect(slugifyTitle("Mise à jour 1.2.0: Nouvelles Formations!")).toBe(
-      "mise-a-jour-1-2-0-nouvelles-formations",
-    );
+    expect(slugifyTitle("Mise à jour 1.2.0: Nouvelles Formations!")).toBe("mise-a-jour-1-2-0-nouvelles-formations");
   });
 
   test("extracts text summary without markdown symbols", () => {

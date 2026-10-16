@@ -62,7 +62,7 @@ describe("catalogue partagé vs démon", () => {
 
   test("toute tâche du catalogue a un exécutant dans runnerMap", async () => {
     const clefs = new Set([...(await clefsDuRunnerMap())].map(normaliserNomTache));
-    const orphelines = TACHES_CRON.filter((nom) => !clefs.has(normaliserNomTache(nom)));
+    const orphelines = TACHES_CRON.filter(nom => !clefs.has(normaliserNomTache(nom)));
     expect(orphelines).toEqual([]);
   });
 
@@ -81,7 +81,7 @@ describe("catalogue partagé vs démon", () => {
     const tolerees = new Set(["discord:archives"]);
     const surplus = [...(await clefsDuRunnerMap())]
       .map(normaliserNomTache)
-      .filter((nom) => !catalogue.has(nom) && !tolerees.has(nom));
+      .filter(nom => !catalogue.has(nom) && !tolerees.has(nom));
     expect(surplus).toEqual([]);
   });
 });

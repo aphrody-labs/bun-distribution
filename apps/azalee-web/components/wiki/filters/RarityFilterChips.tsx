@@ -18,7 +18,7 @@ export function RarityFilterChips() {
   const currentValue = searchParams.get("rarity");
 
   const toggle = (value: string) => {
-    navigate((params) => {
+    navigate(params => {
       if (params.get("rarity") === value) {
         params.delete("rarity");
       } else {
@@ -38,9 +38,7 @@ export function RarityFilterChips() {
             className={cn(
               "inline-flex items-center justify-center min-h-11 sm:min-h-0 transition-all duration-200 rounded-full",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50",
-              isSelected
-                ? "ring-2 ring-primary scale-105 shadow-md"
-                : "opacity-70 hover:opacity-100 hover:scale-105",
+              isSelected ? "ring-2 ring-primary scale-105 shadow-md" : "opacity-70 hover:opacity-100 hover:scale-105",
             )}
           >
             <RarityBadge rarity={rarity} size="md" />

@@ -9,17 +9,17 @@ import { logAdminAction } from "@/lib/admin-logger";
 import { getServerUser } from "@/lib/auth-helpers";
 
 import {
-	avecNomEquipe,
-	BUCKET_IMAGES,
-	construireCheminImage,
-	construireUrlPubliqueAsset,
-	comparerMembres,
-	premierMessage,
-	schemaIdentifiant,
-	schemaMembre,
-	schemaMiseAJourMembre,
-	SOURCE_ADMIN,
-	validerFichierImage,
+  avecNomEquipe,
+  BUCKET_IMAGES,
+  construireCheminImage,
+  construireUrlPubliqueAsset,
+  comparerMembres,
+  premierMessage,
+  schemaIdentifiant,
+  schemaMembre,
+  schemaMiseAJourMembre,
+  SOURCE_ADMIN,
+  validerFichierImage,
 } from "./staff-schema";
 import type { EntreeMembre } from "./staff-schema";
 
@@ -31,9 +31,9 @@ export type TeamMemberInput = EntreeMembre;
 const CHEMINS_A_REVALIDER = ["/notre-equipe", "/community", "/admin/staff"];
 
 function revaliderPagesStaff(): void {
-	for (const chemin of CHEMINS_A_REVALIDER) {
-		revalidatePath(chemin);
-	}
+  for (const chemin of CHEMINS_A_REVALIDER) {
+    revalidatePath(chemin);
+  }
 }
 
 /**
@@ -47,19 +47,19 @@ function revaliderPagesStaff(): void {
  * `editor` accédait donc à la page puis se voyait refuser chaque action.
  */
 async function exigerAdmin(): Promise<{ ok: true } | { ok: false; message: string }> {
-	const user = await getServerUser();
-	if (!user) {
-		return { message: "Non authentifié", ok: false };
-	}
+  const user = await getServerUser();
+  if (!user) {
+    return { message: "Non authentifié", ok: false };
+  }
 
-	const admin = createPostgresClient();
-	const profil = await resolveProfile(admin, user);
+  const admin = createPostgresClient();
+  const profil = await resolveProfile(admin, user);
 
-	if (!profil || !isAdmin(profil.role)) {
-		return { message: "Permissions insuffisantes", ok: false };
-	}
+  if (!profil || !isAdmin(profil.role)) {
+    return { message: "Permissions insuffisantes", ok: false };
+  }
 
-	return { ok: true };
+  return { ok: true };
 }
 
 /**
@@ -69,125 +69,125 @@ async function exigerAdmin(): Promise<{ ok: true } | { ok: false; message: strin
  * afin d'inclure les membres désactivés et les imports en attente.
  */
 export async function getAllTeamMembers(): Promise<{
-	data: TeamMember[] | null;
-	error: string | null;
+  data: TeamMember[] | null;
+  error: string | null;
 }> {
-	try {
-		const garde = await exigerAdmin();
-		if (!garde.ok) {
-			return { data: null, error: garde.message };
-		}
+  try {
+    const garde = await exigerAdmin();
+    if (!garde.ok) {
+      return { data: null, error: garde.message };
+    }
 
-		const admin = createPostgresClient();
-		const { data, error } = await admin.from("team_members").select("*");
+    const admin = createPostgresClient();
+    const { data, error } = await admin.from("team_members").select("*");
 
-		if (error) {
-			console.error("[staff] échec de lecture des membres :", error);
-			return { data: null, error: error.message };
-		}
+    if (error) {
+      console.error("[staff] échec de lecture des membres :", error);
+      return { data: null, error: error.message };
+    }
 
-		// Tri appliqué ici plutôt qu'en SQL : c'est exactement le comparateur du
-		// site public (`display_index` croissant, NULL en dernier, puis nom).
-		const membres = ((data ?? []) as TeamMember[]).toSorted(comparerMembres);
+    // Tri appliqué ici plutôt qu'en SQL : c'est exactement le comparateur du
+    // site public (`display_index` croissant, NULL en dernier, puis nom).
+    const membres = ((data ?? []) as TeamMember[]).toSorted(comparerMembres);
 
-		return { data: membres, error: null };
-	} catch (error) {
-		console.error("[staff] erreur inattendue à la lecture des membres :", error);
-		return { data: null, error: "Une erreur inattendue est survenue" };
-	}
+    return { data: membres, error: null };
+  } catch (error) {
+    console.error("[staff] erreur inattendue à la lecture des membres :", error);
+    return { data: null, error: "Une erreur inattendue est survenue" };
+  }
 }
 
 /**
  * Crée un nouveau membre d'équipe.
  */
 export async function createTeamMember(input: TeamMemberInput): Promise<{
-	data: TeamMember | null;
-	error: string | null;
+  data: TeamMember | null;
+  error: string | null;
 }> {
-	try {
-		const garde = await exigerAdmin();
-		if (!garde.ok) {
-			return { data: null, error: garde.message };
-		}
+  try {
+    const garde = await exigerAdmin();
+    if (!garde.ok) {
+      return { data: null, error: garde.message };
+    }
 
-		const analyse = schemaMembre.safeParse(input);
-		if (!analyse.success) {
-			return { data: null, error: premierMessage(analyse.error) };
-		}
+    const analyse = schemaMembre.safeParse(input);
+    if (!analyse.success) {
+      return { data: null, error: premierMessage(analyse.error) };
+    }
 
-		const valeurs = { ...avecNomEquipe(analyse.data), source: SOURCE_ADMIN };
+    const valeurs = { ...avecNomEquipe(analyse.data), source: SOURCE_ADMIN };
 
-		const admin = createPostgresClient();
-		const { data, error } = await admin.from("team_members").insert(valeurs).select().single();
+    const admin = createPostgresClient();
+    const { data, error } = await admin.from("team_members").insert(valeurs).select().single();
 
-		if (error) {
-			console.error("[staff] échec de création d'un membre :", error);
-			return { data: null, error: error.message };
-		}
+    if (error) {
+      console.error("[staff] échec de création d'un membre :", error);
+      return { data: null, error: error.message };
+    }
 
-		await logAdminAction("create", "team_member", String(data.id), valeurs);
-		revaliderPagesStaff();
+    await logAdminAction("create", "team_member", String(data.id), valeurs);
+    revaliderPagesStaff();
 
-		return { data: data as TeamMember, error: null };
-	} catch (error) {
-		console.error("[staff] erreur inattendue à la création d'un membre :", error);
-		return { data: null, error: "Une erreur inattendue est survenue" };
-	}
+    return { data: data as TeamMember, error: null };
+  } catch (error) {
+    console.error("[staff] erreur inattendue à la création d'un membre :", error);
+    return { data: null, error: "Une erreur inattendue est survenue" };
+  }
 }
 
 /**
  * Met à jour un membre d'équipe.
  */
 export async function updateTeamMember(
-	id: string,
-	input: Partial<TeamMemberInput>
+  id: string,
+  input: Partial<TeamMemberInput>,
 ): Promise<{
-	data: TeamMember | null;
-	error: string | null;
+  data: TeamMember | null;
+  error: string | null;
 }> {
-	try {
-		const garde = await exigerAdmin();
-		if (!garde.ok) {
-			return { data: null, error: garde.message };
-		}
+  try {
+    const garde = await exigerAdmin();
+    if (!garde.ok) {
+      return { data: null, error: garde.message };
+    }
 
-		const identifiant = schemaIdentifiant.safeParse(id);
-		if (!identifiant.success) {
-			return { data: null, error: premierMessage(identifiant.error) };
-		}
+    const identifiant = schemaIdentifiant.safeParse(id);
+    if (!identifiant.success) {
+      return { data: null, error: premierMessage(identifiant.error) };
+    }
 
-		const analyse = schemaMiseAJourMembre.safeParse(input);
-		if (!analyse.success) {
-			return { data: null, error: premierMessage(analyse.error) };
-		}
+    const analyse = schemaMiseAJourMembre.safeParse(input);
+    if (!analyse.success) {
+      return { data: null, error: premierMessage(analyse.error) };
+    }
 
-		if (Object.keys(analyse.data).length === 0) {
-			return { data: null, error: "Aucune modification à enregistrer." };
-		}
+    if (Object.keys(analyse.data).length === 0) {
+      return { data: null, error: "Aucune modification à enregistrer." };
+    }
 
-		const valeurs = avecNomEquipe(analyse.data);
+    const valeurs = avecNomEquipe(analyse.data);
 
-		const admin = createPostgresClient();
-		const { data, error } = await admin
-			.from("team_members")
-			.update(valeurs)
-			.eq("id", identifiant.data)
-			.select()
-			.single();
+    const admin = createPostgresClient();
+    const { data, error } = await admin
+      .from("team_members")
+      .update(valeurs)
+      .eq("id", identifiant.data)
+      .select()
+      .single();
 
-		if (error) {
-			console.error("[staff] échec de mise à jour d'un membre :", error);
-			return { data: null, error: error.message };
-		}
+    if (error) {
+      console.error("[staff] échec de mise à jour d'un membre :", error);
+      return { data: null, error: error.message };
+    }
 
-		await logAdminAction("update", "team_member", identifiant.data, valeurs);
-		revaliderPagesStaff();
+    await logAdminAction("update", "team_member", identifiant.data, valeurs);
+    revaliderPagesStaff();
 
-		return { data: data as TeamMember, error: null };
-	} catch (error) {
-		console.error("[staff] erreur inattendue à la mise à jour d'un membre :", error);
-		return { data: null, error: "Une erreur inattendue est survenue" };
-	}
+    return { data: data as TeamMember, error: null };
+  } catch (error) {
+    console.error("[staff] erreur inattendue à la mise à jour d'un membre :", error);
+    return { data: null, error: "Une erreur inattendue est survenue" };
+  }
 }
 
 /**
@@ -197,46 +197,46 @@ export async function updateTeamMember(
  * aucun moyen d'envoyer une charge utile arbitraire depuis un bouton.
  */
 export async function setTeamMemberActive(
-	id: string,
-	actif: boolean
+  id: string,
+  actif: boolean,
 ): Promise<{ data: TeamMember | null; error: string | null }> {
-	return updateTeamMember(id, { is_active: actif });
+  return updateTeamMember(id, { is_active: actif });
 }
 
 /**
  * Supprime un membre d'équipe.
  */
 export async function deleteTeamMember(id: string): Promise<{
-	success: boolean;
-	error: string | null;
+  success: boolean;
+  error: string | null;
 }> {
-	try {
-		const garde = await exigerAdmin();
-		if (!garde.ok) {
-			return { error: garde.message, success: false };
-		}
+  try {
+    const garde = await exigerAdmin();
+    if (!garde.ok) {
+      return { error: garde.message, success: false };
+    }
 
-		const identifiant = schemaIdentifiant.safeParse(id);
-		if (!identifiant.success) {
-			return { error: premierMessage(identifiant.error), success: false };
-		}
+    const identifiant = schemaIdentifiant.safeParse(id);
+    if (!identifiant.success) {
+      return { error: premierMessage(identifiant.error), success: false };
+    }
 
-		const admin = createPostgresClient();
-		const { error } = await admin.from("team_members").delete().eq("id", identifiant.data);
+    const admin = createPostgresClient();
+    const { error } = await admin.from("team_members").delete().eq("id", identifiant.data);
 
-		if (error) {
-			console.error("[staff] échec de suppression d'un membre :", error);
-			return { error: error.message, success: false };
-		}
+    if (error) {
+      console.error("[staff] échec de suppression d'un membre :", error);
+      return { error: error.message, success: false };
+    }
 
-		await logAdminAction("delete", "team_member", identifiant.data, {});
-		revaliderPagesStaff();
+    await logAdminAction("delete", "team_member", identifiant.data, {});
+    revaliderPagesStaff();
 
-		return { error: null, success: true };
-	} catch (error) {
-		console.error("[staff] erreur inattendue à la suppression d'un membre :", error);
-		return { error: "Une erreur inattendue est survenue", success: false };
-	}
+    return { error: null, success: true };
+  } catch (error) {
+    console.error("[staff] erreur inattendue à la suppression d'un membre :", error);
+    return { error: "Une erreur inattendue est survenue", success: false };
+  }
 }
 
 /**
@@ -249,48 +249,48 @@ export async function deleteTeamMember(id: string): Promise<{
  * donc de l'afficher.
  */
 export async function uploadTeamMemberImage(file: File): Promise<{
-	url: string | null;
-	error: string | null;
+  url: string | null;
+  error: string | null;
 }> {
-	try {
-		const garde = await exigerAdmin();
-		if (!garde.ok) {
-			return { error: garde.message, url: null };
-		}
+  try {
+    const garde = await exigerAdmin();
+    if (!garde.ok) {
+      return { error: garde.message, url: null };
+    }
 
-		if (!(file instanceof File)) {
-			return { error: "Aucun fichier reçu.", url: null };
-		}
+    if (!(file instanceof File)) {
+      return { error: "Aucun fichier reçu.", url: null };
+    }
 
-		const controle = validerFichierImage(file);
-		if (!controle.ok) {
-			return { error: controle.message, url: null };
-		}
+    const controle = validerFichierImage(file);
+    if (!controle.ok) {
+      return { error: controle.message, url: null };
+    }
 
-		const graine = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-		const chemin = construireCheminImage(file.type, graine);
+    const graine = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const chemin = construireCheminImage(file.type, graine);
 
-		const admin = createPostgresClient();
-		const { error: erreurEnvoi } = await admin.storage.from(BUCKET_IMAGES).upload(chemin, file, {
-			cacheControl: "3600",
-			contentType: file.type,
-			upsert: false,
-		});
+    const admin = createPostgresClient();
+    const { error: erreurEnvoi } = await admin.storage.from(BUCKET_IMAGES).upload(chemin, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false,
+    });
 
-		if (erreurEnvoi) {
-			console.error("[staff] échec d'envoi de l'image :", erreurEnvoi);
-			return { error: erreurEnvoi.message, url: null };
-		}
+    if (erreurEnvoi) {
+      console.error("[staff] échec d'envoi de l'image :", erreurEnvoi);
+      return { error: erreurEnvoi.message, url: null };
+    }
 
-		const url = construireUrlPubliqueAsset(chemin, [
-			process.env.NEXT_PUBLIC_SUPABASE_URL,
-			process.env.NEXT_PUBLIC_BASE_URL,
-			process.env.BETTER_AUTH_URL,
-		]);
+    const url = construireUrlPubliqueAsset(chemin, [
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_BASE_URL,
+      process.env.BETTER_AUTH_URL,
+    ]);
 
-		return { error: null, url };
-	} catch (error) {
-		console.error("[staff] erreur inattendue à l'envoi de l'image :", error);
-		return { error: "Une erreur inattendue est survenue", url: null };
-	}
+    return { error: null, url };
+  } catch (error) {
+    console.error("[staff] erreur inattendue à l'envoi de l'image :", error);
+    return { error: "Une erreur inattendue est survenue", url: null };
+  }
 }

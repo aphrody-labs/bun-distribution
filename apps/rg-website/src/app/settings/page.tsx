@@ -12,11 +12,7 @@ export const dynamic = "force-dynamic";
 
 const TABS: readonly AccountTabId[] = ["profile", "address", "connections", "security"];
 
-export default async function AccountPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getServerSession();
   if (!session?.user) {
     redirect("/login");
@@ -54,7 +50,7 @@ export default async function AccountPage({
   let sessions: AccountSession[] = [];
   try {
     const list = await auth.api.listSessions({ headers: await headers() });
-    sessions = (list ?? []).map((s) => ({
+    sessions = (list ?? []).map(s => ({
       createdAt: new Date(s.createdAt).toISOString(),
       current: s.id === session.session.id,
       expiresAt: s.expiresAt ? new Date(s.expiresAt).toISOString() : null,

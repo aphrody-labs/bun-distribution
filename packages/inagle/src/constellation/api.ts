@@ -25,11 +25,7 @@
  * ```
  */
 
-import {
-  buildConstellationMapping,
-  type Constellation,
-  type ConstellationMapping,
-} from "../parsers/constellation.js";
+import { buildConstellationMapping, type Constellation, type ConstellationMapping } from "../parsers/constellation.js";
 
 // Re-export types
 export type { Constellation, ConstellationMapping };
@@ -136,10 +132,7 @@ export function createConstellationAPI() {
     },
 
     /** Get constellation name for a character */
-    getNameForCharacter: (
-      charaParamId: string,
-      lang: "fr" | "en" | "ja" = "fr",
-    ): string | undefined => {
+    getNameForCharacter: (charaParamId: string, lang: "fr" | "en" | "ja" = "fr"): string | undefined => {
       const index = db.byCharacterId.get(charaParamId);
       if (index === undefined) return undefined;
       const constellation = db.byIndex.get(index);
@@ -150,10 +143,8 @@ export function createConstellationAPI() {
     search: (query: string): Constellation[] => {
       const q = query.toLowerCase();
       return db.constellations.filter(
-        (c) =>
-          c.names.fr?.toLowerCase().includes(q) ||
-          c.names.en?.toLowerCase().includes(q) ||
-          c.names.ja?.includes(query),
+        c =>
+          c.names.fr?.toLowerCase().includes(q) || c.names.en?.toLowerCase().includes(q) || c.names.ja?.includes(query),
       );
     },
 

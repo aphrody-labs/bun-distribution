@@ -6,12 +6,7 @@ import { FadeInItem, FadeInStagger } from "@/components/ui/fade-in";
 import { FilterChips } from "@/components/wiki/FilterChips";
 import { CoachCard } from "@/components/wiki/CoachCard";
 import { WikiSearchToolbar } from "@/components/wiki/WikiSearchToolbar";
-import {
-  COACH_ELEMENT_OPTIONS,
-  COACH_PLAYSTYLE_OPTIONS,
-  COACH_ROLE_OPTIONS,
-  getCoachesList,
-} from "@/lib/wiki/coaches";
+import { COACH_ELEMENT_OPTIONS, COACH_PLAYSTYLE_OPTIONS, COACH_ROLE_OPTIONS, getCoachesList } from "@/lib/wiki/coaches";
 import { parseSearchParams } from "@/lib/validations";
 
 export const metadata: Metadata = {
@@ -58,10 +53,7 @@ export default async function CoachesPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
 
       {/* En-tête */}
       <div className="space-y-1">
@@ -74,27 +66,18 @@ export default async function CoachesPage({
       </div>
 
       {/* Recherche + filtres */}
-      <WikiSearchToolbar
-        placeholder="Rechercher un entraîneur..."
-        filterKeys={["role", "element", "playstyle"]}
-      >
+      <WikiSearchToolbar placeholder="Rechercher un entraîneur..." filterKeys={["role", "element", "playstyle"]}>
         <div className="space-y-4">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">
-              Rôle
-            </p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">Rôle</p>
             <FilterChips paramName="role" options={[...COACH_ROLE_OPTIONS]} />
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">
-              Élément
-            </p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">Élément</p>
             <FilterChips paramName="element" options={[...COACH_ELEMENT_OPTIONS]} />
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">
-              Style de jeu
-            </p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">Style de jeu</p>
             <FilterChips paramName="playstyle" options={[...COACH_PLAYSTYLE_OPTIONS]} />
           </div>
         </div>
@@ -109,7 +92,7 @@ export default async function CoachesPage({
       {/* Grille */}
       {coaches.length > 0 ? (
         <FadeInStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {coaches.map((c) => (
+          {coaches.map(c => (
             <FadeInItem key={c.id}>
               <CoachCard
                 id={c.id}

@@ -7,7 +7,7 @@ import type { Database } from "./types.gen";
 let cachedClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 export function createSupabaseBrowserClient() {
-	if (cachedClient) return cachedClient;
-	cachedClient = createBrowserClient<Database>(getSupabaseUrl(), getSupabasePublishableKey());
-	return cachedClient;
+  if (cachedClient) return cachedClient;
+  cachedClient = createBrowserClient<Database>(getSupabaseUrl(), getSupabasePublishableKey());
+  return cachedClient;
 }

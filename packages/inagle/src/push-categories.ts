@@ -101,14 +101,12 @@ export async function importUniforms(_service: any, db: DataAdapter) {
   const rows = resolveUniformRows(uniformDb);
 
   if (rows.length === 0) {
-    console.error(
-      "❌ 0 uniforme résolu — vérifier DATA_PATH et character/uniform_config (parse à vide).",
-    );
+    console.error("❌ 0 uniforme résolu — vérifier DATA_PATH et character/uniform_config (parse à vide).");
     return;
   }
 
   const now = new Date().toISOString();
-  const records = rows.map((r) => ({
+  const records = rows.map(r => ({
     name_id: r.nameId,
     model_start: r.modelStart,
     model_count: r.modelCount,
@@ -147,10 +145,7 @@ export async function importShops(service: any, db: DataAdapter) {
 
   // Items résolus depuis le service inagle (table items réelle), indexés par hex.
   const svc = service ?? (await createInagleService());
-  const itemsByHex = new Map<
-    string,
-    { id: string; fr: string | null; en: string | null; ja: string | null }
-  >();
+  const itemsByHex = new Map<string, { id: string; fr: string | null; en: string | null; ja: string | null }>();
   for (const it of svc.items.allItems() as any[]) {
     const id = it.itemId || it.id;
     if (!id) continue;
@@ -234,7 +229,7 @@ export async function importTricks(_service: any, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const records = trickDb.tricks.map((t) => ({
+  const records = trickDb.tricks.map(t => ({
     id: t.trickId,
     trick_id_name: t.trickIdName,
     event_id: t.eventId,
@@ -266,14 +261,12 @@ export async function importSpecialTactics(_service: any, db: DataAdapter) {
 
   const tacticsDb = await buildSpecialTacticsDatabase(dataPath);
   if (tacticsDb.tactics.length === 0) {
-    console.error(
-      "❌ Parseur a renvoyé 0 tactique — config introuvable ou vide. Abandon (anti-fabrication).",
-    );
+    console.error("❌ Parseur a renvoyé 0 tactique — config introuvable ou vide. Abandon (anti-fabrication).");
     return;
   }
 
   const now = new Date().toISOString();
-  const records = tacticsDb.tactics.map((t) => ({
+  const records = tacticsDb.tactics.map(t => ({
     id: t.id, // tacticsId hex (clé primaire stable)
     internal_code: t.internalCode || null,
     name_fr: t.names.fr ?? null,
@@ -310,9 +303,7 @@ export async function importSpecialTactics(_service: any, db: DataAdapter) {
     else pushed += batch.length;
   }
 
-  console.log(
-    `✅ Special Tactics imported (${pushed}/${unique.length}, parsées ${tacticsDb.tactics.length}).`,
-  );
+  console.log(`✅ Special Tactics imported (${pushed}/${unique.length}, parsées ${tacticsDb.tactics.length}).`);
 }
 
 // === telop_waza → inagle_telop_waza (ON CONFLICT skill_id) ===
@@ -323,14 +314,12 @@ export async function importTelopWaza(_service: any, db: DataAdapter) {
   console.log(`   ↳ Config parsé: ${telopDb.telops.length} télops de skill.`);
 
   if (telopDb.telops.length === 0) {
-    console.error(
-      "❌ Aucun télop parsé — vérifier DATA_PATH / skill_telop_info_config. Abandon (rien poussé).",
-    );
+    console.error("❌ Aucun télop parsé — vérifier DATA_PATH / skill_telop_info_config. Abandon (rien poussé).");
     return;
   }
 
   const now = new Date().toISOString();
-  const records = telopDb.telops.map((t) => ({
+  const records = telopDb.telops.map(t => ({
     skill_id: t.skillId,
     blank_left_index: t.blankLeftIndex,
     blank_right_index: t.blankRightIndex,
@@ -363,14 +352,12 @@ export async function importVideoWaza(_service: any, db: DataAdapter) {
   );
 
   if (videoDb.videos.length === 0) {
-    console.error(
-      "❌ Aucune vidéo parsée — vérifier DATA_PATH / event_movie_config. Abandon (rien poussé).",
-    );
+    console.error("❌ Aucune vidéo parsée — vérifier DATA_PATH / event_movie_config. Abandon (rien poussé).");
     return;
   }
 
   const now = new Date().toISOString();
-  const records = videoDb.videos.map((v) => ({
+  const records = videoDb.videos.map(v => ({
     id: v.id,
     event_id: v.eventId,
     menu_id: v.menuId,
@@ -411,7 +398,7 @@ export async function importEmblems(_service: any, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const records = emblemDb.emblems.map((e) => ({
+  const records = emblemDb.emblems.map(e => ({
     emblem_id: e.emblemId,
     emblem_name: e.emblemName,
     small_file_path: e.smallFilePath || null,
@@ -424,9 +411,7 @@ export async function importEmblems(_service: any, db: DataAdapter) {
     updated_at: now,
   }));
 
-  console.log(
-    `   ↳ ${records.length} emblèmes prêts (dont ${records.filter((r) => r.is_template).length} gabarit).`,
-  );
+  console.log(`   ↳ ${records.length} emblèmes prêts (dont ${records.filter(r => r.is_template).length} gabarit).`);
 
   const { error } = await db.upsert("inagle_emblems", records, "emblem_id");
   if (error) console.error("❌ Error emblems:", error.message || error);
@@ -492,14 +477,12 @@ export async function importSkillTechnic(_service: any, db: DataAdapter) {
   const technics = technicDb.technics;
 
   if (technics.length === 0) {
-    console.error(
-      "❌ 0 technic résolu — vérifier DATA_PATH et skill/skill_technic_config (parse à vide).",
-    );
+    console.error("❌ 0 technic résolu — vérifier DATA_PATH et skill/skill_technic_config (parse à vide).");
     return;
   }
 
   const now = new Date().toISOString();
-  const records = technics.map((t) => ({
+  const records = technics.map(t => ({
     id: t.id,
     win_sub_motion_name_crc: t.winSubMotionNameCrc,
     lose_sub_motion_name_crc: t.loseSubMotionNameCrc,
@@ -668,11 +651,11 @@ export async function importBoostGroups(_service: any, db: DataAdapter) {
   // Spirit table partagée (référence stable embarquée dans chaque ligne pour
   // traçabilité : index -> spiritId hash hex).
   const spiritById = boostDb.spiritTable;
-  const idToSpirit = new Map(spiritById.map((s) => [s.index, s.spiritId]));
+  const idToSpirit = new Map(spiritById.map(s => [s.index, s.spiritId]));
 
   const now = new Date().toISOString();
   const records = boostDb.configs.map((cfg, configIndex) => {
-    const resolvedSpiritIds = cfg.spiritIndices.map((i) => idToSpirit.get(i) ?? null);
+    const resolvedSpiritIds = cfg.spiritIndices.map(i => idToSpirit.get(i) ?? null);
     return {
       id: `boost_grp_${configIndex}`,
       config_index: configIndex,
@@ -693,10 +676,7 @@ export async function importBoostGroups(_service: any, db: DataAdapter) {
   const deduped = dedup(records, "id");
   const { error } = await db.upsert("inagle_boost_groups", deduped, "id");
   if (error) console.error("❌ Error boost_groups:", error.message || error);
-  else
-    console.log(
-      `✅ Boost Groups imported (${deduped.length} — spiritTable: ${spiritById.length} entrées).`,
-    );
+  else console.log(`✅ Boost Groups imported (${deduped.length} — spiritTable: ${spiritById.length} entrées).`);
 }
 
 // === constellations → inagle_constellations (ON CONFLICT id = starNameHash hex) ===
@@ -704,7 +684,7 @@ export async function importBoostGroups(_service: any, db: DataAdapter) {
 export async function importConstellations(_service: any, db: DataAdapter) {
   console.log("🔄 Importing Constellations...");
   const constellations = getAllConstellations();
-  const records = constellations.map((c) => ({
+  const records = constellations.map(c => ({
     id: c.hashId, // PK stable (starNameHash hex)
     idx: c.index,
     name_fr: c.names.fr ?? null,
@@ -748,9 +728,7 @@ export async function importStarSigns(_service: any, db: DataAdapter) {
   const entries = [...map.values()];
 
   if (entries.length === 0) {
-    console.error(
-      "❌ Aucune entrée star-sign trouvée (source réelle absente). Abandon — pas de table fabriquée.",
-    );
+    console.error("❌ Aucune entrée star-sign trouvée (source réelle absente). Abandon — pas de table fabriquée.");
     return;
   }
 
@@ -790,9 +768,7 @@ export async function importTrophies(_service: any, db: DataAdapter) {
   const { trophies } = buildTrophyDatabase(DATA_PATH);
 
   if (trophies.length === 0) {
-    console.error(
-      `❌ Aucune donnée trophée parsée depuis ${DATA_PATH} — rien à pousser (pas de fabrication).`,
-    );
+    console.error(`❌ Aucune donnée trophée parsée depuis ${DATA_PATH} — rien à pousser (pas de fabrication).`);
     return;
   }
 
@@ -830,14 +806,12 @@ export async function importMissions(_service: any, db: DataAdapter) {
   const { missions } = buildMissionDatabase(DATA_PATH);
 
   if (missions.length === 0) {
-    console.error(
-      `❌ 0 mission parsée depuis ${DATA_PATH} — mission_config introuvable ou vide. Rien poussé.`,
-    );
+    console.error(`❌ 0 mission parsée depuis ${DATA_PATH} — mission_config introuvable ou vide. Rien poussé.`);
     return;
   }
 
   const now = new Date().toISOString();
-  const records = missions.map((m) => ({
+  const records = missions.map(m => ({
     mission_id: m.missionId,
     code: m.code,
     name_id: m.nameId,
@@ -878,7 +852,7 @@ export async function importActivityPhotos(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = photoDb.rewards.map((r) => ({
+  const lignes = photoDb.rewards.map(r => ({
     id: r.trophyIdHex,
     trophy_id_hex: r.trophyIdHex,
     reward: r.reward,
@@ -903,7 +877,7 @@ export async function importCharaMenuResource(_service: unknown, db: DataAdapter
   }
 
   const now = new Date().toISOString();
-  const lignes: LignePoussee[] = resourceDb.overrides.map((o) => ({
+  const lignes: LignePoussee[] = resourceDb.overrides.map(o => ({
     id: o.resourceId,
     is_template: o.isTemplate,
     paths: o.paths,
@@ -938,7 +912,7 @@ export async function importChatEmotes(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = emoteDb.emotes.map((e) => ({
+  const lignes = emoteDb.emotes.map(e => ({
     id: e.emoteId,
     emote_id: e.emoteId,
     flag_idx: e.flagIdx,
@@ -965,7 +939,7 @@ export async function importNameplates(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = nameplateDb.nameplates.map((n) => ({
+  const lignes = nameplateDb.nameplates.map(n => ({
     id: n.nameplateId,
     name_text_id: n.nameTextId,
     sort_no: n.sortNo,
@@ -990,7 +964,7 @@ export async function importPerformances(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = perfDb.performances.map((p) => ({
+  const lignes = perfDb.performances.map(p => ({
     id: p.performanceId,
     event_id: p.eventId,
     event_name_text_id: p.eventNameTextId,
@@ -1014,7 +988,7 @@ export async function importPhaseTitles(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = titleDb.titles.map((t) => ({
+  const lignes = titleDb.titles.map(t => ({
     id: t.phaseId,
     texture_id: t.textureId,
     image_path: t.imagePath,
@@ -1037,7 +1011,7 @@ export async function importSceneArchives(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = sceneDb.scenes.map((s) => ({
+  const lignes = sceneDb.scenes.map(s => ({
     id: s.sceneId,
     event_id: s.eventIdText,
     category: s.category,
@@ -1063,7 +1037,7 @@ export async function importStadiums(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = stadiumDb.stadiums.map((s) => ({
+  const lignes = stadiumDb.stadiums.map(s => ({
     id: s.fieldId,
     field_index: s.index,
     image_path: s.imagePath,
@@ -1090,7 +1064,7 @@ export async function importDropRates(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = taux.map((r) => ({
+  const lignes = taux.map(r => ({
     id: r.id,
     source: r.source,
     source_id: r.sourceId,
@@ -1181,7 +1155,7 @@ export async function importOverrideSkills(service: unknown, db: DataAdapter) {
     : await createInagleService();
   const index = indexerTechniques((svc as { skills: { all(): TechniqueResolue[] } }).skills.all());
 
-  const lignes = overrideDb.resolved.map((o) => {
+  const lignes = overrideDb.resolved.map(o => {
     const technique = index.get(o.overrideSkillId);
     const { min, max } = bornesPuissance(technique);
     return {
@@ -1193,9 +1167,9 @@ export async function importOverrideSkills(service: unknown, db: DataAdapter) {
       category_id: technique?.category ?? null,
       power_min: min,
       power_max: max,
-      conditions: o.conditions.map((c) => ({
+      conditions: o.conditions.map(c => ({
         condition_type: c.conditionType,
-        required_skills: c.requiredSkills.map((rs) => {
+        required_skills: c.requiredSkills.map(rs => {
           const requise = index.get(rs.skillId);
           return {
             skill_id: rs.skillId,
@@ -1208,7 +1182,7 @@ export async function importOverrideSkills(service: unknown, db: DataAdapter) {
     };
   });
 
-  const resolus = lignes.filter((l) => l.name_en !== null).length;
+  const resolus = lignes.filter(l => l.name_en !== null).length;
   console.log(`   ↳ ${resolus}/${lignes.length} overrides nommés depuis skill_config.`);
 
   const pousse = await pousserParLots(db, "inagle_override_skills", dedup(lignes, "id"), "id");
@@ -1228,7 +1202,7 @@ export async function importEventSubtitles(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignesEvents = agregats.map((a) => ({
+  const lignesEvents = agregats.map(a => ({
     event_id: a.event_id,
     episode: a.episode,
     has_subtitle: a.has_subtitle,
@@ -1240,7 +1214,7 @@ export async function importEventSubtitles(_service: unknown, db: DataAdapter) {
     updated_at: now,
   }));
 
-  const lignesSousTitres = sousTitres.map((s) => ({
+  const lignesSousTitres = sousTitres.map(s => ({
     event_id: s.event_id,
     episode: s.episode,
     line_index: s.line_index,
@@ -1260,13 +1234,7 @@ export async function importEventSubtitles(_service: unknown, db: DataAdapter) {
   }));
 
   const pousseEvents = await pousserParLots(db, "inagle_events", lignesEvents, "event_id", 500);
-  const pousseLignes = await pousserParLots(
-    db,
-    "inagle_event_subtitles",
-    lignesSousTitres,
-    "event_id,line_index",
-    500,
-  );
+  const pousseLignes = await pousserParLots(db, "inagle_event_subtitles", lignesSousTitres, "event_id,line_index", 500);
   console.log(
     `✅ Event Subtitles imported (${pousseEvents}/${lignesEvents.length} events, ${pousseLignes}/${lignesSousTitres.length} lignes).`,
   );
@@ -1283,7 +1251,7 @@ export async function importFormations(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = formationDb.formations.map((f) => ({
+  const lignes = formationDb.formations.map(f => ({
     id: f.formationId,
     name_fr: f.names.fr ?? null,
     name_en: f.names.en ?? null,
@@ -1298,7 +1266,7 @@ export async function importFormations(_service: unknown, db: DataAdapter) {
     updated_at: now,
   }));
 
-  const nommees = lignes.filter((l) => l.name_fr || l.name_en || l.name_ja).length;
+  const nommees = lignes.filter(l => l.name_fr || l.name_en || l.name_ja).length;
   console.log(`   ↳ ${nommees}/${lignes.length} formations nommées (formation_text).`);
 
   const pousse = await pousserParLots(db, "inagle_formations", dedup(lignes, "id"), "id");
@@ -1321,7 +1289,7 @@ export async function importExpRarityRates(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = expDb.rarityRates.map((r) => ({
+  const lignes = expDb.rarityRates.map(r => ({
     rarity: r.rarity,
     rate: r.rate,
     updated_at: now,
@@ -1342,7 +1310,7 @@ export async function importAbilityLearning(_service: unknown, db: DataAdapter) 
   }
 
   const now = new Date().toISOString();
-  const lignesEffets = [...config.effects.values()].map((e) => ({
+  const lignesEffets = [...config.effects.values()].map(e => ({
     id: e.id,
     hash: e.hash,
     type: e.type,
@@ -1359,13 +1327,7 @@ export async function importAbilityLearning(_service: unknown, db: DataAdapter) 
   }));
 
   const pousseEffets = await pousserParLots(db, "inagle_ability_effects", lignesEffets, "id", 500);
-  const poussePlateaux = await pousserParLots(
-    db,
-    "inagle_ability_boards",
-    lignesPlateaux,
-    "board_id",
-    500,
-  );
+  const poussePlateaux = await pousserParLots(db, "inagle_ability_boards", lignesPlateaux, "board_id", 500);
   console.log(
     `✅ Ability Learning imported (${pousseEffets}/${lignesEffets.length} effets, ${poussePlateaux}/${lignesPlateaux.length} plateaux).`,
   );
@@ -1382,7 +1344,7 @@ export async function importEnjoyModeTeams(_service: unknown, db: DataAdapter) {
   }
 
   const now = new Date().toISOString();
-  const lignes = enjoyDb.teams.map((t) => ({
+  const lignes = enjoyDb.teams.map(t => ({
     id: t.teamId,
     sub_id: t.subId,
     color_crc: t.colorCrc,
@@ -1444,18 +1406,13 @@ export async function importPassiveSkillEffects(_service: unknown, db: DataAdapt
   }
 
   const now = new Date().toISOString();
-  const lignes = effectDb.effects.map((e) => ({
+  const lignes = effectDb.effects.map(e => ({
     effect_id: e.effectId,
     params: e.params,
     data: e,
     updated_at: now,
   }));
 
-  const pousse = await pousserParLots(
-    db,
-    "inagle_passive_skill_effects",
-    dedup(lignes, "effect_id"),
-    "effect_id",
-  );
+  const pousse = await pousserParLots(db, "inagle_passive_skill_effects", dedup(lignes, "effect_id"), "effect_id");
   console.log(`✅ Passive Skill Effects imported (${pousse}/${lignes.length}).`);
 }

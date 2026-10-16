@@ -76,9 +76,7 @@ export default async function NewsListPage({
   };
 
   const [countResult, dataResult, authorsResult] = await Promise.all([
-    applyFilters(
-      client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee"),
-    ),
+    applyFilters(client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee")),
     applyFilters(client.from("articles").select("*").eq("app", "azalee"))
       .order(sortField, { ascending })
       .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1),
@@ -104,13 +102,8 @@ export default async function NewsListPage({
 
   let profileMap = new Map<string, { id: string; username: string; full_name: string }>();
   if (allAuthorIds.length > 0) {
-    const { data: profiles } = await client
-      .from("profiles")
-      .select("id, username, full_name")
-      .in("id", allAuthorIds);
-    profileMap = new Map(
-      (profiles || []).map((p: { id: string; username: string; full_name: string }) => [p.id, p]),
-    );
+    const { data: profiles } = await client.from("profiles").select("id, username, full_name").in("id", allAuthorIds);
+    profileMap = new Map((profiles || []).map((p: { id: string; username: string; full_name: string }) => [p.id, p]));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,7 +117,7 @@ export default async function NewsListPage({
   }
 
   const authorsList = [...profileMap.values()]
-    .map((p) => ({ id: p.id, name: p.full_name || p.username || "Sans nom" }))
+    .map(p => ({ id: p.id, name: p.full_name || p.username || "Sans nom" }))
     .toSorted((a, b) => a.name.localeCompare(b.name));
 
   const isListView = view === "list";
@@ -164,12 +157,7 @@ export default async function NewsListPage({
         }
       />
 
-      <NewsFilters
-        totalItems={totalItems}
-        rangeStart={rangeStart}
-        rangeEnd={rangeEnd}
-        authors={authorsList}
-      />
+      <NewsFilters totalItems={totalItems} rangeStart={rangeStart} rangeEnd={rangeEnd} authors={authorsList} />
 
       {news && (news as unknown[]).length > 0 ? (
         <NewsListClient items={news as unknown[]} isListView={isListView} />
@@ -182,18 +170,11 @@ export default async function NewsListPage({
             >
               <Icon name="description" size={36} className="text-on-surface-variant/50" />
             </EmptyMedia>
-            <EmptyTitle className="text-on-surface text-xl sm:text-2xl">
-              Aucun article pour le moment
-            </EmptyTitle>
-            <EmptyDescription className="max-w-md text-on-surface-variant">
-              {emptySubtitle}
-            </EmptyDescription>
+            <EmptyTitle className="text-on-surface text-xl sm:text-2xl">Aucun article pour le moment</EmptyTitle>
+            <EmptyDescription className="max-w-md text-on-surface-variant">{emptySubtitle}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button
-              asChild
-              className="h-12 rounded-full bg-primary px-6 text-on-primary hover:bg-primary/90 sm:px-8"
-            >
+            <Button asChild className="h-12 rounded-full bg-primary px-6 text-on-primary hover:bg-primary/90 sm:px-8">
               <Link href="/dashboard/news/new">
                 <Icon name="add" size={18} />
                 Créer un article
@@ -203,11 +184,7 @@ export default async function NewsListPage({
         </Empty>
       )}
 
-      <WikiPagination
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-      />
+      <WikiPagination totalItems={totalItems} itemsPerPage={itemsPerPage} currentPage={currentPage} />
     </div>
   );
 }

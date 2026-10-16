@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAchilleaAuth, createAchilleaClient } from "@/lib/achillea";
 import { absoluteUrl } from "@/lib/site-url";
-import {
-  StageType,
-  MatchFormat,
-  ScoreReportPolicy,
-} from "@rosegriffon/achillea-types/enums/eventEnums";
+import { StageType, MatchFormat, ScoreReportPolicy } from "@rosegriffon/achillea-types/enums/eventEnums";
 import type { SeedOrdering } from "@rosegriffon/achillea-types/domain/brackets";
 import type { OrganizationDTO } from "@rosegriffon/achillea-types/domain/organization";
 import { isPlacementPrizeEligible, prizeTableForTournamentSize } from "@rosegriffon/achillea-core";
@@ -119,15 +115,8 @@ export default function TournamentCreationPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    authLoading,
-    isAuthenticated,
-  ]);
-  if (
-    [authLoading, isAuthenticated].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
-  ) {
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([authLoading, isAuthenticated]);
+  if ([authLoading, isAuthenticated].some((value, position) => !Object.is(value, requestIdentity1[position]))) {
     setRequestIdentity1([authLoading, isAuthenticated]);
     (() => {
       if (authLoading || !isAuthenticated) return;
@@ -140,22 +129,20 @@ export default function TournamentCreationPage() {
 
     createAchilleaClient({ credentials: "include" })
       .organizations.mine()
-      .then((result) => {
+      .then(result => {
         if (cancelled) return;
         if (!result.ok) {
           setError("Impossible de charger vos organisations. Vérifiez vos droits d'organisateur.");
           return;
         }
-        const available = (result.value.data ?? []).filter((organization) => {
+        const available = (result.value.data ?? []).filter(organization => {
           const id = Number(organization.id);
           return Number.isInteger(id) && id > 0;
         });
         setOrganizations(available);
-        setOrganizationId((current) => current || String(available[0]?.id ?? ""));
+        setOrganizationId(current => current || String(available[0]?.id ?? ""));
       })
-      .catch(() =>
-        setError("Impossible de charger vos organisations. Réessayez dans quelques instants."),
-      )
+      .catch(() => setError("Impossible de charger vos organisations. Réessayez dans quelques instants."))
       .finally(() => {
         if (!cancelled) setOrganizationsLoading(false);
       });
@@ -231,9 +218,7 @@ export default function TournamentCreationPage() {
 
     try {
       const starts = new Date(startDate);
-      const grandFinal = grandFinalDate
-        ? new Date(grandFinalDate)
-        : new Date(starts.getTime() + 7200000);
+      const grandFinal = grandFinalDate ? new Date(grandFinalDate) : new Date(starts.getTime() + 7200000);
 
       const res = await client.tournaments.create({
         name: name.trim(),
@@ -268,10 +253,7 @@ export default function TournamentCreationPage() {
           router.push("/achillea/tournaments");
         }
       } else {
-        setError(
-          res.detail ||
-            "Impossible de créer le tournoi. Droits administrateur ou organisateur requis.",
-        );
+        setError(res.detail || "Impossible de créer le tournoi. Droits administrateur ou organisateur requis.");
       }
     } catch {
       setError("Une erreur inattendue est survenue lors de la création.");
@@ -406,10 +388,7 @@ export default function TournamentCreationPage() {
       </div>
 
       {/* Form Container */}
-      <form
-        onSubmit={handleSubmit}
-        className="border border-border bg-card rounded-2xl p-6 md:p-8 space-y-6"
-      >
+      <form onSubmit={handleSubmit} className="border border-border bg-card rounded-2xl p-6 md:p-8 space-y-6">
         {error && (
           <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -433,7 +412,7 @@ export default function TournamentCreationPage() {
                 type="text"
                 placeholder="Ex: Tournoi Astral - Saison 1"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
@@ -452,7 +431,7 @@ export default function TournamentCreationPage() {
                 rows={3}
                 placeholder="Présentez brièvement l'évènement, les lots et le contexte compétitif..."
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={e => setDescription(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -469,16 +448,14 @@ export default function TournamentCreationPage() {
                 <select
                   id="tournament-organization"
                   value={organizationId}
-                  onChange={(event) => setOrganizationId(event.target.value)}
+                  onChange={event => setOrganizationId(event.target.value)}
                   disabled={organizationsLoading || organizations.length === 0}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
                 >
                   <option value="">
-                    {organizationsLoading
-                      ? "Chargement des organisations…"
-                      : "Sélectionner une organisation"}
+                    {organizationsLoading ? "Chargement des organisations…" : "Sélectionner une organisation"}
                   </option>
-                  {organizations.map((organization) => (
+                  {organizations.map(organization => (
                     <option key={String(organization.id)} value={String(organization.id)}>
                       {organization.name}
                     </option>
@@ -502,10 +479,10 @@ export default function TournamentCreationPage() {
                 <select
                   id="route-create-tournament-create-client-tsx-3"
                   value={stageType}
-                  onChange={(e) => setStageType(e.target.value as StageType)}
+                  onChange={e => setStageType(e.target.value as StageType)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  {STAGE_TYPE_OPTIONS.map((opt) => (
+                  {STAGE_TYPE_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -524,10 +501,10 @@ export default function TournamentCreationPage() {
                 <select
                   id="route-create-tournament-create-client-tsx-4"
                   value={matchFormat}
-                  onChange={(e) => setMatchFormat(e.target.value as MatchFormat)}
+                  onChange={e => setMatchFormat(e.target.value as MatchFormat)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  {MATCH_FORMAT_OPTIONS.map((opt) => (
+                  {MATCH_FORMAT_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -537,15 +514,12 @@ export default function TournamentCreationPage() {
             </div>
 
             <div className="space-y-1.5">
-              <p
-                id="tournament-capacity-label"
-                className="text-xs font-bold text-foreground flex items-center gap-1.5"
-              >
+              <p id="tournament-capacity-label" className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-primary" />
                 Capacité maximale de joueurs
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {[8, 16, 32, 64, 128, 256].map((size) => (
+                {[8, 16, 32, 64, 128, 256].map(size => (
                   <button
                     key={size}
                     type="button"
@@ -571,28 +545,20 @@ export default function TournamentCreationPage() {
                     <Sparkles className="w-4 h-4" />
                     Barème des récompenses podium classé (Achilléa Points)
                   </div>
-                  <span className="text-xs font-mono font-bold text-primary">
-                    Capacité {capacity} joueurs
-                  </span>
+                  <span className="text-xs font-mono font-bold text-primary">Capacité {capacity} joueurs</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="p-2.5 rounded-lg bg-background/80 border border-border text-center">
                     <div className="text-muted-foreground">1ère place (Vainqueur)</div>
-                    <div className="text-base font-bold font-mono text-amber-400 mt-0.5">
-                      +{prizeTable.first} AP
-                    </div>
+                    <div className="text-base font-bold font-mono text-amber-400 mt-0.5">+{prizeTable.first} AP</div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-background/80 border border-border text-center">
                     <div className="text-muted-foreground">2ème place (Finaliste)</div>
-                    <div className="text-base font-bold font-mono text-slate-300 mt-0.5">
-                      +{prizeTable.second} AP
-                    </div>
+                    <div className="text-base font-bold font-mono text-slate-300 mt-0.5">+{prizeTable.second} AP</div>
                   </div>
                   <div className="p-2.5 rounded-lg bg-background/80 border border-border text-center">
                     <div className="text-muted-foreground">Demi-finalistes (Top 4)</div>
-                    <div className="text-base font-bold font-mono text-amber-600 mt-0.5">
-                      +{prizeTable.semi} AP
-                    </div>
+                    <div className="text-base font-bold font-mono text-amber-600 mt-0.5">+{prizeTable.semi} AP</div>
                   </div>
                 </div>
               </div>
@@ -616,7 +582,7 @@ export default function TournamentCreationPage() {
                   id="route-create-tournament-create-client-tsx-5"
                   type="datetime-local"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={e => setStartDate(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
@@ -634,7 +600,7 @@ export default function TournamentCreationPage() {
                   id="route-create-tournament-create-client-tsx-6"
                   type="datetime-local"
                   value={grandFinalDate}
-                  onChange={(e) => setGrandFinalDate(e.target.value)}
+                  onChange={e => setGrandFinalDate(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -647,8 +613,8 @@ export default function TournamentCreationPage() {
                 Phases automatisées (facultatif)
               </div>
               <p className="text-xs text-muted-foreground">
-                Sans dates renseignées, l'ouverture, la fermeture et le lancement s'effectuent
-                manuellement par les organisateurs.
+                Sans dates renseignées, l'ouverture, la fermeture et le lancement s'effectuent manuellement par les
+                organisateurs.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -663,7 +629,7 @@ export default function TournamentCreationPage() {
                     id="route-create-tournament-create-client-tsx-7"
                     type="datetime-local"
                     value={regOpensAt}
-                    onChange={(e) => setRegOpensAt(e.target.value)}
+                    onChange={e => setRegOpensAt(e.target.value)}
                     className="w-full px-3 py-2 text-xs bg-card border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -679,37 +645,31 @@ export default function TournamentCreationPage() {
                     id="route-create-tournament-create-client-tsx-8"
                     type="datetime-local"
                     value={regClosesAt}
-                    onChange={(e) => setRegClosesAt(e.target.value)}
+                    onChange={e => setRegClosesAt(e.target.value)}
                     className="w-full px-3 py-2 text-xs bg-card border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                <span className="text-xs font-medium text-foreground">
-                  Démarrage automatique à l'heure H
-                </span>
+                <span className="text-xs font-medium text-foreground">Démarrage automatique à l'heure H</span>
                 <input
                   type="checkbox"
                   checked={autoStart}
-                  onChange={(e) => setAutoStart(e.target.checked)}
+                  onChange={e => setAutoStart(e.target.checked)}
                   className="w-4 h-4 accent-primary rounded cursor-pointer"
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-medium text-foreground">
-                    Rôle Discord automatique
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Attribue un rôle Discord aux joueurs inscrits
-                  </div>
+                  <div className="text-xs font-medium text-foreground">Rôle Discord automatique</div>
+                  <div className="text-xs text-muted-foreground">Attribue un rôle Discord aux joueurs inscrits</div>
                 </div>
                 <input
                   type="checkbox"
                   checked={discordRole}
-                  onChange={(e) => setDiscordRole(e.target.checked)}
+                  onChange={e => setDiscordRole(e.target.checked)}
                   className="w-4 h-4 accent-primary rounded cursor-pointer"
                 />
               </div>
@@ -722,7 +682,7 @@ export default function TournamentCreationPage() {
                 Politique de saisie des scores de match
               </p>
               <div className="grid grid-cols-1 gap-2.5">
-                {SCORE_REPORT_OPTIONS.map((opt) => (
+                {SCORE_REPORT_OPTIONS.map(opt => (
                   <label
                     aria-label={opt.label}
                     key={opt.value}
@@ -742,9 +702,7 @@ export default function TournamentCreationPage() {
                     />
                     <div className="space-y-0.5">
                       <div className="text-xs font-bold text-foreground">{opt.label}</div>
-                      <div className="text-xs text-muted-foreground leading-relaxed">
-                        {opt.description}
-                      </div>
+                      <div className="text-xs text-muted-foreground leading-relaxed">{opt.description}</div>
                     </div>
                   </label>
                 ))}
@@ -763,10 +721,10 @@ export default function TournamentCreationPage() {
                 <select
                   id="route-create-tournament-create-client-tsx-11"
                   value={seedOrdering}
-                  onChange={(e) => setSeedOrdering(e.target.value as SeedOrdering)}
+                  onChange={e => setSeedOrdering(e.target.value as SeedOrdering)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  {SEED_ORDERING_OPTIONS.map((opt) => (
+                  {SEED_ORDERING_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -786,7 +744,7 @@ export default function TournamentCreationPage() {
                   type="url"
                   placeholder="https://docs.google.com/..."
                   value={planningUrl}
-                  onChange={(e) => setPlanningUrl(e.target.value)}
+                  onChange={e => setPlanningUrl(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -797,9 +755,7 @@ export default function TournamentCreationPage() {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-amber-500" />
                 <div>
-                  <div className="text-xs font-bold text-foreground">
-                    Déroger aux règles de préavis
-                  </div>
+                  <div className="text-xs font-bold text-foreground">Déroger aux règles de préavis</div>
                   <div className="text-xs text-muted-foreground">
                     Publication immédiate sans délai minimum de 7 jours (Admin)
                   </div>
@@ -808,7 +764,7 @@ export default function TournamentCreationPage() {
               <input
                 type="checkbox"
                 checked={bypassRules}
-                onChange={(e) => setBypassRules(e.target.checked)}
+                onChange={e => setBypassRules(e.target.checked)}
                 className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
               />
             </div>
@@ -832,7 +788,7 @@ export default function TournamentCreationPage() {
                     src={logo}
                     alt="Aperçu logo"
                     className="w-16 h-16 rounded-xl object-cover bg-muted border border-border shadow-sm shrink-0"
-                    onError={(e) => {
+                    onError={e => {
                       (e.target as HTMLElement).style.display = "none";
                     }}
                   />
@@ -846,7 +802,7 @@ export default function TournamentCreationPage() {
                   type="url"
                   placeholder="https://.../logo.png"
                   value={logo}
-                  onChange={(e) => setLogo(e.target.value)}
+                  onChange={e => setLogo(e.target.value)}
                   className="flex-1 px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -866,7 +822,7 @@ export default function TournamentCreationPage() {
                   type="url"
                   placeholder="https://.../banniere.webp"
                   value={affiche}
-                  onChange={(e) => setAffiche(e.target.value)}
+                  onChange={e => setAffiche(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 {affiche && (
@@ -875,7 +831,7 @@ export default function TournamentCreationPage() {
                       src={affiche}
                       alt="Aperçu affiche"
                       className="w-full h-48 object-cover"
-                      onError={(e) => {
+                      onError={e => {
                         (e.target as HTMLElement).style.display = "none";
                       }}
                     />
@@ -897,7 +853,7 @@ export default function TournamentCreationPage() {
                 rows={6}
                 placeholder="Spécifiez les restrictions d'équipes, cartes bannies, déroulement des contestations..."
                 value={ruleset}
-                onChange={(e) => setRuleset(e.target.value)}
+                onChange={e => setRuleset(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs"
               />
             </div>
@@ -942,11 +898,7 @@ export default function TournamentCreationPage() {
                 disabled={submitting}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-primary/90 transition shadow-sm disabled:opacity-50"
               >
-                {submitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )}
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 Créer et publier le tournoi
               </button>
             )}

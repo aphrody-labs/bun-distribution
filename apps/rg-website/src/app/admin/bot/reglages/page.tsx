@@ -12,9 +12,9 @@ import { FormulaireReglages } from "./FormulaireReglages";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-	description:
-		"Niveaux, tickets, journal de modération, accueil, suggestions et jetons Kizuna — les réglages que le bot applique sur le serveur.",
-	title: "Réglages du bot — Administration",
+  description:
+    "Niveaux, tickets, journal de modération, accueil, suggestions et jetons Kizuna — les réglages que le bot applique sur le serveur.",
+  title: "Réglages du bot — Administration",
 };
 
 /**
@@ -29,38 +29,37 @@ export const metadata = {
  * serveur sur les défauts sans le moindre signal.
  */
 export default async function ReglagesBotPage() {
-	const { role } = await requireAdmin();
+  const { role } = await requireAdmin();
 
-	const [reglages, annuaire] = await Promise.all([
-		lireReglagesGuilde(RG_GUILD_ID),
-		annuaireGuilde(RG_GUILD_ID),
-	]);
+  const [reglages, annuaire] = await Promise.all([lireReglagesGuilde(RG_GUILD_ID), annuaireGuilde(RG_GUILD_ID)]);
 
-	return (
-		<div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-			<AdminPageHeader
-				breadcrumbs={[
-					{ href: "/admin", label: "Administration" },
-					{ href: "/admin/bot", label: "Bot Discord" },
-					{ label: "Réglages" },
-				]}
-				icon={<Settings2 className="size-5" />}
-				title="Réglages de communauté"
-				description={
-					reglages.parDefaut
-						? "Ce serveur n'a jamais rien réglé : le bot applique ses défauts et ne publie nulle part."
-						: reglages.majLe ? `Dernière modification ${new Date(reglages.majLe).toLocaleString("fr-FR")}.` : "Date de modification non renseignée."
-				}
-			/>
+  return (
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <AdminPageHeader
+        breadcrumbs={[
+          { href: "/admin", label: "Administration" },
+          { href: "/admin/bot", label: "Bot Discord" },
+          { label: "Réglages" },
+        ]}
+        icon={<Settings2 className="size-5" />}
+        title="Réglages de communauté"
+        description={
+          reglages.parDefaut
+            ? "Ce serveur n'a jamais rien réglé : le bot applique ses défauts et ne publie nulle part."
+            : reglages.majLe
+              ? `Dernière modification ${new Date(reglages.majLe).toLocaleString("fr-FR")}.`
+              : "Date de modification non renseignée."
+        }
+      />
 
-			<FormulaireReglages
-				guildId={RG_GUILD_ID}
-				initiaux={reglages.reglages}
-				salons={annuaire.salons}
-				roles={annuaire.roles}
-				erreurAnnuaire={annuaire.erreur}
-				peutReinitialiser={role === "admin"}
-			/>
-		</div>
-	);
+      <FormulaireReglages
+        guildId={RG_GUILD_ID}
+        initiaux={reglages.reglages}
+        salons={annuaire.salons}
+        roles={annuaire.roles}
+        erreurAnnuaire={annuaire.erreur}
+        peutReinitialiser={role === "admin"}
+      />
+    </div>
+  );
 }

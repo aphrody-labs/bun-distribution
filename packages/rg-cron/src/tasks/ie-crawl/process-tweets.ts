@@ -159,15 +159,8 @@ Règles Azalée:
       temperature: 0.12,
       maxTokens: 1200,
     });
-    if (
-      res.ok &&
-      res.content &&
-      res.content.trim().length > 3 &&
-      !/no-token|error|désolé/i.test(res.content)
-    ) {
-      console.log(
-        `[Azalee+Grok] Traduction Grok utilisée pour tweet ${from}->${to} (sync glossaire Azalée)`,
-      );
+    if (res.ok && res.content && res.content.trim().length > 3 && !/no-token|error|désolé/i.test(res.content)) {
+      console.log(`[Azalee+Grok] Traduction Grok utilisée pour tweet ${from}->${to} (sync glossaire Azalée)`);
       return res.content.trim();
     }
   } catch (e) {
@@ -270,12 +263,10 @@ export async function processTweets() {
             const storagePath = `${tweet.id}/${tweet.id}_${i}.${ext}`;
             console.log(`[Media] Uploading to Storage: tweets/${storagePath}`);
 
-            const { error: uploadErr } = await db.storage
-              .from("tweets")
-              .upload(storagePath, buffer, {
-                contentType,
-                upsert: true,
-              });
+            const { error: uploadErr } = await db.storage.from("tweets").upload(storagePath, buffer, {
+              contentType,
+              upsert: true,
+            });
 
             if (uploadErr) {
               console.error(`[Media] Upload failed:`, uploadErr);
@@ -316,9 +307,7 @@ export async function processTweets() {
             if (Array.isArray(updatedRt.media)) {
               updatedRt.media = updatedRt.media.map((m: any) => {
                 if (m && typeof m.url === "string") {
-                  const match = updatedMedia.find(
-                    (um) => um.original_url === m.url || um.url === m.url,
-                  );
+                  const match = updatedMedia.find(um => um.original_url === m.url || um.url === m.url);
                   if (match) {
                     return { ...m, url: match.url };
                   }
@@ -336,11 +325,7 @@ export async function processTweets() {
                 const rtSourceLang = rtIsJa ? "ja" : "en";
                 const rtReplacements = rtIsJa ? jpReplacements : enReplacements;
                 if (tweet.author_username === "AkihiroHino" || rtIsJa) {
-                  updatedRt.translation = await translateWithGrok(
-                    updatedRt.text,
-                    rtSourceLang,
-                    "fr",
-                  );
+                  updatedRt.translation = await translateWithGrok(updatedRt.text, rtSourceLang, "fr");
                   if (rtReplacements.length > 0) {
                     updatedRt.translation = await translateWithGlossary(
                       updatedRt.translation,
@@ -415,9 +400,7 @@ export async function processTweets() {
           category = "patch-note";
         } else if (/fan|communauté|fan-art|dessin|concours|création/i.test(lowerText)) {
           category = "fan-content";
-        } else if (
-          /trailer|pv|vidéo|scan|média|teaser|illustration|image|screenshot/i.test(lowerText)
-        ) {
+        } else if (/trailer|pv|vidéo|scan|média|teaser|illustration|image|screenshot/i.test(lowerText)) {
           category = "media";
         } else {
           category = "news";

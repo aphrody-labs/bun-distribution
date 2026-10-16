@@ -27,11 +27,7 @@ export default async function ProfilPage() {
   // fermeture PII : la lecture se fait en service-role, filtrée sur l'id de la
   // session vérifiée juste au-dessus.
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("username")
-    .eq("id", session.user.id)
-    .maybeSingle();
+  const { data: profile } = await admin.from("profiles").select("username").eq("id", session.user.id).maybeSingle();
 
   const username = typeof profile?.username === "string" ? profile.username : "";
   redirect(username ? `/profil/${username}` : "/settings");

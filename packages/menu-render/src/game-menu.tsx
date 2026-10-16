@@ -210,8 +210,7 @@ const ObjectNode = ({ animDelay, assetBase, obj, override }: ObjectNodeProps): R
   const ref = useRef<HTMLDivElement>(null);
 
   // Texte piloté par la logique Lua (SetText/SetNumericDisplay) — sinon valeur statique.
-  const liveText =
-    override?.text ?? (override?.number !== undefined ? String(override.number) : undefined);
+  const liveText = override?.text ?? (override?.number !== undefined ? String(override.number) : undefined);
 
   // Dimensions de l'element = sprite ou primitive ou taille texte estimee
   const spriteW = obj.sprite?.w ?? obj.primitive?.w ?? DEFAULT_SPRITE_W;
@@ -265,11 +264,7 @@ const ObjectNode = ({ animDelay, assetBase, obj, override }: ObjectNodeProps): R
 
       {/* Primitive CMenuCreatePrimitiveComponent */}
       {!obj.sprite && obj.primitive && (
-        <PrimitiveBox
-          type={obj.primitive.type}
-          color={obj.primitive.color}
-          alpha={obj.primitive.alpha}
-        />
+        <PrimitiveBox type={obj.primitive.type} color={obj.primitive.color} alpha={obj.primitive.alpha} />
       )}
 
       {/* Texte MenuTextSetting */}
@@ -370,13 +365,7 @@ export interface GameMenuProps {
  * <GameMenu layout={layout} assetBase="https://cdn.rosegriffon.fr" />
  * ```
  */
-export const GameMenu = ({
-  assetBase,
-  className,
-  layout,
-  style,
-  overrides,
-}: GameMenuProps): ReactNode => {
+export const GameMenu = ({ assetBase, className, layout, style, overrides }: GameMenuProps): ReactNode => {
   const outerRef = useRef<HTMLDivElement>(null);
   const scale = useContainerScale(outerRef);
 

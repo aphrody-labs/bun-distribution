@@ -96,9 +96,7 @@ export async function loadSuperTacticsBaseConfigAsync(dataPath: string = DATA_RO
   return parseEntries(content.entries);
 }
 
-export async function buildSuperTacticsBaseDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<SuperTacticsBaseDatabase> {
+export async function buildSuperTacticsBaseDatabase(dataPath: string = DATA_ROOT): Promise<SuperTacticsBaseDatabase> {
   const result = await loadSuperTacticsBaseConfigAsync(dataPath);
   return {
     effects: result?.effects || [],

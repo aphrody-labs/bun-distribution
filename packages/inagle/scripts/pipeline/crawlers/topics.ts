@@ -32,13 +32,7 @@ export async function scrapeTopicList(): Promise<TopicSummary[]> {
 
     // helper function to avoid duplicates and push
     const addTopic = (topic: TopicSummary) => {
-      if (
-        !topic.id ||
-        topics.find((t) => t.id === topic.id) ||
-        topic.id === "fr" ||
-        topic.id === "topics"
-      )
-        return;
+      if (!topic.id || topics.find(t => t.id === topic.id) || topic.id === "fr" || topic.id === "topics") return;
       topics.push(topic);
     };
 
@@ -96,9 +90,7 @@ export async function scrapeTopicList(): Promise<TopicSummary[]> {
 
         if (!href || !title) return;
 
-        const absoluteUrl = href.startsWith("http")
-          ? href
-          : new URL(href, `${BASE_URL}/`).toString();
+        const absoluteUrl = href.startsWith("http") ? href : new URL(href, `${BASE_URL}/`).toString();
 
         const id = absoluteUrl.split("/").filter(Boolean).pop() || "";
 

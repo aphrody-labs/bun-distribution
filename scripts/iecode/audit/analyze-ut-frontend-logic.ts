@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
 
-const js = fs.readFileSync("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js", "utf8");
+const js = await Bun.file("var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets/index-BJtdwxwy.js").text();
 
 function searchKeyword(keyword: string, window = 400) {
   let idx = 0;

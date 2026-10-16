@@ -39,12 +39,7 @@ export type GameFamily =
 
 export type CanonicalMediaKind = "episode" | "film" | "game_video" | "manga_volume" | "special";
 
-export type RustRuntimeRole =
-  | "emulator"
-  | "game_runtime"
-  | "format_reader"
-  | "media_player"
-  | "catalog";
+export type RustRuntimeRole = "emulator" | "game_runtime" | "format_reader" | "media_player" | "catalog";
 
 export interface RustRuntimeLink {
   /** Stable identifier for the Rust capability closest to this content. */

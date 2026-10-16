@@ -66,12 +66,7 @@ export function blendForDrawType(drawType: number): BlendState {
  * Pur (aucune dépendance GPU) — c'est exactement le calcul du vertex shader, exposé pour
  * la vérification headless.
  */
-export function projectOrtho(
-  px: number,
-  py: number,
-  canvasW: number,
-  canvasH: number,
-): { x: number; y: number } {
+export function projectOrtho(px: number, py: number, canvasW: number, canvasH: number): { x: number; y: number } {
   return {
     x: (2 * px) / canvasW - 1,
     y: 1 - (2 * py) / canvasH,

@@ -38,8 +38,7 @@ const PAGES = {
   "patch-notes-detail": "http://127.0.0.1:3003/patch-notes/ps-steam_ver_1_4_2",
 };
 
-const ARTIFACT_DIR =
-  "/home/ubuntu/.gemini/antigravity-cli/brain/55f253a8-fe2a-43f0-a9de-53e6b7a11964/screenshots";
+const ARTIFACT_DIR = "/home/ubuntu/.gemini/antigravity-cli/brain/55f253a8-fe2a-43f0-a9de-53e6b7a11964/screenshots";
 const DOCS_DIR = "/home/ubuntu/rg/docs/tools/screenshots";
 
 mkdirSync(ARTIFACT_DIR, { recursive: true });

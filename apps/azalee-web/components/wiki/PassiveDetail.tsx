@@ -86,7 +86,7 @@ export function PassiveDetailView({ passive }: { passive: PassiveDetailData }) {
   const catLabel = PASSIVE_CATEGORY_LABELS[passive.category] ?? passive.category;
 
   // Courbe d'effets : toutes les valeurs de la famille (effet partagé).
-  const curve = passive.family.filter((f) => f.main_value !== null);
+  const curve = passive.family.filter(f => f.main_value !== null);
   const currentId = passive.passive_id;
 
   return (
@@ -165,10 +165,7 @@ export function PassiveDetailView({ passive }: { passive: PassiveDetailData }) {
             ] as const
           ).map(([lang, txt]) =>
             txt ? (
-              <div
-                key={lang}
-                className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4"
-              >
+              <div key={lang} className="rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">
                   {lang}
                 </div>
@@ -192,25 +189,21 @@ export function PassiveDetailView({ passive }: { passive: PassiveDetailData }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-surface-container-high text-on-surface-variant">
-                  <th className="text-left font-bold px-4 py-2.5 text-xs uppercase tracking-wider">
-                    Valeur
-                  </th>
+                  <th className="text-left font-bold px-4 py-2.5 text-xs uppercase tracking-wider">Valeur</th>
                   <th className="text-left font-bold px-4 py-2.5 text-xs uppercase tracking-wider hidden md:table-cell">
                     Texte
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {curve.map((f) => {
+                {curve.map(f => {
                   const isCurrent = f.passive_id === currentId;
                   return (
                     <tr
                       key={f.passive_id}
                       className={cn(
                         "border-t border-outline-variant/20",
-                        isCurrent
-                          ? "bg-primary/10"
-                          : "hover:bg-surface-container-low transition-colors",
+                        isCurrent ? "bg-primary/10" : "hover:bg-surface-container-low transition-colors",
                       )}
                     >
                       <td className="px-4 py-2.5 font-mono font-bold text-on-surface whitespace-nowrap">

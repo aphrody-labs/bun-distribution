@@ -105,19 +105,18 @@ export const CANONICAL_GAME_FAMILIES: readonly WorkRef[] = [
 ];
 
 /** Release/edition anchors. Patch numbers belong here only after a measured source is recorded. */
-export const CANONICAL_GAME_RELEASES: readonly GameRelease[] = CANONICAL_GAME_FAMILIES.flatMap(
-  (work) =>
-    (work.platforms ?? []).map((platform) => ({
-      id: `${work.id}:${platform}`,
-      work,
-      family: work.series ?? "other",
-      platform,
-      title: work.title,
-      acquisition: "official_purchase" as const,
-      region: null,
-    })),
+export const CANONICAL_GAME_RELEASES: readonly GameRelease[] = CANONICAL_GAME_FAMILIES.flatMap(work =>
+  (work.platforms ?? []).map(platform => ({
+    id: `${work.id}:${platform}`,
+    work,
+    family: work.series ?? "other",
+    platform,
+    title: work.title,
+    acquisition: "official_purchase" as const,
+    region: null,
+  })),
 );
 
 export function gamesForPlatform(platform: GamePlatform): WorkRef[] {
-  return CANONICAL_GAME_FAMILIES.filter((work) => work.platforms?.includes(platform));
+  return CANONICAL_GAME_FAMILIES.filter(work => work.platforms?.includes(platform));
 }

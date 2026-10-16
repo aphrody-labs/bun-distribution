@@ -1,9 +1,6 @@
 type ConsoleId = "dust" | "wii" | "switch" | "ctr";
 
-const consoleStatus: Record<
-  Exclude<ConsoleId, "dust" | "wii">,
-  { title: string; message: string }
-> = {
+const consoleStatus: Record<Exclude<ConsoleId, "dust" | "wii">, { title: string; message: string }> = {
   switch: {
     title: "Switch",
     message: "Not available yet.",

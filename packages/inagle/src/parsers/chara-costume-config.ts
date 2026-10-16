@@ -74,9 +74,7 @@ export async function loadCharaCostumeConfigAsync(dataPath: string = DATA_ROOT) 
   return parseEntries(content.entries);
 }
 
-export async function buildCharaCostumeDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<CharaCostumeDatabase> {
+export async function buildCharaCostumeDatabase(dataPath: string = DATA_ROOT): Promise<CharaCostumeDatabase> {
   const costumes = (await loadCharaCostumeConfigAsync(dataPath)) || [];
   const byIndex = new Map<number, CharaCostume>();
   for (const c of costumes) byIndex.set(c.index, c);

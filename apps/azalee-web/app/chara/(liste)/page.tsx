@@ -85,8 +85,7 @@ export default async function PlayersPage({
   } = params;
 
   const pageNumber = page ? parseInt(page.toString(), 10) : 1;
-  const itemsPerPage =
-    perPage && ALLOWED_PER_PAGE.has(Number(perPage)) ? Number(perPage) : DEFAULT_PER_PAGE;
+  const itemsPerPage = perPage && ALLOWED_PER_PAGE.has(Number(perPage)) ? Number(perPage) : DEFAULT_PER_PAGE;
 
   // Data First: Fetch paginated data from DB
   const { data: characters, total } = await wikiService.getCharactersList({
@@ -131,10 +130,7 @@ export default async function PlayersPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <WikiPageHeader
         icon="group"
         title="Personnages"

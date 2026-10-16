@@ -163,9 +163,7 @@ export function SkillDetail({
 
           {/* Title + Alt Names */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold font-heading text-on-surface leading-tight">
-              {name}
-            </h1>
+            <h1 className="text-2xl md:text-3xl font-bold font-heading text-on-surface leading-tight">{name}</h1>
             {(nameEN || nameJA) && (
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
                 {nameEN && nameEN !== name && (
@@ -196,13 +194,7 @@ export function SkillDetail({
           />
 
           {/* Description Box */}
-          <DescriptionBox
-            skill={skill}
-            desc={desc}
-            descEN={descEN}
-            descJA={descJA}
-            sheetData={sheetData}
-          />
+          <DescriptionBox skill={skill} desc={desc} descEN={descEN} descJA={descJA} sheetData={sheetData} />
         </div>
 
         {/* Right Column: Overdrive + Related Skills */}
@@ -218,7 +210,7 @@ export function SkillDetail({
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-on-surface px-1">À suivre</h3>
             <div className="space-y-3">
-              {relatedSkills.map((relSkill) => (
+              {relatedSkills.map(relSkill => (
                 <RelatedSkillItem key={relSkill.skillID} skill={relSkill} />
               ))}
             </div>
@@ -326,13 +318,7 @@ function MetaRow({
       <div className="flex items-center gap-3 flex-wrap">
         <div className="size-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant/10 overflow-hidden shrink-0">
           {elementIconUrl ? (
-            <Image
-              src={elementIconUrl}
-              alt={element}
-              width={24}
-              height={24}
-              className="object-contain"
-            />
+            <Image src={elementIconUrl} alt={element} width={24} height={24} className="object-contain" />
           ) : (
             <CircleDot size={18} className="text-on-surface-variant" aria-hidden="true" />
           )}
@@ -430,9 +416,7 @@ function DescriptionBox({
           </span>
         )}
         {(() => {
-          const evolution =
-            (skill as any).evolutionType ??
-            (skill.growthType !== undefined ? skill.growthSpeed : null);
+          const evolution = (skill as any).evolutionType ?? (skill.growthType !== undefined ? skill.growthSpeed : null);
           return evolution ? (
             <span className="inline-flex items-center gap-1.5">
               <TrendingUp size={16} className="text-secondary" aria-hidden="true" />
@@ -452,9 +436,7 @@ function DescriptionBox({
             {skill.recastTime} Recharge
           </span>
         )}
-        <span className="opacity-40 font-mono font-normal">
-          #{(skill as any).internalCode || skill.skillIDStr}
-        </span>
+        <span className="opacity-40 font-mono font-normal">#{(skill as any).internalCode || skill.skillIDStr}</span>
       </div>
 
       {/* Description FR */}
@@ -481,9 +463,7 @@ function DescriptionBox({
         <div className="border-t border-outline-variant/20 pt-3 mt-3 mb-2">
           <div className="flex items-center gap-1.5 mb-2">
             <Sparkles size={16} className="text-tertiary" aria-hidden="true" />
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">
-              Effets
-            </span>
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Effets</span>
           </div>
           <ul className="list-disc list-inside text-sm space-y-1">
             {sheetData.effects.map((eff: string, i: number) => (
@@ -506,19 +486,12 @@ function DescriptionBox({
             <div className="border-t border-outline-variant/20 pt-3 mt-3">
               <div className="flex items-center gap-1.5 mb-2">
                 <Store size={16} className="text-secondary" aria-hidden="true" />
-                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">
-                  Obtention
-                </span>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Obtention</span>
               </div>
               <div className="space-y-2">
                 {recipes.map((recipe, i) => (
-                  <div
-                    key={i}
-                    className="p-2 rounded-lg bg-surface-container-high/50 border border-outline-variant/10"
-                  >
-                    <div className="text-[10px] font-bold text-on-surface-variant/60 uppercase mb-1">
-                      {recipe.shop}
-                    </div>
+                  <div key={i} className="p-2 rounded-lg bg-surface-container-high/50 border border-outline-variant/10">
+                    <div className="text-[10px] font-bold text-on-surface-variant/60 uppercase mb-1">{recipe.shop}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {recipe.costs.map((cost, j) => (
                         <span
@@ -541,9 +514,7 @@ function DescriptionBox({
             <div className="border-t border-outline-variant/20 pt-3 mt-3">
               <div className="flex items-center gap-1.5 mb-2">
                 <Store size={16} className="text-secondary" aria-hidden="true" />
-                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">
-                  Obtention
-                </span>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Obtention</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {skill.shops?.fr?.map((shop: string, i: number) => (

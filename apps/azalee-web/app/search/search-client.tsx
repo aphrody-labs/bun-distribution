@@ -73,7 +73,7 @@ function WikiGrid() {
     <section className="space-y-3">
       <h2 className="type-title-small text-on-surface-variant px-1">Base de données</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {WIKI_SECTIONS.map((section) => (
+        {WIKI_SECTIONS.map(section => (
           <Link
             key={section.href}
             href={section.href}
@@ -142,7 +142,7 @@ export function SearchClient({ defaultQuery }: { defaultQuery?: string }) {
     const timer = setTimeout(async () => {
       try {
         const data = await searchGlobal(query);
-        setResolved({ query, results: data.filter((r) => r.type !== "suggestion") });
+        setResolved({ query, results: data.filter(r => r.type !== "suggestion") });
       } catch {
         setResolved({ query, results: [] });
       }
@@ -174,14 +174,7 @@ export function SearchClient({ defaultQuery }: { defaultQuery?: string }) {
       {showLanding && (
         <div className="flex flex-col items-center pt-4 sm:pt-10 pb-4 sm:pb-8">
           <div className="relative size-14 sm:size-20 mb-3 sm:mb-4">
-            <Image
-              src="/logo.webp"
-              fill
-              sizes="80px"
-              alt="Azalée"
-              className="object-contain"
-              priority
-            />
+            <Image src="/logo.webp" fill sizes="80px" alt="Azalée" className="object-contain" priority />
           </div>
         </div>
       )}
@@ -211,7 +204,7 @@ export function SearchClient({ defaultQuery }: { defaultQuery?: string }) {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher sur Azalée..."
             autoComplete="off"
             className="flex-1 bg-transparent outline-hidden type-body-large text-on-surface placeholder:text-on-surface-variant/50 min-w-0"
@@ -243,7 +236,7 @@ export function SearchClient({ defaultQuery }: { defaultQuery?: string }) {
       {/* Results */}
       {hasResults && (
         <div className="mt-2 -mx-4 md:mx-0">
-          {results.map((result) => (
+          {results.map(result => (
             <SearchResultRow
               key={`${result.type}-${result.id}`}
               result={result}
@@ -258,9 +251,7 @@ export function SearchClient({ defaultQuery }: { defaultQuery?: string }) {
       {showEmpty && (
         <div className="mt-16 text-center space-y-3">
           <Icon name="search_off" size={48} className="text-on-surface-variant/30 mx-auto" />
-          <p className="type-body-large text-on-surface-variant">
-            Aucun résultat pour &laquo; {query} &raquo;
-          </p>
+          <p className="type-body-large text-on-surface-variant">Aucun résultat pour &laquo; {query} &raquo;</p>
         </div>
       )}
     </div>

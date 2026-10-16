@@ -29,10 +29,10 @@
  * qui ouvre `bun:sqlite`, précisément ce qu'on évite.
  */
 import {
-	createAzaleeClient,
-	isAzaleeNotFound,
-	isAzaleeRemoteError,
-	type AzaleeClient,
+  createAzaleeClient,
+  isAzaleeNotFound,
+  isAzaleeRemoteError,
+  type AzaleeClient,
 } from "@rosegriffon/azalee/remote";
 
 /**
@@ -51,23 +51,23 @@ let client: AzaleeClient | null = null;
  * démarrage du bot ne doit pas dépendre de la disponibilité d'un autre service.
  */
 export function azalee(): AzaleeClient {
-	// Les retries couvrent un reload court de l'API unifiée : 800 ms → 1,6 s
-	// → 3,2 s évite un échec transitoire de commande, et
-	// `ECONNREFUSED` est bien classé réessayable par le transport.
-	client ??= createAzaleeClient({
-		baseUrl: URL_API_AZALEE,
-		timeoutMs: 8_000,
-		attempts: 4,
-		retryDelayMs: 800,
-	});
-	return client;
+  // Les retries couvrent un reload court de l'API unifiée : 800 ms → 1,6 s
+  // → 3,2 s évite un échec transitoire de commande, et
+  // `ECONNREFUSED` est bien classé réessayable par le transport.
+  client ??= createAzaleeClient({
+    baseUrl: URL_API_AZALEE,
+    timeoutMs: 8_000,
+    attempts: 4,
+    retryDelayMs: 800,
+  });
+  return client;
 }
 
 export { isAzaleeNotFound, isAzaleeRemoteError };
 
 /** Lien vers une page du wiki. */
 export function urlWiki(chemin: string): string {
-	return `${URL_WIKI_AZALEE}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
+  return `${URL_WIKI_AZALEE}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
 }
 
 /**
@@ -85,7 +85,7 @@ export function urlWiki(chemin: string): string {
  * pour rattraper ; un embed Discord n'en a pas.
  */
 export function corrigerNomDouble(url: string): string {
-	return url.replace(/\/([^/]+)_\1(\.[a-z0-9]+)$/i, "/$1$2");
+  return url.replace(/\/([^/]+)_\1(\.[a-z0-9]+)$/i, "/$1$2");
 }
 
 /**
@@ -95,22 +95,20 @@ export function corrigerNomDouble(url: string): string {
  * visuel n'existe : le poser dans un embed produirait une image cassée.
  */
 export function illustrationAbsolue(url: string | null | undefined): string | null {
-	if (typeof url !== "string") {
-		return null;
-	}
-	const propre = url.trim();
-	return propre.startsWith("https://") || propre.startsWith("http://")
-		? corrigerNomDouble(propre)
-		: null;
+  if (typeof url !== "string") {
+    return null;
+  }
+  const propre = url.trim();
+  return propre.startsWith("https://") || propre.startsWith("http://") ? corrigerNomDouble(propre) : null;
 }
 
 /** Message d'erreur lisible pour un salon, sans pile d'appels. */
 export function messageErreurAzalee(err: unknown): string {
-	if (isAzaleeNotFound(err)) {
-		return "Introuvable dans le wiki.";
-	}
-	if (isAzaleeRemoteError(err)) {
-		return `API Azalée injoignable (${URL_API_AZALEE}) — ${err.message}`;
-	}
-	return err instanceof Error ? err.message : String(err);
+  if (isAzaleeNotFound(err)) {
+    return "Introuvable dans le wiki.";
+  }
+  if (isAzaleeRemoteError(err)) {
+    return `API Azalée injoignable (${URL_API_AZALEE}) — ${err.message}`;
+  }
+  return err instanceof Error ? err.message : String(err);
 }

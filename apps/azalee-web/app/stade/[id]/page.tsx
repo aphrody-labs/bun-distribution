@@ -7,11 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStadium } from "@/lib/wiki/stadiums";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const stadium = await getStadium(id);
 
@@ -59,10 +55,7 @@ export default async function StadiumDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="w-full space-y-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
@@ -94,9 +87,7 @@ export default async function StadiumDetailPage({ params }: { params: Promise<{ 
           <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/60">
             Terrain de match
           </span>
-          <h1 className="text-2xl lg:text-3xl font-black text-on-surface tracking-tight">
-            {stadium.title}
-          </h1>
+          <h1 className="text-2xl lg:text-3xl font-black text-on-surface tracking-tight">{stadium.title}</h1>
         </div>
 
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">

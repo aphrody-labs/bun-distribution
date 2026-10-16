@@ -30,9 +30,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
       provider_name: "Rose Griffon",
     });
 
-    const discovery = await app.handle(
-      new Request("http://localhost/.well-known/agent-configuration"),
-    );
+    const discovery = await app.handle(new Request("http://localhost/.well-known/agent-configuration"));
     expect(discovery.status).toBe(200);
     expect((await discovery.json()) as { provider_name: string }).toMatchObject({
       provider_name: "Rose Griffon",
@@ -66,9 +64,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
 
   it("GET /v1/achillea/tournaments applies public organization and state filters to data and total", async () => {
     const absent = await app.handle(
-      new Request(
-        "http://localhost/v1/achillea/tournaments?organization=2147483647&states=Finished&pageSize=1",
-      ),
+      new Request("http://localhost/v1/achillea/tournaments?organization=2147483647&states=Finished&pageSize=1"),
     );
     expect(absent.status).toBe(200);
     const empty = (await absent.json()) as { data: unknown[]; meta: { total: number } };
@@ -80,9 +76,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     const detail = await api.v1.achillea.tournaments({ id: first.id }).get();
     const organization = detail.data?.[0]?.organization;
     const organizationId =
-      organization && typeof organization === "object" && "id" in organization
-        ? Number(organization.id)
-        : null;
+      organization && typeof organization === "object" && "id" in organization ? Number(organization.id) : null;
     if (organizationId === null) return;
     const response = await app.handle(
       new Request(
@@ -101,9 +95,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/achillea/tournaments/circuit/ranking returns the unified circuit projection", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/v1/achillea/tournaments/circuit/ranking"),
-    );
+    const res = await app.handle(new Request("http://localhost/v1/achillea/tournaments/circuit/ranking"));
     expect(res.status).toBe(200);
     const data = (await res.json()) as {
       leaderboard?: unknown[];
@@ -193,9 +185,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("tournament score policy mutation requires the unified session", async () => {
-    const res = await api.v1.achillea
-      .tournaments({ id: 99999999 })
-      ["score-policy"].post({ policy: "players" });
+    const res = await api.v1.achillea.tournaments({ id: 99999999 })["score-policy"].post({ policy: "players" });
     expect(res.status).toBe(401);
   });
 
@@ -304,10 +294,9 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
 
   it("internal tournament placement trigger requires API_ADMIN_TOKEN", async () => {
     const res = await app.handle(
-      new Request(
-        "http://localhost/v1/achillea/tournaments/internal/99999999/apply-placement-prizes",
-        { method: "POST" },
-      ),
+      new Request("http://localhost/v1/achillea/tournaments/internal/99999999/apply-placement-prizes", {
+        method: "POST",
+      }),
     );
     expect(res.status).toBe(401);
   });
@@ -332,20 +321,14 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("admin users and wallets read contracts require the unified session", async () => {
-    const users = await app.handle(
-      new Request("http://localhost/v1/achillea/admin/ops/users?page=1&pagination=25"),
-    );
-    const wallets = await app.handle(
-      new Request("http://localhost/v1/achillea/admin/ops/wallets?limit=25"),
-    );
+    const users = await app.handle(new Request("http://localhost/v1/achillea/admin/ops/users?page=1&pagination=25"));
+    const wallets = await app.handle(new Request("http://localhost/v1/achillea/admin/ops/wallets?limit=25"));
     expect(users.status).toBe(401);
     expect(wallets.status).toBe(401);
   });
 
   it("admin overview is owned by the unified API", async () => {
-    const overview = await app.handle(
-      new Request("http://localhost/v1/achillea/admin/ops/overview"),
-    );
+    const overview = await app.handle(new Request("http://localhost/v1/achillea/admin/ops/overview"));
     expect(overview.status).toBe(401);
   });
 
@@ -412,9 +395,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     const list = await api.v1.achillea.clans.get();
     const id = list.data?.data[0]?.id;
     if (id === undefined) return;
-    const response = await app.handle(
-      new Request(`http://localhost/v1/achillea/clans/${id}/members`),
-    );
+    const response = await app.handle(new Request(`http://localhost/v1/achillea/clans/${id}/members`));
     expect(response.status).toBe(200);
     const members = (await response.json()) as Array<Record<string, unknown>>;
     expect(Array.isArray(members)).toBe(true);
@@ -459,9 +440,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
 
   it("ranked endpoints reject unsupported match modes", async () => {
     for (const path of ["leaderboard", "tiers", "me"]) {
-      const response = await app.handle(
-        new Request(`http://localhost/v1/achillea/ranked/${path}?mode=3`),
-      );
+      const response = await app.handle(new Request(`http://localhost/v1/achillea/ranked/${path}?mode=3`));
       expect(response.status).toBe(400);
     }
   });
@@ -490,9 +469,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("organization review states require an administrator session", async () => {
-    const response = await app.handle(
-      new Request("http://localhost/v1/achillea/organizations?state=0"),
-    );
+    const response = await app.handle(new Request("http://localhost/v1/achillea/organizations?state=0"));
     expect(response.status).toBe(401);
   });
 
@@ -538,9 +515,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     });
     const userId = leaderboard.data?.entries[0]?.userId;
     if (!userId) return;
-    const res = await app.handle(
-      new Request(`http://localhost/v1/achillea/users/${encodeURIComponent(userId)}`),
-    );
+    const res = await app.handle(new Request(`http://localhost/v1/achillea/users/${encodeURIComponent(userId)}`));
     expect(res.status).toBe(200);
     const profile = (await res.json()) as {
       id?: string;
@@ -561,9 +536,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/achillea/users/me/ranked-history is owned by the unified API", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/v1/achillea/users/me/ranked-history?limit=20"),
-    );
+    const res = await app.handle(new Request("http://localhost/v1/achillea/users/me/ranked-history?limit=20"));
     expect(res.status).toBe(401);
   });
 
@@ -574,9 +547,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     const userId = leaderboard.data?.entries[0]?.userId;
     if (!userId) return;
     const response = await app.handle(
-      new Request(
-        `http://localhost/v1/achillea/users/${encodeURIComponent(userId)}/ranked-history?limit=5`,
-      ),
+      new Request(`http://localhost/v1/achillea/users/${encodeURIComponent(userId)}/ranked-history?limit=5`),
     );
     expect(response.status).toBe(200);
     const history = (await response.json()) as Array<{
@@ -585,7 +556,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     }>;
     expect(Array.isArray(history)).toBe(true);
     expect(history.length).toBeLessThanOrEqual(5);
-    expect(new Set(history.map((match) => match.lobbyId)).size).toBe(history.length);
+    expect(new Set(history.map(match => match.lobbyId)).size).toBe(history.length);
     for (const match of history) {
       expect(typeof match.lobbyId).toBe("number");
       expect(typeof match.opponent.userId).toBe("string");
@@ -593,9 +564,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/achillea/users/me/ranked-trend is owned by the unified API", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/v1/achillea/users/me/ranked-trend?days=7&last=20"),
-    );
+    const res = await app.handle(new Request("http://localhost/v1/achillea/users/me/ranked-trend?days=7&last=20"));
     expect(res.status).toBe(401);
   });
 
@@ -606,10 +575,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     const userId = leaderboard.data?.entries[0]?.userId;
     const secret = process.env.JWT_SECRET_KEY;
     if (!userId || !secret) return;
-    const token = signAchilleaSessionToken(
-      { id: userId, username: "contract-test", avatar: null },
-      secret,
-    );
+    const token = signAchilleaSessionToken({ id: userId, username: "contract-test", avatar: null }, secret);
     const history = await app.handle(
       new Request("http://localhost/v1/achillea/users/me/ranked-history?limit=20", {
         headers: { authorization: `Bearer ${token}` },
@@ -680,9 +646,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/auth/oauth/:provider/start rejects unauthenticated starts", async () => {
-    const res = await api.v1.auth
-      .oauth({ provider: "twitch" })
-      .start.get({ query: { userId: "user-1" } });
+    const res = await api.v1.auth.oauth({ provider: "twitch" }).start.get({ query: { userId: "user-1" } });
     expect(res.status).toBe(401);
     expect(res.error).toBeDefined();
   });
@@ -817,9 +781,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/inagle/skill-cutins/assets exposes the SQL CDN gate", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/v1/inagle/skill-cutins/assets/ev60_00340"),
-    );
+    const res = await app.handle(new Request("http://localhost/v1/inagle/skill-cutins/assets/ev60_00340"));
     expect(res.status).toBe(200);
     expect((await res.json()).available).toBe(true);
   });
@@ -858,9 +820,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
     const textStats = (await text.json()) as Array<{ category: string; count: number }>;
     expect(Array.isArray(textStats)).toBe(true);
     expect(textStats.length).toBeGreaterThan(0);
-    const search = await app.handle(
-      new Request("http://localhost/v1/azalee/api/text?q=Mark&locale=fr&limit=2"),
-    );
+    const search = await app.handle(new Request("http://localhost/v1/azalee/api/text?q=Mark&locale=fr&limit=2"));
     expect(search.status).toBe(200);
     const searchBody = (await search.json()) as { source: string; data: unknown[] };
     expect(searchBody.source).toBe("postgres");
@@ -868,9 +828,7 @@ describe.skipIf(!process.env.RG_TEST_DATABASE_URL)("Rose Griffon Unified API (ap
   });
 
   it("GET /v1/azalee/api/cross/catalog is SQL-backed", async () => {
-    const response = await app.handle(
-      new Request("http://localhost/v1/azalee/api/cross/catalog?limit=2"),
-    );
+    const response = await app.handle(new Request("http://localhost/v1/azalee/api/cross/catalog?limit=2"));
     expect(response.status).toBe(200);
     const body = (await response.json()) as { source: string; data: unknown[]; count: number };
     expect(body.source).toBe("postgres");

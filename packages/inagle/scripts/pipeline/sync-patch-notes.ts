@@ -32,8 +32,7 @@ async function syncPatchNotes() {
   }
 
   const pool = createPgPool(dbUrl, { applicationName: "inagle-patch-notes" });
-  const jsonPath =
-    process.env.PATCH_NOTES_JSON || iecodeDataPath("translations", "patch-notes-fr.json");
+  const jsonPath = process.env.PATCH_NOTES_JSON || iecodeDataPath("translations", "patch-notes-fr.json");
 
   console.log(`📖 Reading patch notes from: ${jsonPath}`);
   try {
@@ -67,9 +66,7 @@ async function syncPatchNotes() {
       const url = `https://www.inazuma.jp/victory-road/en/patchnote/`;
 
       // Check if row already exists
-      const { rows: existing } = await pool.query("SELECT id FROM patch_notes WHERE id = $1", [
-        key,
-      ]);
+      const { rows: existing } = await pool.query("SELECT id FROM patch_notes WHERE id = $1", [key]);
 
       if (existing.length > 0) {
         // Update existing
@@ -86,15 +83,7 @@ async function syncPatchNotes() {
           `INSERT INTO patch_notes 
 					 (id, title, date, platform, url, title_fr, content_html_fr, content_html, created_at, updated_at) 
 					 VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $7, NOW(), NOW())`,
-          [
-            key,
-            entry.title_fr,
-            date,
-            JSON.stringify(platform),
-            url,
-            entry.title_fr,
-            entry.content_html_fr,
-          ],
+          [key, entry.title_fr, date, JSON.stringify(platform), url, entry.title_fr, entry.content_html_fr],
         );
         insertedCount++;
       }

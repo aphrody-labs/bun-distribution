@@ -29,11 +29,7 @@ export function registerDbCommand(program: Command): void {
       try {
         const inputSql = await getOrReadInput(sql);
         if (!inputSql.trim()) {
-          reportError(
-            options.json,
-            "Requête SQL vide",
-            `${colors.red}Erreur: Requête SQL vide.${colors.reset}`,
-          );
+          reportError(options.json, "Requête SQL vide", `${colors.red}Erreur: Requête SQL vide.${colors.reset}`);
           return;
         }
 
@@ -59,9 +55,7 @@ export function registerDbCommand(program: Command): void {
           if (options.json) {
             console.log(JSON.stringify(results, null, 2));
           } else {
-            console.log(
-              `\n${colors.green}Résultats SQLite (${results.length} lignes) :${colors.reset}`,
-            );
+            console.log(`\n${colors.green}Résultats SQLite (${results.length} lignes) :${colors.reset}`);
             console.log(renderAsciiTable(results));
           }
           db.close();
@@ -89,18 +83,12 @@ export function registerDbCommand(program: Command): void {
           if (options.json) {
             console.log(JSON.stringify(res.rows, null, 2));
           } else {
-            console.log(
-              `\n${colors.green}Résultats PostgreSQL (${res.rowCount} lignes) :${colors.reset}`,
-            );
+            console.log(`\n${colors.green}Résultats PostgreSQL (${res.rowCount} lignes) :${colors.reset}`);
             console.log(renderAsciiTable(res.rows));
           }
         }
       } catch (e) {
-        reportError(
-          options.json,
-          errorMessage(e),
-          `${colors.red}Erreur SQL : ${errorMessage(e)}${colors.reset}`,
-        );
+        reportError(options.json, errorMessage(e), `${colors.red}Erreur SQL : ${errorMessage(e)}${colors.reset}`);
       }
     });
 }

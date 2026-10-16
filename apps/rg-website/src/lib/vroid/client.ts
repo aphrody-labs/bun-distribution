@@ -25,56 +25,56 @@
  */
 import { BASE_VROID, VERSION_API_VROID } from "./constantes";
 import type {
-	CompteVroid,
-	DetailModeleVroid,
-	EnrobageModele,
-	LicenceTelechargement,
-	ModeleVroid,
-	PageModeles,
-	ReponseVroid,
+  CompteVroid,
+  DetailModeleVroid,
+  EnrobageModele,
+  LicenceTelechargement,
+  ModeleVroid,
+  PageModeles,
+  ReponseVroid,
 } from "./types";
 
 /** Échec d'un appel à l'API VRoid Hub, statut HTTP conservé. */
 export class ErreurVroid extends Error {
-	constructor(
-		message: string,
-		/** Statut HTTP renvoyé (`0` si la requête n'a pas abouti). */
-		readonly statut: number,
-		/** Code d'erreur applicatif VRoid Hub, ex. `COMMON_SIGNED_IN_REQUIRED`. */
-		readonly code?: string
-	) {
-		super(message);
-		this.name = "ErreurVroid";
-	}
+  constructor(
+    message: string,
+    /** Statut HTTP renvoyé (`0` si la requête n'a pas abouti). */
+    readonly statut: number,
+    /** Code d'erreur applicatif VRoid Hub, ex. `COMMON_SIGNED_IN_REQUIRED`. */
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = "ErreurVroid";
+  }
 }
 
 /** L'appel demande une autorisation que l'internaute n'a pas encore donnée. */
 export function estNonAutorise(erreur: unknown): boolean {
-	return erreur instanceof ErreurVroid && (erreur.statut === 401 || erreur.statut === 403);
+  return erreur instanceof ErreurVroid && (erreur.statut === 401 || erreur.statut === 403);
 }
 
 /** Le quota d'appels de l'application non approuvée est épuisé. */
 export function estQuotaDepasse(erreur: unknown): boolean {
-	return erreur instanceof ErreurVroid && erreur.statut === 429;
+  return erreur instanceof ErreurVroid && erreur.statut === 429;
 }
 
 /** Options communes à tous les appels. */
 export interface OptionsAppel {
-	/** Jeton d'accès OAuth ; omis pour les endpoints publics. */
-	jeton?: string;
-	/** Annulation depuis l'appelant (route Next qui abandonne). */
-	signal?: AbortSignal;
+  /** Jeton d'accès OAuth ; omis pour les endpoints publics. */
+  jeton?: string;
+  /** Annulation depuis l'appelant (route Next qui abandonne). */
+  signal?: AbortSignal;
 }
 
 /** En-têtes obligatoires de tout appel à l'API. */
 function enTetes(jeton?: string, extra?: Record<string, string>): Headers {
-	const entetes = new Headers({
-		"X-Api-Version": VERSION_API_VROID,
-		Accept: "application/json",
-		...extra,
-	});
-	if (jeton) entetes.set("Authorization", `Bearer ${jeton}`);
-	return entetes;
+  const entetes = new Headers({
+    "X-Api-Version": VERSION_API_VROID,
+    Accept: "application/json",
+    ...extra,
+  });
+  if (jeton) entetes.set("Authorization", `Bearer ${jeton}`);
+  return entetes;
 }
 
 /**
@@ -84,48 +84,48 @@ function enTetes(jeton?: string, extra?: Record<string, string>): Headers {
  *   l'enveloppe porte un `error.code` malgré un statut 2xx.
  */
 async function appeler<T>(
-	chemin: string,
-	options: OptionsAppel & { methode?: string; corps?: unknown } = {}
+  chemin: string,
+  options: OptionsAppel & { methode?: string; corps?: unknown } = {},
 ): Promise<ReponseVroid<T>> {
-	const url = new URL(chemin, BASE_VROID);
-	const aCorps = options.corps !== undefined;
+  const url = new URL(chemin, BASE_VROID);
+  const aCorps = options.corps !== undefined;
 
-	let reponse: Response;
-	try {
-		reponse = await fetch(url, {
-			method: options.methode ?? "GET",
-			headers: enTetes(options.jeton, aCorps ? { "Content-Type": "application/json" } : undefined),
-			body: aCorps ? JSON.stringify(options.corps) : undefined,
-			signal: options.signal,
-			// Les réponses dépendent du jeton : jamais de cache partagé.
-			cache: "no-store",
-		});
-	} catch (cause) {
-		throw new ErreurVroid(`VRoid Hub injoignable (${chemin}).`, 0, String(cause));
-	}
+  let reponse: Response;
+  try {
+    reponse = await fetch(url, {
+      method: options.methode ?? "GET",
+      headers: enTetes(options.jeton, aCorps ? { "Content-Type": "application/json" } : undefined),
+      body: aCorps ? JSON.stringify(options.corps) : undefined,
+      signal: options.signal,
+      // Les réponses dépendent du jeton : jamais de cache partagé.
+      cache: "no-store",
+    });
+  } catch (cause) {
+    throw new ErreurVroid(`VRoid Hub injoignable (${chemin}).`, 0, String(cause));
+  }
 
-	let charge: ReponseVroid<T> | null = null;
-	try {
-		charge = (await reponse.json()) as ReponseVroid<T>;
-	} catch {
-		// `charge` conserve sa valeur nulle déclarée si le corps n'est pas du JSON.
-	}
+  let charge: ReponseVroid<T> | null = null;
+  try {
+    charge = (await reponse.json()) as ReponseVroid<T>;
+  } catch {
+    // `charge` conserve sa valeur nulle déclarée si le corps n'est pas du JSON.
+  }
 
-	if (!reponse.ok) {
-		throw new ErreurVroid(
-			charge?.error?.message ?? `VRoid Hub a répondu ${reponse.status} sur ${chemin}.`,
-			reponse.status,
-			charge?.error?.code
-		);
-	}
-	if (!charge) {
-		throw new ErreurVroid(`Réponse illisible de VRoid Hub sur ${chemin}.`, reponse.status);
-	}
-	// Un 200 peut tout de même porter une erreur applicative dans l'enveloppe.
-	if (charge.error?.code) {
-		throw new ErreurVroid(charge.error.message ?? charge.error.code, reponse.status, charge.error.code);
-	}
-	return charge;
+  if (!reponse.ok) {
+    throw new ErreurVroid(
+      charge?.error?.message ?? `VRoid Hub a répondu ${reponse.status} sur ${chemin}.`,
+      reponse.status,
+      charge?.error?.code,
+    );
+  }
+  if (!charge) {
+    throw new ErreurVroid(`Réponse illisible de VRoid Hub sur ${chemin}.`, reponse.status);
+  }
+  // Un 200 peut tout de même porter une erreur applicative dans l'enveloppe.
+  if (charge.error?.code) {
+    throw new ErreurVroid(charge.error.message ?? charge.error.code, reponse.status, charge.error.code);
+  }
+  return charge;
 }
 
 /**
@@ -140,14 +140,14 @@ async function appeler<T>(
  * @returns les modèles, dans l'ordre reçu.
  */
 export function deballerModeles(data: (ModeleVroid | EnrobageModele)[] | null | undefined): ModeleVroid[] {
-	if (!Array.isArray(data)) return [];
-	return data
-		.map((entree) =>
-			entree && typeof entree === "object" && "character_model" in entree
-				? (entree as EnrobageModele).character_model
-				: (entree as ModeleVroid)
-		)
-		.filter((modele): modele is ModeleVroid => Boolean(modele?.id));
+  if (!Array.isArray(data)) return [];
+  return data
+    .map(entree =>
+      entree && typeof entree === "object" && "character_model" in entree
+        ? (entree as EnrobageModele).character_model
+        : (entree as ModeleVroid),
+    )
+    .filter((modele): modele is ModeleVroid => Boolean(modele?.id));
 }
 
 /**
@@ -159,30 +159,30 @@ export function deballerModeles(data: (ModeleVroid | EnrobageModele)[] | null | 
  * @returns la query sans `?`, ou `null` s'il n'y a pas de page suivante.
  */
 export function curseurSuivant(reponse: ReponseVroid<unknown>): string | null {
-	const href = reponse._links?.next?.href;
-	if (!href) return null;
-	const interrogation = href.indexOf("?");
-	if (interrogation < 0) return null;
-	const query = href.slice(interrogation + 1);
-	// L'API termine parfois la query par un `&` orphelin (mesuré sur la recherche).
-	const propre = query.replace(/&+$/, "");
-	return propre.length > 0 ? propre : null;
+  const href = reponse._links?.next?.href;
+  if (!href) return null;
+  const interrogation = href.indexOf("?");
+  if (interrogation < 0) return null;
+  const query = href.slice(interrogation + 1);
+  // L'API termine parfois la query par un `&` orphelin (mesuré sur la recherche).
+  const propre = query.replace(/&+$/, "");
+  return propre.length > 0 ? propre : null;
 }
 
 /** Assemble un chemin et des paramètres, en repartant d'un curseur s'il y en a un. */
 function cheminPagine(base: string, curseur: string | null, params: Record<string, string | undefined>): string {
-	// Le curseur porte déjà tous les paramètres de la requête d'origine.
-	const recherche = new URLSearchParams(curseur ?? "");
-	for (const [cle, valeur] of Object.entries(params)) {
-		if (valeur !== undefined && !recherche.has(cle)) recherche.set(cle, valeur);
-	}
-	const query = recherche.toString();
-	return query ? `${base}?${query}` : base;
+  // Le curseur porte déjà tous les paramètres de la requête d'origine.
+  const recherche = new URLSearchParams(curseur ?? "");
+  for (const [cle, valeur] of Object.entries(params)) {
+    if (valeur !== undefined && !recherche.has(cle)) recherche.set(cle, valeur);
+  }
+  const query = recherche.toString();
+  return query ? `${base}?${query}` : base;
 }
 
 /** Transforme une réponse de liste en `PageModeles`. */
 function enPage(reponse: ReponseVroid<(ModeleVroid | EnrobageModele)[]>): PageModeles {
-	return { modeles: deballerModeles(reponse.data), curseurSuivant: curseurSuivant(reponse) };
+  return { modeles: deballerModeles(reponse.data), curseurSuivant: curseurSuivant(reponse) };
 }
 
 /**
@@ -192,11 +192,11 @@ function enPage(reponse: ReponseVroid<(ModeleVroid | EnrobageModele)[]>): PageMo
  * @param nombre nombre de modèles par page (1 à 100, défaut 20 côté API).
  */
 export async function selectionEditoriale(
-	{ curseur = null, nombre = 24 }: { curseur?: string | null; nombre?: number } = {},
-	options: OptionsAppel = {}
+  { curseur = null, nombre = 24 }: { curseur?: string | null; nombre?: number } = {},
+  options: OptionsAppel = {},
 ): Promise<PageModeles> {
-	const chemin = cheminPagine("/api/staff_picks", curseur, { count: String(nombre) });
-	return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, options));
+  const chemin = cheminPagine("/api/staff_picks", curseur, { count: String(nombre) });
+  return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, options));
 }
 
 /**
@@ -219,28 +219,28 @@ export async function selectionEditoriale(
  * mais **l'appelant doit dédupliquer par `id`** — ce que fait la galerie.
  */
 export async function rechercherModeles(
-	{
-		motCle,
-		curseur = null,
-		nombre = 24,
-		telechargeablesSeulement = false,
-		tri = "_score",
-	}: {
-		motCle: string;
-		curseur?: string | null;
-		nombre?: number;
-		telechargeablesSeulement?: boolean;
-		tri?: "_score" | "first_published_at";
-	},
-	options: OptionsAppel = {}
+  {
+    motCle,
+    curseur = null,
+    nombre = 24,
+    telechargeablesSeulement = false,
+    tri = "_score",
+  }: {
+    motCle: string;
+    curseur?: string | null;
+    nombre?: number;
+    telechargeablesSeulement?: boolean;
+    tri?: "_score" | "first_published_at";
+  },
+  options: OptionsAppel = {},
 ): Promise<PageModeles> {
-	const chemin = cheminPagine("/api/search/character_models", curseur, {
-		keyword: motCle,
-		count: String(nombre),
-		sort: tri,
-		is_downloadable: telechargeablesSeulement ? "true" : undefined,
-	});
-	return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, options));
+  const chemin = cheminPagine("/api/search/character_models", curseur, {
+    keyword: motCle,
+    count: String(nombre),
+    sort: tri,
+    is_downloadable: telechargeablesSeulement ? "true" : undefined,
+  });
+  return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, options));
 }
 
 /**
@@ -250,19 +250,16 @@ export async function rechercherModeles(
  * VRM 1.0, les métadonnées de licence complètes.
  */
 export async function detailModele(id: string, options: OptionsAppel = {}): Promise<DetailModeleVroid> {
-	const reponse = await appeler<DetailModeleVroid>(
-		`/api/character_models/${encodeURIComponent(id)}`,
-		options
-	);
-	return reponse.data;
+  const reponse = await appeler<DetailModeleVroid>(`/api/character_models/${encodeURIComponent(id)}`, options);
+  return reponse.data;
 }
 
 /**
  * Compte connecté — `GET /api/account`. **Jeton requis.**
  */
 export async function compteConnecte(jeton: string, options: OptionsAppel = {}): Promise<CompteVroid> {
-	const reponse = await appeler<CompteVroid>("/api/account", { ...options, jeton });
-	return reponse.data;
+  const reponse = await appeler<CompteVroid>("/api/account", { ...options, jeton });
+  return reponse.data;
 }
 
 /**
@@ -272,19 +269,19 @@ export async function compteConnecte(jeton: string, options: OptionsAppel = {}):
  * @param publication `published` (défaut API), `private` ou `all`.
  */
 export async function mesModeles(
-	jeton: string,
-	{
-		curseur = null,
-		nombre = 24,
-		publication,
-	}: { curseur?: string | null; nombre?: number; publication?: "published" | "private" | "all" } = {},
-	options: OptionsAppel = {}
+  jeton: string,
+  {
+    curseur = null,
+    nombre = 24,
+    publication,
+  }: { curseur?: string | null; nombre?: number; publication?: "published" | "private" | "all" } = {},
+  options: OptionsAppel = {},
 ): Promise<PageModeles> {
-	const chemin = cheminPagine("/api/account/character_models", curseur, {
-		count: String(nombre),
-		publication,
-	});
-	return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, { ...options, jeton }));
+  const chemin = cheminPagine("/api/account/character_models", curseur, {
+    count: String(nombre),
+    publication,
+  });
+  return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, { ...options, jeton }));
 }
 
 /**
@@ -296,16 +293,16 @@ export async function mesModeles(
  * Source : https://developer.vroid.com/en/api/list-character.html
  */
 export async function mesCoeurs(
-	jeton: string,
-	applicationId: string,
-	{ curseur = null, nombre = 24 }: { curseur?: string | null; nombre?: number } = {},
-	options: OptionsAppel = {}
+  jeton: string,
+  applicationId: string,
+  { curseur = null, nombre = 24 }: { curseur?: string | null; nombre?: number } = {},
+  options: OptionsAppel = {},
 ): Promise<PageModeles> {
-	const chemin = cheminPagine("/api/hearts", curseur, {
-		application_id: applicationId,
-		count: String(nombre),
-	});
-	return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, { ...options, jeton }));
+  const chemin = cheminPagine("/api/hearts", curseur, {
+    application_id: applicationId,
+    count: String(nombre),
+  });
+  return enPage(await appeler<(ModeleVroid | EnrobageModele)[]>(chemin, { ...options, jeton }));
 }
 
 /**
@@ -317,17 +314,17 @@ export async function mesCoeurs(
  * Source : https://developer.vroid.com/en/api/recognize.html
  */
 export async function emettreLicenceTelechargement(
-	jeton: string,
-	idModele: string,
-	options: OptionsAppel = {}
+  jeton: string,
+  idModele: string,
+  options: OptionsAppel = {},
 ): Promise<LicenceTelechargement> {
-	const reponse = await appeler<LicenceTelechargement>("/api/download_licenses", {
-		...options,
-		jeton,
-		methode: "POST",
-		corps: { character_model_id: idModele },
-	});
-	return reponse.data;
+  const reponse = await appeler<LicenceTelechargement>("/api/download_licenses", {
+    ...options,
+    jeton,
+    methode: "POST",
+    corps: { character_model_id: idModele },
+  });
+  return reponse.data;
 }
 
 /**
@@ -341,27 +338,27 @@ export async function emettreLicenceTelechargement(
  * @throws {ErreurVroid} si la licence est invalide ou l'en-tête `Location` absente.
  */
 export async function urlTelechargementVrm(
-	jeton: string,
-	idLicence: string,
-	options: OptionsAppel = {}
+  jeton: string,
+  idLicence: string,
+  options: OptionsAppel = {},
 ): Promise<string> {
-	const url = new URL(`/api/download_licenses/${encodeURIComponent(idLicence)}/download`, BASE_VROID);
+  const url = new URL(`/api/download_licenses/${encodeURIComponent(idLicence)}/download`, BASE_VROID);
 
-	const reponse = await fetch(url, {
-		method: "GET",
-		headers: enTetes(jeton),
-		redirect: "manual",
-		signal: options.signal,
-		cache: "no-store",
-	});
+  const reponse = await fetch(url, {
+    method: "GET",
+    headers: enTetes(jeton),
+    redirect: "manual",
+    signal: options.signal,
+    cache: "no-store",
+  });
 
-	const emplacement = reponse.headers.get("location");
-	if (emplacement) return emplacement;
+  const emplacement = reponse.headers.get("location");
+  if (emplacement) return emplacement;
 
-	throw new ErreurVroid(
-		`VRoid Hub n'a pas renvoyé d'URL de téléchargement (statut ${reponse.status}).`,
-		reponse.status
-	);
+  throw new ErreurVroid(
+    `VRoid Hub n'a pas renvoyé d'URL de téléchargement (statut ${reponse.status}).`,
+    reponse.status,
+  );
 }
 
 /**
@@ -369,11 +366,11 @@ export async function urlTelechargementVrm(
  * émission de la licence puis résolution de l'URL pré-signée.
  */
 export async function resoudreVrm(
-	jeton: string,
-	idModele: string,
-	options: OptionsAppel = {}
+  jeton: string,
+  idModele: string,
+  options: OptionsAppel = {},
 ): Promise<{ licence: LicenceTelechargement; url: string }> {
-	const licence = await emettreLicenceTelechargement(jeton, idModele, options);
-	const url = await urlTelechargementVrm(jeton, licence.id, options);
-	return { licence, url };
+  const licence = await emettreLicenceTelechargement(jeton, idModele, options);
+  const url = await urlTelechargementVrm(jeton, licence.id, options);
+  return { licence, url };
 }

@@ -15,8 +15,8 @@ import { createPgPool } from "./pg";
 export { sql } from "kysely";
 
 export interface AchilleaSqlOptions {
-	url?: string;
-	maxConnections?: number;
+  url?: string;
+  maxConnections?: number;
 }
 
 // The cache stores instances without inventing a fake shared schema. Every
@@ -24,37 +24,33 @@ export interface AchilleaSqlOptions {
 // only for the runtime cache, never for query construction.
 const clients = new Map<string, Kysely<never>>();
 
-export function createAchilleaSql<DB extends object = never>(
-	options: AchilleaSqlOptions = {},
-): Kysely<DB> {
-	const url = options.url ?? getAchilleaDatabaseUrl();
-	const maxConnections = options.maxConnections ?? 8;
-	const key = `${url}\u0000${maxConnections}`;
-	const existing = clients.get(key);
-	if (existing) return existing as unknown as Kysely<DB>;
+export function createAchilleaSql<DB extends object = never>(options: AchilleaSqlOptions = {}): Kysely<DB> {
+  const url = options.url ?? getAchilleaDatabaseUrl();
+  const maxConnections = options.maxConnections ?? 8;
+  const key = `${url}\u0000${maxConnections}`;
+  const existing = clients.get(key);
+  if (existing) return existing as unknown as Kysely<DB>;
 
-	const sslConfig = url.includes("sslmode=disable")
-		? false
-		: { rejectUnauthorized: false };
+  const sslConfig = url.includes("sslmode=disable") ? false : { rejectUnauthorized: false };
 
-	const pool = createPgPool(url, {
-		applicationName: "rosegriffon-achillea",
-		keepAlive: true,
-		max: maxConnections,
-		searchPath: `${ACHILLEA_SCHEMA},public`,
-		ssl: sslConfig,
-	});
+  const pool = createPgPool(url, {
+    applicationName: "rosegriffon-achillea",
+    keepAlive: true,
+    max: maxConnections,
+    searchPath: `${ACHILLEA_SCHEMA},public`,
+    ssl: sslConfig,
+  });
 
-	const database = new Kysely<DB>({
-		dialect: new PostgresDialect({ pool }),
-	});
-	clients.set(key, database as unknown as Kysely<never>);
-	return database;
+  const database = new Kysely<DB>({
+    dialect: new PostgresDialect({ pool }),
+  });
+  clients.set(key, database as unknown as Kysely<never>);
+  return database;
 }
 
 /** Ferme les pools partagés (arrêt propre du bot, workers et tests). */
 export async function destroyAchilleaSql(): Promise<void> {
-	const openClients = [...clients.values()];
-	clients.clear();
-	await Promise.all(openClients.map((client) => client.destroy()));
+  const openClients = [...clients.values()];
+  clients.clear();
+  await Promise.all(openClients.map(client => client.destroy()));
 }

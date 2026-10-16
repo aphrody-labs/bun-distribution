@@ -21,14 +21,14 @@ export const TRIS_MEMBRES = ["xp", "jetons", "messages", "recent"] as const;
 export type TriMembres = (typeof TRIS_MEMBRES)[number];
 
 export const LIBELLES_TRI: Readonly<Record<TriMembres, string>> = Object.freeze({
-	xp: "Expérience",
-	jetons: "Jetons gagnés",
-	messages: "Messages comptés",
-	recent: "Activité récente",
+  xp: "Expérience",
+  jetons: "Jetons gagnés",
+  messages: "Messages comptés",
+  recent: "Activité récente",
 });
 
 export function estTriMembres(valeur: unknown): valeur is TriMembres {
-	return typeof valeur === "string" && (TRIS_MEMBRES as readonly string[]).includes(valeur);
+  return typeof valeur === "string" && (TRIS_MEMBRES as readonly string[]).includes(valeur);
 }
 
 /**
@@ -46,37 +46,37 @@ export function estTriMembres(valeur: unknown): valeur is TriMembres {
 export type ProvenanceXp = "api" | "classement" | "historique" | "bot";
 
 export const LIBELLES_PROVENANCE: Readonly<Record<ProvenanceXp, string>> = Object.freeze({
-	api: "API Noctaly",
-	classement: "Classement public",
-	historique: "Historique des salons",
-	bot: "Activité sur notre bot",
+  api: "API Noctaly",
+  classement: "Classement public",
+  historique: "Historique des salons",
+  bot: "Activité sur notre bot",
 });
 
 export interface LigneMembre {
-	rang: number;
-	discordId: string;
-	pseudo: string;
-	avatarUrl: string | null;
-	xp: number;
-	niveau: number;
-	jetons: number;
-	jetonsGagnes: number;
-	messages: number;
-	serieQuotidienne: number;
-	/** ISO 8601, `null` si le membre n'a jamais rien gagné chez nous. */
-	dernierGainLe: string | null;
-	titre: string | null;
-	provenance: ProvenanceXp;
-	/** Le membre a-t-il quitté le serveur ? */
-	parti: boolean;
+  rang: number;
+  discordId: string;
+  pseudo: string;
+  avatarUrl: string | null;
+  xp: number;
+  niveau: number;
+  jetons: number;
+  jetonsGagnes: number;
+  messages: number;
+  serieQuotidienne: number;
+  /** ISO 8601, `null` si le membre n'a jamais rien gagné chez nous. */
+  dernierGainLe: string | null;
+  titre: string | null;
+  provenance: ProvenanceXp;
+  /** Le membre a-t-il quitté le serveur ? */
+  parti: boolean;
 }
 
 export interface PageMembres {
-	lignes: LigneMembre[];
-	total: number;
-	page: number;
-	pages: number;
-	tri: TriMembres;
+  lignes: LigneMembre[];
+  total: number;
+  page: number;
+  pages: number;
+  tri: TriMembres;
 }
 
 /** Taille de page — assez pour un écran, assez peu pour rester lisible. */

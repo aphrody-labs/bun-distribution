@@ -60,9 +60,7 @@ describe("VfsFormatConsumer (Bun / TypeScript)", () => {
     expect(detectedRdbn.extension).toBe(".cfg.bin");
 
     // 4. CRILAYLA magic
-    const laylaBuf = new Uint8Array([
-      0x43, 0x52, 0x49, 0x4c, 0x41, 0x59, 0x4c, 0x41, 0x00, 0x10, 0x00, 0x00,
-    ]);
+    const laylaBuf = new Uint8Array([0x43, 0x52, 0x49, 0x4c, 0x41, 0x59, 0x4c, 0x41, 0x00, 0x10, 0x00, 0x00]);
     const detectedLayla = VfsFormatConsumer.detect(laylaBuf);
     expect(detectedLayla.id).toBe(22);
 

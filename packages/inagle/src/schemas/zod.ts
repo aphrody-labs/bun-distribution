@@ -27,20 +27,10 @@ export const StringId = z
 // ============================================================================
 
 /** Skill element types (Zod schema) */
-export const SkillElementSchema = z
-  .number()
-  .int()
-  .min(1)
-  .max(4)
-  .describe("1=Wind, 2=Wood, 3=Fire, 4=Mountain");
+export const SkillElementSchema = z.number().int().min(1).max(4).describe("1=Wind, 2=Wood, 3=Fire, 4=Mountain");
 
 /** Skill category types (Zod schema) */
-export const SkillCategorySchema = z
-  .number()
-  .int()
-  .min(1)
-  .max(4)
-  .describe("1=Shot, 2=Dribble, 3=Block, 4=Catch");
+export const SkillCategorySchema = z.number().int().min(1).max(4).describe("1=Shot, 2=Dribble, 3=Block, 4=Catch");
 
 /** Skill info schema */
 export const SkillInfoSchema = z
@@ -108,9 +98,7 @@ export type ZodEnrichedSkill = z.infer<typeof EnrichedSkillSchema>;
 export const CharacterRarity = z
   .number()
   .int()
-  .describe(
-    "0=Normal, 1=En progression, 2=Expérimenté, 3=Émérite, 4-7=Légendaire, 10=Héros, 20=BASARA",
-  );
+  .describe("0=Normal, 1=En progression, 2=Expérimenté, 3=Émérite, 4-7=Légendaire, 10=Héros, 20=BASARA");
 
 /** Personality types (Zod schema) */
 export const PersonalityTypeSchema = z
@@ -280,5 +268,5 @@ export function toJSONSchema<T extends z.ZodType>(schema: T) {
  * Pretty print Zod errors for API responses
  */
 export function formatZodError(error: z.ZodError): string {
-  return error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ");
+  return error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
 }

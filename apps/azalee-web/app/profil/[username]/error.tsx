@@ -5,13 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { Button } from "@rosegriffon/ui";
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -22,9 +16,7 @@ export default function Error({
         <AlertCircle className="size-10" strokeWidth={1.5} />
       </div>
       <div className="space-y-2 max-w-md">
-        <h2 className="text-2xl font-black font-sans text-on-surface">
-          Impossible de charger ce profil
-        </h2>
+        <h2 className="text-2xl font-black font-sans text-on-surface">Impossible de charger ce profil</h2>
         <p className="text-on-surface-variant">Le profil n'a pas pu s'afficher.</p>
       </div>
       <div className="flex gap-3">

@@ -4,11 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import {
-  SEASON_LABELS,
-  SERIES_LABELS,
-  type TeamListItem,
-} from "@rosegriffon/azalee/wiki/teams-shared";
+import { SEASON_LABELS, SERIES_LABELS, type TeamListItem } from "@rosegriffon/azalee/wiki/teams-shared";
 import { cn } from "@/lib/utils";
 
 interface TeamCardProps {
@@ -70,7 +66,7 @@ export function TeamCard({ team, className }: TeamCardProps) {
                 {team.rosterCount}
               </span>
             )}
-            {team.seriesKeys.map((s) => (
+            {team.seriesKeys.map(s => (
               <span
                 key={s}
                 className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container-highest/50 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider"

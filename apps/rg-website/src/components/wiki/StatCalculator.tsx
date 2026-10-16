@@ -59,7 +59,7 @@ function Seg<T extends number>({
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {options.map((o) => (
+      {options.map(o => (
         <button
           key={o.code}
           type="button"
@@ -97,7 +97,7 @@ export function StatCalculator() {
   useEffect(() => {
     let on = true;
     calculateStats(params, level)
-      .then((r) => {
+      .then(r => {
         if (!on) return;
         setBlock(r.stats);
         setTotal(r.total);
@@ -112,7 +112,7 @@ export function StatCalculator() {
   useEffect(() => {
     let on = true;
     statCurve(params, 1, 99)
-      .then((rows) => on && setCurve(rows.map((r) => r.total)))
+      .then(rows => on && setCurve(rows.map(r => r.total)))
       .catch(() => on && setCurve([]));
     return () => {
       on = false;
@@ -126,32 +126,24 @@ export function StatCalculator() {
       {/* Paramètres */}
       <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low/40 p-4 sm:p-5 space-y-4">
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-            Position
-          </p>
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Position</p>
           <Seg value={mainPosition} options={POSITIONS} onChange={setMainPosition} />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-            Rareté
-          </p>
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Rareté</p>
           <Seg value={charaRank} options={RARITIES} onChange={setCharaRank} />
         </div>
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-            Pattern de croissance
-          </p>
+          <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Pattern de croissance</p>
           <Seg
             value={growthPattern}
-            options={GROWTH_PATTERNS.map((p) => ({ code: p, label: `Type ${p}` }))}
+            options={GROWTH_PATTERNS.map(p => ({ code: p, label: `Type ${p}` }))}
             onChange={setGrowthPattern}
           />
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-              Niveau
-            </p>
+            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">Niveau</p>
             <span className="text-sm font-bold text-primary tabular-nums">Lv {level}</span>
           </div>
           <input
@@ -159,16 +151,14 @@ export function StatCalculator() {
             min={1}
             max={99}
             value={level}
-            onChange={(e) => setLevel(Number(e.target.value))}
+            onChange={e => setLevel(Number(e.target.value))}
             className="w-full accent-primary"
           />
         </div>
       </div>
 
       {error ? (
-        <p className="p-6 text-center text-sm text-on-surface-variant">
-          Moteur de stats indisponible (wasm).
-        </p>
+        <p className="p-6 text-center text-sm text-on-surface-variant">Moteur de stats indisponible (wasm).</p>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 7 stats au niveau choisi */}
@@ -180,7 +170,7 @@ export function StatCalculator() {
               </span>
             </div>
             <div className="space-y-2">
-              {STATS.map((s) => {
+              {STATS.map(s => {
                 const v = block?.[s.k] ?? 0;
                 return (
                   <div key={s.k} className="flex items-center gap-3">
@@ -205,8 +195,7 @@ export function StatCalculator() {
             <h2 className="text-sm font-bold text-on-surface mb-3">Courbe du total (Lv1→99)</h2>
             <TotalCurve curve={curve} level={level} />
             <p className="mt-2 text-[11px] text-on-surface-variant/70 flex items-center gap-1">
-              <Icon name="bolt" size={12} className="text-primary" /> Tables de croissance réelles
-              du jeu.
+              <Icon name="bolt" size={12} className="text-primary" /> Tables de croissance réelles du jeu.
             </p>
           </div>
         </div>
@@ -218,11 +207,7 @@ export function StatCalculator() {
 /** Petit graphe SVG de la courbe du total + marqueur du niveau courant. */
 function TotalCurve({ curve, level }: { curve: number[]; level: number }) {
   if (curve.length < 2) {
-    return (
-      <div className="h-40 flex items-center justify-center text-xs text-on-surface-variant/60">
-        …
-      </div>
-    );
+    return <div className="h-40 flex items-center justify-center text-xs text-on-surface-variant/60">…</div>;
   }
   const W = 320;
   const H = 140;
@@ -246,13 +231,7 @@ function TotalCurve({ curve, level }: { curve: number[]; level: number }) {
       preserveAspectRatio="none"
       aria-label="Courbe du total des stats"
     >
-      <polyline
-        points={pts}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        className="text-primary"
-      />
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth={2} className="text-primary" />
       <line
         x1={cx}
         y1={0}

@@ -106,10 +106,10 @@ async function fetchSkillVideos(skillId: string): Promise<SkillVideos> {
       .eq("skill_id", skillId)
       .order("position", { ascending: true });
     const rows = data ?? [];
-    const dates = rows.map((row) => row.created_at).filter(Boolean) as string[];
+    const dates = rows.map(row => row.created_at).filter(Boolean) as string[];
     return {
       publishedAt: dates.length > 0 ? dates.toSorted()[0]! : null,
-      variants: rows.map((row) => ({
+      variants: rows.map(row => ({
         label: row.label,
         posterUrl: row.poster_url,
         position: row.position,
@@ -122,11 +122,7 @@ async function fetchSkillVideos(skillId: string): Promise<SkillVideos> {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const skill = await wikiService.getSkill(id);
   const name = skill?.name_FR || skill?.displayName || "Technique";
@@ -163,8 +159,7 @@ export async function generateMetadata({
   // annoncer une grande image et servir un telop étroit donne un aperçu vide.
   const poster = skill?.posterUrl || null;
   const ogImage = poster || telop;
-  const ogImageUrl =
-    ogImage && ogImage.startsWith("/") ? `https://azalee.rosegriffon.fr${ogImage}` : ogImage;
+  const ogImageUrl = ogImage && ogImage.startsWith("/") ? `https://azalee.rosegriffon.fr${ogImage}` : ogImage;
 
   return {
     alternates: { canonical: `/skill/${id}` },
@@ -187,9 +182,7 @@ export async function generateMetadata({
       title: `${name} | Azalée`,
       type: "article",
       url: `/skill/${id}`,
-      ...(skill?.videoUrl
-        ? { videos: [{ type: "video/webm", url: skill.videoUrl as string }] }
-        : {}),
+      ...(skill?.videoUrl ? { videos: [{ type: "video/webm", url: skill.videoUrl as string }] } : {}),
     },
     title,
     twitter: {
@@ -254,12 +247,11 @@ export default async function MoveDetailPage({ params }: { params: Promise<{ id:
     })
     .toSorted((a, b) => b.score - a.score)
     .slice(0, 3)
-    .map((item) => item.skill);
+    .map(item => item.skill);
 
   // Fetch override skills (Overdrive combinations)
   const skillHexId = (skill as any).skillId || (skill as any).skillID || id;
-  const overrideSkills: OverrideSkillData[] =
-    await wikiService.getOverrideSkillsForSkill(skillHexId);
+  const overrideSkills: OverrideSkillData[] = await wikiService.getOverrideSkillsForSkill(skillHexId);
 
   // Assets de cut-in (niers : modèle 3D, telop, son) — clé = code interne `skill_id_str`.
 
@@ -298,8 +290,8 @@ export default async function MoveDetailPage({ params }: { params: Promise<{ id:
    * est un balisage qui ment.
    */
   const videoJsonLd = videos
-    .filter((v) => v.videoUrl)
-    .map((v) => ({
+    .filter(v => v.videoUrl)
+    .map(v => ({
       "@type": "VideoObject",
       contentUrl: v.videoUrl,
       description: `${v.label} — ${name}, technique ${category.toLowerCase()} d'élément ${element.toLowerCase()} d'Inazuma Eleven: Victory Road.`,
@@ -318,10 +310,7 @@ export default async function MoveDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SkillDetail
         skill={skill}
         name={name}

@@ -28,34 +28,34 @@ import { EMOTES } from "@/lib/emotes";
  * par `AppSidebar` rend l'identifiant Material correspondant pour le reste.
  */
 export function NavIcone(item: NavItem): React.ReactNode {
-	if (item.imageUrl) {
-		return (
-			<span className="relative block size-full">
-				<Image src={item.imageUrl} alt="" fill sizes="24px" className="object-contain" />
-			</span>
-		);
-	}
+  if (item.imageUrl) {
+    return (
+      <span className="relative block size-full">
+        <Image src={item.imageUrl} alt="" fill sizes="24px" className="object-contain" />
+      </span>
+    );
+  }
 
-	if (item.emote && item.emote in EMOTES) {
-		const emote = EMOTES[item.emote]!;
-		return (
-			<span className="relative block size-full">
-				<Image src={emote.path} alt="" fill sizes="24px" className="object-contain" />
-			</span>
-		);
-	}
+  if (item.emote && item.emote in EMOTES) {
+    const emote = EMOTES[item.emote]!;
+    return (
+      <span className="relative block size-full">
+        <Image src={emote.path} alt="" fill sizes="24px" className="object-contain" />
+      </span>
+    );
+  }
 
-	if (item.gameIcon) {
-		// `bg-current` : l'icône prend la couleur du texte, donc l'état actif et
-		// les quatre thèmes la traitent exactement comme un pictogramme.
-		return <GameSpriteIcon name={item.gameIcon as GameIconKey} size={20} />;
-	}
+  if (item.gameIcon) {
+    // `bg-current` : l'icône prend la couleur du texte, donc l'état actif et
+    // les quatre thèmes la traitent exactement comme un pictogramme.
+    return <GameSpriteIcon name={item.gameIcon as GameIconKey} size={20} />;
+  }
 
-	if (item.commonSprite) {
-		// `scale` et non `size` : les cellules de l'atlas commun font 48 à 92 px,
-		// et 0.25 les ramène toutes dans la boîte de 20 px du menu.
-		return <CommonSpriteIcon name={item.commonSprite as SpriteCommonKey} scale={0.25} />;
-	}
+  if (item.commonSprite) {
+    // `scale` et non `size` : les cellules de l'atlas commun font 48 à 92 px,
+    // et 0.25 les ramène toutes dans la boîte de 20 px du menu.
+    return <CommonSpriteIcon name={item.commonSprite as SpriteCommonKey} scale={0.25} />;
+  }
 
-	return null;
+  return null;
 }

@@ -48,11 +48,7 @@ export default async function VersionsPage({ params }: VersionsPageProps) {
       />
 
       {versions.length > 0 ? (
-        <VersionsList
-          versions={versions}
-          articleId={article.id}
-          restoreAction={restoreArticleVersion}
-        />
+        <VersionsList versions={versions} articleId={article.id} restoreAction={restoreArticleVersion} />
       ) : (
         <div className="text-center py-20">
           <p className="text-on-surface-variant">Aucune version enregistrée pour cet article.</p>

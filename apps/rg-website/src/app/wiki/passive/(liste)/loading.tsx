@@ -1,5 +1,5 @@
 import { WikiListSkeleton } from "@/components/ui/wiki-loading-skeleton";
 
 export default function Loading() {
-	return <WikiListSkeleton columns={3} />;
+  return <WikiListSkeleton columns={3} />;
 }

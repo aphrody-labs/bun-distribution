@@ -13,69 +13,69 @@ type ProfileClient = { from: (table: string) => any };
  * (qui diffère entre apps selon les plugins activés).
  */
 interface AuthInstanceLike {
-	api: {
-		getSession: (args: { headers: Headers }) => Promise<{
-			user?: { id: string; email?: string | null } | null;
-		} | null>;
-	};
+  api: {
+    getSession: (args: { headers: Headers }) => Promise<{
+      user?: { id: string; email?: string | null } | null;
+    } | null>;
+  };
 }
 
 /**
  * Assure l'authentification admin — redirige si non autorisé.
  */
 export async function createAdminGuard(
-	authInstance: AuthInstanceLike,
-	supabase: ProfileClient,
-	options: { redirectTo?: string; fallbackRole?: string } = {}
+  authInstance: AuthInstanceLike,
+  supabase: ProfileClient,
+  options: { redirectTo?: string; fallbackRole?: string } = {},
 ) {
-	const session = await authInstance.api.getSession({
-		headers: await headers(),
-	});
+  const session = await authInstance.api.getSession({
+    headers: await headers(),
+  });
 
-	if (!session?.user) {
-		redirect(options.redirectTo || "/login");
-	}
+  if (!session?.user) {
+    redirect(options.redirectTo || "/login");
+  }
 
-	const profile = await resolveProfile(supabase, session.user);
+  const profile = await resolveProfile(supabase, session.user);
 
-	if (!profile || !isAdmin(profile.role)) {
-		console.warn("[adminGuard] denied", {
-			userId: session.user.id,
-			resolvedRole: profile?.role,
-		});
-		redirect(options.redirectTo || "/dashboard");
-	}
+  if (!profile || !isAdmin(profile.role)) {
+    console.warn("[adminGuard] denied", {
+      userId: session.user.id,
+      resolvedRole: profile?.role,
+    });
+    redirect(options.redirectTo || "/dashboard");
+  }
 
-	return { user: session.user, profile };
+  return { user: session.user, profile };
 }
 
 /**
  * Assure l'authentification avec un rôle spécifique.
  */
 export async function createRoleGuard(
-	authInstance: AuthInstanceLike,
-	supabase: ProfileClient,
-	allowedRoles: string[],
-	options: { redirectTo?: string } = {}
+  authInstance: AuthInstanceLike,
+  supabase: ProfileClient,
+  allowedRoles: string[],
+  options: { redirectTo?: string } = {},
 ) {
-	const session = await authInstance.api.getSession({
-		headers: await headers(),
-	});
+  const session = await authInstance.api.getSession({
+    headers: await headers(),
+  });
 
-	if (!session?.user) {
-		redirect(options.redirectTo || "/login");
-	}
+  if (!session?.user) {
+    redirect(options.redirectTo || "/login");
+  }
 
-	const profile = await resolveProfile(supabase, session.user);
+  const profile = await resolveProfile(supabase, session.user);
 
-	if (!profile || !profile.role || !allowedRoles.includes(profile.role)) {
-		console.warn("[roleGuard] denied", {
-			userId: session.user.id,
-			resolvedRole: profile?.role,
-			allowedRoles,
-		});
-		redirect(options.redirectTo || "/dashboard");
-	}
+  if (!profile || !profile.role || !allowedRoles.includes(profile.role)) {
+    console.warn("[roleGuard] denied", {
+      userId: session.user.id,
+      resolvedRole: profile?.role,
+      allowedRoles,
+    });
+    redirect(options.redirectTo || "/dashboard");
+  }
 
-	return { user: session.user, profile };
+  return { user: session.user, profile };
 }

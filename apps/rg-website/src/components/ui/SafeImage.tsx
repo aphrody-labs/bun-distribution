@@ -13,14 +13,7 @@ interface SafeImageProps extends ImageProps {
 /** Placeholder par défaut pour les personnages sans image */
 const DEFAULT_PLACEHOLDER = "/ievr.webp";
 
-function SafeImageAttempt({
-  src,
-  zukanHash,
-  alt,
-  fallbackSrc,
-  unoptimized,
-  ...props
-}: SafeImageProps) {
+function SafeImageAttempt({ src, zukanHash, alt, fallbackSrc, unoptimized, ...props }: SafeImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [fallbackStage, setFallbackStage] = useState(0);
   const [isFailed, setIsFailed] = useState(false);
@@ -70,11 +63,6 @@ function SafeImageAttempt({
 }
 
 export function SafeImage(props: SafeImageProps) {
-  const key =
-    typeof props.src === "string"
-      ? props.src
-      : "src" in props.src
-        ? props.src.src
-        : props.src.default.src;
+  const key = typeof props.src === "string" ? props.src : "src" in props.src ? props.src.src : props.src.default.src;
   return <SafeImageAttempt key={key} {...props} />;
 }

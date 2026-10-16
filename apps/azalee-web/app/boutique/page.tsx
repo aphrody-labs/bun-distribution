@@ -28,10 +28,7 @@ export default async function BoutiquesPage() {
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       <header className="space-y-2">
         <div className="flex items-center gap-2.5">
@@ -52,7 +49,7 @@ export default async function BoutiquesPage() {
 
       {shops.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {shops.map((shop) => (
+          {shops.map(shop => (
             <FadeInItem key={shop.shopId} className="h-full">
               <ShopCard
                 shopId={shop.shopId}

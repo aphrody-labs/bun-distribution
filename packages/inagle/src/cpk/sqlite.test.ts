@@ -9,18 +9,14 @@ test("CPK endpoints use an existing SQLite index without PostgreSQL or VFS", asy
   const directory = await mkdtemp(join(tmpdir(), "inagle-cpk-sqlite-"));
   const path = join(directory, "mirror.sqlite");
   const keys = ["NIE_DATA_SOURCE", "INAGLE_DATA_SOURCE", "NIE_WIKI_DB"] as const;
-  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   try {
     const db = new Database(path);
     db.exec(
       "CREATE TABLE inagle_cpk_index(path TEXT, top TEXT, sub TEXT, dir TEXT, name TEXT, ext TEXT, cpk TEXT, depth INTEGER)",
     );
     const insert = db.query("INSERT INTO inagle_cpk_index VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    for (const file of [
-      "data/technical/a.bin",
-      "data/technical/b.bin",
-      "data/technical/sub/Épreuve100%_.g4tx",
-    ]) {
+    for (const file of ["data/technical/a.bin", "data/technical/b.bin", "data/technical/sub/Épreuve100%_.g4tx"]) {
       const segments = file.split("/");
       const name = segments.at(-1)!;
       insert.run(
@@ -70,7 +66,5 @@ test("native CPK metadata comes from the existing VFS index and rejects incomple
     top: "technical",
     depth: 3,
   });
-  expect(() => vfsCpkRows({ count: () => 2n, listRange: () => [] })).toThrow(
-    "pagination ended early",
-  );
+  expect(() => vfsCpkRows({ count: () => 2n, listRange: () => [] })).toThrow("pagination ended early");
 });

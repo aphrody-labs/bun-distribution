@@ -15,7 +15,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importEmblems(null, db)
   .then(() => db.close())
-  .catch((err) => {
+  .catch(err => {
     console.error("Erreur fatale push-emblems:", err);
     process.exit(1);
   });

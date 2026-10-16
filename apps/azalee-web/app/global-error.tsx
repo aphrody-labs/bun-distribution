@@ -10,13 +10,7 @@ import { useEffect } from "react";
  * Styles 100% inline aux couleurs DA Rose Griffon (marine / or / Azalée) car le CSS
  * global n'est pas garanti disponible à ce niveau.
  */
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -60,8 +54,8 @@ export default function GlobalError({
             color: "rgba(245,240,230,0.85)",
           }}
         >
-          Azalée a rencontré un problème inattendu et n&apos;a pas pu afficher la page. Vous pouvez
-          réessayer ou revenir à l&apos;accueil.
+          Azalée a rencontré un problème inattendu et n&apos;a pas pu afficher la page. Vous pouvez réessayer ou revenir
+          à l&apos;accueil.
         </p>
         <div
           style={{

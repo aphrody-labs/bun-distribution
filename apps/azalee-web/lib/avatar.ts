@@ -24,5 +24,5 @@ export function isRemoteAvatar(url: string | null | undefined): boolean {
   if (!url) {
     return false;
   }
-  return REMOTE_AVATAR_HOSTS.some((host) => url.includes(host));
+  return REMOTE_AVATAR_HOSTS.some(host => url.includes(host));
 }

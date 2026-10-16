@@ -7,14 +7,7 @@ import type { Crop, PixelCrop } from "react-image-crop";
 
 // React 19 / react-image-crop typings drift: cast to FC<any> (TS2607/TS2786).
 const ReactCrop = RawReactCrop as unknown as React.FC<any>;
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@rosegriffon/ui";
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@rosegriffon/ui";
 import { cn } from "@/lib/utils";
 import "react-image-crop/dist/ReactCrop.css";
 import { CROP_RATIO_PRESETS } from "./constants";
@@ -135,7 +128,7 @@ export function ImageCropDialog({ open, imageUrl, onClose, onApply }: ImageCropD
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-2xl bg-surface-container border-none rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">Recadrer l&apos;image</DialogTitle>
@@ -171,28 +164,15 @@ export function ImageCropDialog({ open, imageUrl, onClose, onApply }: ImageCropD
             className="max-h-[60vh]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt="Crop preview"
-              onLoad={onImageLoad}
-              className="max-h-[60vh] w-auto"
-            />
+            <img src={imageUrl} alt="Crop preview" onLoad={onImageLoad} className="max-h-[60vh] w-auto" />
           </ReactCrop>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="rounded-full border-none bg-surface-container-high"
-          >
+          <Button variant="outline" onClick={onClose} className="rounded-full border-none bg-surface-container-high">
             Annuler
           </Button>
-          <Button
-            onClick={handleApply}
-            disabled={!completedCrop}
-            className="rounded-full bg-primary text-on-primary"
-          >
+          <Button onClick={handleApply} disabled={!completedCrop} className="rounded-full bg-primary text-on-primary">
             Appliquer
           </Button>
         </DialogFooter>

@@ -52,8 +52,8 @@ suite("wikiService.getCharactersList", () => {
     const p1 = await wikiService.getCharactersList({ page: 1, limit: 10 });
     const p2 = await wikiService.getCharactersList({ page: 2, limit: 10 });
     expect(p2.page).toBe(2);
-    const ids = new Set((p1.data as Loose[]).map((c) => c.charaId));
-    expect((p2.data as Loose[]).every((c) => !ids.has(c.charaId))).toBe(true);
+    const ids = new Set((p1.data as Loose[]).map(c => c.charaId));
+    expect((p2.data as Loose[]).every(c => !ids.has(c.charaId))).toBe(true);
     expect(p1.total).toBe(p2.total);
   });
 
@@ -203,12 +203,12 @@ suite("wiki/teams — section Équipes", () => {
       expect(team.rosterCount).toBeGreaterThanOrEqual(0);
     }
     // Les ids sont uniques (1 ligne = 1 équipe).
-    expect(new Set(teams.map((t) => t.id)).size).toBe(teams.length);
+    expect(new Set(teams.map(t => t.id)).size).toBe(teams.length);
   });
 
   test("getTeamDetail hydrate l'effectif et les emblèmes", async () => {
     const teams = await getTeamsList();
-    const raimon = teams.find((t) => t.name === "Raimon") ?? teams[0]!;
+    const raimon = teams.find(t => t.name === "Raimon") ?? teams[0]!;
     const detail = await getTeamDetail(raimon.id);
     expect(detail).not.toBeNull();
     expect(detail?.id).toBe(raimon.id);
@@ -216,7 +216,7 @@ suite("wiki/teams — section Équipes", () => {
     expect(Array.isArray(detail?.roster)).toBe(true);
     expect(detail?.roster.length).toBe(raimon.rosterCount);
     // Un effectif dédupliqué par `chara_id`.
-    const charaIds = (detail?.roster ?? []).map((m) => m.charaId);
+    const charaIds = (detail?.roster ?? []).map(m => m.charaId);
     expect(new Set(charaIds).size).toBe(charaIds.length);
   });
 
@@ -241,17 +241,17 @@ suite("wiki/shops — section Boutiques", () => {
       const parCategorie = shop.categories.reduce((acc, c) => acc + c.count, 0);
       expect(parCategorie).toBeLessThanOrEqual(shop.itemCount);
       // Tri décroissant sur les catégories.
-      const counts = shop.categories.map((c) => c.count);
+      const counts = shop.categories.map(c => c.count);
       expect([...counts].sort((a, b) => b - a)).toEqual(counts);
       totalItems += shop.itemCount;
     }
     expect(totalItems).toBeGreaterThan(2000);
-    expect(new Set(shops.map((s) => s.shopId)).size).toBe(shops.length);
+    expect(new Set(shops.map(s => s.shopId)).size).toBe(shops.length);
     // La jointure vers `inagle_items` résout la catégorie d'une bonne part des
     // lignes : au moins une boutique doit être ventilée.
-    expect(shops.some((s) => s.categories.length > 0)).toBe(true);
+    expect(shops.some(s => s.categories.length > 0)).toBe(true);
     // Tri décroissant du plus gros catalogue au plus petit.
-    const tailles = shops.map((s) => s.itemCount);
+    const tailles = shops.map(s => s.itemCount);
     expect([...tailles].sort((a, b) => b - a)).toEqual(tailles);
   });
 

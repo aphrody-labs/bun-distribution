@@ -51,14 +51,14 @@ export type Intention = "marque" | "succes" | "attention" | "echec" | "info" | "
  * sont l'écrasante majorité.
  */
 export const COULEURS: Readonly<Record<Intention, number>> = Object.freeze({
-	marque: couleurDeMarque(PROFIL.marque.couleurHex),
-	succes: 0x3b_a5_5d,
-	attention: 0xfa_a6_1a,
-	echec: 0xed_42_45,
-	info: 0x58_65_f2,
-	// Gris « embed » : la même valeur que le fond des embeds en thème sombre, donc
-	// une barre latérale qui disparaît. Pour ce qui est vrai mais accessoire.
-	muet: 0x2b_2d_31,
+  marque: couleurDeMarque(PROFIL.marque.couleurHex),
+  succes: 0x3b_a5_5d,
+  attention: 0xfa_a6_1a,
+  echec: 0xed_42_45,
+  info: 0x58_65_f2,
+  // Gris « embed » : la même valeur que le fond des embeds en thème sombre, donc
+  // une barre latérale qui disparaît. Pour ce qui est vrai mais accessoire.
+  muet: 0x2b_2d_31,
 });
 
 // ─── Icônes ─────────────────────────────────────────────────────────────────
@@ -71,59 +71,59 @@ export const COULEURS: Readonly<Record<Intention, number>> = Object.freeze({
  * la porte, et les deux bots servent deux serveurs.
  */
 export const ICONES = Object.freeze({
-	// États d'une réponse
-	succes: "✅",
-	echec: "❌",
-	attention: "⚠️",
-	info: "ℹ️",
-	patiente: "⏳",
-	vide: "🫥",
-	interdit: "🚫",
-	// Objets récurrents du domaine
-	membre: "👤",
-	equipe: "🛡️",
-	article: "📝",
-	agenda: "📅",
-	boutique: "🛍️",
-	sondage: "📊",
-	campagne: "💛",
-	post: "🐦",
-	jeu: "🎮",
-	// Vie de communauté
-	niveau: "⭐",
-	// 💛 est déjà pris par `campagne` : une icône par idée, jamais deux.
-	kizuna: "🤝",
-	collection: "🎴",
-	classement: "🏆",
-	ticket: "🎫",
-	fichier: "📁",
-	image: "🖼️",
-	modele: "🧊",
-	recherche: "🔎",
-	lien: "🔗",
-	// Exploitation
-	service: "🩺",
-	deploiement: "🚀",
-	tache: "⏱️",
-	journal: "🧾",
-	reglage: "🎛️",
-	// Pastilles d'état, à utiliser en début de ligne de liste
-	enLigne: "🟢",
-	degrade: "🟡",
-	horsLigne: "🔴",
-	inconnu: "⚪",
+  // États d'une réponse
+  succes: "✅",
+  echec: "❌",
+  attention: "⚠️",
+  info: "ℹ️",
+  patiente: "⏳",
+  vide: "🫥",
+  interdit: "🚫",
+  // Objets récurrents du domaine
+  membre: "👤",
+  equipe: "🛡️",
+  article: "📝",
+  agenda: "📅",
+  boutique: "🛍️",
+  sondage: "📊",
+  campagne: "💛",
+  post: "🐦",
+  jeu: "🎮",
+  // Vie de communauté
+  niveau: "⭐",
+  // 💛 est déjà pris par `campagne` : une icône par idée, jamais deux.
+  kizuna: "🤝",
+  collection: "🎴",
+  classement: "🏆",
+  ticket: "🎫",
+  fichier: "📁",
+  image: "🖼️",
+  modele: "🧊",
+  recherche: "🔎",
+  lien: "🔗",
+  // Exploitation
+  service: "🩺",
+  deploiement: "🚀",
+  tache: "⏱️",
+  journal: "🧾",
+  reglage: "🎛️",
+  // Pastilles d'état, à utiliser en début de ligne de liste
+  enLigne: "🟢",
+  degrade: "🟡",
+  horsLigne: "🔴",
+  inconnu: "⚪",
 } as const);
 
 export type NomIcone = keyof typeof ICONES;
 
 /** Icône par défaut d'une intention, quand l'appelant n'en impose pas. */
 export const ICONE_INTENTION: Readonly<Record<Intention, string>> = Object.freeze({
-	marque: "",
-	succes: ICONES.succes,
-	attention: ICONES.attention,
-	echec: ICONES.echec,
-	info: ICONES.info,
-	muet: "",
+  marque: "",
+  succes: ICONES.succes,
+  attention: ICONES.attention,
+  echec: ICONES.echec,
+  info: ICONES.info,
+  muet: "",
 });
 
 // ─── Typographie ────────────────────────────────────────────────────────────
@@ -147,12 +147,12 @@ export const PUCE = "- ";
 
 /** Identité affichée dans les pieds de page et les en-têtes d'auteur. */
 export interface Marque {
-	/** Nom lisible du bot, tel qu'il doit apparaître au membre. */
-	readonly nom: string;
-	/** Domaine public correspondant. */
-	readonly domaine: string;
-	/** Icône ronde de 16 px affichée à côté du pied — URL absolue, servie en 200. */
-	readonly icone: string;
+  /** Nom lisible du bot, tel qu'il doit apparaître au membre. */
+  readonly nom: string;
+  /** Domaine public correspondant. */
+  readonly domaine: string;
+  /** Icône ronde de 16 px affichée à côté du pied — URL absolue, servie en 200. */
+  readonly icone: string;
 }
 
 /**
@@ -163,14 +163,14 @@ export interface Marque {
  * à surveiller pour une image de seize pixels.
  */
 const ICONES_MARQUE: Readonly<Record<string, string>> = Object.freeze({
-	rg: "https://rosegriffon.fr/RG_Logo_V2.5.webp",
-	azalee: "https://azalee.rosegriffon.fr/RG_Azalee-logo.webp",
+  rg: "https://rosegriffon.fr/RG_Logo_V2.5.webp",
+  azalee: "https://azalee.rosegriffon.fr/RG_Azalee-logo.webp",
 });
 
 export const MARQUE: Marque = Object.freeze({
-	nom: PROFIL.titre,
-	domaine: PROFIL.marque.piedDePage,
-	icone: ICONES_MARQUE[PROFIL.nom] ?? ICONES_MARQUE.rg!,
+  nom: PROFIL.titre,
+  domaine: PROFIL.marque.piedDePage,
+  icone: ICONES_MARQUE[PROFIL.nom] ?? ICONES_MARQUE.rg!,
 });
 
 // ─── Limites DURES de l'API Discord ─────────────────────────────────────────
@@ -181,27 +181,27 @@ export const MARQUE: Marque = Object.freeze({
  * construit un embed dans ce dépôt passe donc par `lib/ui/embed.ts`, qui borne.
  */
 export const LIMITES = Object.freeze({
-	titre: 256,
-	description: 4096,
-	nomChamp: 256,
-	valeurChamp: 1024,
-	champs: 25,
-	pied: 2048,
-	auteur: 256,
-	/** Somme de titre + description + nom et valeur de TOUS les champs + pied + auteur. */
-	total: 6000,
-	/** Contenu texte d'un message (hors embed). */
-	contenu: 2000,
-	/** Propositions d'autocomplétion, et longueur de chacune. */
-	propositions: 25,
-	longueurProposition: 100,
-	/** Identifiant de composant — au-delà, le composant est refusé. */
-	identifiantComposant: 100,
-	/** Libellé d'un bouton. */
-	libelleBouton: 80,
-	/** Composants par rangée, et rangées par message. */
-	composantsParRangee: 5,
-	rangees: 5,
+  titre: 256,
+  description: 4096,
+  nomChamp: 256,
+  valeurChamp: 1024,
+  champs: 25,
+  pied: 2048,
+  auteur: 256,
+  /** Somme de titre + description + nom et valeur de TOUS les champs + pied + auteur. */
+  total: 6000,
+  /** Contenu texte d'un message (hors embed). */
+  contenu: 2000,
+  /** Propositions d'autocomplétion, et longueur de chacune. */
+  propositions: 25,
+  longueurProposition: 100,
+  /** Identifiant de composant — au-delà, le composant est refusé. */
+  identifiantComposant: 100,
+  /** Libellé d'un bouton. */
+  libelleBouton: 80,
+  /** Composants par rangée, et rangées par message. */
+  composantsParRangee: 5,
+  rangees: 5,
 } as const);
 
 /**

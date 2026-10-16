@@ -16,13 +16,10 @@ export default function NotFound() {
       </div>
 
       <div className="space-y-4 max-w-lg z-10">
-        <h1 className="text-4xl sm:text-6xl font-black font-sans tracking-tight text-on-surface">
-          404
-        </h1>
+        <h1 className="text-4xl sm:text-6xl font-black font-sans tracking-tight text-on-surface">404</h1>
         <h2 className="text-xl sm:text-2xl font-bold text-on-surface-variant">Page introuvable</h2>
         <p className="text-on-surface-variant/80 text-lg leading-relaxed">
-          Oups ! Il semblerait que vous ayez dribblé un peu trop loin. Cette page n&apos;existe pas
-          ou a été déplacée.
+          Oups ! Il semblerait que vous ayez dribblé un peu trop loin. Cette page n&apos;existe pas ou a été déplacée.
         </p>
       </div>
 

@@ -10,9 +10,7 @@ describe("Inazuma TV pure adapters", () => {
     })}</script><script type="application/ld+json">${JSON.stringify({
       "@type": "ItemList",
       name: "Episodes",
-      itemListElement: [
-        { position: 1, name: "Épisode 12 - Le match", url: "https://example.test/ep-12" },
-      ],
+      itemListElement: [{ position: 1, name: "Épisode 12 - Le match", url: "https://example.test/ep-12" }],
     })}</script>`;
     expect(parseOfficialCategories(html)[0]?.slug).toBe("saison1");
     expect(parseOfficialEpisodes(html)[0]?.number).toBe(12);

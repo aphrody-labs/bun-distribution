@@ -10,23 +10,18 @@ checkReadmeInventory();
 const root = resolve(import.meta.dir, "../../..");
 const manifest = JSON.parse(readFileSync(resolve(root, "docs/documentation.json"), "utf8"));
 const archived = new Set(
-  listArchivedDocs().filter((file) =>
-    archivedDocPrefixes.some((prefix) => file.startsWith(prefix)),
-  ),
+  listArchivedDocs().filter(file => archivedDocPrefixes.some(prefix => file.startsWith(prefix))),
 );
 const files = documentationSourceFiles(root, archived);
 const errors: string[] = [];
 const current = new Set<string>([...manifest.entrypoints, ...manifest.currentFiles]);
 let classified = 0;
-for (const file of files.filter((p) => p.startsWith("docs/"))) {
-  const isCurrent =
-    current.has(file) || manifest.currentPrefixes.some((p: string) => file.startsWith(p));
+for (const file of files.filter(p => p.startsWith("docs/"))) {
+  const isCurrent = current.has(file) || manifest.currentPrefixes.some((p: string) => file.startsWith(p));
   if (isCurrent) current.add(file);
   const retained =
     (manifest.historicalFiles ?? []).includes(file) ||
-    [...manifest.referencePrefixes, ...manifest.historicalPrefixes].some((p: string) =>
-      file.startsWith(p),
-    );
+    [...manifest.referencePrefixes, ...manifest.historicalPrefixes].some((p: string) => file.startsWith(p));
   if (!isCurrent && !retained && !["docs/documentation.json", "docs/README.md"].includes(file))
     errors.push(`Unclassified documentation: ${file}`);
   classified++;
@@ -41,7 +36,7 @@ for (const file of files) {
     errors.push(`Copied Rust workspace in skill: ${file}`);
 }
 let links = 0;
-for (const file of [...current].filter((p) => p.endsWith(".md"))) {
+for (const file of [...current].filter(p => p.endsWith(".md"))) {
   if (!existsSync(resolve(root, file))) continue;
   const text = readFileSync(resolve(root, file), "utf8");
   for (const match of text.matchAll(/\[[^\]\n]*\]\(([^)\n]+)\)/g)) {

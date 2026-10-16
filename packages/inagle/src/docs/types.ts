@@ -200,10 +200,7 @@ export interface NieReMap {
   cryptoConstants: NieCryptoConstant[];
   criticalOffsets: NieMemoryOffset[];
   rttiClasses: NieRttiClass[];
-  memoryStructures: Record<
-    string,
-    { sizeHex: string; description: string; fields: Record<string, string> }
-  >;
+  memoryStructures: Record<string, { sizeHex: string; description: string; fields: Record<string, string> }>;
 }
 
 // ============================================================================

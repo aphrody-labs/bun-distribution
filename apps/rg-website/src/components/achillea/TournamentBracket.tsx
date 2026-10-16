@@ -123,8 +123,7 @@ export function TournamentBracket({
                 Arbre de compétition prévisionnel
               </h4>
               <p className="text-lg text-muted-foreground mt-0.5">
-                L&apos;arbre officiel sera calculé et verrouillé par l&apos;arbitrage dès la clôture
-                des inscriptions.
+                L&apos;arbre officiel sera calculé et verrouillé par l&apos;arbitrage dès la clôture des inscriptions.
               </p>
             </div>
           </div>
@@ -171,9 +170,7 @@ export function TournamentBracket({
                               {p1?.user?.username || "En attente"}
                             </span>
                           </div>
-                          <span className="font-mono text-lg font-bold text-muted-foreground">
-                            -
-                          </span>
+                          <span className="font-mono text-lg font-bold text-muted-foreground">-</span>
                         </div>
 
                         <div className="border-t border-border/40" />
@@ -197,9 +194,7 @@ export function TournamentBracket({
                               {p2?.user?.username || "En attente"}
                             </span>
                           </div>
-                          <span className="font-mono text-lg font-bold text-muted-foreground">
-                            -
-                          </span>
+                          <span className="font-mono text-lg font-bold text-muted-foreground">-</span>
                         </div>
                       </div>
                     );
@@ -258,11 +253,9 @@ export function TournamentBracket({
                 </div>
 
                 <div className="space-y-6 flex-1 flex flex-col justify-around">
-                  {round.matches.map((m) => {
-                    const opp1Info =
-                      m.opponent1?.id != null ? participantMap.get(String(m.opponent1.id)) : null;
-                    const opp2Info =
-                      m.opponent2?.id != null ? participantMap.get(String(m.opponent2.id)) : null;
+                  {round.matches.map(m => {
+                    const opp1Info = m.opponent1?.id != null ? participantMap.get(String(m.opponent1.id)) : null;
+                    const opp2Info = m.opponent2?.id != null ? participantMap.get(String(m.opponent2.id)) : null;
 
                     const isWon1 = m.opponent1?.result === "win";
                     const isWon2 = m.opponent2?.result === "win";
@@ -274,7 +267,7 @@ export function TournamentBracket({
                       <div
                         key={m.id}
                         onClick={() => onSelectMatch?.(m.id)}
-                        onKeyDown={(event) => {
+                        onKeyDown={event => {
                           if (onSelectMatch && (event.key === "Enter" || event.key === " ")) {
                             event.preventDefault();
                             onSelectMatch(m.id);
@@ -295,9 +288,7 @@ export function TournamentBracket({
                           {/* Opponent 1 */}
                           <div
                             className={`flex items-center justify-between gap-2 text-lg p-1.5 rounded-lg transition ${
-                              isWon1
-                                ? "bg-emerald-500/10 text-emerald-400 font-bold"
-                                : "text-foreground font-medium"
+                              isWon1 ? "bg-emerald-500/10 text-emerald-400 font-bold" : "text-foreground font-medium"
                             }`}
                           >
                             <div className="flex items-center gap-2 truncate">
@@ -308,9 +299,7 @@ export function TournamentBracket({
                               />
                               <span className="truncate">
                                 {opp1Info?.username ||
-                                  (m.opponent1?.id != null
-                                    ? `Participant #${m.opponent1.id}`
-                                    : "En attente")}
+                                  (m.opponent1?.id != null ? `Participant #${m.opponent1.id}` : "En attente")}
                               </span>
                             </div>
                             <span className="font-mono text-lg font-bold px-1.5 py-0.5 rounded bg-muted/60">
@@ -323,9 +312,7 @@ export function TournamentBracket({
                           {/* Opponent 2 */}
                           <div
                             className={`flex items-center justify-between gap-2 text-lg p-1.5 rounded-lg transition ${
-                              isWon2
-                                ? "bg-emerald-500/10 text-emerald-400 font-bold"
-                                : "text-foreground font-medium"
+                              isWon2 ? "bg-emerald-500/10 text-emerald-400 font-bold" : "text-foreground font-medium"
                             }`}
                           >
                             <div className="flex items-center gap-2 truncate">
@@ -336,9 +323,7 @@ export function TournamentBracket({
                               />
                               <span className="truncate">
                                 {opp2Info?.username ||
-                                  (m.opponent2?.id != null
-                                    ? `Participant #${m.opponent2.id}`
-                                    : "En attente")}
+                                  (m.opponent2?.id != null ? `Participant #${m.opponent2.id}` : "En attente")}
                               </span>
                             </div>
                             <span className="font-mono text-lg font-bold px-1.5 py-0.5 rounded bg-muted/60">

@@ -62,13 +62,7 @@ interface CommentItemProps {
   depth?: number;
 }
 
-export function CommentItem({
-  comment,
-  articleId,
-  onDelete,
-  onUpdate,
-  depth = 0,
-}: CommentItemProps) {
+export function CommentItem({ comment, articleId, onDelete, onUpdate, depth = 0 }: CommentItemProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
   const isAdmin = isAdminRole(profile?.role ?? null);
@@ -113,8 +107,8 @@ export function CommentItem({
 
   // Ajout d'une réponse
   const handleReplyCreated = (reply: Comment) => {
-    setReplies((prev) => [...prev, reply]);
-    setReplyCount((c) => c + 1);
+    setReplies(prev => [...prev, reply]);
+    setReplyCount(c => c + 1);
     if (!repliesLoaded) {
       setRepliesLoaded(true);
     }
@@ -123,13 +117,13 @@ export function CommentItem({
 
   // Suppression d'une réponse imbriquée
   const handleReplyDeleted = (id: string) => {
-    setReplies((prev) => prev.filter((r) => r.id !== id));
-    setReplyCount((c) => Math.max(0, c - 1));
+    setReplies(prev => prev.filter(r => r.id !== id));
+    setReplyCount(c => Math.max(0, c - 1));
   };
 
   // Mise à jour d'une réponse imbriquée
   const handleReplyUpdated = (id: string, content: string) => {
-    setReplies((prev) => prev.map((r) => (r.id === id ? { ...r, content, is_edited: true } : r)));
+    setReplies(prev => prev.map(r => (r.id === id ? { ...r, content, is_edited: true } : r)));
   };
 
   // Suppression du commentaire
@@ -199,13 +193,9 @@ export function CommentItem({
                     Épinglé
                   </Badge>
                 )}
-                {comment.is_edited && (
-                  <span className="text-[10px] text-on-surface-variant/50 italic">(modifié)</span>
-                )}
+                {comment.is_edited && <span className="text-[10px] text-on-surface-variant/50 italic">(modifié)</span>}
               </div>
-              <span className="text-xs text-on-surface-variant/50">
-                {timeAgo(comment.created_at)}
-              </span>
+              <span className="text-xs text-on-surface-variant/50">{timeAgo(comment.created_at)}</span>
             </div>
           </div>
 
@@ -227,7 +217,7 @@ export function CommentItem({
               )}
               {canDelete && (
                 <button
-                  onClick={() => setShowDeleteConfirm((v) => !v)}
+                  onClick={() => setShowDeleteConfirm(v => !v)}
                   className={cn(
                     "inline-flex items-center justify-center min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-1.5 rounded-xl transition-colors",
                     showDeleteConfirm
@@ -274,14 +264,12 @@ export function CommentItem({
             <div
               className={cn(
                 "relative border rounded-xl bg-surface-container transition-colors focus-within:border-primary/40",
-                editContent.length > EDIT_MAX_LENGTH
-                  ? "border-red-500/40"
-                  : "border-outline-variant/15",
+                editContent.length > EDIT_MAX_LENGTH ? "border-red-500/40" : "border-outline-variant/15",
               )}
             >
               <textarea
                 value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
+                onChange={e => setEditContent(e.target.value)}
                 rows={3}
                 className="w-full resize-none bg-transparent px-3 pt-3 pb-14 sm:pb-9 text-sm text-on-surface focus:outline-hidden leading-relaxed"
                 style={{ minHeight: "80px" }}
@@ -326,16 +314,14 @@ export function CommentItem({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">
-            {comment.content}
-          </p>
+          <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap break-words">{comment.content}</p>
         )}
 
         {/* Bouton répondre */}
         {!isEditing && user && depth < MAX_DEPTH && (
           <div>
             <button
-              onClick={() => setShowReplyForm((v) => !v)}
+              onClick={() => setShowReplyForm(v => !v)}
               className={cn(
                 "inline-flex items-center gap-1.5 text-xs font-medium transition-colors rounded-lg px-3 py-1 min-h-11 sm:min-h-0",
                 showReplyForm
@@ -370,9 +356,7 @@ export function CommentItem({
             disabled={repliesLoading}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-primary/70 hover:text-primary transition-colors disabled:opacity-50"
           >
-            <ChevronDown
-              className={cn("size-3.5 transition-transform", repliesLoaded && "rotate-180")}
-            />
+            <ChevronDown className={cn("size-3.5 transition-transform", repliesLoaded && "rotate-180")} />
             {repliesLoading
               ? "Chargement…"
               : repliesLoaded
@@ -385,7 +369,7 @@ export function CommentItem({
       {/* Réponses imbriquées */}
       {repliesLoaded && replies.length > 0 && (
         <div className="mt-3 space-y-3">
-          {replies.map((reply) => (
+          {replies.map(reply => (
             <CommentItem
               key={reply.id}
               comment={reply}

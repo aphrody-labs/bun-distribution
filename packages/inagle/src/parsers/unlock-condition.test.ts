@@ -56,7 +56,7 @@ describe("decodeUnlockCondition - story", () => {
 describe("decodeUnlockCondition - event-flag (CRC32)", () => {
   it("decode une feuille event-flag et resout le CRC32", () => {
     const lookup = buildEventCrcLookup(["ev01_00150"]);
-    const c = decodeUnlockCondition(SCENE_EV01_00050, (crc) => lookup.get(crc));
+    const c = decodeUnlockCondition(SCENE_EV01_00050, crc => lookup.get(crc));
     expect(c.type).toBe("eventFlag");
     expect(c.requiredEvents).toHaveLength(1);
     const ev = c.requiredEvents[0];
@@ -92,7 +92,7 @@ describe("decodeUnlockCondition - composite (AND)", () => {
     expect(c.requiredEvents).toHaveLength(2);
     expect(c.requiredEvents[0].crc).toBe(crc32String("ev04_02110") >>> 0);
     expect(c.requiredEvents[0].crcHex).toBe("0x4DEA4516");
-    expect(c.requiredEvents.every((e) => e.namespace === "0x2A3D4543")).toBe(true);
+    expect(c.requiredEvents.every(e => e.namespace === "0x2A3D4543")).toBe(true);
   });
 });
 

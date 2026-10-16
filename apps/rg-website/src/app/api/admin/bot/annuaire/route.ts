@@ -25,23 +25,23 @@ const FLOCON = /^\d{15,25}$/;
  * pas et va chercher une panne inexistante.
  */
 export async function GET(requete: NextRequest) {
-	const garde = await requireApiAdmin();
-	if (!garde.ok) {
-		return garde.response;
-	}
+  const garde = await requireApiAdmin();
+  if (!garde.ok) {
+    return garde.response;
+  }
 
-	const brut = (requete.nextUrl.searchParams.get("guild") ?? "").trim();
-	const guildId = brut === "" ? RG_GUILD_ID : brut;
-	if (!FLOCON.test(guildId)) {
-		return NextResponse.json({ error: "Identifiant de guilde invalide" }, { status: 400 });
-	}
+  const brut = (requete.nextUrl.searchParams.get("guild") ?? "").trim();
+  const guildId = brut === "" ? RG_GUILD_ID : brut;
+  if (!FLOCON.test(guildId)) {
+    return NextResponse.json({ error: "Identifiant de guilde invalide" }, { status: 400 });
+  }
 
-	const annuaire = await annuaireGuilde(guildId);
-	return NextResponse.json(
-		{ guildId, ...annuaire },
-		{
-			headers: { "cache-control": "private, no-store" },
-			status: annuaire.source === null ? 503 : 200,
-		}
-	);
+  const annuaire = await annuaireGuilde(guildId);
+  return NextResponse.json(
+    { guildId, ...annuaire },
+    {
+      headers: { "cache-control": "private, no-store" },
+      status: annuaire.source === null ? 503 : 200,
+    },
+  );
 }

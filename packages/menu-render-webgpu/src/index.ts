@@ -27,16 +27,7 @@ export {
   computeOutlinePixel,
   OUTLINE_OFFSETS,
 } from "./glyph-atlas";
-export type {
-  Glyph,
-  GlyphAtlas,
-  GlyphQuad,
-  GlyphUV,
-  AtlasInfo,
-  TextLayout,
-  RawFontMetrics,
-  Rgba,
-} from "./glyph-atlas";
+export type { Glyph, GlyphAtlas, GlyphQuad, GlyphUV, AtlasInfo, TextLayout, RawFontMetrics, Rgba } from "./glyph-atlas";
 
 export { blendForDrawType, projectOrtho, DRAW_TYPES } from "./blend";
 export type { BlendState, BlendComponent } from "./blend";

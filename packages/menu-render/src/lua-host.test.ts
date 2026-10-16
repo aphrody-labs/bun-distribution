@@ -13,7 +13,7 @@ test("missing runtime fails explicitly and include fallback preserves owner beha
   expect(() => runMenuScreen("return 42")).toThrow("caller-supplied Lua runtime");
   const owner: LuaGameHost = {
     state: { calls: [], layers: [] },
-    include: (name) => `owner:${name}`,
+    include: name => `owner:${name}`,
   };
   const screen = new LuaScreenHost(owner).registerInclude("known", "return 7");
   expect(screen.host).toBe(owner);
@@ -22,13 +22,11 @@ test("missing runtime fails explicitly and include fallback preserves owner beha
 });
 
 test("caller adapter executes real Lua and propagates interpreter errors", () => {
-  const { lua, lauxlib, lualib, to_luastring, to_jsstring } = createRequire(import.meta.url)(
-    "fengari",
-  );
+  const { lua, lauxlib, lualib, to_luastring, to_jsstring } = createRequire(import.meta.url)("fengari");
   const adapter: LuaRuntimeAdapter = {
     createHost: () => ({
       state: { calls: [], layers: [] },
-      include: (name) => {
+      include: name => {
         throw new Error(`Missing include ${name}`);
       },
     }),
@@ -51,18 +49,14 @@ test("caller adapter executes real Lua and propagates interpreter errors", () =>
     },
   };
   expect(runMenuScreen("return 6 * 7", { runtime: adapter }).calls[0]?.args).toEqual([42]);
-  expect(() => runMenuScreen("error('actual Lua error')", { runtime: adapter })).toThrow(
-    "actual Lua error",
-  );
+  expect(() => runMenuScreen("error('actual Lua error')", { runtime: adapter })).toThrow("actual Lua error");
   expect(() => runMenuScreen("return 1", { runtime: adapter, hashEntries: {} })).toThrow(
     "does not support hash dictionaries",
   );
   expect(() => runMenuScreenState("return 1", { runtime: adapter, funcluaJson: {} })).toThrow(
     "does not support menu command-name loading",
   );
-  expect(runMenuScreenState("return 9", { runtime: adapter }).layerState.calls[0]?.args).toEqual([
-    9,
-  ]);
+  expect(runMenuScreenState("return 9", { runtime: adapter }).layerState.calls[0]?.args).toEqual([9]);
 });
 
 test("menu overrides retain visibility, text and numeric state supplied by the game owner", () => {

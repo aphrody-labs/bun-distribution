@@ -119,8 +119,7 @@ export const EFFECT_FR: Record<string, string> = {
   "Overall: Foul rate +25%": "Global : Taux de faute +25%",
   "Overall: Foul rate when dashing -10%": "Global : Taux de faute en sprint -10%",
   "Overall: When passing, Bond Power+100%": "Global : Lors d'une passe, Puissance de lien +100%",
-  "Overall: When team is scattered, Bond Power gain increases by 25%":
-    "Global : Équipe dispersée, gain de lien +25%",
+  "Overall: When team is scattered, Bond Power gain increases by 25%": "Global : Équipe dispersée, gain de lien +25%",
 
   // --- Géoglyphes ---
   "Geoglyph: Stun opponent with the ball": "Géoglyphe : Étourdit le porteur du ballon adverse",
@@ -133,14 +132,11 @@ export const EFFECT_FR: Record<string, string> = {
   "Geoglyph: DF +60%": "Géoglyphe : DEF +60%",
   "Geoglyph: Focus AT/DF +40%": "Géoglyphe : Concentration ATT/DEF +40%",
   "Geoglyph: Own Special Move Cooldown -25%": "Géoglyphe : Recharge technique -25%",
-  "Geoglyph: When passing, Bond Power +200%":
-    "Géoglyphe : Lors d'une passe, Puissance de lien +200%",
+  "Geoglyph: When passing, Bond Power +200%": "Géoglyphe : Lors d'une passe, Puissance de lien +200%",
   "Geoglyph: Foul rate when dashing -50%": "Géoglyphe : Taux de faute en sprint -50%",
   "Geoglyph: Tension depletion -25%": "Géoglyphe : Perte de tension -25%",
-  "Geoglyph: When Tension is below 30%, Focus AT/DF +40%":
-    "Géoglyphe : Tension < 30%, Concentration ATT/DEF +40%",
-  "Geoglyph: When Tension is below 30%, Scramble AT/DF +40%":
-    "Géoglyphe : Tension < 30%, Mêlée ATT/DEF +40%",
+  "Geoglyph: When Tension is below 30%, Focus AT/DF +40%": "Géoglyphe : Tension < 30%, Concentration ATT/DEF +40%",
+  "Geoglyph: When Tension is below 30%, Scramble AT/DF +40%": "Géoglyphe : Tension < 30%, Mêlée ATT/DEF +40%",
   // Typo variants from DB
   "Geogylph: AT +15%": "Géoglyphe : ATT +15%",
   "Geogylph: DF +30%": "Géoglyphe : DEF +30%",
@@ -169,8 +165,7 @@ export const EFFECT_FR: Record<string, string> = {
   "Form up, ignore Focus, and push forward": "Formation serrée, ignore la concentration, avance",
   "Opposition more likely to miss passes": "L'adversaire rate plus souvent ses passes",
   "Temporarily disables enemy Dash": "Désactive temporairement le sprint adverse",
-  "Temporarily disables enemy Focus Fields":
-    "Désactive temporairement les zones de concentration adverses",
+  "Temporarily disables enemy Focus Fields": "Désactive temporairement les zones de concentration adverses",
 };
 
 /** Translate an effect string — exact match from EFFECT_FR */

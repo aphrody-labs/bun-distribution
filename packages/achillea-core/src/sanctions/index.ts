@@ -13,15 +13,15 @@ export const ESCALATION_WINDOW_SEC = 30 * 24 * 60 * 60;
 
 /** Décision d'escalade : type de sanction à appliquer + durée (secondes). */
 export interface EscalationDecision {
-	type: SanctionType;
-	/** Durée de la sanction en secondes (`null` = permanente). */
-	durationSec: number | null;
+  type: SanctionType;
+  /** Durée de la sanction en secondes (`null` = permanente). */
+  durationSec: number | null;
 }
 
 /** Un palier d'escalade : `threshold` avertissements actifs → `decision`. */
 export interface EscalationTier {
-	threshold: number;
-	decision: EscalationDecision;
+  threshold: number;
+  decision: EscalationDecision;
 }
 
 /**
@@ -31,9 +31,9 @@ export interface EscalationTier {
  *   3 warns actifs → mute 1h
  */
 export const ESCALATION_TIERS: readonly EscalationTier[] = [
-	{ threshold: 8, decision: { type: SanctionType.Ban, durationSec: 7 * 24 * 60 * 60 } },
-	{ threshold: 5, decision: { type: SanctionType.Mute, durationSec: 24 * 60 * 60 } },
-	{ threshold: 3, decision: { type: SanctionType.Mute, durationSec: 60 * 60 } },
+  { threshold: 8, decision: { type: SanctionType.Ban, durationSec: 7 * 24 * 60 * 60 } },
+  { threshold: 5, decision: { type: SanctionType.Mute, durationSec: 24 * 60 * 60 } },
+  { threshold: 3, decision: { type: SanctionType.Mute, durationSec: 60 * 60 } },
 ] as const;
 
 /**
@@ -44,8 +44,8 @@ export const ESCALATION_TIERS: readonly EscalationTier[] = [
  * @param activeWarns Nombre d'avertissements actifs dans la fenêtre d'observation.
  */
 export function evaluateEscalation(activeWarns: number): EscalationDecision | null {
-	for (const tier of ESCALATION_TIERS) {
-		if (activeWarns >= tier.threshold) return tier.decision;
-	}
-	return null;
+  for (const tier of ESCALATION_TIERS) {
+    if (activeWarns >= tier.threshold) return tier.decision;
+  }
+  return null;
 }

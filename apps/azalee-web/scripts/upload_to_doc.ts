@@ -115,14 +115,12 @@ async function uploadToTmpFiles(filePath: string, retries = 3): Promise<string> 
       return viewUrl.replace("https://tmpfiles.org/", "https://tmpfiles.org/dl/");
     } catch (error: any) {
       clearTimeout(timeoutId);
-      console.warn(
-        `Attempt ${attempt} failed for ${filePath.split("/").pop()}: ${error.message || error}`,
-      );
+      console.warn(`Attempt ${attempt} failed for ${filePath.split("/").pop()}: ${error.message || error}`);
       if (attempt === retries) {
         throw error;
       }
       // Wait 2 seconds before retry
-      await new Promise((r) => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
   throw new Error("Failed after all retries");
@@ -133,7 +131,7 @@ async function main() {
   const docs = google.docs({ version: "v1", auth });
 
   // List files in the local screenshots directory
-  const localFiles = fs.readdirSync(DOCS_DIR).filter((f) => f.endsWith(".png"));
+  const localFiles = fs.readdirSync(DOCS_DIR).filter(f => f.endsWith(".png"));
   console.log(`Found ${localFiles.length} local screenshots in ${DOCS_DIR}.`);
 
   // Upload each file and get the direct download link
@@ -154,7 +152,7 @@ async function main() {
 
   // Read and parse the YouTube script
   console.log(`Reading script from ${SCRIPT_PATH}...`);
-  const scriptContent = fs.readFileSync(SCRIPT_PATH, "utf-8");
+  const scriptContent = await Bun.file(SCRIPT_PATH).text();
 
   // Split by sections using regex that matches both ## and ### with CRLF support
   const rawSections = scriptContent.split(/\r?\n##+ /);

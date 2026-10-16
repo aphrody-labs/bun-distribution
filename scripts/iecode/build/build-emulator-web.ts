@@ -3,10 +3,7 @@
 import { resolve, join } from "node:path";
 
 const root = resolve(import.meta.dir, "../../..");
-const aphrodyRoot = resolve(
-  root,
-  process.env.APHRODY_ROOT ?? process.env.APHRODY_INFRA_ROOT ?? "../aphrody",
-);
+const aphrodyRoot = resolve(root, process.env.APHRODY_ROOT ?? process.env.APHRODY_INFRA_ROOT ?? "../aphrody");
 const cargoFactory = join(aphrodyRoot, "scripts/iecode/build/rust/cargo-serial.ts");
 const ds = process.argv.includes("--ds");
 const packageName = ds ? "aphrody-dust-web" : "aphrody-wii-web";
@@ -26,11 +23,7 @@ async function run(command: string[]) {
 const lock = await Bun.file(join(root, "Cargo.lock")).text();
 const expected = lock.match(/name = "wasm-bindgen"\nversion = "([^"]+)"/)?.[1];
 const version = Bun.spawnSync(["wasm-bindgen", "--version"], { cwd: root });
-if (
-  !expected ||
-  version.exitCode !== 0 ||
-  version.stdout.toString().trim() !== `wasm-bindgen ${expected}`
-) {
+if (!expected || version.exitCode !== 0 || version.stdout.toString().trim() !== `wasm-bindgen ${expected}`) {
   throw new Error(`Install wasm-bindgen-cli ${expected ?? "from Cargo.lock"} before building.`);
 }
 await run([

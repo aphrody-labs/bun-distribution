@@ -1,19 +1,7 @@
 "use client";
-import {
-  useNotificationPermission,
-  refreshNotificationPermission,
-} from "../_context/notification-permission";
+import { useNotificationPermission, refreshNotificationPermission } from "../_context/notification-permission";
 
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@rosegriffon/ui";
+import { Badge, Button, Card, CardContent, CardHeader, Avatar, AvatarFallback, AvatarImage } from "@rosegriffon/ui";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -84,8 +72,7 @@ export function TwitchChat({ channelName = "rose_griffontv" }: TwitchChatProps) 
           // Better Auth expose name / image / email — on les utilise pour le UI minimal.
           // Pour les vraies infos Twitch (follows, sub) on appellera l'API Twitch côté serveur
           // Avec le token stocké dans `account` quand nécessaire.
-          const username =
-            (sessionUser.name as string | undefined) ?? sessionUser.email?.split("@")[0] ?? "user";
+          const username = (sessionUser.name as string | undefined) ?? sessionUser.email?.split("@")[0] ?? "user";
           setTwitchUsername(username);
           setTwitchUserData({
             broadcaster_type: "",
@@ -216,20 +203,14 @@ export function TwitchChat({ channelName = "rose_griffontv" }: TwitchChatProps) 
     return (
       <Card className="border-2 h-[600px]" style={{ borderColor: `${colors.primary}40` }}>
         <CardContent className="p-6 flex items-center justify-center h-full">
-          <div
-            className="animate-spin rounded-full size-8 border-b-2"
-            style={{ borderColor: colors.primary }}
-          />
+          <div className="animate-spin rounded-full size-8 border-b-2" style={{ borderColor: colors.primary }} />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card
-      className="border-2 h-[600px] overflow-hidden"
-      style={{ borderColor: `${colors.primary}40` }}
-    >
+    <Card className="border-2 h-[600px] overflow-hidden" style={{ borderColor: `${colors.primary}40` }}>
       <CardHeader className="pb-3 border-b" style={{ borderColor: `${colors.primary}20` }}>
         <div className="flex items-center justify-between">
           <h3 className="font-bold flex items-center gap-2">
@@ -260,23 +241,14 @@ export function TwitchChat({ channelName = "rose_griffontv" }: TwitchChatProps) 
                 className="h-8"
                 title={notificationsEnabled ? "Désactiver notifications" : "Activer notifications"}
               >
-                {notificationsEnabled ? (
-                  <Bell className="size-4 text-green-500" />
-                ) : (
-                  <BellOff className="size-4" />
-                )}
+                {notificationsEnabled ? <Bell className="size-4 text-green-500" /> : <BellOff className="size-4" />}
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="h-8">
                 <LogOut className="size-4" />
               </Button>
             </div>
           ) : (
-            <Button
-              size="sm"
-              onClick={handleTwitchLogin}
-              className="gap-2"
-              style={{ backgroundColor: "#9146FF" }}
-            >
+            <Button size="sm" onClick={handleTwitchLogin} className="gap-2" style={{ backgroundColor: "#9146FF" }}>
               <LogIn className="size-4" />
               <span className="hidden sm:inline">Connexion Twitch</span>
             </Button>
@@ -324,12 +296,7 @@ export function TwitchChat({ channelName = "rose_griffontv" }: TwitchChatProps) 
                     <p className="text-xs text-green-600 font-semibold flex items-center gap-1">
                       ✅ Abonné à {channelName}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleSubscribe}
-                      className="h-6 text-xs"
-                    >
+                    <Button size="sm" variant="ghost" onClick={handleSubscribe} className="h-6 text-xs">
                       Se désabonner
                     </Button>
                   </div>
@@ -352,30 +319,20 @@ export function TwitchChat({ channelName = "rose_griffontv" }: TwitchChatProps) 
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div
-                className="mb-4 p-4 rounded-full"
-                style={{ backgroundColor: `${colors.primary}20` }}
-              >
+              <div className="mb-4 p-4 rounded-full" style={{ backgroundColor: `${colors.primary}20` }}>
                 <MessageSquare className="size-12" style={{ color: colors.primary }} />
               </div>
               <h4 className="font-bold text-lg mb-2">Rejoignez le chat Twitch !</h4>
               <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                Connectez-vous avec votre compte Twitch pour participer aux discussions en direct
-                avec la communauté.
+                Connectez-vous avec votre compte Twitch pour participer aux discussions en direct avec la communauté.
               </p>
-              <Button
-                onClick={handleTwitchLogin}
-                className="gap-2"
-                style={{ backgroundColor: "#9146FF" }}
-              >
+              <Button onClick={handleTwitchLogin} className="gap-2" style={{ backgroundColor: "#9146FF" }}>
                 <svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
                 </svg>
                 Se connecter avec Twitch
               </Button>
-              <p className="text-xs text-muted-foreground mt-4">
-                Votre connexion est sécurisée via Supabase Auth
-              </p>
+              <p className="text-xs text-muted-foreground mt-4">Votre connexion est sécurisée via Supabase Auth</p>
             </motion.div>
           </div>
         )}

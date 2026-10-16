@@ -13,18 +13,12 @@ export type ImportLocal = ({ type: "2d"; planches: Planche[] } | { type: "3d"; u
   remarque: string;
   liberer(): void;
 };
-const objet = (v: unknown): v is Record<string, unknown> =>
-  !!v && typeof v === "object" && !Array.isArray(v);
+const objet = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const entier = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
 
-export function grille(
-  largeur: number,
-  hauteur: number,
-  colonnes: number,
-  lignes: number,
-): Region[] {
+export function grille(largeur: number, hauteur: number, colonnes: number, lignes: number): Region[] {
   if (
-    ![largeur, hauteur, colonnes, lignes].every((n) => entier(n) && n > 0) ||
+    ![largeur, hauteur, colonnes, lignes].every(n => entier(n) && n > 0) ||
     colonnes * lignes > 4096 ||
     largeur % colonnes ||
     hauteur % lignes
@@ -51,7 +45,7 @@ export function lireRegions(v: unknown, largeur: number, hauteur: number): Regio
     v.sprites.length > 4096
   )
     throw new Error("Atlas JSON invalide : dimensions différentes de l’image ou trop de régions.");
-  return v.sprites.map((s) => {
+  return v.sprites.map(s => {
     if (
       !objet(s) ||
       typeof s.nom !== "string" ||
@@ -74,9 +68,7 @@ export function lireRegions(v: unknown, largeur: number, hauteur: number): Regio
 
 export async function decompresserGzip(blob: Blob): Promise<Uint8Array> {
   if (typeof DecompressionStream === "undefined")
-    throw new Error(
-      "Gzip indisponible dans ce navigateur. Décompressez le fichier avant l’import.",
-    );
+    throw new Error("Gzip indisponible dans ce navigateur. Décompressez le fichier avant l’import.");
   const reader = blob.stream().pipeThrough(new DecompressionStream("gzip")).getReader();
   const blocs: Uint8Array[] = [];
   let total = 0;
@@ -85,8 +77,7 @@ export async function decompresserGzip(blob: Blob): Promise<Uint8Array> {
       const { done, value } = await reader.read();
       if (done) break;
       total += value.byteLength;
-      if (total > MAX_OCTETS)
-        throw new Error("Fichier décompressé trop volumineux (64 Mio maximum).");
+      if (total > MAX_OCTETS) throw new Error("Fichier décompressé trop volumineux (64 Mio maximum).");
       blocs.push(value);
     }
   } finally {
@@ -104,11 +95,7 @@ export async function decompresserGzip(blob: Blob): Promise<Uint8Array> {
 
 /** Résout seulement les compagnons sélectionnés ; jamais de réseau ni de chemin absolu. */
 export function resoudreUri(uri: string, fichiers: Map<string, string>): string {
-  if (
-    /^data:(application\/(octet-stream|gltf-buffer)|image\/(png|jpeg|webp|ktx2));base64,[a-z\d+/=\s]*$/i.test(
-      uri,
-    )
-  )
+  if (/^data:(application\/(octet-stream|gltf-buffer)|image\/(png|jpeg|webp|ktx2));base64,[a-z\d+/=\s]*$/i.test(uri))
     return uri;
   let nom: string;
   try {
@@ -119,28 +106,19 @@ export function resoudreUri(uri: string, fichiers: Map<string, string>): string 
   nom = nom.replace(/^\.\//, "");
   if (
     /[\\:?#]/.test(nom) ||
-    [...nom].some((character) => character.charCodeAt(0) < 32) ||
+    [...nom].some(character => character.charCodeAt(0) < 32) ||
     nom.startsWith("/") ||
-    nom.split("/").some((p) => !p || p === "..")
+    nom.split("/").some(p => !p || p === "..")
   )
     throw new Error("Ressource externe ou chemin interdit dans le modèle.");
   // Le sélecteur multiple fournit des noms de fichiers, pas des chemins. Refuser les doublons en amont.
   const url = fichiers.get(nom) ?? fichiers.get(nom.split("/").pop()!);
-  if (!url)
-    throw new Error(
-      `Ressource manquante : ${nom}. Sélectionnez aussi les textures et fichiers .bin.`,
-    );
+  if (!url) throw new Error(`Ressource manquante : ${nom}. Sélectionnez aussi les textures et fichiers .bin.`);
   return url;
 }
 
 function relierGltf(v: unknown, ressources: Map<string, string>): void {
-  if (
-    !objet(v) ||
-    !objet(v.asset) ||
-    v.asset.version !== "2.0" ||
-    !Array.isArray(v.meshes) ||
-    !v.meshes.length
-  )
+  if (!objet(v) || !objet(v.asset) || v.asset.version !== "2.0" || !Array.isArray(v.meshes) || !v.meshes.length)
     throw new Error("Modèle glTF 2.0 sans maillage ou document invalide.");
   function visiter(value: unknown, profondeur = 0) {
     if (profondeur > 64) throw new Error("Document glTF trop imbriqué.");
@@ -189,10 +167,9 @@ export function preparerGlb(bytes: Uint8Array, ressources: Map<string, string>):
 }
 
 export async function importerLocal(selection: File[]): Promise<ImportLocal> {
-  if (!selection.length || selection.length > 200)
-    throw new Error("Sélectionnez entre 1 et 200 fichiers.");
+  if (!selection.length || selection.length > 200) throw new Error("Sélectionnez entre 1 et 200 fichiers.");
   if (
-    selection.some((f) => !f.size || f.size > MAX_OCTETS) ||
+    selection.some(f => !f.size || f.size > MAX_OCTETS) ||
     selection.reduce((n, f) => n + f.size, 0) > 128 * 1024 * 1024
   )
     throw new Error("Limite : 64 Mio par fichier, 128 Mio par import ; fichiers vides refusés.");
@@ -214,41 +191,31 @@ export async function importerLocal(selection: File[]): Promise<ImportLocal> {
     const fichiers: File[] = [];
     let tailleTotale = 0;
     for (const f of selection) {
-      const fichier = /\.gz$/i.test(f.name)
-        ? new File([(await decompresserGzip(f)).slice()], f.name.slice(0, -3))
-        : f;
+      const fichier = /\.gz$/i.test(f.name) ? new File([(await decompresserGzip(f)).slice()], f.name.slice(0, -3)) : f;
       tailleTotale += fichier.size;
-      if (tailleTotale > 128 * 1024 * 1024)
-        throw new Error("Import décompressé supérieur à 128 Mio.");
-      if (fichiers.some((v) => v.name === fichier.name))
-        throw new Error("Doublon après décompression.");
+      if (tailleTotale > 128 * 1024 * 1024) throw new Error("Import décompressé supérieur à 128 Mio.");
+      if (fichiers.some(v => v.name === fichier.name)) throw new Error("Doublon après décompression.");
       fichiers.push(fichier);
     }
-    const modeles = fichiers.filter((f) => /\.(glb|gltf|vrm|g4md)$/i.test(f.name));
-    if (modeles.length > 1)
-      throw new Error("Importez un seul modèle à la fois avec ses ressources.");
+    const modeles = fichiers.filter(f => /\.(glb|gltf|vrm|g4md)$/i.test(f.name));
+    if (modeles.length > 1) throw new Error("Importez un seul modèle à la fois avec ses ressources.");
     if (modeles.length) {
       const principal = modeles[0];
       let blob: Blob;
       if (/\.g4md$/i.test(principal.name)) {
-        const mesh = fichiers.find((f) => f.name === principal.name.replace(/g4md$/i, "g4mg"));
+        const mesh = fichiers.find(f => f.name === principal.name.replace(/g4md$/i, "g4mg"));
         if (!mesh) throw new Error("Sélectionnez la paire G4MD + G4MG de même nom.");
         const { modelToGlb } = await import("@/lib/cpk-wasm");
         blob = new Blob(
           [
             (
-              await modelToGlb(
-                new Uint8Array(await principal.arrayBuffer()),
-                new Uint8Array(await mesh.arrayBuffer()),
-              )
+              await modelToGlb(new Uint8Array(await principal.arrayBuffer()), new Uint8Array(await mesh.arrayBuffer()))
             ).slice(),
           ],
           { type: "model/gltf-binary" },
         );
       } else {
-        const ressources = new Map(
-          fichiers.filter((f) => f !== principal).map((f) => [f.name, creer(f)]),
-        );
+        const ressources = new Map(fichiers.filter(f => f !== principal).map(f => [f.name, creer(f)]));
         if (/\.gltf$/i.test(principal.name)) {
           if (principal.size > 8 * 1024 * 1024) throw new Error("JSON glTF supérieur à 8 Mio.");
           const doc: unknown = JSON.parse(await principal.text());
@@ -268,8 +235,8 @@ export async function importerLocal(selection: File[]): Promise<ImportLocal> {
             : "Modèle local indépendant du catalogue. Exportez le GLB pour conserver les transformations.",
       };
     }
-    const images = fichiers.filter((f) => /\.(png|jpe?g|webp|g4tx)$/i.test(f.name));
-    const atlas = fichiers.filter((f) => /\.json$/i.test(f.name));
+    const images = fichiers.filter(f => /\.(png|jpe?g|webp|g4tx)$/i.test(f.name));
+    const atlas = fichiers.filter(f => /\.json$/i.test(f.name));
     if (
       !images.length ||
       fichiers.length !== images.length + atlas.length ||
@@ -281,9 +248,7 @@ export async function importerLocal(selection: File[]): Promise<ImportLocal> {
       );
     const planches: Planche[] = [];
     let pixels = 0;
-    for (const fichier of images.sort((a, b) =>
-      a.name.localeCompare(b.name, "fr", { numeric: true }),
-    )) {
+    for (const fichier of images.sort((a, b) => a.name.localeCompare(b.name, "fr", { numeric: true }))) {
       let blob: Blob = fichier;
       let manifeste: unknown;
       if (/\.g4tx$/i.test(fichier.name)) {

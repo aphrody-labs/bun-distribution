@@ -103,10 +103,7 @@ export function buildAllDescriptionMaps(): DescriptionMaps {
 /**
  * Get localized description for a character by nameHash
  */
-export function getDescription(
-  maps: DescriptionMaps,
-  nameHash: string,
-): { en?: string; fr?: string; ja?: string } {
+export function getDescription(maps: DescriptionMaps, nameHash: string): { en?: string; fr?: string; ja?: string } {
   return {
     en: maps.descriptions.get("en")?.get(nameHash),
     fr: maps.descriptions.get("fr")?.get(nameHash),

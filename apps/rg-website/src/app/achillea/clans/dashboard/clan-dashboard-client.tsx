@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAchilleaAuth, createAchilleaClient } from "@/lib/achillea";
 import { UserAvatar } from "@/components/achillea/UserAvatar";
-import type {
-  ClanDTO,
-  ClanMemberDTO,
-  ClanApplicationDTO,
-  ClanInviteDTO,
-} from "@rosegriffon/achillea-types";
+import type { ClanDTO, ClanMemberDTO, ClanApplicationDTO, ClanInviteDTO } from "@rosegriffon/achillea-types";
 import { ClanMemberDistinction } from "@rosegriffon/achillea-types/enums/clanMemberRole";
 import {
   Shield,
@@ -40,9 +35,7 @@ export default function ClanDashboardPage() {
   const [applications, setApplications] = useState<ClanApplicationDTO[]>([]);
   const [invites, setInvites] = useState<ClanInviteDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<"members" | "applications" | "invites" | "settings">(
-    "members",
-  );
+  const [activeTab, setActiveTab] = useState<"members" | "applications" | "invites" | "settings">("members");
 
   // Invites state
   const [inviteUserId, setInviteUserId] = useState<string>("");
@@ -55,15 +48,8 @@ export default function ClanDashboardPage() {
   const [savingSettings, setSavingSettings] = useState<boolean>(false);
   const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    isAuthenticated,
-    user?.id,
-  ]);
-  if (
-    [isAuthenticated, user?.id].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
-  ) {
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([isAuthenticated, user?.id]);
+  if ([isAuthenticated, user?.id].some((value, position) => !Object.is(value, requestIdentity1[position]))) {
     setRequestIdentity1([isAuthenticated, user?.id]);
     (() => {
       if (!isAuthenticated) {
@@ -83,7 +69,7 @@ export default function ClanDashboardPage() {
 
     void createAchilleaClient({ credentials: "include" })
       .clans.myRole()
-      .then((result) => {
+      .then(result => {
         if (!cancelled) {
           setClanRole(result.ok ? result.value.role : null);
           setRoleLoading(false);
@@ -134,7 +120,7 @@ export default function ClanDashboardPage() {
     // résultat de l'annuaire public (qui pouvait montrer le mauvais clan).
     client.clans
       .get(user.clanId)
-      .then(async (res) => {
+      .then(async res => {
         if (cancelled) return;
         if (res.ok) {
           const myClan = res.value;
@@ -154,7 +140,7 @@ export default function ClanDashboardPage() {
           if (invRes.ok) setInvites(invRes.value);
         }
       })
-      .catch((cause) => {
+      .catch(cause => {
         signalerException("clans/dashboard", cause);
       })
       .finally(() => {
@@ -189,19 +175,19 @@ export default function ClanDashboardPage() {
     if (!clan) return;
     const client = createAchilleaClient({ credentials: "include" });
     await client.clans.kickMember(userId, "Exclusion par un officier");
-    setMembers((prev) => prev.filter((m) => m.user?.id !== userId));
+    setMembers(prev => prev.filter(m => m.user?.id !== userId));
   };
 
   const handleAcceptApp = async (app: ClanApplicationDTO) => {
     const client = createAchilleaClient({ credentials: "include" });
     await client.clans.acceptApplication(app);
-    setApplications((prev) => prev.filter((a) => a.id !== app.id));
+    setApplications(prev => prev.filter(a => a.id !== app.id));
   };
 
   const handleRejectApp = async (app: ClanApplicationDTO) => {
     const client = createAchilleaClient({ credentials: "include" });
     await client.clans.rejectApplication(app);
-    setApplications((prev) => prev.filter((a) => a.id !== app.id));
+    setApplications(prev => prev.filter(a => a.id !== app.id));
   };
 
   const handleCreateInvite = async (e: React.FormEvent) => {
@@ -211,9 +197,7 @@ export default function ClanDashboardPage() {
     setInviteError(null);
     const client = createAchilleaClient({ credentials: "include" });
     try {
-      const res = await client.clans.createInvite(inviteUserId.trim(), [
-        ClanMemberDistinction.Player,
-      ]);
+      const res = await client.clans.createInvite(inviteUserId.trim(), [ClanMemberDistinction.Player]);
       if (res.ok) {
         setInviteUserId("");
         const ref = await client.clans.invites();
@@ -231,7 +215,7 @@ export default function ClanDashboardPage() {
   const handleRevokeInvite = async (inv: ClanInviteDTO) => {
     const client = createAchilleaClient({ credentials: "include" });
     await client.clans.revokeInvite(inv);
-    setInvites((prev) => prev.filter((i) => i.id !== inv.id));
+    setInvites(prev => prev.filter(i => i.id !== inv.id));
   };
 
   const handleNotifyInvite = async (inv: ClanInviteDTO) => {
@@ -389,27 +373,19 @@ export default function ClanDashboardPage() {
           {activeTab === "members" && (
             <div className="border border-border rounded-2xl bg-card overflow-hidden">
               <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
-                <h3 className="font-bold text-xs uppercase text-muted-foreground">
-                  Effectif du clan
-                </h3>
+                <h3 className="font-bold text-xs uppercase text-muted-foreground">Effectif du clan</h3>
               </div>
 
               <div className="divide-y divide-border/60">
-                {members.map((m) => (
+                {members.map(m => (
                   <div
                     key={m.user?.id}
                     className="p-3 px-4 flex items-center justify-between gap-4 hover:bg-muted/20 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <UserAvatar
-                        avatar={m.user?.avatar}
-                        name={m.user?.username || "Membre"}
-                        className="w-8 h-8"
-                      />
+                      <UserAvatar avatar={m.user?.avatar} name={m.user?.username || "Membre"} className="w-8 h-8" />
                       <div>
-                        <div className="font-semibold text-xs text-foreground">
-                          {m.user?.username}
-                        </div>
+                        <div className="font-semibold text-xs text-foreground">{m.user?.username}</div>
                         <div className="text-[10px] text-muted-foreground">
                           Rejoint le {new Date(m.createdAt).toLocaleDateString("fr-FR")}
                         </div>
@@ -418,11 +394,7 @@ export default function ClanDashboardPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-muted text-muted-foreground">
-                        {m.clanRole === 3
-                          ? "Président"
-                          : m.clanRole === 2
-                            ? "Vice-Président"
-                            : "Membre"}
+                        {m.clanRole === 3 ? "Président" : m.clanRole === 2 ? "Vice-Président" : "Membre"}
                       </span>
 
                       {m.clanRole !== 3 && (
@@ -446,18 +418,14 @@ export default function ClanDashboardPage() {
           {activeTab === "applications" && (
             <div className="border border-border rounded-2xl bg-card overflow-hidden">
               <div className="p-4 border-b border-border bg-muted/20">
-                <h3 className="font-bold text-xs uppercase text-muted-foreground">
-                  Candidatures reçues
-                </h3>
+                <h3 className="font-bold text-xs uppercase text-muted-foreground">Candidatures reçues</h3>
               </div>
 
               {applications.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  Aucune candidature en attente.
-                </div>
+                <div className="py-12 text-center text-xs text-muted-foreground">Aucune candidature en attente.</div>
               ) : (
                 <div className="divide-y divide-border/60">
-                  {applications.map((app) => (
+                  {applications.map(app => (
                     <div
                       key={app.id}
                       className="p-4 flex items-center justify-between gap-4 hover:bg-muted/20 transition"
@@ -520,7 +488,7 @@ export default function ClanDashboardPage() {
                   <input
                     type="text"
                     value={inviteUserId}
-                    onChange={(e) => setInviteUserId(e.target.value)}
+                    onChange={e => setInviteUserId(e.target.value)}
                     placeholder="Identifiant Discord du joueur (ex: 394820194829104820)"
                     className="flex-1 px-3 py-2 text-xs bg-background border border-border rounded-xl focus:outline-hidden focus:ring-1 focus:ring-primary font-mono"
                   />
@@ -529,11 +497,7 @@ export default function ClanDashboardPage() {
                     disabled={inviting || !inviteUserId.trim()}
                     className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-primary/90 disabled:opacity-50 transition shadow-xs"
                   >
-                    {inviting ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Send className="w-3.5 h-3.5" />
-                    )}
+                    {inviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     Envoyer l&apos;invitation
                   </button>
                 </div>
@@ -554,12 +518,10 @@ export default function ClanDashboardPage() {
                 </div>
 
                 {invites.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-muted-foreground">
-                    Aucune invitation en cours.
-                  </div>
+                  <div className="py-12 text-center text-xs text-muted-foreground">Aucune invitation en cours.</div>
                 ) : (
                   <div className="divide-y divide-border/60">
-                    {invites.map((inv) => (
+                    {invites.map(inv => (
                       <div
                         key={inv.id}
                         className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/20 transition"
@@ -574,9 +536,7 @@ export default function ClanDashboardPage() {
                             <div className="font-semibold text-xs text-foreground">
                               {inv.user?.username || "Joueur"}
                             </div>
-                            <div className="text-[10px] text-muted-foreground font-mono">
-                              ID: {inv.user?.id}
-                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono">ID: {inv.user?.id}</div>
                           </div>
                         </div>
 
@@ -609,10 +569,7 @@ export default function ClanDashboardPage() {
 
           {/* Settings Tab */}
           {activeTab === "settings" && (
-            <form
-              onSubmit={handleSaveSettings}
-              className="border border-border bg-card rounded-2xl p-6 space-y-5"
-            >
+            <form onSubmit={handleSaveSettings} className="border border-border bg-card rounded-2xl p-6 space-y-5">
               <h3 className="font-bold text-sm">Paramètres du Clan</h3>
 
               <div className="space-y-4">
@@ -627,7 +584,7 @@ export default function ClanDashboardPage() {
                     id="route-dashboard-clan-dashboard-client-tsx-1"
                     rows={4}
                     value={bio}
-                    onChange={(e) => setBio(e.target.value)}
+                    onChange={e => setBio(e.target.value)}
                     className="w-full p-3 text-xs bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -637,7 +594,7 @@ export default function ClanDashboardPage() {
                     type="checkbox"
                     id="recruiting-toggle"
                     checked={isRecruiting}
-                    onChange={(e) => setIsRecruiting(e.target.checked)}
+                    onChange={e => setIsRecruiting(e.target.checked)}
                     className="rounded border-border"
                   />
                   <label htmlFor="recruiting-toggle" className="text-xs font-medium cursor-pointer">
@@ -658,11 +615,7 @@ export default function ClanDashboardPage() {
                   disabled={savingSettings}
                   className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-primary/90 transition shadow-sm"
                 >
-                  {savingSettings ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5" />
-                  )}
+                  {savingSettings ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   Enregistrer les modifications
                 </button>
               </div>

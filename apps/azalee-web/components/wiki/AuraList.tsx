@@ -94,9 +94,8 @@ export function AuraList({
 
         {/* Element Chips - same style as SkillFilterBar */}
         <div className="flex flex-wrap gap-2">
-          {ELEMENTS.map((f) => {
-            const isActive =
-              f.value === "" ? !element : element.toLowerCase() === f.value.toLowerCase();
+          {ELEMENTS.map(f => {
+            const isActive = f.value === "" ? !element : element.toLowerCase() === f.value.toLowerCase();
             return (
               <button
                 key={f.value}
@@ -130,7 +129,7 @@ export function AuraList({
 
       {auras.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {auras.map((aura) => {
+          {auras.map(aura => {
             const sd = aura.sheetData || {};
             const passiveRaw = sd.passiveEffect;
             const passiveFr = passiveRaw ? translatePassiveEffect(passiveRaw) : undefined;

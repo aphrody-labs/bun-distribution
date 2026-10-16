@@ -12,5 +12,5 @@
 import { permanentRedirect } from "next/navigation";
 
 export default function KeshinPage(): never {
-	permanentRedirect("/modeles/keshin");
+  permanentRedirect("/modeles/keshin");
 }

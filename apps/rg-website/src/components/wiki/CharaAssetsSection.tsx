@@ -12,52 +12,50 @@ import { cdnOrigin } from "@rosegriffon/assets";
 import { Icon } from "@/components/ui/Icon";
 
 const CharacterModelViewer = dynamic(() => import("@/components/wiki/CharacterModelViewer"), {
-	ssr: false,
+  ssr: false,
 });
 
 const CDN = cdnOrigin(process.env.NEXT_PUBLIC_CDN_ORIGIN);
 
 export function CharaAssetsSection({
-	internalCode,
-	displayName,
+  internalCode,
+  displayName,
 }: {
-	internalCode: string;
-	/** Nom lisible du personnage — utilisé pour l'alt/titre/nom de fichier du viewer 3D, jamais le code interne. */
-	displayName?: string;
+  internalCode: string;
+  /** Nom lisible du personnage — utilisé pour l'alt/titre/nom de fichier du viewer 3D, jamais le code interne. */
+  displayName?: string;
 }) {
-	const [voiceFailed, setVoiceFailed] = useState(false);
-	if (!internalCode || !/^c\d{6,9}$/i.test(internalCode)) return null;
+  const [voiceFailed, setVoiceFailed] = useState(false);
+  if (!internalCode || !/^c\d{6,9}$/i.test(internalCode)) return null;
 
-	const glbUrl = `${CDN}/model-full/${internalCode}.glb`;
-	const voiceUrl = `${CDN}/audio/data/common/sound_asset/ja/${internalCode}.acb`;
+  const glbUrl = `${CDN}/model-full/${internalCode}.glb`;
+  const voiceUrl = `${CDN}/audio/data/common/sound_asset/ja/${internalCode}.acb`;
 
-	return (
-		<section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low/40 p-5 space-y-4">
-			<h2 className="flex items-center gap-2 text-fluid-title-md font-bold text-on-surface">
-				<Icon name="deployed_code" size={20} className="text-primary" />
-				Assets du jeu
-			</h2>
+  return (
+    <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low/40 p-5 space-y-4">
+      <h2 className="flex items-center gap-2 text-fluid-title-md font-bold text-on-surface">
+        <Icon name="deployed_code" size={20} className="text-primary" />
+        Assets du jeu
+      </h2>
 
-			<div>
-				<p className="text-xs text-on-surface-variant mb-1">
-					Modèle 3D (corps + visage + uniforme)
-				</p>
-				<CharacterModelViewer glbUrl={glbUrl} name={displayName || "personnage"} inline />
-			</div>
+      <div>
+        <p className="text-xs text-on-surface-variant mb-1">Modèle 3D (corps + visage + uniforme)</p>
+        <CharacterModelViewer glbUrl={glbUrl} name={displayName || "personnage"} inline />
+      </div>
 
-			{!voiceFailed && (
-				<div>
-					<p className="text-xs text-on-surface-variant mb-1">Voix (JP)</p>
-					{/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-					<audio
-						controls
-						preload="none"
-						className="w-full max-w-md"
-						src={voiceUrl}
-						onError={() => setVoiceFailed(true)}
-					/>
-				</div>
-			)}
-		</section>
-	);
+      {!voiceFailed && (
+        <div>
+          <p className="text-xs text-on-surface-variant mb-1">Voix (JP)</p>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio
+            controls
+            preload="none"
+            className="w-full max-w-md"
+            src={voiceUrl}
+            onError={() => setVoiceFailed(true)}
+          />
+        </div>
+      )}
+    </section>
+  );
 }

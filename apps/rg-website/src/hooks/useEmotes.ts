@@ -39,10 +39,7 @@ export function useEmotes() {
     return emote;
   }, []);
 
-  const getByCharacter = useCallback(
-    (character: "gaelle" | "roy" | "rg") => getEmotesByCharacter(character),
-    [],
-  );
+  const getByCharacter = useCallback((character: "gaelle" | "roy" | "rg") => getEmotesByCharacter(character), []);
 
   const getByCategory = useCallback(
     (category: "reaction" | "greeting" | "emotion") => getEmotesByCategory(category),
@@ -77,9 +74,9 @@ export function useEmoteHistory(maxHistory: number = 10) {
 
   const addToHistory = useCallback(
     (emote: Emote) => {
-      setHistory((prev) => {
+      setHistory(prev => {
         // Supprimer les doublons et ajouter en tête
-        const filtered = prev.filter((e) => e.name !== emote.name);
+        const filtered = prev.filter(e => e.name !== emote.name);
         const newHistory = [emote, ...filtered];
         // Limiter l'historique
         return newHistory.slice(0, maxHistory);
@@ -143,7 +140,7 @@ export function useEmoteValidation(text: string) {
     const valid: string[] = [];
     const invalid: string[] = [];
 
-    matches.forEach((match) => {
+    matches.forEach(match => {
       const emoteName = match[1];
       if (emoteName && Object.hasOwn(EMOTES, emoteName)) {
         valid.push(emoteName);

@@ -111,10 +111,7 @@ const PLAYSTYLE_FR: Record<string, string> = {
 };
 
 // Game-accurate playstyle colors (inline styles — Tailwind can't purge dynamic classes)
-const PLAYSTYLE_COLOR: Record<
-  string,
-  { bg: string; text: string; border: string; gradient?: string }
-> = {
+const PLAYSTYLE_COLOR: Record<string, { bg: string; text: string; border: string; gradient?: string }> = {
   Bond: { bg: "rgba(234,179,8,0.15)", border: "rgba(234,179,8,0.35)", text: "#fde047" },
   Breach: {
     bg: "transparent",
@@ -175,7 +172,7 @@ function HeroTypeSelector({
 }) {
   return (
     <div className="flex rounded-full p-0.5 border border-amber-500/30 bg-amber-950/20">
-      {heroForms.map((hf) => {
+      {heroForms.map(hf => {
         const isCurrent = hf.type === currentHeroType;
         return isCurrent ? (
           <span
@@ -354,8 +351,7 @@ export function CharacterSheet({
   } else if (avatarUrl) {
     characterImageUrl = getCharacterFaceUrl(avatarUrl);
   }
-  const finalImageSrc =
-    characterImageUrl && characterImageUrl.length > 0 ? characterImageUrl : "/ievr.webp";
+  const finalImageSrc = characterImageUrl && characterImageUrl.length > 0 ? characterImageUrl : "/ievr.webp";
 
   // Position icon
   const positionCategoryMap: Record<string, string> = {
@@ -376,15 +372,10 @@ export function CharacterSheet({
   // `X` = non-binaire : le jeu n'a que deux pictogrammes ; ne pas afficher
   // l'icône d'un autre genre par défaut.
   const genderSprite =
-    gender === "F"
-      ? ("girl" as SpriteCommonKey)
-      : gender === "M"
-        ? ("boy" as SpriteCommonKey)
-        : null;
+    gender === "F" ? ("girl" as SpriteCommonKey) : gender === "M" ? ("boy" as SpriteCommonKey) : null;
 
   // Uniform URLs
-  const internalCode =
-    avatarUrl && !avatarUrl.startsWith("/") && !avatarUrl.startsWith("http") ? avatarUrl : null;
+  const internalCode = avatarUrl && !avatarUrl.startsWith("/") && !avatarUrl.startsWith("http") ? avatarUrl : null;
   // Modèle 3D GLB COMPLET (corps+face+uniforme) assemblé live par nie-model-serve,
   // servi sur cdn.rosegriffon.fr/model-full/<code>.glb.
   // null si aucun modèle exporté → pas de bouton 3D (fallback portrait image).
@@ -409,12 +400,7 @@ export function CharacterSheet({
           ═══════════════════════════════════════════════════ */}
       <section className="relative rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-lg">
         {/* Background gradient based on element */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-linear-to-br",
-            ELEMENT_GRADIENTS[element] || ELEMENT_GRADIENTS.Void,
-          )}
-        />
+        <div className={cn("absolute inset-0 bg-linear-to-br", ELEMENT_GRADIENTS[element] || ELEMENT_GRADIENTS.Void)} />
         {/* Subtle radial highlight */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_80%,rgba(255,255,255,0.06),transparent_60%)]" />
 
@@ -501,11 +487,7 @@ export function CharacterSheet({
               )}
 
               {/* Rarity */}
-              <RarityBadge
-                rarity={rarity}
-                size="md"
-                className="backdrop-blur-sm text-[10px] sm:text-xs"
-              />
+              <RarityBadge rarity={rarity} size="md" className="backdrop-blur-sm text-[10px] sm:text-xs" />
 
               {/* Controllable (playable in story mode) */}
               {isControllable && (
@@ -541,7 +523,7 @@ export function CharacterSheet({
 
               {/* Constellations — heroes may appear in multiple constellations */}
               {isHero && heroConstellations && heroConstellations.length > 0
-                ? heroConstellations.map((hc) => (
+                ? heroConstellations.map(hc => (
                     <span
                       key={hc.name}
                       className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-sm"
@@ -556,9 +538,7 @@ export function CharacterSheet({
                   ))
                 : constellation?.names?.fr
                   ? (() => {
-                      const psColor = sheetData?.playstyle
-                        ? PLAYSTYLE_COLOR[sheetData.playstyle]
-                        : undefined;
+                      const psColor = sheetData?.playstyle ? PLAYSTYLE_COLOR[sheetData.playstyle] : undefined;
                       return (
                         <span
                           className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-sm"
@@ -585,9 +565,7 @@ export function CharacterSheet({
             </div>
 
             {/* Form selector — visual thumbnails of all variants */}
-            {forms && forms.length > 1 && (
-              <FormSelector forms={forms} currentFormId={currentFormId} />
-            )}
+            {forms && forms.length > 1 && <FormSelector forms={forms} currentFormId={currentFormId} />}
 
             {/* Bottom row: Navigation + Compare */}
             <div className="flex items-center gap-2 justify-center sm:justify-start pt-1">
@@ -628,9 +606,7 @@ export function CharacterSheet({
                   onError={() => setUniformError(true)}
                 />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">
-                Uniforme
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">Uniforme</span>
             </div>
           )}
         </div>
@@ -645,17 +621,13 @@ export function CharacterSheet({
           <div className="bg-surface-container-low px-4 sm:px-8 py-3 sm:py-4 border-b border-outline-variant/20 flex items-center justify-between">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <TrendingUp size={20} className="sm:size-6 text-primary" aria-hidden="true" />
-              <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">
-                Statistiques
-              </h2>
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">Statistiques</h2>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
                 Total
               </span>
-              <span className="text-base sm:text-lg font-black text-primary tabular-nums">
-                {totalStats}
-              </span>
+              <span className="text-base sm:text-lg font-black text-primary tabular-nums">{totalStats}</span>
             </div>
           </div>
           <div className="p-4 sm:p-6 flex flex-col items-center w-full">
@@ -676,7 +648,7 @@ export function CharacterSheet({
                   min="1"
                   max="99"
                   value={level}
-                  onChange={(e) => setLevel(Number(e.target.value))}
+                  onChange={e => setLevel(Number(e.target.value))}
                   className="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary focus:outline-hidden"
                 />
                 <div className="flex justify-between text-[10px] text-on-surface-variant/50 font-bold">
@@ -697,12 +669,7 @@ export function CharacterSheet({
                   ["Pression", currentStats.pressure, statsLv1?.pressure, stats.pressure],
                   ["Physique", currentStats.physical, statsLv1?.physical, stats.physical],
                   ["Agilité", currentStats.agility, statsLv1?.agility, stats.agility],
-                  [
-                    "Intelligence",
-                    currentStats.intelligence,
-                    statsLv1?.intelligence,
-                    stats.intelligence,
-                  ],
+                  ["Intelligence", currentStats.intelligence, statsLv1?.intelligence, stats.intelligence],
                 ] as Array<[string, number, number | undefined, number]>
               ).map(([label, current, lv1, lv99]) => {
                 const percentage = Math.min(100, Math.max(0, (current / 999) * 100));
@@ -711,9 +678,7 @@ export function CharacterSheet({
                     <div className="flex justify-between text-xs">
                       <span className="font-bold text-on-surface-variant">{label}</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-black text-primary text-sm tabular-nums">
-                          {current}
-                        </span>
+                        <span className="font-black text-primary text-sm tabular-nums">{current}</span>
                         {lv1 !== undefined && (
                           <span className="text-[10px] text-on-surface-variant/40 tabular-nums">
                             ({lv1} → {lv99})
@@ -740,9 +705,7 @@ export function CharacterSheet({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <CircleDot size={20} className="sm:size-6 text-primary" aria-hidden="true" />
-                <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">
-                  Techniques
-                </h2>
+                <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">Techniques</h2>
               </div>
 
               {/* BASARA / Normal variant toggle */}
@@ -835,17 +798,9 @@ export function CharacterSheet({
                         className="size-3.5 sm:size-[18px] object-contain"
                       />
                     ) : skill.isPassive ? (
-                      <Sparkles
-                        size={14}
-                        aria-hidden="true"
-                        className="sm:size-[18px] text-on-surface-variant/60"
-                      />
+                      <Sparkles size={14} aria-hidden="true" className="sm:size-[18px] text-on-surface-variant/60" />
                     ) : (
-                      <CircleDot
-                        size={14}
-                        aria-hidden="true"
-                        className="sm:size-[18px] text-on-surface-variant/60"
-                      />
+                      <CircleDot size={14} aria-hidden="true" className="sm:size-[18px] text-on-surface-variant/60" />
                     )}
                   </div>
 
@@ -870,20 +825,11 @@ export function CharacterSheet({
 										le DOM. */}
                     {skill.element && getSkillElementIconUrl(skill.element) && (
                       <div className="size-3 sm:w-3.5 sm:h-3.5 relative shrink-0 opacity-80">
-                        <NextImage
-                          src={getSkillElementIconUrl(skill.element)}
-                          alt=""
-                          fill
-                          className="object-contain"
-                        />
+                        <NextImage src={getSkillElementIconUrl(skill.element)} alt="" fill className="object-contain" />
                       </div>
                     )}
                     {skill.videoUrl && (
-                      <PlayCircle
-                        size={12}
-                        aria-hidden="true"
-                        className="sm:size-[14px] text-primary animate-pulse"
-                      />
+                      <PlayCircle size={12} aria-hidden="true" className="sm:size-[14px] text-primary animate-pulse" />
                     )}
                   </div>
 
@@ -946,9 +892,7 @@ export function CharacterSheet({
       <section className="bg-surface-container-lowest rounded-[24px] sm:rounded-[32px] border border-outline-variant/30 overflow-hidden shadow-sm">
         <div className="bg-surface-container-low px-4 sm:px-8 py-3 sm:py-4 border-b border-outline-variant/20 flex items-center gap-1.5 sm:gap-2">
           <FileText size={20} className="sm:size-6 text-primary" aria-hidden="true" />
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">
-            Profil
-          </h2>
+          <h2 className="text-xs sm:text-sm font-black uppercase tracking-widest text-on-surface">Profil</h2>
         </div>
         <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
           {/* Description */}
@@ -964,7 +908,7 @@ export function CharacterSheet({
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 px-1">
                     Styles de jeu
                   </span>
-                  {sheetData.heroVariants.map((v) => {
+                  {sheetData.heroVariants.map(v => {
                     const color = PLAYSTYLE_COLOR[v.playstyle];
                     return (
                       <div
@@ -1015,10 +959,7 @@ export function CharacterSheet({
                         style={color ? { color: color.text } : undefined}
                       >
                         {PLAYSTYLE_SPRITE[sheetData.playstyle] && (
-                          <CommonSpriteIcon
-                            name={PLAYSTYLE_SPRITE[sheetData.playstyle]}
-                            scale={0.5}
-                          />
+                          <CommonSpriteIcon name={PLAYSTYLE_SPRITE[sheetData.playstyle]} scale={0.5} />
                         )}
                         {PLAYSTYLE_FR[sheetData.playstyle] || sheetData.playstyle}
                       </span>
@@ -1032,18 +973,12 @@ export function CharacterSheet({
                     Progression
                   </span>
                   <span className="text-sm font-bold text-on-surface leading-tight">
-                    {sheetData.paths.main.replaceAll(
-                      /Keep|Shoot|Offense|Defense|Dribble/g,
-                      (m) => PATH_TYPE_FR[m] || m,
-                    )}
+                    {sheetData.paths.main.replaceAll(/Keep|Shoot|Offense|Defense|Dribble/g, m => PATH_TYPE_FR[m] || m)}
                   </span>
                   {sheetData.paths.alt && (
                     <span className="text-xs text-on-surface-variant mt-1.5 block leading-tight">
                       {sheetData.paths.alt
-                        .replaceAll(
-                          /Keep|Shoot|Offense|Defense|Dribble/g,
-                          (m) => PATH_TYPE_FR[m] || m,
-                        )
+                        .replaceAll(/Keep|Shoot|Offense|Defense|Dribble/g, m => PATH_TYPE_FR[m] || m)
                         .split("\n")
                         .join(" / ")}
                     </span>

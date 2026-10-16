@@ -86,11 +86,7 @@ const PLACE_NAME_TAGS: Record<string, { en?: string; fr?: string; jp?: string }>
 /**
  * Resolve a single tag to its text value
  */
-function resolveTag(
-  _tagType: string,
-  tagName: string,
-  lang: "en" | "fr" | "jp" | "ja" = "fr",
-): string {
+function resolveTag(_tagType: string, tagName: string, lang: "en" | "fr" | "jp" | "ja" = "fr"): string {
   const upperName = tagName.toUpperCase();
   const normalizedLang = lang === "ja" ? "jp" : lang;
 

@@ -108,9 +108,7 @@ export async function loadRealSkillConfigAsync(dataPath: string = DATA_ROOT) {
   return content ? parseContent(content) : null;
 }
 
-export async function buildRealSkillDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<RealSkillDatabase> {
+export async function buildRealSkillDatabase(dataPath: string = DATA_ROOT): Promise<RealSkillDatabase> {
   const result = await loadRealSkillConfigAsync(dataPath);
   const courses = result?.courses || [];
   const skills = result?.skills || [];

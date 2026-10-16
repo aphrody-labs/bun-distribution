@@ -21,7 +21,7 @@ if (skills.length === 0 || events.length === 0) throw new Error("Cut-in sources 
 
 const db = createInagleSql<Database>();
 const now = new Date().toISOString();
-await db.transaction().execute(async (tx) => {
+await db.transaction().execute(async tx => {
   for (let offset = 0; offset < skills.length; offset += 100) {
     for (const skill of skills.slice(offset, offset + 100)) {
       const skillId = String(skill.skill_id_str ?? "");
@@ -35,7 +35,7 @@ await db.transaction().execute(async (tx) => {
           data: JSON.stringify(skill),
           updated_at: now,
         })
-        .onConflict((oc) =>
+        .onConflict(oc =>
           oc.column("skill_id").doUpdateSet({
             event_id_name: typeof cutin?.event_id_name === "string" ? cutin.event_id_name : null,
             data: JSON.stringify(skill),
@@ -49,15 +49,11 @@ await db.transaction().execute(async (tx) => {
     await tx
       .insertInto("inagle_skill_cutin_assets")
       .values({ event_id_name: event, data: JSON.stringify({ served: true }), updated_at: now })
-      .onConflict((oc) =>
-        oc
-          .column("event_id_name")
-          .doUpdateSet({ data: JSON.stringify({ served: true }), updated_at: now }),
+      .onConflict(oc =>
+        oc.column("event_id_name").doUpdateSet({ data: JSON.stringify({ served: true }), updated_at: now }),
       )
       .execute();
   }
 });
-console.log(
-  `Imported ${skills.length} skill cut-ins and ${events.length} served events into PostgreSQL.`,
-);
+console.log(`Imported ${skills.length} skill cut-ins and ${events.length} served events into PostgreSQL.`);
 await db.destroy();

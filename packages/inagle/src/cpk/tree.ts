@@ -55,10 +55,7 @@ function loadingChild(parentId: string): CpkNode {
 /** `true` si le dossier n'a pas encore chargé ses vrais enfants. */
 export function isUnloaded(node: CpkNode): boolean {
   return (
-    node.kind === "dir" &&
-    !!node.children &&
-    node.children.length === 1 &&
-    node.children[0].id.endsWith(`/${SENTINEL}`)
+    node.kind === "dir" && !!node.children && node.children.length === 1 && node.children[0].id.endsWith(`/${SENTINEL}`)
   );
 }
 
@@ -82,7 +79,7 @@ export async function fetchChildren(dirPath: string): Promise<CpkNode[]> {
   const res = await fetch(`/api/cpk?path=${encodeURIComponent(dirPath)}&limit=${TREE_FILE_CAP}`);
   if (!res.ok) return [];
   const listing = (await res.json()) as CpkListing;
-  const dirs = listing.dirs.map((d) => dirNode(dirPath, d.name, d.count));
+  const dirs = listing.dirs.map(d => dirNode(dirPath, d.name, d.count));
   const files = listing.files.map(fileNode);
   const remaining = (listing.fileTotal ?? files.length) - files.length;
   if (remaining > 0) {
@@ -99,7 +96,7 @@ export async function fetchChildren(dirPath: string): Promise<CpkNode[]> {
 
 /** Remplace immuablement les enfants du nœud `id` dans l'arbre. */
 export function setChildren(tree: CpkNode[], id: string, children: CpkNode[]): CpkNode[] {
-  return tree.map((n) => {
+  return tree.map(n => {
     if (n.id === id) return { ...n, children };
     if (n.children && id.startsWith(`${n.id}/`)) {
       return { ...n, children: setChildren(n.children, id, children) };

@@ -48,11 +48,7 @@ export function parseBrandConfig(value: unknown): BrandConfig {
       throw new Error("Invalid RG M3 theme");
     ids.add(theme.id);
     for (const selector of theme.selectors) {
-      if (
-        typeof selector !== "string" ||
-        !/^(?::root)?\.[a-z][a-z0-9-]+$/.test(selector) ||
-        selectors.has(selector)
-      )
+      if (typeof selector !== "string" || !/^(?::root)?\.[a-z][a-z0-9-]+$/.test(selector) || selectors.has(selector))
         throw new Error(`Invalid or repeated RG M3 selector: ${selector}`);
       selectors.add(selector);
     }
@@ -61,10 +57,7 @@ export function parseBrandConfig(value: unknown): BrandConfig {
 }
 
 export function scopeNativeSheet(css: string, theme: BrandTheme): string {
-  if (
-    !css.includes("--md-sys-color-primary:") ||
-    !css.includes("--primary: var(--md-sys-color-primary);")
-  )
+  if (!css.includes("--md-sys-color-primary:") || !css.includes("--primary: var(--md-sys-color-primary);"))
     throw new Error("Native M3 sheet is missing its color/semantic alias contract");
   const roots = css.match(/:root\s*\{/g);
   if (roots?.length !== 2) throw new Error("Expected native scheme and semantic alias root blocks");
@@ -96,12 +89,8 @@ export async function generateBrandCss(config: BrandConfig, generator: string): 
       new Response(process.stderr).text(),
       process.exited,
     ]);
-    if (exitCode !== 0)
-      throw new Error(`Native M3 generator failed for ${theme.id} (${exitCode}): ${stderr}`);
-    parts.push(
-      `/* ${theme.id}: ${theme.seed}, ${theme.dark ? "dark" : "light"}. */`,
-      scopeNativeSheet(stdout, theme),
-    );
+    if (exitCode !== 0) throw new Error(`Native M3 generator failed for ${theme.id} (${exitCode}): ${stderr}`);
+    parts.push(`/* ${theme.id}: ${theme.seed}, ${theme.dark ? "dark" : "light"}. */`, scopeNativeSheet(stdout, theme));
   }
   return `${parts.join("\n\n")}\n`;
 }
@@ -121,16 +110,12 @@ if (import.meta.main) {
     throw new Error(
       "Usage: bun scripts/iecode/tools/rg-m3.ts --generator <qualified-native-sheets> --output <canonical-rg-ui-brands.css> [--check]",
     );
-  const config = parseBrandConfig(
-    await Bun.file(resolve(root, "packages/rg-config/rg-m3.json")).json(),
-  );
+  const config = parseBrandConfig(await Bun.file(resolve(root, "packages/rg-config/rg-m3.json")).json());
   const css = await generateBrandCss(config, resolve(args[1]!));
   const output = resolve(args[3]!);
   if (args[4] === "--check") {
     if (!(await Bun.file(output).exists()) || (await Bun.file(output).text()) !== css)
-      throw new Error(
-        "RG M3 tokens are stale; regenerate with the qualified native sheets executable",
-      );
+      throw new Error("RG M3 tokens are stale; regenerate with the qualified native sheets executable");
   } else {
     await Bun.write(output, css);
   }

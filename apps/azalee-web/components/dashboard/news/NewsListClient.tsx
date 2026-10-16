@@ -20,7 +20,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
   const router = useRouter();
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -35,7 +35,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
     if (selectedIds.size === items.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(items.map((i) => i.id)));
+      setSelectedIds(new Set(items.map(i => i.id)));
     }
   }, [items, selectedIds.size]);
 
@@ -62,9 +62,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
       } else if (action === "category" && value) {
         const result = await bulkUpdateArticles(ids, { category: value });
         if (result.success) {
-          toast.success(
-            `Catégorie mise à jour pour ${result.count} article${result.count > 1 ? "s" : ""}`,
-          );
+          toast.success(`Catégorie mise à jour pour ${result.count} article${result.count > 1 ? "s" : ""}`);
           clearSelection();
           router.refresh();
         } else {
@@ -86,9 +84,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
       } else if (action === "delete") {
         const result = await bulkDeleteArticles(ids);
         if (result.success) {
-          toast.success(
-            `${result.count} article${result.count > 1 ? "s" : ""} supprimé${result.count > 1 ? "s" : ""}`,
-          );
+          toast.success(`${result.count} article${result.count > 1 ? "s" : ""} supprimé${result.count > 1 ? "s" : ""}`);
           clearSelection();
           router.refresh();
         } else {
@@ -145,7 +141,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
 
       {isListView ? (
         <div className="rounded-[24px] sm:rounded-[32px] border border-outline-variant/30 overflow-hidden bg-surface-container-lowest shadow-sm divide-y divide-outline-variant/10">
-          {items.map((item) => (
+          {items.map(item => (
             <SelectableNewsRow
               key={item.id}
               item={item}
@@ -156,7 +152,7 @@ export function NewsListClient({ items, isListView }: NewsListClientProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-          {items.map((item) => (
+          {items.map(item => (
             <SelectableNewsCard
               key={item.id}
               item={item as unknown as NewsItem}

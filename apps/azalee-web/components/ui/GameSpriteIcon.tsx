@@ -29,14 +29,7 @@ interface GameSpriteIconProps extends React.HTMLAttributes<HTMLSpanElement> {
  *   mask-position = -x,-y a l'echelle (decalage vers la cellule)
  *   width/height  = w x h a l'echelle (fenetre = cellule)
  */
-export const GameSpriteIcon = ({
-  name,
-  size,
-  scale = 1,
-  className,
-  style,
-  ...props
-}: GameSpriteIconProps) => {
+export const GameSpriteIcon = ({ name, size, scale = 1, className, style, ...props }: GameSpriteIconProps) => {
   const icon = GAME_ICONS[name];
 
   if (!icon) {

@@ -106,7 +106,7 @@ export default async function Image() {
 
         {/* Item type pills */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-          {ITEM_TYPES.map((t) => (
+          {ITEM_TYPES.map(t => (
             <div
               key={t.label}
               style={{
@@ -120,9 +120,7 @@ export default async function Image() {
               }}
             >
               <div style={{ display: "flex", fontSize: 16 }}>{t.emoji}</div>
-              <div style={{ color: ACCENT, display: "flex", fontSize: 14, fontWeight: 700 }}>
-                {t.label}
-              </div>
+              <div style={{ color: ACCENT, display: "flex", fontSize: 14, fontWeight: 700 }}>{t.label}</div>
             </div>
           ))}
         </div>
@@ -140,37 +138,33 @@ export default async function Image() {
           width: 300,
         }}
       >
-        {["Frappe", "Controle", "Technique", "Pression", "Physique", "Agilite", "Intelligence"].map(
-          (s) => (
-            <div key={s} style={{ alignItems: "center", display: "flex", gap: 10, width: "100%" }}>
-              <div
-                style={{
-                  color: "#6D5E50",
-                  display: "flex",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  justifyContent: "flex-end",
-                  textAlign: "right",
-                  width: 80,
-                }}
-              >
-                {s}
-              </div>
-              <div
-                style={{
-                  background: `${ACCENT}30`,
-                  borderRadius: 8,
-                  display: "flex",
-                  padding: "3px 10px",
-                }}
-              >
-                <div style={{ color: ACCENT, display: "flex", fontSize: 14, fontWeight: 800 }}>
-                  +??
-                </div>
-              </div>
+        {["Frappe", "Controle", "Technique", "Pression", "Physique", "Agilite", "Intelligence"].map(s => (
+          <div key={s} style={{ alignItems: "center", display: "flex", gap: 10, width: "100%" }}>
+            <div
+              style={{
+                color: "#6D5E50",
+                display: "flex",
+                fontSize: 12,
+                fontWeight: 600,
+                justifyContent: "flex-end",
+                textAlign: "right",
+                width: 80,
+              }}
+            >
+              {s}
             </div>
-          ),
-        )}
+            <div
+              style={{
+                background: `${ACCENT}30`,
+                borderRadius: 8,
+                display: "flex",
+                padding: "3px 10px",
+              }}
+            >
+              <div style={{ color: ACCENT, display: "flex", fontSize: 14, fontWeight: 800 }}>+??</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Branding */}
@@ -185,19 +179,9 @@ export default async function Image() {
         }}
       >
         {/* oxlint-disable-next-line next/no-img-element -- ImageResponse (next/og) ne supporte pas next/image */}
-        <img
-          src={getOgLogoDataUri()}
-          width={28}
-          height={28}
-          style={{ borderRadius: 7 }}
-          alt="Logo Azalée"
-        />
-        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>
-          azalee.rosegriffon.fr
-        </div>
-        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>
-          Inazuma Eleven: Victory Road
-        </div>
+        <img src={getOgLogoDataUri()} width={28} height={28} style={{ borderRadius: 7 }} alt="Logo Azalée" />
+        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>azalee.rosegriffon.fr</div>
+        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>Inazuma Eleven: Victory Road</div>
       </div>
     </div>,
     { ...size },

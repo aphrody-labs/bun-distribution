@@ -4,13 +4,7 @@ import { AlertCircle, Home, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@rosegriffon/ui";
 
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     // Log the error to an error reporting service
     console.error(error);
@@ -30,8 +24,7 @@ export default function Error({
           Une erreur critique est survenue
         </h2>
         <p className="text-on-surface-variant text-lg">
-          Azalée a rencontré un problème inattendu. Nos équipes (enfin, le développeur) ont
-          probablement été notifiées.
+          Azalée a rencontré un problème inattendu. Nos équipes (enfin, le développeur) ont probablement été notifiées.
         </p>
         {process.env.NODE_ENV === "development" && (
           <p className="text-xs font-mono bg-surface-container-high p-2 rounded-md overflow-x-auto text-error">

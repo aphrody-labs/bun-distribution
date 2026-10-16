@@ -8,83 +8,81 @@ import type { PatchNoteDetail } from "@/app/actions/news";
 import { PlatformBadge } from "./PlatformBadge";
 
 interface PatchNoteViewerProps {
-	data: PatchNoteDetail;
+  data: PatchNoteDetail;
 }
 
 /**
  * Extrait le numéro de version depuis l'ID composite.
  */
 function extractVersion(id: string): string | null {
-	const match = id.match(/ver_(\d+(?:_\d+)*)/);
-	if (!match) {
-		return null;
-	}
-	return match[1].replaceAll("_", ".");
+  const match = id.match(/ver_(\d+(?:_\d+)*)/);
+  if (!match) {
+    return null;
+  }
+  return match[1].replaceAll("_", ".");
 }
 
 export function PatchNoteViewer({ data }: PatchNoteViewerProps) {
-	const contentRef = useRef<HTMLDivElement>(null);
-	const [imgError, setImgError] = useState(false);
-	const dateObj = data.date ? new Date(data.date) : null;
-	const version = extractVersion(data.id);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [imgError, setImgError] = useState(false);
+  const dateObj = data.date ? new Date(data.date) : null;
+  const version = extractVersion(data.id);
 
-	return (
-		<article className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-			{/* Header Banner */}
-			<div className="relative rounded-[32px] overflow-hidden bg-surface-container-low border border-outline-variant/10 mb-8 p-1 group">
-				{data.featured_image && !imgError ? (
-					<div className="absolute inset-0">
-						<Image
-							src={data.featured_image}
-							alt=""
-							fill
-							className="object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
-							onError={() => setImgError(true)}
-						/>
-						<div className="absolute inset-0 bg-linear-to-t from-background/95 via-background/60 to-background/30" />
-					</div>
-				) : (
-					<div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-secondary/5" />
-				)}
+  return (
+    <article className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header Banner */}
+      <div className="relative rounded-[32px] overflow-hidden bg-surface-container-low border border-outline-variant/10 mb-8 p-1 group">
+        {data.featured_image && !imgError ? (
+          <div className="absolute inset-0">
+            <Image
+              src={data.featured_image}
+              alt=""
+              fill
+              className="object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+              onError={() => setImgError(true)}
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-background/95 via-background/60 to-background/30" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-secondary/5" />
+        )}
 
-				{/* Decorator */}
-				{(!data.featured_image || imgError) && (
-					<div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-				)}
+        {/* Decorator */}
+        {(!data.featured_image || imgError) && (
+          <div className="absolute top-0 right-0 p-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        )}
 
-				<div className="relative p-5 md:p-8 lg:p-12 flex flex-col gap-4 md:gap-6">
-					<div className="flex flex-wrap items-center gap-3">
-						{version && (
-							<span className="text-sm font-bold bg-primary text-on-primary px-3 py-1 rounded-full">
-								v{version}
-							</span>
-						)}
-						{data.platform.map((p) => (
-							<PlatformBadge
-								key={p}
-								platform={p}
-								showLabel
-								className="bg-surface/50 backdrop-blur-md border-surface-variant/20 shadow-sm"
-							/>
-						))}
-					</div>
+        <div className="relative p-5 md:p-8 lg:p-12 flex flex-col gap-4 md:gap-6">
+          <div className="flex flex-wrap items-center gap-3">
+            {version && (
+              <span className="text-sm font-bold bg-primary text-on-primary px-3 py-1 rounded-full">v{version}</span>
+            )}
+            {data.platform.map(p => (
+              <PlatformBadge
+                key={p}
+                platform={p}
+                showLabel
+                className="bg-surface/50 backdrop-blur-md border-surface-variant/20 shadow-sm"
+              />
+            ))}
+          </div>
 
-					<div>
-						<div className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2">
-							<span className="inline-block size-2 rounded-full bg-primary" />
-							Mise a jour du {dateObj ? format(dateObj, "d MMMM yyyy", { locale: fr }) : data.date}
-						</div>
-						<h1 className="text-2xl md:text-4xl lg:text-5xl font-bold font-sans text-on-surface drop-shadow-sm">
-							{data.title}
-						</h1>
-					</div>
-				</div>
-			</div>
+          <div>
+            <div className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2">
+              <span className="inline-block size-2 rounded-full bg-primary" />
+              Mise a jour du {dateObj ? format(dateObj, "d MMMM yyyy", { locale: fr }) : data.date}
+            </div>
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold font-sans text-on-surface drop-shadow-sm">
+              {data.title}
+            </h1>
+          </div>
+        </div>
+      </div>
 
-			{/* Content */}
-			<div
-				ref={contentRef}
-				className="
+      {/* Content */}
+      <div
+        ref={contentRef}
+        className="
           prose prose-lg max-w-none
           prose-headings:font-sans prose-headings:font-bold prose-headings:text-on-surface
           prose-p:text-on-surface-variant prose-p:leading-loose prose-p:text-lg
@@ -124,8 +122,8 @@ export function PatchNoteViewer({ data }: PatchNoteViewerProps) {
           /* Hide empty elements */
           [&_:empty]:hidden
         "
-				dangerouslySetInnerHTML={{ __html: data.content_html }}
-			/>
-		</article>
-	);
+        dangerouslySetInnerHTML={{ __html: data.content_html }}
+      />
+    </article>
+  );
 }

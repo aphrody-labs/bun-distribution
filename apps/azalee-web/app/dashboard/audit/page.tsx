@@ -44,21 +44,13 @@ export default async function AuditPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashboardPageHeader
-        breadcrumbs={[
-          { href: "/dashboard", label: "Tableau de bord" },
-          { label: "Journal d'audit" },
-        ]}
+        breadcrumbs={[{ href: "/dashboard", label: "Tableau de bord" }, { label: "Journal d'audit" }]}
         title="Journal d'audit"
         subtitle={`${count || 0} entrée${(count || 0) !== 1 ? "s" : ""}`}
         icon={<Icon name="policy" size={20} />}
       />
 
-      <AuditTable
-        logs={logs || []}
-        currentPage={page}
-        totalPages={totalPages}
-        currentAction={actionFilter}
-      />
+      <AuditTable logs={logs || []} currentPage={page} totalPages={totalPages} currentAction={actionFilter} />
     </div>
   );
 }

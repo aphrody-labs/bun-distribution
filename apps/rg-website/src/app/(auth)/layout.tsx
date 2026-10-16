@@ -7,7 +7,7 @@ import { getServerUser } from "@/lib/auth-helpers";
 // indexer, et une page de connexion en résultat de recherche n'aide personne.
 // Les pages sont des composants client, elles ne peuvent pas porter ça elles-mêmes.
 export const metadata: Metadata = {
-	robots: { follow: false, index: false },
+  robots: { follow: false, index: false },
 };
 
 /**
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
  * renvoyant directement sur son espace.
  */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-	const user = await getServerUser();
-	if (user) {
-		redirect("/dashboard");
-	}
-	return <>{children}</>;
+  const user = await getServerUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+  return <>{children}</>;
 }

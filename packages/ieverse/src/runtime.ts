@@ -146,14 +146,7 @@ export const RUST_RUNTIME_BY_MEDIA_KIND: Readonly<Record<CanonicalMediaKind, Rus
     false,
     "closest_available",
   ),
-  film: link(
-    "film-player",
-    "media_player",
-    "iecode-core",
-    "crates.io:iecode-core@1::video",
-    true,
-    "available",
-  ),
+  film: link("film-player", "media_player", "iecode-core", "crates.io:iecode-core@1::video", true, "available"),
   game_video: link(
     "game-video-player",
     "media_player",
@@ -188,8 +181,6 @@ export function runtimeForMediaKind(kind: CanonicalMediaKind): RustRuntimeLink {
   return RUST_RUNTIME_BY_MEDIA_KIND[kind];
 }
 
-export function runtimeLinksForPlatforms(
-  platforms: readonly GamePlatform[] | undefined,
-): RustRuntimeLink[] {
+export function runtimeLinksForPlatforms(platforms: readonly GamePlatform[] | undefined): RustRuntimeLink[] {
   return (platforms ?? ["unknown"]).map(runtimeForPlatform);
 }

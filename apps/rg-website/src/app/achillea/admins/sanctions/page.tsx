@@ -6,13 +6,12 @@ import SanctionsClient from "./sanctions-client";
  * interdit. L'interface, inchangée, vit dans `sanctions-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Sanctions",
-	description:
-		"Registre des sanctions prononcées sur le circuit Achilléa.",
-	chemin: "/achillea/admins/sanctions",
-	indexable: false,
+  titre: "Sanctions",
+  description: "Registre des sanctions prononcées sur le circuit Achilléa.",
+  chemin: "/achillea/admins/sanctions",
+  indexable: false,
 });
 
 export default function SanctionsPage() {
-	return <SanctionsClient />;
+  return <SanctionsClient />;
 }

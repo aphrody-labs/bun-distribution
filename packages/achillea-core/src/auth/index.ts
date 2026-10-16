@@ -28,7 +28,7 @@ function decodeBase64Url(value: string): ArrayBuffer {
     .replaceAll("_", "/")
     .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(normalized);
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0)).buffer as ArrayBuffer;
+  return Uint8Array.from(binary, char => char.charCodeAt(0)).buffer as ArrayBuffer;
 }
 
 /**
@@ -62,19 +62,12 @@ async function verifyAchilleaToken(
       aud?: unknown;
       exp?: unknown;
     };
-    if (
-      header.alg !== "HS256" ||
-      payload.tokenUse !== tokenUse ||
-      payload.iss !== ACHILLEA_AUTH_ISSUER
-    )
-      return null;
+    if (header.alg !== "HS256" || payload.tokenUse !== tokenUse || payload.iss !== ACHILLEA_AUTH_ISSUER) return null;
     const audience = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
     if (!audience.includes(audienceName)) return null;
-    if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp) || payload.exp <= now)
-      return null;
+    if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp) || payload.exp <= now) return null;
     const id = typeof payload.id === "string" && payload.id ? payload.id : payload.sub;
-    if (typeof id !== "string" || !id || (payload.id !== undefined && payload.id !== payload.sub))
-      return null;
+    if (typeof id !== "string" || !id || (payload.id !== undefined && payload.id !== payload.sub)) return null;
 
     const key = await crypto.subtle.importKey(
       "raw",

@@ -37,11 +37,8 @@ let salonManquantSignale = false;
 
 /** Identifiant du salon d'exploitation, ou `null` s'il n'est pas configuré. */
 export function salonAlertes(env: Record<string, string | undefined> = Bun.env): string | null {
-	const id =
-		env.DISCORD_CRON_ALERTS_CHANNEL_ID ||
-		env.DISCORD_LOGS_CHANNEL_ID ||
-		env.DISCORD_BOTS_CHANNEL_ID;
-	return id && id.trim().length > 0 ? id.trim() : null;
+  const id = env.DISCORD_CRON_ALERTS_CHANNEL_ID || env.DISCORD_LOGS_CHANNEL_ID || env.DISCORD_BOTS_CHANNEL_ID;
+  return id && id.trim().length > 0 ? id.trim() : null;
 }
 
 /**
@@ -49,29 +46,29 @@ export function salonAlertes(env: Record<string, string | undefined> = Bun.env):
  * Rend `null` pour une décision qui ne s'annonce pas.
  */
 export function encartDecision(decision: DecisionAlerte): EncartDiscord | null {
-	if (decision.type === "alerte") {
-		return {
-			title: `Tâche cron en échec : ${decision.nom}`,
-			description:
-				`\`${decision.nom}\` a échoué **${decision.echecsConsecutifs} fois de suite**.\n` +
-				(decision.erreur ? `Dernière erreur :\n\`\`\`\n${decision.erreur}\n\`\`\`` : "Aucun message d'erreur remonté."),
-			color: COULEUR_ECHEC,
-			footer: { text: "rg-cron — une seule alerte par série d'échecs" },
-			timestamp: new Date().toISOString(),
-		};
-	}
-	if (decision.type === "retablissement") {
-		return {
-			title: `Tâche cron rétablie : ${decision.nom}`,
-			description:
-				`\`${decision.nom}\` a de nouveau réussi en ${formaterDuree(decision.dureeMs)}, ` +
-				`après ${decision.echecsPrecedents} échec(s) consécutif(s).`,
-			color: COULEUR_RETABLISSEMENT,
-			footer: { text: "rg-cron" },
-			timestamp: new Date().toISOString(),
-		};
-	}
-	return null;
+  if (decision.type === "alerte") {
+    return {
+      title: `Tâche cron en échec : ${decision.nom}`,
+      description:
+        `\`${decision.nom}\` a échoué **${decision.echecsConsecutifs} fois de suite**.\n` +
+        (decision.erreur ? `Dernière erreur :\n\`\`\`\n${decision.erreur}\n\`\`\`` : "Aucun message d'erreur remonté."),
+      color: COULEUR_ECHEC,
+      footer: { text: "rg-cron — une seule alerte par série d'échecs" },
+      timestamp: new Date().toISOString(),
+    };
+  }
+  if (decision.type === "retablissement") {
+    return {
+      title: `Tâche cron rétablie : ${decision.nom}`,
+      description:
+        `\`${decision.nom}\` a de nouveau réussi en ${formaterDuree(decision.dureeMs)}, ` +
+        `après ${decision.echecsPrecedents} échec(s) consécutif(s).`,
+      color: COULEUR_RETABLISSEMENT,
+      footer: { text: "rg-cron" },
+      timestamp: new Date().toISOString(),
+    };
+  }
+  return null;
 }
 
 /**
@@ -81,36 +78,34 @@ export function encartDecision(decision: DecisionAlerte): EncartDiscord | null {
  * Rend `true` si un message est effectivement parti.
  */
 export async function signalerDecisionAlerte(decision: DecisionAlerte): Promise<boolean> {
-	const encart = encartDecision(decision);
-	if (!encart) return false;
+  const encart = encartDecision(decision);
+  if (!encart) return false;
 
-	// Le journal d'abord : il est la trace qui survit même sans Discord.
-	if (decision.type === "alerte") {
-		console.error(
-			`[cron-alerte] ${decision.nom} : ${decision.echecsConsecutifs} échecs consécutifs — ${
-				decision.erreur ?? "sans message"
-			}`
-		);
-	} else if (decision.type === "retablissement") {
-		// Test explicite et non `else` : `encartDecision` a déjà écarté le cas
-		// `aucune` juste au-dessus, mais TypeScript ne le déduit pas d'un `null` —
-		// un `else` nu lisait donc `.nom` sur une variante qui n'en a pas.
-		console.log(
-			`[cron-alerte] ${decision.nom} : rétablie après ${decision.echecsPrecedents} échec(s).`
-		);
-	}
+  // Le journal d'abord : il est la trace qui survit même sans Discord.
+  if (decision.type === "alerte") {
+    console.error(
+      `[cron-alerte] ${decision.nom} : ${decision.echecsConsecutifs} échecs consécutifs — ${
+        decision.erreur ?? "sans message"
+      }`,
+    );
+  } else if (decision.type === "retablissement") {
+    // Test explicite et non `else` : `encartDecision` a déjà écarté le cas
+    // `aucune` juste au-dessus, mais TypeScript ne le déduit pas d'un `null` —
+    // un `else` nu lisait donc `.nom` sur une variante qui n'en a pas.
+    console.log(`[cron-alerte] ${decision.nom} : rétablie après ${decision.echecsPrecedents} échec(s).`);
+  }
 
-	const salon = salonAlertes();
-	if (!salon) {
-		if (!salonManquantSignale) {
-			salonManquantSignale = true;
-			console.warn(
-				"[cron-alerte] aucun salon configuré (DISCORD_CRON_ALERTS_CHANNEL_ID / DISCORD_LOGS_CHANNEL_ID / DISCORD_BOTS_CHANNEL_ID) : les alertes restent dans le journal."
-			);
-		}
-		return false;
-	}
+  const salon = salonAlertes();
+  if (!salon) {
+    if (!salonManquantSignale) {
+      salonManquantSignale = true;
+      console.warn(
+        "[cron-alerte] aucun salon configuré (DISCORD_CRON_ALERTS_CHANNEL_ID / DISCORD_LOGS_CHANNEL_ID / DISCORD_BOTS_CHANNEL_ID) : les alertes restent dans le journal.",
+      );
+    }
+    return false;
+  }
 
-	const message = await publierMessageDiscord(salon, { embeds: [encart] });
-	return message !== null;
+  const message = await publierMessageDiscord(salon, { embeds: [encart] });
+  return message !== null;
 }

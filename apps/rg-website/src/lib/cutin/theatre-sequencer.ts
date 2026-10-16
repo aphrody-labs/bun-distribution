@@ -20,24 +20,24 @@ import type { RootState } from "@react-three/fiber";
 
 /** Sous-ensemble du `RootState` R3F nécessaire au rendu manuel (renderer + scène + caméra + clock). */
 export interface R3fRenderHandle {
-	gl: RootState["gl"];
-	scene: RootState["scene"];
-	camera: RootState["camera"];
-	/** Optionnel : horloge R3F, avancée manuellement pour que les `useFrame` éventuels soient cohérents. */
-	advance?: RootState["advance"];
+  gl: RootState["gl"];
+  scene: RootState["scene"];
+  camera: RootState["camera"];
+  /** Optionnel : horloge R3F, avancée manuellement pour que les `useFrame` éventuels soient cohérents. */
+  advance?: RootState["advance"];
 }
 
 /** Options du séquenceur déterministe. */
 export interface TheatreSequencerOptions {
-	/** La séquence Theatre.js du sheet du cut-in (`sheet.sequence`). */
-	sequence: ISequence;
-	/** Handle de rendu R3F (récupéré via `useThree(s => ({ gl, scene, camera, advance }))`). */
-	r3f: R3fRenderHandle;
-	/**
-	 * Callback synchrone optionnel exécuté APRÈS le positionnement de la timeline et AVANT le rendu
-	 * (ex. mutations dépendantes du temps non pilotées par Theatre : shake de caméra, uniforms).
-	 */
-	onBeforeRender?: (timeSec: number) => void;
+  /** La séquence Theatre.js du sheet du cut-in (`sheet.sequence`). */
+  sequence: ISequence;
+  /** Handle de rendu R3F (récupéré via `useThree(s => ({ gl, scene, camera, advance }))`). */
+  r3f: R3fRenderHandle;
+  /**
+   * Callback synchrone optionnel exécuté APRÈS le positionnement de la timeline et AVANT le rendu
+   * (ex. mutations dépendantes du temps non pilotées par Theatre : shake de caméra, uniforms).
+   */
+  onBeforeRender?: (timeSec: number) => void;
 }
 
 /**
@@ -47,19 +47,19 @@ export interface TheatreSequencerOptions {
  * exporter = `sequence.length` (en secondes).
  */
 export function createTheatreSequencer(options: TheatreSequencerOptions): (timeSec: number) => void {
-	const { sequence, r3f, onBeforeRender } = options;
-	const { gl, scene, camera, advance } = r3f;
+  const { sequence, r3f, onBeforeRender } = options;
+  const { gl, scene, camera, advance } = r3f;
 
-	return (timeSec: number) => {
-		// 1) Fige la timeline → Theatre applique les valeurs interpolées sur les objets pilotés.
-		sequence.position = timeSec;
-		// 2) Avance l'horloge R3F au temps absolu (les `useFrame` voient un delta cohérent).
-		advance?.(timeSec, true);
-		// 3) Mutations hors-Theatre éventuelles.
-		onBeforeRender?.(timeSec);
-		// 4) Rendu unique et synchrone dans le canvas WebGL (source des VideoFrame).
-		gl.render(scene, camera);
-	};
+  return (timeSec: number) => {
+    // 1) Fige la timeline → Theatre applique les valeurs interpolées sur les objets pilotés.
+    sequence.position = timeSec;
+    // 2) Avance l'horloge R3F au temps absolu (les `useFrame` voient un delta cohérent).
+    advance?.(timeSec, true);
+    // 3) Mutations hors-Theatre éventuelles.
+    onBeforeRender?.(timeSec);
+    // 4) Rendu unique et synchrone dans le canvas WebGL (source des VideoFrame).
+    gl.render(scene, camera);
+  };
 }
 
 /**
@@ -68,5 +68,5 @@ export function createTheatreSequencer(options: TheatreSequencerOptions): (timeS
  * `ISequence` en `@theatre/core` 0.7 ; elle vit dans le Pointer d'état, en secondes).
  */
 export function sequenceDurationSec(sequence: ISequence): number {
-	return val(sequence.pointer.length);
+  return val(sequence.pointer.length);
 }

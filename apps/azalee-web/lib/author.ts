@@ -12,10 +12,7 @@ export interface AuthorInfo {
   color: string;
 }
 
-export function getAuthorInfo(
-  username: string | null | undefined,
-  authorName: string | null | undefined,
-): AuthorInfo {
+export function getAuthorInfo(username: string | null | undefined, authorName: string | null | undefined): AuthorInfo {
   const user = username || "";
   const name = authorName || user;
 

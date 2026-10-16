@@ -6,13 +6,12 @@ import AdminDashboardClient from "./admin-dashboard-client";
  * interdit. L'interface, inchangée, vit dans `admin-dashboard-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Tableau de bord administrateur",
-	description:
-		"Supervision du domaine compétitif Achilléa.",
-	chemin: "/achillea/admins/dashboard",
-	indexable: false,
+  titre: "Tableau de bord administrateur",
+  description: "Supervision du domaine compétitif Achilléa.",
+  chemin: "/achillea/admins/dashboard",
+  indexable: false,
 });
 
 export default function AdminDashboardPage() {
-	return <AdminDashboardClient />;
+  return <AdminDashboardClient />;
 }

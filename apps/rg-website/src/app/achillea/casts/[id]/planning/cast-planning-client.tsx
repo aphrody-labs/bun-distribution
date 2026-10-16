@@ -16,15 +16,9 @@ export default function CastPlanningPage({ id }: { id: string }) {
   const [loading, setLoading] = useState<boolean>(isAuthenticated && !authLoading);
   const [error, setError] = useState<string | null>(null);
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    authLoading,
-    eventId,
-    isAuthenticated,
-  ]);
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([authLoading, eventId, isAuthenticated]);
   if (
-    [authLoading, eventId, isAuthenticated].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
+    [authLoading, eventId, isAuthenticated].some((value, position) => !Object.is(value, requestIdentity1[position]))
   ) {
     setRequestIdentity1([authLoading, eventId, isAuthenticated]);
     (() => {
@@ -48,7 +42,7 @@ export default function CastPlanningPage({ id }: { id: string }) {
 
     client.casts
       .getEvent(eventId)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value) {
           setDetail(res.value);
@@ -60,7 +54,7 @@ export default function CastPlanningPage({ id }: { id: string }) {
           );
         }
       })
-      .catch((cause) => {
+      .catch(cause => {
         if (!cancelled) setError("Une erreur inattendue est survenue lors du chargement.");
         signalerException("casts/[id]/planning", cause);
       })
@@ -96,14 +90,10 @@ export default function CastPlanningPage({ id }: { id: string }) {
       </div>
 
       {authLoading ? (
-        <div className="py-20 text-center text-sm text-muted-foreground">
-          Vérification de la session…
-        </div>
+        <div className="py-20 text-center text-sm text-muted-foreground">Vérification de la session…</div>
       ) : !isAuthenticated ? (
         <div className="max-w-md mx-auto py-20 text-center space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Connectez-vous pour consulter le planning de régie.
-          </p>
+          <p className="text-sm text-muted-foreground">Connectez-vous pour consulter le planning de régie.</p>
           <button
             type="button"
             onClick={() => login(`/achillea/casts/${encodeURIComponent(eventId)}/planning`)}
@@ -154,9 +144,7 @@ export default function CastPlanningPage({ id }: { id: string }) {
           {/* Slots and Attributions */}
           <div className="border border-border bg-card rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-border bg-muted/20">
-              <h3 className="font-bold text-xs uppercase text-muted-foreground">
-                Postes attribués
-              </h3>
+              <h3 className="font-bold text-xs uppercase text-muted-foreground">Postes attribués</h3>
             </div>
 
             {detail.attributions.length === 0 ? (
@@ -165,7 +153,7 @@ export default function CastPlanningPage({ id }: { id: string }) {
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                {detail.attributions.map((att) => (
+                {detail.attributions.map(att => (
                   <div key={att.id} className="p-4 flex items-center justify-between gap-4">
                     <div>
                       <div className="font-semibold text-xs text-foreground">

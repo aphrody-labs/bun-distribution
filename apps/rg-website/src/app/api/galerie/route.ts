@@ -27,38 +27,35 @@ const BASE_INTERNE = process.env.AZALEE_API_URL ?? "http://127.0.0.1:8800/v1/aza
 const LIMITE_MAX = 48;
 
 export async function GET(requete: Request): Promise<Response> {
-	const entrants = new URL(requete.url).searchParams;
-	const sortants = new URLSearchParams();
-	sortants.set("page", String(entier(entrants.get("page"), 1)));
-	sortants.set("limit", String(Math.min(LIMITE_MAX, entier(entrants.get("limite"), GALERIE_PAR_PAGE))));
-	const categorie = entrants.get("categorie");
-	if (categorie) {
-		sortants.set("category", categorie);
-	}
-	const recherche = entrants.get("q");
-	if (recherche) {
-		sortants.set("q", recherche);
-	}
+  const entrants = new URL(requete.url).searchParams;
+  const sortants = new URLSearchParams();
+  sortants.set("page", String(entier(entrants.get("page"), 1)));
+  sortants.set("limit", String(Math.min(LIMITE_MAX, entier(entrants.get("limite"), GALERIE_PAR_PAGE))));
+  const categorie = entrants.get("categorie");
+  if (categorie) {
+    sortants.set("category", categorie);
+  }
+  const recherche = entrants.get("q");
+  if (recherche) {
+    sortants.set("q", recherche);
+  }
 
-	try {
-		const reponse = await fetch(`${BASE_INTERNE}/api/gallery?${sortants.toString()}`, {
-			cache: "no-store",
-			signal: AbortSignal.timeout(8_000),
-		});
-		if (!reponse.ok) {
-			return Response.json(
-				{ error: `La galerie du wiki a répondu ${reponse.status}.` },
-				{ status: 502 }
-			);
-		}
-		return Response.json(await reponse.json());
-	} catch (erreur) {
-		console.error("[galerie] wiki injoignable", erreur);
-		return Response.json({ error: "Galerie momentanément injoignable." }, { status: 502 });
-	}
+  try {
+    const reponse = await fetch(`${BASE_INTERNE}/api/gallery?${sortants.toString()}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!reponse.ok) {
+      return Response.json({ error: `La galerie du wiki a répondu ${reponse.status}.` }, { status: 502 });
+    }
+    return Response.json(await reponse.json());
+  } catch (erreur) {
+    console.error("[galerie] wiki injoignable", erreur);
+    return Response.json({ error: "Galerie momentanément injoignable." }, { status: 502 });
+  }
 }
 
 function entier(valeur: string | null, defaut: number): number {
-	const n = Number.parseInt(valeur ?? "", 10);
-	return Number.isFinite(n) && n > 0 ? n : defaut;
+  const n = Number.parseInt(valeur ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : defaut;
 }

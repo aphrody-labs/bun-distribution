@@ -81,68 +81,68 @@ const PREFIXE_TWEETS = "/storage/v1/object/public/tweets/";
 const SEUIL_FORT = 2;
 
 interface LigneCreation {
-	source: "x" | "discord" | "instagram";
-	identifiant: string;
-	cle_identite: string | null;
-	auteur_nom: string | null;
-	auteur_pseudo: string | null;
-	horodatage: Date | string | null;
-	nb_images: number;
-	permalien: string | null;
-	motif_ecart: string | null;
+  source: "x" | "discord" | "instagram";
+  identifiant: string;
+  cle_identite: string | null;
+  auteur_nom: string | null;
+  auteur_pseudo: string | null;
+  horodatage: Date | string | null;
+  nb_images: number;
+  permalien: string | null;
+  motif_ecart: string | null;
 }
 
 interface LigneOeuvre {
-	oeuvre_id: string;
-	cle: string;
-	creations: unknown;
-	sha256: string | null;
-	dhash: string | null;
-	phash: string | null;
+  oeuvre_id: string;
+  cle: string;
+  creations: unknown;
+  sha256: string | null;
+  dhash: string | null;
+  phash: string | null;
 }
 
 /** Un fichier d'une création, tel qu'on sait aller le lire. */
 interface FichierCreation {
-	index: number;
-	/** Chemin sur disque quand notre copie existe — le cas normal. */
-	chemin: string | null;
-	/** Chemin dans le bucket, tel qu'écrit en base (`campagnes/…`). */
-	cheminBucket: string | null;
-	/** URL d'origine, seul recours quand la copie manque (X surtout). */
-	url: string | null;
-	kind: "image" | "video";
-	largeurAnnoncee: number | null;
-	hauteurAnnoncee: number | null;
+  index: number;
+  /** Chemin sur disque quand notre copie existe — le cas normal. */
+  chemin: string | null;
+  /** Chemin dans le bucket, tel qu'écrit en base (`campagnes/…`). */
+  cheminBucket: string | null;
+  /** URL d'origine, seul recours quand la copie manque (X surtout). */
+  url: string | null;
+  kind: "image" | "video";
+  largeurAnnoncee: number | null;
+  hauteurAnnoncee: number | null;
 }
 
 /** Ce qu'on a réellement mesuré sur un fichier. */
 interface Mesure {
-	index: number;
-	sha256: string;
-	/** `null` pour une vidéo : aucune empreinte perceptuelle n'a de sens sur un flux. */
-	dhash: string | null;
-	phash: string | null;
-	largeur: number | null;
-	hauteur: number | null;
-	octets: number;
-	kind: "image" | "video";
-	cheminBucket: string | null;
-	url: string | null;
+  index: number;
+  sha256: string;
+  /** `null` pour une vidéo : aucune empreinte perceptuelle n'a de sens sur un flux. */
+  dhash: string | null;
+  phash: string | null;
+  largeur: number | null;
+  hauteur: number | null;
+  octets: number;
+  kind: "image" | "video";
+  cheminBucket: string | null;
+  url: string | null;
 }
 
 // ───────────────────────── Empreintes ─────────────────────────
 
 function bitsVersHex(bits: readonly number[]): string {
-	let sortie = "";
-	for (let position = 0; position < bits.length; position += 4) {
-		sortie += (
-			(bits[position] << 3) |
-			(bits[position + 1] << 2) |
-			(bits[position + 2] << 1) |
-			bits[position + 3]
-		).toString(16);
-	}
-	return sortie;
+  let sortie = "";
+  for (let position = 0; position < bits.length; position += 4) {
+    sortie += (
+      (bits[position] << 3) |
+      (bits[position + 1] << 2) |
+      (bits[position + 2] << 1) |
+      bits[position + 3]
+    ).toString(16);
+  }
+  return sortie;
 }
 
 /**
@@ -152,14 +152,14 @@ function bitsVersHex(bits: readonly number[]): string {
  * compression, et deux images redimensionnées différemment donnent la même empreinte.
  */
 async function dhash(sharp: SharpModule, octets: Uint8Array): Promise<string> {
-	const brut = await sharp(octets).grayscale().resize(9, 8, { fit: "fill" }).raw().toBuffer();
-	const bits: number[] = [];
-	for (let y = 0; y < 8; y++) {
-		for (let x = 0; x < 8; x++) {
-			bits.push(brut[y * 9 + x] > brut[y * 9 + x + 1] ? 1 : 0);
-		}
-	}
-	return bitsVersHex(bits);
+  const brut = await sharp(octets).grayscale().resize(9, 8, { fit: "fill" }).raw().toBuffer();
+  const bits: number[] = [];
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      bits.push(brut[y * 9 + x] > brut[y * 9 + x + 1] ? 1 : 0);
+    }
+  }
+  return bitsVersHex(bits);
 }
 
 /**
@@ -173,61 +173,61 @@ async function dhash(sharp: SharpModule, octets: Uint8Array): Promise<string> {
  * quelques bits — assez pour qu'un doublon cesse d'en être un.
  */
 async function phash(sharp: SharpModule, octets: Uint8Array): Promise<string> {
-	const cote = 32;
-	const brut = await sharp(octets).grayscale().resize(cote, cote, { fit: "fill" }).raw().toBuffer();
+  const cote = 32;
+  const brut = await sharp(octets).grayscale().resize(cote, cote, { fit: "fill" }).raw().toBuffer();
 
-	const cosinus: number[][] = [];
-	for (let u = 0; u < cote; u++) {
-		cosinus[u] = [];
-		for (let x = 0; x < cote; x++) {
-			cosinus[u][x] = Math.cos(((2 * x + 1) * u * Math.PI) / (2 * cote));
-		}
-	}
+  const cosinus: number[][] = [];
+  for (let u = 0; u < cote; u++) {
+    cosinus[u] = [];
+    for (let x = 0; x < cote; x++) {
+      cosinus[u][x] = Math.cos(((2 * x + 1) * u * Math.PI) / (2 * cote));
+    }
+  }
 
-	const coefficients: number[] = [];
-	for (let u = 0; u < 8; u++) {
-		for (let v = 0; v < 8; v++) {
-			let somme = 0;
-			for (let x = 0; x < cote; x++) {
-				for (let y = 0; y < cote; y++) {
-					somme += cosinus[u][x] * cosinus[v][y] * brut[x * cote + y];
-				}
-			}
-			const cu = u === 0 ? Math.SQRT1_2 : 1;
-			const cv = v === 0 ? Math.SQRT1_2 : 1;
-			coefficients.push(0.25 * cu * cv * somme);
-		}
-	}
+  const coefficients: number[] = [];
+  for (let u = 0; u < 8; u++) {
+    for (let v = 0; v < 8; v++) {
+      let somme = 0;
+      for (let x = 0; x < cote; x++) {
+        for (let y = 0; y < cote; y++) {
+          somme += cosinus[u][x] * cosinus[v][y] * brut[x * cote + y];
+        }
+      }
+      const cu = u === 0 ? Math.SQRT1_2 : 1;
+      const cv = v === 0 ? Math.SQRT1_2 : 1;
+      coefficients.push(0.25 * cu * cv * somme);
+    }
+  }
 
-	const sansContinu = coefficients.slice(1).sort((a, b) => a - b);
-	const seuil = (sansContinu[30] + sansContinu[31]) / 2;
-	return bitsVersHex(coefficients.map((valeur, position) => (position === 0 ? 0 : valeur > seuil ? 1 : 0)));
+  const sansContinu = coefficients.slice(1).sort((a, b) => a - b);
+  const seuil = (sansContinu[30] + sansContinu[31]) / 2;
+  return bitsVersHex(coefficients.map((valeur, position) => (position === 0 ? 0 : valeur > seuil ? 1 : 0)));
 }
 
 /** Distance de Hamming entre deux empreintes hexadécimales de même longueur. */
 export function distance(a: string | null, b: string | null): number | null {
-	if (!a || !b || a.length !== b.length) {
-		return null;
-	}
-	let total = 0;
-	for (let position = 0; position < a.length; position++) {
-		let reste = Number.parseInt(a[position], 16) ^ Number.parseInt(b[position], 16);
-		while (reste) {
-			total += reste & 1;
-			reste >>= 1;
-		}
-	}
-	return total;
+  if (!a || !b || a.length !== b.length) {
+    return null;
+  }
+  let total = 0;
+  for (let position = 0; position < a.length; position++) {
+    let reste = Number.parseInt(a[position], 16) ^ Number.parseInt(b[position], 16);
+    while (reste) {
+      total += reste & 1;
+      reste >>= 1;
+    }
+  }
+  return total;
 }
 
 // ───────────────────────── Lecture des fichiers ─────────────────────────
 
 type SharpModule = (entree: Uint8Array | string) => {
-	grayscale(): ReturnType<SharpModule>;
-	resize(l: number, h: number, o: { fit: "fill" }): ReturnType<SharpModule>;
-	raw(): ReturnType<SharpModule>;
-	toBuffer(): Promise<Buffer>;
-	metadata(): Promise<{ width?: number; height?: number }>;
+  grayscale(): ReturnType<SharpModule>;
+  resize(l: number, h: number, o: { fit: "fill" }): ReturnType<SharpModule>;
+  raw(): ReturnType<SharpModule>;
+  toBuffer(): Promise<Buffer>;
+  metadata(): Promise<{ width?: number; height?: number }>;
 };
 
 /**
@@ -238,162 +238,162 @@ type SharpModule = (entree: Uint8Array | string) => {
  * d'ajouter une dépendance racine pour un seul script lancé à la main.
  */
 async function chargerSharp(): Promise<SharpModule> {
-	const racine = new URL("../..", import.meta.url).pathname;
-	try {
-		const chemin = Bun.resolveSync("sharp", `${racine}apps/website`);
-		return ((await import(chemin)) as { default: SharpModule }).default;
-	} catch (erreur) {
-		throw new Error(
-			`sharp introuvable (${erreur instanceof Error ? erreur.message : String(erreur)}) — ` +
-				"lancer `bun install` à la racine du dépôt."
-		);
-	}
+  const racine = new URL("../..", import.meta.url).pathname;
+  try {
+    const chemin = Bun.resolveSync("sharp", `${racine}apps/website`);
+    return ((await import(chemin)) as { default: SharpModule }).default;
+  } catch (erreur) {
+    throw new Error(
+      `sharp introuvable (${erreur instanceof Error ? erreur.message : String(erreur)}) — ` +
+        "lancer `bun install` à la racine du dépôt.",
+    );
+  }
 }
 
 function cheminDisque(urlOuChemin: string): string | null {
-	if (urlOuChemin.startsWith("campagnes/")) {
-		return `${RACINE_STOCKAGE}/assets/${urlOuChemin}`;
-	}
-	const position = urlOuChemin.indexOf(PREFIXE_ASSETS);
-	if (position >= 0) {
-		return `${RACINE_STOCKAGE}/assets/${urlOuChemin.slice(position + PREFIXE_ASSETS.length)}`;
-	}
-	const positionTweets = urlOuChemin.indexOf(PREFIXE_TWEETS);
-	if (positionTweets >= 0) {
-		return `${RACINE_STOCKAGE}/tweets/${urlOuChemin.slice(positionTweets + PREFIXE_TWEETS.length)}`;
-	}
-	return null;
+  if (urlOuChemin.startsWith("campagnes/")) {
+    return `${RACINE_STOCKAGE}/assets/${urlOuChemin}`;
+  }
+  const position = urlOuChemin.indexOf(PREFIXE_ASSETS);
+  if (position >= 0) {
+    return `${RACINE_STOCKAGE}/assets/${urlOuChemin.slice(position + PREFIXE_ASSETS.length)}`;
+  }
+  const positionTweets = urlOuChemin.indexOf(PREFIXE_TWEETS);
+  if (positionTweets >= 0) {
+    return `${RACINE_STOCKAGE}/tweets/${urlOuChemin.slice(positionTweets + PREFIXE_TWEETS.length)}`;
+  }
+  return null;
 }
 
 function tableau(valeur: unknown): unknown[] {
-	if (Array.isArray(valeur)) return valeur;
-	if (typeof valeur === "string") {
-		try {
-			const analyse: unknown = JSON.parse(valeur);
-			return Array.isArray(analyse) ? analyse : [];
-		} catch {
-			return [];
-		}
-	}
-	return [];
+  if (Array.isArray(valeur)) return valeur;
+  if (typeof valeur === "string") {
+    try {
+      const analyse: unknown = JSON.parse(valeur);
+      return Array.isArray(analyse) ? analyse : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 function texte(valeur: unknown): string | null {
-	return typeof valeur === "string" && valeur.trim().length > 0 ? valeur.trim() : null;
+  return typeof valeur === "string" && valeur.trim().length > 0 ? valeur.trim() : null;
 }
 
 function nombre(valeur: unknown): number | null {
-	return typeof valeur === "number" && Number.isFinite(valeur) ? Math.trunc(valeur) : null;
+  return typeof valeur === "number" && Number.isFinite(valeur) ? Math.trunc(valeur) : null;
 }
 
 /** Les fichiers d'une création Discord ou Instagram (même forme de stockage). */
 function fichiersDepuisImages(brut: unknown): FichierCreation[] {
-	const fichiers: FichierCreation[] = [];
-	let index = 0;
-	for (const entree of tableau(brut)) {
-		if (!entree || typeof entree !== "object") continue;
-		const item = entree as Record<string, unknown>;
-		const cheminBucket = texte(item.chemin);
-		const typeMime = texte(item.type_mime) ?? "";
-		const kind = texte(item.kind) === "video" || typeMime.startsWith("video/") ? "video" : "image";
-		fichiers.push({
-			chemin: cheminBucket ? cheminDisque(cheminBucket) : null,
-			cheminBucket,
-			hauteurAnnoncee: nombre(item.hauteur),
-			index,
-			kind,
-			largeurAnnoncee: nombre(item.largeur),
-			url: texte(item.url_origine),
-		});
-		index++;
-	}
-	return fichiers;
+  const fichiers: FichierCreation[] = [];
+  let index = 0;
+  for (const entree of tableau(brut)) {
+    if (!entree || typeof entree !== "object") continue;
+    const item = entree as Record<string, unknown>;
+    const cheminBucket = texte(item.chemin);
+    const typeMime = texte(item.type_mime) ?? "";
+    const kind = texte(item.kind) === "video" || typeMime.startsWith("video/") ? "video" : "image";
+    fichiers.push({
+      chemin: cheminBucket ? cheminDisque(cheminBucket) : null,
+      cheminBucket,
+      hauteurAnnoncee: nombre(item.hauteur),
+      index,
+      kind,
+      largeurAnnoncee: nombre(item.largeur),
+      url: texte(item.url_origine),
+    });
+    index++;
+  }
+  return fichiers;
 }
 
 /** Les fichiers d'un tweet : seules les PHOTOS comptent (cf. `extraireImages` côté site). */
 function fichiersDepuisTweet(brut: unknown): FichierCreation[] {
-	const fichiers: FichierCreation[] = [];
-	let index = 0;
-	for (const entree of tableau(brut)) {
-		if (!entree || typeof entree !== "object") continue;
-		const item = entree as Record<string, unknown>;
-		if (texte(item.type) !== "photo") continue;
-		const stockage = texte(item.storage_url);
-		const origine = texte(item.original_url) ?? texte(item.url) ?? texte(item.preview_url);
-		fichiers.push({
-			chemin: stockage ? cheminDisque(stockage) : null,
-			cheminBucket: stockage,
-			hauteurAnnoncee: nombre(item.height),
-			index,
-			kind: "image",
-			largeurAnnoncee: nombre(item.width),
-			// `?name=orig` : X sert la variante « medium » (1200 px) sans ce suffixe.
-			url: origine ? (origine.includes("?name=") ? origine : `${origine}?name=orig`) : null,
-		});
-		index++;
-	}
-	return fichiers;
+  const fichiers: FichierCreation[] = [];
+  let index = 0;
+  for (const entree of tableau(brut)) {
+    if (!entree || typeof entree !== "object") continue;
+    const item = entree as Record<string, unknown>;
+    if (texte(item.type) !== "photo") continue;
+    const stockage = texte(item.storage_url);
+    const origine = texte(item.original_url) ?? texte(item.url) ?? texte(item.preview_url);
+    fichiers.push({
+      chemin: stockage ? cheminDisque(stockage) : null,
+      cheminBucket: stockage,
+      hauteurAnnoncee: nombre(item.height),
+      index,
+      kind: "image",
+      largeurAnnoncee: nombre(item.width),
+      // `?name=orig` : X sert la variante « medium » (1200 px) sans ce suffixe.
+      url: origine ? (origine.includes("?name=") ? origine : `${origine}?name=orig`) : null,
+    });
+    index++;
+  }
+  return fichiers;
 }
 
 async function lireOctets(fichier: FichierCreation): Promise<Uint8Array | null> {
-	if (fichier.chemin) {
-		const surDisque = Bun.file(fichier.chemin);
-		if (await surDisque.exists()) {
-			return new Uint8Array(await surDisque.arrayBuffer());
-		}
-	}
-	if (fichier.url) {
-		const reponse = await fetch(fichier.url).catch(() => null);
-		if (reponse?.ok) {
-			return new Uint8Array(await reponse.arrayBuffer());
-		}
-	}
-	return null;
+  if (fichier.chemin) {
+    const surDisque = Bun.file(fichier.chemin);
+    if (await surDisque.exists()) {
+      return new Uint8Array(await surDisque.arrayBuffer());
+    }
+  }
+  if (fichier.url) {
+    const reponse = await fetch(fichier.url).catch(() => null);
+    if (reponse?.ok) {
+      return new Uint8Array(await reponse.arrayBuffer());
+    }
+  }
+  return null;
 }
 
 async function mesurer(sharp: SharpModule, fichier: FichierCreation): Promise<Mesure | null> {
-	const octets = await lireOctets(fichier);
-	if (!octets) return null;
+  const octets = await lireOctets(fichier);
+  if (!octets) return null;
 
-	const sha256 = new Bun.CryptoHasher("sha256").update(octets).digest("hex");
-	if (fichier.kind === "video") {
-		// Aucune empreinte perceptuelle sur une vidéo : `sharp` ne la décode pas, et hacher une
-		// frame arbitraire donnerait une valeur qui ne veut rien dire. Les dimensions annoncées
-		// par Discord sont, elles, mesurées — par Discord.
-		return {
-			cheminBucket: fichier.cheminBucket,
-			dhash: null,
-			hauteur: fichier.hauteurAnnoncee,
-			index: fichier.index,
-			kind: "video",
-			largeur: fichier.largeurAnnoncee,
-			octets: octets.byteLength,
-			phash: null,
-			sha256,
-			url: fichier.url,
-		};
-	}
+  const sha256 = new Bun.CryptoHasher("sha256").update(octets).digest("hex");
+  if (fichier.kind === "video") {
+    // Aucune empreinte perceptuelle sur une vidéo : `sharp` ne la décode pas, et hacher une
+    // frame arbitraire donnerait une valeur qui ne veut rien dire. Les dimensions annoncées
+    // par Discord sont, elles, mesurées — par Discord.
+    return {
+      cheminBucket: fichier.cheminBucket,
+      dhash: null,
+      hauteur: fichier.hauteurAnnoncee,
+      index: fichier.index,
+      kind: "video",
+      largeur: fichier.largeurAnnoncee,
+      octets: octets.byteLength,
+      phash: null,
+      sha256,
+      url: fichier.url,
+    };
+  }
 
-	const meta = await sharp(octets).metadata();
-	return {
-		cheminBucket: fichier.cheminBucket,
-		dhash: await dhash(sharp, octets),
-		hauteur: meta.height ?? fichier.hauteurAnnoncee,
-		index: fichier.index,
-		kind: "image",
-		largeur: meta.width ?? fichier.largeurAnnoncee,
-		octets: octets.byteLength,
-		phash: await phash(sharp, octets),
-		sha256,
-		url: fichier.url,
-	};
+  const meta = await sharp(octets).metadata();
+  return {
+    cheminBucket: fichier.cheminBucket,
+    dhash: await dhash(sharp, octets),
+    hauteur: meta.height ?? fichier.hauteurAnnoncee,
+    index: fichier.index,
+    kind: "image",
+    largeur: meta.width ?? fichier.largeurAnnoncee,
+    octets: octets.byteLength,
+    phash: await phash(sharp, octets),
+    sha256,
+    url: fichier.url,
+  };
 }
 
 // ───────────────────────── Programme ─────────────────────────
 
 function option(nom: string): string | undefined {
-	const position = Bun.argv.indexOf(nom);
-	return position === -1 ? undefined : Bun.argv[position + 1];
+  const position = Bun.argv.indexOf(nom);
+  return position === -1 ? undefined : Bun.argv[position + 1];
 }
 
 const SLUG = option("--campagne") ?? "iergday";
@@ -413,7 +413,7 @@ const sql = createBunSql({ url: URL_BASE });
 const sharp = await chargerSharp();
 
 const creations = (await sql.unsafe(SQL_CREATIONS, [SLUG])) as unknown as LigneCreation[];
-const retenues = creations.filter((creation) => creation.motif_ecart === null);
+const retenues = creations.filter(creation => creation.motif_ecart === null);
 const oeuvres = (await sql`
 	select oeuvre_id, cle, creations, sha256, dhash, phash
 	  from public.x_campagne_oeuvres
@@ -421,151 +421,151 @@ const oeuvres = (await sql`
 
 const couvertes = new Set<string>();
 for (const oeuvre of oeuvres) {
-	for (const entree of tableau(oeuvre.creations)) {
-		if (!entree || typeof entree !== "object") continue;
-		const item = entree as Record<string, unknown>;
-		couvertes.add(`${texte(item.source)}:${texte(item.identifiant)}`);
-	}
+  for (const entree of tableau(oeuvre.creations)) {
+    if (!entree || typeof entree !== "object") continue;
+    const item = entree as Record<string, unknown>;
+    couvertes.add(`${texte(item.source)}:${texte(item.identifiant)}`);
+  }
 }
 
-const aTraiter = retenues.filter(
-	(creation) => TOUT || !couvertes.has(`${creation.source}:${creation.identifiant}`)
-);
+const aTraiter = retenues.filter(creation => TOUT || !couvertes.has(`${creation.source}:${creation.identifiant}`));
 
 console.log(
-	`empreintes campagne=${SLUG} retenues=${retenues.length} couvertes=${couvertes.size} ` +
-		`a_mesurer=${aTraiter.length} oeuvres_en_base=${oeuvres.length}` +
-		`${TOUT ? " mode=controle (aucune ecriture)" : DRY ? " mode=simulation" : ""}`
+  `empreintes campagne=${SLUG} retenues=${retenues.length} couvertes=${couvertes.size} ` +
+    `a_mesurer=${aTraiter.length} oeuvres_en_base=${oeuvres.length}` +
+    `${TOUT ? " mode=controle (aucune ecriture)" : DRY ? " mode=simulation" : ""}`,
 );
 
 if (aTraiter.length === 0) {
-	console.log("rien a faire : chaque creation retenue porte deja une oeuvre");
-	process.exit(0);
+  console.log("rien a faire : chaque creation retenue porte deja une oeuvre");
+  process.exit(0);
 }
 
 /** Les fichiers d'une création, quelle qu'en soit la source. */
 async function fichiersDe(creation: LigneCreation): Promise<FichierCreation[]> {
-	if (creation.source === "x") {
-		const lignes = (await sql`select media from public.tweets where id = ${creation.identifiant}`) as Array<{
-			media: unknown;
-		}>;
-		return fichiersDepuisTweet(lignes[0]?.media);
-	}
-	if (creation.source === "discord") {
-		const lignes = (await sql`
+  if (creation.source === "x") {
+    const lignes = (await sql`select media from public.tweets where id = ${creation.identifiant}`) as Array<{
+      media: unknown;
+    }>;
+    return fichiersDepuisTweet(lignes[0]?.media);
+  }
+  if (creation.source === "discord") {
+    const lignes = (await sql`
 			select images from public.campagne_creations_discord
 			 where campagne_slug = ${SLUG} and message_id = ${creation.identifiant}`) as Array<{ images: unknown }>;
-		return fichiersDepuisImages(lignes[0]?.images);
-	}
-	const lignes = (await sql`
+    return fichiersDepuisImages(lignes[0]?.images);
+  }
+  const lignes = (await sql`
 		select images from public.campagne_creations_instagram
 		 where campagne_slug = ${SLUG} and shortcode = ${creation.identifiant}`) as Array<{ images: unknown }>;
-	return fichiersDepuisImages(lignes[0]?.images);
+  return fichiersDepuisImages(lignes[0]?.images);
 }
 
 interface Candidate {
-	creation: LigneCreation;
-	mesures: Mesure[];
-	master: Mesure;
-	/** Œuvre existante à laquelle la preuve rattache cette création, s'il y en a une. */
-	rattachement: LigneOeuvre | null;
-	preuve: string | null;
+  creation: LigneCreation;
+  mesures: Mesure[];
+  master: Mesure;
+  /** Œuvre existante à laquelle la preuve rattache cette création, s'il y en a une. */
+  rattachement: LigneOeuvre | null;
+  preuve: string | null;
 }
 
 const candidates: Candidate[] = [];
 const illisibles: string[] = [];
 
 for (const creation of aTraiter) {
-	const fichiers = await fichiersDe(creation);
-	const mesures: Mesure[] = [];
-	for (const fichier of fichiers) {
-		const mesure = await mesurer(sharp, fichier);
-		if (mesure) mesures.push(mesure);
-		else illisibles.push(`${creation.source}:${creation.identifiant}#${fichier.index}`);
-	}
-	if (mesures.length === 0) {
-		console.warn(`illisible ${creation.source}:${creation.identifiant} — aucun fichier mesurable, ignoree`);
-		continue;
-	}
+  const fichiers = await fichiersDe(creation);
+  const mesures: Mesure[] = [];
+  for (const fichier of fichiers) {
+    const mesure = await mesurer(sharp, fichier);
+    if (mesure) mesures.push(mesure);
+    else illisibles.push(`${creation.source}:${creation.identifiant}#${fichier.index}`);
+  }
+  if (mesures.length === 0) {
+    console.warn(`illisible ${creation.source}:${creation.identifiant} — aucun fichier mesurable, ignoree`);
+    continue;
+  }
 
-	// Le master est le fichier le mieux défini de la création : c'est lui qu'on sert en pleine
-	// résolution, et lui dont l'empreinte représente l'œuvre.
-	const master = mesures.reduce((meilleur, mesure) =>
-		(mesure.largeur ?? 0) * (mesure.hauteur ?? 0) > (meilleur.largeur ?? 0) * (meilleur.hauteur ?? 0)
-			? mesure
-			: meilleur
-	);
+  // Le master est le fichier le mieux défini de la création : c'est lui qu'on sert en pleine
+  // résolution, et lui dont l'empreinte représente l'œuvre.
+  const master = mesures.reduce((meilleur, mesure) =>
+    (mesure.largeur ?? 0) * (mesure.hauteur ?? 0) > (meilleur.largeur ?? 0) * (meilleur.hauteur ?? 0)
+      ? mesure
+      : meilleur,
+  );
 
-	let rattachement: LigneOeuvre | null = null;
-	let preuve: string | null = null;
-	for (const oeuvre of oeuvres) {
-		if (oeuvre.sha256 && oeuvre.sha256 === master.sha256) {
-			rattachement = oeuvre;
-			preuve = `sha256 identique (${master.sha256.slice(0, 16)}…) : le fichier est le même octet pour octet.`;
-			break;
-		}
-		const dd = distance(oeuvre.dhash, master.dhash);
-		const dp = distance(oeuvre.phash, master.phash);
-		if (dd !== null && dp !== null && dd <= SEUIL_FORT && dp <= SEUIL_FORT) {
-			rattachement = oeuvre;
-			preuve = `dHash=${dd} et pHash=${dp}, sous le seuil fort de ${SEUIL_FORT} : même dessin republié.`;
-			break;
-		}
-	}
+  let rattachement: LigneOeuvre | null = null;
+  let preuve: string | null = null;
+  for (const oeuvre of oeuvres) {
+    if (oeuvre.sha256 && oeuvre.sha256 === master.sha256) {
+      rattachement = oeuvre;
+      preuve = `sha256 identique (${master.sha256.slice(0, 16)}…) : le fichier est le même octet pour octet.`;
+      break;
+    }
+    const dd = distance(oeuvre.dhash, master.dhash);
+    const dp = distance(oeuvre.phash, master.phash);
+    if (dd !== null && dp !== null && dd <= SEUIL_FORT && dp <= SEUIL_FORT) {
+      rattachement = oeuvre;
+      preuve = `dHash=${dd} et pHash=${dp}, sous le seuil fort de ${SEUIL_FORT} : même dessin republié.`;
+      break;
+    }
+  }
 
-	candidates.push({ creation, master, mesures, preuve, rattachement });
+  candidates.push({ creation, master, mesures, preuve, rattachement });
 
-	const proches = oeuvres
-		.map((oeuvre) => ({ dd: distance(oeuvre.dhash, master.dhash), dp: distance(oeuvre.phash, master.phash), oeuvre }))
-		.filter((item) => item.dd !== null && item.dp !== null && item.dd <= 8 && item.dp <= 8 && item.oeuvre !== rattachement);
-	for (const proche of proches) {
-		console.warn(
-			`a verifier a la main ${creation.source}:${creation.identifiant} vs ${proche.oeuvre.oeuvre_id} — ` +
-				`dHash=${proche.dd} pHash=${proche.dp} : ressemblant SANS etre une preuve. Aucune fusion prononcee.`
-		);
-	}
+  const proches = oeuvres
+    .map(oeuvre => ({ dd: distance(oeuvre.dhash, master.dhash), dp: distance(oeuvre.phash, master.phash), oeuvre }))
+    .filter(
+      item => item.dd !== null && item.dp !== null && item.dd <= 8 && item.dp <= 8 && item.oeuvre !== rattachement,
+    );
+  for (const proche of proches) {
+    console.warn(
+      `a verifier a la main ${creation.source}:${creation.identifiant} vs ${proche.oeuvre.oeuvre_id} — ` +
+        `dHash=${proche.dd} pHash=${proche.dp} : ressemblant SANS etre une preuve. Aucune fusion prononcee.`,
+    );
+  }
 
-	console.log(
-		`mesure ${creation.source}:${creation.identifiant} fichiers=${mesures.length} kind=${master.kind} ` +
-			`${master.largeur}x${master.hauteur} sha256=${master.sha256.slice(0, 12)} ` +
-			`dhash=${master.dhash ?? "-"} phash=${master.phash ?? "-"} ` +
-			`${rattachement ? `rattachee=${rattachement.oeuvre_id}` : "oeuvre=nouvelle"}`
-	);
+  console.log(
+    `mesure ${creation.source}:${creation.identifiant} fichiers=${mesures.length} kind=${master.kind} ` +
+      `${master.largeur}x${master.hauteur} sha256=${master.sha256.slice(0, 12)} ` +
+      `dhash=${master.dhash ?? "-"} phash=${master.phash ?? "-"} ` +
+      `${rattachement ? `rattachee=${rattachement.oeuvre_id}` : "oeuvre=nouvelle"}`,
+  );
 }
 
 if (illisibles.length > 0) {
-	console.warn(`fichiers illisibles=${illisibles.length} : ${illisibles.join(", ")}`);
+  console.warn(`fichiers illisibles=${illisibles.length} : ${illisibles.join(", ")}`);
 }
 
 // Les identités doivent PRÉEXISTER : la clé étrangère de `x_campagne_oeuvres` l'exige, et créer
 // un participant ici court-circuiterait la reconstruction du roster, seul endroit qui sait fusionner
 // deux identités d'une même personne.
 const clesRequises = [
-	...new Set(candidates.filter((c) => !c.rattachement).map((c) => c.creation.cle_identite ?? "")),
+  ...new Set(candidates.filter(c => !c.rattachement).map(c => c.creation.cle_identite ?? "")),
 ].filter(Boolean);
 const connues = new Set(
-	(
-		(await sql`
+  (
+    (await sql`
 			select cle from public.x_campagne_participants
 			 where campagne_slug = ${SLUG}`) as Array<{ cle: string }>
-	).map((ligne) => ligne.cle)
+  ).map(ligne => ligne.cle),
 );
-const manquantes = clesRequises.filter((cle) => !connues.has(cle));
+const manquantes = clesRequises.filter(cle => !connues.has(cle));
 if (manquantes.length > 0 && !DRY) {
-	console.error(
-		`ARRET : ${manquantes.length} identite(s) absente(s) de x_campagne_participants : ${manquantes.join(", ")}.\n` +
-			"  Reconstruire le roster d'abord (/admin/iergday, « Reconstruire »), qui cree la ligne canonique a zero\n" +
-			"  compteur, puis relancer ce script, puis reconstruire une seconde fois pour mettre les compteurs a jour."
-	);
-	process.exit(1);
+  console.error(
+    `ARRET : ${manquantes.length} identite(s) absente(s) de x_campagne_participants : ${manquantes.join(", ")}.\n` +
+      "  Reconstruire le roster d'abord (/admin/iergday, « Reconstruire »), qui cree la ligne canonique a zero\n" +
+      "  compteur, puis relancer ce script, puis reconstruire une seconde fois pour mettre les compteurs a jour.",
+  );
+  process.exit(1);
 }
 
 if (DRY) {
-	console.log(
-		`simulation : ${candidates.filter((c) => !c.rattachement).length} oeuvre(s) seraient creee(s), ` +
-			`${candidates.filter((c) => c.rattachement).length} rattachee(s) a une oeuvre existante. Rien ecrit.`
-	);
-	process.exit(0);
+  console.log(
+    `simulation : ${candidates.filter(c => !c.rattachement).length} oeuvre(s) seraient creee(s), ` +
+      `${candidates.filter(c => c.rattachement).length} rattachee(s) a une oeuvre existante. Rien ecrit.`,
+  );
+  process.exit(0);
 }
 
 // Un engagement ouvert a déjà publié l'empreinte du roster : y ajouter une œuvre rendrait le
@@ -575,67 +575,67 @@ const engagement = (await sql`
 	 where campagne_slug = ${SLUG} and graine is null and annule_le is null
 	 limit 1`) as Array<{ numero: number }>;
 if (engagement.length > 0) {
-	console.error(
-		`ARRET : un engagement est ouvert (tirage n°${engagement[0].numero}) et son roster est gele. ` +
-			"L'annuler avant d'ajouter une oeuvre, sinon la verification du tirage echouera."
-	);
-	process.exit(1);
+  console.error(
+    `ARRET : un engagement est ouvert (tirage n°${engagement[0].numero}) et son roster est gele. ` +
+      "L'annuler avant d'ajouter une oeuvre, sinon la verification du tirage echouera.",
+  );
+  process.exit(1);
 }
 
 let creees = 0;
 let rattachees = 0;
 for (const candidate of candidates) {
-	const { creation, master } = candidate;
-	if (candidate.rattachement) {
-		// Rattachement à une œuvre existante : on n'ajoute QUE la création à sa liste, sans toucher
-		// ni au master, ni au motif, ni à la création gardée — ces choix-là ont été arbitrés.
-		const liste = tableau(candidate.rattachement.creations) as Array<Record<string, unknown>>;
-		if (liste.some((entree) => texte(entree.identifiant) === creation.identifiant)) {
-			// Déjà dans la liste : ne jamais l'y remettre. Une publication comptée deux fois dans
-			// une œuvre, c'est `nb_creations` faussé et un ticket qui apparaît de nulle part.
-			continue;
-		}
-		liste.push({
-			auteur: creation.auteur_pseudo ?? creation.auteur_nom,
-			identifiant: creation.identifiant,
-			publieLe: creation.horodatage,
-			source: creation.source,
-		});
-		await sql`
+  const { creation, master } = candidate;
+  if (candidate.rattachement) {
+    // Rattachement à une œuvre existante : on n'ajoute QUE la création à sa liste, sans toucher
+    // ni au master, ni au motif, ni à la création gardée — ces choix-là ont été arbitrés.
+    const liste = tableau(candidate.rattachement.creations) as Array<Record<string, unknown>>;
+    if (liste.some(entree => texte(entree.identifiant) === creation.identifiant)) {
+      // Déjà dans la liste : ne jamais l'y remettre. Une publication comptée deux fois dans
+      // une œuvre, c'est `nb_creations` faussé et un ticket qui apparaît de nulle part.
+      continue;
+    }
+    liste.push({
+      auteur: creation.auteur_pseudo ?? creation.auteur_nom,
+      identifiant: creation.identifiant,
+      publieLe: creation.horodatage,
+      source: creation.source,
+    });
+    await sql`
 			update public.x_campagne_oeuvres
 			   set creations = ${liste}::jsonb,
 			       nb_creations = ${liste.length},
 			       motif_regroupement = coalesce(motif_regroupement, ${candidate.preuve})
 			 where campagne_slug = ${SLUG} and oeuvre_id = ${candidate.rattachement.oeuvre_id}`;
-		rattachees++;
-		continue;
-	}
+    rattachees++;
+    continue;
+  }
 
-	const oeuvreId = `${creation.source}:${creation.identifiant}`;
-	await sql`
+  const oeuvreId = `${creation.source}:${creation.identifiant}`;
+  await sql`
 		insert into public.x_campagne_oeuvres
 		       (campagne_slug, oeuvre_id, cle, creation_gardee_source, creation_gardee_id,
 		        creations, nb_creations, sha256, dhash, phash, largeur, hauteur,
 		        image_master_source, image_master_id, image_master_index, image_master_chemin, image_master_url)
 		values (${SLUG}, ${oeuvreId}, ${creation.cle_identite}, ${creation.source}, ${creation.identifiant},
 		        ${[
-					{
-						auteur: creation.auteur_pseudo ?? creation.auteur_nom,
-						identifiant: creation.identifiant,
-						publieLe: creation.horodatage,
-						source: creation.source,
-					},
-				]}::jsonb,
+              {
+                auteur: creation.auteur_pseudo ?? creation.auteur_nom,
+                identifiant: creation.identifiant,
+                publieLe: creation.horodatage,
+                source: creation.source,
+              },
+            ]}::jsonb,
 		        1, ${master.sha256}, ${master.dhash}, ${master.phash}, ${master.largeur}, ${master.hauteur},
 		        ${creation.source}, ${creation.identifiant}, ${master.index},
 		        ${master.cheminBucket}, ${master.url})
 		on conflict (campagne_slug, oeuvre_id) do nothing`;
-	creees++;
+  creees++;
 }
 
 console.log(
-	`ecrit campagne=${SLUG} oeuvres_creees=${creees} creations_rattachees=${rattachees} ` +
-		`oeuvres_total=${oeuvres.length + creees}`
+  `ecrit campagne=${SLUG} oeuvres_creees=${creees} creations_rattachees=${rattachees} ` +
+    `oeuvres_total=${oeuvres.length + creees}`,
 );
 console.log("reconstruire le roster (/admin/iergday) pour mettre les compteurs des participants a jour");
 process.exit(0);

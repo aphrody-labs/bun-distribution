@@ -50,7 +50,8 @@ for (const item of downloads) {
   try {
     const res = await fetch(item.url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
         "Accept": "*/*",
       },
     });
@@ -74,7 +75,7 @@ const skillMetadata = {
   id: "who01060",
   internal_code: "who01060",
   game_hash: "0xE0549BE6",
-  game_hash_u32: 0xE0549BE6,
+  game_hash_u32: 0xe0549be6,
   names: {
     fr: "Sauve-cabri",
     en: "Easy Breezy Kid",

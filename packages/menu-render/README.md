@@ -88,7 +88,10 @@ Copier `re/azalee-integration/components/menu/GameMenuClient.tsx`
 "use client";
 import { GameMenu, type MenuLayout } from "@rosegriffon/menu-render";
 
-export function GameMenuClient({ layout, assetBase = "https://cdn.rosegriffon.fr" }) {
+export function GameMenuClient({
+  layout,
+  assetBase = "https://cdn.rosegriffon.fr",
+}) {
   return <GameMenu layout={layout} assetBase={assetBase} />;
 }
 ```

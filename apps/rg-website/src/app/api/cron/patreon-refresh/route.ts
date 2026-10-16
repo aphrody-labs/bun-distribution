@@ -13,15 +13,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-	const auth = req.headers.get("authorization");
-	const secret = process.env.CRON_SECRET;
-	if (!secret || auth !== `Bearer ${secret}`) {
-		return new NextResponse("unauthorized", { status: 401 });
-	}
+  const auth = req.headers.get("authorization");
+  const secret = process.env.CRON_SECRET;
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return new NextResponse("unauthorized", { status: 401 });
+  }
 
-	const result = await refreshAllMemberships({
-		limit: 200,
-		olderThanMs: 6 * 24 * 3600 * 1000,
-	});
-	return NextResponse.json(result);
+  const result = await refreshAllMemberships({
+    limit: 200,
+    olderThanMs: 6 * 24 * 3600 * 1000,
+  });
+  return NextResponse.json(result);
 }

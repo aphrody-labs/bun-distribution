@@ -9,11 +9,7 @@ import { notFound } from "next/navigation";
 import { TacticDetail } from "@/components/wiki/TacticDetail";
 import { wikiService } from "@/lib/wiki-service";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const tactic = await wikiService.getTactic(id);
 
@@ -60,10 +56,7 @@ export default async function TacticDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="w-full space-y-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-on-surface-variant font-medium">

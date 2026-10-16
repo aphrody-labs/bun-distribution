@@ -11,8 +11,7 @@ export interface RgtvBannerProps {
   link?: string;
 }
 
-const STRIPE_PATTERN =
-  "repeating-linear-gradient(-45deg, #6b3d1b, #6b3d1b 20px, transparent 20px, transparent 40px)";
+const STRIPE_PATTERN = "repeating-linear-gradient(-45deg, #6b3d1b, #6b3d1b 20px, transparent 20px, transparent 40px)";
 
 function RgBadge({ subtitle, className }: { subtitle: string; className?: string }) {
   return (
@@ -47,13 +46,7 @@ function RgButton({ link, buttonText }: { link: string; buttonText: string }) {
       className="bg-white text-[#8B5023] hover:bg-white/90 font-black rounded-xl shadow-[4px_4px_0px_0px_#6b3d1b] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#6b3d1b] transition-all duration-200 border-2 border-white cursor-pointer"
     >
       <a href={link} target="_blank" rel="noopener noreferrer">
-        <Image
-          src="/rg.webp"
-          alt=""
-          width={18}
-          height={18}
-          className="mr-2 w-4.5 h-4.5 object-contain"
-        />
+        <Image src="/rg.webp" alt="" width={18} height={18} className="mr-2 w-4.5 h-4.5 object-contain" />
         {buttonText}
       </a>
     </Button>
@@ -74,10 +67,7 @@ export function RgtvBanner({
       <div className="md:hidden -mx-4 relative overflow-hidden">
         <Image src={image} alt={title} fill className="object-cover object-top" sizes="100vw" />
         <div className="absolute inset-0 bg-linear-to-t from-[#8B5023]/90 via-[#8B5023]/60 to-[#8B5023]/30" />
-        <div
-          className="absolute inset-0 pointer-events-none opacity-10"
-          style={{ background: STRIPE_PATTERN }}
-        />
+        <div className="absolute inset-0 pointer-events-none opacity-10" style={{ background: STRIPE_PATTERN }} />
 
         <div className="relative z-10 p-5 flex flex-col gap-4">
           <RgBadge subtitle={subtitle} className="px-3 py-1 text-[10px] border border-white/20" />
@@ -95,10 +85,7 @@ export function RgtvBanner({
 
       {/* ── Desktop: side-by-side grid ── */}
       <Card className="hidden md:block overflow-hidden border-none shadow-xl bg-[#8B5023] relative group rounded-[32px] p-0">
-        <div
-          className="absolute inset-0 z-0 pointer-events-none opacity-10"
-          style={{ background: STRIPE_PATTERN }}
-        />
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-10" style={{ background: STRIPE_PATTERN }} />
 
         <div className="grid md:grid-cols-2 gap-0 relative z-20">
           <div className="relative h-auto w-full overflow-hidden">
@@ -122,9 +109,7 @@ export function RgtvBanner({
                 <RgTitle title={title} />
               </div>
             </div>
-            <p className="text-white/90 text-lg leading-relaxed max-w-md font-bold">
-              {description}
-            </p>
+            <p className="text-white/90 text-lg leading-relaxed max-w-md font-bold">{description}</p>
             <div className="flex justify-start pt-2">
               <div className="w-full sm:w-auto px-0">
                 <RgButton link={link} buttonText={buttonText} />

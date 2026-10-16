@@ -79,8 +79,7 @@ export interface CoordinatorPassiveData {
 // ── Translations ──
 
 export const REQUIREMENT_FR: Record<string, string> = {
-  "After a substitution, for the player who comes on (15s)":
-    "Après remplacement, joueur entrant (15s)",
+  "After a substitution, for the player who comes on (15s)": "Après remplacement, joueur entrant (15s)",
   "For nearby players": "Joueurs à proximité",
   "For players of different elements": "Joueurs d'éléments différents",
   "For players of different positions": "Joueurs de positions différentes",
@@ -108,8 +107,7 @@ export const REQUIREMENT_FR: Record<string, string> = {
   "When at 50% or higher tension": "Tension à 50% ou plus",
   "When losing a Scramble": "En perdant une mêlée",
   "When making a pass": "En faisant une passe",
-  "When opposition passes the ball out during Focus Battle":
-    "L'adversaire passe le ballon lors d'un affrontement",
+  "When opposition passes the ball out during Focus Battle": "L'adversaire passe le ballon lors d'un affrontement",
   "When outside the zone": "Hors de la zone",
   "When the opposition commits a foul": "Quand l'adversaire commet une faute",
   "When tied or behind in goals": "Score à égalité ou en retard",
@@ -239,8 +237,7 @@ export function PlayerPassiveCard({ passive }: { passive: PlayerPassiveData }) {
           if (!values.low && !values.high) {
             return null;
           }
-          const display =
-            values.low === values.high ? values.low : `${values.low} ~ ${values.high}`;
+          const display = values.low === values.high ? values.low : `${values.low} ~ ${values.high}`;
           return (
             <div key={key} className="flex items-center gap-2">
               <span
@@ -329,11 +326,7 @@ export function NierPassiveFamilyCard({ family }: { family: NierPassiveFamily })
   if (instances.length === 0) return null;
 
   const representative = instances[0];
-  const textFr =
-    representative.description.fr ??
-    representative.description.en ??
-    representative.description.ja ??
-    "";
+  const textFr = representative.description.fr ?? representative.description.en ?? representative.description.ja ?? "";
   const elementName = representative.element_name;
   const elementColor = ELEMENT_COLORS[elementName] ?? ELEMENT_COLORS.neutral;
   const elementLabel = ELEMENT_LABELS[elementName] ?? elementName;
@@ -372,11 +365,9 @@ export function NierPassiveFamilyCard({ family }: { family: NierPassiveFamily })
       <div className="space-y-2">
         {[...byPrefix.entries()].map(([prefix, insts]) => (
           <div key={prefix}>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">
-              {prefix}
-            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{prefix}</div>
             <div className="flex flex-wrap gap-1">
-              {insts.map((inst) => (
+              {insts.map(inst => (
                 <Link
                   key={inst.string_id}
                   href={`/passive/${inst.passive_id}`}
@@ -392,9 +383,7 @@ export function NierPassiveFamilyCard({ family }: { family: NierPassiveFamily })
       </div>
 
       {/* string_id de référence */}
-      <div className="text-[10px] text-on-surface-variant/50 font-mono truncate">
-        {representative.string_id}
-      </div>
+      <div className="text-[10px] text-on-surface-variant/50 font-mono truncate">{representative.string_id}</div>
     </div>
   );
 }
@@ -445,7 +434,7 @@ export function CoordinatorPassiveCard({ passive }: { passive: CoordinatorPassiv
       label: "Coord. (C)",
       value: passive.coordinatorCommon,
     },
-  ].filter((r) => r.value);
+  ].filter(r => r.value);
 
   return (
     <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-colors p-4 space-y-3">

@@ -14,34 +14,34 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * le double-comptage par bounce.
  */
 export async function trackArticleView(articleId: string): Promise<{ success: boolean }> {
-	if (!articleId || !UUID_RE.test(articleId)) {
-		return { success: false };
-	}
+  if (!articleId || !UUID_RE.test(articleId)) {
+    return { success: false };
+  }
 
-	const client = createPostgresClient();
+  const client = createPostgresClient();
 
-	// On vérifie que l'article appartient bien à l'app "azalee" avant
-	// D'incrémenter quoi que ce soit — un user qui devine un UUID rpb
-	// Ou website ne peut pas booster un compteur étranger via cette route.
-	const { data: row } = await client
-		.from("articles")
-		.select("id")
-		.eq("id", articleId)
-		.eq("app", "azalee")
-		.maybeSingle();
+  // On vérifie que l'article appartient bien à l'app "azalee" avant
+  // D'incrémenter quoi que ce soit — un user qui devine un UUID rpb
+  // Ou website ne peut pas booster un compteur étranger via cette route.
+  const { data: row } = await client
+    .from("articles")
+    .select("id")
+    .eq("id", articleId)
+    .eq("app", "azalee")
+    .maybeSingle();
 
-	if (!row) {
-		return { success: false };
-	}
+  if (!row) {
+    return { success: false };
+  }
 
-	const { error } = await client.rpc("increment_article_views", {
-		article_id: articleId,
-	});
+  const { error } = await client.rpc("increment_article_views", {
+    article_id: articleId,
+  });
 
-	if (error) {
-		console.error("trackArticleView rpc error:", error);
-		return { success: false };
-	}
+  if (error) {
+    console.error("trackArticleView rpc error:", error);
+    return { success: false };
+  }
 
-	return { success: true };
+  return { success: true };
 }

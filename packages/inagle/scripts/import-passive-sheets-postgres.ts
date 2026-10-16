@@ -4,9 +4,7 @@ import type { Database } from "@rosegriffon/db/schema";
 
 const input = process.env.INAGLE_PASSIVE_SHEETS_JSON;
 if (!input) {
-  throw new Error(
-    "INAGLE_PASSIVE_SHEETS_JSON est obligatoire : l'import lit une extraction explicite.",
-  );
+  throw new Error("INAGLE_PASSIVE_SHEETS_JSON est obligatoire : l'import lit une extraction explicite.");
 }
 
 type Kind = "player" | "custom" | "coordinator";
@@ -33,9 +31,9 @@ for (let offset = 0; offset < rows.length; offset += 200) {
   await db
     .insertInto("inagle_passive_sheets")
     .values(batch)
-    .onConflict((oc) =>
+    .onConflict(oc =>
       oc.columns(["kind", "id"]).doUpdateSet({
-        data: (eb) => eb.ref("excluded.data"),
+        data: eb => eb.ref("excluded.data"),
         updated_at: new Date().toISOString(),
       }),
     )

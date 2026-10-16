@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  ArrowRight,
-  CircleDot,
-  LayoutGrid,
-  Sparkles,
-  Store,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleDot, LayoutGrid, Sparkles, Store, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -50,9 +42,7 @@ interface SubTypeInfo {
  * `min–max` (un seul nombre si min===max). Évite l'erreur React « Objects are not
  * valid as a React child » quand la donnée est une plage.
  */
-function formatHissatsuPower(
-  power: string | number | { min: number; max: number } | null | undefined,
-): string {
+function formatHissatsuPower(power: string | number | { min: number; max: number } | null | undefined): string {
   if (power == null) return "";
   if (typeof power === "object") {
     return power.min === power.max ? `${power.max}` : `${power.min}–${power.max}`;
@@ -123,11 +113,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
               />
             ) : (
               <>
-                <Icon
-                  name={subTypeInfo.icon}
-                  size={96}
-                  className={`sm:hidden ${subTypeInfo.color} opacity-30`}
-                />
+                <Icon name={subTypeInfo.icon} size={96} className={`sm:hidden ${subTypeInfo.color} opacity-30`} />
                 <Icon
                   name={subTypeInfo.icon}
                   size={144}
@@ -142,7 +128,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
                 download
                 target="_blank"
                 rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
                 className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-xs font-medium text-on-surface hover:bg-surface border border-outline-variant/30 transition-colors"
                 title="Télécharger l'image"
               >
@@ -155,9 +141,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
           <div className="flex flex-wrap justify-center gap-3 w-full">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-highest border border-outline-variant/10 w-full justify-center">
               <Icon name={subTypeInfo.icon} size={20} className={subTypeInfo.color} />
-              <span className="text-sm font-bold text-on-surface uppercase tracking-wider">
-                {subTypeInfo.label}
-              </span>
+              <span className="text-sm font-bold text-on-surface uppercase tracking-wider">{subTypeInfo.label}</span>
             </div>
 
             {aura.elementName?.en && (
@@ -223,9 +207,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
             <div className="bg-tertiary/5 border border-tertiary/10 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={18} className="text-tertiary" aria-hidden="true" />
-                <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">
-                  Effet Passif
-                </span>
+                <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">Effet Passif</span>
               </div>
               <p className="text-on-surface font-medium whitespace-pre-line">
                 {translatePassiveEffect(aura.sheetData.passiveEffect)}
@@ -264,8 +246,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
                     <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
                       {aura.sheetData?.hissatsu?.type && (
                         <span className="font-medium">
-                          {HISSATSU_TYPE_FR[aura.sheetData.hissatsu.type] ||
-                            aura.sheetData.hissatsu.type}
+                          {HISSATSU_TYPE_FR[aura.sheetData.hissatsu.type] || aura.sheetData.hissatsu.type}
                         </span>
                       )}
                       {aura.sheetData?.hissatsu?.type && aura.sheetData?.hissatsu?.element && (
@@ -273,8 +254,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
                       )}
                       {aura.sheetData?.hissatsu?.element && (
                         <span className="font-medium">
-                          {HISSATSU_ELEMENT_FR[aura.sheetData.hissatsu.element] ||
-                            aura.sheetData.hissatsu.element}
+                          {HISSATSU_ELEMENT_FR[aura.sheetData.hissatsu.element] || aura.sheetData.hissatsu.element}
                         </span>
                       )}
                       {aura.sheetData?.hissatsu?.power != null && (
@@ -289,12 +269,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
                   )}
                   {(aura as any).skillVideoUrl && (
                     <div className="rounded-xl overflow-hidden border border-primary/10 aspect-video bg-black">
-                      <video
-                        src={(aura as any).skillVideoUrl}
-                        controls
-                        muted
-                        className="w-full h-full object-contain"
-                      >
+                      <video src={(aura as any).skillVideoUrl} controls muted className="w-full h-full object-contain">
                         Votre navigateur ne supporte pas la lecture de vidéos.
                       </video>
                     </div>
@@ -311,9 +286,7 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
                     </span>
                   </div>
                   {aura.sheetData?.buff.name && (
-                    <span className="text-sm font-bold text-on-surface block mb-1">
-                      {aura.sheetData.buff.name}
-                    </span>
+                    <span className="text-sm font-bold text-on-surface block mb-1">{aura.sheetData.buff.name}</span>
                   )}
                   <p className="text-sm font-medium whitespace-pre-line">
                     {BUFF_EFFECT_FR[aura.sheetData?.buff.effect] || aura.sheetData?.buff.effect}
@@ -324,15 +297,14 @@ export function AuraDetail({ aura, category, subTypeInfo, prevAura, nextAura }: 
           )}
 
           {/* Shop Availability */}
-          {(aura.sheetData as any)?.shopAvailability &&
-            (aura.sheetData as any).shopAvailability.length > 0 && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-surface-container-low border border-outline-variant/10">
-                <Store size={18} className="text-on-surface-variant shrink-0" aria-hidden="true" />
-                <span className="text-sm font-medium text-on-surface">
-                  {(aura.sheetData as any).shopAvailability.join(", ")}
-                </span>
-              </div>
-            )}
+          {(aura.sheetData as any)?.shopAvailability && (aura.sheetData as any).shopAvailability.length > 0 && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-surface-container-low border border-outline-variant/10">
+              <Store size={18} className="text-on-surface-variant shrink-0" aria-hidden="true" />
+              <span className="text-sm font-medium text-on-surface">
+                {(aura.sheetData as any).shopAvailability.join(", ")}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

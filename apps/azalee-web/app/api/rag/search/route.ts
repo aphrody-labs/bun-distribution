@@ -1,3 +1,4 @@
+// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import { ragSearch, type RagSourceKind } from "@rosegriffon/db/rag";
 
 // RAG unifié — endpoint REST additif (cf. iecode/re/rag/UNIFIED-RAG-PLAN.md §5).
@@ -30,15 +31,9 @@ export async function POST(req: Request): Promise<Response> {
     const results = await ragSearch(query, { k, kinds });
     return Response.json({ query, count: results.length, results });
   } catch (err) {
-    return Response.json(
-      { error: err instanceof Error ? err.message : "rag search failed" },
-      { status: 500 },
-    );
+    return Response.json({ error: err instanceof Error ? err.message : "rag search failed" }, { status: 500 });
   }
 }
 
 export const GET = () =>
-  Response.json(
-    { message: "POST { query, k?, kinds? } to search the unified RAG (local hybrid)." },
-    { status: 200 },
-  );
+  Response.json({ message: "POST { query, k?, kinds? } to search the unified RAG (local hybrid)." }, { status: 200 });

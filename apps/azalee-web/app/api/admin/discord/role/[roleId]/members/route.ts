@@ -70,16 +70,10 @@ async function fetchAllMembers(guildId: string, token: string): Promise<DiscordM
   return all;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ roleId: string }> },
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "CLAUDE_API_KEY non configuré côté serveur" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "CLAUDE_API_KEY non configuré côté serveur" }, { status: 500 });
   }
   if (request.headers.get("authorization") !== `Bearer ${apiKey}`) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -93,10 +87,7 @@ export async function GET(
   const token = process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_GUILD_ID;
   if (!token || !guildId) {
-    return NextResponse.json(
-      { error: "DISCORD_BOT_TOKEN/DISCORD_GUILD_ID non configurés" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "DISCORD_BOT_TOKEN/DISCORD_GUILD_ID non configurés" }, { status: 500 });
   }
 
   let members: DiscordMember[];
@@ -106,7 +97,7 @@ export async function GET(
     return NextResponse.json({ error: (error as Error).message }, { status: 502 });
   }
 
-  const withRole = members.filter((m) => m.roles?.includes(roleId));
+  const withRole = members.filter(m => m.roles?.includes(roleId));
   if (withRole.length === 0) {
     return NextResponse.json({ members: [], roleId });
   }
@@ -114,7 +105,7 @@ export async function GET(
   // Lookup profiles existants
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
-  const discordIds = withRole.map((m) => m.user.id);
+  const discordIds = withRole.map(m => m.user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profiles } = await (supabase as any)
     .from("profiles")
@@ -124,10 +115,10 @@ export async function GET(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profileByDiscord = new Map<string, any>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ((profiles ?? []) as any[]).map((p) => [p.discord_id, p]),
+    ((profiles ?? []) as any[]).map(p => [p.discord_id, p]),
   );
 
-  const out = withRole.map((m) => {
+  const out = withRole.map(m => {
     const profile = profileByDiscord.get(m.user.id);
     return {
       avatar_url: avatarUrl(m.user.id, m.user.avatar),

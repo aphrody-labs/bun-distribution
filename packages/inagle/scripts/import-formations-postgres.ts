@@ -11,14 +11,14 @@ if (!source) {
 const input = JSON.parse(await Bun.file(resolve(source)).text()) as {
   formations?: Array<Record<string, unknown>>;
 };
-const formations = (input.formations ?? []).filter((formation) => formation.valid !== false);
+const formations = (input.formations ?? []).filter(formation => formation.valid !== false);
 if (formations.length === 0) throw new Error("No valid formations found in the explicit source.");
 
 const db = createInagleSql<Database>();
 const now = new Date().toISOString();
 for (let offset = 0; offset < formations.length; offset += 100) {
   const batch = formations.slice(offset, offset + 100);
-  await db.transaction().execute(async (tx) => {
+  await db.transaction().execute(async tx => {
     for (const formation of batch) {
       const id = String(formation.form_id ?? "");
       if (!id) continue;
@@ -39,7 +39,7 @@ for (let offset = 0; offset < formations.length; offset += 100) {
           updated_at: now,
           emblem_url: null,
         })
-        .onConflict((oc) =>
+        .onConflict(oc =>
           oc.column("id").doUpdateSet({
             name_fr: label,
             name_en: label,

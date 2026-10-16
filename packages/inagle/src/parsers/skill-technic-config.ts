@@ -78,9 +78,7 @@ export async function loadSkillTechnicConfigAsync(dataPath: string = DATA_ROOT) 
   return content ? parseContent(content) : null;
 }
 
-export async function buildSkillTechnicDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<SkillTechnicDatabase> {
+export async function buildSkillTechnicDatabase(dataPath: string = DATA_ROOT): Promise<SkillTechnicDatabase> {
   const technics = (await loadSkillTechnicConfigAsync(dataPath)) || [];
   const bySkillId = new Map<string, SkillTechnicInfo>();
   for (const t of technics) bySkillId.set(t.id, t);

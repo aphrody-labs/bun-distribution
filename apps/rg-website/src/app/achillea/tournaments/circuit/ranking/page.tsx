@@ -6,13 +6,12 @@ import CircuitRankingClient from "./circuit-ranking-client";
  * interdit. L'interface, inchangée, vit dans `circuit-ranking-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Classement du circuit",
-	description:
-		"Le classement général du circuit Achilléa : joueurs, clans et tournois comptant pour la saison.",
-	chemin: "/achillea/tournaments/circuit/ranking",
-	indexable: true,
+  titre: "Classement du circuit",
+  description: "Le classement général du circuit Achilléa : joueurs, clans et tournois comptant pour la saison.",
+  chemin: "/achillea/tournaments/circuit/ranking",
+  indexable: true,
 });
 
 export default function CircuitRankingPage() {
-	return <CircuitRankingClient />;
+  return <CircuitRankingClient />;
 }

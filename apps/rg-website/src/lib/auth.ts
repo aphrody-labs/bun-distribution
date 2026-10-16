@@ -20,7 +20,7 @@ function detectCreatorScopes(scope: string | null | undefined): boolean {
   return (scope ?? "")
     .split(/[\s,]+/)
     .filter(Boolean)
-    .some((value) => value === "campaigns.members" || value === "w:campaigns.webhook");
+    .some(value => value === "campaigns.members" || value === "w:campaigns.webhook");
 }
 
 /**
@@ -44,7 +44,7 @@ export const auth = createRoseGriffonAuth({
     clientId: process.env.PATREON_CLIENT_ID ?? "",
     clientSecret: process.env.PATREON_CLIENT_SECRET ?? "",
     scopes: SCOPES_PATRON,
-    getUserInfo: async (tokens) => {
+    getUserInfo: async tokens => {
       const accessToken = (tokens as { accessToken?: string }).accessToken;
       if (!accessToken) return null;
       try {
@@ -129,9 +129,7 @@ async function syncPatreonAccount(account: {
             last_charge_date: top?.attrs.last_charge_date ?? null,
             last_charge_status: top?.attrs.last_charge_status ?? null,
             lifetime_support_cents:
-              top?.attrs.campaign_lifetime_support_cents ??
-              top?.attrs.lifetime_support_cents ??
-              null,
+              top?.attrs.campaign_lifetime_support_cents ?? top?.attrs.lifetime_support_cents ?? null,
             member_email: top?.attrs.email ?? null,
             next_charge_date: top?.attrs.next_charge_date ?? null,
             note: top?.attrs.note ?? null,

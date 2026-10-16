@@ -52,43 +52,41 @@ let dernierePurge = 0;
 
 /** Nombre d'écritures d'historique refusées depuis le démarrage (métrique). */
 export function echecsPersistanceHistorique(): number {
-	return echecsPersistance;
+  return echecsPersistance;
 }
 
 /** Vrai si l'écriture est actuellement en veille (table absente, base coupée…). */
 export function persistanceEnVeille(): boolean {
-	return Date.now() < enVeilleJusqua;
+  return Date.now() < enVeilleJusqua;
 }
 
 function sqlstate(err: unknown): string | null {
-	if (typeof err !== "object" || err === null) return null;
-	const errno = (err as { errno?: unknown }).errno;
-	return typeof errno === "string" ? errno : null;
+  if (typeof err !== "object" || err === null) return null;
+  const errno = (err as { errno?: unknown }).errno;
+  return typeof errno === "string" ? errno : null;
 }
 
 function mettreEnVeille(err: unknown): void {
-	const etat = sqlstate(err);
-	const message = err instanceof Error ? err.message : String(err);
-	enVeilleJusqua = Date.now() + VEILLE_MS;
+  const etat = sqlstate(err);
+  const message = err instanceof Error ? err.message : String(err);
+  enVeilleJusqua = Date.now() + VEILLE_MS;
 
-	if (etat === SQLSTATE_TABLE_ABSENTE) {
-		motifVeille = "table absente";
-		console.warn(
-			`[cron-historique] public.cron_executions n'existe pas : historique désactivé pendant ${
-				VEILLE_MS / 60_000
-			} min. Appliquer apps/website/supabase/migrations/20260813_02_cron_executions.sql.`
-		);
-		return;
-	}
-	if (etat === SQLSTATE_DROITS) {
-		motifVeille = "droits insuffisants";
-		console.warn(
-			`[cron-historique] écriture refusée (SQLSTATE 42501) : ${message.slice(0, 200)}`
-		);
-		return;
-	}
-	motifVeille = etat ? `SQLSTATE ${etat}` : "erreur base";
-	console.warn(`[cron-historique] écriture impossible (${motifVeille}) : ${message.slice(0, 200)}`);
+  if (etat === SQLSTATE_TABLE_ABSENTE) {
+    motifVeille = "table absente";
+    console.warn(
+      `[cron-historique] public.cron_executions n'existe pas : historique désactivé pendant ${
+        VEILLE_MS / 60_000
+      } min. Appliquer apps/website/supabase/migrations/20260813_02_cron_executions.sql.`,
+    );
+    return;
+  }
+  if (etat === SQLSTATE_DROITS) {
+    motifVeille = "droits insuffisants";
+    console.warn(`[cron-historique] écriture refusée (SQLSTATE 42501) : ${message.slice(0, 200)}`);
+    return;
+  }
+  motifVeille = etat ? `SQLSTATE ${etat}` : "erreur base";
+  console.warn(`[cron-historique] écriture impossible (${motifVeille}) : ${message.slice(0, 200)}`);
 }
 
 /**
@@ -98,17 +96,17 @@ function mettreEnVeille(err: unknown): void {
  * d'intégration et au diagnostic, ignoré par le démon.
  */
 export async function enregistrerExecutionEnBase(resultat: ResultatExecution): Promise<boolean> {
-	if (persistanceEnVeille()) {
-		echecsPersistance += 1;
-		return false;
-	}
+  if (persistanceEnVeille()) {
+    echecsPersistance += 1;
+    return false;
+  }
 
-	const debut = new Date(resultat.debutLe).toISOString();
-	const fin = new Date(resultat.debutLe + resultat.dureeMs).toISOString();
-	const erreur = tronquerErreur(resultat.erreur);
+  const debut = new Date(resultat.debutLe).toISOString();
+  const fin = new Date(resultat.debutLe + resultat.dureeMs).toISOString();
+  const erreur = tronquerErreur(resultat.erreur);
 
-	try {
-		await sql`
+  try {
+    await sql`
 			INSERT INTO public.cron_executions
 				(tache, demarre_le, termine_le, duree_ms, succes, expiree, erreur, origine, hote)
 			VALUES (
@@ -117,17 +115,17 @@ export async function enregistrerExecutionEnBase(resultat: ResultatExecution): P
 				${erreur}, ${resultat.origine}, ${HOTE}
 			)
 		`;
-		// Une écriture réussie ferme la veille éventuelle (base revenue, migration
-		// appliquée) sans attendre la fin du quart d'heure.
-		enVeilleJusqua = 0;
-		motifVeille = "";
-		void purgerHistoriqueSiNecessaire();
-		return true;
-	} catch (err) {
-		echecsPersistance += 1;
-		mettreEnVeille(err);
-		return false;
-	}
+    // Une écriture réussie ferme la veille éventuelle (base revenue, migration
+    // appliquée) sans attendre la fin du quart d'heure.
+    enVeilleJusqua = 0;
+    motifVeille = "";
+    void purgerHistoriqueSiNecessaire();
+    return true;
+  } catch (err) {
+    echecsPersistance += 1;
+    mettreEnVeille(err);
+    return false;
+  }
 }
 
 /**
@@ -137,30 +135,27 @@ export async function enregistrerExecutionEnBase(resultat: ResultatExecution): P
  * des lignes sont écrites, et un démon arrêté n'a rien à purger.
  */
 export async function purgerHistoriqueSiNecessaire(maintenant = Date.now()): Promise<number> {
-	if (maintenant - dernierePurge < PERIODE_PURGE_MS) return 0;
-	dernierePurge = maintenant;
+  if (maintenant - dernierePurge < PERIODE_PURGE_MS) return 0;
+  dernierePurge = maintenant;
 
-	const brut = Number.parseInt(Bun.env.CRON_HISTORIQUE_RETENTION_JOURS ?? "", 10);
-	const jours = Number.isFinite(brut) && brut > 0 ? brut : RETENTION_JOURS_DEFAUT;
+  const brut = Number.parseInt(Bun.env.CRON_HISTORIQUE_RETENTION_JOURS ?? "", 10);
+  const jours = Number.isFinite(brut) && brut > 0 ? brut : RETENTION_JOURS_DEFAUT;
 
-	try {
-		const supprimees = await sql`
+  try {
+    const supprimees = await sql`
 			DELETE FROM public.cron_executions
 			 WHERE demarre_le < now() - (${jours}::int * interval '1 day')
 			RETURNING 1
 		`;
-		const n = Array.isArray(supprimees) ? supprimees.length : 0;
-		if (n > 0) {
-			console.log(`[cron-historique] purge : ${n} exécution(s) de plus de ${jours} jours retirées.`);
-		}
-		return n;
-	} catch (err) {
-		console.warn(
-			"[cron-historique] purge impossible :",
-			err instanceof Error ? err.message.slice(0, 200) : err
-		);
-		return 0;
-	}
+    const n = Array.isArray(supprimees) ? supprimees.length : 0;
+    if (n > 0) {
+      console.log(`[cron-historique] purge : ${n} exécution(s) de plus de ${jours} jours retirées.`);
+    }
+    return n;
+  } catch (err) {
+    console.warn("[cron-historique] purge impossible :", err instanceof Error ? err.message.slice(0, 200) : err);
+    return 0;
+  }
 }
 
 /**
@@ -169,32 +164,32 @@ export async function purgerHistoriqueSiNecessaire(maintenant = Date.now()): Pro
  * l'observabilité ne doit jamais transformer une requête HTTP en 500.
  */
 export async function historiqueRecent(limite = 50): Promise<
-	Array<{
-		tache: string;
-		demarre_le: string;
-		duree_ms: number;
-		succes: boolean;
-		erreur: string | null;
-		origine: string;
-	}>
+  Array<{
+    tache: string;
+    demarre_le: string;
+    duree_ms: number;
+    succes: boolean;
+    erreur: string | null;
+    origine: string;
+  }>
 > {
-	if (persistanceEnVeille()) return [];
-	const plafond = Math.min(Math.max(Math.trunc(limite), 1), 500);
-	try {
-		const lignes = await sql`
+  if (persistanceEnVeille()) return [];
+  const plafond = Math.min(Math.max(Math.trunc(limite), 1), 500);
+  try {
+    const lignes = await sql`
 			SELECT tache, demarre_le, duree_ms, succes, erreur, origine
 			  FROM public.cron_executions
 			 ORDER BY demarre_le DESC
 			 LIMIT ${plafond}
 		`;
-		return lignes as unknown as Awaited<ReturnType<typeof historiqueRecent>>;
-	} catch (err) {
-		mettreEnVeille(err);
-		return [];
-	}
+    return lignes as unknown as Awaited<ReturnType<typeof historiqueRecent>>;
+  } catch (err) {
+    mettreEnVeille(err);
+    return [];
+  }
 }
 
 /** Motif courant de la veille, ou chaîne vide. Exposé pour le diagnostic. */
 export function motifVeillePersistance(): string {
-	return persistanceEnVeille() ? motifVeille : "";
+  return persistanceEnVeille() ? motifVeille : "";
 }

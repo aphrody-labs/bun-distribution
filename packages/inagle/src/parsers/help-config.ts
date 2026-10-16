@@ -47,7 +47,7 @@ export function buildHelpDatabase(_dataPath: string) {
         let idHex = "";
 
         // Look for Image String
-        const strVar = vars.find((v) => v.type === "String");
+        const strVar = vars.find(v => v.type === "String");
         if (strVar) image = strVar.value;
 
         // Heuristic: Find small integers that are valid text indices

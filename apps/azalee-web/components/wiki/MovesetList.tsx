@@ -67,12 +67,7 @@ export function MovesetList({ skills, maxSlots = 4, className }: MovesetListProp
               <div className="w-10 h-full flex items-center justify-center bg-surface-dim">
                 {elementIcon ? (
                   <div className="size-5 relative">
-                    <Image
-                      src={elementIcon}
-                      alt={skill.element || ""}
-                      fill
-                      className="object-contain"
-                    />
+                    <Image src={elementIcon} alt={skill.element || ""} fill className="object-contain" />
                   </div>
                 ) : skill.isPassive ? (
                   <Sparkles size={18} className="text-outline-variant" aria-hidden="true" />
@@ -93,21 +88,15 @@ export function MovesetList({ skills, maxSlots = 4, className }: MovesetListProp
                 >
                   {skill.name}
                   {skill.evolutionSuffix && (
-                    <span className="ml-1.5 text-[11px] font-black text-amber-400">
-                      {skill.evolutionSuffix}
-                    </span>
+                    <span className="ml-1.5 text-[11px] font-black text-amber-400">{skill.evolutionSuffix}</span>
                   )}
                 </span>
                 <div className="flex items-center gap-2">
                   {skill.isPassive && (
-                    <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
-                      Talent
-                    </span>
+                    <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">Talent</span>
                   )}
                   {skill.learnLevel !== undefined && skill.learnLevel > 0 && (
-                    <span className="text-[9px] font-medium text-slate-400">
-                      Niv. {skill.learnLevel}
-                    </span>
+                    <span className="text-[9px] font-medium text-slate-400">Niv. {skill.learnLevel}</span>
                   )}
                 </div>
               </div>

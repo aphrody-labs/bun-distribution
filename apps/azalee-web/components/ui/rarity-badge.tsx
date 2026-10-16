@@ -77,12 +77,7 @@ interface RarityBadgeProps {
   className?: string;
 }
 
-export function RarityBadge({
-  rarity,
-  size = "sm",
-  showLabel = true,
-  className,
-}: RarityBadgeProps) {
+export function RarityBadge({ rarity, size = "sm", showLabel = true, className }: RarityBadgeProps) {
   const key = normalizeRarity(rarity);
   const style = RARITY_STYLES[key] || RARITY_STYLES.NORMAL;
   const label = RARITY_LABEL[key] || RARITY_LABEL[rarity] || rarity;

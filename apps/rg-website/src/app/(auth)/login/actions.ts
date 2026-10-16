@@ -10,7 +10,7 @@ import { auth } from "@/lib/auth";
  * Déconnexion — invalide la session Better Auth côté serveur.
  */
 export async function logout(): Promise<void> {
-	await auth.api.signOut({ headers: await headers() }).catch(() => {});
-	revalidatePath("/", "layout");
-	redirect("/");
+  await auth.api.signOut({ headers: await headers() }).catch(() => {});
+  revalidatePath("/", "layout");
+  redirect("/");
 }

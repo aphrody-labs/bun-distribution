@@ -3,20 +3,20 @@ import "server-only";
 import { getPgPool } from "@/lib/db/pg";
 
 import {
-	collecterIdentifiantsDiscord,
-	RESOLUTION_VIDE,
-	type ResolutionDiscord,
-	resoudreMentions,
+  collecterIdentifiantsDiscord,
+  RESOLUTION_VIDE,
+  type ResolutionDiscord,
+  resoudreMentions,
 } from "./discord-texte";
 import {
-	type Campagne,
-	entierPositif,
-	extraireImages,
-	type ImageCampagne,
-	type MetriquesPost,
-	type PostCampagne,
-	type StatsCampagne,
-	urlImageAsset,
+  type Campagne,
+  entierPositif,
+  extraireImages,
+  type ImageCampagne,
+  type MetriquesPost,
+  type PostCampagne,
+  type StatsCampagne,
+  urlImageAsset,
 } from "./types";
 
 /*
@@ -58,23 +58,23 @@ const COLONNES_CAMPAGNE = `slug, titre, sur_titre, description, image_couverture
 	       collecte_le`;
 
 interface LigneCampagne {
-	slug: string;
-	titre: string;
-	sur_titre: string | null;
-	description: string | null;
-	image_couverture: string | null;
-	image_affiche: string | null;
-	image_reglement: string | null;
-	note_affiche: string | null;
-	reglement: string[] | null;
-	hashtags: string[] | null;
-	hashtags_affichage: string[] | null;
-	salons_depot: string[] | null;
-	debut_le: Date | string | null;
-	fin_le: Date | string | null;
-	actif: boolean;
-	principale: boolean;
-	collecte_le: Date | string | null;
+  slug: string;
+  titre: string;
+  sur_titre: string | null;
+  description: string | null;
+  image_couverture: string | null;
+  image_affiche: string | null;
+  image_reglement: string | null;
+  note_affiche: string | null;
+  reglement: string[] | null;
+  hashtags: string[] | null;
+  hashtags_affichage: string[] | null;
+  salons_depot: string[] | null;
+  debut_le: Date | string | null;
+  fin_le: Date | string | null;
+  actif: boolean;
+  principale: boolean;
+  collecte_le: Date | string | null;
 }
 
 /**
@@ -85,35 +85,35 @@ interface LigneCampagne {
  * (« X ne publie pas de nom de salon », « Discord ne publie pas de métriques »).
  */
 interface LigneCreation {
-	source: "x" | "discord" | "instagram";
-	/** Identifiant natif : `tweets.id` ou `discord_messages.message_id`. */
-	identifiant: string;
-	hashtag_trouve: string | null;
-	mis_en_avant: boolean;
-	publie_le: Date | string | null;
-	auteur_nom: string | null;
-	auteur_pseudo: string | null;
-	texte: string | null;
-	/** `tweets.media` côté X, `campagne_creations_discord.images` côté Discord. */
-	media: unknown;
-	metrics: unknown;
-	salon_id: string | null;
-	salon_nom: string | null;
-	guild_id: string | null;
-	/** Permalien Instagram — `null` pour les deux autres sources. */
-	permalien: string | null;
+  source: "x" | "discord" | "instagram";
+  /** Identifiant natif : `tweets.id` ou `discord_messages.message_id`. */
+  identifiant: string;
+  hashtag_trouve: string | null;
+  mis_en_avant: boolean;
+  publie_le: Date | string | null;
+  auteur_nom: string | null;
+  auteur_pseudo: string | null;
+  texte: string | null;
+  /** `tweets.media` côté X, `campagne_creations_discord.images` côté Discord. */
+  media: unknown;
+  metrics: unknown;
+  salon_id: string | null;
+  salon_nom: string | null;
+  guild_id: string | null;
+  /** Permalien Instagram — `null` pour les deux autres sources. */
+  permalien: string | null;
 }
 
 /** Une entrée de `campagne_creations_discord.images` (jsonb). */
 interface ImageDiscordStockee {
-	chemin?: string | null;
-	nom?: string | null;
-	largeur?: number | null;
-	hauteur?: number | null;
-	url_origine?: string | null;
-	/** Absent des lignes récoltées avant le 26/8/2026 : elles sont toutes des images. */
-	kind?: string | null;
-	type_mime?: string | null;
+  chemin?: string | null;
+  nom?: string | null;
+  largeur?: number | null;
+  hauteur?: number | null;
+  url_origine?: string | null;
+  /** Absent des lignes récoltées avant le 26/8/2026 : elles sont toutes des images. */
+  kind?: string | null;
+  type_mime?: string | null;
 }
 
 /*
@@ -125,36 +125,36 @@ interface ImageDiscordStockee {
 
 /** Les dates traversent la frontière serveur → client : toujours en chaîne ISO. */
 function versISO(valeur: Date | string | null | undefined): string | null {
-	if (!valeur) {
-		return null;
-	}
-	if (valeur instanceof Date) {
-		return Number.isNaN(valeur.getTime()) ? null : valeur.toISOString();
-	}
-	const date = new Date(valeur);
-	return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  if (!valeur) {
+    return null;
+  }
+  if (valeur instanceof Date) {
+    return Number.isNaN(valeur.getTime()) ? null : valeur.toISOString();
+  }
+  const date = new Date(valeur);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function versCampagne(ligne: LigneCampagne): Campagne {
-	return {
-		actif: ligne.actif,
-		collecteLe: versISO(ligne.collecte_le),
-		debutLe: versISO(ligne.debut_le),
-		description: ligne.description,
-		finLe: versISO(ligne.fin_le),
-		hashtags: ligne.hashtags ?? [],
-		hashtagsAffichage: ligne.hashtags_affichage ?? [],
-		imageAffiche: ligne.image_affiche,
-		imageCouverture: ligne.image_couverture,
-		imageReglement: ligne.image_reglement,
-		noteAffiche: ligne.note_affiche,
-		principale: ligne.principale,
-		reglement: ligne.reglement ?? [],
-		salonsDepot: ligne.salons_depot ?? [],
-		slug: ligne.slug,
-		surTitre: ligne.sur_titre,
-		titre: ligne.titre,
-	};
+  return {
+    actif: ligne.actif,
+    collecteLe: versISO(ligne.collecte_le),
+    debutLe: versISO(ligne.debut_le),
+    description: ligne.description,
+    finLe: versISO(ligne.fin_le),
+    hashtags: ligne.hashtags ?? [],
+    hashtagsAffichage: ligne.hashtags_affichage ?? [],
+    imageAffiche: ligne.image_affiche,
+    imageCouverture: ligne.image_couverture,
+    imageReglement: ligne.image_reglement,
+    noteAffiche: ligne.note_affiche,
+    principale: ligne.principale,
+    reglement: ligne.reglement ?? [],
+    salonsDepot: ligne.salons_depot ?? [],
+    slug: ligne.slug,
+    surTitre: ligne.sur_titre,
+    titre: ligne.titre,
+  };
 }
 
 /**
@@ -168,35 +168,32 @@ function versCampagne(ligne: LigneCampagne): Campagne {
  * `next/image` faute d'hôte autorisé, et sert de trace de provenance.
  */
 function imagesDiscord(brut: unknown): ImageCampagne[] {
-	if (!Array.isArray(brut)) {
-		return [];
-	}
-	const images: ImageCampagne[] = [];
-	for (const entree of brut) {
-		if (!entree || typeof entree !== "object") {
-			continue;
-		}
-		const image = entree as ImageDiscordStockee;
-		const src = urlImageAsset(image.chemin);
-		if (!src) {
-			continue;
-		}
-		images.push({
-			hauteur: typeof image.hauteur === "number" ? image.hauteur : null,
-			// Le `kind` écrit par la récolte fait foi ; à défaut — lignes d'avant le
-			// 26/8/2026 — le type MIME tranche, et sinon c'est une image. Aucune de
-			// ces trois lectures ne devine : la dernière décrit l'état réel du stock
-			// à cette date (aucune vidéo récoltée avant elle).
-			kind:
-				image.kind === "video" || (image.type_mime ?? "").startsWith("video/")
-					? "video"
-					: "image",
-			largeur: typeof image.largeur === "number" ? image.largeur : null,
-			source: src,
-			src,
-		});
-	}
-	return images;
+  if (!Array.isArray(brut)) {
+    return [];
+  }
+  const images: ImageCampagne[] = [];
+  for (const entree of brut) {
+    if (!entree || typeof entree !== "object") {
+      continue;
+    }
+    const image = entree as ImageDiscordStockee;
+    const src = urlImageAsset(image.chemin);
+    if (!src) {
+      continue;
+    }
+    images.push({
+      hauteur: typeof image.hauteur === "number" ? image.hauteur : null,
+      // Le `kind` écrit par la récolte fait foi ; à défaut — lignes d'avant le
+      // 26/8/2026 — le type MIME tranche, et sinon c'est une image. Aucune de
+      // ces trois lectures ne devine : la dernière décrit l'état réel du stock
+      // à cette date (aucune vidéo récoltée avant elle).
+      kind: image.kind === "video" || (image.type_mime ?? "").startsWith("video/") ? "video" : "image",
+      largeur: typeof image.largeur === "number" ? image.largeur : null,
+      source: src,
+      src,
+    });
+  }
+  return images;
 }
 
 /**
@@ -214,112 +211,110 @@ function imagesDiscord(brut: unknown): ImageCampagne[] {
  * « @membre » et la galerie s'affiche. Personne ne doit tomber sur une 500 en venant voir des dessins.
  */
 async function resoudreDiscord(lignes: readonly LigneCreation[]): Promise<ResolutionDiscord> {
-	const { membres, roles, salons } = collecterIdentifiantsDiscord(
-		lignes.map((ligne) => ligne.texte ?? "")
-	);
-	if (membres.length === 0 && roles.length === 0 && salons.length === 0) {
-		return RESOLUTION_VIDE;
-	}
+  const { membres, roles, salons } = collecterIdentifiantsDiscord(lignes.map(ligne => ligne.texte ?? ""));
+  if (membres.length === 0 && roles.length === 0 && salons.length === 0) {
+    return RESOLUTION_VIDE;
+  }
 
-	const pool = getPgPool();
-	try {
-		const [lignesMembres, lignesRoles, lignesSalons] = await Promise.all([
-			membres.length > 0
-				? pool.query<{ discord_id: string; nom: string }>(
-						`select discord_id,
+  const pool = getPgPool();
+  try {
+    const [lignesMembres, lignesRoles, lignesSalons] = await Promise.all([
+      membres.length > 0
+        ? pool.query<{ discord_id: string; nom: string }>(
+            `select discord_id,
 						        coalesce(nullif(btrim(nickname), ''), nullif(btrim(display_name), ''),
 						                 nullif(btrim(username), ''), 'membre') as nom
 						   from public.discord_members where discord_id = any($1::text[])`,
-						[membres]
-					)
-				: null,
-			roles.length > 0
-				? pool.query<{ role_id: string; name: string }>(
-						`select role_id, name from public.discord_roles where role_id = any($1::text[])`,
-						[roles]
-					)
-				: null,
-			salons.length > 0
-				? pool.query<{ channel_id: string; name: string }>(
-						`select channel_id, name from public.discord_channels where channel_id = any($1::text[])`,
-						[salons]
-					)
-				: null,
-		]);
+            [membres],
+          )
+        : null,
+      roles.length > 0
+        ? pool.query<{ role_id: string; name: string }>(
+            `select role_id, name from public.discord_roles where role_id = any($1::text[])`,
+            [roles],
+          )
+        : null,
+      salons.length > 0
+        ? pool.query<{ channel_id: string; name: string }>(
+            `select channel_id, name from public.discord_channels where channel_id = any($1::text[])`,
+            [salons],
+          )
+        : null,
+    ]);
 
-		return {
-			membres: Object.fromEntries((lignesMembres?.rows ?? []).map((r) => [r.discord_id, r.nom])),
-			roles: Object.fromEntries((lignesRoles?.rows ?? []).map((r) => [r.role_id, r.name])),
-			salons: Object.fromEntries((lignesSalons?.rows ?? []).map((r) => [r.channel_id, r.name])),
-		};
-	} catch (error) {
-		console.error("Erreur de résolution des identifiants Discord :", error);
-		return RESOLUTION_VIDE;
-	}
+    return {
+      membres: Object.fromEntries((lignesMembres?.rows ?? []).map(r => [r.discord_id, r.nom])),
+      roles: Object.fromEntries((lignesRoles?.rows ?? []).map(r => [r.role_id, r.name])),
+      salons: Object.fromEntries((lignesSalons?.rows ?? []).map(r => [r.channel_id, r.name])),
+    };
+  } catch (error) {
+    console.error("Erreur de résolution des identifiants Discord :", error);
+    return RESOLUTION_VIDE;
+  }
 }
 
 function versPost(ligne: LigneCreation, resolution: ResolutionDiscord = RESOLUTION_VIDE): PostCampagne {
-	const commun = {
-		// ⚠ `||` ET NON `??`. Mesuré le 13/8/2026 : 55 des 451 créations Discord ont
-		// un `author_display_name` VIDE (chaîne vide, pas `null`) — `??` les
-		// laissait passer telles quelles et la carte s'affichait sans nom d'auteur.
-		// Aucune création n'est réellement anonyme : `author_username` est renseigné
-		// sur les 451 lignes Discord comme sur les 493 lignes X (compté en base).
-		// Le repli final ne devrait donc jamais servir ; il rend une chaîne vide
-		// plutôt qu'un « Anonyme » qui affirmerait quelque chose de faux.
-		auteurNom: ligne.auteur_nom || ligne.auteur_pseudo || "",
-		hashtagTrouve: ligne.hashtag_trouve,
-		misEnAvant: ligne.mis_en_avant,
-		publieLe: versISO(ligne.publie_le),
-		/*
-		 * ⚠ LES MENTIONS SONT RÉSOLUES ICI, UNE FOIS, ET PAS DANS LES ÉCRANS.
-		 * `<@198209347589898240>` s'affichait tel quel sur la galerie publique. La résolution
-		 * demande la base : la faire côté écran obligerait chaque composant à devenir serveur,
-		 * ou à recevoir un dictionnaire dont il n'a que faire. Les émojis personnalisés, eux,
-		 * traversent intacts : `<TexteDiscord>` les rendra en images.
-		 */
-		texte: resoudreMentions(ligne.texte ?? "", resolution),
-	};
+  const commun = {
+    // ⚠ `||` ET NON `??`. Mesuré le 13/8/2026 : 55 des 451 créations Discord ont
+    // un `author_display_name` VIDE (chaîne vide, pas `null`) — `??` les
+    // laissait passer telles quelles et la carte s'affichait sans nom d'auteur.
+    // Aucune création n'est réellement anonyme : `author_username` est renseigné
+    // sur les 451 lignes Discord comme sur les 493 lignes X (compté en base).
+    // Le repli final ne devrait donc jamais servir ; il rend une chaîne vide
+    // plutôt qu'un « Anonyme » qui affirmerait quelque chose de faux.
+    auteurNom: ligne.auteur_nom || ligne.auteur_pseudo || "",
+    hashtagTrouve: ligne.hashtag_trouve,
+    misEnAvant: ligne.mis_en_avant,
+    publieLe: versISO(ligne.publie_le),
+    /*
+     * ⚠ LES MENTIONS SONT RÉSOLUES ICI, UNE FOIS, ET PAS DANS LES ÉCRANS.
+     * `<@198209347589898240>` s'affichait tel quel sur la galerie publique. La résolution
+     * demande la base : la faire côté écran obligerait chaque composant à devenir serveur,
+     * ou à recevoir un dictionnaire dont il n'a que faire. Les émojis personnalisés, eux,
+     * traversent intacts : `<TexteDiscord>` les rendra en images.
+     */
+    texte: resoudreMentions(ligne.texte ?? "", resolution),
+  };
 
-	if (ligne.source === "instagram") {
-		return {
-			...commun,
-			auteurPseudo: ligne.auteur_pseudo,
-			// Même forme de stockage que Discord : un tableau d'objets portant le
-			// `chemin` dans le bucket `assets`. Les URL `cdninstagram.com` sont
-			// signées et expirent, elles ne sont jamais servies.
-			images: imagesDiscord(ligne.media),
-			permalien: ligne.permalien ?? "",
-			shortcode: ligne.identifiant,
-			source: "instagram",
-		};
-	}
+  if (ligne.source === "instagram") {
+    return {
+      ...commun,
+      auteurPseudo: ligne.auteur_pseudo,
+      // Même forme de stockage que Discord : un tableau d'objets portant le
+      // `chemin` dans le bucket `assets`. Les URL `cdninstagram.com` sont
+      // signées et expirent, elles ne sont jamais servies.
+      images: imagesDiscord(ligne.media),
+      permalien: ligne.permalien ?? "",
+      shortcode: ligne.identifiant,
+      source: "instagram",
+    };
+  }
 
-	if (ligne.source === "discord") {
-		return {
-			...commun,
-			auteurPseudo: ligne.auteur_pseudo,
-			guildId: ligne.guild_id ?? "",
-			images: imagesDiscord(ligne.media),
-			messageId: ligne.identifiant,
-			salonId: ligne.salon_id ?? "",
-			salonNom: ligne.salon_nom,
-			source: "discord",
-		};
-	}
+  if (ligne.source === "discord") {
+    return {
+      ...commun,
+      auteurPseudo: ligne.auteur_pseudo,
+      guildId: ligne.guild_id ?? "",
+      images: imagesDiscord(ligne.media),
+      messageId: ligne.identifiant,
+      salonId: ligne.salon_id ?? "",
+      salonNom: ligne.salon_nom,
+      source: "discord",
+    };
+  }
 
-	const metriques =
-		ligne.metrics && typeof ligne.metrics === "object" && !Array.isArray(ligne.metrics)
-			? (ligne.metrics as MetriquesPost)
-			: null;
-	return {
-		...commun,
-		auteurPseudo: ligne.auteur_pseudo ?? "",
-		images: extraireImages(ligne.media),
-		metriques,
-		source: "x",
-		tweetId: ligne.identifiant,
-	};
+  const metriques =
+    ligne.metrics && typeof ligne.metrics === "object" && !Array.isArray(ligne.metrics)
+      ? (ligne.metrics as MetriquesPost)
+      : null;
+  return {
+    ...commun,
+    auteurPseudo: ligne.auteur_pseudo ?? "",
+    images: extraireImages(ligne.media),
+    metriques,
+    source: "x",
+    tweetId: ligne.identifiant,
+  };
 }
 
 /**
@@ -336,45 +331,43 @@ function versPost(ligne: LigneCreation, resolution: ResolutionDiscord = RESOLUTI
  * envoyer un participant lui promettrait que sa création rejoindra la galerie,
  * ce qui serait faux. Mieux vaut ne pas afficher le bouton.
  */
-export async function lienDepotDiscord(
-	slug: string
-): Promise<{ url: string; nom: string | null } | null> {
-	try {
-		const { rows } = await getPgPool().query<{ channel_id: string; guild_id: string | null; name: string | null }>(
-			`select c.channel_id, c.guild_id, c.name
+export async function lienDepotDiscord(slug: string): Promise<{ url: string; nom: string | null } | null> {
+  try {
+    const { rows } = await getPgPool().query<{ channel_id: string; guild_id: string | null; name: string | null }>(
+      `select c.channel_id, c.guild_id, c.name
 			   from public.x_campagnes camp
 			   join public.discord_channels c on c.channel_id = any(camp.salons_depot)
 			  where camp.slug = $1 and camp.publiee and c.suivi and c.guild_id is not null
 			  order by c.position nulls last
 			  limit 1`,
-			[slug]
-		);
-		const ligne = rows[0];
-		if (!ligne?.guild_id) return null;
-		return {
-			nom: ligne.name,
-			url: `https://discord.com/channels/${ligne.guild_id}/${ligne.channel_id}`,
-		};
-	} catch (error) {
-		console.error("Erreur de lecture du salon de dépôt :", error);
-		return null;
-	}
+      [slug],
+    );
+    const ligne = rows[0];
+    if (!ligne?.guild_id) return null;
+    return {
+      nom: ligne.name,
+      url: `https://discord.com/channels/${ligne.guild_id}/${ligne.channel_id}`,
+    };
+  } catch (error) {
+    console.error("Erreur de lecture du salon de dépôt :", error);
+    return null;
+  }
 }
 
 /** Toutes les campagnes publiées — alimente le sélecteur de campagne. */
 export async function listerCampagnesPubliees(): Promise<Campagne[]> {
-	try {
-		const { rows } = await getPgPool().query<LigneCampagne>(
-			`select ${COLONNES_CAMPAGNE}
+  try {
+    const { rows } = await getPgPool().query<LigneCampagne>(
+      `select ${COLONNES_CAMPAGNE}
 			   from public.x_campagnes
 			  where publiee
-			  order by principale desc, debut_le desc nulls last, slug`
-		);
-		return rows.map(versCampagne);
-	} catch (error) {
-		console.error("Erreur de lecture des campagnes X publiées :", error);
-		return [];
-	}
+			  order by principale desc, debut_le desc nulls last, slug`,
+    );
+    return rows.map(versCampagne);
+  } catch (error) {
+    console.error("Erreur de lecture des campagnes X publiées :", error);
+    return [];
+  }
 }
 
 /**
@@ -384,37 +377,37 @@ export async function listerCampagnesPubliees(): Promise<Campagne[]> {
  * une URL partagée après la dépublication d'une campagne reste utilisable.
  */
 export async function chargerCampagne(slug?: string): Promise<Campagne | null> {
-	try {
-		// `getPgPool()` DOIT être appelé dans le try : il lève de façon synchrone
-		// quand `DATABASE_URL` est absent ou corrompu (garde-fou `eyJ2Ijo`), et une
-		// exception qui remonte ici fait tomber la page entière sur `error.tsx`.
-		const pool = getPgPool();
-		if (slug) {
-			const { rows } = await pool.query<LigneCampagne>(
-				`select ${COLONNES_CAMPAGNE}
+  try {
+    // `getPgPool()` DOIT être appelé dans le try : il lève de façon synchrone
+    // quand `DATABASE_URL` est absent ou corrompu (garde-fou `eyJ2Ijo`), et une
+    // exception qui remonte ici fait tomber la page entière sur `error.tsx`.
+    const pool = getPgPool();
+    if (slug) {
+      const { rows } = await pool.query<LigneCampagne>(
+        `select ${COLONNES_CAMPAGNE}
 				   from public.x_campagnes
 				  where publiee and slug = $1
 				  limit 1`,
-				[slug]
-			);
-			const demandee = rows[0];
-			if (demandee) {
-				return versCampagne(demandee);
-			}
-		}
-		const { rows } = await pool.query<LigneCampagne>(
-			`select ${COLONNES_CAMPAGNE}
+        [slug],
+      );
+      const demandee = rows[0];
+      if (demandee) {
+        return versCampagne(demandee);
+      }
+    }
+    const { rows } = await pool.query<LigneCampagne>(
+      `select ${COLONNES_CAMPAGNE}
 			   from public.x_campagnes
 			  where publiee
 			  order by principale desc, debut_le desc nulls last, slug
-			  limit 1`
-		);
-		const defaut = rows[0];
-		return defaut ? versCampagne(defaut) : null;
-	} catch (error) {
-		console.error("Erreur de lecture de la campagne X :", error);
-		return null;
-	}
+			  limit 1`,
+    );
+    const defaut = rows[0];
+    return defaut ? versCampagne(defaut) : null;
+  } catch (error) {
+    console.error("Erreur de lecture de la campagne X :", error);
+    return null;
+  }
 }
 
 /**
@@ -450,13 +443,13 @@ export async function chargerCampagne(slug?: string): Promise<Campagne | null> {
  * acte de modération déjà posé ; ce qu'il ne doit pas faire, c'est en inventer un.
  */
 export async function compterPostsCampagne(slug: string): Promise<StatsCampagne> {
-	try {
-		const { rows } = await getPgPool().query<{
-			posts: number;
-			auteurs: number;
-			derniere: Date | string | null;
-		}>(
-			`select count(*)::int   as posts,
+  try {
+    const { rows } = await getPgPool().query<{
+      posts: number;
+      auteurs: number;
+      derniere: Date | string | null;
+    }>(
+      `select count(*)::int   as posts,
 			        -- ⚠ PAS de \`coalesce\` ici : \`count(*)\` rend 0, jamais NULL, donc
 			        -- le repli ne se serait JAMAIS déclenché et les six campagnes
 			        -- archivées auraient affiché « 0 participants ». Mesuré sur
@@ -475,18 +468,18 @@ export async function compterPostsCampagne(slug: string): Promise<StatsCampagne>
 			        max(publie_le)   as derniere
 			   from (${SELECT_POSTS}) as creations
 			  where campagne_slug = $1 and not masque and a_media`,
-			[slug]
-		);
-		const ligne = rows[0];
-		return {
-			auteurs: ligne?.auteurs ?? 0,
-			derniere: versISO(ligne?.derniere ?? null),
-			posts: ligne?.posts ?? 0,
-		};
-	} catch (error) {
-		console.error("Erreur de comptage des publications de campagne :", error);
-		return { auteurs: 0, derniere: null, posts: 0 };
-	}
+      [slug],
+    );
+    const ligne = rows[0];
+    return {
+      auteurs: ligne?.auteurs ?? 0,
+      derniere: versISO(ligne?.derniere ?? null),
+      posts: ligne?.posts ?? 0,
+    };
+  } catch (error) {
+    console.error("Erreur de comptage des publications de campagne :", error);
+    return { auteurs: 0, derniere: null, posts: 0 };
+  }
 }
 
 /*
@@ -627,31 +620,27 @@ const SELECT_POSTS = `
 const GALERIE = `select * from (${SELECT_POSTS}) as creations`;
 
 /** Page de la galerie, chronologique stricte (posts avec image, non masqués). */
-export async function listerPostsCampagne(
-	slug: string,
-	page: number,
-	parPage: number
-): Promise<PostCampagne[]> {
-	// `Math.max(1, NaN)` vaut NaN : sans `entierPositif`, `?page=abc` envoyait
-	// littéralement « NaN » à Postgres (`invalid input syntax for type bigint`),
-	// la requête partait en erreur et la galerie s'affichait vide alors que la
-	// campagne compte des publications.
-	const taille = entierPositif(parPage, 24);
-	const offset = (entierPositif(page, 1) - 1) * taille;
-	try {
-		const { rows } = await getPgPool().query<LigneCreation>(
-			`${GALERIE}
+export async function listerPostsCampagne(slug: string, page: number, parPage: number): Promise<PostCampagne[]> {
+  // `Math.max(1, NaN)` vaut NaN : sans `entierPositif`, `?page=abc` envoyait
+  // littéralement « NaN » à Postgres (`invalid input syntax for type bigint`),
+  // la requête partait en erreur et la galerie s'affichait vide alors que la
+  // campagne compte des publications.
+  const taille = entierPositif(parPage, 24);
+  const offset = (entierPositif(page, 1) - 1) * taille;
+  try {
+    const { rows } = await getPgPool().query<LigneCreation>(
+      `${GALERIE}
 			 where campagne_slug = $1 and not masque and a_media
 			 order by publie_le desc, identifiant desc
 			 limit $2 offset $3`,
-			[slug, taille, offset]
-		);
-		const resolution = await resoudreDiscord(rows);
-		return rows.map((ligne) => versPost(ligne, resolution));
-	} catch (error) {
-		console.error("Erreur de lecture des publications de campagne :", error);
-		return [];
-	}
+      [slug, taille, offset],
+    );
+    const resolution = await resoudreDiscord(rows);
+    return rows.map(ligne => versPost(ligne, resolution));
+  } catch (error) {
+    console.error("Erreur de lecture des publications de campagne :", error);
+    return [];
+  }
 }
 
 /**
@@ -660,18 +649,18 @@ export async function listerPostsCampagne(
  * pagination instable (un post promu depuis la page 3 décalerait tout).
  */
 export async function listerPostsEnAvant(slug: string, limite = 6): Promise<PostCampagne[]> {
-	try {
-		const { rows } = await getPgPool().query<LigneCreation>(
-			`${GALERIE}
+  try {
+    const { rows } = await getPgPool().query<LigneCreation>(
+      `${GALERIE}
 			 where campagne_slug = $1 and mis_en_avant and not masque and a_media
 			 order by publie_le desc, identifiant desc
 			 limit $2`,
-			[slug, entierPositif(limite, 6)]
-		);
-		const resolution = await resoudreDiscord(rows);
-		return rows.map((ligne) => versPost(ligne, resolution));
-	} catch (error) {
-		console.error("Erreur de lecture des publications à la une :", error);
-		return [];
-	}
+      [slug, entierPositif(limite, 6)],
+    );
+    const resolution = await resoudreDiscord(rows);
+    return rows.map(ligne => versPost(ligne, resolution));
+  } catch (error) {
+    console.error("Erreur de lecture des publications à la une :", error);
+    return [];
+  }
 }

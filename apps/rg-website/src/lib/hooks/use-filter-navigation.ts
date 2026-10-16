@@ -6,8 +6,8 @@ import { createContext, useCallback, useContext, useMemo, useTransition } from "
 // ── Shared pending context ────────────────────────────────
 
 interface FilterPendingCtx {
-	isPending: boolean;
-	startTransition: (cb: () => void) => void;
+  isPending: boolean;
+  startTransition: (cb: () => void) => void;
 }
 
 export const FilterTransitionContext = createContext<FilterPendingCtx | null>(null);
@@ -17,9 +17,9 @@ export const FilterTransitionContext = createContext<FilterPendingCtx | null>(nu
  * to create the shared transition state and expose it via context.
  */
 export function useFilterTransition() {
-	const [isPending, startTransition] = useTransition();
-	const value = useMemo<FilterPendingCtx>(() => ({ isPending, startTransition }), [isPending]);
-	return value;
+  const [isPending, startTransition] = useTransition();
+  const value = useMemo<FilterPendingCtx>(() => ({ isPending, startTransition }), [isPending]);
+  return value;
 }
 
 // ── Hook consumed by every filter chip ────────────────────
@@ -30,36 +30,36 @@ export function useFilterTransition() {
  * falls back to a local useTransition otherwise.
  */
 export function useFilterNavigation() {
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const shared = useContext(FilterTransitionContext);
-	const [localPending, localStartTransition] = useTransition();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const shared = useContext(FilterTransitionContext);
+  const [localPending, localStartTransition] = useTransition();
 
-	const isPending = shared ? shared.isPending : localPending;
-	const startTransition = shared ? shared.startTransition : localStartTransition;
+  const isPending = shared ? shared.isPending : localPending;
+  const startTransition = shared ? shared.startTransition : localStartTransition;
 
-	const navigate = useCallback(
-		(updater: (params: URLSearchParams) => void) => {
-			const params = new URLSearchParams(searchParams.toString());
-			updater(params);
-			params.delete("page");
-			startTransition(() => {
-				router.replace(`?${params.toString()}`, { scroll: false });
-			});
-		},
-		[searchParams, router, startTransition]
-	);
+  const navigate = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      updater(params);
+      params.delete("page");
+      startTransition(() => {
+        router.replace(`?${params.toString()}`, { scroll: false });
+      });
+    },
+    [searchParams, router, startTransition],
+  );
 
-	const navigateWithPage = useCallback(
-		(updater: (params: URLSearchParams) => void) => {
-			const params = new URLSearchParams(searchParams.toString());
-			updater(params);
-			startTransition(() => {
-				router.push(`?${params.toString()}`, { scroll: false });
-			});
-		},
-		[searchParams, router, startTransition]
-	);
+  const navigateWithPage = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      updater(params);
+      startTransition(() => {
+        router.push(`?${params.toString()}`, { scroll: false });
+      });
+    },
+    [searchParams, router, startTransition],
+  );
 
-	return { isPending, navigate, navigateWithPage, searchParams };
+  return { isPending, navigate, navigateWithPage, searchParams };
 }

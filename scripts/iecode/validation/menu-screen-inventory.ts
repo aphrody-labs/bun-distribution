@@ -143,24 +143,24 @@ const byFile = new Map<string, any>(manifest.entries.map((e: any) => [e.file, e]
 const pick = (dir: string, tokens: string[], exts?: string[]) =>
   vfs
     .filter(
-      (e) =>
+      e =>
         e.path.startsWith(dir) &&
-        tokens.some((t) => e.path.slice(dir.length).includes(t)) &&
-        (!exts || exts.some((x) => e.path.endsWith(x))),
+        tokens.some(t => e.path.slice(dir.length).includes(t)) &&
+        (!exts || exts.some(x => e.path.endsWith(x))),
     )
-    .map((e) => ({ path: e.path, size: e.size, cpk: e.cpk }));
+    .map(e => ({ path: e.path, size: e.size, cpk: e.cpk }));
 
 /** A setting whose referenced OBJBIN files are all absent renders nothing: a stale recipe. */
 const CFG_EXTRACT = `${REPO}var/outputs/menu-inventory/cfg`;
 const OBJ_REF = /[ -~]*gamedata\/menu\/obj\/[ -~]+\.objbin/g;
-const vfsPaths = new Set(vfs.map((e) => e.path));
+const vfsPaths = new Set(vfs.map(e => e.path));
 async function recipeStatus(settingPath: string) {
   const local = Bun.file(`${CFG_EXTRACT}/${settingPath.slice(CFG_DIR.length)}`);
   if (!(await local.exists())) return null;
-  const refs = [...((await local.text()).match(OBJ_REF) ?? [])].map((r) =>
+  const refs = [...((await local.text()).match(OBJ_REF) ?? [])].map(r =>
     r.startsWith("data/") ? r : `data/${r.replace(/^\/+/, "")}`,
   );
-  const missing = refs.filter((r) => !vfsPaths.has(r));
+  const missing = refs.filter(r => !vfsPaths.has(r));
   return {
     setting: settingPath,
     referenced_objbins: refs.length,
@@ -170,7 +170,7 @@ async function recipeStatus(settingPath: string) {
 }
 
 const captures = readdirSync(MENU_DIR)
-  .filter((f) => f.toLowerCase().endsWith(".png"))
+  .filter(f => f.toLowerCase().endsWith(".png"))
   .sort();
 
 const entries = [];
@@ -189,10 +189,7 @@ for (const file of captures) {
   } else if (manifestEntry) {
     screen = manifestEntry.canonical_screen;
     const sub = manifestEntry.visual_subscreen;
-    tokens = [
-      ...(TOKEN_OVERRIDES[screen] ?? [screen]),
-      ...((sub && SUBSCREEN_TOKENS[sub]) ?? []),
-    ];
+    tokens = [...(TOKEN_OVERRIDES[screen] ?? [screen]), ...((sub && SUBSCREEN_TOKENS[sub]) ?? [])];
     source = `data/menu/manifest.json (${manifestEntry.confidence})`;
   } else {
     screen = "";
@@ -200,8 +197,8 @@ for (const file of captures) {
     source = "unpaired: absent from manifest and from the corrected identity table";
   }
 
-  const movies = (identity?.movies ?? []).flatMap((p) => {
-    const hit = vfs.find((e) => e.path === p);
+  const movies = (identity?.movies ?? []).flatMap(p => {
+    const hit = vfs.find(e => e.path === p);
     return hit ? [{ path: hit.path, size: hit.size, cpk: hit.cpk }] : [];
   });
   const resources = {
@@ -213,12 +210,11 @@ for (const file of captures) {
     movie: movies,
   };
   const total = Object.values(resources).reduce((n, r) => n + r.length, 0);
-  const status =
-    total === 0 ? "missing" : resources.setting_cfg.length || movies.length ? "resolved" : "partial";
+  const status = total === 0 ? "missing" : resources.setting_cfg.length || movies.length ? "resolved" : "partial";
 
-  const recipes = (
-    await Promise.all(resources.setting_cfg.map((r) => recipeStatus(r.path)))
-  ).filter((r): r is NonNullable<typeof r> => r !== null);
+  const recipes = (await Promise.all(resources.setting_cfg.map(r => recipeStatus(r.path)))).filter(
+    (r): r is NonNullable<typeof r> => r !== null,
+  );
 
   entries.push({
     file,
@@ -232,10 +228,8 @@ for (const file of captures) {
     screen_tokens: tokens,
     pairing_status: status,
     setting_recipes: recipes,
-    stale_recipes: recipes.filter((r) => r.status === "stale").length,
-    resource_counts: Object.fromEntries(
-      Object.entries(resources).map(([k, v]) => [k, v.length]),
-    ),
+    stale_recipes: recipes.filter(r => r.status === "stale").length,
+    resource_counts: Object.fromEntries(Object.entries(resources).map(([k, v]) => [k, v.length])),
     resources,
   });
 }

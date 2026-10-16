@@ -6,9 +6,9 @@ import { auth } from "@/lib/auth";
  * is not the domain root.
  */
 export async function GET(request: Request) {
-	return auth.api.getOAuthServerConfig({ request });
+  return auth.api.getOAuthServerConfig({ request });
 }
 
 export async function HEAD(request: Request) {
-	return auth.api.getOAuthServerConfig({ request });
+  return auth.api.getOAuthServerConfig({ request });
 }

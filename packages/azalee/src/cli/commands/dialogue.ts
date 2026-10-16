@@ -4,14 +4,7 @@ import type { Command } from "commander";
 import { createInagleSql } from "@rosegriffon/db/inagle-sql";
 import type { Database } from "@rosegriffon/db/schema";
 
-import {
-  colors,
-  errorMessage,
-  getOrReadInput,
-  reportError,
-  restoreLogs,
-  suppressLogs,
-} from "../context";
+import { colors, errorMessage, getOrReadInput, reportError, restoreLogs, suppressLogs } from "../context";
 import type { DialogueOptions } from "../types";
 
 /** Réplique retenue, telle qu'affichée / sérialisée. */
@@ -44,7 +37,7 @@ export function registerDialogueCommand(program: Command): void {
         const dialogueRows = await db
           .selectFrom("inagle_game_text")
           .select(["hash_id", "locale", "category", "value"])
-          .where((eb) =>
+          .where(eb =>
             eb.or([
               eb("category", "ilike", "%dialog%"),
               eb("category", "ilike", "%event%"),
@@ -53,8 +46,8 @@ export function registerDialogueCommand(program: Command): void {
               eb("category", "ilike", "%phase%"),
             ]),
           )
-          .$if(Boolean(textQ), (qb) => qb.where("value", "ilike", `%${textQ}%`))
-          .$if(Boolean(speakerQ), (qb) => qb.where("value", "ilike", `%${speakerQ}%`))
+          .$if(Boolean(textQ), qb => qb.where("value", "ilike", `%${textQ}%`))
+          .$if(Boolean(speakerQ), qb => qb.where("value", "ilike", `%${speakerQ}%`))
           .orderBy("hash_id", "asc")
           .limit(Math.max(limitVal * 3, 3))
           .execute();
@@ -97,11 +90,7 @@ export function registerDialogueCommand(program: Command): void {
           }
         }
       } catch (e) {
-        reportError(
-          options.json,
-          errorMessage(e),
-          `${colors.red}Erreur dialogue : ${errorMessage(e)}${colors.reset}`,
-        );
+        reportError(options.json, errorMessage(e), `${colors.red}Erreur dialogue : ${errorMessage(e)}${colors.reset}`);
       }
     });
 }

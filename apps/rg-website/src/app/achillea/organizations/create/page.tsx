@@ -6,13 +6,12 @@ import OrganizationCreateClient from "./organization-create-client";
  * interdit. L'interface, inchangée, vit dans `organization-create-client.tsx`.
  */
 export const metadata = metadonneesAchillea({
-	titre: "Enregistrer une organisation",
-	description:
-		"Déclarer une organisation esport auprès d'Achilléa pour la faire accréditer.",
-	chemin: "/achillea/organizations/create",
-	indexable: false,
+  titre: "Enregistrer une organisation",
+  description: "Déclarer une organisation esport auprès d'Achilléa pour la faire accréditer.",
+  chemin: "/achillea/organizations/create",
+  indexable: false,
 });
 
 export default function OrganizationCreatePage() {
-	return <OrganizationCreateClient />;
+  return <OrganizationCreateClient />;
 }

@@ -30,7 +30,7 @@ export default function LicenseVerifyPage({ qr }: { qr: string }) {
 
     client.licenses
       .verify(qrSecret)
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok && res.value) {
           setResult(res.value);
@@ -74,15 +74,10 @@ export default function LicenseVerifyPage({ qr }: { qr: string }) {
       {loading ? (
         <div className="py-12 text-center space-y-3">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">
-            Vérification de l'empreinte de sécurité...
-          </p>
+          <p className="text-xs text-muted-foreground">Vérification de l'empreinte de sécurité...</p>
         </div>
       ) : unavailable ? (
-        <div
-          role="alert"
-          className="border border-amber-500/30 bg-amber-500/5 rounded-3xl p-8 text-center space-y-4"
-        >
+        <div role="alert" className="border border-amber-500/30 bg-amber-500/5 rounded-3xl p-8 text-center space-y-4">
           <ShieldAlert className="w-14 h-14 text-amber-400 mx-auto" />
           <div className="space-y-1">
             <h2 className="text-xl font-bold">Vérification indisponible</h2>
@@ -92,7 +87,7 @@ export default function LicenseVerifyPage({ qr }: { qr: string }) {
           </div>
           <button
             type="button"
-            onClick={() => setReload((value) => value + 1)}
+            onClick={() => setReload(value => value + 1)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
           >
             Réessayer
@@ -123,9 +118,7 @@ export default function LicenseVerifyPage({ qr }: { qr: string }) {
               Licence Homologuée
             </span>
             <h2 className="text-2xl font-black pt-2">{result.holder?.displayName}</h2>
-            <div className="font-mono text-xs text-muted-foreground font-semibold">
-              N° {result.licenseNumber}
-            </div>
+            <div className="font-mono text-xs text-muted-foreground font-semibold">N° {result.licenseNumber}</div>
           </div>
 
           {result.holder && (
@@ -144,9 +137,7 @@ export default function LicenseVerifyPage({ qr }: { qr: string }) {
             {result.validUntil && (
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Date limite :</span>
-                <span className="font-mono font-medium">
-                  {new Date(result.validUntil).toLocaleDateString("fr-FR")}
-                </span>
+                <span className="font-mono font-medium">{new Date(result.validUntil).toLocaleDateString("fr-FR")}</span>
               </div>
             )}
           </div>

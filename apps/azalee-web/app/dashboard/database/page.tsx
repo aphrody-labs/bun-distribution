@@ -1,12 +1,7 @@
 import { Backpack, BadgeCheck, ScanSearch, Swords, User, Users, Zap } from "lucide-react";
 import Link from "next/link";
 import type React from "react";
-import {
-  AdminPageHeader as DashboardPageHeader,
-  Card,
-  CardContent,
-  CardTitle,
-} from "@rosegriffon/ui";
+import { AdminPageHeader as DashboardPageHeader, Card, CardContent, CardTitle } from "@rosegriffon/ui";
 import { ElementChartLoader } from "./ElementChartLoader";
 import { apiClient } from "@/lib/api-client";
 import { createClient } from "@/lib/supabase/server";
@@ -100,10 +95,7 @@ export default async function DatabasePage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashboardPageHeader
-        breadcrumbs={[
-          { href: "/dashboard", label: "Tableau de bord" },
-          { label: "Base de données" },
-        ]}
+        breadcrumbs={[{ href: "/dashboard", label: "Tableau de bord" }, { label: "Base de données" }]}
         title="Base de données"
         subtitle="Accès brut aux tables Wiki"
         icon={<Icon name="database" size={20} />}

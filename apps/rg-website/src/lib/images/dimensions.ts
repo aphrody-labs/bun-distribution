@@ -58,26 +58,26 @@ const connues = new Map<string, DimensionsImage | null>();
  * qu'une image n'a pas répondu serait hors de proportion.
  */
 export const dimensionsImage = cache(async function dimensionsImage(
-	url: string | null | undefined
+  url: string | null | undefined,
 ): Promise<DimensionsImage | null> {
-	if (typeof url !== "string" || !/^https?:\/\//.test(url)) return null;
-	if (connues.has(url)) return connues.get(url) ?? null;
+  if (typeof url !== "string" || !/^https?:\/\//.test(url)) return null;
+  if (connues.has(url)) return connues.get(url) ?? null;
 
-	let mesure: DimensionsImage | null = null;
-	try {
-		const reponse = await fetch(url, {
-			headers: { Range: `bytes=0-${OCTETS_ENTETE - 1}` },
-			signal: AbortSignal.timeout(DELAI_MS),
-		});
-		if (reponse.ok || reponse.status === 206) {
-			mesure = lireDimensions(new Uint8Array(await reponse.arrayBuffer()));
-		}
-	} catch {
-		// Réseau coupé, délai dépassé, hôte injoignable : on retient `null` pour ne
-		// pas repayer le délai d'attente à chaque rendu.
-		mesure = null;
-	}
+  let mesure: DimensionsImage | null = null;
+  try {
+    const reponse = await fetch(url, {
+      headers: { Range: `bytes=0-${OCTETS_ENTETE - 1}` },
+      signal: AbortSignal.timeout(DELAI_MS),
+    });
+    if (reponse.ok || reponse.status === 206) {
+      mesure = lireDimensions(new Uint8Array(await reponse.arrayBuffer()));
+    }
+  } catch {
+    // Réseau coupé, délai dépassé, hôte injoignable : on retient `null` pour ne
+    // pas repayer le délai d'attente à chaque rendu.
+    mesure = null;
+  }
 
-	connues.set(url, mesure);
-	return mesure;
+  connues.set(url, mesure);
+  return mesure;
 });

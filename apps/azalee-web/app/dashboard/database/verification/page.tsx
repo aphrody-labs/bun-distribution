@@ -17,17 +17,13 @@ export default async function VerificationPage() {
   const [charsRes, skillsRes, teamsRes, itemsRes] = await Promise.all([
     client
       .from("inagle_characters")
-      .select(
-        "id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code",
-      )
+      .select("id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code")
       .or("name_fr.is.null,name_fr.eq.,description_fr.is.null,description_fr.eq.")
       .order("id", { ascending: true })
       .limit(100),
     client
       .from("inagle_skills")
-      .select(
-        "id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code",
-      )
+      .select("id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code")
       .or("name_fr.is.null,name_fr.eq.,description_fr.is.null,description_fr.eq.")
       .order("id", { ascending: true })
       .limit(100),
@@ -39,9 +35,7 @@ export default async function VerificationPage() {
       .limit(100),
     client
       .from("inagle_items")
-      .select(
-        "id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code",
-      )
+      .select("id, name_en, name_fr, name_ja, description_en, description_fr, description_ja, internal_code")
       .or("name_fr.is.null,name_fr.eq.,description_fr.is.null,description_fr.eq.")
       .order("id", { ascending: true })
       .limit(100),

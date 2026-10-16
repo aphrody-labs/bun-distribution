@@ -30,12 +30,8 @@ export function registerAuditCommand(program: Command): void {
           (c as { image_url?: string; zukan_hash?: string; image?: string }).image_url ??
           (c as { zukan_hash?: string }).zukan_hash ??
           (c as { image?: string }).image;
-        const missingImg = chars.filter(
-          (c: any) => !c.icons?.face && !legacyImage(c) && !c.zukanHash,
-        );
-        const missingStats = chars.filter(
-          (c: any) => !c.stats || Object.keys(c.stats).length === 0,
-        );
+        const missingImg = chars.filter((c: any) => !c.icons?.face && !legacyImage(c) && !c.zukanHash);
+        const missingStats = chars.filter((c: any) => !c.stats || Object.keys(c.stats).length === 0);
         const missingSkillName = skills.filter((s: any) => !s.name_FR && !s.name_EN);
 
         if (options.json) {
@@ -94,13 +90,9 @@ export function registerAuditCommand(program: Command): void {
 export function registerTestVariantsCommand(program: Command): void {
   program
     .command("test-variants")
-    .description(
-      "Exécute des tests de cohérence de haut niveau sur les personnages et leurs variantes",
-    )
+    .description("Exécute des tests de cohérence de haut niveau sur les personnages et leurs variantes")
     .action(async () => {
-      console.log(
-        `${colors.cyan}Démarrage des tests de cohérence de haut niveau...${colors.reset}`,
-      );
+      console.log(`${colors.cyan}Démarrage des tests de cohérence de haut niveau...${colors.reset}`);
       const svc = await createInagleService();
       const baseChars = svc.characters.baseCharacters();
 
@@ -110,9 +102,7 @@ export function registerTestVariantsCommand(program: Command): void {
 
       for (const bc of baseChars) {
         if (!bc.variants || bc.variants.length === 0) {
-          errors.push(
-            `Personnage ${bc.names.fr || bc.names.en} (ID: ${bc.charaId}) sans variantes !`,
-          );
+          errors.push(`Personnage ${bc.names.fr || bc.names.en} (ID: ${bc.charaId}) sans variantes !`);
           failed++;
           continue;
         }
@@ -123,13 +113,9 @@ export function registerTestVariantsCommand(program: Command): void {
         for (let i = 1; i < bc.variants.length; i++) {
           const current = bc.variants[i];
           const orderYoungest =
-            youngest.zukanOrder !== undefined && youngest.zukanOrder !== null
-              ? youngest.zukanOrder
-              : 999999;
+            youngest.zukanOrder !== undefined && youngest.zukanOrder !== null ? youngest.zukanOrder : 999999;
           const orderCurrent =
-            current.zukanOrder !== undefined && current.zukanOrder !== null
-              ? current.zukanOrder
-              : 999999;
+            current.zukanOrder !== undefined && current.zukanOrder !== null ? current.zukanOrder : 999999;
           if (orderYoungest > orderCurrent) {
             errors.push(
               `Personnage ${bc.names.fr || bc.names.en} : variante ${current.charaParamId} a un zukanOrder (${orderCurrent}) plus petit que la variante d'origine ${youngest.charaParamId} (${orderYoungest}) !`,
@@ -163,9 +149,7 @@ export function registerTestVariantsCommand(program: Command): void {
 
       console.log(`\n${colors.bold}Rapport des tests :${colors.reset}`);
       console.log(`  - Réussis : ${colors.green}${passed}${colors.reset}`);
-      console.log(
-        `  - Échecs  : ${failed > 0 ? colors.red : colors.green}${failed}${colors.reset}`,
-      );
+      console.log(`  - Échecs  : ${failed > 0 ? colors.red : colors.green}${failed}${colors.reset}`);
 
       if (errors.length > 0) {
         console.log(`\n${colors.red}Erreurs détectées :${colors.reset}`);

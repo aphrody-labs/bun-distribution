@@ -46,11 +46,7 @@ export async function GET(request: NextRequest) {
   let role: string | null;
   try {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle();
+    const { data } = await supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle();
     role = (data as { role?: string | null } | null)?.role ?? null;
   } catch {
     role = null;

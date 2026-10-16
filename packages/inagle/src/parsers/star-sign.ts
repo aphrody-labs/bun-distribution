@@ -138,7 +138,7 @@ export function buildStarSignMap(): Map<string, StarSignCharaInfo> {
     }
   }
 
-  const nonNormal = [...starSignCache.values()].filter((e) => e.charaRarity !== 0).length;
+  const nonNormal = [...starSignCache.values()].filter(e => e.charaRarity !== 0).length;
   console.log(`[star-sign] Loaded ${starSignCache.size} entries (${nonNormal} non-Normal)`);
 
   return starSignCache;

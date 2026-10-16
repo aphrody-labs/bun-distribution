@@ -1,11 +1,11 @@
 import "server-only";
 
 import {
-	fusionnerReglages,
-	lireReglages,
-	validerReglages,
-	type ModificationReglages,
-	type ReglagesCommunaute,
+  fusionnerReglages,
+  lireReglages,
+  validerReglages,
+  type ModificationReglages,
+  type ReglagesCommunaute,
 } from "@rosegriffon/types/bot";
 
 import { pgQuery } from "@/lib/db/platform";
@@ -32,32 +32,32 @@ import { invaliderReglagesBots } from "./serveur";
  */
 
 interface LigneReglages {
-	valeurs: unknown;
-	maj_le: string | Date | null;
+  valeurs: unknown;
+  maj_le: string | Date | null;
 }
 
 export interface ReglagesGuilde {
-	guildId: string;
-	reglages: ReglagesCommunaute;
-	/** ISO 8601, `null` si la guilde n'a jamais rien réglé. */
-	majLe: string | null;
-	/** Vrai quand aucune ligne n'existe encore : ce sont les défauts du schéma. */
-	parDefaut: boolean;
+  guildId: string;
+  reglages: ReglagesCommunaute;
+  /** ISO 8601, `null` si la guilde n'a jamais rien réglé. */
+  majLe: string | null;
+  /** Vrai quand aucune ligne n'existe encore : ce sont les défauts du schéma. */
+  parDefaut: boolean;
 }
 
 /** Réglages d'une guilde. Rend les défauts si la ligne n'existe pas. */
 export async function lireReglagesGuilde(guildId: string): Promise<ReglagesGuilde> {
-	const lignes = await pgQuery<LigneReglages>(
-		"SELECT valeurs, maj_le FROM public.bot_reglages_guilde WHERE guild_id = $1 LIMIT 1",
-		[guildId]
-	);
-	const ligne = lignes[0];
-	return {
-		guildId,
-		reglages: lireReglages(ligne?.valeurs),
-		majLe: ligne?.maj_le ? new Date(ligne.maj_le).toISOString() : null,
-		parDefaut: !ligne,
-	};
+  const lignes = await pgQuery<LigneReglages>(
+    "SELECT valeurs, maj_le FROM public.bot_reglages_guilde WHERE guild_id = $1 LIMIT 1",
+    [guildId],
+  );
+  const ligne = lignes[0];
+  return {
+    guildId,
+    reglages: lireReglages(ligne?.valeurs),
+    majLe: ligne?.maj_le ? new Date(ligne.maj_le).toISOString() : null,
+    parDefaut: !ligne,
+  };
 }
 
 /**
@@ -77,30 +77,30 @@ export async function lireReglagesGuilde(guildId: string): Promise<ReglagesGuild
  * pilotes différents.
  */
 export async function enregistrerReglagesGuilde(
-	guildId: string,
-	modification: ModificationReglages
+  guildId: string,
+  modification: ModificationReglages,
 ): Promise<ReglagesGuilde & { profilsPrevenus: string[] }> {
-	const actuels = await lireReglagesGuilde(guildId);
-	const fusionnes = fusionnerReglages(actuels.reglages, modification);
+  const actuels = await lireReglagesGuilde(guildId);
+  const fusionnes = fusionnerReglages(actuels.reglages, modification);
 
-	const lignes = await pgQuery<{ maj_le: string | Date }>(
-		`INSERT INTO public.bot_reglages_guilde (guild_id, valeurs, maj_le)
+  const lignes = await pgQuery<{ maj_le: string | Date }>(
+    `INSERT INTO public.bot_reglages_guilde (guild_id, valeurs, maj_le)
 		 VALUES ($1, $2::jsonb, NOW())
 		 ON CONFLICT (guild_id) DO UPDATE
 			 SET valeurs = EXCLUDED.valeurs, maj_le = NOW()
 		 RETURNING maj_le`,
-		[guildId, JSON.stringify(fusionnes)]
-	);
+    [guildId, JSON.stringify(fusionnes)],
+  );
 
-	const profilsPrevenus = await invaliderReglagesBots(guildId);
+  const profilsPrevenus = await invaliderReglagesBots(guildId);
 
-	return {
-		guildId,
-		reglages: fusionnes,
-		majLe: lignes[0]?.maj_le ? new Date(lignes[0]!.maj_le).toISOString() : null,
-		parDefaut: false,
-		profilsPrevenus,
-	};
+  return {
+    guildId,
+    reglages: fusionnes,
+    majLe: lignes[0]?.maj_le ? new Date(lignes[0]!.maj_le).toISOString() : null,
+    parDefaut: false,
+    profilsPrevenus,
+  };
 }
 
 /**
@@ -110,48 +110,48 @@ export async function enregistrerReglagesGuilde(
  * réglages, et une fusion ne peut pas exprimer une suppression.
  */
 export async function remplacerReglagesGuilde(
-	guildId: string,
-	document: unknown
+  guildId: string,
+  document: unknown,
 ): Promise<ReglagesGuilde & { profilsPrevenus: string[] }> {
-	const valides = validerReglages(document);
-	const lignes = await pgQuery<{ maj_le: string | Date }>(
-		`INSERT INTO public.bot_reglages_guilde (guild_id, valeurs, maj_le)
+  const valides = validerReglages(document);
+  const lignes = await pgQuery<{ maj_le: string | Date }>(
+    `INSERT INTO public.bot_reglages_guilde (guild_id, valeurs, maj_le)
 		 VALUES ($1, $2::jsonb, NOW())
 		 ON CONFLICT (guild_id) DO UPDATE
 			 SET valeurs = EXCLUDED.valeurs, maj_le = NOW()
 		 RETURNING maj_le`,
-		[guildId, JSON.stringify(valides)]
-	);
-	const profilsPrevenus = await invaliderReglagesBots(guildId);
-	return {
-		guildId,
-		reglages: valides,
-		majLe: lignes[0]?.maj_le ? new Date(lignes[0]!.maj_le).toISOString() : null,
-		parDefaut: false,
-		profilsPrevenus,
-	};
+    [guildId, JSON.stringify(valides)],
+  );
+  const profilsPrevenus = await invaliderReglagesBots(guildId);
+  return {
+    guildId,
+    reglages: valides,
+    majLe: lignes[0]?.maj_le ? new Date(lignes[0]!.maj_le).toISOString() : null,
+    parDefaut: false,
+    profilsPrevenus,
+  };
 }
 
 export interface StatistiquesCommunaute {
-	profils: number;
-	niveauMoyen: number;
-	xpTotale: number;
-	jetonsEnCirculation: number;
-	ticketsOuverts: number;
-	ticketsTotal: number;
-	suggestionsOuvertes: number;
-	menusRoles: number;
+  profils: number;
+  niveauMoyen: number;
+  xpTotale: number;
+  jetonsEnCirculation: number;
+  ticketsOuverts: number;
+  ticketsTotal: number;
+  suggestionsOuvertes: number;
+  menusRoles: number;
 }
 
 const STATISTIQUES_VIDES: StatistiquesCommunaute = Object.freeze({
-	profils: 0,
-	niveauMoyen: 0,
-	xpTotale: 0,
-	jetonsEnCirculation: 0,
-	ticketsOuverts: 0,
-	ticketsTotal: 0,
-	suggestionsOuvertes: 0,
-	menusRoles: 0,
+  profils: 0,
+  niveauMoyen: 0,
+  xpTotale: 0,
+  jetonsEnCirculation: 0,
+  ticketsOuverts: 0,
+  ticketsTotal: 0,
+  suggestionsOuvertes: 0,
+  menusRoles: 0,
 });
 
 /**
@@ -169,41 +169,38 @@ const STATISTIQUES_VIDES: StatistiquesCommunaute = Object.freeze({
  * est toujours ouvert pour qui l'a déposé.
  */
 export async function statistiquesCommunaute(guildId: string): Promise<StatistiquesCommunaute> {
-	const [profils, tickets, suggestions, menus] = await Promise.all([
-		compter<{ profils: string; niveau_moyen: string | null; xp: string; jetons: string }>(
-			`SELECT count(*) AS profils,
+  const [profils, tickets, suggestions, menus] = await Promise.all([
+    compter<{ profils: string; niveau_moyen: string | null; xp: string; jetons: string }>(
+      `SELECT count(*) AS profils,
 			        coalesce(round(avg(niveau), 1), 0) AS niveau_moyen,
 			        coalesce(sum(xp), 0) AS xp,
 			        coalesce(sum(jetons), 0) AS jetons
 			   FROM public.bot_profils WHERE guild_id = $1`,
-			guildId
-		),
-		compter<{ ouverts: string; total: string }>(
-			`SELECT count(*) FILTER (WHERE statut <> 'ferme') AS ouverts, count(*) AS total
+      guildId,
+    ),
+    compter<{ ouverts: string; total: string }>(
+      `SELECT count(*) FILTER (WHERE statut <> 'ferme') AS ouverts, count(*) AS total
 			   FROM public.bot_tickets WHERE guild_id = $1`,
-			guildId
-		),
-		compter<{ ouvertes: string }>(
-			`SELECT count(*) AS ouvertes FROM public.bot_suggestions
+      guildId,
+    ),
+    compter<{ ouvertes: string }>(
+      `SELECT count(*) AS ouvertes FROM public.bot_suggestions
 			  WHERE guild_id = $1 AND statut = 'ouverte'`,
-			guildId
-		),
-		compter<{ total: string }>(
-			"SELECT count(*) AS total FROM public.bot_menus_roles WHERE guild_id = $1",
-			guildId
-		),
-	]);
+      guildId,
+    ),
+    compter<{ total: string }>("SELECT count(*) AS total FROM public.bot_menus_roles WHERE guild_id = $1", guildId),
+  ]);
 
-	return {
-		profils: Number(profils?.profils ?? 0),
-		niveauMoyen: Number(profils?.niveau_moyen ?? 0),
-		xpTotale: Number(profils?.xp ?? 0),
-		jetonsEnCirculation: Number(profils?.jetons ?? 0),
-		ticketsOuverts: Number(tickets?.ouverts ?? 0),
-		ticketsTotal: Number(tickets?.total ?? 0),
-		suggestionsOuvertes: Number(suggestions?.ouvertes ?? 0),
-		menusRoles: Number(menus?.total ?? 0),
-	};
+  return {
+    profils: Number(profils?.profils ?? 0),
+    niveauMoyen: Number(profils?.niveau_moyen ?? 0),
+    xpTotale: Number(profils?.xp ?? 0),
+    jetonsEnCirculation: Number(profils?.jetons ?? 0),
+    ticketsOuverts: Number(tickets?.ouverts ?? 0),
+    ticketsTotal: Number(tickets?.total ?? 0),
+    suggestionsOuvertes: Number(suggestions?.ouvertes ?? 0),
+    menusRoles: Number(menus?.total ?? 0),
+  };
 }
 
 /**
@@ -213,16 +210,13 @@ export async function statistiquesCommunaute(guildId: string): Promise<Statistiq
  * propage pas : un compteur manquant vaut mieux qu'un tableau de bord blanc.
  */
 async function compter<T>(sql: string, guildId: string): Promise<T | null> {
-	try {
-		const lignes = await pgQuery<T>(sql, [guildId]);
-		return lignes[0] ?? null;
-	} catch (erreur) {
-		console.warn(
-			"[bot/reglages] agrégat indisponible :",
-			erreur instanceof Error ? erreur.message : erreur
-		);
-		return null;
-	}
+  try {
+    const lignes = await pgQuery<T>(sql, [guildId]);
+    return lignes[0] ?? null;
+  } catch (erreur) {
+    console.warn("[bot/reglages] agrégat indisponible :", erreur instanceof Error ? erreur.message : erreur);
+    return null;
+  }
 }
 
 export { STATISTIQUES_VIDES };

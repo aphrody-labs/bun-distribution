@@ -46,9 +46,9 @@
  */
 import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import {
-	ApplicationCommandOptionType,
-	type AutocompleteInteraction,
-	type ChatInputCommandInteraction,
+  ApplicationCommandOptionType,
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction,
 } from "discord.js";
 
 import { logAdminAction } from "../../lib/audit";
@@ -58,11 +58,11 @@ import { sql } from "../../lib/db";
 import { rgEmbed, truncate } from "../../lib/embeds";
 import { differerEnPrive, exigerDroits, messagePanne } from "../staff/garde";
 import {
-	CHOIX_STATUT_ARTICLE,
-	badgeStatutArticle,
-	decrireChangement,
-	libelleStatutArticle,
-	type StatutArticle,
+  CHOIX_STATUT_ARTICLE,
+  badgeStatutArticle,
+  decrireChangement,
+  libelleStatutArticle,
+  type StatutArticle,
 } from "./valeurs";
 import "./racine-gestion";
 import { echec, piedTexte, repondre } from "../../lib/ui";
@@ -75,15 +75,15 @@ import { echec, piedTexte, repondre } from "../../lib/ui";
  * ferait transiter tout le corps de l'article à chaque `liste`.
  */
 interface ArticleAdmin {
-	id: string;
-	title: string;
-	slug: string;
-	app: string;
-	/** Nullable en base : la contrainte `articles_status_check` laisse passer NULL. */
-	status: string | null;
-	category: string | null;
-	published_at: Date | string | null;
-	updated_at: Date | string | null;
+  id: string;
+  title: string;
+  slug: string;
+  app: string;
+  /** Nullable en base : la contrainte `articles_status_check` laisse passer NULL. */
+  status: string | null;
+  category: string | null;
+  published_at: Date | string | null;
+  updated_at: Date | string | null;
 }
 
 /** Index d'autocomplétion : court, et rafraîchi assez vite pour suivre une publication. */
@@ -93,8 +93,8 @@ const CLEF_INDEX = "administration:article:index";
 const CLEF_INDEX_PUBLIC = "article:index";
 
 const CHOIX_SITE = [
-	{ name: "rosegriffon.fr", value: "website" },
-	{ name: "Azalée (wiki IEVR)", value: "azalee" },
+  { name: "rosegriffon.fr", value: "website" },
+  { name: "Azalée (wiki IEVR)", value: "azalee" },
 ] as const;
 
 /**
@@ -105,12 +105,8 @@ const CHOIX_SITE = [
  * prédicat quand le paramètre est nul, et évite trois variantes de requête à
  * maintenir en parallèle (l'ancien `services/admin.ts` en gardait quatre).
  */
-async function listerArticles(
-	statut: string | null,
-	app: string | null,
-	limite: number
-): Promise<ArticleAdmin[]> {
-	return await sql<ArticleAdmin[]>`
+async function listerArticles(statut: string | null, app: string | null, limite: number): Promise<ArticleAdmin[]> {
+  return await sql<ArticleAdmin[]>`
 		SELECT id::text, title::text, slug::text, app, status::text,
 		       category::text, published_at, updated_at
 		FROM articles
@@ -129,14 +125,14 @@ async function listerArticles(
  * uuid ») dès qu'on tape un slug, et l'erreur remontait brute dans le salon.
  */
 async function resoudreArticle(reference: string): Promise<ArticleAdmin | null> {
-	const lignes = await sql<ArticleAdmin[]>`
+  const lignes = await sql<ArticleAdmin[]>`
 		SELECT id::text, title::text, slug::text, app, status::text,
 		       category::text, published_at, updated_at
 		FROM articles
 		WHERE id::text = ${reference} OR slug = ${reference}
 		LIMIT 1
 	`;
-	return lignes[0] ?? null;
+  return lignes[0] ?? null;
 }
 
 /**
@@ -148,7 +144,7 @@ async function resoudreArticle(reference: string): Promise<ArticleAdmin | null> 
  * `pg_trigger` ne rend aucune ligne non interne pour cette table).
  */
 async function ecrireStatut(id: string, statut: StatutArticle): Promise<ArticleAdmin | null> {
-	const lignes = await sql<ArticleAdmin[]>`
+  const lignes = await sql<ArticleAdmin[]>`
 		UPDATE articles
 		   SET status = ${statut},
 		       published_at = CASE
@@ -160,34 +156,34 @@ async function ecrireStatut(id: string, statut: StatutArticle): Promise<ArticleA
 		RETURNING id::text, title::text, slug::text, app, status::text,
 		          category::text, published_at, updated_at
 	`;
-	return lignes[0] ?? null;
+  return lignes[0] ?? null;
 }
 
 async function indexArticles(): Promise<ArticleAdmin[]> {
-	return await cached(CLEF_INDEX, TTL_INDEX_MS, async () => {
-		return await sql<ArticleAdmin[]>`
+  return await cached(CLEF_INDEX, TTL_INDEX_MS, async () => {
+    return await sql<ArticleAdmin[]>`
 			SELECT id::text, title::text, slug::text, app, status::text,
 			       category::text, published_at, updated_at
 			FROM articles
 			ORDER BY updated_at DESC NULLS LAST
 			LIMIT 100
 		`;
-	});
+  });
 }
 
 /** Une ligne de liste : état, titre cliquable, site, catégorie, dernière retouche. */
 function ligneArticle(article: ArticleAdmin): string {
-	const site = siteArticle(article.app);
-	const meta = [site.libelle];
-	if (article.category) {
-		meta.push(article.category);
-	}
-	meta.push(`modifié le ${dateCourte(article.updated_at)}`);
-	return (
-		`${badgeStatutArticle(article.status)} **[${truncate(article.title, 90)}]` +
-		`(${urlArticle(article.app, article.slug)})**\n` +
-		`\`${article.slug}\` · *${meta.join(" · ")}*`
-	);
+  const site = siteArticle(article.app);
+  const meta = [site.libelle];
+  if (article.category) {
+    meta.push(article.category);
+  }
+  meta.push(`modifié le ${dateCourte(article.updated_at)}`);
+  return (
+    `${badgeStatutArticle(article.status)} **[${truncate(article.title, 90)}]` +
+    `(${urlArticle(article.app, article.slug)})**\n` +
+    `\`${article.slug}\` · *${meta.join(" · ")}*`
+  );
 }
 
 /**
@@ -196,253 +192,247 @@ function ligneArticle(article: ArticleAdmin): string {
  * seulement la partie fautive.
  */
 function descriptionListe(articles: readonly ArticleAdmin[]): string {
-	const lignes: string[] = [];
-	let taille = 0;
-	for (const article of articles) {
-		const ligne = ligneArticle(article);
-		if (taille + ligne.length + 2 > 4_000) {
-			break;
-		}
-		lignes.push(ligne);
-		taille += ligne.length + 2;
-	}
-	return lignes.join("\n\n");
+  const lignes: string[] = [];
+  let taille = 0;
+  for (const article of articles) {
+    const ligne = ligneArticle(article);
+    if (taille + ligne.length + 2 > 4_000) {
+      break;
+    }
+    lignes.push(ligne);
+    taille += ligne.length + 2;
+  }
+  return lignes.join("\n\n");
 }
 
 @Discord()
 @SlashGroup({
-	name: "article",
-	description: "Publier, dépublier ou archiver un article des deux sites",
-	root: "gestion",
+  name: "article",
+  description: "Publier, dépublier ou archiver un article des deux sites",
+  root: "gestion",
 })
 @SlashGroup("article", "gestion")
 export class AdministrationArticleCommand {
-	@Slash({
-		name: "liste",
-		description: "Les articles des deux sites, brouillons et archives compris",
-	})
-	async liste(
-		@SlashChoice(...CHOIX_STATUT_ARTICLE)
-		@SlashOption({
-			name: "statut",
-			description: "N'afficher qu'un état (par défaut : tous)",
-			type: ApplicationCommandOptionType.String,
-			required: false,
-		})
-		statut: string | undefined,
-		@SlashChoice(...CHOIX_SITE)
-		@SlashOption({
-			name: "site",
-			description: "N'afficher qu'un site (par défaut : les deux)",
-			type: ApplicationCommandOptionType.String,
-			required: false,
-		})
-		site: string | undefined,
-		@SlashOption({
-			name: "nombre",
-			description: "Nombre d'articles (1 à 25, 10 par défaut)",
-			type: ApplicationCommandOptionType.Integer,
-			required: false,
-			minValue: 1,
-			maxValue: 25,
-		})
-		nombre: number | undefined,
-		interaction: ChatInputCommandInteraction
-	) {
-		await differerEnPrive(interaction);
-		if (!(await exigerDroits(interaction))) {
-			return;
-		}
-		try {
-			const articles = await listerArticles(statut ?? null, site ?? null, nombre ?? 10);
-			const portee = [
-				statut ? libelleStatutArticle(statut) : null,
-				site ? siteArticle(site).libelle : null,
-			].filter((morceau): morceau is string => morceau !== null);
+  @Slash({
+    name: "liste",
+    description: "Les articles des deux sites, brouillons et archives compris",
+  })
+  async liste(
+    @SlashChoice(...CHOIX_STATUT_ARTICLE)
+    @SlashOption({
+      name: "statut",
+      description: "N'afficher qu'un état (par défaut : tous)",
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    })
+    statut: string | undefined,
+    @SlashChoice(...CHOIX_SITE)
+    @SlashOption({
+      name: "site",
+      description: "N'afficher qu'un site (par défaut : les deux)",
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    })
+    site: string | undefined,
+    @SlashOption({
+      name: "nombre",
+      description: "Nombre d'articles (1 à 25, 10 par défaut)",
+      type: ApplicationCommandOptionType.Integer,
+      required: false,
+      minValue: 1,
+      maxValue: 25,
+    })
+    nombre: number | undefined,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await differerEnPrive(interaction);
+    if (!(await exigerDroits(interaction))) {
+      return;
+    }
+    try {
+      const articles = await listerArticles(statut ?? null, site ?? null, nombre ?? 10);
+      const portee = [statut ? libelleStatutArticle(statut) : null, site ? siteArticle(site).libelle : null].filter(
+        (morceau): morceau is string => morceau !== null,
+      );
 
-			if (articles.length === 0) {
-				await interaction.editReply({
-					content:
-						portee.length > 0
-							? `Aucun article ne correspond à ce filtre (${portee.join(" · ")}).`
-							: "La table `articles` ne contient aucune ligne.",
-				});
-				return;
-			}
+      if (articles.length === 0) {
+        await interaction.editReply({
+          content:
+            portee.length > 0
+              ? `Aucun article ne correspond à ce filtre (${portee.join(" · ")}).`
+              : "La table `articles` ne contient aucune ligne.",
+        });
+        return;
+      }
 
-			// Le décompte par état est plus utile que le total : c'est lui qui dit
-			// s'il reste des brouillons à publier.
-			const parEtat = new Map<string, number>();
-			for (const article of articles) {
-				const etat = article.status ?? "sans état";
-				parEtat.set(etat, (parEtat.get(etat) ?? 0) + 1);
-			}
-			const repartition = [...parEtat.entries()]
-				.map(([etat, nb]) => `${badgeStatutArticle(etat)} ${nb} ${libelleStatutArticle(etat)}`)
-				.join(" · ");
+      // Le décompte par état est plus utile que le total : c'est lui qui dit
+      // s'il reste des brouillons à publier.
+      const parEtat = new Map<string, number>();
+      for (const article of articles) {
+        const etat = article.status ?? "sans état";
+        parEtat.set(etat, (parEtat.get(etat) ?? 0) + 1);
+      }
+      const repartition = [...parEtat.entries()]
+        .map(([etat, nb]) => `${badgeStatutArticle(etat)} ${nb} ${libelleStatutArticle(etat)}`)
+        .join(" · ");
 
-			const filtre = portee.length > 0 ? ` — ${portee.join(" · ")}` : "";
-			const embed = rgEmbed()
-				.setTitle(`${articles.length} article${articles.length > 1 ? "s" : ""}${filtre}`)
-				.setDescription(descriptionListe(articles))
-				.setFooter(
-					piedTexte({
-						note: `${repartition} · publier avec /administration article publier`,
-					})
-				);
-			await interaction.editReply({ embeds: [embed] });
-		} catch (err) {
-			await repondre(interaction, echec("Le service n'a pas répondu", messagePanne(err)));
-		}
-	}
+      const filtre = portee.length > 0 ? ` — ${portee.join(" · ")}` : "";
+      const embed = rgEmbed()
+        .setTitle(`${articles.length} article${articles.length > 1 ? "s" : ""}${filtre}`)
+        .setDescription(descriptionListe(articles))
+        .setFooter(
+          piedTexte({
+            note: `${repartition} · publier avec /administration article publier`,
+          }),
+        );
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      await repondre(interaction, echec("Le service n'a pas répondu", messagePanne(err)));
+    }
+  }
 
-	@Slash({ name: "publier", description: "Rendre un article visible du public" })
-	async publier(
-		@SlashOption({
-			name: "article",
-			description: "Titre de l'article (autocomplété), son slug ou son UUID",
-			type: ApplicationCommandOptionType.String,
-			required: true,
-			autocomplete: proposerArticles,
-		})
-		reference: string,
-		interaction: ChatInputCommandInteraction
-	) {
-		await this.changerStatut(interaction, reference, "published");
-	}
+  @Slash({ name: "publier", description: "Rendre un article visible du public" })
+  async publier(
+    @SlashOption({
+      name: "article",
+      description: "Titre de l'article (autocomplété), son slug ou son UUID",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+      autocomplete: proposerArticles,
+    })
+    reference: string,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await this.changerStatut(interaction, reference, "published");
+  }
 
-	@Slash({ name: "depublier", description: "Repasser un article en brouillon" })
-	async depublier(
-		@SlashOption({
-			name: "article",
-			description: "Titre de l'article (autocomplété), son slug ou son UUID",
-			type: ApplicationCommandOptionType.String,
-			required: true,
-			autocomplete: proposerArticles,
-		})
-		reference: string,
-		interaction: ChatInputCommandInteraction
-	) {
-		await this.changerStatut(interaction, reference, "draft");
-	}
+  @Slash({ name: "depublier", description: "Repasser un article en brouillon" })
+  async depublier(
+    @SlashOption({
+      name: "article",
+      description: "Titre de l'article (autocomplété), son slug ou son UUID",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+      autocomplete: proposerArticles,
+    })
+    reference: string,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await this.changerStatut(interaction, reference, "draft");
+  }
 
-	@Slash({
-		name: "archiver",
-		description: "Retirer un article du public sans le détruire",
-	})
-	async archiver(
-		@SlashOption({
-			name: "article",
-			description: "Titre de l'article (autocomplété), son slug ou son UUID",
-			type: ApplicationCommandOptionType.String,
-			required: true,
-			autocomplete: proposerArticles,
-		})
-		reference: string,
-		interaction: ChatInputCommandInteraction
-	) {
-		await this.changerStatut(interaction, reference, "archived");
-	}
+  @Slash({
+    name: "archiver",
+    description: "Retirer un article du public sans le détruire",
+  })
+  async archiver(
+    @SlashOption({
+      name: "article",
+      description: "Titre de l'article (autocomplété), son slug ou son UUID",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+      autocomplete: proposerArticles,
+    })
+    reference: string,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await this.changerStatut(interaction, reference, "archived");
+  }
 
-	/**
-	 * Le corps commun aux trois transitions.
-	 *
-	 * L'ordre est imposé : différer d'abord (3 secondes seulement pour le premier
-	 * accusé de réception), vérifier les droits ensuite, lire l'état avant
-	 * d'écrire, et ne journaliser qu'un changement qui a réellement eu lieu.
-	 */
-	private async changerStatut(
-		interaction: ChatInputCommandInteraction,
-		reference: string,
-		cible: StatutArticle
-	): Promise<void> {
-		await differerEnPrive(interaction);
-		// Publier engage l'image de l'association : réservé au rôle `admin`, pas
-		// au rôle `staff` que `requireRgAdmin` laisserait passer.
-		const admin = await exigerDroits(interaction, { strict: true });
-		if (!admin) {
-			return;
-		}
-		const saisie = reference.trim();
-		try {
-			const avant = await resoudreArticle(saisie);
-			if (!avant) {
-				await interaction.editReply({
-					content:
-						`Aucun article sous « ${truncate(saisie, 80)} ». ` +
-						"Utilise l'autocomplétion, ou passe le slug exact.",
-				});
-				return;
-			}
-			if (avant.status === cible) {
-				await interaction.editReply({
-					content:
-						`**${truncate(avant.title, 120)}** est déjà ${libelleStatutArticle(cible)} — ` +
-						"rien n'a été écrit.",
-				});
-				return;
-			}
+  /**
+   * Le corps commun aux trois transitions.
+   *
+   * L'ordre est imposé : différer d'abord (3 secondes seulement pour le premier
+   * accusé de réception), vérifier les droits ensuite, lire l'état avant
+   * d'écrire, et ne journaliser qu'un changement qui a réellement eu lieu.
+   */
+  private async changerStatut(
+    interaction: ChatInputCommandInteraction,
+    reference: string,
+    cible: StatutArticle,
+  ): Promise<void> {
+    await differerEnPrive(interaction);
+    // Publier engage l'image de l'association : réservé au rôle `admin`, pas
+    // au rôle `staff` que `requireRgAdmin` laisserait passer.
+    const admin = await exigerDroits(interaction, { strict: true });
+    if (!admin) {
+      return;
+    }
+    const saisie = reference.trim();
+    try {
+      const avant = await resoudreArticle(saisie);
+      if (!avant) {
+        await interaction.editReply({
+          content:
+            `Aucun article sous « ${truncate(saisie, 80)} ». ` + "Utilise l'autocomplétion, ou passe le slug exact.",
+        });
+        return;
+      }
+      if (avant.status === cible) {
+        await interaction.editReply({
+          content:
+            `**${truncate(avant.title, 120)}** est déjà ${libelleStatutArticle(cible)} — ` + "rien n'a été écrit.",
+        });
+        return;
+      }
 
-			const apres = await ecrireStatut(avant.id, cible);
-			if (!apres) {
-				await interaction.editReply({
-					content: "L'article a disparu entre la lecture et l'écriture. Rien n'a été modifié.",
-				});
-				return;
-			}
+      const apres = await ecrireStatut(avant.id, cible);
+      if (!apres) {
+        await interaction.editReply({
+          content: "L'article a disparu entre la lecture et l'écriture. Rien n'a été modifié.",
+        });
+        return;
+      }
 
-			await logAdminAction({
-				adminId: admin.profileId,
-				discordId: admin.discordId,
-				action: `article.${cible}`,
-				targetType: "article",
-				targetId: apres.id,
-				details: {
-					slug: apres.slug,
-					titre: apres.title,
-					app: apres.app,
-					statut_avant: avant.status,
-					statut_apres: apres.status,
-				},
-			});
+      await logAdminAction({
+        adminId: admin.profileId,
+        discordId: admin.discordId,
+        action: `article.${cible}`,
+        targetType: "article",
+        targetId: apres.id,
+        details: {
+          slug: apres.slug,
+          titre: apres.title,
+          app: apres.app,
+          statut_avant: avant.status,
+          statut_apres: apres.status,
+        },
+      });
 
-			// Sans ça, `/article lire` ne proposerait l'article qu'au bout des trois
-			// minutes de son propre cache.
-			invalidate(CLEF_INDEX);
-			invalidate(CLEF_INDEX_PUBLIC);
+      // Sans ça, `/article lire` ne proposerait l'article qu'au bout des trois
+      // minutes de son propre cache.
+      invalidate(CLEF_INDEX);
+      invalidate(CLEF_INDEX_PUBLIC);
 
-			const site = siteArticle(apres.app);
-			const embed = rgEmbed()
-				.setTitle(`${badgeStatutArticle(apres.status)} ${truncate(apres.title, 240)}`)
-				.setURL(urlArticle(apres.app, apres.slug))
-				.setDescription(
-					`État : ${decrireChangement(
-						libelleStatutArticle(avant.status),
-						libelleStatutArticle(apres.status)
-					)}`
-				)
-				.addFields(
-					{ name: "Site", value: site.libelle, inline: true },
-					{ name: "Slug", value: `\`${truncate(apres.slug, 90)}\``, inline: true },
-					{
-						name: "Publié le",
-						value: apres.published_at ? dateCourte(apres.published_at) : "jamais",
-						inline: true,
-					}
-				)
-				.setFooter(
-					piedTexte({
-						note:
-							apres.status === "published"
-								? "Visible du public · l'adresse ci-dessus est celle que voient les visiteurs"
-								: "Retiré du public · l'adresse ci-dessus répondra 404 aux visiteurs",
-					})
-				);
-			await interaction.editReply({ embeds: [embed] });
-		} catch (err) {
-			await repondre(interaction, echec("Le service n'a pas répondu", messagePanne(err)));
-		}
-	}
+      const site = siteArticle(apres.app);
+      const embed = rgEmbed()
+        .setTitle(`${badgeStatutArticle(apres.status)} ${truncate(apres.title, 240)}`)
+        .setURL(urlArticle(apres.app, apres.slug))
+        .setDescription(
+          `État : ${decrireChangement(libelleStatutArticle(avant.status), libelleStatutArticle(apres.status))}`,
+        )
+        .addFields(
+          { name: "Site", value: site.libelle, inline: true },
+          { name: "Slug", value: `\`${truncate(apres.slug, 90)}\``, inline: true },
+          {
+            name: "Publié le",
+            value: apres.published_at ? dateCourte(apres.published_at) : "jamais",
+            inline: true,
+          },
+        )
+        .setFooter(
+          piedTexte({
+            note:
+              apres.status === "published"
+                ? "Visible du public · l'adresse ci-dessus est celle que voient les visiteurs"
+                : "Retiré du public · l'adresse ci-dessus répondra 404 aux visiteurs",
+          }),
+        );
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      await repondre(interaction, echec("Le service n'a pas répondu", messagePanne(err)));
+    }
+  }
 }
 
 /**
@@ -454,36 +444,33 @@ export class AdministrationArticleCommand {
  * plutôt que rien.
  */
 async function proposerArticles(interaction: AutocompleteInteraction): Promise<void> {
-	try {
-		const saisie = String(interaction.options.getFocused() ?? "")
-			.trim()
-			.toLowerCase();
-		const index = await indexArticles();
-		const retenus = index
-			.filter(
-				(article) =>
-					saisie.length === 0 ||
-					article.title.toLowerCase().includes(saisie) ||
-					article.slug.includes(saisie)
-			)
-			// Discord refuse au-delà de 25 propositions, et 100 caractères par champ.
-			.slice(0, 25);
-		await interaction.respond(
-			retenus.map((article) => ({
-				name: truncate(
-					`${badgeStatutArticle(article.status)} ${article.title} — ${siteArticle(article.app).libelle}`,
-					100
-				),
-				// La VALEUR est l'UUID, jamais le slug : Discord plafonne une valeur
-				// d'autocomplétion à 100 caractères, et rien n'interdit un slug plus
-				// long (le plus long en base fait 64 caractères aujourd'hui, mais un
-				// titre à rallonge en produirait un qui serait tronqué — donc rendu
-				// irrésolvable, alors même qu'il aurait été choisi dans la liste).
-				// Un UUID fait toujours 36 caractères.
-				value: article.id,
-			}))
-		);
-	} catch {
-		await interaction.respond([]);
-	}
+  try {
+    const saisie = String(interaction.options.getFocused() ?? "")
+      .trim()
+      .toLowerCase();
+    const index = await indexArticles();
+    const retenus = index
+      .filter(
+        article => saisie.length === 0 || article.title.toLowerCase().includes(saisie) || article.slug.includes(saisie),
+      )
+      // Discord refuse au-delà de 25 propositions, et 100 caractères par champ.
+      .slice(0, 25);
+    await interaction.respond(
+      retenus.map(article => ({
+        name: truncate(
+          `${badgeStatutArticle(article.status)} ${article.title} — ${siteArticle(article.app).libelle}`,
+          100,
+        ),
+        // La VALEUR est l'UUID, jamais le slug : Discord plafonne une valeur
+        // d'autocomplétion à 100 caractères, et rien n'interdit un slug plus
+        // long (le plus long en base fait 64 caractères aujourd'hui, mais un
+        // titre à rallonge en produirait un qui serait tronqué — donc rendu
+        // irrésolvable, alors même qu'il aurait été choisi dans la liste).
+        // Un UUID fait toujours 36 caractères.
+        value: article.id,
+      })),
+    );
+  } catch {
+    await interaction.respond([]);
+  }
 }

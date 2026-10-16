@@ -45,20 +45,20 @@ import { borner } from "./ui/texte";
  * refus dit quelle limite a sauté.
  */
 export const LIMITES_SONDAGE = Object.freeze({
-	/** Un sondage sans deux choix n'est pas un sondage. */
-	choixMin: 2,
-	/** Plafond de l'API : dix réponses. */
-	choixMax: 10,
-	/** Durée par défaut de Discord, reprise telle quelle. */
-	dureeDefautHeures: 24,
-	/** Plancher de l'API : une heure. */
-	dureeMinHeures: 1,
-	/** Plafond de l'API : 32 jours. */
-	dureeMaxHeures: 768,
-	/** Libellé d'une réponse. */
-	longueurChoix: 55,
-	/** Texte de la question. */
-	longueurQuestion: 300,
+  /** Un sondage sans deux choix n'est pas un sondage. */
+  choixMin: 2,
+  /** Plafond de l'API : dix réponses. */
+  choixMax: 10,
+  /** Durée par défaut de Discord, reprise telle quelle. */
+  dureeDefautHeures: 24,
+  /** Plancher de l'API : une heure. */
+  dureeMinHeures: 1,
+  /** Plafond de l'API : 32 jours. */
+  dureeMaxHeures: 768,
+  /** Libellé d'une réponse. */
+  longueurChoix: 55,
+  /** Texte de la question. */
+  longueurQuestion: 300,
 } as const);
 
 /** Séparateurs acceptés entre deux choix. Le `/` en est EXCLU : il sépare deux
@@ -70,34 +70,34 @@ const SEPARATEURS_CHOIX = /[;\n|]/;
 
 /** Durées proposées à l'autocomplétion, de la plus courte à la plus longue. */
 export const DUREES_PROPOSEES = [
-	{ heures: 1, libelle: "1 heure" },
-	{ heures: 6, libelle: "6 heures" },
-	{ heures: 12, libelle: "12 heures" },
-	{ heures: 24, libelle: "1 jour" },
-	{ heures: 48, libelle: "2 jours" },
-	{ heures: 72, libelle: "3 jours" },
-	{ heures: 168, libelle: "1 semaine" },
-	{ heures: 336, libelle: "2 semaines" },
-	{ heures: 768, libelle: "32 jours (maximum)" },
+  { heures: 1, libelle: "1 heure" },
+  { heures: 6, libelle: "6 heures" },
+  { heures: 12, libelle: "12 heures" },
+  { heures: 24, libelle: "1 jour" },
+  { heures: 48, libelle: "2 jours" },
+  { heures: 72, libelle: "3 jours" },
+  { heures: 168, libelle: "1 semaine" },
+  { heures: 336, libelle: "2 semaines" },
+  { heures: 768, libelle: "32 jours (maximum)" },
 ] as const;
 
 /** Durée résolue : ce que l'API attend, et ce qu'on montre au membre. */
 export interface DureeSondage {
-	heures: number;
-	libelle: string;
+  heures: number;
+  libelle: string;
 }
 
 /** Libellé français d'une durée en heures, sans jamais écrire « 1 jours ». */
 export function libelleDuree(heures: number): string {
-	if (heures % 168 === 0 && heures >= 168) {
-		const semaines = heures / 168;
-		return semaines === 1 ? "1 semaine" : `${semaines} semaines`;
-	}
-	if (heures % 24 === 0) {
-		const jours = heures / 24;
-		return jours === 1 ? "1 jour" : `${jours} jours`;
-	}
-	return heures === 1 ? "1 heure" : `${heures} heures`;
+  if (heures % 168 === 0 && heures >= 168) {
+    const semaines = heures / 168;
+    return semaines === 1 ? "1 semaine" : `${semaines} semaines`;
+  }
+  if (heures % 24 === 0) {
+    const jours = heures / 24;
+    return jours === 1 ? "1 jour" : `${jours} jours`;
+  }
+  return heures === 1 ? "1 heure" : `${heures} heures`;
 }
 
 /**
@@ -108,25 +108,25 @@ export function libelleDuree(heures: number): string {
  * durée par défaut plutôt que de refuser la commande pour une coquille.
  */
 export function normaliserDuree(valeur: unknown): DureeSondage | null {
-	const brut = typeof valeur === "string" ? valeur.trim().toLowerCase() : "";
-	if (brut.length === 0) {
-		return null;
-	}
-	const trouve = /^(\d+(?:[.,]\d+)?)\s*(h|heures?|j|jours?|s|semaines?)?$/.exec(brut);
-	if (!trouve) {
-		return null;
-	}
-	const nombre = Number(trouve[1]?.replace(",", "."));
-	if (!Number.isFinite(nombre) || nombre <= 0) {
-		return null;
-	}
-	const unite = trouve[2] ?? "h";
-	const facteur = unite.startsWith("j") ? 24 : unite.startsWith("s") ? 168 : 1;
-	const heures = Math.round(nombre * facteur);
-	if (heures < LIMITES_SONDAGE.dureeMinHeures || heures > LIMITES_SONDAGE.dureeMaxHeures) {
-		return null;
-	}
-	return { heures, libelle: libelleDuree(heures) };
+  const brut = typeof valeur === "string" ? valeur.trim().toLowerCase() : "";
+  if (brut.length === 0) {
+    return null;
+  }
+  const trouve = /^(\d+(?:[.,]\d+)?)\s*(h|heures?|j|jours?|s|semaines?)?$/.exec(brut);
+  if (!trouve) {
+    return null;
+  }
+  const nombre = Number(trouve[1]?.replace(",", "."));
+  if (!Number.isFinite(nombre) || nombre <= 0) {
+    return null;
+  }
+  const unite = trouve[2] ?? "h";
+  const facteur = unite.startsWith("j") ? 24 : unite.startsWith("s") ? 168 : 1;
+  const heures = Math.round(nombre * facteur);
+  if (heures < LIMITES_SONDAGE.dureeMinHeures || heures > LIMITES_SONDAGE.dureeMaxHeures) {
+    return null;
+  }
+  return { heures, libelle: libelleDuree(heures) };
 }
 
 // ─── Emoji de tête ──────────────────────────────────────────────────────────
@@ -145,23 +145,23 @@ const EMOJI_PERSONNALISE = /^<(a?):([A-Za-z0-9_~]+):(\d+)>/;
  * un liant sans chasse (« 👨‍👩‍👧 »).
  */
 const EMOJI_UNICODE =
-	/^(?:\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*|[\d#*]\uFE0F?\u20E3)/u;
+  /^(?:\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*|[\d#*]\uFE0F?\u20E3)/u;
 
 /** Emoji d'un choix, tel que l'API l'attend (`{ id }` ou `{ name }`). */
 export interface EmojiChoix {
-	/** Identifiant d'un emoji personnalisé du serveur. */
-	id?: string;
-	/** Caractère Unicode, ou nom de l'emoji personnalisé. */
-	name?: string;
-	animated?: boolean;
+  /** Identifiant d'un emoji personnalisé du serveur. */
+  id?: string;
+  /** Caractère Unicode, ou nom de l'emoji personnalisé. */
+  name?: string;
+  animated?: boolean;
 }
 
 /** Choix découpé : l'emoji de vote d'un côté, le libellé de l'autre. */
 export interface ChoixSondage {
-	emoji: EmojiChoix | null;
-	/** Emoji tel qu'il s'écrit, pour un affichage hors API. */
-	emojiTexte: string | null;
-	texte: string;
+  emoji: EmojiChoix | null;
+  /** Emoji tel qu'il s'écrit, pour un affichage hors API. */
+  emojiTexte: string | null;
+  texte: string;
 }
 
 /**
@@ -174,30 +174,30 @@ export interface ChoixSondage {
  * du salon écrivent.
  */
 export function separerEmojiDeTete(brut: string): ChoixSondage {
-	const texte = brut.trim();
-	const personnalise = EMOJI_PERSONNALISE.exec(texte);
-	if (personnalise) {
-		const reste = texte.slice(personnalise[0].length).trim();
-		if (reste.length > 0) {
-			return {
-				emoji: { animated: personnalise[1] === "a", id: personnalise[3], name: personnalise[2] },
-				emojiTexte: personnalise[0],
-				texte: reste,
-			};
-		}
-	}
-	const unicode = EMOJI_UNICODE.exec(texte);
-	if (unicode) {
-		const reste = texte.slice(unicode[0].length).trim();
-		// Un emoji collé à son libellé (« 🥞Goldie ») compte comme un emoji de
-		// tête : la séparation est ce que le membre voulait, l'espace lui a
-		// simplement manqué. En revanche un emoji SEUL reste le libellé — sinon
-		// le choix n'aurait plus de texte du tout.
-		if (reste.length > 0) {
-			return { emoji: { name: unicode[0] }, emojiTexte: unicode[0], texte: reste };
-		}
-	}
-	return { emoji: null, emojiTexte: null, texte };
+  const texte = brut.trim();
+  const personnalise = EMOJI_PERSONNALISE.exec(texte);
+  if (personnalise) {
+    const reste = texte.slice(personnalise[0].length).trim();
+    if (reste.length > 0) {
+      return {
+        emoji: { animated: personnalise[1] === "a", id: personnalise[3], name: personnalise[2] },
+        emojiTexte: personnalise[0],
+        texte: reste,
+      };
+    }
+  }
+  const unicode = EMOJI_UNICODE.exec(texte);
+  if (unicode) {
+    const reste = texte.slice(unicode[0].length).trim();
+    // Un emoji collé à son libellé (« 🥞Goldie ») compte comme un emoji de
+    // tête : la séparation est ce que le membre voulait, l'espace lui a
+    // simplement manqué. En revanche un emoji SEUL reste le libellé — sinon
+    // le choix n'aurait plus de texte du tout.
+    if (reste.length > 0) {
+      return { emoji: { name: unicode[0] }, emojiTexte: unicode[0], texte: reste };
+    }
+  }
+  return { emoji: null, emojiTexte: null, texte };
 }
 
 // ─── Découpage des choix ────────────────────────────────────────────────────
@@ -211,38 +211,37 @@ export function separerEmojiDeTete(brut: string): ChoixSondage {
  * reviendrait à refuser un sondage réel.
  */
 export function decouperChoix(brut: unknown): string[] {
-	if (typeof brut !== "string") {
-		return [];
-	}
-	return brut
-		.split(SEPARATEURS_CHOIX)
-		.map((morceau) => morceau.trim())
-		.filter((morceau) => morceau.length > 0);
+  if (typeof brut !== "string") {
+    return [];
+  }
+  return brut
+    .split(SEPARATEURS_CHOIX)
+    .map(morceau => morceau.trim())
+    .filter(morceau => morceau.length > 0);
 }
 
 // ─── Projet de sondage ──────────────────────────────────────────────────────
 
 /** Ce qu'un membre saisit dans la commande. */
 export interface SaisieSondage {
-	question: unknown;
-	choix: unknown;
-	duree?: unknown;
-	/** `true` = autant de choix qu'on veut ; `false` = un seul. */
-	multiple?: unknown;
+  question: unknown;
+  choix: unknown;
+  duree?: unknown;
+  /** `true` = autant de choix qu'on veut ; `false` = un seul. */
+  multiple?: unknown;
 }
 
 /** Sondage prêt à poser, toutes limites vérifiées. */
 export interface ProjetSondage {
-	question: string;
-	choix: ChoixSondage[];
-	duree: DureeSondage;
-	/** Régime de vote natif : un seul choix, ou autant qu'on veut. */
-	multiple: boolean;
+  question: string;
+  choix: ChoixSondage[];
+  duree: DureeSondage;
+  /** Régime de vote natif : un seul choix, ou autant qu'on veut. */
+  multiple: boolean;
 }
 
 export type ResultatPreparation =
-	| { ok: true; projet: ProjetSondage; avertissements: string[] }
-	| { ok: false; erreurs: string[] };
+  { ok: true; projet: ProjetSondage; avertissements: string[] } | { ok: false; erreurs: string[] };
 
 /**
  * Valide une saisie et rend un projet de sondage.
@@ -253,87 +252,87 @@ export type ResultatPreparation =
  * que la pose va faire du texte (troncature, emoji promu).
  */
 export function preparerSondage(saisie: SaisieSondage): ResultatPreparation {
-	const erreurs: string[] = [];
-	const avertissements: string[] = [];
+  const erreurs: string[] = [];
+  const avertissements: string[] = [];
 
-	const question = typeof saisie.question === "string" ? saisie.question.trim() : "";
-	if (question.length === 0) {
-		erreurs.push("La question est vide.");
-	} else if (question.length > LIMITES_SONDAGE.longueurQuestion) {
-		erreurs.push(
-			`La question fait ${question.length} caractères ; Discord en accepte ${LIMITES_SONDAGE.longueurQuestion} au maximum.`
-		);
-	}
+  const question = typeof saisie.question === "string" ? saisie.question.trim() : "";
+  if (question.length === 0) {
+    erreurs.push("La question est vide.");
+  } else if (question.length > LIMITES_SONDAGE.longueurQuestion) {
+    erreurs.push(
+      `La question fait ${question.length} caractères ; Discord en accepte ${LIMITES_SONDAGE.longueurQuestion} au maximum.`,
+    );
+  }
 
-	const bruts = decouperChoix(saisie.choix);
-	if (bruts.length < LIMITES_SONDAGE.choixMin) {
-		erreurs.push(
-			`Il faut au moins ${LIMITES_SONDAGE.choixMin} choix, séparés par un point-virgule (exemple : \`Oui ; Non\`).`
-		);
-	}
-	if (bruts.length > LIMITES_SONDAGE.choixMax) {
-		erreurs.push(
-			`${bruts.length} choix ont été saisis ; un sondage Discord en accepte ${LIMITES_SONDAGE.choixMax} au maximum.`
-		);
-	}
+  const bruts = decouperChoix(saisie.choix);
+  if (bruts.length < LIMITES_SONDAGE.choixMin) {
+    erreurs.push(
+      `Il faut au moins ${LIMITES_SONDAGE.choixMin} choix, séparés par un point-virgule (exemple : \`Oui ; Non\`).`,
+    );
+  }
+  if (bruts.length > LIMITES_SONDAGE.choixMax) {
+    erreurs.push(
+      `${bruts.length} choix ont été saisis ; un sondage Discord en accepte ${LIMITES_SONDAGE.choixMax} au maximum.`,
+    );
+  }
 
-	const choix = bruts.slice(0, LIMITES_SONDAGE.choixMax).map((brut) => separerEmojiDeTete(brut));
-	for (const [index, entree] of choix.entries()) {
-		if (entree.texte.length === 0) {
-			erreurs.push(`Le choix nº ${index + 1} est vide.`);
-			continue;
-		}
-		if (entree.texte.length > LIMITES_SONDAGE.longueurChoix) {
-			avertissements.push(
-				`Le choix nº ${index + 1} dépasse ${LIMITES_SONDAGE.longueurChoix} caractères : il sera abrégé.`
-			);
-			entree.texte = borner(entree.texte, LIMITES_SONDAGE.longueurChoix);
-		}
-	}
+  const choix = bruts.slice(0, LIMITES_SONDAGE.choixMax).map(brut => separerEmojiDeTete(brut));
+  for (const [index, entree] of choix.entries()) {
+    if (entree.texte.length === 0) {
+      erreurs.push(`Le choix nº ${index + 1} est vide.`);
+      continue;
+    }
+    if (entree.texte.length > LIMITES_SONDAGE.longueurChoix) {
+      avertissements.push(
+        `Le choix nº ${index + 1} dépasse ${LIMITES_SONDAGE.longueurChoix} caractères : il sera abrégé.`,
+      );
+      entree.texte = borner(entree.texte, LIMITES_SONDAGE.longueurChoix);
+    }
+  }
 
-	// Une durée illisible ne fait pas échouer la commande : on retombe sur le
-	// défaut de Discord et on le DIT, plutôt que de renvoyer le membre à sa
-	// saisie pour un « 3 jrs ».
-	const dureeSaisie = saisie.duree === undefined || saisie.duree === null ? null : saisie.duree;
-	let duree = normaliserDuree(dureeSaisie);
-	if (dureeSaisie !== null && String(dureeSaisie).trim().length > 0 && !duree) {
-		avertissements.push(
-			`Durée « ${borner(String(dureeSaisie), 40)} » incomprise : le sondage durera ${libelleDuree(LIMITES_SONDAGE.dureeDefautHeures)}. ` +
-				`Formes acceptées : \`12h\`, \`3j\`, \`1 semaine\` (de ${LIMITES_SONDAGE.dureeMinHeures} h à ${LIMITES_SONDAGE.dureeMaxHeures} h).`
-		);
-	}
-	duree ??= {
-		heures: LIMITES_SONDAGE.dureeDefautHeures,
-		libelle: libelleDuree(LIMITES_SONDAGE.dureeDefautHeures),
-	};
+  // Une durée illisible ne fait pas échouer la commande : on retombe sur le
+  // défaut de Discord et on le DIT, plutôt que de renvoyer le membre à sa
+  // saisie pour un « 3 jrs ».
+  const dureeSaisie = saisie.duree === undefined || saisie.duree === null ? null : saisie.duree;
+  let duree = normaliserDuree(dureeSaisie);
+  if (dureeSaisie !== null && String(dureeSaisie).trim().length > 0 && !duree) {
+    avertissements.push(
+      `Durée « ${borner(String(dureeSaisie), 40)} » incomprise : le sondage durera ${libelleDuree(LIMITES_SONDAGE.dureeDefautHeures)}. ` +
+        `Formes acceptées : \`12h\`, \`3j\`, \`1 semaine\` (de ${LIMITES_SONDAGE.dureeMinHeures} h à ${LIMITES_SONDAGE.dureeMaxHeures} h).`,
+    );
+  }
+  duree ??= {
+    heures: LIMITES_SONDAGE.dureeDefautHeures,
+    libelle: libelleDuree(LIMITES_SONDAGE.dureeDefautHeures),
+  };
 
-	if (erreurs.length > 0) {
-		return { erreurs, ok: false };
-	}
-	return {
-		avertissements,
-		ok: true,
-		projet: { choix, duree, multiple: saisie.multiple === true, question },
-	};
+  if (erreurs.length > 0) {
+    return { erreurs, ok: false };
+  }
+  return {
+    avertissements,
+    ok: true,
+    projet: { choix, duree, multiple: saisie.multiple === true, question },
+  };
 }
 
 /** Instant de clôture d'un projet, tel que Discord le calculera. */
 export function clotureDe(projet: Pick<ProjetSondage, "duree">, maintenant = new Date()): Date {
-	return new Date(maintenant.getTime() + projet.duree.heures * 3_600_000);
+  return new Date(maintenant.getTime() + projet.duree.heures * 3_600_000);
 }
 
 /** Règle de vote, dite comme sur le site (`libelleChoixAutorises`). */
 export function libelleRegleDeVote(projet: Pick<ProjetSondage, "multiple">): string {
-	return projet.multiple ? "Choix illimités" : "1 choix par personne";
+  return projet.multiple ? "Choix illimités" : "1 choix par personne";
 }
 
 // ─── Désignation d'un sondage déjà publié ───────────────────────────────────
 
 /** Salon et message désignés par une saisie de clôture. */
 export interface ReferenceMessage {
-	/** `null` quand la saisie ne portait qu'un identifiant : au caller de choisir. */
-	salonId: string | null;
-	messageId: string;
+  /** `null` quand la saisie ne portait qu'un identifiant : au caller de choisir. */
+  salonId: string | null;
+  messageId: string;
 }
 
 /**
@@ -354,20 +353,20 @@ export interface ReferenceMessage {
  * de saisie, pas un cas à deviner.
  */
 export function referenceMessage(brut: unknown): ReferenceMessage | null {
-	if (typeof brut !== "string") {
-		return null;
-	}
-	const valeur = brut.trim();
-	if (valeur === "") {
-		return null;
-	}
-	const lien = valeur.match(
-		/^https?:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/channels\/(\d{15,25}|@me)\/(\d{15,25})\/(\d{15,25})/
-	);
-	if (lien) {
-		return { messageId: lien[3] as string, salonId: lien[2] as string };
-	}
-	// Flocon nu : Discord les rend sur 17 à 20 chiffres aujourd'hui, la borne
-	// large (15–25) laisse la place à leur croissance sans rien casser.
-	return /^\d{15,25}$/.test(valeur) ? { messageId: valeur, salonId: null } : null;
+  if (typeof brut !== "string") {
+    return null;
+  }
+  const valeur = brut.trim();
+  if (valeur === "") {
+    return null;
+  }
+  const lien = valeur.match(
+    /^https?:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/channels\/(\d{15,25}|@me)\/(\d{15,25})\/(\d{15,25})/,
+  );
+  if (lien) {
+    return { messageId: lien[3] as string, salonId: lien[2] as string };
+  }
+  // Flocon nu : Discord les rend sur 17 à 20 chiffres aujourd'hui, la borne
+  // large (15–25) laisse la place à leur croissance sans rien casser.
+  return /^\d{15,25}$/.test(valeur) ? { messageId: valeur, salonId: null } : null;
 }

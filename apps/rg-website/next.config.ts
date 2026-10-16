@@ -362,9 +362,7 @@ const nextConfig: NextConfig = {
     // docs/PORTS-AND-DOMAINS.md item 13) : ce port n'est jamais écouté en production.
     const FALLBACK_STORAGE_URL = "http://127.0.0.1:8800";
     const storageUrl =
-      process.env.SUPABASE_INTERNAL_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      FALLBACK_STORAGE_URL;
+      process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || FALLBACK_STORAGE_URL;
 
     const destination = storageUrl.startsWith("http")
       ? `${storageUrl}/storage/v1/:path*`

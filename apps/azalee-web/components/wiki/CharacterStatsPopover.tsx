@@ -30,11 +30,7 @@ export function CharacterStatsPopover({ stats, name }: CharacterStatsPopoverProp
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 sm:size-8 text-on-surface-variant hover:text-primary"
-        >
+        <Button variant="ghost" size="icon" className="size-11 sm:size-8 text-on-surface-variant hover:text-primary">
           <BarChart3 className="size-4" />
           <span className="sr-only">Stats de {name}</span>
         </Button>
@@ -66,10 +62,7 @@ export function CharacterStatsPopover({ stats, name }: CharacterStatsPopoverProp
                   </div>
                   <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
                     <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        config.color,
-                      )}
+                      className={cn("h-full rounded-full transition-all duration-500", config.color)}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

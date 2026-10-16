@@ -1,8 +1,8 @@
 export enum ClanMemberRole {
-	Trial,
-	Member,
-	SubCaptain,
-	Captain,
+  Trial,
+  Member,
+  SubCaptain,
+  Captain,
 }
 
 // Les libellés d'affichage vivent dans `@rosegriffon/achillea-core/labels`
@@ -10,8 +10,8 @@ export enum ClanMemberRole {
 // texte destiné à un humain — sinon il cesse d'être traduisible mécaniquement.
 
 export enum ClanMemberDistinction {
-	Player = "Joueur",
-	Staff = "Staff",
-	Artist = "Artiste",
-	ContentCreator = "Créateur de contenu",
+  Player = "Joueur",
+  Staff = "Staff",
+  Artist = "Artiste",
+  ContentCreator = "Créateur de contenu",
 }

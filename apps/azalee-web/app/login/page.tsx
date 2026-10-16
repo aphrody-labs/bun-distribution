@@ -24,9 +24,7 @@ function LoginContent() {
     if (redirecting) {
       // Le résolveur serveur décide /dashboard (admin) vs returnTo selon le rôle
       // réel en base — pas de race sur un isAdmin client pas encore chargé.
-      const dest = returnTo
-        ? `/auth/post-login?returnTo=${encodeURIComponent(returnTo)}`
-        : "/auth/post-login";
+      const dest = returnTo ? `/auth/post-login?returnTo=${encodeURIComponent(returnTo)}` : "/auth/post-login";
       // Full navigation to ensure cookies are sent properly.
       window.location.href = dest;
     }
@@ -54,9 +52,7 @@ function LoginContent() {
               {/* Logo */}
               <div className="mb-5 flex justify-center">
                 <div className="relative">
-                  <h1 className="type-display-small font-black italic tracking-tighter text-on-surface">
-                    AZALÉE
-                  </h1>
+                  <h1 className="type-display-small font-black italic tracking-tighter text-on-surface">AZALÉE</h1>
                   <div className="absolute -bottom-1 left-0 right-0 h-1 bg-linear-to-r from-primary via-secondary to-primary rounded-full" />
                 </div>
               </div>
@@ -74,9 +70,7 @@ function LoginContent() {
         </div>
 
         {/* External footer */}
-        <p className="type-body-small text-center text-on-surface-variant/60 mt-6">
-          Azalée &mdash; Rose Griffon
-        </p>
+        <p className="type-body-small text-center text-on-surface-variant/60 mt-6">Azalée &mdash; Rose Griffon</p>
       </div>
     </div>
   );

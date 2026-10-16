@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 // contenu propre : rien à indexer. La page étant un composant client, la
 // consigne doit vivre ici.
 export const metadata: Metadata = {
-	robots: { follow: false, index: false },
+  robots: { follow: false, index: false },
 };
 
 export default function AuthTechniqueLayout({ children }: { children: ReactNode }) {
-	return children;
+  return children;
 }

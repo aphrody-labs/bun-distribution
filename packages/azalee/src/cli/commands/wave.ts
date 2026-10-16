@@ -28,9 +28,7 @@ export function registerWaveCommand(program: Command): void {
       const scriptPath = options.cycle
         ? path.resolve(process.cwd(), "scripts/inagle/pipeline/run-wave-cycle.sh")
         : path.resolve(process.cwd(), "scripts/inagle/pipeline/wave-processing.ts");
-      const argv = [options.cycle ? scriptPath : "bun", options.cycle ? "" : scriptPath].filter(
-        Boolean,
-      );
+      const argv = [options.cycle ? scriptPath : "bun", options.cycle ? "" : scriptPath].filter(Boolean);
 
       if (options.loop) {
         console.log(

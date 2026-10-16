@@ -21,11 +21,7 @@ import EdgeSwipeDetector from "@/components/shared/EdgeSwipeDetector";
 import MobileWatermark from "@/components/shared/MobileWatermark";
 import { DynamicUniverseHead } from "@/components/layout/DynamicUniverseHead";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import {
-  LanguageProvider,
-  type Language,
-  useLanguage,
-} from "@/components/providers/language-provider";
+import { LanguageProvider, type Language, useLanguage } from "@/components/providers/language-provider";
 import { ProfileProvider, useProfile } from "@/contexts/profile-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AchilleaAuthProvider, createAchilleaClient, useAchilleaAuth } from "@/lib/achillea";
@@ -84,13 +80,7 @@ function classeThemeDuDomaine(pathname: string): string | undefined {
   return undefined;
 }
 
-function RoutedHeader({
-  isMobile,
-  showSidebarToggle,
-}: {
-  isMobile?: boolean;
-  showSidebarToggle?: boolean;
-}) {
+function RoutedHeader({ isMobile, showSidebarToggle }: { isMobile?: boolean; showSidebarToggle?: boolean }) {
   const pathname = usePathname() || "/";
   const activeDomaine = domaineDeLaRoute(pathname);
   const { user: rgUser } = useAuth();
@@ -106,15 +96,9 @@ function RoutedHeader({
   const profile = rgProfile;
 
   const appName = isEsport ? "Achilléa" : isWiki ? "Azalée" : "Rose Griffon";
-  const logoSrc = isEsport
-    ? "/achillea/logo1.svg"
-    : isWiki
-      ? "/RG_Azalee-logo.webp"
-      : "/RG_Logo_V2.5.webp";
+  const logoSrc = isEsport ? "/achillea/logo1.svg" : isWiki ? "/RG_Azalee-logo.webp" : "/RG_Logo_V2.5.webp";
   const homeHref = isEsport ? "/achillea" : isWiki ? "/wiki" : "/";
-  const accountHref = profile?.username
-    ? `/profil/${encodeURIComponent(profile.username)}`
-    : "/profil";
+  const accountHref = profile?.username ? `/profil/${encodeURIComponent(profile.username)}` : "/profil";
 
   return (
     <Header
@@ -153,16 +137,8 @@ function useAchilleaNavigationVisibility(pathname: string) {
   const [clanRole, setClanRole] = useState<number | null>(null);
   const isEsport = domaineDeLaRoute(pathname) === "esport";
 
-  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([
-    isAuthenticated,
-    isEsport,
-    user?.id,
-  ]);
-  if (
-    [isAuthenticated, isEsport, user?.id].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
-  ) {
+  const [requestIdentity1, setRequestIdentity1] = useState<readonly unknown[]>([isAuthenticated, isEsport, user?.id]);
+  if ([isAuthenticated, isEsport, user?.id].some((value, position) => !Object.is(value, requestIdentity1[position]))) {
     setRequestIdentity1([isAuthenticated, isEsport, user?.id]);
     (() => {
       if (!isEsport || !isAuthenticated) {
@@ -181,7 +157,7 @@ function useAchilleaNavigationVisibility(pathname: string) {
 
     void createAchilleaClient({ credentials: "include" })
       .clans.myRole()
-      .then((result) => {
+      .then(result => {
         if (!cancelled && result.ok) setClanRole(result.value.role);
       });
     return () => {
@@ -194,10 +170,7 @@ function useAchilleaNavigationVisibility(pathname: string) {
     if (!access) return true;
     if (access.requiresAuthentication && !isAuthenticated) return false;
     const achilleaRole = Number(user?.role ?? 0);
-    if (
-      access.minimumAchilleaRole !== undefined &&
-      (!isAuthenticated || achilleaRole < access.minimumAchilleaRole)
-    ) {
+    if (access.minimumAchilleaRole !== undefined && (!isAuthenticated || achilleaRole < access.minimumAchilleaRole)) {
       return false;
     }
     if (
@@ -242,9 +215,7 @@ export default function ClientLayout({
   const isAdminPage = pathname?.startsWith("/admin");
   const isShopPage = pathname?.startsWith("/shop");
   const isAuthPage =
-    pathname?.startsWith("/login") ||
-    pathname?.startsWith("/register") ||
-    pathname?.startsWith("/auth");
+    pathname?.startsWith("/login") || pathname?.startsWith("/register") || pathname?.startsWith("/auth");
 
   const shouldHideSidebar = isAdminPage || isShopPage || isAuthPage;
 
@@ -283,18 +254,14 @@ export default function ClientLayout({
                   {/* Pas de marge gauche manuelle en expanded : <Sidebar> pose déjà un
 								    « gap » de --sidebar-width dans le flux, qui décale l'inset. En
 								    ajouter une seconde doublait le décalage et écrasait le contenu. */}
-                  <SidebarInset
-                    className={cn("transition-all duration-300 min-w-0", showRail && "ml-20")}
-                  >
+                  <SidebarInset className={cn("transition-all duration-300 min-w-0", showRail && "ml-20")}>
                     {/* La réserve en haut compense le Header fixe (4rem+safe-area en mobile, 14 (3.5rem) sur desktop/tablette).
 									    La réserve en bas compense la barre de navigation basse (5rem+safe-area) uniquement montée en compact. */}
                     <div
                       className={cn(
                         "flex flex-col min-h-[100dvh] w-full",
                         !shouldHideSidebar && "pt-[calc(4rem+env(safe-area-inset-top))] md:pt-14",
-                        isCompact &&
-                          !shouldHideSidebar &&
-                          "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
+                        isCompact && !shouldHideSidebar && "pb-[calc(5.5rem+env(safe-area-inset-bottom))]",
                       )}
                     >
                       {/* Le kit admin fournit son propre en-tête mobile : sans cette garde,

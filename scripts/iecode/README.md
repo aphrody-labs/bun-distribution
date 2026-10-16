@@ -7,17 +7,17 @@ to the installed `@aphrody/workspace/ops` registry export; IECODE keeps thin bin
 and game-specific tools. Explicit `APHRODY_ROOT` selects a validated source checkout. No legacy Infra
 checkout fallback or second release orchestrator is active here.
 
-| Directory | Owner and purpose |
-| --- | --- |
-| `audit/` | Documentation, asset, runtime and reverse-engineering evidence checks |
-| `audit/uemu/` | Function proofs and their shared Unicorn helper, moved together |
-| `build/` | Native and emulator WASM build/packaging adapters |
-| `dev/` | Local setup, environment and installed command bindings |
-| `migration/` | Measured source/workspace transfers |
-| `tools/` | Domain tooling and thin central operations/transport bindings |
-| `tools/data/` | Extraction, mirroring and derived local data |
-| `validation/`, `donnees/`, `forge/`, `ghidra/`, `ops/`, `re/` | Retained domain harnesses with established internal consumers |
-| `gecko/`, `ruzu/`, `upstream/` | Imported integration tooling and clearly marked historical orchestration |
+| Directory                                                     | Owner and purpose                                                        |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `audit/`                                                      | Documentation, asset, runtime and reverse-engineering evidence checks    |
+| `audit/uemu/`                                                 | Function proofs and their shared Unicorn helper, moved together          |
+| `build/`                                                      | Native and emulator WASM build/packaging adapters                        |
+| `dev/`                                                        | Local setup, environment and installed command bindings                  |
+| `migration/`                                                  | Measured source/workspace transfers                                      |
+| `tools/`                                                      | Domain tooling and thin central operations/transport bindings            |
+| `tools/data/`                                                 | Extraction, mirroring and derived local data                             |
+| `validation/`, `donnees/`, `forge/`, `ghidra/`, `ops/`, `re/` | Retained domain harnesses with established internal consumers            |
+| `gecko/`, `ruzu/`, `upstream/`                                | Imported integration tooling and clearly marked historical orchestration |
 
 The root contains this index and TypeScript configuration only. The relocation
 inventory is [`config/script-layout.json`](../config/script-layout.json). Rust

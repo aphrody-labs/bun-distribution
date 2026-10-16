@@ -38,7 +38,7 @@ export default function CreateClanPage() {
       setError("Le sigle (tag) doit comporter 2 ou 3 lettres ou chiffres.");
       return;
     }
-    if (![xUrl, instagramUrl, tiktokUrl].some((url) => url.trim())) {
+    if (![xUrl, instagramUrl, tiktokUrl].some(url => url.trim())) {
       setError("Ajoute au moins un lien X, Instagram ou TikTok pour le clan.");
       return;
     }
@@ -50,9 +50,9 @@ export default function CreateClanPage() {
       const client = createAchilleaClient({ credentials: "include" });
       const founders = founderIds
         .split(",")
-        .map((s) => s.trim())
+        .map(s => s.trim())
         .filter(Boolean)
-        .map((id) => ({ id }));
+        .map(id => ({ id }));
       const clanName = name.trim();
       const clanTag = tag.trim().toUpperCase();
       const paysFrance: Country = {
@@ -111,9 +111,7 @@ export default function CreateClanPage() {
       <div className="mx-auto max-w-md space-y-4 px-4 py-20 text-center">
         <Shield className="mx-auto size-12 text-primary" />
         <h2 className="text-xl font-bold text-on-surface">Connexion requise</h2>
-        <p className="text-sm text-on-surface-variant">
-          Connecte-toi pour déposer une demande de création de clan.
-        </p>
+        <p className="text-sm text-on-surface-variant">Connecte-toi pour déposer une demande de création de clan.</p>
         <Button type="button" onClick={() => login("/achillea/clans/create")}>
           Se connecter
         </Button>
@@ -162,7 +160,7 @@ export default function CreateClanPage() {
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 placeholder="ex. Raimon Eleven"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"
               />
@@ -182,7 +180,7 @@ export default function CreateClanPage() {
                 required
                 maxLength={3}
                 value={tag}
-                onChange={(e) => setTag(e.target.value.toUpperCase())}
+                onChange={e => setTag(e.target.value.toUpperCase())}
                 placeholder="ex. RG"
                 className="w-full max-w-xs px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface uppercase font-mono font-bold focus:outline-none focus:border-primary"
               />
@@ -202,7 +200,7 @@ export default function CreateClanPage() {
                 id="route-create-clan-create-client-tsx-3"
                 rows={4}
                 value={biography}
-                onChange={(e) => setBiography(e.target.value)}
+                onChange={e => setBiography(e.target.value)}
                 placeholder="Présentation du clan, ambitions esport, critères de sélection..."
                 className="w-full p-3 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"
               />
@@ -219,13 +217,12 @@ export default function CreateClanPage() {
                 id="route-create-clan-create-client-tsx-4"
                 type="text"
                 value={founderIds}
-                onChange={(e) => setFounderIds(e.target.value)}
+                onChange={e => setFounderIds(e.target.value)}
                 placeholder="ID1, ID2, ID3..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"
               />
               <p className="text-[11px] text-on-surface-variant">
-                Optionnel : sépare les IDs Discord par des virgules pour lancer le vote de
-                fondation.
+                Optionnel : sépare les IDs Discord par des virgules pour lancer le vote de fondation.
               </p>
             </div>
 
@@ -233,13 +230,11 @@ export default function CreateClanPage() {
               <legend className="text-xs font-bold text-on-surface uppercase tracking-wider">
                 Réseaux sociaux <span className="text-red-500">*</span>
               </legend>
-              <p className="text-[11px] text-on-surface-variant">
-                Ajoute au moins un lien X, Instagram ou TikTok.
-              </p>
+              <p className="text-[11px] text-on-surface-variant">Ajoute au moins un lien X, Instagram ou TikTok.</p>
               <input
                 type="url"
                 value={xUrl}
-                onChange={(e) => setXUrl(e.target.value)}
+                onChange={e => setXUrl(e.target.value)}
                 placeholder="https://x.com/mon-clan"
                 aria-label="Lien X du clan"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"
@@ -247,7 +242,7 @@ export default function CreateClanPage() {
               <input
                 type="url"
                 value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
+                onChange={e => setInstagramUrl(e.target.value)}
                 placeholder="https://instagram.com/mon-clan"
                 aria-label="Lien Instagram du clan"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"
@@ -255,7 +250,7 @@ export default function CreateClanPage() {
               <input
                 type="url"
                 value={tiktokUrl}
-                onChange={(e) => setTiktokUrl(e.target.value)}
+                onChange={e => setTiktokUrl(e.target.value)}
                 placeholder="https://tiktok.com/@mon-clan"
                 aria-label="Lien TikTok du clan"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-outline/30 bg-surface-variant/20 text-sm text-on-surface focus:outline-none focus:border-primary"

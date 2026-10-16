@@ -45,10 +45,7 @@ interface TweetRow {
   updated_at: string | null;
 }
 
-type TweetMetaRow = Pick<
-  TweetRow,
-  "text" | "translation" | "author_username" | "author_name" | "media" | "raw_tweets"
->;
+type TweetMetaRow = Pick<TweetRow, "text" | "translation" | "author_username" | "author_name" | "media" | "raw_tweets">;
 
 const AZALEE_USERNAME = "Azalee_IE";
 
@@ -78,10 +75,10 @@ async function getTweetMetaByThreadId(id: string): Promise<TweetMetaRow | null> 
 
 async function getTweetById(id: string): Promise<TweetRow | null> {
   const pool = getPgPool();
-  const { rows } = await pool.query<TweetRow>(
-    `SELECT * FROM tweets WHERE id = $1 AND author_username = $2 LIMIT 1`,
-    [id, AZALEE_USERNAME],
-  );
+  const { rows } = await pool.query<TweetRow>(`SELECT * FROM tweets WHERE id = $1 AND author_username = $2 LIMIT 1`, [
+    id,
+    AZALEE_USERNAME,
+  ]);
   return rows[0] ?? null;
 }
 
@@ -105,11 +102,7 @@ function estimateReadTime(text: string): number {
   return Math.max(1, Math.ceil(text.trim().split(/\s+/).length / 200));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   let tweet = await getTweetMetaById(id);
 
@@ -220,9 +213,7 @@ function formatSectionText(text: string, isFirstSection = false) {
               className="list-none flex items-start gap-2.5 my-2 pl-2 text-on-surface-variant/90 leading-relaxed text-base sm:text-lg font-medium"
             >
               <span className="inline-flex size-2 rounded-full bg-[#1DA1F2]/50 mt-2.5 shrink-0 animate-pulse" />
-              <span className="flex-1">
-                {renderFormattedText(trimmed.replace(/^[-\s•]+/g, ""))}
-              </span>
+              <span className="flex-1">{renderFormattedText(trimmed.replace(/^[-\s•]+/g, ""))}</span>
             </li>
           );
         }
@@ -315,9 +306,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
     // Thread
     sections = rawTweets.map((rt: any) => ({
       media: (rt.media || []).map((m: any) => {
-        const downloaded = tweet.media?.find(
-          (dm: any) => dm.original_url === m.url || dm.url === m.url,
-        );
+        const downloaded = tweet.media?.find((dm: any) => dm.original_url === m.url || dm.url === m.url);
         return downloaded || m;
       }),
       text: rt.translation || rt.fullText || rt.text || "",
@@ -344,7 +333,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
 
   // Filter out the hero image from section media to avoid duplicate rendering
   if (sections.length > 0 && heroImage) {
-    sections[0].media = sections[0].media.filter((m) => m.url !== heroImage);
+    sections[0].media = sections[0].media.filter(m => m.url !== heroImage);
   }
 
   return (
@@ -404,13 +393,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
               <div className="flex items-center gap-2">
                 {authorInfo.avatar ? (
                   <div className="size-8 sm:size-9 rounded-full bg-surface-container-high overflow-hidden relative shrink-0 ring-2 ring-background">
-                    <Image
-                      src={authorInfo.avatar}
-                      alt={authorInfo.name}
-                      fill
-                      sizes="36px"
-                      className="object-cover"
-                    />
+                    <Image src={authorInfo.avatar} alt={authorInfo.name} fill sizes="36px" className="object-cover" />
                   </div>
                 ) : (
                   <div
@@ -420,12 +403,8 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
                   </div>
                 )}
                 <div>
-                  <span className="font-bold text-on-surface block sm:inline">
-                    {authorInfo.name}
-                  </span>
-                  <span className="text-on-surface-variant/70 text-xs sm:ml-1.5">
-                    @{tweet.author_username}
-                  </span>
+                  <span className="font-bold text-on-surface block sm:inline">{authorInfo.name}</span>
+                  <span className="text-on-surface-variant/70 text-xs sm:ml-1.5">@{tweet.author_username}</span>
                 </div>
               </div>
 
@@ -434,9 +413,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
               {/* Date */}
               <div className="flex items-center gap-1.5 text-on-surface-variant/80">
                 <Calendar className="size-3.5" />
-                <time dateTime={publishedDate}>
-                  {format(new Date(publishedDate), "d MMMM yyyy", { locale: fr })}
-                </time>
+                <time dateTime={publishedDate}>{format(new Date(publishedDate), "d MMMM yyyy", { locale: fr })}</time>
               </div>
 
               <span className="text-on-surface-variant/20 hidden sm:inline">|</span>
@@ -524,12 +501,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
             <div className="flex items-center gap-4">
               {authorInfo.avatar ? (
                 <div className="size-14 rounded-full bg-surface-container-high overflow-hidden relative border border-outline-variant/15 shrink-0 shadow-inner">
-                  <Image
-                    src={authorInfo.avatar}
-                    alt={authorInfo.name}
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={authorInfo.avatar} alt={authorInfo.name} fill className="object-cover" />
                 </div>
               ) : (
                 <div
@@ -540,16 +512,12 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
               )}
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="font-bold text-on-surface text-base sm:text-lg">
-                    {authorInfo.name}
-                  </p>
+                  <p className="font-bold text-on-surface text-base sm:text-lg">{authorInfo.name}</p>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1DA1F2]/10 text-[#1DA1F2]">
                     Auteur
                   </span>
                 </div>
-                <p className="text-sm text-on-surface-variant/60 font-medium">
-                  @{tweet.author_username}
-                </p>
+                <p className="text-sm text-on-surface-variant/60 font-medium">@{tweet.author_username}</p>
                 <p className="text-xs sm:text-sm text-on-surface-variant/70 mt-1.5 max-w-[520px] leading-relaxed">
                   {authorInfo.bio}
                 </p>

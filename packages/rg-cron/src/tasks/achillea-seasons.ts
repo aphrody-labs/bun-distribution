@@ -9,32 +9,30 @@
 import { sql } from "../lib/db.js";
 
 export interface ResultatRolloverSaisons {
-	activees: number;
-	cloturees: number;
-	success: true;
+  activees: number;
+  cloturees: number;
+  success: true;
 }
 
 export async function runAchilleaSeasonRollover(): Promise<ResultatRolloverSaisons> {
-	return sql.begin(async (tx) => {
-		// Les tables importées d'Achilléa gardent leurs politiques RLS historiques.
-		// `service_role` est le rôle d'écriture déjà utilisé par la projection
-		// Discord dans `achillea-sync.ts`; il est impérativement réinitialisé.
-		await tx`SET LOCAL ROLE service_role`;
+  return sql.begin(async tx => {
+    // Les tables importées d'Achilléa gardent leurs politiques RLS historiques.
+    // `service_role` est le rôle d'écriture déjà utilisé par la projection
+    // Discord dans `achillea-sync.ts`; il est impérativement réinitialisé.
+    await tx`SET LOCAL ROLE service_role`;
 
-		const activees = await tx`
+    const activees = await tx`
 			UPDATE achillea.season
 			   SET state = 'Active', updated_at = now()
 			 WHERE state = 'Upcoming' AND starts_at <= now()
 			 RETURNING id`;
-		const cloturees = await tx`
+    const cloturees = await tx`
 			UPDATE achillea.season
 			   SET state = 'Closed', updated_at = now()
 			 WHERE state = 'Active' AND ends_at <= now()
 			 RETURNING id`;
 
-		console.log(
-			`[achillea] rollover saisons : ${activees.length} activée(s), ${cloturees.length} clôturée(s)`
-		);
-		return { activees: activees.length, cloturees: cloturees.length, success: true };
-	});
+    console.log(`[achillea] rollover saisons : ${activees.length} activée(s), ${cloturees.length} clôturée(s)`);
+    return { activees: activees.length, cloturees: cloturees.length, success: true };
+  });
 }

@@ -33,7 +33,7 @@ export const MIRROR_TABLES = [
   "drops_tables",
   "drops_battles",
   "drops_treasures",
-].map((name) => `inagle_${name}`);
+].map(name => `inagle_${name}`);
 type SqliteEvidence = {
   available: boolean;
   ready: boolean;
@@ -82,36 +82,31 @@ export function sqliteEvidence(
   let database: Database | undefined;
   try {
     database = new Database(canonical, { readonly: true, strict: true });
-    const integrity =
-      database.query<{ quick_check: string }, []>("PRAGMA quick_check").get()?.quick_check === "ok";
+    const integrity = database.query<{ quick_check: string }, []>("PRAGMA quick_check").get()?.quick_check === "ok";
     const names = new Set(
       database
         .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table'")
         .all()
-        .map((row) => row.name),
+        .map(row => row.name),
     );
     const required = kind === "mirror" ? MIRROR_TABLES : ["cfgbin"];
-    let requiredSchema = required.every((name) => names.has(name));
+    let requiredSchema = required.every(name => names.has(name));
     if (kind === "cfgbin" && requiredSchema) {
       const columns = new Set(
         database
           .query<{ name: string }, []>("PRAGMA table_info(cfgbin)")
           .all()
-          .map((row) => row.name),
+          .map(row => row.name),
       );
-      requiredSchema = ["path", "cpk", "size", "parsed", "format", "error", "json"].every((name) =>
-        columns.has(name),
-      );
+      requiredSchema = ["path", "cpk", "size", "parsed", "format", "error", "json"].every(name => columns.has(name));
     }
     const requiredData =
       kind === "cfgbin" ||
       (requiredSchema &&
-        ["characters", "skills", "teams"].every((name) =>
+        ["characters", "skills", "teams"].every(name =>
           Boolean(
             database!
-              .query<{ present: number }, []>(
-                `SELECT EXISTS(SELECT 1 FROM inagle_${name} LIMIT 1) AS present`,
-              )
+              .query<{ present: number }, []>(`SELECT EXISTS(SELECT 1 FROM inagle_${name} LIMIT 1) AS present`)
               .get()?.present,
           ),
         ));
@@ -150,8 +145,7 @@ export function ownedPostgres(container: Container, value: string | undefined): 
       return false;
     return Boolean(
       container.NetworkSettings?.Ports?.["5432/tcp"]?.some(
-        (port) =>
-          ["127.0.0.1", "::1"].includes(port.HostIp) && port.HostPort === (url.port || "5432"),
+        port => ["127.0.0.1", "::1"].includes(port.HostIp) && port.HostPort === (url.port || "5432"),
       ),
     );
   } catch {
@@ -159,13 +153,9 @@ export function ownedPostgres(container: Container, value: string | undefined): 
   }
 }
 
-export function validateBackup(
-  path: string | undefined,
-  kind: "directory" | "file",
-): string | undefined {
+export function validateBackup(path: string | undefined, kind: "directory" | "file"): string | undefined {
   if (!path) return undefined;
-  if (!existsSync(path))
-    throw new StorageRuntimeError("The explicitly configured IECODE backup source does not exist");
+  if (!existsSync(path)) throw new StorageRuntimeError("The explicitly configured IECODE backup source does not exist");
   const canonical = realpathSync(path),
     info = statSync(canonical);
   if ((kind === "directory" && !info.isDirectory()) || (kind === "file" && !info.isFile()))
@@ -195,18 +185,14 @@ function fileChecksum(path: string): string {
 /** A read transaction includes committed WAL pages; no raw source-file copy is used. */
 export async function sqliteSnapshot(source: string, destination: string) {
   if (!existsSync(source) || existsSync(destination))
-    throw new StorageRuntimeError(
-      "SQLite snapshot requires an existing source and a new destination",
-    );
+    throw new StorageRuntimeError("SQLite snapshot requires an existing source and a new destination");
   const database = new Database(source, { readonly: true, strict: true });
   try {
     database.exec("BEGIN");
     const sourceSchema = database
-      .query<{ name: string }, []>(
-        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-      )
+      .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
       .all()
-      .map((row) => row.name);
+      .map(row => row.name);
     const sourceChecksum = fileChecksum(source);
     await Bun.write(destination, database.serialize(), { mode: 0o600 });
     // Make only the new owned snapshot standalone, so a read-only volume
@@ -219,21 +205,15 @@ export async function sqliteSnapshot(source: string, destination: string) {
     }
     const snapshot = new Database(destination, { readonly: true, strict: true });
     try {
-      const integrity =
-        snapshot.query<{ quick_check: string }, []>("PRAGMA quick_check").get()?.quick_check ===
-        "ok";
+      const integrity = snapshot.query<{ quick_check: string }, []>("PRAGMA quick_check").get()?.quick_check === "ok";
       const snapshotSchema = snapshot
-        .query<{ name: string }, []>(
-          "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-        )
+        .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         .all()
-        .map((row) => row.name);
+        .map(row => row.name);
       const schemaParity = JSON.stringify(sourceSchema) === JSON.stringify(snapshotSchema);
       const sourceUnchanged = sourceChecksum === fileChecksum(source);
       if (!integrity || !schemaParity || !sourceUnchanged)
-        throw new StorageRuntimeError(
-          "SQLite snapshot failed integrity, schema parity or source preservation",
-        );
+        throw new StorageRuntimeError("SQLite snapshot failed integrity, schema parity or source preservation");
       return {
         kind: "sqlite" as const,
         integrity,
@@ -254,9 +234,7 @@ export async function sqliteSnapshot(source: string, destination: string) {
 
 function bindFileArgument(source: string, destination: string): string {
   const fields = ["type=bind", `source=${source}`, `target=${destination}`, "readonly"];
-  return fields
-    .map((field) => (/[",\r\n]/.test(field) ? `"${field.replaceAll('"', '""')}"` : field))
-    .join(",");
+  return fields.map(field => (/[",\r\n]/.test(field) ? `"${field.replaceAll('"', '""')}"` : field)).join(",");
 }
 
 function ownedBackupVolume(name: string): boolean {
@@ -319,9 +297,7 @@ async function streamSqliteVolume(path: string, checksum: string, suffix: string
     !Number.isInteger(identity.uid) ||
     !Number.isInteger(identity.gid)
   )
-    throw new StorageRuntimeError(
-      "The selected Bun container does not match its qualified immutable artifact",
-    );
+    throw new StorageRuntimeError("The selected Bun container does not match its qualified immutable artifact");
   const writer = Bun.spawn(
     [
       "docker",
@@ -352,9 +328,7 @@ async function streamSqliteVolume(path: string, checksum: string, suffix: string
     },
   );
   if (await writer.exited)
-    throw new StorageRuntimeError(
-      "Streaming the verified IE snapshot into its isolated volume failed",
-    );
+    throw new StorageRuntimeError("Streaming the verified IE snapshot into its isolated volume failed");
   const verify = native(
     [
       "docker",
@@ -378,9 +352,7 @@ async function streamSqliteVolume(path: string, checksum: string, suffix: string
     { ...process.env, IECODE_BACKUP_SHA256: checksum },
   );
   if (verify.exitCode !== 0)
-    throw new StorageRuntimeError(
-      "The read-only IE backup volume failed checksum or SQLite integrity verification",
-    );
+    throw new StorageRuntimeError("The read-only IE backup volume failed checksum or SQLite integrity verification");
   return name;
 }
 
@@ -427,11 +399,8 @@ async function backupStorage() {
   } else if (state.report.selected === "postgres") {
     path = join(directory, `ie-postgres-${suffix}.dump`);
     await Bun.write(path, new Uint8Array(), { mode: 0o600 });
-    const container = state.containers.find((item) =>
-      ownedPostgres(item, state.childEnv.NIE_PG_URL),
-    );
-    if (!container?.Id)
-      throw new StorageRuntimeError("IE PostgreSQL ownership changed before backup");
+    const container = state.containers.find(item => ownedPostgres(item, state.childEnv.NIE_PG_URL));
+    if (!container?.Id) throw new StorageRuntimeError("IE PostgreSQL ownership changed before backup");
     const dump = Bun.spawn(
       [
         "docker",
@@ -462,18 +431,14 @@ async function backupStorage() {
       "--list",
       "/backup/input.dump",
     ]);
-    if (probe.exitCode !== 0)
-      throw new StorageRuntimeError("The owned IE PostgreSQL backup archive is invalid");
+    if (probe.exitCode !== 0) throw new StorageRuntimeError("The owned IE PostgreSQL backup archive is invalid");
     receipt = {
       kind: "postgres",
       sha256: fileChecksum(path),
       bytes: statSync(path).size,
       archiveListVerified: true,
     };
-  } else
-    throw new StorageRuntimeError(
-      "No qualified IE SQLite or PostgreSQL source is available for backup",
-    );
+  } else throw new StorageRuntimeError("No qualified IE SQLite or PostgreSQL source is available for backup");
   await Bun.write(
     `${path}.manifest.json`,
     JSON.stringify(
@@ -504,8 +469,7 @@ export function selectStorage(options: {
     throw new Error("NIE_DATA_SOURCE must be auto, postgres, sqlite or vfs");
   if (selected === "postgres" && (options.postgresDisabled || !options.postgres))
     throw new Error("The selected IE PostgreSQL source is not qualified");
-  if (selected === "sqlite" && !options.sqlite)
-    throw new Error("The selected IE SQLite mirror is not qualified");
+  if (selected === "sqlite" && !options.sqlite) throw new Error("The selected IE SQLite mirror is not qualified");
   if (selected !== "auto") return selected as "postgres" | "sqlite" | "vfs";
   return options.gameAvailable
     ? "vfs"
@@ -573,7 +537,7 @@ async function postgresReady(url: string): Promise<boolean> {
     const tables =
       await sql`SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'inagle_%'`;
     const names = new Set(tables.map((row: { table_name: string }) => row.table_name));
-    if (!MIRROR_TABLES.every((name) => names.has(name))) return false;
+    if (!MIRROR_TABLES.every(name => names.has(name))) return false;
     const data =
       await sql`SELECT EXISTS(SELECT 1 FROM public.inagle_characters LIMIT 1) AND EXISTS(SELECT 1 FROM public.inagle_skills LIMIT 1) AND EXISTS(SELECT 1 FROM public.inagle_teams LIMIT 1) AS ready`;
     return data[0]?.ready === true;
@@ -600,7 +564,7 @@ export async function inspectStorage(env: Environment = process.env) {
   const cache = sqliteEvidence(cachePath, "cfgbin", context.metadataDatabase);
   const url = env.NIE_PG_URL || context.runtime.postgresUrl;
   const containers = postgresContainers();
-  const container = containers.find((item) => ownedPostgres(item, url));
+  const container = containers.find(item => ownedPostgres(item, url));
   const pgIsReady = container?.Id
     ? native([
         "docker",
@@ -631,8 +595,7 @@ export async function inspectStorage(env: Environment = process.env) {
     NIE_DATA_SOURCE: selected,
     INAGLE_DATA_SOURCE: selected,
   };
-  if (context.runtime.nativeLibraryPath)
-    childEnv.IECODE_LIB_PATH = context.runtime.nativeLibraryPath;
+  if (context.runtime.nativeLibraryPath) childEnv.IECODE_LIB_PATH = context.runtime.nativeLibraryPath;
   if (selected === "postgres") childEnv.NIE_PG_URL = url;
   if (mirror.ready) childEnv.NIE_WIKI_DB = realpathSync(mirrorPath);
   if (cache.ready) childEnv.IEVR_CFGBIN_DB = realpathSync(cachePath);
@@ -655,9 +618,7 @@ export async function inspectStorage(env: Environment = process.env) {
     mirror,
     cfgbinCache: cache,
     gameAvailable,
-    nativeLibraryAvailable: Boolean(
-      childEnv.IECODE_LIB_PATH && existsSync(childEnv.IECODE_LIB_PATH),
-    ),
+    nativeLibraryAvailable: Boolean(childEnv.IECODE_LIB_PATH && existsSync(childEnv.IECODE_LIB_PATH)),
     backups: {
       directoryConfigured: Boolean(backupDir),
       fileConfigured: Boolean(backupFile),
@@ -671,15 +632,8 @@ export async function inspectStorage(env: Environment = process.env) {
 async function setupStorage() {
   const state = await inspectStorage();
   if (state.containers.length)
-    throw new Error(
-      "An IE-owned PostgreSQL service already exists; setup will not initialize or restore it",
-    );
-  const priorVolume = native([
-    "docker",
-    "volume",
-    "inspect",
-    `${contract.project}_ie-postgres-data`,
-  ]);
+    throw new Error("An IE-owned PostgreSQL service already exists; setup will not initialize or restore it");
+  const priorVolume = native(["docker", "volume", "inspect", `${contract.project}_ie-postgres-data`]);
   if (priorVolume.exitCode === 0)
     throw new StorageRuntimeError(
       "An IE PostgreSQL data volume already exists; setup will not initialize or restore it",
@@ -687,8 +641,7 @@ async function setupStorage() {
   const runtimeDir = dirname(state.context.path),
     passwordFile = join(runtimeDir, "secrets", "postgres-password");
   mkdirSync(dirname(passwordFile), { recursive: true, mode: 0o700 });
-  if (!existsSync(passwordFile))
-    await Bun.write(passwordFile, randomBytes(32).toString("base64url"), { mode: 0o600 });
+  if (!existsSync(passwordFile)) await Bun.write(passwordFile, randomBytes(32).toString("base64url"), { mode: 0o600 });
   const files = ["--file", join(repositoryRoot, "config/container/compose.storage.yaml")];
   if (state.backupDir || state.backupFile) {
     const override = join(runtimeDir, "compose.storage.override.json");
@@ -717,16 +670,15 @@ async function setupStorage() {
   const composeEnv = { ...process.env, IECODE_PG_PASSWORD_FILE: passwordFile };
   const validation = native([...args, "config", "--quiet"], composeEnv);
   if (validation.exitCode !== 0) throw new Error("The IE storage Compose contract is invalid");
-  const processHandle = Bun.spawn(
-    [...args, "up", "--detach", "--wait", "--wait-timeout", "120", "postgres"],
-    { cwd: repositoryRoot, env: composeEnv, stdout: "pipe", stderr: "pipe" },
-  );
-  if (await processHandle.exited)
-    throw new Error("The new isolated IE PostgreSQL service did not become healthy");
+  const processHandle = Bun.spawn([...args, "up", "--detach", "--wait", "--wait-timeout", "120", "postgres"], {
+    cwd: repositoryRoot,
+    env: composeEnv,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (await processHandle.exited) throw new Error("The new isolated IE PostgreSQL service did not become healthy");
   const container = postgresContainers()[0];
-  const port = container?.NetworkSettings?.Ports?.["5432/tcp"]?.find(
-    (item) => item.HostIp === "127.0.0.1",
-  )?.HostPort;
+  const port = container?.NetworkSettings?.Ports?.["5432/tcp"]?.find(item => item.HostIp === "127.0.0.1")?.HostPort;
   if (!port) throw new Error("The IE PostgreSQL service lacks an isolated loopback port");
   const password = readFileSync(passwordFile, "utf8").trim();
   const url = `postgresql://${contract.postgresUser}:${encodeURIComponent(password)}@127.0.0.1:${port}/${contract.postgresDatabase}`;
@@ -744,8 +696,7 @@ if (import.meta.main) {
   try {
     await checkBunRuntime(repositoryRoot);
     const [operation = "status", ...args] = process.argv.slice(2);
-    if (operation === "status")
-      console.log(JSON.stringify((await inspectStorage()).report, null, 2));
+    if (operation === "status") console.log(JSON.stringify((await inspectStorage()).report, null, 2));
     else if (operation === "backup") console.log(JSON.stringify(await backupStorage(), null, 2));
     else if (operation === "setup") console.log(JSON.stringify(await setupStorage(), null, 2));
     else if (operation === "run") {

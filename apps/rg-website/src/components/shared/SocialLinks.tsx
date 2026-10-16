@@ -1,3 +1,3 @@
 export default function SocialLinks() {
-	return null;
+  return null;
 }

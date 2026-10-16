@@ -37,12 +37,7 @@
  */
 import { GatewayIntentBits } from "discord.js";
 
-import {
-	ACHILLEA_GUILD_ID,
-	AZALEE_GUILD_ID,
-	RG_GUILD_ID,
-	resolveGuildIds,
-} from "@rosegriffon/types/discord";
+import { ACHILLEA_GUILD_ID, AZALEE_GUILD_ID, RG_GUILD_ID, resolveGuildIds } from "@rosegriffon/types/discord";
 
 /**
  * Vue lisible de l'environnement.
@@ -72,158 +67,158 @@ export const PROFIL_PAR_DEFAUT: NomProfil = "rg";
 
 /** Identité visuelle appliquée aux embeds du profil. */
 export interface MarqueProfil {
-	/** Couleur d'accent, en hexadécimal CSS. Seule source de couleur du bot. */
-	couleurHex: `#${string}`;
-	/** Pied de page des embeds — le domaine que le bot représente. */
-	piedDePage: string;
-	/** Racine des liens publics construits par `rgUrl()`. */
-	urlBase: string;
-	/**
-	 * Variable d'env qui peut remplacer `urlBase` (recette, préversion).
-	 *
-	 * Elle est PROPRE À CHAQUE PROFIL, et ce n'est pas un détail : les deux
-	 * services lisent le même `.env` racine. Si les deux profils écoutaient
-	 * `WEBSITE_URL`, la ligne `Environment=WEBSITE_URL=https://rosegriffon.fr`
-	 * de `infra/systemd/rg-bot.service` ferait pointer les liens du bot Azalée
-	 * vers le site principal.
-	 */
-	variableUrlBase: string;
+  /** Couleur d'accent, en hexadécimal CSS. Seule source de couleur du bot. */
+  couleurHex: `#${string}`;
+  /** Pied de page des embeds — le domaine que le bot représente. */
+  piedDePage: string;
+  /** Racine des liens publics construits par `rgUrl()`. */
+  urlBase: string;
+  /**
+   * Variable d'env qui peut remplacer `urlBase` (recette, préversion).
+   *
+   * Elle est PROPRE À CHAQUE PROFIL, et ce n'est pas un détail : les deux
+   * services lisent le même `.env` racine. Si les deux profils écoutaient
+   * `WEBSITE_URL`, la ligne `Environment=WEBSITE_URL=https://rosegriffon.fr`
+   * de `infra/systemd/rg-bot.service` ferait pointer les liens du bot Azalée
+   * vers le site principal.
+   */
+  variableUrlBase: string;
 }
 
 /** Publication automatique des nouveaux posts X dans un salon. */
 export interface AnnoncePostsProfil {
-	/**
-	 * Salon de destination figé par le registre, `""` s'il n'est pas figé.
-	 *
-	 * Rose Griffon annonce depuis toujours dans le salon désigné par
-	 * `DISCORD_NEWS_CHANNEL_ID` ; on ne le fige pas ici pour ne pas changer un
-	 * comportement en production. Azalée, elle, n'a pas de variable existante :
-	 * son salon est figé (il est public et vérifiable, ce n'est pas un secret).
-	 */
-	salonId: string;
-	/** Variable d'env qui l'emporte sur `salonId` quand elle est posée. */
-	variableSalon: string;
-	/**
-	 * Canal logique du curseur, clé primaire de
-	 * `public.tweet_notification_curseurs` (colonne `canal`, `text` NOT NULL,
-	 * PK — vérifié en psql le 13/8/2026 ; une seule ligne existe : `discord`).
-	 *
-	 * Deux profils = deux curseurs. Les partager ferait avancer le curseur
-	 * commun au premier qui publie, et l'autre serveur ne verrait jamais le
-	 * post : le curseur EST la mémoire de « ce qui a déjà été annoncé ».
-	 */
-	curseur: string;
-	/**
-	 * Rôle mentionné après l'annonce, `null` si aucun.
-	 *
-	 * Relevé dans le salon `1349528692086276148` : `<@&1359506615765827744>`,
-	 * posté en spoiler dans un message à part.
-	 */
-	roleMention: string | null;
-	/**
-	 * Salon où DEMANDER avant de publier, `null` pour publier directement.
-	 *
-	 * ── POURQUOI UNE VALIDATION HUMAINE ────────────────────────────────────
-	 * Le compte suivi ne publie pas que des annonces : il retweete, il répond,
-	 * il commente. Les deux formes les plus bruyantes sont filtrées
-	 * automatiquement (`estRetweet`, `estReponse`), mais aucun filtre écrit à
-	 * l'avance ne dira jamais si un post donné MÉRITE de notifier deux mille
-	 * personnes. Un humain le sait en une seconde ; c'est donc lui qui décide.
-	 *
-	 * Quand ce salon est posé, le drain n'annonce plus rien de lui-même : il
-	 * dépose une carte de validation, et l'annonce ne part qu'au clic. Le
-	 * curseur, lui, avance quand même — sans quoi le même post serait proposé
-	 * toutes les cinq minutes jusqu'à ce que quelqu'un tranche.
-	 */
-	salonValidation: string | null;
-	/**
-	 * Comptes X annoncés par CE profil, `null` pour suivre le réglage partagé.
-	 *
-	 * ── POURQUOI UNE LISTE PAR PROFIL ──────────────────────────────────────
-	 * `settings['tweets.notification'].comptes` est UNE ligne pour les deux
-	 * bots : elle porte aujourd'hui huit comptes (Level5, les comptes officiels
-	 * Inazuma, Rose Griffon, Azalée). C'est la bonne liste pour une veille
-	 * thématique — ce n'est pas la bonne pour un salon d'annonce de MARQUE.
-	 *
-	 * Le salon d'annonce d'Azalée ne parle que d'Azalée : y voir arriver un post
-	 * de `@rose_griffon` ou de `@Level5Hub` est une erreur d'adressage, pas un
-	 * choix éditorial. (Constaté le 13/8/2026 : la première carte de validation
-	 * proposée portait un post de `@rose_griffon`.)
-	 *
-	 * La liste vit dans le REGISTRE et non en base : c'est l'identité du bot,
-	 * pas un réglage d'exploitation. Un profil qui annoncerait soudain un autre
-	 * compte doit être une décision lue dans le code, pas un UPDATE oublié.
-	 */
-	comptes: readonly string[] | null;
+  /**
+   * Salon de destination figé par le registre, `""` s'il n'est pas figé.
+   *
+   * Rose Griffon annonce depuis toujours dans le salon désigné par
+   * `DISCORD_NEWS_CHANNEL_ID` ; on ne le fige pas ici pour ne pas changer un
+   * comportement en production. Azalée, elle, n'a pas de variable existante :
+   * son salon est figé (il est public et vérifiable, ce n'est pas un secret).
+   */
+  salonId: string;
+  /** Variable d'env qui l'emporte sur `salonId` quand elle est posée. */
+  variableSalon: string;
+  /**
+   * Canal logique du curseur, clé primaire de
+   * `public.tweet_notification_curseurs` (colonne `canal`, `text` NOT NULL,
+   * PK — vérifié en psql le 13/8/2026 ; une seule ligne existe : `discord`).
+   *
+   * Deux profils = deux curseurs. Les partager ferait avancer le curseur
+   * commun au premier qui publie, et l'autre serveur ne verrait jamais le
+   * post : le curseur EST la mémoire de « ce qui a déjà été annoncé ».
+   */
+  curseur: string;
+  /**
+   * Rôle mentionné après l'annonce, `null` si aucun.
+   *
+   * Relevé dans le salon `1349528692086276148` : `<@&1359506615765827744>`,
+   * posté en spoiler dans un message à part.
+   */
+  roleMention: string | null;
+  /**
+   * Salon où DEMANDER avant de publier, `null` pour publier directement.
+   *
+   * ── POURQUOI UNE VALIDATION HUMAINE ────────────────────────────────────
+   * Le compte suivi ne publie pas que des annonces : il retweete, il répond,
+   * il commente. Les deux formes les plus bruyantes sont filtrées
+   * automatiquement (`estRetweet`, `estReponse`), mais aucun filtre écrit à
+   * l'avance ne dira jamais si un post donné MÉRITE de notifier deux mille
+   * personnes. Un humain le sait en une seconde ; c'est donc lui qui décide.
+   *
+   * Quand ce salon est posé, le drain n'annonce plus rien de lui-même : il
+   * dépose une carte de validation, et l'annonce ne part qu'au clic. Le
+   * curseur, lui, avance quand même — sans quoi le même post serait proposé
+   * toutes les cinq minutes jusqu'à ce que quelqu'un tranche.
+   */
+  salonValidation: string | null;
+  /**
+   * Comptes X annoncés par CE profil, `null` pour suivre le réglage partagé.
+   *
+   * ── POURQUOI UNE LISTE PAR PROFIL ──────────────────────────────────────
+   * `settings['tweets.notification'].comptes` est UNE ligne pour les deux
+   * bots : elle porte aujourd'hui huit comptes (Level5, les comptes officiels
+   * Inazuma, Rose Griffon, Azalée). C'est la bonne liste pour une veille
+   * thématique — ce n'est pas la bonne pour un salon d'annonce de MARQUE.
+   *
+   * Le salon d'annonce d'Azalée ne parle que d'Azalée : y voir arriver un post
+   * de `@rose_griffon` ou de `@Level5Hub` est une erreur d'adressage, pas un
+   * choix éditorial. (Constaté le 13/8/2026 : la première carte de validation
+   * proposée portait un post de `@rose_griffon`.)
+   *
+   * La liste vit dans le REGISTRE et non en base : c'est l'identité du bot,
+   * pas un réglage d'exploitation. Un profil qui annoncerait soudain un autre
+   * compte doit être une décision lue dans le code, pas un UPDATE oublié.
+   */
+  comptes: readonly string[] | null;
 }
 
 export interface Profil {
-	nom: NomProfil;
-	/** Nom lisible, tel qu'il apparaît dans les journaux et les messages d'erreur. */
-	titre: string;
-	/**
-	 * `botId` de discordx (`ClientOptions.botId`, défaut `"bot"` —
-	 * `dist/index.js:259`).
-	 *
-	 * Il ne sert à rien tant qu'un processus ne pilote qu'un client, et c'est
-	 * voulu : le jour où l'on voudra les deux bots dans UN processus, il suffira
-	 * de décorer les commandes avec `@Bot(...)`. Sans décorateur, une commande
-	 * est acceptée par tous les bots (`isBotAllowed` rend `true` quand la liste
-	 * est vide, `dist/index.js:659`) — poser cet identifiant aujourd'hui ne
-	 * retire donc aucune commande à personne.
-	 */
-	identifiantBot: string;
-	/** Variable d'env portant le jeton du bot. */
-	variableJeton: string;
-	/**
-	 * Variables acceptées à défaut de `variableJeton`, dans l'ordre.
-	 *
-	 * Uniquement pour ne casser aucun déploiement existant : `DISCORD_TOKEN`
-	 * était le nom historique côté Rose Griffon.
-	 */
-	variablesJetonSecours: readonly string[];
-	/** Guildes où enregistrer les commandes (défaut, avant lecture de l'env). */
-	guildes: readonly string[];
-	/**
-	 * Où les slash commands sont publiées.
-	 *
-	 * `"guildes"` — l'enregistrement vise la liste ci-dessus, et seulement elle.
-	 * La publication est immédiate, mais tout serveur absent de la liste voit un
-	 * bot en ligne et muet : il faut modifier le code puis redéployer pour
-	 * l'accueillir.
-	 *
-	 * `"globale"` — les commandes appartiennent à l'application, donc à tous les
-	 * serveurs qui l'invitent, présents comme futurs. C'est le mode d'un bot
-	 * public. Discord met quelques minutes à propager une modification globale
-	 * (contre l'instant pour une guilde), ce qui est le prix à payer pour ne plus
-	 * avoir à déclarer chaque serveur.
-	 *
-	 * Un profil global ne doit PAS conserver de commandes de guilde : Discord les
-	 * additionne, et le membre voit chaque commande en double.
-	 */
-	porteeCommandes: "globale" | "guildes";
-	/**
-	 * Intents de la passerelle — ILS NE SONT PAS LES MÊMES POUR LES DEUX BOTS.
-	 *
-	 * `GuildMembers` est un intent PRIVILÉGIÉ : il doit être coché dans le portail
-	 * développeur de CHAQUE application, sinon Discord ferme la connexion à
-	 * l'ouverture avec « Used disallowed intents » — et le bot ne démarre pas du
-	 * tout. Mesuré sur l'application Azalée le 13/8/2026 : `[Guilds]` ouvre la
-	 * passerelle (`𝓐𝔃𝓪𝓵𝓮́𝓮 🌸#9761`), `[Guilds, GuildMembers]` la fait refuser.
-	 *
-	 * Ce n'est pas une limitation subie : le profil Azalée n'en a pas besoin. Ses
-	 * commandes lisent la base et les APIs internes ; c'est le profil Rose Griffon
-	 * qui résout des membres (`/membre discord`, `/administration synchroniser`,
-	 * `guild.members.fetch()`) et qui écoute `guildMemberAdd`.
-	 */
-	intents: readonly GatewayIntentBits[];
-	/**
-	 * Modules à importer pour leurs décorateurs, chemins relatifs à
-	 * `apps/bot/src`. Depuis `src/index.ts` : `await import(\`./${chemin}\`)`.
-	 */
-	modules: readonly string[];
-	marque: MarqueProfil;
-	annoncePosts: AnnoncePostsProfil | null;
+  nom: NomProfil;
+  /** Nom lisible, tel qu'il apparaît dans les journaux et les messages d'erreur. */
+  titre: string;
+  /**
+   * `botId` de discordx (`ClientOptions.botId`, défaut `"bot"` —
+   * `dist/index.js:259`).
+   *
+   * Il ne sert à rien tant qu'un processus ne pilote qu'un client, et c'est
+   * voulu : le jour où l'on voudra les deux bots dans UN processus, il suffira
+   * de décorer les commandes avec `@Bot(...)`. Sans décorateur, une commande
+   * est acceptée par tous les bots (`isBotAllowed` rend `true` quand la liste
+   * est vide, `dist/index.js:659`) — poser cet identifiant aujourd'hui ne
+   * retire donc aucune commande à personne.
+   */
+  identifiantBot: string;
+  /** Variable d'env portant le jeton du bot. */
+  variableJeton: string;
+  /**
+   * Variables acceptées à défaut de `variableJeton`, dans l'ordre.
+   *
+   * Uniquement pour ne casser aucun déploiement existant : `DISCORD_TOKEN`
+   * était le nom historique côté Rose Griffon.
+   */
+  variablesJetonSecours: readonly string[];
+  /** Guildes où enregistrer les commandes (défaut, avant lecture de l'env). */
+  guildes: readonly string[];
+  /**
+   * Où les slash commands sont publiées.
+   *
+   * `"guildes"` — l'enregistrement vise la liste ci-dessus, et seulement elle.
+   * La publication est immédiate, mais tout serveur absent de la liste voit un
+   * bot en ligne et muet : il faut modifier le code puis redéployer pour
+   * l'accueillir.
+   *
+   * `"globale"` — les commandes appartiennent à l'application, donc à tous les
+   * serveurs qui l'invitent, présents comme futurs. C'est le mode d'un bot
+   * public. Discord met quelques minutes à propager une modification globale
+   * (contre l'instant pour une guilde), ce qui est le prix à payer pour ne plus
+   * avoir à déclarer chaque serveur.
+   *
+   * Un profil global ne doit PAS conserver de commandes de guilde : Discord les
+   * additionne, et le membre voit chaque commande en double.
+   */
+  porteeCommandes: "globale" | "guildes";
+  /**
+   * Intents de la passerelle — ILS NE SONT PAS LES MÊMES POUR LES DEUX BOTS.
+   *
+   * `GuildMembers` est un intent PRIVILÉGIÉ : il doit être coché dans le portail
+   * développeur de CHAQUE application, sinon Discord ferme la connexion à
+   * l'ouverture avec « Used disallowed intents » — et le bot ne démarre pas du
+   * tout. Mesuré sur l'application Azalée le 13/8/2026 : `[Guilds]` ouvre la
+   * passerelle (`𝓐𝔃𝓪𝓵𝓮́𝓮 🌸#9761`), `[Guilds, GuildMembers]` la fait refuser.
+   *
+   * Ce n'est pas une limitation subie : le profil Azalée n'en a pas besoin. Ses
+   * commandes lisent la base et les APIs internes ; c'est le profil Rose Griffon
+   * qui résout des membres (`/membre discord`, `/administration synchroniser`,
+   * `guild.members.fetch()`) et qui écoute `guildMemberAdd`.
+   */
+  intents: readonly GatewayIntentBits[];
+  /**
+   * Modules à importer pour leurs décorateurs, chemins relatifs à
+   * `apps/bot/src`. Depuis `src/index.ts` : `await import(\`./${chemin}\`)`.
+   */
+  modules: readonly string[];
+  marque: MarqueProfil;
+  annoncePosts: AnnoncePostsProfil | null;
 }
 
 /**
@@ -248,19 +243,19 @@ export interface Profil {
  * commandes eux-mêmes.
  */
 const MODULES_AZALEE = [
-	// `/article` n'est PAS ici : il lit les articles des DEUX sites, pas seulement
-	// ceux du jeu, et son pendant d'écriture (`/gestion article`) vit déjà chez le
-	// bot Rose Griffon. Le laisser au profil Azalée séparait la lecture de
-	// l'écriture entre deux identités Discord, ce qui n'a aucun sens pour le
-	// staff qui utilise les deux dans la même minute. Cf. `docs/bot-commandes.md`.
-	"commands/azalee-jeu.ts",
-	"commands/cpk.ts",
-	"commands/cdn.ts",
-	"commands/x.ts",
-	// Les boutons de la carte de validation d'annonce. Ce module ne déclare
-	// aucune commande — seulement un `@ButtonComponent` —, mais discordx doit
-	// l'importer pour que ses boutons répondent.
-	"commands/validation-annonce.ts",
+  // `/article` n'est PAS ici : il lit les articles des DEUX sites, pas seulement
+  // ceux du jeu, et son pendant d'écriture (`/gestion article`) vit déjà chez le
+  // bot Rose Griffon. Le laisser au profil Azalée séparait la lecture de
+  // l'écriture entre deux identités Discord, ce qui n'a aucun sens pour le
+  // staff qui utilise les deux dans la même minute. Cf. `docs/bot-commandes.md`.
+  "commands/azalee-jeu.ts",
+  "commands/cpk.ts",
+  "commands/cdn.ts",
+  "commands/x.ts",
+  // Les boutons de la carte de validation d'annonce. Ce module ne déclare
+  // aucune commande — seulement un `@ButtonComponent` —, mais discordx doit
+  // l'importer pour que ses boutons répondent.
+  "commands/validation-annonce.ts",
 ] as const;
 
 /**
@@ -272,57 +267,57 @@ const MODULES_AZALEE = [
  * décorateur : il n'a rien à faire ici.
  */
 const MODULES_RG = [
-	// Passerelle vers le bot Achillea : il tient sa propre base et sa propre API, et
-	// c'est le profil Rose Griffon qui l'interroge — le bot Azalée, lui, ne parle que
-	// du wiki.
-	"commands/achillea.ts",
-	"commands/administration/racine.ts",
-	"commands/administration/racine-gestion.ts",
-	"commands/administration/racine-moderation.ts",
-	"commands/administration/article.ts",
-	"commands/administration/cron.ts",
-	"commands/administration/equipe.ts",
-	"commands/administration/evenement.ts",
-	"commands/administration/moderation.ts",
-	"commands/administration/multicomptes.ts",
-	"commands/administration/reglages.ts",
-	"commands/administration/role.ts",
-	"commands/administration/salon.ts",
-	"commands/administration/sondage.ts",
-	"commands/administration/ticket.ts",
-	"commands/administration/niveaux.ts",
-	"commands/administration/roles.ts",
-	"commands/administration/accueil.ts",
-	"commands/administration/historique.ts",
-	"commands/administration/journal.ts",
-	"commands/administration/automod.ts",
-	"commands/administration/suggestion.ts",
-	"commands/administration/stream.ts",
-	"commands/administration/synchroniser.ts",
-	"commands/administration/utilisateur.ts",
-	"commands/administration/veille.ts",
-	"commands/agenda.ts",
-	// Lecture publique des articles des deux sites. Son pendant d'écriture est
-	// `commands/administration/article.ts`, juste au-dessus.
-	"commands/article.ts",
-	"commands/staff/racine.ts",
-	"commands/staff/cron.ts",
-	"commands/staff/discord.ts",
-	"commands/staff/services.ts",
-	"commands/staff/stats.ts",
-	"commands/staff/veille.ts",
-	"commands/staff/web.ts",
-	"commands/boutique.ts",
-	"commands/campagne.ts",
-	"commands/equipe.ts",
-	"commands/membre.ts",
-	"commands/patreon.ts",
-	"commands/sondage.ts",
-	"commands/suggestion.ts",
-	"commands/profil.ts",
-	"commands/kizuna.ts",
-	"commands/collection.ts",
-	"commands/ticket.ts",
+  // Passerelle vers le bot Achillea : il tient sa propre base et sa propre API, et
+  // c'est le profil Rose Griffon qui l'interroge — le bot Azalée, lui, ne parle que
+  // du wiki.
+  "commands/achillea.ts",
+  "commands/administration/racine.ts",
+  "commands/administration/racine-gestion.ts",
+  "commands/administration/racine-moderation.ts",
+  "commands/administration/article.ts",
+  "commands/administration/cron.ts",
+  "commands/administration/equipe.ts",
+  "commands/administration/evenement.ts",
+  "commands/administration/moderation.ts",
+  "commands/administration/multicomptes.ts",
+  "commands/administration/reglages.ts",
+  "commands/administration/role.ts",
+  "commands/administration/salon.ts",
+  "commands/administration/sondage.ts",
+  "commands/administration/ticket.ts",
+  "commands/administration/niveaux.ts",
+  "commands/administration/roles.ts",
+  "commands/administration/accueil.ts",
+  "commands/administration/historique.ts",
+  "commands/administration/journal.ts",
+  "commands/administration/automod.ts",
+  "commands/administration/suggestion.ts",
+  "commands/administration/stream.ts",
+  "commands/administration/synchroniser.ts",
+  "commands/administration/utilisateur.ts",
+  "commands/administration/veille.ts",
+  "commands/agenda.ts",
+  // Lecture publique des articles des deux sites. Son pendant d'écriture est
+  // `commands/administration/article.ts`, juste au-dessus.
+  "commands/article.ts",
+  "commands/staff/racine.ts",
+  "commands/staff/cron.ts",
+  "commands/staff/discord.ts",
+  "commands/staff/services.ts",
+  "commands/staff/stats.ts",
+  "commands/staff/veille.ts",
+  "commands/staff/web.ts",
+  "commands/boutique.ts",
+  "commands/campagne.ts",
+  "commands/equipe.ts",
+  "commands/membre.ts",
+  "commands/patreon.ts",
+  "commands/sondage.ts",
+  "commands/suggestion.ts",
+  "commands/profil.ts",
+  "commands/kizuna.ts",
+  "commands/collection.ts",
+  "commands/ticket.ts",
 ] as const;
 
 /**
@@ -359,100 +354,96 @@ const SALON_ANNONCE_AZALEE = "1349528692086276148";
 const SALON_VALIDATION_AZALEE = "1220382147811082340";
 
 export const PROFILS: Readonly<Record<NomProfil, Profil>> = Object.freeze({
-	rg: Object.freeze({
-		nom: "rg",
-		titre: "Rose Griffon",
-		identifiantBot: "rg",
-		variableJeton: "DISCORD_BOT_TOKEN",
-		variablesJetonSecours: ["DISCORD_TOKEN"],
-		// Les deux serveurs : le bot Rose Griffon est déjà présent sur Azalée et
-		// y sert ses commandes de communauté. Le second bot s'y AJOUTE, il ne le
-		// remplace pas.
-		guildes: [RG_GUILD_ID, AZALEE_GUILD_ID],
-		// Ce bot-ci reste par guilde : il porte l'administration de la communauté
-		// Rose Griffon (synchronisation des membres, niveaux, accueil), qui n'a
-		// aucun sens ailleurs. Le publier globalement l'offrirait à des serveurs
-		// dont il ne connaît ni les membres ni les rôles.
-		porteeCommandes: "guildes",
-		// `GuildMessages` s'ajoute pour le système de niveaux : il livre l'événement
-		// `messageCreate`, donc l'AUTEUR, le SALON et l'HORODATAGE d'un message.
-		// Il ne livre PAS son contenu — ça, c'est `MessageContent`, un intent
-		// privilégié que ces applications n'ont pas et ne demanderont pas. On compte
-		// les messages sans jamais les lire, et ce n'est pas une promesse : c'est ce
-		// que Discord nous envoie.
-		intents: [
-			GatewayIntentBits.Guilds,
-			GatewayIntentBits.GuildMembers,
-			GatewayIntentBits.GuildMessages,
-		],
-		modules: MODULES_RG,
-		marque: {
-			couleurHex: "#a14b3f" as const,
-			piedDePage: "rosegriffon.fr",
-			urlBase: "https://rosegriffon.fr",
-			variableUrlBase: "WEBSITE_URL",
-		},
-		// Le bot Rose Griffon N'ANNONCE RIEN. Décision explicite du 13/8/2026 :
-		// l'annonce des posts X appartient au bot Azalée et à lui seul.
-		//
-		// Elle est prise ICI, dans le registre, et non en désactivant le réglage
-		// partagé `settings['tweets.notification'].actif` : ce réglage est UNE
-		// ligne pour les deux profils, donc le couper pour Rose Griffon couperait
-		// aussi Azalée. `null` veut dire « ce profil n'annonce pas » — le
-		// notifieur ne démarre pas du tout, aucun minuteur, aucun curseur.
-		annoncePosts: null,
-	}),
-	azalee: Object.freeze({
-		nom: "azalee",
-		titre: "Azalée",
-		identifiantBot: "azalee",
-		variableJeton: "AZALEE_DISCORD_BOT_TOKEN",
-		variablesJetonSecours: [],
-		// Conservée pour le NETTOYAGE seulement : ce profil publie désormais ses
-		// commandes globalement (voir `porteeCommandes`), et cette liste sert à
-		// savoir où effacer les anciennes commandes de guilde, qui feraient
-		// doublon. Aucun enregistrement ne la vise plus.
-		guildes: [RG_GUILD_ID, AZALEE_GUILD_ID, ACHILLEA_GUILD_ID],
-		// Bot PUBLIC (`bot_public: true` sur l'application 1537394034769657867) :
-		// n'importe quel serveur peut l'inviter, et le 14/8/2026 Achillea l'a fait.
-		// Avec un enregistrement par guilde, ce serveur voyait un bot en ligne et
-		// sans aucune commande — la liste ci-dessus ne le contenait pas, et
-		// l'ajouter à la main aurait fallu recommencer au serveur suivant.
-		// Ce que sert ce profil (fiches du wiki, données de jeu) ne dépend
-		// d'aucune configuration propre à un serveur : c'est exactement le cas
-		// d'usage des commandes globales.
-		porteeCommandes: "globale",
-		// `Guilds` SEUL : l'intent privilégié `GuildMembers` n'est pas accordé à
-		// cette application (vérifié — « Used disallowed intents »), et aucune
-		// commande de ce profil ne résout un membre.
-		intents: [GatewayIntentBits.Guilds],
-		modules: MODULES_AZALEE,
-		marque: {
-			// Orange Azalée de la charte (cf. `CLAUDE.md`, palette Rose Griffon).
-			couleurHex: "#F89C5A" as const,
-			piedDePage: "azalee.rosegriffon.fr",
-			urlBase: "https://azalee.rosegriffon.fr",
-			variableUrlBase: "AZALEE_WEBSITE_URL",
-		},
-		annoncePosts: {
-			salonId: SALON_ANNONCE_AZALEE,
-			variableSalon: "AZALEE_DISCORD_NEWS_CHANNEL_ID",
-			curseur: "azalee",
-			roleMention: "1359506615765827744",
-			// `🌿📰〡général-azalée`, sur le serveur Rose Griffon. Rien ne part dans
-			// le salon d'annonce sans qu'un humain ait cliqué ici.
-			salonValidation: SALON_VALIDATION_AZALEE,
-			// UNIQUEMENT les posts d'Azalée. Le salon d'annonce porte la marque
-			// Azalée : les sept autres comptes du réglage partagé (Level5, comptes
-			// officiels Inazuma, Rose Griffon) n'ont rien à y faire.
-			comptes: ["Azalee_IE"],
-		},
-	}),
+  rg: Object.freeze({
+    nom: "rg",
+    titre: "Rose Griffon",
+    identifiantBot: "rg",
+    variableJeton: "DISCORD_BOT_TOKEN",
+    variablesJetonSecours: ["DISCORD_TOKEN"],
+    // Les deux serveurs : le bot Rose Griffon est déjà présent sur Azalée et
+    // y sert ses commandes de communauté. Le second bot s'y AJOUTE, il ne le
+    // remplace pas.
+    guildes: [RG_GUILD_ID, AZALEE_GUILD_ID],
+    // Ce bot-ci reste par guilde : il porte l'administration de la communauté
+    // Rose Griffon (synchronisation des membres, niveaux, accueil), qui n'a
+    // aucun sens ailleurs. Le publier globalement l'offrirait à des serveurs
+    // dont il ne connaît ni les membres ni les rôles.
+    porteeCommandes: "guildes",
+    // `GuildMessages` s'ajoute pour le système de niveaux : il livre l'événement
+    // `messageCreate`, donc l'AUTEUR, le SALON et l'HORODATAGE d'un message.
+    // Il ne livre PAS son contenu — ça, c'est `MessageContent`, un intent
+    // privilégié que ces applications n'ont pas et ne demanderont pas. On compte
+    // les messages sans jamais les lire, et ce n'est pas une promesse : c'est ce
+    // que Discord nous envoie.
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
+    modules: MODULES_RG,
+    marque: {
+      couleurHex: "#a14b3f" as const,
+      piedDePage: "rosegriffon.fr",
+      urlBase: "https://rosegriffon.fr",
+      variableUrlBase: "WEBSITE_URL",
+    },
+    // Le bot Rose Griffon N'ANNONCE RIEN. Décision explicite du 13/8/2026 :
+    // l'annonce des posts X appartient au bot Azalée et à lui seul.
+    //
+    // Elle est prise ICI, dans le registre, et non en désactivant le réglage
+    // partagé `settings['tweets.notification'].actif` : ce réglage est UNE
+    // ligne pour les deux profils, donc le couper pour Rose Griffon couperait
+    // aussi Azalée. `null` veut dire « ce profil n'annonce pas » — le
+    // notifieur ne démarre pas du tout, aucun minuteur, aucun curseur.
+    annoncePosts: null,
+  }),
+  azalee: Object.freeze({
+    nom: "azalee",
+    titre: "Azalée",
+    identifiantBot: "azalee",
+    variableJeton: "AZALEE_DISCORD_BOT_TOKEN",
+    variablesJetonSecours: [],
+    // Conservée pour le NETTOYAGE seulement : ce profil publie désormais ses
+    // commandes globalement (voir `porteeCommandes`), et cette liste sert à
+    // savoir où effacer les anciennes commandes de guilde, qui feraient
+    // doublon. Aucun enregistrement ne la vise plus.
+    guildes: [RG_GUILD_ID, AZALEE_GUILD_ID, ACHILLEA_GUILD_ID],
+    // Bot PUBLIC (`bot_public: true` sur l'application 1537394034769657867) :
+    // n'importe quel serveur peut l'inviter, et le 14/8/2026 Achillea l'a fait.
+    // Avec un enregistrement par guilde, ce serveur voyait un bot en ligne et
+    // sans aucune commande — la liste ci-dessus ne le contenait pas, et
+    // l'ajouter à la main aurait fallu recommencer au serveur suivant.
+    // Ce que sert ce profil (fiches du wiki, données de jeu) ne dépend
+    // d'aucune configuration propre à un serveur : c'est exactement le cas
+    // d'usage des commandes globales.
+    porteeCommandes: "globale",
+    // `Guilds` SEUL : l'intent privilégié `GuildMembers` n'est pas accordé à
+    // cette application (vérifié — « Used disallowed intents »), et aucune
+    // commande de ce profil ne résout un membre.
+    intents: [GatewayIntentBits.Guilds],
+    modules: MODULES_AZALEE,
+    marque: {
+      // Orange Azalée de la charte (cf. `CLAUDE.md`, palette Rose Griffon).
+      couleurHex: "#F89C5A" as const,
+      piedDePage: "azalee.rosegriffon.fr",
+      urlBase: "https://azalee.rosegriffon.fr",
+      variableUrlBase: "AZALEE_WEBSITE_URL",
+    },
+    annoncePosts: {
+      salonId: SALON_ANNONCE_AZALEE,
+      variableSalon: "AZALEE_DISCORD_NEWS_CHANNEL_ID",
+      curseur: "azalee",
+      roleMention: "1359506615765827744",
+      // `🌿📰〡général-azalée`, sur le serveur Rose Griffon. Rien ne part dans
+      // le salon d'annonce sans qu'un humain ait cliqué ici.
+      salonValidation: SALON_VALIDATION_AZALEE,
+      // UNIQUEMENT les posts d'Azalée. Le salon d'annonce porte la marque
+      // Azalée : les sept autres comptes du réglage partagé (Level5, comptes
+      // officiels Inazuma, Rose Griffon) n'ont rien à y faire.
+      comptes: ["Azalee_IE"],
+    },
+  }),
 });
 
 /** Vrai si la chaîne est un nom de profil connu. */
 export function estNomProfil(valeur: string): valeur is NomProfil {
-	return (NOMS_PROFILS as readonly string[]).includes(valeur);
+  return (NOMS_PROFILS as readonly string[]).includes(valeur);
 }
 
 /**
@@ -468,24 +459,24 @@ export function estNomProfil(valeur: string): valeur is NomProfil {
  * disant pourquoi.
  */
 export function profilDemande(env: EnvLisible): NomProfil {
-	const brut = (env[VARIABLE_PROFIL] ?? "").trim();
-	if (brut === "") {
-		return PROFIL_PAR_DEFAUT;
-	}
-	const normalise = brut.toLowerCase();
-	if (!estNomProfil(normalise)) {
-		throw new Error(
-			`[profil] ${VARIABLE_PROFIL}="${brut}" n'est pas un profil connu. ` +
-				`Valeurs acceptées : ${NOMS_PROFILS.join(", ")}. ` +
-				`Laisse la variable absente pour le bot Rose Griffon.`
-		);
-	}
-	return normalise;
+  const brut = (env[VARIABLE_PROFIL] ?? "").trim();
+  if (brut === "") {
+    return PROFIL_PAR_DEFAUT;
+  }
+  const normalise = brut.toLowerCase();
+  if (!estNomProfil(normalise)) {
+    throw new Error(
+      `[profil] ${VARIABLE_PROFIL}="${brut}" n'est pas un profil connu. ` +
+        `Valeurs acceptées : ${NOMS_PROFILS.join(", ")}. ` +
+        `Laisse la variable absente pour le bot Rose Griffon.`,
+    );
+  }
+  return normalise;
 }
 
 /** Le profil du processus courant. */
 export function profilActif(env: EnvLisible = Bun.env as EnvLisible): Profil {
-	return PROFILS[profilDemande(env)];
+  return PROFILS[profilDemande(env)];
 }
 
 /**
@@ -501,10 +492,10 @@ export function profilActif(env: EnvLisible = Bun.env as EnvLisible): Profil {
  * principal — exactement le doublon qu'on veut éviter.
  */
 export function guildesDuProfil(profil: Profil, env: EnvLisible): readonly string[] {
-	if (profil.nom === "rg") {
-		return resolveGuildIds(env);
-	}
-	return profil.guildes;
+  if (profil.nom === "rg") {
+    return resolveGuildIds(env);
+  }
+  return profil.guildes;
 }
 
 /**
@@ -515,31 +506,31 @@ export function guildesDuProfil(profil: Profil, env: EnvLisible): readonly strin
  * doit pas demander un déploiement.
  */
 export function salonAnnonceDuProfil(profil: Profil, env: EnvLisible): string | null {
-	const annonce = profil.annoncePosts;
-	if (!annonce) {
-		return null;
-	}
-	const depuisEnv = (env[annonce.variableSalon] ?? "").trim();
-	if (/^\d{15,25}$/.test(depuisEnv)) {
-		return depuisEnv;
-	}
-	const fige = annonce.salonId.trim();
-	return fige === "" ? null : fige;
+  const annonce = profil.annoncePosts;
+  if (!annonce) {
+    return null;
+  }
+  const depuisEnv = (env[annonce.variableSalon] ?? "").trim();
+  if (/^\d{15,25}$/.test(depuisEnv)) {
+    return depuisEnv;
+  }
+  const fige = annonce.salonId.trim();
+  return fige === "" ? null : fige;
 }
 
 /** Racine des liens publics du profil. */
 export function urlBaseDuProfil(profil: Profil, env: EnvLisible): string {
-	const depuisEnv = (env[profil.marque.variableUrlBase] ?? "").trim();
-	return depuisEnv === "" || depuisEnv.startsWith("$") ? profil.marque.urlBase : depuisEnv;
+  const depuisEnv = (env[profil.marque.variableUrlBase] ?? "").trim();
+  return depuisEnv === "" || depuisEnv.startsWith("$") ? profil.marque.urlBase : depuisEnv;
 }
 
 /** Couleur d'embed (entier 24 bits) à partir de l'hexadécimal de la marque. */
 export function couleurDeMarque(couleurHex: string): number {
-	const chiffres = couleurHex.startsWith("#") ? couleurHex.slice(1) : couleurHex;
-	if (!/^[0-9a-fA-F]{6}$/.test(chiffres)) {
-		throw new Error(`[profil] couleur de marque invalide : "${couleurHex}" (attendu #RRGGBB).`);
-	}
-	return Number.parseInt(chiffres, 16);
+  const chiffres = couleurHex.startsWith("#") ? couleurHex.slice(1) : couleurHex;
+  if (!/^[0-9a-fA-F]{6}$/.test(chiffres)) {
+    throw new Error(`[profil] couleur de marque invalide : "${couleurHex}" (attendu #RRGGBB).`);
+  }
+  return Number.parseInt(chiffres, 16);
 }
 
 /**
@@ -557,28 +548,28 @@ export function couleurDeMarque(couleurHex: string): number {
  *     l'expansion dans `.env`.
  */
 export function jetonDuProfil(profil: Profil, env: EnvLisible = Bun.env as EnvLisible): string {
-	const candidates = [profil.variableJeton, ...profil.variablesJetonSecours];
-	for (const variable of candidates) {
-		const valeur = (env[variable] ?? "").trim();
-		if (valeur === "") {
-			continue;
-		}
-		if (valeur.startsWith("eyJ2Ijo")) {
-			throw new Error(
-				`[profil] ${variable} contient un secret SCELLÉ (« eyJ2Ijo… ») au lieu du jeton en clair. ` +
-					`Rétablis la vraie valeur dans .env — le bot ne peut pas déchiffrer ce blob.`
-			);
-		}
-		if (valeur.startsWith("$")) {
-			throw new Error(
-				`[profil] ${variable}="${valeur}" est une référence shell non substituée : Bun ne fait pas ` +
-					`l'expansion des $VAR dans .env. Écris la valeur littérale.`
-			);
-		}
-		return valeur;
-	}
+  const candidates = [profil.variableJeton, ...profil.variablesJetonSecours];
+  for (const variable of candidates) {
+    const valeur = (env[variable] ?? "").trim();
+    if (valeur === "") {
+      continue;
+    }
+    if (valeur.startsWith("eyJ2Ijo")) {
+      throw new Error(
+        `[profil] ${variable} contient un secret SCELLÉ (« eyJ2Ijo… ») au lieu du jeton en clair. ` +
+          `Rétablis la vraie valeur dans .env — le bot ne peut pas déchiffrer ce blob.`,
+      );
+    }
+    if (valeur.startsWith("$")) {
+      throw new Error(
+        `[profil] ${variable}="${valeur}" est une référence shell non substituée : Bun ne fait pas ` +
+          `l'expansion des $VAR dans .env. Écris la valeur littérale.`,
+      );
+    }
+    return valeur;
+  }
 
-	throw new Error(messageJetonAbsent(profil));
+  throw new Error(messageJetonAbsent(profil));
 }
 
 /**
@@ -586,17 +577,17 @@ export function jetonDuProfil(profil: Profil, env: EnvLisible = Bun.env as EnvLi
  * seule chose que verra la personne qui installe le second bot.
  */
 export function messageJetonAbsent(profil: Profil): string {
-	if (profil.nom === "azalee") {
-		return (
-			`[profil] Jeton Discord absent pour le profil « azalee » (${profil.titre}). ` +
-			`Pose ${profil.variableJeton} dans .env : c'est le jeton de l'application Discord Azalée ` +
-			`(Developer Portal → ton application Azalée → Bot → Reset Token), et surtout PAS celui du bot ` +
-			`Rose Griffon (DISCORD_BOT_TOKEN). Deux processus connectés au même jeton, c'est la même ` +
-			`identité en double : chaque interaction serait traitée deux fois.`
-		);
-	}
-	return (
-		`[profil] Jeton Discord absent pour le profil « ${profil.nom} » (${profil.titre}). ` +
-		`Pose ${profil.variableJeton} dans .env (jeton de l'application Discord ${profil.titre}).`
-	);
+  if (profil.nom === "azalee") {
+    return (
+      `[profil] Jeton Discord absent pour le profil « azalee » (${profil.titre}). ` +
+      `Pose ${profil.variableJeton} dans .env : c'est le jeton de l'application Discord Azalée ` +
+      `(Developer Portal → ton application Azalée → Bot → Reset Token), et surtout PAS celui du bot ` +
+      `Rose Griffon (DISCORD_BOT_TOKEN). Deux processus connectés au même jeton, c'est la même ` +
+      `identité en double : chaque interaction serait traitée deux fois.`
+    );
+  }
+  return (
+    `[profil] Jeton Discord absent pour le profil « ${profil.nom} » (${profil.titre}). ` +
+    `Pose ${profil.variableJeton} dans .env (jeton de l'application Discord ${profil.titre}).`
+  );
 }

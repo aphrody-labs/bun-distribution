@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import {
-  AppRouterContext,
-  type AppRouterInstance,
-} from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 import { UnifiedSearchBar } from "@rosegriffon/app-shell";
 
@@ -53,8 +50,6 @@ describe("UnifiedSearchBar", () => {
     fireEvent.change(input, { target: { value: "jude" } });
     expect(screen.queryByText("Axel")).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("Recherche dans");
-    await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toContain("temporairement indisponible"),
-    );
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("temporairement indisponible"));
   });
 });

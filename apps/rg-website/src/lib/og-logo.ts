@@ -14,11 +14,11 @@ import path from "node:path";
 let _cached: string | null = null;
 
 export function getOgLogoDataUri(): string {
-	if (_cached) {
-		return _cached;
-	}
-	const file = path.join(process.cwd(), "public", "logo-og.png");
-	const b64 = readFileSync(file).toString("base64");
-	_cached = `data:image/png;base64,${b64}`;
-	return _cached;
+  if (_cached) {
+    return _cached;
+  }
+  const file = path.join(process.cwd(), "public", "logo-og.png");
+  const b64 = readFileSync(file).toString("base64");
+  _cached = `data:image/png;base64,${b64}`;
+  return _cached;
 }

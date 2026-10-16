@@ -3,20 +3,13 @@ import { Database } from "bun:sqlite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  categoryStats,
-  getText,
-  getTextLocale,
-  getTexts,
-  listCategory,
-  searchText,
-} from "./index.js";
+import { categoryStats, getText, getTextLocale, getTexts, listCategory, searchText } from "./index.js";
 
 test("all game-text endpoints read SQLite without PostgreSQL, native VFS or loose files", async () => {
   const directory = await mkdtemp(join(tmpdir(), "inagle-text-sqlite-"));
   const path = join(directory, "mirror.sqlite");
   const keys = ["NIE_DATA_SOURCE", "INAGLE_DATA_SOURCE", "NIE_WIKI_DB"] as const;
-  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   try {
     const db = new Database(path);
     db.exec("CREATE TABLE inagle_game_text(hash_id TEXT, locale TEXT, category TEXT, value TEXT)");

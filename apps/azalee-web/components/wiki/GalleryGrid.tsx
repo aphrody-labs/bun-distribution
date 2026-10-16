@@ -37,7 +37,7 @@ export function GalleryGrid({ items, priorityCount = 4 }: GalleryGridProps) {
   return (
     <>
       {/* Préchargement des vignettes de la 1re rangée (WebP w=400, ~Ko) avant le paint. */}
-      {items.slice(0, priorityCount).map((item) =>
+      {items.slice(0, priorityCount).map(item =>
         item.thumb ? (
           // biome-ignore lint/correctness/useUniqueElementIds: lien de preload sans id
           <link key={`preload-${item.id}`} rel="preload" as="image" href={item.thumb} />
@@ -63,7 +63,7 @@ export function GalleryGrid({ items, priorityCount = 4 }: GalleryGridProps) {
       </FadeInStagger>
 
       <GalleryLightbox
-        items={items.map((it) => ({
+        items={items.map(it => ({
           id: it.id,
           title: it.title,
           full: it.full,

@@ -61,14 +61,14 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
   }
 
   // Filter out the base version itself as we only show comparisons of variants against it
-  const variantComparisons = comparisons.filter((c) => c.classification !== "Base Version");
+  const variantComparisons = comparisons.filter(c => c.classification !== "Base Version");
 
   if (variantComparisons.length === 0) {
     return null;
   }
 
   const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -85,10 +85,9 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:gap-4">
-        {variantComparisons.map((c) => {
+        {variantComparisons.map(c => {
           const isExpanded = !!expandedIds[c.variantId];
-          const style =
-            CLASSIFICATION_STYLES[c.classification] || CLASSIFICATION_STYLES["Tactical Variation"];
+          const style = CLASSIFICATION_STYLES[c.classification] || CLASSIFICATION_STYLES["Tactical Variation"];
 
           return (
             <div
@@ -118,9 +117,7 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                   >
                     {c.classification}
                   </div>
-                  <span className="text-xs font-bold text-on-surface truncate">
-                    Rarité : {c.rarity}
-                  </span>
+                  <span className="text-xs font-bold text-on-surface truncate">Rarité : {c.rarity}</span>
                   <span className="text-[10px] text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
                     {c.position} | {c.element}
                   </span>
@@ -154,7 +151,7 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                       Comparatif des statistiques (Niveau 99)
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {c.statChanges.map((stat) => {
+                      {c.statChanges.map(stat => {
                         const hasDiff = stat.difference !== 0;
                         const isPositive = stat.difference > 0;
                         return (
@@ -162,9 +159,7 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                             key={stat.stat}
                             className="flex items-center justify-between p-2 rounded-xl bg-surface-container/20 border border-outline-variant/10 text-xs"
                           >
-                            <span className="text-on-surface-variant">
-                              {STAT_LABELS[stat.stat] || stat.stat}
-                            </span>
+                            <span className="text-on-surface-variant">{STAT_LABELS[stat.stat] || stat.stat}</span>
                             <div className="flex items-center gap-2 font-mono">
                               <span className="text-on-surface-variant/60">{stat.baseValue}</span>
                               <span className="text-on-surface-variant/40">➔</span>
@@ -173,9 +168,7 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                                 <span
                                   className={cn(
                                     "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                                    isPositive
-                                      ? "bg-emerald-500/10 text-emerald-400"
-                                      : "bg-red-500/10 text-red-400",
+                                    isPositive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400",
                                   )}
                                 >
                                   {isPositive ? "+" : ""}
@@ -198,20 +191,15 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                       </h4>
                       {c.addedSkills.length > 0 ? (
                         <ul className="space-y-1">
-                          {c.addedSkills.map((sk) => (
-                            <li
-                              key={sk}
-                              className="text-xs text-on-surface flex items-center gap-1.5"
-                            >
+                          {c.addedSkills.map(sk => (
+                            <li key={sk} className="text-xs text-on-surface flex items-center gap-1.5">
                               <span className="size-1 rounded-full bg-emerald-400" />
                               {sk}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-[11px] text-on-surface-variant/60 italic">
-                          Aucune nouvelle technique.
-                        </p>
+                        <p className="text-[11px] text-on-surface-variant/60 italic">Aucune nouvelle technique.</p>
                       )}
                     </div>
 
@@ -222,11 +210,8 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                       </h4>
                       {c.removedSkills.length > 0 ? (
                         <ul className="space-y-1">
-                          {c.removedSkills.map((sk) => (
-                            <li
-                              key={sk}
-                              className="text-xs text-on-surface-variant/70 flex items-center gap-1.5"
-                            >
+                          {c.removedSkills.map(sk => (
+                            <li key={sk} className="text-xs text-on-surface-variant/70 flex items-center gap-1.5">
                               <span className="size-1 rounded-full bg-outline/40" />
                               {sk}
                             </li>

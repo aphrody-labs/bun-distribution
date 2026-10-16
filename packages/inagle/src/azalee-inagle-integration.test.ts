@@ -17,8 +17,7 @@ import { fileURLToPath } from "node:url";
  * l'ancienne adresse. Il échouait donc en `beforeAll`, sans rapport avec ce
  * qu'il teste, et son échec masquait la lisibilité de toute la suite.
  */
-const MIROIR_REPLI =
-  process.env["AZALEE_MIRROR_PATH"] ?? join(import.meta.dir, "../../../var/mirror.sqlite");
+const MIROIR_REPLI = process.env["AZALEE_MIRROR_PATH"] ?? join(import.meta.dir, "../../../var/mirror.sqlite");
 
 /** Dossier historique des sauvegardes, conservé s'il redevient alimenté. */
 const DOSSIER_SAUVEGARDES = join(import.meta.dir, "../../../apps/website/data/backups");
@@ -32,7 +31,7 @@ const DOSSIER_SAUVEGARDES = join(import.meta.dir, "../../../apps/website/data/ba
 async function trouverMiroir(): Promise<string | null> {
   if (await exists(DOSSIER_SAUVEGARDES)) {
     const sqliteFiles = (await readdir(DOSSIER_SAUVEGARDES))
-      .filter((f) => f.startsWith("supabase-") && f.endsWith(".sqlite"))
+      .filter(f => f.startsWith("supabase-") && f.endsWith(".sqlite"))
       .sort((a, b) => b.localeCompare(a));
     if (sqliteFiles[0]) return join(DOSSIER_SAUVEGARDES, sqliteFiles[0]);
   }
@@ -102,9 +101,7 @@ describe.skipIf(!PRETS)("Azalée CLI & Inagle Real-World Integration Tests", () 
     expect(charaBaseData.entries.length).toBeGreaterThan(0);
 
     // The actual character info list items are children of the BEG node
-    const begEntry = charaBaseData.entries.find((e: any) =>
-      e.name?.startsWith("CHARA_BASE_INFO_LIST_BEG"),
-    );
+    const begEntry = charaBaseData.entries.find((e: any) => e.name?.startsWith("CHARA_BASE_INFO_LIST_BEG"));
     expect(begEntry).toBeDefined();
     expect(Array.isArray(begEntry.children)).toBe(true);
     expect(begEntry.children.length).toBeGreaterThan(1000); // Thousands of base character child nodes
@@ -125,16 +122,12 @@ describe.skipIf(!PRETS)("Azalée CLI & Inagle Real-World Integration Tests", () 
 
     // Verify specific legendary character profiles exist in the parsed VFS/data
     // Mark Evans (mamoru endo)
-    const markEvans = characters.find(
-      (c: any) => c.names?.fr === "Mark Evans" || c.names?.en === "Mark Evans",
-    );
+    const markEvans = characters.find((c: any) => c.names?.fr === "Mark Evans" || c.names?.en === "Mark Evans");
     expect(markEvans).toBeDefined();
     expect(markEvans.names?.fr).toBe("Mark Evans");
 
     // Axel Blaze (goenji shuya)
-    const axelBlaze = characters.find(
-      (c: any) => c.names?.fr === "Axel Blaze" || c.names?.en === "Axel Blaze",
-    );
+    const axelBlaze = characters.find((c: any) => c.names?.fr === "Axel Blaze" || c.names?.en === "Axel Blaze");
     expect(axelBlaze).toBeDefined();
     expect(axelBlaze.names?.fr).toBe("Axel Blaze");
   });
@@ -144,9 +137,7 @@ describe.skipIf(!PRETS)("Azalée CLI & Inagle Real-World Integration Tests", () 
 
     // Verify characters alignment
     const charactersParsed = service.characters.all();
-    const charactersDbCountRow = db
-      .query("SELECT COUNT(*) as count FROM inagle_characters")
-      .get() as any;
+    const charactersDbCountRow = db.query("SELECT COUNT(*) as count FROM inagle_characters").get() as any;
     const dbCount = charactersDbCountRow.count;
 
     expect(dbCount).toBeGreaterThan(1000);

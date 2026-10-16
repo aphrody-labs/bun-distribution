@@ -83,10 +83,7 @@ export function SelectableNewsRow({ item, selected, onToggle }: SelectableNewsRo
       </button>
 
       {/* Content */}
-      <Link
-        href={`/dashboard/news/${item.id}`}
-        className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0"
-      >
+      <Link href={`/dashboard/news/${item.id}`} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
         {/* Thumbnail */}
         <div className="relative size-14 sm:size-16 rounded-xl sm:rounded-2xl overflow-hidden bg-surface-container shrink-0">
           <Image
@@ -134,7 +131,7 @@ export function SelectableNewsRow({ item, selected, onToggle }: SelectableNewsRo
           {/* Tags */}
           {tags && tags.length > 0 && (
             <div className="hidden sm:flex items-center gap-1 flex-wrap">
-              {tags.slice(0, 3).map((tag) => (
+              {tags.slice(0, 3).map(tag => (
                 <span
                   key={tag}
                   className="inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container-high text-[10px] font-medium text-on-surface-variant"
@@ -142,9 +139,7 @@ export function SelectableNewsRow({ item, selected, onToggle }: SelectableNewsRo
                   {tag}
                 </span>
               ))}
-              {tags.length > 3 && (
-                <span className="text-[10px] text-on-surface-variant/50">+{tags.length - 3}</span>
-              )}
+              {tags.length > 3 && <span className="text-[10px] text-on-surface-variant/50">+{tags.length - 3}</span>}
             </div>
           )}
         </div>
@@ -161,14 +156,9 @@ export function SelectableNewsRow({ item, selected, onToggle }: SelectableNewsRo
       <div
         role="presentation"
         className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
-        <NewsActions
-          newsId={item.id}
-          slug={item.slug || ""}
-          pinned={item.pinned}
-          currentStatus={item.status}
-        />
+        <NewsActions newsId={item.id} slug={item.slug || ""} pinned={item.pinned} currentStatus={item.status} />
       </div>
     </div>
   );

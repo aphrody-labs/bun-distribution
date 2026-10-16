@@ -110,9 +110,7 @@ describe("Inagle Native FFI (bun:ffi)", () => {
 
   describe("Format Probing", () => {
     it("identifies format signatures correctly", () => {
-      const cpkBuffer = new Uint8Array([
-        0x43, 0x50, 0x4b, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      ]);
+      const cpkBuffer = new Uint8Array([0x43, 0x50, 0x4b, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
       expect(nieCpkProbe(cpkBuffer)).toBe(true);
       expect(nieProbeHeader(cpkBuffer)).toBe(14); // 14 = CPK
       expect(nieFormatName(14)).toBe("CPK");

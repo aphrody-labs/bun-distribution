@@ -7,9 +7,7 @@ import { assertFreshStandalone, standaloneServer } from "./next-build";
 test("standalone paths follow the selected workspace and reject an outside app", () => {
   const root = join(tmpdir(), "rg-next-workspace");
   const app = join(root, "apps", "rg", "website");
-  expect(standaloneServer(root, app)).toBe(
-    join(app, ".next", "standalone", "apps", "rg", "website", "server.js"),
-  );
+  expect(standaloneServer(root, app)).toBe(join(app, ".next", "standalone", "apps", "rg", "website", "server.js"));
   expect(() => standaloneServer(root, join(root, "..", "outside"))).toThrow("inside");
   expect(() => standaloneServer(root, root)).toThrow("inside");
 });

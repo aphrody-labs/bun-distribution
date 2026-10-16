@@ -1,12 +1,13 @@
 # Rose Griffon — Application Unifiée
 
-Application Next.js 16 unifiée de **Rose Griffon** (`rosegriffon.fr`), fusionnant l'ancien portail associatif et l'ensemble de la base de données / wiki **Azalée** (*Inazuma Eleven: Victory Road*), le système de publication des Chroniques et d'actualités, et l'espace d'administration.
+Application Next.js 16 unifiée de **Rose Griffon** (`rosegriffon.fr`), fusionnant l'ancien portail associatif et l'ensemble de la base de données / wiki **Azalée** (_Inazuma Eleven: Victory Road_), le système de publication des Chroniques et d'actualités, et l'espace d'administration.
 
 ---
 
 ## Architecture des Routes
 
 ### 1. Portail Principal & Vie Associative
+
 - `/` : Accueil, actualités en une, prochains événements, liens communautaires.
 - `/community` : Hub communautaire, intégration Discord, liens sociaux.
 - `/shop` : Boutique associative et goodies.
@@ -14,7 +15,8 @@ Application Next.js 16 unifiée de **Rose Griffon** (`rosegriffon.fr`), fusionna
 - `/a-propos` : Charte, histoire, engagements et contact.
 - `/sondages` : Système de sondages communautaires.
 
-### 2. Base de Données & Wiki (*Inazuma Eleven: Victory Road*) — `/wiki`
+### 2. Base de Données & Wiki (_Inazuma Eleven: Victory Road_) — `/wiki`
+
 - `/wiki` : Portail d'accueil du wiki (recherche globale, nouveautés, raccourcis).
 - `/wiki/chara` : Annuaire complet des 5 930+ joueurs (cartes, heptagone de stats, raretés, variantes).
 - `/wiki/skill` : Catalogue des techniques spéciales et arbres d'évolution.
@@ -35,12 +37,14 @@ Application Next.js 16 unifiée de **Rose Griffon** (`rosegriffon.fr`), fusionna
 - `/wiki/cross` : Passerelle Inazuma Eleven Cross.
 
 ### 3. Chroniques & Actualités — `/chroniques` et `/news`
+
 - Fusion complète des actualités Azalée (`app = 'azalee'`) et des Chroniques du Bouquet (`app = 'website'`).
 - Support universel du format Lexical JSON AST et de l'ancien HTML brut via `LexicalRenderer`.
 - Catégories combinées : `official`, `community`, `esport`, `guides`, `association`, `announcement`, `event`, `critique`.
 - Commentaires unifiés, likes, fils de discussion imbriqués et intégration des tweets officiels.
 
 ### 4. Tableau de Bord d'Administration — `/admin`
+
 - `/admin` : Vue d'ensemble et métriques.
 - `/admin/news` : Éditeur d'articles Lexical avec gestion des brouillons, programmation et versions.
 - `/admin/database` : Explorateur et éditeur direct des tables Supabase / PostgreSQL.
@@ -55,6 +59,7 @@ Application Next.js 16 unifiée de **Rose Griffon** (`rosegriffon.fr`), fusionna
 ## Compatibilité & Rétro-compatibilité Nginx
 
 Toutes les anciennes URLs `https://azalee.rosegriffon.fr/*` sont préservées sans régression :
+
 - `https://azalee.rosegriffon.fr/` ➔ `https://rosegriffon.fr/wiki` (301 Permanent).
 - `https://azalee.rosegriffon.fr/<section>/...` ➔ `https://rosegriffon.fr/wiki/<section>/...` (301 Permanent).
 - `https://azalee.rosegriffon.fr/news/...` ➔ `https://rosegriffon.fr/news/...` (301 Permanent).

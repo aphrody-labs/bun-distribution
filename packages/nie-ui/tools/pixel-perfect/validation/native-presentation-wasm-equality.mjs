@@ -7,18 +7,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  initSync,
-  menu_presentation_json,
-  WasmBitmapFont,
-} from "../../../packages/nie-web/src/wasm/nie_wasm.js";
+import { initSync, menu_presentation_json, WasmBitmapFont } from "../../../packages/nie-web/src/wasm/nie_wasm.js";
 const [report, directory] = process.argv.slice(2);
 assert(report && directory, "Expected native JSON and private font directory");
 const native = JSON.parse(readFileSync(report, "utf8"));
 assert.equal(native.schemaVersion, 1);
-const wasm = readFileSync(
-  new URL("../../../packages/nie-web/public/static/game/nie_wasm_bg.wasm", import.meta.url),
-);
+const wasm = readFileSync(new URL("../../../packages/nie-web/public/static/game/nie_wasm_bg.wasm", import.meta.url));
 initSync({ module: wasm });
 const expectedSceneIds = [
   "loading",
@@ -33,17 +27,14 @@ const expectedSceneIds = [
   "avatar-name",
   "options-row",
 ];
-assert(
-  Array.isArray(native.scenes) && Array.isArray(native.texts),
-  "Scene and text arrays required",
-);
+assert(Array.isArray(native.scenes) && Array.isArray(native.texts), "Scene and text arrays required");
 assert.deepEqual(
-  native.scenes.map((scene) => scene.id).sort(),
+  native.scenes.map(scene => scene.id).sort(),
   expectedSceneIds.toSorted(),
   "Exactly eleven unique presentations, including the Options row template, are required",
 );
 assert(
-  native.texts.length >= 6 && native.texts.some((text) => text.text === "CHARGEMENT EN COURS…"),
+  native.texts.length >= 6 && native.texts.some(text => text.text === "CHARGEMENT EN COURS…"),
   "Multilingual text corpus must include the rendered loading label",
 );
 for (const scene of native.scenes) {

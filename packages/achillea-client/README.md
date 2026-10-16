@@ -20,24 +20,24 @@ import { createAchilleaClient } from "@rosegriffon/achillea-client/v1";
 
 ## Surface couverte — 197 routes
 
-| Ressource              | Routes | Domaine                                                              |
-| ---------------------- | -----: | -------------------------------------------------------------------- |
+| Ressource              | Routes | Domaine                                                                                             |
+| ---------------------- | -----: | --------------------------------------------------------------------------------------------------- |
 | `client.admin`         |     49 | `/admin/ops`, `/admin/db`, `/bot`, `/health`, `/database`, `/metrics`, `/moderation/sync`, `/proxy` |
-| `client.tournaments`   |     35 | cycle de vie, seeding, bracket, circuit, hub de stats, lobbies       |
-| `client.clans`         |     20 | annuaire, membres, invitations, candidatures, quotas, affiche        |
-| `client.ranked`        |     19 | profil Elo, paliers, classement, défis, litiges, saisons, arbitrage  |
-| `client.users`         |     11 | profil enrichi, classement, tendance, carte joueur, autocomplétion   |
-| `client.auth`          |      9 | session, jeton temps réel, déconnexion, URL OAuth                    |
-| `client.casts`         |      9 | évènements à diffuser, disponibilités, attributions, casters         |
-| `client.stats`         |      8 | télémétrie d'usage du bot                                            |
-| `client.notifications` |      7 | boîte de réception + relais temps réel internes                      |
-| `client.organizations` |      7 | structures e-sport et leur revue                                     |
-| `client.playerNotes`   |      7 | notes du staff sur les joueurs                                       |
-| `client.licenses`      |      5 | émission, révocation, PDF, vérification QR publique                  |
-| `client.sanctions`     |      4 | journal de modération cross-serveurs                                 |
-| `client.guilds`        |      3 | métadonnées des serveurs Discord scannés                             |
-| `client.leagues`       |      2 | championnats (Astral League S1 et ses alias)                         |
-| `client.wallet`        |      2 | solde et historique du portefeuille virtuel                          |
+| `client.tournaments`   |     35 | cycle de vie, seeding, bracket, circuit, hub de stats, lobbies                                      |
+| `client.clans`         |     20 | annuaire, membres, invitations, candidatures, quotas, affiche                                       |
+| `client.ranked`        |     19 | profil Elo, paliers, classement, défis, litiges, saisons, arbitrage                                 |
+| `client.users`         |     11 | profil enrichi, classement, tendance, carte joueur, autocomplétion                                  |
+| `client.auth`          |      9 | session, jeton temps réel, déconnexion, URL OAuth                                                   |
+| `client.casts`         |      9 | évènements à diffuser, disponibilités, attributions, casters                                        |
+| `client.stats`         |      8 | télémétrie d'usage du bot                                                                           |
+| `client.notifications` |      7 | boîte de réception + relais temps réel internes                                                     |
+| `client.organizations` |      7 | structures e-sport et leur revue                                                                    |
+| `client.playerNotes`   |      7 | notes du staff sur les joueurs                                                                      |
+| `client.licenses`      |      5 | émission, révocation, PDF, vérification QR publique                                                 |
+| `client.sanctions`     |      4 | journal de modération cross-serveurs                                                                |
+| `client.guilds`        |      3 | métadonnées des serveurs Discord scannés                                                            |
+| `client.leagues`       |      2 | championnats (Astral League S1 et ses alias)                                                        |
+| `client.wallet`        |      2 | solde et historique du portefeuille virtuel                                                         |
 
 Les routes `/admin/lobbies`, `/admin/ranked` et `/admin/seasons` vivent avec leur
 domaine, sur `client.ranked.admin*`.
@@ -58,11 +58,11 @@ Aucun appel ne lève sur une erreur réseau, HTTP ou de schéma :
 
 ```ts
 type AchilleaClientResult<T> =
-	| { ok: true; value: T }
-	| { ok: false; kind: "unreachable"; detail: string; path: string }
-	| { ok: false; kind: "http"; detail: string; path: string; status: number }
-	| { ok: false; kind: "invalid_json"; detail: string; path: string }
-	| { ok: false; kind: "invalid_response"; detail: string; path: string };
+  | { ok: true; value: T }
+  | { ok: false; kind: "unreachable"; detail: string; path: string }
+  | { ok: false; kind: "http"; detail: string; path: string; status: number }
+  | { ok: false; kind: "invalid_json"; detail: string; path: string }
+  | { ok: false; kind: "invalid_response"; detail: string; path: string };
 ```
 
 Une valeur `ok: true` a déjà traversé son schéma : elle est validée et normalisée.
@@ -73,10 +73,10 @@ Deux régimes, combinables :
 
 ```ts
 createAchilleaClient({
-	// Cookie de session HttpOnly (navigateur, même origine ou CORS autorisé).
-	credentials: "include",
-	// Jeton porteur (`Authorization: Bearer …`) — serveur, mobile, CLI.
-	getAuthToken: () => process.env.ACHILLEA_TOKEN ?? null,
+  // Cookie de session HttpOnly (navigateur, même origine ou CORS autorisé).
+  credentials: "include",
+  // Jeton porteur (`Authorization: Bearer …`) — serveur, mobile, CLI.
+  getAuthToken: () => process.env.ACHILLEA_TOKEN ?? null,
 });
 ```
 
@@ -84,7 +84,9 @@ Le paquet n'accède jamais lui-même à un stockage de plateforme. Si le jeton v
 dans un stockage, injecter une implémentation d'`AchilleaTokenStore` :
 
 ```ts
-createAchilleaClient({ tokenStore: { getToken: () => secureStore.read("achillea") } });
+createAchilleaClient({
+  tokenStore: { getToken: () => secureStore.read("achillea") },
+});
 ```
 
 ## Next.js — Server Component
@@ -94,26 +96,27 @@ import { createAchilleaClient } from "@rosegriffon/achillea-client/v1";
 import { cookies } from "next/headers";
 
 export default async function PageCircuit() {
-	// Un RSC n'a pas de cookie ambiant : la session se relaie explicitement.
-	const jar = await cookies();
-	const achillea = createAchilleaClient({
-		baseUrl: process.env.ACHILLEA_API_URL,
-		headers: { cookie: jar.toString() },
-	});
+  // Un RSC n'a pas de cookie ambiant : la session se relaie explicitement.
+  const jar = await cookies();
+  const achillea = createAchilleaClient({
+    baseUrl: process.env.ACHILLEA_API_URL,
+    headers: { cookie: jar.toString() },
+  });
 
-	const classement = await achillea.tournaments.circuitRanking();
+  const classement = await achillea.tournaments.circuitRanking();
 
-	if (!classement.ok) return <p>Classement indisponible ({classement.kind}).</p>;
+  if (!classement.ok)
+    return <p>Classement indisponible ({classement.kind}).</p>;
 
-	return (
-		<ol>
-			{classement.value.leaderboard.map((joueur) => (
-				<li key={joueur.userId}>
-					{joueur.displayName} — {joueur.points} pts
-				</li>
-			))}
-		</ol>
-	);
+  return (
+    <ol>
+      {classement.value.leaderboard.map(joueur => (
+        <li key={joueur.userId}>
+          {joueur.displayName} — {joueur.points} pts
+        </li>
+      ))}
+    </ol>
+  );
 }
 ```
 
@@ -122,21 +125,31 @@ export default async function PageCircuit() {
 ```tsx
 "use client";
 
-import { createAchilleaClient, type RankedProfile } from "@rosegriffon/achillea-client/v1";
+import {
+  createAchilleaClient,
+  type RankedProfile,
+} from "@rosegriffon/achillea-client/v1";
 import { useEffect, useState } from "react";
 
 // Même origine que l'app : le cookie de session part tout seul.
-const achillea = createAchilleaClient({ baseUrl: "/api", credentials: "include" });
+const achillea = createAchilleaClient({
+  baseUrl: "/api",
+  credentials: "include",
+});
 
 export function CarteRanked() {
-	const [profil, setProfil] = useState<RankedProfile | null>(null);
+  const [profil, setProfil] = useState<RankedProfile | null>(null);
 
-	useEffect(() => {
-		void achillea.ranked.me().then((r) => setProfil(r.ok ? r.value : null));
-	}, []);
+  useEffect(() => {
+    void achillea.ranked.me().then(r => setProfil(r.ok ? r.value : null));
+  }, []);
 
-	if (!profil) return null;
-	return <p>{profil.elo} Elo — {profil.tier?.key ?? "non classé"}</p>;
+  if (!profil) return null;
+  return (
+    <p>
+      {profil.elo} Elo — {profil.tier?.key ?? "non classé"}
+    </p>
+  );
 }
 ```
 
@@ -146,16 +159,16 @@ export function CarteRanked() {
 import { createAchilleaClient } from "@rosegriffon/achillea-client/v1";
 
 const achillea = createAchilleaClient({
-	baseUrl: Bun.env.ACHILLEA_API_URL,
-	getAuthToken: () => Bun.env.ACHILLEA_DEV_TOKEN ?? null,
-	timeoutMs: 8_000,
+  baseUrl: Bun.env.ACHILLEA_API_URL,
+  getAuthToken: () => Bun.env.ACHILLEA_DEV_TOKEN ?? null,
+  timeoutMs: 8_000,
 });
 
 const tournois = await achillea.tournaments.list({ page: 1, pagination: 25 });
 if (!tournois.ok) {
-	console.error(tournois.kind, tournois.detail, tournois.path);
+  console.error(tournois.kind, tournois.detail, tournois.path);
 } else {
-	for (const tournoi of tournois.value.data) console.info(tournoi.name);
+  for (const tournoi of tournois.value.data) console.info(tournoi.name);
 }
 ```
 

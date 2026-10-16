@@ -96,7 +96,7 @@ export function PassiveFilters({ typeCounts, playstyleCounts }: PassiveFiltersPr
     <search className="space-y-3" aria-label="Filtres des passifs">
       {/* Type filter */}
       <fieldset className="flex flex-wrap gap-1.5" aria-label="Filtrer par type de passif">
-        {TYPE_OPTIONS.map((opt) => {
+        {TYPE_OPTIONS.map(opt => {
           const isActive = activeType === opt.value;
           const count = typeCounts?.[opt.value];
           return (
@@ -111,15 +111,9 @@ export function PassiveFilters({ typeCounts, playstyleCounts }: PassiveFiltersPr
                   : "bg-surface-container-low text-on-surface-variant border-transparent hover:bg-surface-container-highest hover:border-primary/20",
               )}
             >
-              <Icon
-                name={opt.icon}
-                size={14}
-                className={cn(isActive ? "text-primary" : opt.color)}
-              />
+              <Icon name={opt.icon} size={14} className={cn(isActive ? "text-primary" : opt.color)} />
               {opt.label}
-              {count !== undefined && (
-                <span className="text-[9px] opacity-60 ml-0.5">({count})</span>
-              )}
+              {count !== undefined && <span className="text-[9px] opacity-60 ml-0.5">({count})</span>}
             </button>
           );
         })}
@@ -127,7 +121,7 @@ export function PassiveFilters({ typeCounts, playstyleCounts }: PassiveFiltersPr
 
       {/* Playstyle filter */}
       <fieldset className="flex flex-wrap gap-1.5" aria-label="Filtrer par style de jeu">
-        {PLAYSTYLE_OPTIONS.map((opt) => {
+        {PLAYSTYLE_OPTIONS.map(opt => {
           const isActive = activePlaystyle === opt.value;
           const count = playstyleCounts?.[opt.value];
           return (
@@ -145,16 +139,10 @@ export function PassiveFilters({ typeCounts, playstyleCounts }: PassiveFiltersPr
               {opt.sprite ? (
                 <CommonSpriteIcon name={opt.sprite} scale={0.22} />
               ) : opt.icon ? (
-                <Icon
-                  name={opt.icon}
-                  size={14}
-                  className={cn(isActive ? "text-primary" : opt.color)}
-                />
+                <Icon name={opt.icon} size={14} className={cn(isActive ? "text-primary" : opt.color)} />
               ) : null}
               {opt.label}
-              {count !== undefined && (
-                <span className="text-[9px] opacity-60 ml-0.5">({count})</span>
-              )}
+              {count !== undefined && <span className="text-[9px] opacity-60 ml-0.5">({count})</span>}
             </button>
           );
         })}
@@ -166,7 +154,7 @@ export function PassiveFilters({ typeCounts, playstyleCounts }: PassiveFiltersPr
 
         aria-label="Filtrer par catégorie de stat"
       >
-        {STAT_CATEGORY_OPTIONS.map((opt) => {
+        {STAT_CATEGORY_OPTIONS.map(opt => {
           const isActive = activeStatCat === opt.value;
           return (
             <button

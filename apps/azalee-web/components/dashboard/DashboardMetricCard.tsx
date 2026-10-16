@@ -41,21 +41,11 @@ export function DashboardMetricCard({
           {trend && (
             <span
               className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-                trend.value > 0
-                  ? "text-green-600"
-                  : trend.value < 0
-                    ? "text-red-500"
-                    : "text-on-surface-variant"
+                trend.value > 0 ? "text-green-600" : trend.value < 0 ? "text-red-500" : "text-on-surface-variant"
               }`}
             >
               <Icon
-                name={
-                  trend.value > 0
-                    ? "trending_up"
-                    : trend.value < 0
-                      ? "trending_down"
-                      : "trending_flat"
-                }
+                name={trend.value > 0 ? "trending_up" : trend.value < 0 ? "trending_down" : "trending_flat"}
                 size={14}
               />
               {trend.value > 0 ? "+" : ""}
@@ -64,9 +54,7 @@ export function DashboardMetricCard({
           )}
         </div>
         {description && <p className="text-xs text-on-surface-variant/70 mt-0.5">{description}</p>}
-        {trend?.label && (
-          <p className="text-[10px] text-on-surface-variant/50 mt-0.5">{trend.label}</p>
-        )}
+        {trend?.label && <p className="text-[10px] text-on-surface-variant/50 mt-0.5">{trend.label}</p>}
       </div>
       {href && (
         <Icon

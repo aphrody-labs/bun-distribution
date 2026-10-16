@@ -4,12 +4,12 @@
 live together here; reusable JavaScript/TypeScript libraries belong in
 `packages/`. The Rust adapter is a member of the root Cargo workspace.
 
-| Console | Current browser capability | Rust owner |
-| --- | --- | --- |
-| Nintendo DS/DSi | Dust emulation with WebGPU presentation and WebGL fallback | `crates/emu/core`, `crates/emu/render/*` |
-| Wii | Checked Wii DOL boot with Broadway interpreter and WebGPU presentation; keyboard Wiimote buttons, shake and pointer | `apps/iecode-web/wii/crate`, `crates/emu/wii`, `aphrody-labs/bun-engine/plugins/emulation` |
-| Switch | Tegra block-linear texture primitives; browser execution pending | `aphrody-labs/bun-engine/plugins/emulation`, `crates/emu/ruzu` |
-| Nintendo 3DS | PICA commands and SHBIN parsing; browser execution pending | `crates/aphrody-ctr` |
+| Console         | Current browser capability                                                                                          | Rust owner                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Nintendo DS/DSi | Dust emulation with WebGPU presentation and WebGL fallback                                                          | `crates/emu/core`, `crates/emu/render/*`                                                   |
+| Wii             | Checked Wii DOL boot with Broadway interpreter and WebGPU presentation; keyboard Wiimote buttons, shake and pointer | `apps/iecode-web/wii/crate`, `crates/emu/wii`, `aphrody-labs/bun-engine/plugins/emulation` |
+| Switch          | Tegra block-linear texture primitives; browser execution pending                                                    | `aphrody-labs/bun-engine/plugins/emulation`, `crates/emu/ruzu`                             |
+| Nintendo 3DS    | PICA commands and SHBIN parsing; browser execution pending                                                          | `crates/aphrody-ctr`                                                                       |
 
 The console switcher shows the current capability of each owner. It does not
 offer a game launcher for a console whose CPU, devices and renderer are not yet

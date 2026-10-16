@@ -9,7 +9,18 @@
   "ignorePatterns": ["lib/nie-wasm-web/**", "public/vendor/**"],
   "rules": {
     "no-unused-vars": "error",
-    "typescript/no-explicit-any": "off"
+    "typescript/no-explicit-any": "off",
+    "react/set-state-in-effect": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/prefer-tag-over-role": "warn",
+    "jsx-a11y/no-noninteractive-tabindex": "warn",
+    "jsx-a11y/media-has-caption": "warn",
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "oxc/erasing-op": "warn",
+    "unicorn/no-empty-file": "warn",
+    "import/namespace": "warn",
+    "no-irregular-whitespace": "warn"
   },
   "overrides": [
     {

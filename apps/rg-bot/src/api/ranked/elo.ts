@@ -3,9 +3,9 @@
 // les chemins d'import existants côté bot (ranked).
 
 export {
-	applyEloUpdate,
-	eloDelta,
-	expectedScore,
-	progressiveEloDelta,
-	tierEloFactors,
+  applyEloUpdate,
+  eloDelta,
+  expectedScore,
+  progressiveEloDelta,
+  tierEloFactors,
 } from "@rosegriffon/achillea-core";

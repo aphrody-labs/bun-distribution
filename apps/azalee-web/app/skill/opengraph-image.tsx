@@ -112,7 +112,7 @@ export default async function Image() {
 
         {/* Category pills */}
         <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-          {CATEGORIES.map((c) => (
+          {CATEGORIES.map(c => (
             <div
               key={c.label}
               style={{
@@ -123,16 +123,14 @@ export default async function Image() {
                 padding: "8px 18px",
               }}
             >
-              <div style={{ color: c.color, display: "flex", fontSize: 15, fontWeight: 700 }}>
-                {c.label}
-              </div>
+              <div style={{ color: c.color, display: "flex", fontSize: 15, fontWeight: 700 }}>{c.label}</div>
             </div>
           ))}
         </div>
 
         {/* Element pills */}
         <div style={{ display: "flex", gap: 12 }}>
-          {ELEMENTS.map((e) => (
+          {ELEMENTS.map(e => (
             <div
               key={e.label}
               style={{
@@ -143,11 +141,7 @@ export default async function Image() {
                 padding: "6px 16px",
               }}
             >
-              <div
-                style={{ color: `${e.color}CC`, display: "flex", fontSize: 13, fontWeight: 600 }}
-              >
-                {e.label}
-              </div>
+              <div style={{ color: `${e.color}CC`, display: "flex", fontSize: 13, fontWeight: 600 }}>{e.label}</div>
             </div>
           ))}
         </div>
@@ -189,12 +183,8 @@ export default async function Image() {
           >
             Puissance
           </div>
-          <div style={{ color: "#F2A93B", display: "flex", fontSize: 48, fontWeight: 900 }}>
-            ???
-          </div>
-          <div style={{ color: "#6D5E50", display: "flex", fontSize: 13 }}>
-            TP &bull; Element &bull; Type
-          </div>
+          <div style={{ color: "#F2A93B", display: "flex", fontSize: 48, fontWeight: 900 }}>???</div>
+          <div style={{ color: "#6D5E50", display: "flex", fontSize: 13 }}>TP &bull; Element &bull; Type</div>
         </div>
       </div>
 
@@ -210,19 +200,9 @@ export default async function Image() {
         }}
       >
         {/* oxlint-disable-next-line next/no-img-element -- ImageResponse (next/og) ne supporte pas next/image */}
-        <img
-          src={getOgLogoDataUri()}
-          width={28}
-          height={28}
-          style={{ borderRadius: 7 }}
-          alt="Logo Azalée"
-        />
-        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>
-          azalee.rosegriffon.fr
-        </div>
-        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>
-          Inazuma Eleven: Victory Road
-        </div>
+        <img src={getOgLogoDataUri()} width={28} height={28} style={{ borderRadius: 7 }} alt="Logo Azalée" />
+        <div style={{ color: "#F2A93B", display: "flex", fontSize: 14, fontWeight: 700 }}>azalee.rosegriffon.fr</div>
+        <div style={{ color: "#6D5E50", display: "flex", fontSize: 12 }}>Inazuma Eleven: Victory Road</div>
       </div>
     </div>,
     { ...size },

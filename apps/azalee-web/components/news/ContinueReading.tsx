@@ -35,7 +35,7 @@ export function ContinueReading({ articles }: ContinueReadingProps) {
       </div>
 
       <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
-        {articles.map((article) => (
+        {articles.map(article => (
           <div
             key={article.article_id}
             className="shrink-0 w-52 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/20 flex flex-col"
@@ -59,9 +59,7 @@ export function ContinueReading({ articles }: ContinueReadingProps) {
                 </span>
               )}
 
-              <p className="text-xs font-semibold text-on-surface line-clamp-3 leading-snug flex-1">
-                {article.title}
-              </p>
+              <p className="text-xs font-semibold text-on-surface line-clamp-3 leading-snug flex-1">{article.title}</p>
 
               {/* Barre de progression */}
               <div className="space-y-1">
@@ -71,9 +69,7 @@ export function ContinueReading({ articles }: ContinueReadingProps) {
                     style={{ width: `${Math.min(article.progress, 100)}%` }}
                   />
                 </div>
-                <span className="text-[10px] text-on-surface-variant/50 tabular-nums">
-                  {article.progress}% lu
-                </span>
+                <span className="text-[10px] text-on-surface-variant/50 tabular-nums">{article.progress}% lu</span>
               </div>
 
               <Link

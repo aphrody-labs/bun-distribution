@@ -19,10 +19,7 @@ function getGoogleAuth() {
   if (fs.existsSync(keyFilePath)) {
     return new google.auth.GoogleAuth({
       keyFile: keyFilePath,
-      scopes: [
-        "https://www.googleapis.com/auth/documents.readonly",
-        "https://www.googleapis.com/auth/drive",
-      ],
+      scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/drive"],
     });
   }
 
@@ -32,10 +29,7 @@ function getGoogleAuth() {
       const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
       return new google.auth.GoogleAuth({
         credentials,
-        scopes: [
-          "https://www.googleapis.com/auth/documents.readonly",
-          "https://www.googleapis.com/auth/drive",
-        ],
+        scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/drive"],
       });
     } catch (error) {
       console.error("Invalid GOOGLE_SERVICE_ACCOUNT JSON", error);
@@ -44,10 +38,7 @@ function getGoogleAuth() {
 
   // 3. Fallback to standard discovery (GOOGLE_APPLICATION_CREDENTIALS or GCE metadata)
   return new google.auth.GoogleAuth({
-    scopes: [
-      "https://www.googleapis.com/auth/documents.readonly",
-      "https://www.googleapis.com/auth/drive",
-    ],
+    scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/drive"],
   });
 }
 
@@ -58,11 +49,7 @@ async function requireDocAdmin() {
   }
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
 
   if (!profile || !isAdminRole(profile.role)) {
     return { error: "Permissions insuffisantes" as const, user: null };
@@ -186,11 +173,7 @@ export async function exportToGoogleDrive(newsId: string) {
     }
 
     const supabase = await createClient();
-    const { data: news, error: fetchError } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("id", newsId)
-      .single();
+    const { data: news, error: fetchError } = await supabase.from("articles").select("*").eq("id", newsId).single();
 
     if (fetchError || !news) {
       return { success: false, error: "Article introuvable." };

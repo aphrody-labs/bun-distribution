@@ -13,16 +13,12 @@ export function registerRepairCommand(program: Command): void {
     .command("repair")
     .description("Diagnostique et répare la base de données locale (RLS, privilèges)")
     .action(async () => {
-      console.log(
-        `${colors.cyan}Diagnostics et réparation de la base de données...${colors.reset}`,
-      );
+      console.log(`${colors.cyan}Diagnostics et réparation de la base de données...${colors.reset}`);
       let dbUrl: string;
       try {
         dbUrl = getInagleDatabaseURL();
       } catch {
-        console.error(
-          `${colors.red}INAGLE_DATABASE_URL is required for the local database repair.${colors.reset}`,
-        );
+        console.error(`${colors.red}INAGLE_DATABASE_URL is required for the local database repair.${colors.reset}`);
         return;
       }
       if (!["localhost", "127.0.0.1", "[::1]"].includes(new URL(dbUrl).hostname)) {
@@ -42,9 +38,7 @@ export function registerRepairCommand(program: Command): void {
 					 WHERE table_schema = 'public' AND table_name LIKE 'inagle_%'`,
         );
 
-        console.log(
-          `  Trouvé ${tables.length} tables Inagle. Désactivation RLS et attribution des droits...`,
-        );
+        console.log(`  Trouvé ${tables.length} tables Inagle. Désactivation RLS et attribution des droits...`);
 
         for (const t of tables) {
           const tableName = t.table_name;
@@ -57,13 +51,9 @@ export function registerRepairCommand(program: Command): void {
           }
         }
 
-        console.log(
-          `\n${colors.bold}${colors.green}Base de données locale réparée avec succès !${colors.reset}`,
-        );
+        console.log(`\n${colors.bold}${colors.green}Base de données locale réparée avec succès !${colors.reset}`);
       } catch (e) {
-        console.error(
-          `${colors.red}Erreur de connexion / privilèges : ${errorMessage(e)}${colors.reset}`,
-        );
+        console.error(`${colors.red}Erreur de connexion / privilèges : ${errorMessage(e)}${colors.reset}`);
       } finally {
         await client.end();
       }

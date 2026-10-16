@@ -116,18 +116,14 @@ export function buildQuery(params?: Record<string, AzaleeQueryValue>): string {
  * ancien embarqué par Tauri sous Linux) : on retombe sur un `AbortController`
  * relayant le premier signal déclenché.
  */
-function linkSignals(
-  timeoutMs: number,
-  external?: AbortSignal,
-): { signal: AbortSignal; dispose: () => void } {
+function linkSignals(timeoutMs: number, external?: AbortSignal): { signal: AbortSignal; dispose: () => void } {
   const timeout = AbortSignal.timeout(timeoutMs);
   if (!external) return { signal: timeout, dispose: () => {} };
 
   // `AbortSignal.any` est une méthode STATIQUE qui construit via `new this` :
   // la détacher de son porteur produit « undefined is not a constructor ».
   const holder = AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal };
-  if (typeof holder.any === "function")
-    return { signal: holder.any([timeout, external]), dispose: () => {} };
+  if (typeof holder.any === "function") return { signal: holder.any([timeout, external]), dispose: () => {} };
 
   const controller = new AbortController();
   const relay = (source: AbortSignal) => () => controller.abort(source.reason);
@@ -203,9 +199,7 @@ async function readErrorBody(response: Response): Promise<{ detail?: string; bod
     try {
       const parsed: unknown = JSON.parse(text);
       const detail =
-        typeof parsed === "object" &&
-        parsed !== null &&
-        typeof (parsed as { error?: unknown }).error === "string"
+        typeof parsed === "object" && parsed !== null && typeof (parsed as { error?: unknown }).error === "string"
           ? (parsed as { error: string }).error
           : undefined;
       return detail === undefined ? { body: parsed } : { detail, body: parsed };
@@ -241,7 +235,7 @@ export interface AzaleeTransportContext {
 export function createTransportContext(options: AzaleeClientOptions = {}): AzaleeTransportContext {
   const baseUrl = resolveAzaleeApiUrl(options.baseUrl);
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const transport: AzaleeTransport = options.transport ?? ((request) => fetchImpl(request));
+  const transport: AzaleeTransport = options.transport ?? (request => fetchImpl(request));
 
   const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
   const userAgent = options.userAgent === undefined ? AZALEE_USER_AGENT : options.userAgent;
@@ -269,9 +263,7 @@ async function attemptOnce(
   const external = options.signal ?? context.signal;
   const { signal, dispose } = linkSignals(options.timeoutMs ?? context.timeoutMs, external);
   try {
-    return await context.transport(
-      new Request(url, { method: "GET", headers: context.headers, signal }),
-    );
+    return await context.transport(new Request(url, { method: "GET", headers: context.headers, signal }));
   } catch (cause) {
     const kind = abortKind(signal, external);
     const message =
@@ -307,8 +299,7 @@ export async function requestJson<T>(
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (attempt > 0) {
-      const delay =
-        serverDelayMs ?? backoffMs(attempt - 1, context.retryDelayMs, context.maxRetryDelayMs);
+      const delay = serverDelayMs ?? backoffMs(attempt - 1, context.retryDelayMs, context.maxRetryDelayMs);
       serverDelayMs = null;
       await sleep(Math.min(delay, context.maxRetryDelayMs), options.signal ?? context.signal);
     }

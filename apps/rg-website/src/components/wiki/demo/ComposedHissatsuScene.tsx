@@ -122,7 +122,7 @@ function EffectModel({
       -center.z * scale + EFFECT_OFFSET.z,
     );
     // Émissif boosté + hors tonemapping → l'effet « brille » dans le Bloom.
-    clone.traverse((child) => {
+    clone.traverse(child => {
       const mesh = child as THREE.Mesh;
       if (!mesh.isMesh) return;
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -220,18 +220,12 @@ function CameraRig({
 }
 
 /** Remonte le handle de rendu (gl/scene/camera/advance/sequence) au wrapper — identique CutinScene. */
-function ReadyReporter({
-  sequence,
-  onReady,
-}: {
-  sequence: ISequence;
-  onReady?: (h: CutinSceneHandle) => void;
-}): null {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const camera = useThree((s) => s.camera);
-  const advance = useThree((s) => s.advance);
-  const setFrameloop = useThree((s) => s.setFrameloop);
+function ReadyReporter({ sequence, onReady }: { sequence: ISequence; onReady?: (h: CutinSceneHandle) => void }): null {
+  const gl = useThree(s => s.gl);
+  const scene = useThree(s => s.scene);
+  const camera = useThree(s => s.camera);
+  const advance = useThree(s => s.advance);
+  const setFrameloop = useThree(s => s.setFrameloop);
   useEffect(() => {
     onReady?.({
       gl,
@@ -239,7 +233,7 @@ function ReadyReporter({
       camera,
       advance,
       sequence,
-      setFrameloop: (mode) => setFrameloop(mode),
+      setFrameloop: mode => setFrameloop(mode),
     });
   }, [gl, scene, camera, advance, sequence, setFrameloop, onReady]);
   return null;
@@ -262,7 +256,7 @@ function SceneContent(props: ComposedHissatsuSceneProps): React.JSX.Element {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
     let active = true;
-    void import("@theatre/studio").then((mod) => {
+    void import("@theatre/studio").then(mod => {
       if (active) mod.default.initialize();
     });
     return () => {
@@ -326,9 +320,7 @@ function SceneContent(props: ComposedHissatsuSceneProps): React.JSX.Element {
  * Canvas R3F de la scène composée. `preserveDrawingBuffer` IMPÉRATIF : sans lui, la capture
  * `new VideoFrame(canvas)` de l'export renverrait un cadre NOIR.
  */
-export default function ComposedHissatsuScene(
-  props: ComposedHissatsuSceneProps,
-): React.JSX.Element {
+export default function ComposedHissatsuScene(props: ComposedHissatsuSceneProps): React.JSX.Element {
   return (
     <Canvas
       frameloop="always"

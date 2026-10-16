@@ -29,7 +29,7 @@ export interface SearchResult<T> {
  */
 export function createSearchIndex<T extends SearchableItem>(
   items: T[],
-  textGetter: (item: T) => string = (item) => item.text,
+  textGetter: (item: T) => string = item => item.text,
 ): {
   search: (query: string, limit?: number) => SearchResult<T>[];
   items: T[];
@@ -39,7 +39,7 @@ export function createSearchIndex<T extends SearchableItem>(
   return {
     items,
     search(query: string, limit = 20): SearchResult<T>[] {
-      return canonical.search(query, { limit }).map((result) => ({
+      return canonical.search(query, { limit }).map(result => ({
         item: result.item,
         score: 1 - result.score,
         matches: Array.from({ length: Math.floor(result.matches.length / 2) }, (_, index) => {
@@ -57,19 +57,13 @@ export function createSearchIndex<T extends SearchableItem>(
  */
 export function exactSearch<T>(items: T[], query: string, textGetter: (item: T) => string): T[] {
   const lowerQuery = query.toLowerCase();
-  return items.filter((item) => textGetter(item).toLowerCase().includes(lowerQuery));
+  return items.filter(item => textGetter(item).toLowerCase().includes(lowerQuery));
 }
 
 /**
  * Search with multiple fields
  */
-export function multiFieldSearch<T>(
-  items: T[],
-  query: string,
-  fieldGetters: ((item: T) => string)[],
-): T[] {
+export function multiFieldSearch<T>(items: T[], query: string, fieldGetters: ((item: T) => string)[]): T[] {
   const lowerQuery = query.toLowerCase();
-  return items.filter((item) =>
-    fieldGetters.some((getter) => getter(item).toLowerCase().includes(lowerQuery)),
-  );
+  return items.filter(item => fieldGetters.some(getter => getter(item).toLowerCase().includes(lowerQuery)));
 }

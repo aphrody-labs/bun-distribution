@@ -34,21 +34,17 @@ const ENTETE = `// Types du schéma PostgreSQL — FICHIER GÉNÉRÉ, NE PAS ÉD
 `;
 
 const url = `${PG_META}/generators/typescript?included_schemas=${SCHEMAS.join(",")}`;
-const reponse = await fetch(url, { signal: AbortSignal.timeout(60_000) }).catch(
-	(erreur: unknown) => {
-		throw new Error(`[types:gen] pg-meta injoignable sur ${PG_META} : ${String(erreur)}`);
-	}
-);
+const reponse = await fetch(url, { signal: AbortSignal.timeout(60_000) }).catch((erreur: unknown) => {
+  throw new Error(`[types:gen] pg-meta injoignable sur ${PG_META} : ${String(erreur)}`);
+});
 
 if (!reponse.ok) {
-	throw new Error(
-		`[types:gen] pg-meta a répondu ${reponse.status} — le conteneur rg-pg-meta doit tourner.`
-	);
+  throw new Error(`[types:gen] pg-meta a répondu ${reponse.status} — le conteneur rg-pg-meta doit tourner.`);
 }
 
 const types = await reponse.text();
 if (!types.includes("export type Database = {")) {
-	throw new Error("[types:gen] réponse inattendue : aucun `export type Database` dans la sortie.");
+  throw new Error("[types:gen] réponse inattendue : aucun `export type Database` dans la sortie.");
 }
 
 await Bun.write(CIBLE, ENTETE + types);

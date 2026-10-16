@@ -29,7 +29,7 @@ import { Discord, SlashGroup } from "discordx";
 
 @Discord()
 @SlashGroup({
-	name: "staff",
-	description: "Consultation de l'exploitation Rose Griffon (staff) — ne modifie jamais rien",
+  name: "staff",
+  description: "Consultation de l'exploitation Rose Griffon (staff) — ne modifie jamais rien",
 })
 export class RacineStaff {}

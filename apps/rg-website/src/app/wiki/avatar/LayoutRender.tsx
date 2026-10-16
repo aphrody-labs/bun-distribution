@@ -19,60 +19,55 @@ import type { Layout, LayoutObjet } from "./types";
 
 /** Vrai si l'objet a un sprite et tombe dans le canevas. */
 function dessinable(o: LayoutObjet, w: number, h: number): boolean {
-	const t = o.transform;
-	if (!o.sprite?.pngUrl || !t || o.visible === false) return false;
-	if (typeof t.x !== "number" || typeof t.y !== "number") return false;
-	return t.x >= 0 && t.x <= w && t.y >= 0 && t.y <= h;
+  const t = o.transform;
+  if (!o.sprite?.pngUrl || !t || o.visible === false) return false;
+  if (typeof t.x !== "number" || typeof t.y !== "number") return false;
+  return t.x >= 0 && t.x <= w && t.y >= 0 && t.y <= h;
 }
 
-export function LayoutRender({
-	layout,
-	cdn,
-	className,
-}: {
-	layout: Layout;
-	cdn: string;
-	className?: string;
-}) {
-	const { w, h } = layout.canvas;
-	const objets = layout.objects
-		.filter((o) => dessinable(o, w, h))
-		.slice()
-		.sort((a, b) => (a.drawPriority ?? 0) - (b.drawPriority ?? 0));
+export function LayoutRender({ layout, cdn, className }: { layout: Layout; cdn: string; className?: string }) {
+  const { w, h } = layout.canvas;
+  const objets = layout.objects
+    .filter(o => dessinable(o, w, h))
+    .slice()
+    .sort((a, b) => (a.drawPriority ?? 0) - (b.drawPriority ?? 0));
 
-	return (
-		<div className={`
+  return (
+    <div
+      className={`
     pointer-events-none absolute inset-0
     ${className ?? ""}
-  `} aria-hidden>
-			{objets.map((o, i) => {
-				const t = o.transform!;
-				const sp = o.sprite!;
-				// Le sprite est posé à l'échelle du layout puis ramené en pourcentage du cadre ;
-				// l'ancre du jeu (0,5 par défaut) devient une translation CSS.
-				const largeur = (sp.w * (t.scaleX ?? 1) * 100) / w;
-				const hauteur = (sp.h * (t.scaleY ?? 1) * 100) / h;
-				const gauche = (t.x! * 100) / w;
-				const haut = (t.y! * 100) / h;
-				const ax = (t.anchorX ?? 0.5) * 100;
-				const ay = (t.anchorY ?? 0.5) * 100;
-				return (
-					// eslint-disable-next-line @next/next/no-img-element
-					<img
-						key={`${o.name}-${i}`}
-						src={`${cdn}${sp.pngUrl}`}
-						alt=""
-						style={{
-							position: "absolute",
-							left: `${gauche}%`,
-							top: `${haut}%`,
-							width: `${largeur}%`,
-							height: `${hauteur}%`,
-							transform: `translate(-${ax}%, -${ay}%)${t.rot ? ` rotate(${t.rot}rad)` : ""}`,
-						}}
-					/>
-				);
-			})}
-		</div>
-	);
+  `}
+      aria-hidden
+    >
+      {objets.map((o, i) => {
+        const t = o.transform!;
+        const sp = o.sprite!;
+        // Le sprite est posé à l'échelle du layout puis ramené en pourcentage du cadre ;
+        // l'ancre du jeu (0,5 par défaut) devient une translation CSS.
+        const largeur = (sp.w * (t.scaleX ?? 1) * 100) / w;
+        const hauteur = (sp.h * (t.scaleY ?? 1) * 100) / h;
+        const gauche = (t.x! * 100) / w;
+        const haut = (t.y! * 100) / h;
+        const ax = (t.anchorX ?? 0.5) * 100;
+        const ay = (t.anchorY ?? 0.5) * 100;
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`${o.name}-${i}`}
+            src={`${cdn}${sp.pngUrl}`}
+            alt=""
+            style={{
+              position: "absolute",
+              left: `${gauche}%`,
+              top: `${haut}%`,
+              width: `${largeur}%`,
+              height: `${hauteur}%`,
+              transform: `translate(-${ax}%, -${ay}%)${t.rot ? ` rotate(${t.rot}rad)` : ""}`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }

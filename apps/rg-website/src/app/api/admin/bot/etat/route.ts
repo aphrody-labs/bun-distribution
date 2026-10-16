@@ -15,15 +15,15 @@ export const dynamic = "force-dynamic";
  * justement le moment où on le consulte.
  */
 export async function GET() {
-	const garde = await requireApiAdmin();
-	if (!garde.ok) {
-		return garde.response;
-	}
+  const garde = await requireApiAdmin();
+  if (!garde.ok) {
+    return garde.response;
+  }
 
-	const [bots, cron] = await Promise.all([etatDesBots(), etatDuCron()]);
+  const [bots, cron] = await Promise.all([etatDesBots(), etatDuCron()]);
 
-	return NextResponse.json(
-		{ bots, cron, mesureLe: new Date().toISOString() },
-		{ headers: { "cache-control": "private, no-store" } }
-	);
+  return NextResponse.json(
+    { bots, cron, mesureLe: new Date().toISOString() },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }

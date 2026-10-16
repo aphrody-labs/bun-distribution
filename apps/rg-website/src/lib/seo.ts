@@ -25,24 +25,24 @@
  * deux URLs équivalentes produisent un canonique identique.
  */
 export function buildCanonical(
-	path: string,
-	params: Record<string, string | string[] | undefined>,
-	allowedKeys: readonly string[]
+  path: string,
+  params: Record<string, string | string[] | undefined>,
+  allowedKeys: readonly string[],
 ): string {
-	const query = new URLSearchParams();
-	for (const key of [...allowedKeys].sort()) {
-		const value = params[key];
-		if (value === undefined) {
-			continue;
-		}
-		for (const one of Array.isArray(value) ? value : [value]) {
-			if (one !== "") {
-				query.append(key, one);
-			}
-		}
-	}
-	const qs = query.toString();
-	return qs ? `${path}?${qs}` : path;
+  const query = new URLSearchParams();
+  for (const key of [...allowedKeys].sort()) {
+    const value = params[key];
+    if (value === undefined) {
+      continue;
+    }
+    for (const one of Array.isArray(value) ? value : [value]) {
+      if (one !== "") {
+        query.append(key, one);
+      }
+    }
+  }
+  const qs = query.toString();
+  return qs ? `${path}?${qs}` : path;
 }
 
 /**
@@ -63,14 +63,14 @@ export function buildCanonical(
  * différents, chacun canonique de lui-même.
  */
 export const LIST_CANONICAL_KEYS = [
-	"category",
-	"element",
-	"gender",
-	"grade",
-	"page",
-	"position",
-	"rarity",
-	"role",
-	"series",
-	"type",
+  "category",
+  "element",
+  "gender",
+  "grade",
+  "page",
+  "position",
+  "rarity",
+  "role",
+  "series",
+  "type",
 ] as const;

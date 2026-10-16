@@ -84,11 +84,7 @@ function EventCard({ event }: EventCardProps) {
           className="relative mt-3 sm:mt-4 md:mt-0 md:ml-4 text-white hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg group/btn overflow-hidden w-full sm:w-auto"
           style={{ backgroundColor: "#a14b3f" }}
         >
-          <Link
-            href={event.extendedProperties.shared.eventLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Link href={event.extendedProperties.shared.eventLink} target="_blank" rel="noopener noreferrer">
             <span className="absolute inset-0 bg-white opacity-0 group-hover/btn:opacity-20 transition-opacity duration-300" />
             <span className="relative flex items-center justify-center text-xs sm:text-sm">
               Rejoindre l&apos;événement

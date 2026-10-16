@@ -17,8 +17,7 @@ export default async function NewsStatsPage() {
   const [stats, categoryData] = await Promise.all([getArticleStats(), getCategoryBreakdown()]);
 
   // Calculate avg views per article
-  const avgViews =
-    stats.totalPublished > 0 ? Math.round(stats.totalViews / stats.totalPublished) : 0;
+  const avgViews = stats.totalPublished > 0 ? Math.round(stats.totalViews / stats.totalPublished) : 0;
 
   return (
     <div className="space-y-8">
@@ -56,11 +55,7 @@ export default async function NewsStatsPage() {
         />
         <DashboardMetricCard
           label="Taux publication"
-          value={
-            stats.totalArticles > 0
-              ? `${Math.round((stats.totalPublished / stats.totalArticles) * 100)}%`
-              : "—"
-          }
+          value={stats.totalArticles > 0 ? `${Math.round((stats.totalPublished / stats.totalArticles) * 100)}%` : "—"}
           icon={<Icon name="publish" size={20} />}
           accentColor="bg-amber-500/15 text-amber-600"
           description={`${stats.totalDrafts} brouillon${stats.totalDrafts !== 1 ? "s" : ""} en attente`}
@@ -77,7 +72,7 @@ export default async function NewsStatsPage() {
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {categoryData.map((cat) => (
+            {categoryData.map(cat => (
               <div
                 key={cat.category}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-low border border-outline-variant/10"
@@ -128,9 +123,7 @@ export default async function NewsStatsPage() {
               </Link>
             ))}
             {stats.topArticles.length === 0 && (
-              <p className="text-sm text-on-surface-variant py-4 text-center">
-                Aucun article publié
-              </p>
+              <p className="text-sm text-on-surface-variant py-4 text-center">Aucun article publié</p>
             )}
           </div>
         </div>
@@ -144,7 +137,7 @@ export default async function NewsStatsPage() {
             </h2>
           </div>
           <div className="space-y-1">
-            {stats.recentArticles.map((article) => (
+            {stats.recentArticles.map(article => (
               <Link
                 key={article.id}
                 href={`/news/${article.slug}`}
@@ -168,9 +161,7 @@ export default async function NewsStatsPage() {
               </Link>
             ))}
             {stats.recentArticles.length === 0 && (
-              <p className="text-sm text-on-surface-variant py-4 text-center">
-                Aucun article publié
-              </p>
+              <p className="text-sm text-on-surface-variant py-4 text-center">Aucun article publié</p>
             )}
           </div>
         </div>
@@ -200,7 +191,5 @@ async function getCategoryBreakdown(): Promise<Array<{ category: string; count: 
     counts.set(cat, (counts.get(cat) || 0) + 1);
   }
 
-  return [...counts.entries()]
-    .map(([category, count]) => ({ category, count }))
-    .toSorted((a, b) => b.count - a.count);
+  return [...counts.entries()].map(([category, count]) => ({ category, count })).toSorted((a, b) => b.count - a.count);
 }

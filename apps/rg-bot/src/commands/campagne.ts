@@ -28,15 +28,15 @@
  */
 import { ButtonComponent, Discord, Slash, SlashGroup, SlashOption } from "discordx";
 import {
-	ActionRowBuilder,
-	ApplicationCommandOptionType,
-	ButtonBuilder,
-	ButtonStyle,
-	MessageFlags,
-	type AutocompleteInteraction,
-	type ButtonInteraction,
-	type ChatInputCommandInteraction,
-	type InteractionEditReplyOptions,
+  ActionRowBuilder,
+  ApplicationCommandOptionType,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+  type AutocompleteInteraction,
+  type ButtonInteraction,
+  type ChatInputCommandInteraction,
+  type InteractionEditReplyOptions,
 } from "discord.js";
 
 import { cached } from "../lib/cache";
@@ -44,35 +44,35 @@ import { RG_BASE_URL } from "../lib/config";
 import { sql } from "../lib/db";
 import { rgEmbed, truncate } from "../lib/embeds";
 import {
-	bornerPage,
-	cheminCampagne,
-	couper,
-	decoderEtatCampagnes,
-	echapperMarkdown,
-	encoderEtatCampagnes,
-	entier,
-	estSlugCampagne,
-	etatCampagne,
-	formaterNombre,
-	hashtagsAffichables,
-	horodatageRelatif,
-	imagePost,
-	libelleEtatCampagne,
-	ligneListeCampagne,
-	ligneMetriques,
-	ligneParticipations,
-	lignePost,
-	nombreDePages,
-	normaliserCampagne,
-	noteCampagneVide,
-	periodeCampagne,
-	pluriel,
-	versDate,
-	type Campagne,
-	type EtatListeCampagnes,
-	type LigneCampagne,
-	type PostCampagne,
-	type StatsCampagne,
+  bornerPage,
+  cheminCampagne,
+  couper,
+  decoderEtatCampagnes,
+  echapperMarkdown,
+  encoderEtatCampagnes,
+  entier,
+  estSlugCampagne,
+  etatCampagne,
+  formaterNombre,
+  hashtagsAffichables,
+  horodatageRelatif,
+  imagePost,
+  libelleEtatCampagne,
+  ligneListeCampagne,
+  ligneMetriques,
+  ligneParticipations,
+  lignePost,
+  nombreDePages,
+  normaliserCampagne,
+  noteCampagneVide,
+  periodeCampagne,
+  pluriel,
+  versDate,
+  type Campagne,
+  type EtatListeCampagnes,
+  type LigneCampagne,
+  type PostCampagne,
+  type StatsCampagne,
 } from "../lib/sondage-format";
 import { echec, pied, repondre } from "../lib/ui";
 
@@ -123,31 +123,29 @@ const AGREGATS = `
 `;
 
 interface LigneCampagneAgregee extends LigneCampagne {
-	agregats_x: unknown;
-	creations: number | string | null;
+  agregats_x: unknown;
+  creations: number | string | null;
 }
 
 /** Agrégats bruts → `StatsCampagne` typées. */
 function versStats(ligne: LigneCampagneAgregee): StatsCampagne {
-	const brut =
-		ligne.agregats_x && typeof ligne.agregats_x === "object"
-			? (ligne.agregats_x as Record<string, unknown>)
-			: {};
-	return {
-		auteurs: entier(brut.auteurs) ?? 0,
-		creations: entier(ligne.creations) ?? 0,
-		derniere: versDate(brut.derniere as string | null),
-		jaime: entier(brut.jaime) ?? 0,
-		posts: entier(brut.posts) ?? 0,
-		repartages: entier(brut.repartages) ?? 0,
-		vues: entier(brut.vues) ?? 0,
-	};
+  const brut =
+    ligne.agregats_x && typeof ligne.agregats_x === "object" ? (ligne.agregats_x as Record<string, unknown>) : {};
+  return {
+    auteurs: entier(brut.auteurs) ?? 0,
+    creations: entier(ligne.creations) ?? 0,
+    derniere: versDate(brut.derniere as string | null),
+    jaime: entier(brut.jaime) ?? 0,
+    posts: entier(brut.posts) ?? 0,
+    repartages: entier(brut.repartages) ?? 0,
+    vues: entier(brut.vues) ?? 0,
+  };
 }
 
 interface PageCampagnes {
-	entrees: Array<{ campagne: Campagne; stats: StatsCampagne }>;
-	total: number;
-	page: number;
+  entrees: Array<{ campagne: Campagne; stats: StatsCampagne }>;
+  total: number;
+  page: number;
 }
 
 /**
@@ -158,11 +156,11 @@ interface PageCampagnes {
  * écrans qui listent la même chose ne doivent pas la lister différemment.
  */
 async function listerCampagnes(etat: EtatListeCampagnes): Promise<PageCampagnes> {
-	const page = Math.max(1, Math.trunc(etat.page));
-	const decalage = (page - 1) * PAR_PAGE;
-	const seulementOuvertes = etat.enCours;
+  const page = Math.max(1, Math.trunc(etat.page));
+  const decalage = (page - 1) * PAR_PAGE;
+  const seulementOuvertes = etat.enCours;
 
-	const [total] = await sql<Array<{ total: number }>>`
+  const [total] = await sql<Array<{ total: number }>>`
 		SELECT count(*)::int AS total
 		FROM public.x_campagnes c
 		WHERE c.publiee
@@ -170,7 +168,7 @@ async function listerCampagnes(etat: EtatListeCampagnes): Promise<PageCampagnes>
 		       OR c.fin_le IS NULL OR c.fin_le >= now())
 	`;
 
-	const lignes = await sql<LigneCampagneAgregee[]>`
+  const lignes = await sql<LigneCampagneAgregee[]>`
 		SELECT ${sql.unsafe(COLONNES_CAMPAGNE)}, ${sql.unsafe(AGREGATS)}
 		FROM public.x_campagnes c
 		WHERE c.publiee
@@ -180,31 +178,29 @@ async function listerCampagnes(etat: EtatListeCampagnes): Promise<PageCampagnes>
 		LIMIT ${PAR_PAGE} OFFSET ${decalage}
 	`;
 
-	return {
-		entrees: lignes.map((ligne) => ({
-			campagne: normaliserCampagne(ligne),
-			stats: versStats(ligne),
-		})),
-		page,
-		total: total?.total ?? 0,
-	};
+  return {
+    entrees: lignes.map(ligne => ({
+      campagne: normaliserCampagne(ligne),
+      stats: versStats(ligne),
+    })),
+    page,
+    total: total?.total ?? 0,
+  };
 }
 
 /** Une campagne publiée précise, avec ses agrégats. */
-async function lireCampagne(
-	slug: string
-): Promise<{ campagne: Campagne; stats: StatsCampagne } | null> {
-	if (!estSlugCampagne(slug)) {
-		return null;
-	}
-	const lignes = await sql<LigneCampagneAgregee[]>`
+async function lireCampagne(slug: string): Promise<{ campagne: Campagne; stats: StatsCampagne } | null> {
+  if (!estSlugCampagne(slug)) {
+    return null;
+  }
+  const lignes = await sql<LigneCampagneAgregee[]>`
 		SELECT ${sql.unsafe(COLONNES_CAMPAGNE)}, ${sql.unsafe(AGREGATS)}
 		FROM public.x_campagnes c
 		WHERE c.publiee AND c.slug = ${slug}
 		LIMIT 1
 	`;
-	const ligne = lignes[0];
-	return ligne ? { campagne: normaliserCampagne(ligne), stats: versStats(ligne) } : null;
+  const ligne = lignes[0];
+  return ligne ? { campagne: normaliserCampagne(ligne), stats: versStats(ligne) } : null;
 }
 
 /**
@@ -216,16 +212,16 @@ async function lireCampagne(
  * ressortir. Le texte, lui, est nettoyé par `x_masquer_hashtags()`.
  */
 async function dernieresPublications(slug: string, limite: number): Promise<PostCampagne[]> {
-	const lignes = await sql<
-		Array<{
-			tweet_id: string;
-			author_username: string | null;
-			text: string | null;
-			publie_le: Date | string | null;
-			hashtag_trouve: string | null;
-			media: unknown;
-		}>
-	>`
+  const lignes = await sql<
+    Array<{
+      tweet_id: string;
+      author_username: string | null;
+      text: string | null;
+      publie_le: Date | string | null;
+      hashtag_trouve: string | null;
+      media: unknown;
+    }>
+  >`
 		SELECT p.tweet_id,
 		       t.author_username,
 		       public.x_masquer_hashtags(t.text, c.hashtags_rattrapage) AS text,
@@ -243,22 +239,19 @@ async function dernieresPublications(slug: string, limite: number): Promise<Post
 		ORDER BY p.publie_le DESC, p.tweet_id DESC
 		LIMIT ${limite}
 	`;
-	return lignes.map((ligne) => ({
-		auteur: ligne.author_username,
-		hashtag: ligne.hashtag_trouve,
-		image: imagePost(ligne.media),
-		publieLe: versDate(ligne.publie_le),
-		texte: ligne.text,
-		tweetId: ligne.tweet_id,
-	}));
+  return lignes.map(ligne => ({
+    auteur: ligne.author_username,
+    hashtag: ligne.hashtag_trouve,
+    image: imagePost(ligne.media),
+    publieLe: versDate(ligne.publie_le),
+    texte: ligne.text,
+    tweetId: ligne.tweet_id,
+  }));
 }
 
 /** Comptes X les plus actifs sur une campagne. */
-async function participantsLesPlusActifs(
-	slug: string,
-	limite: number
-): Promise<Array<{ compte: string; n: number }>> {
-	const lignes = await sql<Array<{ compte: string | null; n: number }>>`
+async function participantsLesPlusActifs(slug: string, limite: number): Promise<Array<{ compte: string; n: number }>> {
+  const lignes = await sql<Array<{ compte: string | null; n: number }>>`
 		SELECT t.author_username AS compte, count(*)::int AS n
 		FROM public.x_campagne_posts p
 		JOIN public.tweets t ON t.id = p.tweet_id
@@ -269,301 +262,285 @@ async function participantsLesPlusActifs(
 		ORDER BY n DESC, compte
 		LIMIT ${limite}
 	`;
-	return lignes
-		.filter((ligne): ligne is { compte: string; n: number } => ligne.compte !== null)
-		.map((ligne) => ({ compte: ligne.compte, n: ligne.n }));
+  return lignes
+    .filter((ligne): ligne is { compte: string; n: number } => ligne.compte !== null)
+    .map(ligne => ({ compte: ligne.compte, n: ligne.n }));
 }
 
 /** Slugs et titres publiés — alimente l'autocomplétion. */
 async function campagnesConnues(): Promise<Array<{ slug: string; titre: string }>> {
-	return cached("campagnes:slugs", TTL_SLUGS_MS, async () => {
-		return sql<Array<{ slug: string; titre: string }>>`
+  return cached("campagnes:slugs", TTL_SLUGS_MS, async () => {
+    return sql<Array<{ slug: string; titre: string }>>`
 			SELECT c.slug, c.titre
 			FROM public.x_campagnes c
 			WHERE c.publiee
 			ORDER BY c.principale DESC, c.debut_le DESC NULLS LAST, c.slug
 			LIMIT 100
 		`;
-	});
+  });
 }
 
 /** Construit la réponse (embed + boutons) d'une page de liste. */
 async function rendrePage(etat: EtatListeCampagnes): Promise<InteractionEditReplyOptions> {
-	const premier = await listerCampagnes(etat);
-	const page = bornerPage(etat.page, premier.total, PAR_PAGE);
-	const resultat = page === premier.page ? premier : await listerCampagnes({ ...etat, page });
-	const pages = nombreDePages(resultat.total, PAR_PAGE);
+  const premier = await listerCampagnes(etat);
+  const page = bornerPage(etat.page, premier.total, PAR_PAGE);
+  const resultat = page === premier.page ? premier : await listerCampagnes({ ...etat, page });
+  const pages = nombreDePages(resultat.total, PAR_PAGE);
 
-	const embed = rgEmbed()
-		.setTitle(
-			`Campagnes — ${formaterNombre(resultat.total)} ${pluriel(resultat.total, "campagne", "campagnes")}`
-		)
-		.setURL(`${RG_BASE_URL}/iergday`);
-	if (etat.enCours) {
-		embed.setAuthor({ name: "Filtre : campagnes ouvertes ou à venir" });
-	}
+  const embed = rgEmbed()
+    .setTitle(`Campagnes — ${formaterNombre(resultat.total)} ${pluriel(resultat.total, "campagne", "campagnes")}`)
+    .setURL(`${RG_BASE_URL}/iergday`);
+  if (etat.enCours) {
+    embed.setAuthor({ name: "Filtre : campagnes ouvertes ou à venir" });
+  }
 
-	if (resultat.entrees.length === 0) {
-		embed.setDescription("Aucune campagne publiée ne correspond.");
-	} else {
-		embed.setDescription(
-			truncate(
-				resultat.entrees
-					.map((entree) => ligneListeCampagne(entree.campagne, entree.stats, RG_BASE_URL))
-					.join("\n\n"),
-				4096
-			)
-		);
-		pied(embed, { page: page, pages: pages });
-	}
+  if (resultat.entrees.length === 0) {
+    embed.setDescription("Aucune campagne publiée ne correspond.");
+  } else {
+    embed.setDescription(
+      truncate(
+        resultat.entrees.map(entree => ligneListeCampagne(entree.campagne, entree.stats, RG_BASE_URL)).join("\n\n"),
+        4096,
+      ),
+    );
+    pied(embed, { page: page, pages: pages });
+  }
 
-	const composants: Array<ActionRowBuilder<ButtonBuilder>> = [];
-	const idPrecedent = encoderEtatCampagnes({ ...etat, page: page - 1 });
-	const idSuivant = encoderEtatCampagnes({ ...etat, page: page + 1 });
-	if (pages > 1 && idPrecedent && idSuivant) {
-		composants.push(
-			new ActionRowBuilder<ButtonBuilder>().addComponents(
-				new ButtonBuilder()
-					.setCustomId(idPrecedent)
-					.setLabel("Précédent")
-					.setStyle(ButtonStyle.Secondary)
-					.setDisabled(page <= 1),
-				new ButtonBuilder()
-					.setCustomId(idSuivant)
-					.setLabel("Suivant")
-					.setStyle(ButtonStyle.Secondary)
-					.setDisabled(page >= pages)
-			)
-		);
-	}
-	return { components: composants, embeds: [embed] };
+  const composants: Array<ActionRowBuilder<ButtonBuilder>> = [];
+  const idPrecedent = encoderEtatCampagnes({ ...etat, page: page - 1 });
+  const idSuivant = encoderEtatCampagnes({ ...etat, page: page + 1 });
+  if (pages > 1 && idPrecedent && idSuivant) {
+    composants.push(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(idPrecedent)
+          .setLabel("Précédent")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(page <= 1),
+        new ButtonBuilder()
+          .setCustomId(idSuivant)
+          .setLabel("Suivant")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(page >= pages),
+      ),
+    );
+  }
+  return { components: composants, embeds: [embed] };
 }
 
 /** Embed de détail d'une campagne. */
 function rendreCampagne(
-	campagne: Campagne,
-	stats: StatsCampagne,
-	posts: PostCampagne[],
-	actifs: Array<{ compte: string; n: number }>
+  campagne: Campagne,
+  stats: StatsCampagne,
+  posts: PostCampagne[],
+  actifs: Array<{ compte: string; n: number }>,
 ): InteractionEditReplyOptions {
-	const embed = rgEmbed()
-		.setTitle(truncate(campagne.titre, 256))
-		.setURL(`${RG_BASE_URL}${cheminCampagne(campagne)}`);
+  const embed = rgEmbed()
+    .setTitle(truncate(campagne.titre, 256))
+    .setURL(`${RG_BASE_URL}${cheminCampagne(campagne)}`);
 
-	const entete = [
-		campagne.surTitre ? `*${echapperMarkdown(couper(campagne.surTitre, 120))}*` : null,
-		campagne.description ? echapperMarkdown(couper(campagne.description, 600)) : null,
-	]
-		.filter((valeur): valeur is string => valeur !== null)
-		.join("\n\n");
-	if (entete.length > 0) {
-		embed.setDescription(truncate(entete, 4096));
-	}
+  const entete = [
+    campagne.surTitre ? `*${echapperMarkdown(couper(campagne.surTitre, 120))}*` : null,
+    campagne.description ? echapperMarkdown(couper(campagne.description, 600)) : null,
+  ]
+    .filter((valeur): valeur is string => valeur !== null)
+    .join("\n\n");
+  if (entete.length > 0) {
+    embed.setDescription(truncate(entete, 4096));
+  }
 
-	const periode = periodeCampagne(campagne);
-	embed.addFields(
-		{ inline: true, name: "État", value: libelleEtatCampagne(campagne) },
-		{ inline: true, name: "Période", value: periode ?? "non publiée" },
-		{
-			inline: true,
-			name: "Hashtags",
-			value:
-				hashtagsAffichables(campagne).length > 0
-					? truncate(echapperMarkdown(hashtagsAffichables(campagne).join(" ")), 1024)
-					: "aucun",
-		}
-	);
+  const periode = periodeCampagne(campagne);
+  embed.addFields(
+    { inline: true, name: "État", value: libelleEtatCampagne(campagne) },
+    { inline: true, name: "Période", value: periode ?? "non publiée" },
+    {
+      inline: true,
+      name: "Hashtags",
+      value:
+        hashtagsAffichables(campagne).length > 0
+          ? truncate(echapperMarkdown(hashtagsAffichables(campagne).join(" ")), 1024)
+          : "aucun",
+    },
+  );
 
-	const vide = noteCampagneVide(campagne, stats);
-	embed.addFields({
-		inline: false,
-		name: "Participations",
-		value: truncate(
-			vide ? `${ligneParticipations(stats)}\n${vide}` : ligneParticipations(stats),
-			1024
-		),
-	});
+  const vide = noteCampagneVide(campagne, stats);
+  embed.addFields({
+    inline: false,
+    name: "Participations",
+    value: truncate(vide ? `${ligneParticipations(stats)}\n${vide}` : ligneParticipations(stats), 1024),
+  });
 
-	// Les métriques n'ont de sens que s'il y a des publications X : « 0 · 0 · 0 »
-	// en face d'une campagne dont les créations sont sur Discord se lirait comme
-	// un échec, alors que c'est simplement une autre source.
-	if (stats.posts > 0) {
-		embed.addFields({
-			inline: false,
-			name: "Métriques agrégées (X)",
-			value: truncate(
-				`${ligneMetriques(stats)}\nDernière publication ${horodatageRelatif(stats.derniere)}`,
-				1024
-			),
-		});
-	}
+  // Les métriques n'ont de sens que s'il y a des publications X : « 0 · 0 · 0 »
+  // en face d'une campagne dont les créations sont sur Discord se lirait comme
+  // un échec, alors que c'est simplement une autre source.
+  if (stats.posts > 0) {
+    embed.addFields({
+      inline: false,
+      name: "Métriques agrégées (X)",
+      value: truncate(`${ligneMetriques(stats)}\nDernière publication ${horodatageRelatif(stats.derniere)}`, 1024),
+    });
+  }
 
-	if (actifs.length > 0) {
-		embed.addFields({
-			inline: false,
-			name: `Comptes les plus actifs (${actifs.length})`,
-			value: truncate(
-				actifs
-					.map(
-						(entree) =>
-							`[@${echapperMarkdown(entree.compte)}](https://x.com/${encodeURIComponent(entree.compte)}) — ${entree.n} ${pluriel(entree.n, "publication", "publications")}`
-					)
-					.join("\n"),
-				1024
-			),
-		});
-	}
+  if (actifs.length > 0) {
+    embed.addFields({
+      inline: false,
+      name: `Comptes les plus actifs (${actifs.length})`,
+      value: truncate(
+        actifs
+          .map(
+            entree =>
+              `[@${echapperMarkdown(entree.compte)}](https://x.com/${encodeURIComponent(entree.compte)}) — ${entree.n} ${pluriel(entree.n, "publication", "publications")}`,
+          )
+          .join("\n"),
+        1024,
+      ),
+    });
+  }
 
-	if (posts.length > 0) {
-		embed.addFields({
-			inline: false,
-			name: `Dernières publications (${posts.length})`,
-			value: truncate(posts.map((post) => lignePost(post)).join("\n\n"), 1024),
-		});
-	}
+  if (posts.length > 0) {
+    embed.addFields({
+      inline: false,
+      name: `Dernières publications (${posts.length})`,
+      value: truncate(posts.map(post => lignePost(post)).join("\n\n"), 1024),
+    });
+  }
 
-	if (campagne.salonsDepot.length > 0) {
-		embed.addFields({
-			inline: false,
-			name: "Salons de dépôt",
-			value: truncate(campagne.salonsDepot.map((salon) => `<#${salon}>`).join(" · "), 1024),
-		});
-	}
+  if (campagne.salonsDepot.length > 0) {
+    embed.addFields({
+      inline: false,
+      name: "Salons de dépôt",
+      value: truncate(campagne.salonsDepot.map(salon => `<#${salon}>`).join(" · "), 1024),
+    });
+  }
 
-	// Une image de post ne remplace pas le visuel officiel : la couverture, puis
-	// l'affiche, puis à défaut la dernière création récoltée.
-	const visuel =
-		campagne.imageCouverture ??
-		campagne.imageAffiche ??
-		posts.find((post) => post.image !== null)?.image ??
-		null;
-	if (visuel) {
-		embed.setImage(visuel);
-	}
+  // Une image de post ne remplace pas le visuel officiel : la couverture, puis
+  // l'affiche, puis à défaut la dernière création récoltée.
+  const visuel =
+    campagne.imageCouverture ?? campagne.imageAffiche ?? posts.find(post => post.image !== null)?.image ?? null;
+  if (visuel) {
+    embed.setImage(visuel);
+  }
 
-	const etat = etatCampagne(campagne);
-	pied(embed, {
-		note: `${campagne.slug} · ${etat === "en-cours" && campagne.actif ? "récolte en cours" : "récolte close"} · rosegriffon.fr`,
-	});
-	return { embeds: [embed] };
+  const etat = etatCampagne(campagne);
+  pied(embed, {
+    note: `${campagne.slug} · ${etat === "en-cours" && campagne.actif ? "récolte en cours" : "récolte close"} · rosegriffon.fr`,
+  });
+  return { embeds: [embed] };
 }
 
 @Discord()
 @SlashGroup({
-	description: "Les campagnes à hashtag : participations, métriques et créations",
-	name: "campagne",
+  description: "Les campagnes à hashtag : participations, métriques et créations",
+  name: "campagne",
 })
 @SlashGroup("campagne")
 export class CampagneCommand {
-	@Slash({
-		description: "Liste les campagnes publiées et leur volume de participation",
-		name: "liste",
-	})
-	async liste(
-		@SlashOption({
-			description: "Ne montrer que les campagnes ouvertes ou à venir",
-			name: "en-cours",
-			required: false,
-			type: ApplicationCommandOptionType.Boolean,
-		})
-		enCours: boolean | undefined,
-		@SlashOption({
-			description: "Numéro de page",
-			minValue: 1,
-			name: "page",
-			required: false,
-			type: ApplicationCommandOptionType.Integer,
-		})
-		page: number | undefined,
-		interaction: ChatInputCommandInteraction
-	) {
-		await interaction.deferReply();
-		try {
-			await interaction.editReply(await rendrePage({ enCours: enCours === true, page: page ?? 1 }));
-		} catch (err) {
-			await repondre(
-				interaction,
-				echec("Lecture des campagnes impossible", err instanceof Error ? err.message : String(err))
-			);
-		}
-	}
+  @Slash({
+    description: "Liste les campagnes publiées et leur volume de participation",
+    name: "liste",
+  })
+  async liste(
+    @SlashOption({
+      description: "Ne montrer que les campagnes ouvertes ou à venir",
+      name: "en-cours",
+      required: false,
+      type: ApplicationCommandOptionType.Boolean,
+    })
+    enCours: boolean | undefined,
+    @SlashOption({
+      description: "Numéro de page",
+      minValue: 1,
+      name: "page",
+      required: false,
+      type: ApplicationCommandOptionType.Integer,
+    })
+    page: number | undefined,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await interaction.deferReply();
+    try {
+      await interaction.editReply(await rendrePage({ enCours: enCours === true, page: page ?? 1 }));
+    } catch (err) {
+      await repondre(
+        interaction,
+        echec("Lecture des campagnes impossible", err instanceof Error ? err.message : String(err)),
+      );
+    }
+  }
 
-	/** Boutons de pagination — état intégral dans le `customId` (cf. `/sondage`). */
-	@ButtonComponent({ id: /^cmp\|/ })
-	async paginer(interaction: ButtonInteraction) {
-		const etat = decoderEtatCampagnes(interaction.customId);
-		if (!etat) {
-			await interaction.reply({
-				content: "Pagination illisible.",
-				flags: MessageFlags.Ephemeral,
-			});
-			return;
-		}
-		await interaction.deferUpdate();
-		try {
-			await interaction.editReply(await rendrePage(etat));
-		} catch (err) {
-			await interaction.followUp({
-				content: `❌ ${err instanceof Error ? err.message : String(err)}`,
-				flags: MessageFlags.Ephemeral,
-			});
-		}
-	}
+  /** Boutons de pagination — état intégral dans le `customId` (cf. `/sondage`). */
+  @ButtonComponent({ id: /^cmp\|/ })
+  async paginer(interaction: ButtonInteraction) {
+    const etat = decoderEtatCampagnes(interaction.customId);
+    if (!etat) {
+      await interaction.reply({
+        content: "Pagination illisible.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+    await interaction.deferUpdate();
+    try {
+      await interaction.editReply(await rendrePage(etat));
+    } catch (err) {
+      await interaction.followUp({
+        content: `❌ ${err instanceof Error ? err.message : String(err)}`,
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+  }
 
-	@Slash({
-		description: "Affiche une campagne : participations, métriques et créations récoltées",
-		name: "voir",
-	})
-	async voir(
-		@SlashOption({
-			autocomplete: async (interaction: AutocompleteInteraction) => {
-				try {
-					const saisie = String(interaction.options.getFocused() ?? "").toLowerCase();
-					const campagnes = await campagnesConnues();
-					await interaction.respond(
-						campagnes
-							.filter(
-								(entree) =>
-									entree.titre.toLowerCase().includes(saisie) || entree.slug.includes(saisie)
-							)
-							.slice(0, 25)
-							.map((entree) => ({
-								name: couper(entree.titre, 100),
-								value: entree.slug,
-							}))
-					);
-				} catch {
-					await interaction.respond([]);
-				}
-			},
-			description: "Campagne (choisir dans la liste, ou saisir son slug)",
-			name: "campagne",
-			required: true,
-			type: ApplicationCommandOptionType.String,
-		})
-		slug: string,
-		interaction: ChatInputCommandInteraction
-	) {
-		await interaction.deferReply();
-		try {
-			const propre = slug.trim().toLowerCase();
-			const trouvee = await lireCampagne(propre);
-			if (!trouvee) {
-				await interaction.editReply({
-					content: `Aucune campagne publiée ne porte le slug \`${truncate(slug, 40)}\`. Utilise \`/campagne liste\` pour la retrouver.`,
-				});
-				return;
-			}
-			const [posts, actifs] = await Promise.all([
-				dernieresPublications(propre, POSTS_MONTRES),
-				participantsLesPlusActifs(propre, TOP_AUTEURS),
-			]);
-			await interaction.editReply(rendreCampagne(trouvee.campagne, trouvee.stats, posts, actifs));
-		} catch (err) {
-			await repondre(
-				interaction,
-				echec("Lecture de la campagne impossible", err instanceof Error ? err.message : String(err))
-			);
-		}
-	}
+  @Slash({
+    description: "Affiche une campagne : participations, métriques et créations récoltées",
+    name: "voir",
+  })
+  async voir(
+    @SlashOption({
+      autocomplete: async (interaction: AutocompleteInteraction) => {
+        try {
+          const saisie = String(interaction.options.getFocused() ?? "").toLowerCase();
+          const campagnes = await campagnesConnues();
+          await interaction.respond(
+            campagnes
+              .filter(entree => entree.titre.toLowerCase().includes(saisie) || entree.slug.includes(saisie))
+              .slice(0, 25)
+              .map(entree => ({
+                name: couper(entree.titre, 100),
+                value: entree.slug,
+              })),
+          );
+        } catch {
+          await interaction.respond([]);
+        }
+      },
+      description: "Campagne (choisir dans la liste, ou saisir son slug)",
+      name: "campagne",
+      required: true,
+      type: ApplicationCommandOptionType.String,
+    })
+    slug: string,
+    interaction: ChatInputCommandInteraction,
+  ) {
+    await interaction.deferReply();
+    try {
+      const propre = slug.trim().toLowerCase();
+      const trouvee = await lireCampagne(propre);
+      if (!trouvee) {
+        await interaction.editReply({
+          content: `Aucune campagne publiée ne porte le slug \`${truncate(slug, 40)}\`. Utilise \`/campagne liste\` pour la retrouver.`,
+        });
+        return;
+      }
+      const [posts, actifs] = await Promise.all([
+        dernieresPublications(propre, POSTS_MONTRES),
+        participantsLesPlusActifs(propre, TOP_AUTEURS),
+      ]);
+      await interaction.editReply(rendreCampagne(trouvee.campagne, trouvee.stats, posts, actifs));
+    } catch (err) {
+      await repondre(
+        interaction,
+        echec("Lecture de la campagne impossible", err instanceof Error ? err.message : String(err)),
+      );
+    }
+  }
 }

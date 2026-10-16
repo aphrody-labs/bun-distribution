@@ -286,7 +286,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               { color: "#FF9800", label: "PHY", value: stats.physical },
               { color: "#FDD835", label: "AGI", value: stats.agility },
               { color: "#AB47BC", label: "INT", value: stats.intelligence },
-            ].map((s) => (
+            ].map(s => (
               <div
                 key={s.label}
                 style={{

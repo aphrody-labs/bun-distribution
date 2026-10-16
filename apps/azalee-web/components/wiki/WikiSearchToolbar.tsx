@@ -96,15 +96,13 @@ export function WikiSearchToolbar({
   };
 
   // Count active filters (excluding 'q' and 'page')
-  const activeFilterCount = [...searchParams.entries()].filter(
-    ([key]) => key !== "q" && key !== "page",
-  ).length;
+  const activeFilterCount = [...searchParams.entries()].filter(([key]) => key !== "q" && key !== "page").length;
 
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const handleResetFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
-    filterKeys.forEach((k) => params.delete(k));
+    filterKeys.forEach(k => params.delete(k));
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -112,10 +110,7 @@ export function WikiSearchToolbar({
     <Button
       variant={activeFilterCount > 0 ? "secondary" : "ghost"}
       size="sm"
-      className={cn(
-        "rounded-full gap-2 px-4 transition-all h-10 md:h-9",
-        activeFilterCount > 0 && "font-bold",
-      )}
+      className={cn("rounded-full gap-2 px-4 transition-all h-10 md:h-9", activeFilterCount > 0 && "font-bold")}
     >
       {activeFilterCount > 0 ? (
         <ListFilter size={18} aria-hidden="true" />
@@ -152,7 +147,7 @@ export function WikiSearchToolbar({
         {/* Input */}
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           placeholder={finalPlaceholder}
           aria-label={finalPlaceholder}
           className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 h-11 sm:h-10 text-base"
@@ -218,10 +213,7 @@ function FilterContainer({
     return (
       <Sheet>
         <SheetTrigger asChild>{filterButton}</SheetTrigger>
-        <SheetContent
-          side="right"
-          className="w-full sm:w-[400px] md:w-[540px] flex flex-col h-full"
-        >
+        <SheetContent side="right" className="w-full sm:w-[400px] md:w-[540px] flex flex-col h-full">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2 text-xl">
               <SlidersHorizontal size={24} aria-hidden="true" />

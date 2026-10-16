@@ -24,8 +24,7 @@ function Verification() {
   // est exactement ce qu'on utilise pour faire atterrir quelqu'un sur un faux
   // site juste après qu'il a prouvé son identité.
   const demande = parametres.get("callbackURL");
-  const destination =
-    demande && demande.startsWith("/") && !demande.startsWith("//") ? demande : "/";
+  const destination = demande && demande.startsWith("/") && !demande.startsWith("//") ? demande : "/";
 
   return (
     <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
@@ -44,7 +43,7 @@ function Verification() {
             throw new Error(error.message ?? "Code refusé.");
           }
         }}
-        verifierCodeDeSecours={async (code) => {
+        verifierCodeDeSecours={async code => {
           const { error } = await authClient.twoFactor.verifyBackupCode({ code });
           if (error) {
             throw new Error(error.message ?? "Code de secours refusé.");

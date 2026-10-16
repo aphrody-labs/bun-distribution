@@ -26,13 +26,13 @@
  * et le lire en `number` perdrait silencieusement les bits hauts.
  */
 export const PERMISSIONS = {
-	KICK_MEMBERS: 1n << 1n,
-	BAN_MEMBERS: 1n << 2n,
-	ADMINISTRATOR: 1n << 3n,
-	MANAGE_GUILD: 1n << 5n,
-	MANAGE_MESSAGES: 1n << 13n,
-	MANAGE_ROLES: 1n << 28n,
-	MODERATE_MEMBERS: 1n << 40n,
+  KICK_MEMBERS: 1n << 1n,
+  BAN_MEMBERS: 1n << 2n,
+  ADMINISTRATOR: 1n << 3n,
+  MANAGE_GUILD: 1n << 5n,
+  MANAGE_MESSAGES: 1n << 13n,
+  MANAGE_ROLES: 1n << 28n,
+  MODERATE_MEMBERS: 1n << 40n,
 } as const;
 
 /** Un rôle qui porte l'un de ces droits gouverne le serveur. */
@@ -40,38 +40,38 @@ const DROITS_ADMINISTRATION = PERMISSIONS.ADMINISTRATOR | PERMISSIONS.MANAGE_GUI
 
 /** Un rôle qui porte l'un de ceux-là modère, sans gouverner. */
 const DROITS_MODERATION =
-	PERMISSIONS.KICK_MEMBERS |
-	PERMISSIONS.BAN_MEMBERS |
-	PERMISSIONS.MANAGE_MESSAGES |
-	PERMISSIONS.MANAGE_ROLES |
-	PERMISSIONS.MODERATE_MEMBERS;
+  PERMISSIONS.KICK_MEMBERS |
+  PERMISSIONS.BAN_MEMBERS |
+  PERMISSIONS.MANAGE_MESSAGES |
+  PERMISSIONS.MANAGE_ROLES |
+  PERMISSIONS.MODERATE_MEMBERS;
 
 /** Rang d'un membre dans la hiérarchie, du plus haut au plus bas. */
 export type RangDiscord = "administration" | "moderation" | "communaute";
 
 export interface RoleDiscord {
-	role_id: string;
-	name: string;
-	/** Position Discord : plus le nombre est grand, plus le rôle est haut. */
-	position: number;
-	/** Couleur entière Discord ; `0` signifie « pas de couleur », pas « noir ». */
-	color: number;
-	/** Rôle détaché dans la liste des membres de Discord. */
-	is_hoisted: boolean;
-	/** Bitfield sérialisé en chaîne décimale, tel que Discord le rend. */
-	permissions: string | null;
-	icon_url?: string | null;
+  role_id: string;
+  name: string;
+  /** Position Discord : plus le nombre est grand, plus le rôle est haut. */
+  position: number;
+  /** Couleur entière Discord ; `0` signifie « pas de couleur », pas « noir ». */
+  color: number;
+  /** Rôle détaché dans la liste des membres de Discord. */
+  is_hoisted: boolean;
+  /** Bitfield sérialisé en chaîne décimale, tel que Discord le rend. */
+  permissions: string | null;
+  icon_url?: string | null;
 }
 
 export interface MembreDiscord {
-	discord_id: string;
-	username: string;
-	display_name?: string | null;
-	nickname?: string | null;
-	avatar_url?: string | null;
-	joined_at?: string | null;
-	premium_since?: string | null;
-	roles: string[];
+  discord_id: string;
+  username: string;
+  display_name?: string | null;
+  nickname?: string | null;
+  avatar_url?: string | null;
+  joined_at?: string | null;
+  premium_since?: string | null;
+  roles: string[];
 }
 
 /**
@@ -82,40 +82,40 @@ export interface MembreDiscord {
  * pas.
  */
 export function lirePermissions(brut: string | null | undefined): bigint {
-	if (!brut) return 0n;
-	try {
-		return BigInt(brut);
-	} catch {
-		return 0n;
-	}
+  if (!brut) return 0n;
+  try {
+    return BigInt(brut);
+  } catch {
+    return 0n;
+  }
 }
 
 /** Le rôle gouverne-t-il le serveur ? */
 export function estRoleAdministration(role: RoleDiscord): boolean {
-	return (lirePermissions(role.permissions) & DROITS_ADMINISTRATION) !== 0n;
+  return (lirePermissions(role.permissions) & DROITS_ADMINISTRATION) !== 0n;
 }
 
 /** Le rôle modère-t-il, sans gouverner ? */
 export function estRoleModeration(role: RoleDiscord): boolean {
-	if (estRoleAdministration(role)) return false;
-	return (lirePermissions(role.permissions) & DROITS_MODERATION) !== 0n;
+  if (estRoleAdministration(role)) return false;
+  return (lirePermissions(role.permissions) & DROITS_MODERATION) !== 0n;
 }
 
 export interface MembreClasse extends MembreDiscord {
-	rang: RangDiscord;
-	/** Nom affiché : surnom de serveur, puis nom global, puis pseudo. */
-	nomAffiche: string;
-	/**
-	 * Rôle qui DÉTERMINE la place du membre : son rôle `hoisted` le plus haut,
-	 * exactement ce que Discord affiche comme section. À défaut, son rôle le plus
-	 * haut tout court — un membre peut n'avoir que des rôles discrets.
-	 */
-	roleDeSection: RoleDiscord | null;
-	/** Rôle le plus haut, quel qu'il soit : c'est lui qui donne la couleur. */
-	roleLePlusHaut: RoleDiscord | null;
-	/** Position du rôle le plus haut, pour trier. */
-	position: number;
-	estBooster: boolean;
+  rang: RangDiscord;
+  /** Nom affiché : surnom de serveur, puis nom global, puis pseudo. */
+  nomAffiche: string;
+  /**
+   * Rôle qui DÉTERMINE la place du membre : son rôle `hoisted` le plus haut,
+   * exactement ce que Discord affiche comme section. À défaut, son rôle le plus
+   * haut tout court — un membre peut n'avoir que des rôles discrets.
+   */
+  roleDeSection: RoleDiscord | null;
+  /** Rôle le plus haut, quel qu'il soit : c'est lui qui donne la couleur. */
+  roleLePlusHaut: RoleDiscord | null;
+  /** Position du rôle le plus haut, pour trier. */
+  position: number;
+  estBooster: boolean;
 }
 
 /**
@@ -125,39 +125,36 @@ export interface MembreClasse extends MembreDiscord {
  * rôles est réécrite à chaque synchronisation, un identifiant qui n'y est plus
  * désigne un rôle supprimé.
  */
-export function classerMembre(
-	membre: MembreDiscord,
-	rolesParId: Map<string, RoleDiscord>
-): MembreClasse {
-	const roles = membre.roles
-		.map((id) => rolesParId.get(id))
-		.filter((role): role is RoleDiscord => role !== undefined)
-		.sort((a, b) => b.position - a.position);
+export function classerMembre(membre: MembreDiscord, rolesParId: Map<string, RoleDiscord>): MembreClasse {
+  const roles = membre.roles
+    .map(id => rolesParId.get(id))
+    .filter((role): role is RoleDiscord => role !== undefined)
+    .sort((a, b) => b.position - a.position);
 
-	const roleLePlusHaut = roles[0] ?? null;
-	const roleDeSection = roles.find((role) => role.is_hoisted) ?? roleLePlusHaut;
+  const roleLePlusHaut = roles[0] ?? null;
+  const roleDeSection = roles.find(role => role.is_hoisted) ?? roleLePlusHaut;
 
-	const rang: RangDiscord = roles.some(estRoleAdministration)
-		? "administration"
-		: roles.some(estRoleModeration)
-			? "moderation"
-			: "communaute";
+  const rang: RangDiscord = roles.some(estRoleAdministration)
+    ? "administration"
+    : roles.some(estRoleModeration)
+      ? "moderation"
+      : "communaute";
 
-	return {
-		...membre,
-		estBooster: Boolean(membre.premium_since),
-		nomAffiche: membre.nickname || membre.display_name || membre.username,
-		position: roleLePlusHaut?.position ?? 0,
-		rang,
-		roleDeSection,
-		roleLePlusHaut,
-	};
+  return {
+    ...membre,
+    estBooster: Boolean(membre.premium_since),
+    nomAffiche: membre.nickname || membre.display_name || membre.username,
+    position: roleLePlusHaut?.position ?? 0,
+    rang,
+    roleDeSection,
+    roleLePlusHaut,
+  };
 }
 
 export interface SectionHierarchie {
-	/** Rôle qui donne son nom à la section, `null` pour « sans rôle détaché ». */
-	role: RoleDiscord | null;
-	membres: MembreClasse[];
+  /** Rôle qui donne son nom à la section, `null` pour « sans rôle détaché ». */
+  role: RoleDiscord | null;
+  membres: MembreClasse[];
 }
 
 /**
@@ -171,34 +168,30 @@ export interface SectionHierarchie {
  * Les sections vides sont omises — un rôle peut exister sans porteur.
  */
 export function grouperParSection(membres: MembreClasse[]): SectionHierarchie[] {
-	const sections = new Map<string, SectionHierarchie>();
+  const sections = new Map<string, SectionHierarchie>();
 
-	for (const membre of membres) {
-		const role = membre.roleDeSection?.is_hoisted ? membre.roleDeSection : null;
-		const cle = role?.role_id ?? "";
-		const section = sections.get(cle) ?? { membres: [], role };
-		section.membres.push(membre);
-		sections.set(cle, section);
-	}
+  for (const membre of membres) {
+    const role = membre.roleDeSection?.is_hoisted ? membre.roleDeSection : null;
+    const cle = role?.role_id ?? "";
+    const section = sections.get(cle) ?? { membres: [], role };
+    section.membres.push(membre);
+    sections.set(cle, section);
+  }
 
-	for (const section of sections.values()) {
-		section.membres.sort(
-			(a, b) =>
-				b.position - a.position ||
-				new Date(a.joined_at ?? 0).getTime() - new Date(b.joined_at ?? 0).getTime()
-		);
-	}
+  for (const section of sections.values()) {
+    section.membres.sort(
+      (a, b) => b.position - a.position || new Date(a.joined_at ?? 0).getTime() - new Date(b.joined_at ?? 0).getTime(),
+    );
+  }
 
-	return [...sections.values()].sort(
-		(a, b) => (b.role?.position ?? -1) - (a.role?.position ?? -1)
-	);
+  return [...sections.values()].sort((a, b) => (b.role?.position ?? -1) - (a.role?.position ?? -1));
 }
 
 /** Couleur CSS d'un rôle, ou `null` quand Discord n'en donne pas. */
 export function couleurRole(role: RoleDiscord | null | undefined): string | null {
-	// `0` n'est pas noir : c'est l'absence de couleur, et le membre hérite alors
-	// de la couleur du texte. Le rendre en `#000000` écrivait en noir sur fond
-	// sombre.
-	if (!role || !role.color) return null;
-	return `#${role.color.toString(16).padStart(6, "0")}`;
+  // `0` n'est pas noir : c'est l'absence de couleur, et le membre hérite alors
+  // de la couleur du texte. Le rendre en `#000000` écrivait en noir sur fond
+  // sombre.
+  if (!role || !role.color) return null;
+  return `#${role.color.toString(16).padStart(6, "0")}`;
 }

@@ -1,13 +1,7 @@
 import type { MediaEntry } from "./work";
 
-export function nextUnwatchedEpisode(
-  available: readonly number[],
-  watched: ReadonlySet<number>,
-): number | null {
-  return (
-    [...available].sort((left, right) => left - right).find((episode) => !watched.has(episode)) ??
-    null
-  );
+export function nextUnwatchedEpisode(available: readonly number[], watched: ReadonlySet<number>): number | null {
+  return [...available].sort((left, right) => left - right).find(episode => !watched.has(episode)) ?? null;
 }
 
 export function neighboringEpisodes(
@@ -18,8 +12,8 @@ export function neighboringEpisodes(
   const index = sorted.indexOf(episode);
   return index < 0
     ? {
-        previous: sorted.filter((candidate) => candidate < episode).at(-1) ?? null,
-        next: sorted.find((candidate) => candidate > episode) ?? null,
+        previous: sorted.filter(candidate => candidate < episode).at(-1) ?? null,
+        next: sorted.find(candidate => candidate > episode) ?? null,
       }
     : {
         previous: index > 0 ? sorted[index - 1]! : null,
@@ -27,18 +21,15 @@ export function neighboringEpisodes(
       };
 }
 
-export function nextUnwatchedEntry(
-  entries: readonly MediaEntry[],
-  watched: ReadonlySet<string>,
-): MediaEntry | null {
-  return entries.find((entry) => !watched.has(entry.id)) ?? null;
+export function nextUnwatchedEntry(entries: readonly MediaEntry[], watched: ReadonlySet<string>): MediaEntry | null {
+  return entries.find(entry => !watched.has(entry.id)) ?? null;
 }
 
 export function neighboringEntries(
   entries: readonly MediaEntry[],
   currentId: string,
 ): { previous: MediaEntry | null; next: MediaEntry | null } {
-  const index = entries.findIndex((entry) => entry.id === currentId);
+  const index = entries.findIndex(entry => entry.id === currentId);
   return index < 0
     ? { previous: null, next: entries[0] ?? null }
     : {

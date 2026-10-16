@@ -12,8 +12,7 @@
 import { crawlWebRecon } from "./web-recon";
 import { cronSharedPath } from "../../lib/shared-path";
 
-const outDir =
-	process.argv[2] || cronSharedPath("ie-crawl", "victory-road-fr");
+const outDir = process.argv[2] || cronSharedPath("ie-crawl", "victory-road-fr");
 const rootUrl = process.argv[3] || "https://www.inazuma.jp/victory-road/fr/";
 
 const t0 = Date.now();
@@ -31,6 +30,5 @@ console.log(`css            : ${res.css.length}`);
 console.log(`js             : ${res.js.length}`);
 console.log(`json payloads  : ${res.json.length}`);
 console.log("\nArtefacts :");
-for (const [name, info] of Object.entries(res.artifacts))
-	console.log(`  ${name.padEnd(18)} ${info.bytes} octets`);
+for (const [name, info] of Object.entries(res.artifacts)) console.log(`  ${name.padEnd(18)} ${info.bytes} octets`);
 console.log(`\nDurée : ${((Date.now() - t0) / 1000).toFixed(1)}s`);

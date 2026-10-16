@@ -55,9 +55,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // inconnue » pour tout le monde. `claimed_at` est la date de réclamation du
   // profil — et quand elle manque, on n'affiche pas la ligne du tout plutôt
   // que d'écrire une non-information.
-  const joinedDate = profile.claimed_at
-    ? format(new Date(profile.claimed_at), "MMMM yyyy", { locale: fr })
-    : null;
+  const joinedDate = profile.claimed_at ? format(new Date(profile.claimed_at), "MMMM yyyy", { locale: fr }) : null;
 
   // Role badge config
   const roleConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -174,9 +172,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
               {/* Bio */}
               {profile.bio && (
-                <p className="type-body-large text-on-surface-variant leading-relaxed max-w-2xl">
-                  {profile.bio}
-                </p>
+                <p className="type-body-large text-on-surface-variant leading-relaxed max-w-2xl">{profile.bio}</p>
               )}
             </div>
           </div>

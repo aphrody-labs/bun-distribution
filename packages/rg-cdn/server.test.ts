@@ -247,7 +247,6 @@ describe("/api/assets/<scope>/<path> — résolution + anti-traversal", () => {
   });
 });
 
-
 describe("manifest absent", () => {
   test("GET /api/assets/manifest sans fichier → 503", async () => {
     const res = await fetch(`${base}/api/assets/manifest`);

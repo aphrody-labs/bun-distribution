@@ -28,11 +28,4 @@ export const SEASON_LABELS: Record<string, string> = {
   ORION: "Orion",
 };
 
-export type {
-  TeamDetail,
-  TeamEmblem,
-  TeamKit,
-  TeamKitModel,
-  TeamListItem,
-  TeamRosterMember,
-} from "./types.js";
+export type { TeamDetail, TeamEmblem, TeamKit, TeamKitModel, TeamListItem, TeamRosterMember } from "./types.js";

@@ -5,11 +5,7 @@ import { PatchNoteViewer } from "@/components/wiki/patch-notes/PatchNoteViewer";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const note = await getPatchNoteDetail(id);
   const title = note?.title || "Patch Note";

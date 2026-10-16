@@ -15,11 +15,7 @@ async function requireTweetAdmin() {
   }
 
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
 
   if (!profile || !isAdminRole(profile.role)) {
     return { error: "Permissions insuffisantes" as const, session: null };
@@ -64,9 +60,7 @@ export async function saveTweet(data: TweetFormValues) {
   } else {
     // Create new
     const id = Date.now().toString(); // Simple ID generation
-    ({ error } = await adminDb
-      .from("tweets")
-      .insert([{ ...payload, created_at: new Date().toISOString(), id }]));
+    ({ error } = await adminDb.from("tweets").insert([{ ...payload, created_at: new Date().toISOString(), id }]));
   }
 
   if (error) {

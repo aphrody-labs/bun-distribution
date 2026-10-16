@@ -114,7 +114,7 @@ export async function getArticleSeries(
       [series.id],
     );
 
-    const currentIndex = seriesArticles.findIndex((a) => a.id === articleId);
+    const currentIndex = seriesArticles.findIndex(a => a.id === articleId);
 
     return {
       articles: seriesArticles,
@@ -133,9 +133,7 @@ export async function getArticleSeries(
  */
 export async function getAllSeries(): Promise<SeriesSummary[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("article_series")
-    .select("id, title, slug, description, cover_image_url");
+  const { data } = await supabase.from("article_series").select("id, title, slug, description, cover_image_url");
 
   if (!data) {
     return [];
@@ -144,7 +142,7 @@ export async function getAllSeries(): Promise<SeriesSummary[]> {
   // Récupérer le compte d'articles par série
   const counts = await Promise.all(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (data as any[]).map(async (series) => {
+    (data as any[]).map(async series => {
       const { count } = await supabase
         .from("articles")
         .select("id", { count: "exact", head: true })
@@ -153,10 +151,10 @@ export async function getAllSeries(): Promise<SeriesSummary[]> {
     }),
   );
 
-  const countMap = new Map(counts.map((c) => [c.id, c.count]));
+  const countMap = new Map(counts.map(c => [c.id, c.count]));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data as any[]).map((series) => ({
+  return (data as any[]).map(series => ({
     article_count: countMap.get(series.id) || 0,
     cover_image_url: series.cover_image_url,
     description: series.description,
@@ -229,10 +227,7 @@ export async function removeArticleFromSeries(articleId: string): Promise<{ succ
   await requireAdmin();
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("articles")
-    .update({ series_id: null, series_order: 0 })
-    .eq("id", articleId);
+  const { error } = await supabase.from("articles").update({ series_id: null, series_order: 0 }).eq("id", articleId);
 
   if (error) {
     throw new Error(error.message);

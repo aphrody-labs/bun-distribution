@@ -42,54 +42,54 @@ import { reglagesDe } from "./communaute";
  * l'accusé de réception en rappel permanent). Rend la phrase d'alerte sinon.
  */
 export async function publierAuJournal(
-	client: Client,
-	guildId: string,
-	entree: ActionJournalisee
+  client: Client,
+  guildId: string,
+  entree: ActionJournalisee,
 ): Promise<string | null> {
-	let salonId: string | null = null;
-	try {
-		const reglages = await reglagesDe(guildId);
-		if (!reglages.moderation.actif || !reglages.moderation.salonJournal) {
-			return null;
-		}
-		salonId = reglages.moderation.salonJournal;
-	} catch (err) {
-		return `Les réglages de la guilde n'ont pas pu être lus : l'action n'est PAS au journal du serveur (${message(err)}).`;
-	}
+  let salonId: string | null = null;
+  try {
+    const reglages = await reglagesDe(guildId);
+    if (!reglages.moderation.actif || !reglages.moderation.salonJournal) {
+      return null;
+    }
+    salonId = reglages.moderation.salonJournal;
+  } catch (err) {
+    return `Les réglages de la guilde n'ont pas pu être lus : l'action n'est PAS au journal du serveur (${message(err)}).`;
+  }
 
-	const salon = await client.channels.fetch(salonId).catch(() => null);
-	if (!salon || !salon.isTextBased() || !("send" in salon)) {
-		return (
-			`Le salon de journal <#${salonId}> est introuvable ou n'accepte pas de message : ` +
-			`l'action n'y figure pas. Corrige le réglage de modération.`
-		);
-	}
+  const salon = await client.channels.fetch(salonId).catch(() => null);
+  if (!salon || !salon.isTextBased() || !("send" in salon)) {
+    return (
+      `Le salon de journal <#${salonId}> est introuvable ou n'accepte pas de message : ` +
+      `l'action n'y figure pas. Corrige le réglage de modération.`
+    );
+  }
 
-	const ligne = ligneJournal(entree);
-	const carte = fiche({
-		icone: ligne.icone,
-		intention: ligne.intention,
-		titre: ligne.titre,
-		description: ligne.description,
-	});
-	for (const champ of ligne.champs) {
-		carte.champ(champ.nom, champ.valeur, { enLigne: champ.enLigne });
-	}
+  const ligne = ligneJournal(entree);
+  const carte = fiche({
+    icone: ligne.icone,
+    intention: ligne.intention,
+    titre: ligne.titre,
+    description: ligne.description,
+  });
+  for (const champ of ligne.champs) {
+    carte.champ(champ.nom, champ.valeur, { enLigne: champ.enLigne });
+  }
 
-	try {
-		await salon.send({
-			embeds: [carte.finir({ note: "consigné dans admin_audit_log" })],
-			// Une mention posée DANS un embed ne notifie pas — mais la barrière
-			// reste, parce qu'elle ne dépend alors plus de cette propriété-là de
-			// l'API le jour où la carte gagne une ligne de texte hors embed.
-			allowedMentions: { parse: [] },
-		});
-		return null;
-	} catch (err) {
-		return `Le salon de journal <#${salonId}> a refusé le message : l'action n'y figure pas (${message(err)}).`;
-	}
+  try {
+    await salon.send({
+      embeds: [carte.finir({ note: "consigné dans admin_audit_log" })],
+      // Une mention posée DANS un embed ne notifie pas — mais la barrière
+      // reste, parce qu'elle ne dépend alors plus de cette propriété-là de
+      // l'API le jour où la carte gagne une ligne de texte hors embed.
+      allowedMentions: { parse: [] },
+    });
+    return null;
+  } catch (err) {
+    return `Le salon de journal <#${salonId}> a refusé le message : l'action n'y figure pas (${message(err)}).`;
+  }
 }
 
 function message(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
+  return err instanceof Error ? err.message : String(err);
 }

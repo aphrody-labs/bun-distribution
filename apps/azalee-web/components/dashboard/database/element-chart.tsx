@@ -29,21 +29,9 @@ export function ElementChart({ data }: { data: Array<{ name: string; value: numb
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="value"
-              >
+              <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
                 {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={(COLORS as any)[entry.name] || "#8884d8"}
-                    strokeWidth={0}
-                  />
+                  <Cell key={`cell-${index}`} fill={(COLORS as any)[entry.name] || "#8884d8"} strokeWidth={0} />
                 ))}
               </Pie>
               <Tooltip
@@ -58,7 +46,7 @@ export function ElementChart({ data }: { data: Array<{ name: string; value: numb
           </ResponsiveContainer>
         </div>
         <div className="flex flex-wrap justify-center gap-4 mt-4">
-          {data.map((entry) => (
+          {data.map(entry => (
             <div key={entry.name} className="flex items-center gap-2">
               <div
                 className="size-3 rounded-full"

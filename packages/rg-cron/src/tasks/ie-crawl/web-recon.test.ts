@@ -29,19 +29,17 @@ console.log(JSON.stringify({schema:"aphrody-web.crawl/1",pages: probes ? [{url:"
     const argv = (await Bun.file(calls).text())
       .trim()
       .split("\n")
-      .map((line) => JSON.parse(line) as string[]);
+      .map(line => JSON.parse(line) as string[]);
     expect(argv).toHaveLength(2);
-    expect(argv.every((args) => args[0] === "crawl")).toBe(true);
+    expect(argv.every(args => args[0] === "crawl")).toBe(true);
     expect(argv[0]).toContain("--render");
     expect(argv[1]).not.toContain("--render");
     expect(argv[0]).toContain("--include-url-regex");
     expect(argv[0]).toContain("--exclude-url-regex");
     expect(argv[1]?.[argv[1].indexOf("--max-depth") + 1]).toBe("0");
-    expect(result.endpoints.find((entry) => entry.kind === "page")?.status).toBe(206);
-    expect(result.endpoints.find((entry) => entry.url.endsWith("data.json"))?.kind).toBe("json");
-    expect(
-      JSON.parse(await Bun.file(join(dir, "out/json/example.test_data.json.json")).text()),
-    ).toEqual({ value: 42 });
+    expect(result.endpoints.find(entry => entry.kind === "page")?.status).toBe(206);
+    expect(result.endpoints.find(entry => entry.url.endsWith("data.json"))?.kind).toBe("json");
+    expect(JSON.parse(await Bun.file(join(dir, "out/json/example.test_data.json.json")).text())).toEqual({ value: 42 });
   } finally {
     if (before === undefined) delete process.env.APHRODY_WEB_BIN;
     else process.env.APHRODY_WEB_BIN = before;

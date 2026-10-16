@@ -53,9 +53,7 @@ export async function GET(request: NextRequest) {
             top: "20px",
           }}
         >
-          <span style={{ color: "#fff", fontSize: "20px", fontWeight: "bold" }}>
-            Azalée IE Wiki
-          </span>
+          <span style={{ color: "#fff", fontSize: "20px", fontWeight: "bold" }}>Azalée IE Wiki</span>
         </div>
 
         <div
@@ -79,13 +77,7 @@ export async function GET(request: NextRequest) {
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl}
-                alt={name}
-                width="300"
-                height="300"
-                style={{ objectFit: "cover" }}
-              />
+              <img src={imageUrl} alt={name} width="300" height="300" style={{ objectFit: "cover" }} />
             </div>
           )}
 
@@ -137,8 +129,8 @@ export async function GET(request: NextRequest) {
                 margin: 0,
               }}
             >
-              Découvrez les statistiques, techniques et talents de {name} sur Azalée, le wiki
-              francophone de Victory Road.
+              Découvrez les statistiques, techniques et talents de {name} sur Azalée, le wiki francophone de Victory
+              Road.
             </p>
           </div>
         </div>

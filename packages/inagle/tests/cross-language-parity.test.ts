@@ -5,12 +5,7 @@
  */
 
 import { describe, expect, it } from "bun:test";
-import {
-  computeLevel5Crc32,
-  computeNieCrc32,
-  deriveCpkKeyFromFilename,
-  PureCrand,
-} from "../src/nie-bridge/index.js";
+import { computeLevel5Crc32, computeNieCrc32, deriveCpkKeyFromFilename, PureCrand } from "../src/nie-bridge/index.js";
 import {
   NIE_CRYPTO_CONSTANTS,
   NIE_CRITICAL_OFFSETS,
@@ -88,32 +83,32 @@ describe("Cross-Language 5-Runtime Parity Suite (Rust, C++, .NET 10, Bun/TS, Pyt
     it("matches all 7 cryptographic constants across runtimes", () => {
       expect(NIE_CRYPTO_CONSTANTS.length).toBe(7);
 
-      const viola = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "VIOLA_FIXED_KEY");
+      const viola = NIE_CRYPTO_CONSTANTS.find(c => c.name === "VIOLA_FIXED_KEY");
       expect(viola?.intValue).toBe(0x1717e18e);
 
-      const poly = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "LEVEL5_CRC32_POLYNOMIAL");
+      const poly = NIE_CRYPTO_CONSTANTS.find(c => c.name === "LEVEL5_CRC32_POLYNOMIAL");
       expect(poly?.intValue).toBe(0xedb88320);
 
-      const table = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "CRI_ENCRYPTED_TABLE_MAGIC");
+      const table = NIE_CRYPTO_CONSTANTS.find(c => c.name === "CRI_ENCRYPTED_TABLE_MAGIC");
       expect(table?.intValue).toBe(0xf5f39e1f);
 
-      const live = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "LIVES_SAVE_HEADER_MAGIC");
+      const live = NIE_CRYPTO_CONSTANTS.find(c => c.name === "LIVES_SAVE_HEADER_MAGIC");
       expect(live?.intValue).toBe(0x9dce66c3);
 
-      const const2 = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "LIVES_SAVE_CONST2");
+      const const2 = NIE_CRYPTO_CONSTANTS.find(c => c.name === "LIVES_SAVE_CONST2");
       expect(const2?.intValue).toBe(0x2ec3031f);
 
-      const blob = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "LIVES_BLOB_MAGIC");
+      const blob = NIE_CRYPTO_CONSTANTS.find(c => c.name === "LIVES_BLOB_MAGIC");
       expect(blob?.intValue).toBe(0xeeff);
 
-      const steam = NIE_CRYPTO_CONSTANTS.find((c) => c.name === "STEAM_APP_ID");
+      const steam = NIE_CRYPTO_CONSTANTS.find(c => c.name === "STEAM_APP_ID");
       expect(steam?.intValue).toBe(2799860);
     });
 
     it("matches all 8 critical function pointers across runtimes", () => {
       expect(NIE_CRITICAL_OFFSETS.length).toBe(8);
 
-      const offsets = new Map(NIE_CRITICAL_OFFSETS.map((o) => [o.symbol, o.runtimePc]));
+      const offsets = new Map(NIE_CRITICAL_OFFSETS.map(o => [o.symbol, o.runtimePc]));
       expect(offsets.get("GameTickLoop")).toBe(0x1406d5840n);
       expect(offsets.get("CharaControllerUpdate")).toBe(0x1404ecd60n);
       expect(offsets.get("CriFsStreamDecryptBlock")).toBe(0x1405a1120n);
@@ -126,7 +121,7 @@ describe("Cross-Language 5-Runtime Parity Suite (Rust, C++, .NET 10, Bun/TS, Pyt
 
     it("matches all 8 RTTI classes and 3 memory structures", () => {
       expect(NIE_RTTI_CLASSES.length).toBe(8);
-      const rttiNames = NIE_RTTI_CLASSES.map((r) => r.name);
+      const rttiNames = NIE_RTTI_CLASSES.map(r => r.name);
       expect(rttiNames).toContain("Object");
       expect(rttiNames).toContain("CharaController");
       expect(rttiNames).toContain("BallPhysics");

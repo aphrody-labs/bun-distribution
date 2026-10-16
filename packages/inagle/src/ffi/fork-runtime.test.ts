@@ -63,12 +63,7 @@ test("catalog rejects duplicate identities, missing provenance and nonportable p
   const missingHash = catalog();
   missingHash.packages[0]!.sha256 = "";
   expect(() => parseForkCapabilityCatalog(missingHash)).toThrow("provenance hash");
-  for (const path of [
-    "../private/data",
-    "C:/bun/package.json",
-    "/root/package.json",
-    "src\\module.ts",
-  ]) {
+  for (const path of ["../private/data", "C:/bun/package.json", "/root/package.json", "src\\module.ts"]) {
     const invalid = catalog();
     invalid.modules[0]!.source = path;
     expect(() => parseForkCapabilityCatalog(invalid)).toThrow("nonportable source path");
@@ -77,7 +72,7 @@ test("catalog rejects duplicate identities, missing provenance and nonportable p
 
 test("source module presence cannot qualify a missing installed native module", async () => {
   const visited: string[] = [];
-  const evidence = await inspectForkModules(catalog(), async (name) => {
+  const evidence = await inspectForkModules(catalog(), async name => {
     visited.push(name);
     if (name === "bun:python") throw new Error("native Python host missing");
     return { ptr() {}, dlopen() {} };
@@ -113,27 +108,20 @@ test("native graph keeps metadata separate from actual selected Rust extraction"
       },
     ],
     consumerRevision: "c".repeat(40),
-    artifacts: [
-      { fileName: "ie.dll", sha256: "d".repeat(64), abiVersion: 1, aliasOfCanonicalLibrary: true },
-    ],
+    artifacts: [{ fileName: "ie.dll", sha256: "d".repeat(64), abiVersion: 1, aliasOfCanonicalLibrary: true }],
   });
   expect(graph.scope).toEqual({ source: "graph:iecode-bun-fork", profile: "ie" });
   expect(graph.graph.nodes.length).toBeGreaterThan(
-    source.modules.length +
-      source.packages.length +
-      source.nativeCrates.length +
-      source.sourceDelta.length,
+    source.modules.length + source.packages.length + source.nativeCrates.length + source.sourceDelta.length,
   );
   expect(
     graph.graph.links
-      .filter((edge) => edge.relation.startsWith("catalog_"))
-      .every((edge) => edge.confidence === "INFERRED"),
+      .filter(edge => edge.relation.startsWith("catalog_"))
+      .every(edge => edge.confidence === "INFERRED"),
   ).toBe(true);
   expect(graph.extraction?.parseErrors).toEqual([]);
   expect(graph.sourceFiles).toHaveLength(1);
-  expect(
-    graph.graph.nodes.filter((node) => !node.id.startsWith("bun-catalog:")).length,
-  ).toBeGreaterThan(0);
+  expect(graph.graph.nodes.filter(node => !node.id.startsWith("bun-catalog:")).length).toBeGreaterThan(0);
   expect(graph.artifacts[0]?.fileName).toBe("ie.dll");
 });
 

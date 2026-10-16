@@ -4,11 +4,7 @@ import { ButtonComponent, Discord } from "discordx";
 
 import { PROFIL_ANNONCEUR } from "../lib/config";
 import { messageAnnonce, messagePing, urlTweet } from "../lib/tweets-format";
-import {
-	decoderValidation,
-	texteCarteTranchee,
-	PREFIXE_VALIDATION,
-} from "../lib/validation-annonce";
+import { decoderValidation, texteCarteTranchee, PREFIXE_VALIDATION } from "../lib/validation-annonce";
 import { lireTweet } from "../services/tweets";
 import { resoudreSalon } from "../services/tweetsNotifier";
 import { ANNONCEURS_AUTORISES } from "./x";
@@ -37,121 +33,121 @@ import { ANNONCEURS_AUTORISES } from "./x";
  */
 @Discord()
 export class ValidationAnnonce {
-	@ButtonComponent({ id: new RegExp(`^${PREFIXE_VALIDATION}\\|`) })
-	async trancher(interaction: ButtonInteraction): Promise<void> {
-		const etat = decoderValidation(interaction.customId);
-		if (!etat) {
-			await interaction.reply({
-				content: "Ce bouton n'est plus lisible. Relance la récolte pour obtenir une carte fraîche.",
-				flags: MessageFlags.Ephemeral,
-			});
-			return;
-		}
+  @ButtonComponent({ id: new RegExp(`^${PREFIXE_VALIDATION}\\|`) })
+  async trancher(interaction: ButtonInteraction): Promise<void> {
+    const etat = decoderValidation(interaction.customId);
+    if (!etat) {
+      await interaction.reply({
+        content: "Ce bouton n'est plus lisible. Relance la récolte pour obtenir une carte fraîche.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
 
-		if (!ANNONCEURS_AUTORISES.has(interaction.user.id)) {
-			await interaction.reply({
-				content: "⛔ Seuls Yoyo, Inazo et Kolti peuvent valider une annonce.",
-				flags: MessageFlags.Ephemeral,
-			});
-			return;
-		}
+    if (!ANNONCEURS_AUTORISES.has(interaction.user.id)) {
+      await interaction.reply({
+        content: "⛔ Seuls Yoyo, Inazo et Kolti peuvent valider une annonce.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
 
-		const annonce = PROFIL_ANNONCEUR.annoncePosts;
-		if (!annonce) {
-			await interaction.reply({
-				content: "Ce bot n'a pas de salon d'annonce dans son registre : il n'y a nulle part où publier.",
-				flags: MessageFlags.Ephemeral,
-			});
-			return;
-		}
+    const annonce = PROFIL_ANNONCEUR.annoncePosts;
+    if (!annonce) {
+      await interaction.reply({
+        content: "Ce bot n'a pas de salon d'annonce dans son registre : il n'y a nulle part où publier.",
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
 
-		// ⚠ ON RETIRE LES BOUTONS AVANT DE PUBLIER, pas après.
-		// `deferUpdate` puis `editReply` laisserait une fenêtre de plusieurs
-		// secondes — l'appel à Discord pour envoyer l'annonce — pendant laquelle un
-		// second clic serait accepté et publierait le même post une seconde fois.
-		// Éditer d'abord ferme la porte ; si l'envoi échoue ensuite, la carte le
-		// dit, et la commande `/x annoncer` reste disponible pour rattraper.
-		await interaction.update({ components: [] });
+    // ⚠ ON RETIRE LES BOUTONS AVANT DE PUBLIER, pas après.
+    // `deferUpdate` puis `editReply` laisserait une fenêtre de plusieurs
+    // secondes — l'appel à Discord pour envoyer l'annonce — pendant laquelle un
+    // second clic serait accepté et publierait le même post une seconde fois.
+    // Éditer d'abord ferme la porte ; si l'envoi échoue ensuite, la carte le
+    // dit, et la commande `/x annoncer` reste disponible pour rattraper.
+    await interaction.update({ components: [] });
 
-		const tweet = await lireTweet(etat.tweetId);
-		const auteur = tweet?.author_username ?? "inconnu";
-		const url = tweet ? urlTweet(tweet) : `https://x.com/i/status/${etat.tweetId}`;
+    const tweet = await lireTweet(etat.tweetId);
+    const auteur = tweet?.author_username ?? "inconnu";
+    const url = tweet ? urlTweet(tweet) : `https://x.com/i/status/${etat.tweetId}`;
 
-		if (etat.decision === "non") {
-			await interaction.editReply({
-				content: texteCarteTranchee({
-					auteur,
-					decision: "non",
-					parQui: interaction.user.id,
-					url,
-				}),
-				allowedMentions: { parse: [] },
-			});
-			return;
-		}
+    if (etat.decision === "non") {
+      await interaction.editReply({
+        content: texteCarteTranchee({
+          auteur,
+          decision: "non",
+          parQui: interaction.user.id,
+          url,
+        }),
+        allowedMentions: { parse: [] },
+      });
+      return;
+    }
 
-		if (!tweet) {
-			await interaction.editReply({
-				content: texteCarteTranchee({
-					auteur,
-					decision: "ok",
-					echec: "ce post n'est plus dans l'archive.",
-					parQui: interaction.user.id,
-					url,
-				}),
-				allowedMentions: { parse: [] },
-			});
-			return;
-		}
+    if (!tweet) {
+      await interaction.editReply({
+        content: texteCarteTranchee({
+          auteur,
+          decision: "ok",
+          echec: "ce post n'est plus dans l'archive.",
+          parQui: interaction.user.id,
+          url,
+        }),
+        allowedMentions: { parse: [] },
+      });
+      return;
+    }
 
-		const { salon, raison } = await resoudreSalon(interaction.client, annonce.salon);
-		if (!salon) {
-			await interaction.editReply({
-				content: texteCarteTranchee({
-					auteur,
-					decision: "ok",
-					echec: `salon \`${annonce.salon}\` injoignable (${raison ?? "le bot doit y voir et y écrire"}).`,
-					parQui: interaction.user.id,
-					url,
-				}),
-				allowedMentions: { parse: [] },
-			});
-			return;
-		}
+    const { salon, raison } = await resoudreSalon(interaction.client, annonce.salon);
+    if (!salon) {
+      await interaction.editReply({
+        content: texteCarteTranchee({
+          auteur,
+          decision: "ok",
+          echec: `salon \`${annonce.salon}\` injoignable (${raison ?? "le bot doit y voir et y écrire"}).`,
+          parQui: interaction.user.id,
+          url,
+        }),
+        allowedMentions: { parse: [] },
+      });
+      return;
+    }
 
-		try {
-			// Le motif du salon, à la lettre : une amorce suivie de l'URL `fixvx.com`,
-			// que Discord déplie en aperçu complet. Le ping part APRÈS, dans son
-			// propre message — l'inclure empêcherait l'aperçu de se déplier.
-			await salon.send({ content: messageAnnonce(tweet) });
-			if (annonce.roleMention) {
-				await salon.send({
-					content: messagePing(annonce.roleMention),
-					allowedMentions: { roles: [annonce.roleMention] },
-				});
-			}
-			await interaction.editReply({
-				content: texteCarteTranchee({
-					auteur,
-					decision: "ok",
-					parQui: interaction.user.id,
-					url,
-				}),
-				allowedMentions: { parse: [] },
-			});
-		} catch (err) {
-			const detail = err instanceof Error ? err.message : String(err);
-			console.error("[validation] échec de l'annonce :", detail);
-			await interaction.editReply({
-				content: texteCarteTranchee({
-					auteur,
-					decision: "ok",
-					echec: detail.slice(0, 200),
-					parQui: interaction.user.id,
-					url,
-				}),
-				allowedMentions: { parse: [] },
-			});
-		}
-	}
+    try {
+      // Le motif du salon, à la lettre : une amorce suivie de l'URL `fixvx.com`,
+      // que Discord déplie en aperçu complet. Le ping part APRÈS, dans son
+      // propre message — l'inclure empêcherait l'aperçu de se déplier.
+      await salon.send({ content: messageAnnonce(tweet) });
+      if (annonce.roleMention) {
+        await salon.send({
+          content: messagePing(annonce.roleMention),
+          allowedMentions: { roles: [annonce.roleMention] },
+        });
+      }
+      await interaction.editReply({
+        content: texteCarteTranchee({
+          auteur,
+          decision: "ok",
+          parQui: interaction.user.id,
+          url,
+        }),
+        allowedMentions: { parse: [] },
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[validation] échec de l'annonce :", detail);
+      await interaction.editReply({
+        content: texteCarteTranchee({
+          auteur,
+          decision: "ok",
+          echec: detail.slice(0, 200),
+          parQui: interaction.user.id,
+          url,
+        }),
+        allowedMentions: { parse: [] },
+      });
+    }
+  }
 }

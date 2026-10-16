@@ -87,7 +87,7 @@ export function WikiCarousel({ stats }: WikiCarouselProps) {
 
       {/* Single responsive render: horizontal scroll on mobile, grid on desktop */}
       <div className="flex overflow-x-auto snap-x snap-proximity gap-3 -mx-4 px-4 pb-1 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-4 lg:gap-6 md:mx-0 md:px-8 lg:px-12 md:overflow-visible md:snap-none md:pb-0">
-        {WIKI_SECTIONS.map((section) => {
+        {WIKI_SECTIONS.map(section => {
           const count = section.statKey && stats ? stats[section.statKey] : undefined;
 
           return (

@@ -30,9 +30,7 @@ import { Client } from "pg";
 const { DATABASE_URL } = process.env;
 
 if (!DATABASE_URL) {
-  console.error(
-    "❌ Manque DATABASE_URL (postgres connection string requise pour la découverte dynamique)",
-  );
+  console.error("❌ Manque DATABASE_URL (postgres connection string requise pour la découverte dynamique)");
   process.exit(1);
 }
 
@@ -45,7 +43,7 @@ for (const a of args) {
 
 const stamp = new Date().toISOString().replaceAll(/[:.]/g, "-").slice(0, 19);
 const outFile = path.resolve(argMap.get("output") ?? `data/backups/supabase-${stamp}.sqlite`);
-const schemas = (argMap.get("schema") ?? "public").split(",").map((s) => s.trim());
+const schemas = (argMap.get("schema") ?? "public").split(",").map(s => s.trim());
 const includeTablesArg = argMap.get("tables");
 // Filtre PII : ne snapshoter que les tables d'un préfixe (ex --prefix=inagle_).
 // Le wiki ne sert QUE les tables inagle_* via le miroir SQLite ; profiles/articles/
@@ -92,16 +90,16 @@ await pg.connect();
 	`;
   const tblRes = await pg.query<{ table_schema: string; table_name: string }>(tblQuery, [schemas]);
 
-  let names = tblRes.rows.map((r) => ({
+  let names = tblRes.rows.map(r => ({
     name: r.table_name,
     schema: r.table_schema,
   }));
   if (includeTablesArg) {
-    const allow = new Set(includeTablesArg.split(",").map((t) => t.trim()));
-    names = names.filter((t) => allow.has(t.name));
+    const allow = new Set(includeTablesArg.split(",").map(t => t.trim()));
+    names = names.filter(t => allow.has(t.name));
   }
   if (prefixArg) {
-    names = names.filter((t) => t.name.startsWith(prefixArg));
+    names = names.filter(t => t.name.startsWith(prefixArg));
   }
 
   const colQuery = `
@@ -117,7 +115,7 @@ await pg.connect();
       data_type: string;
     }>(colQuery, [t.schema, t.name]);
     tables.push({
-      columns: cols.rows.map((r) => ({
+      columns: cols.rows.map(r => ({
         name: r.column_name,
         pgType: r.data_type,
         sqliteAffinity: affinityFor(r.data_type),
@@ -196,12 +194,12 @@ for (const t of tables) {
   const sqliteName = t.schema === "public" ? t.name : `${t.schema}__${t.name}`;
   const t0 = performance.now();
 
-  const colsDecl = t.columns.map((c) => `"${c.name}" ${c.sqliteAffinity}`).join(", ");
+  const colsDecl = t.columns.map(c => `"${c.name}" ${c.sqliteAffinity}`).join(", ");
   db.exec(`DROP TABLE IF EXISTS "${sqliteName}"`);
   db.exec(`CREATE TABLE "${sqliteName}" (${colsDecl})`);
 
-  const colNames = t.columns.map((c) => `"${c.name}"`).join(", ");
-  const placeholders = t.columns.map((c) => `$${c.name}`).join(", ");
+  const colNames = t.columns.map(c => `"${c.name}"`).join(", ");
+  const placeholders = t.columns.map(c => `$${c.name}`).join(", ");
   const insert = db.prepare(`INSERT INTO "${sqliteName}" (${colNames}) VALUES (${placeholders})`);
 
   const insertMany = db.transaction((rows: Array<Record<string, unknown>>) => {
@@ -217,10 +215,10 @@ for (const t of tables) {
   let count = 0;
   // Pagination par OFFSET (ORDER BY ctid pour stabilité). Pas de curseur (simple).
   for (let offset = 0; ; offset += pageSize) {
-    const res = await pg.query<Record<string, unknown>>(
-      `SELECT * FROM ${tableId} ORDER BY ctid LIMIT $1 OFFSET $2`,
-      [pageSize, offset],
-    );
+    const res = await pg.query<Record<string, unknown>>(`SELECT * FROM ${tableId} ORDER BY ctid LIMIT $1 OFFSET $2`, [
+      pageSize,
+      offset,
+    ]);
     if (res.rows.length === 0) {
       break;
     }
@@ -251,7 +249,7 @@ console.log(
   `  Top 5 tables: ${summary
     .toSorted((a, b) => b.rows - a.rows)
     .slice(0, 5)
-    .map((s) => `${s.table}=${s.rows}`)
+    .map(s => `${s.table}=${s.rows}`)
     .join(", ")}`,
 );
 

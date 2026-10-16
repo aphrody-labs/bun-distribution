@@ -12,9 +12,7 @@ const episode: MediaEntry = {
   title: "Episode 1",
   season: 1,
   episode: 1,
-  sources: [
-    { platform: "youtube", id: "abc12345678", url: "https://youtu.be/abc12345678", official: true },
-  ],
+  sources: [{ platform: "youtube", id: "abc12345678", url: "https://youtu.be/abc12345678", official: true }],
 };
 
 describe("canonical media catalogue", () => {

@@ -15,15 +15,15 @@ export const dynamic = "force-dynamic";
  * catalogue des tâches cron l'a fait, dix-huit noms contre vingt-deux.
  */
 export async function GET() {
-	const garde = await requireApiAdmin();
-	if (!garde.ok) {
-		return garde.response;
-	}
+  const garde = await requireApiAdmin();
+  if (!garde.ok) {
+    return garde.response;
+  }
 
-	const { commandes, indisponibles } = await commandesDesBots();
+  const { commandes, indisponibles } = await commandesDesBots();
 
-	return NextResponse.json(
-		{ commandes, indisponibles, total: commandes.length },
-		{ headers: { "cache-control": "private, no-store" } }
-	);
+  return NextResponse.json(
+    { commandes, indisponibles, total: commandes.length },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }

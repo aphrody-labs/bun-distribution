@@ -124,9 +124,7 @@ export async function loadOpponentTeamConfigAsync(dataPath: string = DATA_ROOT) 
   return content ? parseContent(content) : null;
 }
 
-export async function buildOpponentTeamDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<OpponentTeamDatabase> {
+export async function buildOpponentTeamDatabase(dataPath: string = DATA_ROOT): Promise<OpponentTeamDatabase> {
   const result = await loadOpponentTeamConfigAsync(dataPath);
   const opponents = result?.opponents || [];
   const matchDifficulties = result?.matchDifficulties || [];

@@ -71,7 +71,6 @@ const db = createPostgresClient();
 const { data } = await db.from("profiles").select("*");
 ```
 
-
 ## Scripts
 
 - `types:gen` : Régénère `src/types.gen.ts` depuis la base PostgreSQL **locale**

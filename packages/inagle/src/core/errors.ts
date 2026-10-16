@@ -68,12 +68,7 @@ export class InagleError extends Error {
   public readonly timestamp: Date;
   public override readonly cause?: Error;
 
-  constructor(
-    code: InagleErrorCodeType,
-    message: string,
-    details?: InagleErrorDetails,
-    cause?: Error,
-  ) {
+  constructor(code: InagleErrorCodeType, message: string, details?: InagleErrorDetails, cause?: Error) {
     super(message);
     this.name = "InagleError";
     this.code = code;
@@ -133,11 +128,7 @@ export function isInagleError(error: unknown): error is InagleError {
 /**
  * Wrappe une erreur inconnue en InagleError
  */
-export function wrapError(
-  error: unknown,
-  code: InagleErrorCodeType,
-  context?: string,
-): InagleError {
+export function wrapError(error: unknown, code: InagleErrorCodeType, context?: string): InagleError {
   if (isInagleError(error)) {
     return error;
   }

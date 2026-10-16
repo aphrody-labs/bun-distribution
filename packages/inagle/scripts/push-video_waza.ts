@@ -15,7 +15,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importVideoWaza(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("❌ Erreur push-video_waza:", e);
     process.exit(1);
   });

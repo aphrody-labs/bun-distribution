@@ -54,16 +54,7 @@ export interface SmartSearchResult extends GlobalSearchResult {
 
 /** Search context for prioritization */
 export type SearchContext =
-  | "chara"
-  | "skill"
-  | "team"
-  | "aura"
-  | "passive"
-  | "tactic"
-  | "global"
-  | "item"
-  | "news"
-  | "patchnotes";
+  "chara" | "skill" | "team" | "aura" | "passive" | "tactic" | "global" | "item" | "news" | "patchnotes";
 
 /** Search configuration */
 export interface SmartSearchConfig {
@@ -127,11 +118,7 @@ function getCachedResults(query: string, config: SmartSearchConfig): SmartSearch
 /**
  * Cache search results
  */
-function cacheResults(
-  query: string,
-  config: SmartSearchConfig,
-  results: SmartSearchResult[],
-): void {
+function cacheResults(query: string, config: SmartSearchConfig, results: SmartSearchResult[]): void {
   const key = getCacheKey(query, config);
   searchCache.set(key, {
     results,
@@ -189,10 +176,7 @@ const CONTEXT_PRIORITY: Record<SearchContext, SearchableType[]> = {
 /**
  * Prioritize results based on search context
  */
-function prioritizeResults(
-  results: SmartSearchResult[],
-  context: SearchContext,
-): SmartSearchResult[] {
+function prioritizeResults(results: SmartSearchResult[], context: SearchContext): SmartSearchResult[] {
   const priorities = CONTEXT_PRIORITY[context];
 
   return results.toSorted((a, b) => {
@@ -219,7 +203,7 @@ function prioritizeResults(
  * Enhance search results with language detection
  */
 function enhanceResults(results: GlobalSearchResult[], query: string): SmartSearchResult[] {
-  return results.map((result) => {
+  return results.map(result => {
     const enhanced: SmartSearchResult = { ...result };
 
     // Detect matched language for multilingual items
@@ -249,10 +233,7 @@ function enhanceResults(results: GlobalSearchResult[], query: string): SmartSear
         });
         if (matchedLang) {
           enhanced.matchedLanguage = matchedLang;
-          const langKey = `name_${matchedLang === "JP" ? "JA" : matchedLang}` as
-            | "name_FR"
-            | "name_EN"
-            | "name_JA";
+          const langKey = `name_${matchedLang === "JP" ? "JA" : matchedLang}` as "name_FR" | "name_EN" | "name_JA";
           enhanced.matchedName = (data[langKey] as string) || result.name;
         }
       }
@@ -335,7 +316,7 @@ export async function smartSearch(
 
   // Filter by minimum score
   if (minScore > 0) {
-    results = results.filter((r) => r.score >= minScore);
+    results = results.filter(r => r.score >= minScore);
   }
 
   // Prioritize by context

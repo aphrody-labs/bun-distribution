@@ -33,9 +33,7 @@ export function AzaleeBanner({
   const mostVisitedPages = [
     {
       badge: "Base de données",
-      count: stats?.characters
-        ? `${stats.characters.toLocaleString("fr-FR")} profils`
-        : "Tous les joueurs",
+      count: stats?.characters ? `${stats.characters.toLocaleString("fr-FR")} profils` : "Tous les joueurs",
       description: "Fiches complètes, stats Lv99, passifs et recrutement.",
       href: "/wiki/chara",
       icon: Users,
@@ -43,9 +41,7 @@ export function AzaleeBanner({
     },
     {
       badge: "Catalogue",
-      count: stats?.skills
-        ? `${stats.skills.toLocaleString("fr-FR")} mouvements`
-        : "Tir, dribble, défense",
+      count: stats?.skills ? `${stats.skills.toLocaleString("fr-FR")} mouvements` : "Tir, dribble, défense",
       description: "Puissance, éléments, arbres d'évolution et vidéos.",
       href: "/wiki/skill",
       icon: Swords,
@@ -121,9 +117,7 @@ export function AzaleeBanner({
               </h2>
             </div>
 
-            <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-md font-light">
-              {description}
-            </p>
+            <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-md font-light">{description}</p>
 
             <div className="flex flex-wrap gap-3 pt-0">
               <Button
@@ -181,7 +175,7 @@ export function AzaleeBanner({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {mostVisitedPages.map((page) => {
+            {mostVisitedPages.map(page => {
               const Icon = page.icon;
               return (
                 <Link
@@ -199,9 +193,7 @@ export function AzaleeBanner({
                     <h3 className="text-sm sm:text-base font-bold text-white group-hover/card:text-[#FECD50] transition-colors">
                       {page.title}
                     </h3>
-                    <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed font-light">
-                      {page.description}
-                    </p>
+                    <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed font-light">{page.description}</p>
                   </div>
 
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">

@@ -34,12 +34,10 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
     <section className="border-t border-outline-variant/20 pt-8">
       <div className="flex items-center gap-2 mb-6">
         <Newspaper className="size-5 text-primary" />
-        <h2 className="text-lg font-bold font-sans tracking-tight text-on-surface">
-          Articles similaires
-        </h2>
+        <h2 className="text-lg font-bold font-sans tracking-tight text-on-surface">Articles similaires</h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {articles.map((article) => (
+        {articles.map(article => (
           <Link
             key={article.id}
             href={`/news/${article.slug}`}
@@ -70,9 +68,7 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
               <h3 className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2">
                 {article.title}
               </h3>
-              {article.excerpt && (
-                <p className="text-xs text-on-surface-variant line-clamp-2">{article.excerpt}</p>
-              )}
+              {article.excerpt && <p className="text-xs text-on-surface-variant line-clamp-2">{article.excerpt}</p>}
             </div>
           </Link>
         ))}

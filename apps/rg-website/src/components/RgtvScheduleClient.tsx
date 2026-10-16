@@ -11,16 +11,7 @@ import type { StreamSchedule } from "@rosegriffon/types";
 const logger = createLogger("RgtvSchedule");
 
 // Ordre de tri des jours pour cohérence (Lundi en premier, Dimanche en dernier)
-const DAY_ORDER = [
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-  "Dimanche",
-  "Prochainement",
-];
+const DAY_ORDER = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche", "Prochainement"];
 
 // Cache et revalidation - Récupérer les données toutes les heures
 // Maintenant géré par le wrapper serveur
@@ -146,13 +137,7 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
             backgroundClip: "text",
           }}
         >
-          <Image
-            src="/rgtv/rgtv.webp"
-            alt="RGTV"
-            width={24}
-            height={24}
-            className="size-6 shrink-0"
-          />
+          <Image src="/rgtv/rgtv.webp" alt="RGTV" width={24} height={24} className="size-6 shrink-0" />
           <span>Planning des Streams</span>
         </CardTitle>
       </CardHeader>
@@ -163,9 +148,7 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
               <AlertCircle className="size-10 text-red-400 mx-auto mb-2" />
             </div>
             <div className="text-center">
-              <p className="text-red-300 text-sm font-semibold mb-1">
-                Erreur lors du chargement du planning
-              </p>
+              <p className="text-red-300 text-sm font-semibold mb-1">Erreur lors du chargement du planning</p>
               <p className="text-red-300/60 text-xs">Veuillez rafraîchir la page</p>
             </div>
           </div>
@@ -184,15 +167,13 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
               </div>
               <div className="text-center">
                 <p className="text-purple-300 text-sm font-semibold mb-1">Planning à venir !</p>
-                <p className="text-purple-300/60 text-xs">
-                  Les horaires des streams seront disponibles très bientôt
-                </p>
+                <p className="text-purple-300/60 text-xs">Les horaires des streams seront disponibles très bientôt</p>
               </div>
             </div>
           </div>
         ) : (
           <div className="space-y-5">
-            {sortedDays.map((day) => {
+            {sortedDays.map(day => {
               const rawSchedules = scheduleByDay[day] || [];
               const schedules = sortSchedulesByTime(rawSchedules);
               const totalMinutesStreamed = schedules.reduce((acc, schedule) => {
@@ -243,11 +224,8 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
                       )}
                     </div>
                   </div>
-                  <ul
-                    className="space-y-2 ml-4 border-l-2 pl-6"
-                    style={{ borderColor: "#345182" + "50" }}
-                  >
-                    {schedules.map((schedule) => (
+                  <ul className="space-y-2 ml-4 border-l-2 pl-6" style={{ borderColor: "#345182" + "50" }}>
+                    {schedules.map(schedule => (
                       <li
                         key={schedule.id}
                         className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-3 p-3 md:p-4 rounded-lg transition-all duration-300 border group/stream"
@@ -257,10 +235,7 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
                         }}
                       >
                         <div className="flex-1 min-w-0">
-                          <p
-                            className="font-bold text-sm md:text-base word-break"
-                            style={{ color: colors.text }}
-                          >
+                          <p className="font-bold text-sm md:text-base word-break" style={{ color: colors.text }}>
                             🎮 {schedule.streamer_name}
                           </p>
                           {schedule.category && schedule.category !== "Gameplay" && (
@@ -275,10 +250,7 @@ export function RgtvScheduleClient({ scheduleByDay, error }: RgtvScheduleClientP
                             </p>
                           )}
                           {schedule.notes && (
-                            <p
-                              className="text-xs mt-2 italic opacity-60"
-                              style={{ color: colors.text }}
-                            >
+                            <p className="text-xs mt-2 italic opacity-60" style={{ color: colors.text }}>
                               {schedule.notes}
                             </p>
                           )}

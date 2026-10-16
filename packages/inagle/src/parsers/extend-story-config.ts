@@ -108,9 +108,7 @@ export async function loadExtendStoryConfigAsync(dataPath: string = DATA_ROOT) {
   return content ? parseContent(content) : null;
 }
 
-export async function buildExtendStoryDatabase(
-  dataPath: string = DATA_ROOT,
-): Promise<ExtendStoryDatabase> {
+export async function buildExtendStoryDatabase(dataPath: string = DATA_ROOT): Promise<ExtendStoryDatabase> {
   const result = await loadExtendStoryConfigAsync(dataPath);
   const stories = result?.stories || [];
   const enterEvents = result?.enterEvents || [];

@@ -7,7 +7,14 @@ export const aura_lookup: (a: number, b: number, c: number, d: number) => [numbe
 export const calculate_stats: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
 export const cfgbin_parse_json: (a: number, b: number) => [number, number, number, number];
 export const cfgbin_typed_json: (a: number, b: number, c: number, d: number) => [number, number, number, number];
-export const cpk_extract_file: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
+export const cpk_extract_file: (
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  e: number,
+  f: number,
+) => [number, number, number, number];
 export const cpk_parse_entries: (a: number, b: number, c: number, d: number) => [number, number, number, number];
 export const crilayla_decompress: (a: number, b: number) => [number, number, number, number];
 export const detect_format: (a: number, b: number) => [number, number];

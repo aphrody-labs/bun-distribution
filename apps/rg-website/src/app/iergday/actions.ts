@@ -47,10 +47,10 @@
  */
 
 import {
-	analyserPermalien,
-	hashtagDansLegende,
-	normaliserPseudo,
-	verifierPublication,
+  analyserPermalien,
+  hashtagDansLegende,
+  normaliserPseudo,
+  verifierPublication,
 } from "@rosegriffon/types/instagram";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -61,9 +61,9 @@ import { createPostgresClient } from "@rosegriffon/db/service";
 
 /** Retour uniforme du formulaire. */
 export interface ResultatDepot {
-	success: boolean;
-	error?: string;
-	message?: string;
+  success: boolean;
+  error?: string;
+  message?: string;
 }
 
 /** Bucket public des visuels de campagne — le même que pour Discord. */
@@ -75,19 +75,19 @@ const MAX_DEPOTS_PAR_MEMBRE = 10;
 /** Formats acceptés et poids maximal — alignés sur l'envoi d'image du staff. */
 const TYPES_ACCEPTES = new Set(["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif"]);
 const EXTENSIONS: Record<string, string> = {
-	"image/avif": "avif",
-	"image/gif": "gif",
-	"image/jpeg": "jpg",
-	"image/png": "png",
-	"image/webp": "webp",
+  "image/avif": "avif",
+  "image/gif": "gif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
 };
 const TAILLE_MAX = 8 * 1024 * 1024;
 
 const schema = z.object({
-	campagne: z.string().trim().min(1),
-	permalien: z.string().trim().min(1, "Colle le lien de ta publication Instagram."),
-	pseudo: z.string().trim().max(60).optional(),
-	legende: z.string().trim().max(2200).optional(),
+  campagne: z.string().trim().min(1),
+  permalien: z.string().trim().min(1, "Colle le lien de ta publication Instagram."),
+  pseudo: z.string().trim().max(60).optional(),
+  legende: z.string().trim().max(2200).optional(),
 });
 
 /**
@@ -97,126 +97,125 @@ const schema = z.object({
  * une server action sans passer par une route API et un second aller-retour.
  */
 export async function deposerCreationInstagram(donnees: FormData): Promise<ResultatDepot> {
-	const membre = await getServerUser();
-	if (!membre) {
-		return {
-			error: "Connecte-toi pour déposer ta création — c'est ce qui nous permet de te l'attribuer.",
-			success: false,
-		};
-	}
+  const membre = await getServerUser();
+  if (!membre) {
+    return {
+      error: "Connecte-toi pour déposer ta création — c'est ce qui nous permet de te l'attribuer.",
+      success: false,
+    };
+  }
 
-	const analyse = schema.safeParse({
-		campagne: donnees.get("campagne"),
-		legende: donnees.get("legende") ?? undefined,
-		permalien: donnees.get("permalien"),
-		pseudo: donnees.get("pseudo") ?? undefined,
-	});
-	if (!analyse.success) {
-		return { error: analyse.error.issues[0]?.message ?? "Formulaire incomplet.", success: false };
-	}
-	const v = analyse.data;
+  const analyse = schema.safeParse({
+    campagne: donnees.get("campagne"),
+    legende: donnees.get("legende") ?? undefined,
+    permalien: donnees.get("permalien"),
+    pseudo: donnees.get("pseudo") ?? undefined,
+  });
+  if (!analyse.success) {
+    return { error: analyse.error.issues[0]?.message ?? "Formulaire incomplet.", success: false };
+  }
+  const v = analyse.data;
 
-	const lien = analyserPermalien(v.permalien);
-	if (!lien) {
-		return {
-			error:
-				"Ce lien n'est pas une publication Instagram. Attendu : instagram.com/p/… (ou /reel/…).",
-			success: false,
-		};
-	}
+  const lien = analyserPermalien(v.permalien);
+  if (!lien) {
+    return {
+      error: "Ce lien n'est pas une publication Instagram. Attendu : instagram.com/p/… (ou /reel/…).",
+      success: false,
+    };
+  }
 
-	const fichier = donnees.get("image");
-	if (!(fichier instanceof File) || fichier.size === 0) {
-		return {
-			error: "Ajoute l'image de ta création : Instagram ne nous laisse pas la récupérer nous-mêmes.",
-			success: false,
-		};
-	}
-	if (!TYPES_ACCEPTES.has(fichier.type)) {
-		return { error: "Format non supporté : PNG, JPEG, WebP, AVIF ou GIF.", success: false };
-	}
-	if (fichier.size > TAILLE_MAX) {
-		return { error: "L'image ne doit pas dépasser 8 Mo.", success: false };
-	}
+  const fichier = donnees.get("image");
+  if (!(fichier instanceof File) || fichier.size === 0) {
+    return {
+      error: "Ajoute l'image de ta création : Instagram ne nous laisse pas la récupérer nous-mêmes.",
+      success: false,
+    };
+  }
+  if (!TYPES_ACCEPTES.has(fichier.type)) {
+    return { error: "Format non supporté : PNG, JPEG, WebP, AVIF ou GIF.", success: false };
+  }
+  if (fichier.size > TAILLE_MAX) {
+    return { error: "L'image ne doit pas dépasser 8 Mo.", success: false };
+  }
 
-	try {
-		const pool = getPgPool();
+  try {
+    const pool = getPgPool();
 
-		// La campagne doit être ouverte au dépôt. On relit son état plutôt que de
-		// faire confiance au champ caché du formulaire : celui-ci vient du
-		// navigateur, donc de personne.
-		const { rows: campagnes } = await pool.query(
-			`select slug, hashtags, hashtags_rattrapage, fin_le, actif, publiee
+    // La campagne doit être ouverte au dépôt. On relit son état plutôt que de
+    // faire confiance au champ caché du formulaire : celui-ci vient du
+    // navigateur, donc de personne.
+    const { rows: campagnes } = await pool.query(
+      `select slug, hashtags, hashtags_rattrapage, fin_le, actif, publiee
 			   from public.x_campagnes where slug = $1`,
-			[v.campagne]
-		);
-		const campagne = campagnes[0];
-		if (!campagne || !campagne.actif || !campagne.publiee) {
-			return { error: "Cette campagne n'accepte pas de dépôt.", success: false };
-		}
-		if (campagne.fin_le && new Date(campagne.fin_le) < new Date()) {
-			return { error: "Cette campagne est close : les dépôts sont terminés.", success: false };
-		}
+      [v.campagne],
+    );
+    const campagne = campagnes[0];
+    if (!campagne || !campagne.actif || !campagne.publiee) {
+      return { error: "Cette campagne n'accepte pas de dépôt.", success: false };
+    }
+    if (campagne.fin_le && new Date(campagne.fin_le) < new Date()) {
+      return { error: "Cette campagne est close : les dépôts sont terminés.", success: false };
+    }
 
-		// Quota par membre. Compté AVANT la vérification Meta et l'envoi du
-		// fichier : inutile de faire travailler deux services pour refuser ensuite.
-		const { rows: deja } = await pool.query(
-			`select count(*)::int as n from public.campagne_creations_instagram
+    // Quota par membre. Compté AVANT la vérification Meta et l'envoi du
+    // fichier : inutile de faire travailler deux services pour refuser ensuite.
+    const { rows: deja } = await pool.query(
+      `select count(*)::int as n from public.campagne_creations_instagram
 			  where campagne_slug = $1 and soumis_par = $2`,
-			[campagne.slug, membre.id]
-		);
-		if ((deja[0]?.n ?? 0) >= MAX_DEPOTS_PAR_MEMBRE) {
-			return {
-				error: `Tu as déjà déposé ${MAX_DEPOTS_PAR_MEMBRE} créations pour cette campagne. Écris à l'équipe si tu en as d'autres.`,
-				success: false,
-			};
-		}
+      [campagne.slug, membre.id],
+    );
+    if ((deja[0]?.n ?? 0) >= MAX_DEPOTS_PAR_MEMBRE) {
+      return {
+        error: `Tu as déjà déposé ${MAX_DEPOTS_PAR_MEMBRE} créations pour cette campagne. Écris à l'équipe si tu en as d'autres.`,
+        success: false,
+      };
+    }
 
-		// Le lien existe-t-il et est-il public ? Une panne de Meta ne bloque PAS le
-		// dépôt (`indeterminee`) : le staff verra la création arriver dans son salon
-		// de suivi et tranchera. Faire payer au participant une panne qui n'est pas
-		// la sienne serait le pire des deux mondes.
-		// Les règles (analyse du lien, verdict) vivent dans
-		// `@rosegriffon/types/instagram` : le cron `campagnes:instagram` REVALIDE
-		// plus tard exactement les mêmes liens, et deux lectures divergentes
-		// laisseraient un post supprimé affiché — ou masqueraient la galerie sur
-		// une panne de Meta.
-		const verification = await verifierPublication(lien.permalien, {
-			base: process.env.INSTAGRAM_OEMBED_URL,
-		});
-		if (verification.verdict === "introuvable") {
-			return { error: verification.message, success: false };
-		}
+    // Le lien existe-t-il et est-il public ? Une panne de Meta ne bloque PAS le
+    // dépôt (`indeterminee`) : le staff verra la création arriver dans son salon
+    // de suivi et tranchera. Faire payer au participant une panne qui n'est pas
+    // la sienne serait le pire des deux mondes.
+    // Les règles (analyse du lien, verdict) vivent dans
+    // `@rosegriffon/types/instagram` : le cron `campagnes:instagram` REVALIDE
+    // plus tard exactement les mêmes liens, et deux lectures divergentes
+    // laisseraient un post supprimé affiché — ou masqueraient la galerie sur
+    // une panne de Meta.
+    const verification = await verifierPublication(lien.permalien, {
+      base: process.env.INSTAGRAM_OEMBED_URL,
+    });
+    if (verification.verdict === "introuvable") {
+      return { error: verification.message, success: false };
+    }
 
-		// Ré-hébergement. Chemin DÉTERMINISTE : un second dépôt du même post écrase
-		// le même objet au lieu d'en empiler une copie par tentative.
-		const extension = EXTENSIONS[fichier.type] ?? "bin";
-		const chemin = `campagnes/${campagne.slug}/instagram/${lien.shortcode}.${extension}`;
-		const admin = createPostgresClient();
-		if (!admin) {
-			return { error: "Service de stockage indisponible. Réessaie dans un moment.", success: false };
-		}
-		const { error: erreurEnvoi } = await admin.storage.from(BUCKET).upload(chemin, fichier, {
-			cacheControl: "3600",
-			contentType: fichier.type,
-			upsert: true,
-		});
-		if (erreurEnvoi) {
-			console.error("[iergday] envoi de l'image Instagram :", erreurEnvoi);
-			return { error: "L'image n'a pas pu être enregistrée. Réessaie.", success: false };
-		}
+    // Ré-hébergement. Chemin DÉTERMINISTE : un second dépôt du même post écrase
+    // le même objet au lieu d'en empiler une copie par tentative.
+    const extension = EXTENSIONS[fichier.type] ?? "bin";
+    const chemin = `campagnes/${campagne.slug}/instagram/${lien.shortcode}.${extension}`;
+    const admin = createPostgresClient();
+    if (!admin) {
+      return { error: "Service de stockage indisponible. Réessaie dans un moment.", success: false };
+    }
+    const { error: erreurEnvoi } = await admin.storage.from(BUCKET).upload(chemin, fichier, {
+      cacheControl: "3600",
+      contentType: fichier.type,
+      upsert: true,
+    });
+    if (erreurEnvoi) {
+      console.error("[iergday] envoi de l'image Instagram :", erreurEnvoi);
+      return { error: "L'image n'a pas pu être enregistrée. Réessaie.", success: false };
+    }
 
-		const hashtags = [
-			...((campagne.hashtags as string[]) ?? []),
-			...((campagne.hashtags_rattrapage as string[]) ?? []),
-		];
+    const hashtags = [
+      ...((campagne.hashtags as string[]) ?? []),
+      ...((campagne.hashtags_rattrapage as string[]) ?? []),
+    ];
 
-		// ⚠ `masque`, `motif_masquage` et `mis_en_avant` sont ABSENTS de la clause
-		// `do update` — même règle que les deux autres sources. Sans ça, un membre
-		// dont la création vient d'être retirée la ferait réapparaître en la
-		// redéposant.
-		await pool.query(
-			`insert into public.campagne_creations_instagram
+    // ⚠ `masque`, `motif_masquage` et `mis_en_avant` sont ABSENTS de la clause
+    // `do update` — même règle que les deux autres sources. Sans ça, un membre
+    // dont la création vient d'être retirée la ferait réapparaître en la
+    // redéposant.
+    await pool.query(
+      `insert into public.campagne_creations_instagram
 			   (campagne_slug, shortcode, permalink, auteur_pseudo, legende, hashtag_trouve,
 			    a_media, nb_images, images, publie_le, origine, soumis_par)
 			 values ($1, $2, $3, $4, $5, $6, true, 1, $7::jsonb, now(), 'formulaire', $8)
@@ -229,40 +228,37 @@ export async function deposerCreationInstagram(donnees: FormData): Promise<Resul
 			   nb_images     = excluded.nb_images,
 			   images        = excluded.images,
 			   collecte_le   = now()`,
-			[
-				campagne.slug,
-				lien.shortcode,
-				lien.permalien,
-				normaliserPseudo(v.pseudo) ?? lien.pseudo,
-				v.legende ?? null,
-				hashtagDansLegende(v.legende ?? "", hashtags),
-				JSON.stringify([
-					{
-						chemin,
-						hauteur: null,
-						largeur: null,
-						nom: fichier.name,
-						taille: fichier.size,
-						type_mime: fichier.type,
-						url_origine: lien.permalien,
-					},
-				]),
-				membre.id,
-			]
-		);
+      [
+        campagne.slug,
+        lien.shortcode,
+        lien.permalien,
+        normaliserPseudo(v.pseudo) ?? lien.pseudo,
+        v.legende ?? null,
+        hashtagDansLegende(v.legende ?? "", hashtags),
+        JSON.stringify([
+          {
+            chemin,
+            hauteur: null,
+            largeur: null,
+            nom: fichier.name,
+            taille: fichier.size,
+            type_mime: fichier.type,
+            url_origine: lien.permalien,
+          },
+        ]),
+        membre.id,
+      ],
+    );
 
-		revalidatePath("/iergday");
-		revalidatePath("/admin/iergday");
+    revalidatePath("/iergday");
+    revalidatePath("/admin/iergday");
 
-		return {
-			message:
-				verification.verdict === "publique"
-					? "Merci ! Ta création rejoint la galerie."
-					: verification.message,
-			success: true,
-		};
-	} catch (err) {
-		console.error("[iergday] dépôt Instagram :", err);
-		return { error: "Le dépôt a échoué. Réessaie dans un moment.", success: false };
-	}
+    return {
+      message: verification.verdict === "publique" ? "Merci ! Ta création rejoint la galerie." : verification.message,
+      success: true,
+    };
+  } catch (err) {
+    console.error("[iergday] dépôt Instagram :", err);
+    return { error: "Le dépôt a échoué. Réessaie dans un moment.", success: false };
+  }
 }

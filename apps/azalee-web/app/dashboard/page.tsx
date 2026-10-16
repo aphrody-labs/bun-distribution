@@ -2,10 +2,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  DashboardStatsCard as DashboardMetricCard,
-  AdminPageHeader as DashboardPageHeader,
-} from "@rosegriffon/ui";
+import { DashboardStatsCard as DashboardMetricCard, AdminPageHeader as DashboardPageHeader } from "@rosegriffon/ui";
 import { Icon } from "@/components/ui/Icon";
 import { getServerSession } from "@/lib/auth-helpers";
 import { createClient } from "@/lib/supabase/server";
@@ -47,35 +44,17 @@ export default async function DashboardPage() {
     coordinators,
   ] = await Promise.all([
     client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee"),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("app", "azalee")
-      .eq("status", "published"),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("app", "azalee")
-      .eq("status", "draft"),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("app", "azalee")
-      .eq("status", "scheduled"),
-    client
-      .from("articles")
-      .select("*", { count: "exact", head: true })
-      .eq("app", "azalee")
-      .eq("status", "archived"),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee").eq("status", "published"),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee").eq("status", "draft"),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee").eq("status", "scheduled"),
+    client.from("articles").select("*", { count: "exact", head: true }).eq("app", "azalee").eq("status", "archived"),
     client.from("articles").select("view_count").eq("app", "azalee").eq("status", "published"),
     client.from("profiles").select("id", { count: "exact", head: true }),
     client.from("inagle_characters").select("*", { count: "exact", head: true }),
     client.from("inagle_skills").select("*", { count: "exact", head: true }),
     client
       .from("articles")
-      .select(
-        "id, title, slug, status, updated_at, featured_image_url, category, view_count, author_id",
-      )
+      .select("id, title, slug, status, updated_at, featured_image_url, category, view_count, author_id")
       .eq("app", "azalee")
       .order("updated_at", { ascending: false })
       .limit(5),
@@ -105,10 +84,7 @@ export default async function DashboardPage() {
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const totalViews = (viewsData.data || []).reduce(
-    (sum: number, a: any) => sum + (a.view_count || 0),
-    0,
-  );
+  const totalViews = (viewsData.data || []).reduce((sum: number, a: any) => sum + (a.view_count || 0), 0);
 
   // ============ Wiki stats aggregation ============
 
@@ -195,7 +171,7 @@ export default async function DashboardPage() {
   // Fetch author names for recent articles
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentData = (recentArticles.data || []) as any[];
-  const authorIds = [...new Set(recentData.map((a) => a.author_id).filter(Boolean))];
+  const authorIds = [...new Set(recentData.map(a => a.author_id).filter(Boolean))];
   let authorMap = new Map<string, string>();
   if (authorIds.length > 0) {
     const { data: authorProfiles } = await client
@@ -203,9 +179,7 @@ export default async function DashboardPage() {
       .select("id, full_name, username")
       .in("id", authorIds);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authorMap = new Map(
-      (authorProfiles || []).map((p: any) => [p.id, p.full_name || p.username || ""]),
-    );
+    authorMap = new Map((authorProfiles || []).map((p: any) => [p.id, p.full_name || p.username || ""]));
   }
 
   const quickLinks = [
@@ -408,15 +382,13 @@ export default async function DashboardPage() {
             label: "Archivés",
             status: "archived",
           },
-        ].map((item) => (
+        ].map(item => (
           <Link
             key={item.status}
             href={`/dashboard/news?status=${item.status}`}
             className="flex items-center gap-3 p-3 sm:p-4 rounded-[20px] bg-surface-container-low border border-outline-variant/20 hover:shadow-level-1 hover:bg-surface-container transition-all group"
           >
-            <div
-              className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}
-            >
+            <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
               <Icon name={statusIcon(item.status)} size={20} />
             </div>
             <div className="min-w-0">
@@ -439,7 +411,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="rounded-[24px] bg-surface-container-low border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/10">
-              {recentData.map((article) => (
+              {recentData.map(article => (
                 <Link
                   key={article.id}
                   href={`/dashboard/news/${article.id}`}
@@ -499,21 +471,16 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-medium text-on-surface">
               Publications programmées
               {scheduledData.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-on-surface-variant">
-                  ({scheduled.count || 0})
-                </span>
+                <span className="ml-2 text-sm font-normal text-on-surface-variant">({scheduled.count || 0})</span>
               )}
             </h2>
-            <Link
-              href="/dashboard/news?status=scheduled"
-              className="text-sm text-primary hover:underline"
-            >
+            <Link href="/dashboard/news?status=scheduled" className="text-sm text-primary hover:underline">
               Tout voir
             </Link>
           </div>
           {scheduledData.length > 0 ? (
             <div className="rounded-[24px] bg-surface-container-low border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/10">
-              {scheduledData.map((article) => (
+              {scheduledData.map(article => (
                 <Link
                   key={article.id}
                   href={`/dashboard/news/${article.id}`}
@@ -548,10 +515,7 @@ export default async function DashboardPage() {
                 <Icon name="schedule" size={24} className="text-on-surface-variant/40" />
               </div>
               <p className="text-sm text-on-surface-variant">Aucune publication programmée</p>
-              <Link
-                href="/dashboard/news/new"
-                className="text-xs text-primary hover:underline mt-2"
-              >
+              <Link href="/dashboard/news/new" className="text-xs text-primary hover:underline mt-2">
                 Créer un article
               </Link>
             </div>
@@ -607,7 +571,7 @@ export default async function DashboardPage() {
               icon: "schema",
               label: "Formations",
             },
-          ].map((item) => (
+          ].map(item => (
             <Link
               key={item.label}
               href={item.href}
@@ -617,9 +581,7 @@ export default async function DashboardPage() {
                 <Icon name={item.icon} size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-lg font-normal text-on-surface">
-                  {item.count.toLocaleString("fr-FR")}
-                </p>
+                <p className="text-lg font-normal text-on-surface">{item.count.toLocaleString("fr-FR")}</p>
                 <p className="text-[11px] text-on-surface-variant truncate">{item.label}</p>
               </div>
             </Link>
@@ -640,22 +602,16 @@ export default async function DashboardPage() {
               </span>
             </div>
             <div className="space-y-2">
-              {positionStats.map((pos) => {
+              {positionStats.map(pos => {
                 const pct = characters.count ? Math.round((pos.count / characters.count) * 100) : 0;
                 return (
                   <div key={pos.code} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-on-surface-variant w-20 truncate">
-                      {pos.label}
-                    </span>
+                    <span className="text-xs font-bold text-on-surface-variant w-20 truncate">{pos.label}</span>
                     <div className="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary/60 transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs tabular-nums text-on-surface-variant/70 w-16 text-right">
-                      {pos.count.toLocaleString("fr-FR")}{" "}
-                      <span className="text-on-surface-variant/40">({pct}%)</span>
+                      {pos.count.toLocaleString("fr-FR")} <span className="text-on-surface-variant/40">({pct}%)</span>
                     </span>
                   </div>
                 );
@@ -672,11 +628,8 @@ export default async function DashboardPage() {
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {elementStats.map((el) => (
-                <div
-                  key={el.id}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-xl ${el.color}`}
-                >
+              {elementStats.map(el => (
+                <div key={el.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl ${el.color}`}>
                   <span className="text-lg font-normal">{el.count.toLocaleString("fr-FR")}</span>
                   <span className="text-xs font-medium truncate">{el.label}</span>
                 </div>
@@ -696,22 +649,16 @@ export default async function DashboardPage() {
               </span>
             </div>
             <div className="space-y-2">
-              {skillCatStats.map((cat) => {
+              {skillCatStats.map(cat => {
                 const pct = skills.count ? Math.round((cat.count / skills.count) * 100) : 0;
                 return (
                   <div key={cat.code} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-on-surface-variant w-20 truncate">
-                      {cat.label}
-                    </span>
+                    <span className="text-xs font-bold text-on-surface-variant w-20 truncate">{cat.label}</span>
                     <div className="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-tertiary/60 transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className="h-full rounded-full bg-tertiary/60 transition-all" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs tabular-nums text-on-surface-variant/70 w-16 text-right">
-                      {cat.count.toLocaleString("fr-FR")}{" "}
-                      <span className="text-on-surface-variant/40">({pct}%)</span>
+                      {cat.count.toLocaleString("fr-FR")} <span className="text-on-surface-variant/40">({pct}%)</span>
                     </span>
                   </div>
                 );
@@ -728,11 +675,8 @@ export default async function DashboardPage() {
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {skillElStats.map((el) => (
-                <div
-                  key={el.id}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-xl ${el.color}`}
-                >
+              {skillElStats.map(el => (
+                <div key={el.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl ${el.color}`}>
                   <span className="text-lg font-normal">{el.count.toLocaleString("fr-FR")}</span>
                   <span className="text-xs font-medium truncate">{el.label}</span>
                 </div>
@@ -762,7 +706,7 @@ export default async function DashboardPage() {
       <div className="space-y-4">
         <h2 className="text-lg font-medium text-on-surface">Accès rapide</h2>
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {quickLinks.map((link) => (
+          {quickLinks.map(link => (
             <Link key={link.href} href={link.href}>
               <div className="flex items-center gap-4 p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant/20 transition-all duration-300 hover:shadow-level-1 hover:bg-surface-container group h-full">
                 <div className="size-12 rounded-[16px] bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-300">

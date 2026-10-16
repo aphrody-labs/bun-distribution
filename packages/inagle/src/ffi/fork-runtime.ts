@@ -76,7 +76,7 @@ export interface ForkModuleEvidence {
 }
 
 type ModuleImporter = (name: string) => Promise<Record<string, unknown>>;
-const importModule: ModuleImporter = (name) => import(name);
+const importModule: ModuleImporter = name => import(name);
 
 async function probeModule(name: string): Promise<Record<string, unknown>> {
   const source = `try { const loaded = await import(${JSON.stringify(name)}); console.log(JSON.stringify(Object.keys(loaded).sort())); process.exit(0); } catch(error) { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); }`;
@@ -96,9 +96,9 @@ async function probeModule(name: string): Promise<Record<string, unknown>> {
       `Module import failed (exit ${exitCode}): ${stderr.trim() || "native process failed or timed out"}`,
     );
   const exports: unknown = JSON.parse(stdout);
-  if (!Array.isArray(exports) || exports.some((value) => typeof value !== "string"))
+  if (!Array.isArray(exports) || exports.some(value => typeof value !== "string"))
     throw new Error("Module import produced an invalid export inventory");
-  return Object.fromEntries(exports.map((name) => [name, true]));
+  return Object.fromEntries(exports.map(name => [name, true]));
 }
 
 function record(value: unknown, label: string): Record<string, unknown> {
@@ -108,11 +108,7 @@ function record(value: unknown, label: string): Record<string, unknown> {
 }
 
 function sourcePath(value: unknown): void {
-  if (
-    typeof value !== "string" ||
-    !value ||
-    /^[a-z]:|^[\\/]|\\|:|(?:^|\/)\.\.?(?:\/|$)/i.test(value)
-  )
+  if (typeof value !== "string" || !value || /^[a-z]:|^[\\/]|\\|:|(?:^|\/)\.\.?(?:\/|$)/i.test(value))
     throw new Error("Invalid fork capability catalog: nonportable source path");
 }
 
@@ -162,11 +158,7 @@ export function parseForkCapabilityCatalog(value: unknown): ForkCapabilityCatalo
       names.add(entry.name);
       sourcePath(section === "modules" ? entry.source : entry.manifest);
       hash(entry.sha256, 64);
-      if (
-        section === "modules" &&
-        entry.forkOnly !== undefined &&
-        typeof entry.forkOnly !== "boolean"
-      )
+      if (section === "modules" && entry.forkOnly !== undefined && typeof entry.forkOnly !== "boolean")
         throw new Error("Invalid fork capability catalog: fork module classification");
       if (section === "packages") {
         if (entry.version !== null && (typeof entry.version !== "string" || !entry.version))
@@ -174,14 +166,13 @@ export function parseForkCapabilityCatalog(value: unknown): ForkCapabilityCatalo
         for (const field of ["os", "cpu"])
           if (
             entry[field] !== undefined &&
-            (!Array.isArray(entry[field]) || entry[field].some((item) => typeof item !== "string"))
+            (!Array.isArray(entry[field]) || entry[field].some(item => typeof item !== "string"))
           )
             throw new Error(`Invalid fork capability catalog: package ${field}`);
       }
       if (
         section === "nativeCrates" &&
-        (!Array.isArray(entry.crateTypes) ||
-          entry.crateTypes.some((item) => typeof item !== "string"))
+        (!Array.isArray(entry.crateTypes) || entry.crateTypes.some(item => typeof item !== "string"))
       )
         throw new Error("Invalid fork capability catalog: native crate types");
     }
@@ -194,7 +185,7 @@ export async function importForkModule<T = Record<string, unknown>>(
   name: string,
 ): Promise<T> {
   parseForkCapabilityCatalog(catalog);
-  if (!catalog.modules.some((entry) => entry.name === name))
+  if (!catalog.modules.some(entry => entry.name === name))
     throw new Error(`Module is absent from the Bun producer catalog: ${name}`);
   return (await importModule(name)) as T;
 }
@@ -250,10 +241,7 @@ export async function executeForkGraph<T = unknown>(
   options?: { signal?: AbortSignal },
 ): Promise<ForkGraphResponse<T>> {
   const graph = await importForkModule<{
-    executeGraph(
-      request: ForkGraphRequest,
-      options?: { signal?: AbortSignal },
-    ): Promise<ForkGraphResponse<T>>;
+    executeGraph(request: ForkGraphRequest, options?: { signal?: AbortSignal }): Promise<ForkGraphResponse<T>>;
   }>(catalog, "bun:graph-native");
   return graph.executeGraph(request, options);
 }
@@ -293,16 +281,14 @@ export async function buildForkCapabilityGraph(
       confidence: "INFERRED",
       confidence_score: 1,
       source_file: source ?? null,
-      context:
-        "Producer inventory metadata; this edge is not an extracted AST call or runtime qualification.",
+      context: "Producer inventory metadata; this edge is not an extracted AST call or runtime qualification.",
     });
   }
   for (const entry of catalog.modules) metadata("module", entry.name, entry.source);
   for (const entry of catalog.packages)
     metadata("package", `${entry.name}@${entry.version ?? "unversioned"}`, entry.manifest);
   for (const entry of catalog.nativeCrates) metadata("native_crate", entry.name, entry.manifest);
-  for (const entry of catalog.sourceDelta)
-    metadata("source_delta", `${entry.status} ${entry.path}`, entry.path);
+  for (const entry of catalog.sourceDelta) metadata("source_delta", `${entry.status} ${entry.path}`, entry.path);
   for (const entry of options.artifacts ?? []) {
     sourcePath(entry.fileName);
     hash(entry.sha256, 64);
@@ -312,22 +298,14 @@ export async function buildForkCapabilityGraph(
       typeof entry.aliasOfCanonicalLibrary !== "boolean"
     )
       throw new Error("Invalid qualified native artifact graph evidence");
-    metadata(
-      "artifact_witness",
-      `${entry.fileName} sha256:${entry.sha256} ABI:${entry.abiVersion}`,
-    );
+    metadata("artifact_witness", `${entry.fileName} sha256:${entry.sha256} ABI:${entry.abiVersion}`);
   }
   const files = options.files ?? [];
   const paths = new Set<string>();
   for (const file of files) {
     sourcePath(file.path);
-    if (
-      !/^(?:crates\/nie\/|packages\/inagle\/).+\.(?:rs|tsx?)$/.test(file.path) ||
-      typeof file.content !== "string"
-    )
-      throw new Error(
-        "Graph extraction accepts selected NIE Rust and Inagle TypeScript source only",
-      );
+    if (!/^(?:crates\/nie\/|packages\/inagle\/).+\.(?:rs|tsx?)$/.test(file.path) || typeof file.content !== "string")
+      throw new Error("Graph extraction accepts selected NIE Rust and Inagle TypeScript source only");
     if (paths.has(file.path)) throw new Error("Duplicate selected graph source");
     paths.add(file.path);
   }
@@ -359,11 +337,7 @@ export async function buildForkCapabilityGraph(
       { signal: options.signal },
     );
     extraction = response.result;
-    if (
-      !extraction?.graph ||
-      !Array.isArray(extraction.graph.nodes) ||
-      !Array.isArray(extraction.graph.links)
-    )
+    if (!extraction?.graph || !Array.isArray(extraction.graph.nodes) || !Array.isArray(extraction.graph.links))
       throw new Error("Native graph extraction returned invalid evidence");
     graph.nodes.push(...extraction.graph.nodes);
     graph.links.push(...extraction.graph.links);
@@ -389,10 +363,8 @@ export async function buildForkCapabilityGraph(
     consumerRevision: options.consumerRevision ?? null,
     coverage: catalog.coverage,
     graph: response.result.graph,
-    extraction: extraction
-      ? { stats: extraction.stats, parseErrors: extraction.parse_errors }
-      : null,
-    sourceFiles: files.map((file) => ({
+    extraction: extraction ? { stats: extraction.stats, parseErrors: extraction.parse_errors } : null,
+    sourceFiles: files.map(file => ({
       path: file.path,
       sha256: new Bun.CryptoHasher("sha256").update(file.content).digest("hex"),
     })),

@@ -30,10 +30,10 @@ function getMirrorPath(): string {
   for (const dir of dirs) {
     try {
       const files = readdirSync(dir);
-      const mirror = files.find((f) => f === "mirror.sqlite");
+      const mirror = files.find(f => f === "mirror.sqlite");
       if (mirror) return path.join(dir, mirror);
       const sqliteFiles = files
-        .filter((f) => f.startsWith("supabase-") && f.endsWith(".sqlite"))
+        .filter(f => f.startsWith("supabase-") && f.endsWith(".sqlite"))
         .sort((a, b) => b.localeCompare(a));
       if (sqliteFiles.length > 0) return path.join(dir, sqliteFiles[0]);
     } catch {
@@ -64,18 +64,16 @@ function main() {
 
   const tables = (
     db
-      .query(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'inagle_%' ORDER BY name",
-      )
+      .query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'inagle_%' ORDER BY name")
       .all() as Array<{ name: string }>
-  ).map((r) => r.name);
+  ).map(r => r.name);
 
   const usedBuilders = new Set<string>();
   const blocks: string[] = [];
 
   for (const table of tables) {
     const cols = db.query(`PRAGMA table_info("${table}")`).all() as Array<ColInfo>;
-    const lines = cols.map((c) => {
+    const lines = cols.map(c => {
       const b = colBuilder(c.type);
       usedBuilders.add(b);
       // On passe le nom SQL explicite à Drizzle pour rester fidèle au schéma réel.
@@ -83,9 +81,7 @@ function main() {
     });
     // Nom d'export = table en camelCase-ish ; on garde le nom de table tel quel.
     const exportName = table.replace(/[^A-Za-z0-9_]/g, "_");
-    blocks.push(
-      `export const ${exportName} = sqliteTable(${JSON.stringify(table)}, {\n${lines.join("\n")}\n});`,
-    );
+    blocks.push(`export const ${exportName} = sqliteTable(${JSON.stringify(table)}, {\n${lines.join("\n")}\n});`);
   }
 
   db.close();

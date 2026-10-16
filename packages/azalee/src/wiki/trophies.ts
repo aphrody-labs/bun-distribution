@@ -14,13 +14,7 @@
  */
 
 import { createInagleSql } from "@rosegriffon/db/inagle-sql";
-import {
-  type Trophy,
-  type TrophyCategory,
-  groupLabel,
-  trophyCategory,
-  trophyGroup,
-} from "./trophies-shared";
+import { type Trophy, type TrophyCategory, groupLabel, trophyCategory, trophyGroup } from "./trophies-shared";
 
 /** Ligne brute `inagle_trophies` telle que stockée dans le miroir. */
 interface TrophyRow {
@@ -92,16 +86,7 @@ export async function getAllTrophies(): Promise<Trophy[]> {
   try {
     data = await sql
       .selectFrom("inagle_trophies")
-      .select([
-        "trophy_id",
-        "code",
-        "name_en",
-        "name_fr",
-        "name_ja",
-        "desc_en",
-        "desc_fr",
-        "desc_ja",
-      ])
+      .select(["trophy_id", "code", "name_en", "name_fr", "name_ja", "desc_en", "desc_fr", "desc_ja"])
       .limit(2000)
       .execute();
   } catch {
@@ -128,19 +113,19 @@ export async function getTrophiesList(params?: {
   cat?: TrophyCategory | "all";
 }): Promise<TrophyListResult> {
   const all = await getAllTrophies();
-  const trophy = all.filter((x) => x.category === "trophy").length;
+  const trophy = all.filter(x => x.category === "trophy").length;
   const activity = all.length - trophy;
 
   let trophies = all;
   const cat = params?.cat ?? "all";
   if (cat === "trophy" || cat === "activity") {
-    trophies = trophies.filter((x) => x.category === cat);
+    trophies = trophies.filter(x => x.category === cat);
   }
 
   const q = params?.q?.trim().toLowerCase();
   if (q) {
     trophies = trophies.filter(
-      (x) =>
+      x =>
         x.names.fr.toLowerCase().includes(q) ||
         x.names.en.toLowerCase().includes(q) ||
         x.names.ja.toLowerCase().includes(q) ||
@@ -160,15 +145,13 @@ export async function getTrophiesList(params?: {
 export async function getTrophy(id: string): Promise<Trophy | null> {
   const all = await getAllTrophies();
   const norm = id.trim().toLowerCase();
-  return all.find((x) => x.id.toLowerCase() === norm) ?? null;
+  return all.find(x => x.id.toLowerCase() === norm) ?? null;
 }
 
 /** Succès adjacents (précédent/suivant dans l'ordre de tri) pour la nav du détail. */
-export async function getTrophyNeighbors(
-  id: string,
-): Promise<{ prev: Trophy | null; next: Trophy | null }> {
+export async function getTrophyNeighbors(id: string): Promise<{ prev: Trophy | null; next: Trophy | null }> {
   const all = await getAllTrophies();
-  const idx = all.findIndex((x) => x.id.toLowerCase() === id.trim().toLowerCase());
+  const idx = all.findIndex(x => x.id.toLowerCase() === id.trim().toLowerCase());
   if (idx === -1) return { prev: null, next: null };
   return {
     prev: idx > 0 ? all[idx - 1] : null,

@@ -12,27 +12,27 @@
  */
 import { borner, ilYA } from "./ui/texte";
 import {
-	MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
-	bornerPage as bornerPageUi,
-	decoderEtat,
-	encoderEtat,
-	nombreDePages as nombreDePagesUi,
-	pageDecodee,
+  MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
+  bornerPage as bornerPageUi,
+  decoderEtat,
+  encoderEtat,
+  nombreDePages as nombreDePagesUi,
+  pageDecodee,
 } from "./ui/etat";
 
 /** Ligne de `public.tweets`, réduite aux colonnes que le bot lit. */
 export interface LigneTweet {
-	id: string;
-	text: string | null;
-	created_at: string | Date | null;
-	author_username: string | null;
-	author_name: string | null;
-	media: unknown;
-	metrics: unknown;
-	is_thread: boolean | null;
-	tweet_count: number | null;
-	translation: string | null;
-	category: string | null;
+  id: string;
+  text: string | null;
+  created_at: string | Date | null;
+  author_username: string | null;
+  author_name: string | null;
+  media: unknown;
+  metrics: unknown;
+  is_thread: boolean | null;
+  tweet_count: number | null;
+  translation: string | null;
+  category: string | null;
 }
 
 /**
@@ -44,7 +44,7 @@ export interface LigneTweet {
  * suivi : le membre clique en croyant lire Azalée et tombe ailleurs.
  */
 export function estRetweet(texte: string | null | undefined): boolean {
-	return /^RT @[A-Za-z0-9_]{1,15}:/.test((texte ?? "").trimStart());
+  return /^RT @[A-Za-z0-9_]{1,15}:/.test((texte ?? "").trimStart());
 }
 
 /**
@@ -62,7 +62,7 @@ export function estRetweet(texte: string | null | undefined): boolean {
  * quelque part.
  */
 export function estReponse(texte: string | null | undefined): boolean {
-	return /^(@[A-Za-z0-9_]{1,15}[\s,]+)+\S/.test((texte ?? "").trimStart());
+  return /^(@[A-Za-z0-9_]{1,15}[\s,]+)+\S/.test((texte ?? "").trimStart());
 }
 
 /**
@@ -74,23 +74,23 @@ export function estReponse(texte: string | null | undefined): boolean {
  * même — et c'est exactement ce qui s'est produit avant cette fonction.
  */
 export function estAnnoncable(texte: string | null | undefined): boolean {
-	return !estRetweet(texte) && !estReponse(texte);
+  return !estRetweet(texte) && !estReponse(texte);
 }
 
 /** Média retenu pour un embed : une image, avec son URL absolue. */
 export interface ImageTweet {
-	url: string;
-	largeur: number | null;
-	hauteur: number | null;
+  url: string;
+  largeur: number | null;
+  hauteur: number | null;
 }
 
 /** Métriques publiques d'un post X. Toutes optionnelles : X n'en renvoie pas toujours. */
 export interface MetriquesTweet {
-	like_count?: number;
-	retweet_count?: number;
-	reply_count?: number;
-	quote_count?: number;
-	view_count?: number;
+  like_count?: number;
+  retweet_count?: number;
+  reply_count?: number;
+  quote_count?: number;
+  view_count?: number;
 }
 
 /** Clé de `public.settings` qui pilote la notification. */
@@ -106,16 +106,16 @@ export const CLE_PAUSE_TWEETS = "tweets.notification.pause";
 
 /** Réglage de la notification des nouveaux tweets. */
 export interface FiltreTweets {
-	/** Interrupteur général : à `false`, le bot ne publie plus rien (sans redéploiement). */
-	actif: boolean;
-	/** Liste blanche de comptes X, sans `@`. Vide = aucun compte suivi, donc rien n'est annoncé. */
-	comptes: string[];
-	/** Catégories jamais annoncées automatiquement. */
-	categories_exclues: string[];
-	/** Nombre maximum d'embeds détaillés par lot ; au-delà, un seul embed de synthèse. */
-	max_par_lot: number;
-	/** Salon de destination ; `null` = `DISCORD_NEWS_CHANNEL_ID`. */
-	salon: string | null;
+  /** Interrupteur général : à `false`, le bot ne publie plus rien (sans redéploiement). */
+  actif: boolean;
+  /** Liste blanche de comptes X, sans `@`. Vide = aucun compte suivi, donc rien n'est annoncé. */
+  comptes: string[];
+  /** Catégories jamais annoncées automatiquement. */
+  categories_exclues: string[];
+  /** Nombre maximum d'embeds détaillés par lot ; au-delà, un seul embed de synthèse. */
+  max_par_lot: number;
+  /** Salon de destination ; `null` = `DISCORD_NEWS_CHANNEL_ID`. */
+  salon: string | null;
 }
 
 /**
@@ -129,14 +129,14 @@ export interface FiltreTweets {
  * `fan-content` restent hors périmètre par défaut.
  */
 export const COMPTES_OFFICIELS = [
-	"inazuma_project",
-	"inazuma_cross",
-	"InazumaSeries",
-	"InazumaNational",
-	"Level5Hub",
-	"LEVEL5_times",
-	"Azalee_IE",
-	"rose_griffon",
+  "inazuma_project",
+  "inazuma_cross",
+  "InazumaSeries",
+  "InazumaNational",
+  "Level5Hub",
+  "LEVEL5_times",
+  "Azalee_IE",
+  "rose_griffon",
 ] as const;
 
 /**
@@ -149,11 +149,11 @@ export const COMPTES_OFFICIELS = [
 export const CATEGORIES_INTERDITES = ["leak"] as const;
 
 export const FILTRE_TWEETS_DEFAUT: FiltreTweets = {
-	actif: false,
-	comptes: [...COMPTES_OFFICIELS],
-	categories_exclues: ["fan-content"],
-	max_par_lot: 5,
-	salon: null,
+  actif: false,
+  comptes: [...COMPTES_OFFICIELS],
+  categories_exclues: ["fan-content"],
+  max_par_lot: 5,
+  salon: null,
 };
 
 /** Plafond dur d'un drain, quoi que dise le réglage. Voir `services/tweets.ts`. */
@@ -183,31 +183,30 @@ export const MAX_CARACTERES_PAR_MESSAGE = 6_000;
  * auteur), donc les vrais embeds s'y branchent sans adaptateur.
  */
 export function decouperEnLots<T extends { length: number }>(
-	elements: readonly T[],
-	maxParLot = MAX_EMBEDS_PAR_MESSAGE,
-	maxCaracteres = MAX_CARACTERES_PAR_MESSAGE
+  elements: readonly T[],
+  maxParLot = MAX_EMBEDS_PAR_MESSAGE,
+  maxCaracteres = MAX_CARACTERES_PAR_MESSAGE,
 ): T[][] {
-	const lots: T[][] = [];
-	let courant: T[] = [];
-	let poids = 0;
-	for (const element of elements) {
-		const taille = Math.max(0, element.length);
-		// Un élément seul plus gros que la borne part quand même seul : le tronquer
-		// ici serait une décision de rendu prise au mauvais endroit.
-		const debordement =
-			courant.length > 0 && (courant.length >= maxParLot || poids + taille > maxCaracteres);
-		if (debordement) {
-			lots.push(courant);
-			courant = [];
-			poids = 0;
-		}
-		courant.push(element);
-		poids += taille;
-	}
-	if (courant.length > 0) {
-		lots.push(courant);
-	}
-	return lots;
+  const lots: T[][] = [];
+  let courant: T[] = [];
+  let poids = 0;
+  for (const element of elements) {
+    const taille = Math.max(0, element.length);
+    // Un élément seul plus gros que la borne part quand même seul : le tronquer
+    // ici serait une décision de rendu prise au mauvais endroit.
+    const debordement = courant.length > 0 && (courant.length >= maxParLot || poids + taille > maxCaracteres);
+    if (debordement) {
+      lots.push(courant);
+      courant = [];
+      poids = 0;
+    }
+    courant.push(element);
+    poids += taille;
+  }
+  if (courant.length > 0) {
+    lots.push(courant);
+  }
+  return lots;
 }
 
 /** Longueur maximale d'un `nonce` de message Discord. */
@@ -224,20 +223,20 @@ const MAX_NONCE = 25;
  * deux processus qui draineraient le même lot.
  */
 export function nonceLot(dernierId: string, index = 0): string {
-	const propre = dernierId.replaceAll(/[^0-9A-Za-z]/g, "").slice(-18);
-	return `tw${index}-${propre}`.slice(0, MAX_NONCE);
+  const propre = dernierId.replaceAll(/[^0-9A-Za-z]/g, "").slice(-18);
+  return `tw${index}-${propre}`.slice(0, MAX_NONCE);
 }
 
 function estChaineNonVide(valeur: unknown): valeur is string {
-	return typeof valeur === "string" && valeur.trim().length > 0;
+  return typeof valeur === "string" && valeur.trim().length > 0;
 }
 
 function listeDeChaines(valeur: unknown, repli: string[]): string[] {
-	if (!Array.isArray(valeur)) {
-		return repli;
-	}
-	const propres = valeur.filter(estChaineNonVide).map((v) => v.trim().replace(/^@/, ""));
-	return propres;
+  if (!Array.isArray(valeur)) {
+    return repli;
+  }
+  const propres = valeur.filter(estChaineNonVide).map(v => v.trim().replace(/^@/, ""));
+  return propres;
 }
 
 /**
@@ -260,39 +259,37 @@ function listeDeChaines(valeur: unknown, repli: string[]): string[] {
  * (`services/tweets.ts`), donc au-delà le seuil ne changerait plus rien.
  */
 export function lireFiltreTweets(valeur: unknown): FiltreTweets {
-	if (!valeur || typeof valeur !== "object" || Array.isArray(valeur)) {
-		return { ...FILTRE_TWEETS_DEFAUT, comptes: [...FILTRE_TWEETS_DEFAUT.comptes] };
-	}
-	const brut = valeur as Record<string, unknown>;
-	const max = Number(brut.max_par_lot);
-	return {
-		actif: brut.actif === true,
-		comptes: listeDeChaines(brut.comptes, [...FILTRE_TWEETS_DEFAUT.comptes]),
-		categories_exclues: listeDeChaines(brut.categories_exclues, [
-			...FILTRE_TWEETS_DEFAUT.categories_exclues,
-		]),
-		max_par_lot: Number.isFinite(max)
-			? Math.min(PLAFOND_DRAIN, Math.max(1, Math.trunc(max)))
-			: FILTRE_TWEETS_DEFAUT.max_par_lot,
-		salon: estChaineNonVide(brut.salon) ? brut.salon.trim() : null,
-	};
+  if (!valeur || typeof valeur !== "object" || Array.isArray(valeur)) {
+    return { ...FILTRE_TWEETS_DEFAUT, comptes: [...FILTRE_TWEETS_DEFAUT.comptes] };
+  }
+  const brut = valeur as Record<string, unknown>;
+  const max = Number(brut.max_par_lot);
+  return {
+    actif: brut.actif === true,
+    comptes: listeDeChaines(brut.comptes, [...FILTRE_TWEETS_DEFAUT.comptes]),
+    categories_exclues: listeDeChaines(brut.categories_exclues, [...FILTRE_TWEETS_DEFAUT.categories_exclues]),
+    max_par_lot: Number.isFinite(max)
+      ? Math.min(PLAFOND_DRAIN, Math.max(1, Math.trunc(max)))
+      : FILTRE_TWEETS_DEFAUT.max_par_lot,
+    salon: estChaineNonVide(brut.salon) ? brut.salon.trim() : null,
+  };
 }
 
 /** Toutes les catégories bannies : celles du réglage PLUS celles interdites en dur. */
 export function categoriesBannies(filtre: FiltreTweets): string[] {
-	const toutes = new Set<string>(CATEGORIES_INTERDITES);
-	for (const categorie of filtre.categories_exclues) {
-		toutes.add(categorie.toLowerCase());
-	}
-	return [...toutes];
+  const toutes = new Set<string>(CATEGORIES_INTERDITES);
+  for (const categorie of filtre.categories_exclues) {
+    toutes.add(categorie.toLowerCase());
+  }
+  return [...toutes];
 }
 
 /** Compare deux pseudos X : la casse n'a aucun sens sur X (`@Level5Hub` = `@level5hub`). */
 export function memeCompte(a: string | null | undefined, b: string | null | undefined): boolean {
-	if (!a || !b) {
-		return false;
-	}
-	return a.trim().replace(/^@/, "").toLowerCase() === b.trim().replace(/^@/, "").toLowerCase();
+  if (!a || !b) {
+    return false;
+  }
+  return a.trim().replace(/^@/, "").toLowerCase() === b.trim().replace(/^@/, "").toLowerCase();
 }
 
 /**
@@ -304,23 +301,23 @@ export function memeCompte(a: string | null | undefined, b: string | null | unde
  * inexplicable, soit une annonce non voulue.
  */
 export function tweetEstNotifiable(tweet: LigneTweet, filtre: FiltreTweets): boolean {
-	if (!filtre.actif) {
-		return false;
-	}
-	if (!filtre.comptes.some((compte) => memeCompte(compte, tweet.author_username))) {
-		return false;
-	}
-	const categorie = (tweet.category ?? "").toLowerCase();
-	if (categorie.length > 0 && categoriesBannies(filtre).includes(categorie)) {
-		return false;
-	}
-	return true;
+  if (!filtre.actif) {
+    return false;
+  }
+  if (!filtre.comptes.some(compte => memeCompte(compte, tweet.author_username))) {
+    return false;
+  }
+  const categorie = (tweet.category ?? "").toLowerCase();
+  if (categorie.length > 0 && categoriesBannies(filtre).includes(categorie)) {
+    return false;
+  }
+  return true;
 }
 
 /** Lien canonique vers le post d'origine. */
 export function urlTweet(tweet: Pick<LigneTweet, "id" | "author_username">): string {
-	const auteur = tweet.author_username?.trim().replace(/^@/, "") || "i";
-	return `https://x.com/${auteur}/status/${tweet.id}`;
+  const auteur = tweet.author_username?.trim().replace(/^@/, "") || "i";
+  return `https://x.com/${auteur}/status/${tweet.id}`;
 }
 
 /**
@@ -337,8 +334,8 @@ export function urlTweet(tweet: Pick<LigneTweet, "id" | "author_username">): str
  * et c'est ce que portent les messages existants.
  */
 export function urlFixvx(tweet: Pick<LigneTweet, "id" | "author_username">): string {
-	const auteur = tweet.author_username?.trim().replace(/^@/, "") || "i";
-	return `https://fixvx.com/${auteur}/status/${tweet.id}?s=20`;
+  const auteur = tweet.author_username?.trim().replace(/^@/, "") || "i";
+  return `https://fixvx.com/${auteur}/status/${tweet.id}?s=20`;
 }
 
 /**
@@ -349,10 +346,10 @@ export function urlFixvx(tweet: Pick<LigneTweet, "id" | "author_username">): str
  * à une URL nue et le fil devient illisible quand l'aperçu tarde à charger.
  */
 export function messageAnnonce(tweet: LigneTweet, maxAmorce = 120): string {
-	const texte = texteSansLienMedia(tweet.text).split(/\r?\n/)[0]?.trim() ?? "";
-	const amorce = texte.length > maxAmorce ? `${texte.slice(0, maxAmorce - 1).trimEnd()}…` : texte;
-	const url = urlFixvx(tweet);
-	return amorce.length > 0 ? `${amorce} : ${url}` : url;
+  const texte = texteSansLienMedia(tweet.text).split(/\r?\n/)[0]?.trim() ?? "";
+  const amorce = texte.length > maxAmorce ? `${texte.slice(0, maxAmorce - 1).trimEnd()}…` : texte;
+  const url = urlFixvx(tweet);
+  return amorce.length > 0 ? `${amorce} : ${url}` : url;
 }
 
 /**
@@ -364,7 +361,7 @@ export function messageAnnonce(tweet: LigneTweet, maxAmorce = 120): string {
  * dans le fil.
  */
 export function messagePing(roleId: string): string {
-	return `||<@&${roleId}> ||`;
+  return `||<@&${roleId}> ||`;
 }
 
 /** Segment de chemin des médias ré-hébergés dans le Storage self-host. */
@@ -378,18 +375,18 @@ const CHEMIN_STOCKAGE = "/storage/v1/object/public/tweets/";
  * résolue. On repasse donc par l'origine publique.
  */
 export function urlMediaAbsolue(url: string | null | undefined): string | null {
-	if (!estChaineNonVide(url)) {
-		return null;
-	}
-	const propre = url.trim();
-	const position = propre.indexOf(CHEMIN_STOCKAGE);
-	if (position >= 0) {
-		return `https://rosegriffon.fr${propre.slice(position)}`;
-	}
-	if (propre.startsWith("https://")) {
-		return propre;
-	}
-	return null;
+  if (!estChaineNonVide(url)) {
+    return null;
+  }
+  const propre = url.trim();
+  const position = propre.indexOf(CHEMIN_STOCKAGE);
+  if (position >= 0) {
+    return `https://rosegriffon.fr${propre.slice(position)}`;
+  }
+  if (propre.startsWith("https://")) {
+    return propre;
+  }
+  return null;
 }
 
 /**
@@ -401,89 +398,77 @@ export function urlMediaAbsolue(url: string | null | undefined): string | null {
  * URLs d'origine finissent par expirer.
  */
 export function imagesTweet(media: unknown): ImageTweet[] {
-	if (!Array.isArray(media)) {
-		return [];
-	}
-	const images: ImageTweet[] = [];
-	for (const brut of media) {
-		if (!brut || typeof brut !== "object") {
-			continue;
-		}
-		const item = brut as Record<string, unknown>;
-		if (item.type !== "photo") {
-			continue;
-		}
-		const candidats = [
-			item.storage_url,
-			item.url,
-			item.preview_url,
-			item.previewUrl,
-			item.original_url,
-		]
-			.filter(estChaineNonVide)
-			.map((valeur) => valeur.trim());
-		const stockee = candidats.find((valeur) => valeur.includes(CHEMIN_STOCKAGE));
-		const url = urlMediaAbsolue(stockee ?? candidats[0]);
-		if (!url) {
-			continue;
-		}
-		images.push({
-			url,
-			largeur: typeof item.width === "number" ? item.width : null,
-			hauteur: typeof item.height === "number" ? item.height : null,
-		});
-	}
-	return images;
+  if (!Array.isArray(media)) {
+    return [];
+  }
+  const images: ImageTweet[] = [];
+  for (const brut of media) {
+    if (!brut || typeof brut !== "object") {
+      continue;
+    }
+    const item = brut as Record<string, unknown>;
+    if (item.type !== "photo") {
+      continue;
+    }
+    const candidats = [item.storage_url, item.url, item.preview_url, item.previewUrl, item.original_url]
+      .filter(estChaineNonVide)
+      .map(valeur => valeur.trim());
+    const stockee = candidats.find(valeur => valeur.includes(CHEMIN_STOCKAGE));
+    const url = urlMediaAbsolue(stockee ?? candidats[0]);
+    if (!url) {
+      continue;
+    }
+    images.push({
+      url,
+      largeur: typeof item.width === "number" ? item.width : null,
+      hauteur: typeof item.height === "number" ? item.height : null,
+    });
+  }
+  return images;
 }
 
 /** Métriques exploitables, ou `null` si X n'en a renvoyé aucune. */
 export function metriquesTweet(metrics: unknown): MetriquesTweet | null {
-	if (!metrics || typeof metrics !== "object" || Array.isArray(metrics)) {
-		return null;
-	}
-	const brut = metrics as Record<string, unknown>;
-	const retenues: MetriquesTweet = {};
-	for (const clef of [
-		"like_count",
-		"retweet_count",
-		"reply_count",
-		"quote_count",
-		"view_count",
-	] as const) {
-		const valeur = brut[clef];
-		if (typeof valeur === "number" && Number.isFinite(valeur)) {
-			retenues[clef] = valeur;
-		}
-	}
-	return Object.keys(retenues).length > 0 ? retenues : null;
+  if (!metrics || typeof metrics !== "object" || Array.isArray(metrics)) {
+    return null;
+  }
+  const brut = metrics as Record<string, unknown>;
+  const retenues: MetriquesTweet = {};
+  for (const clef of ["like_count", "retweet_count", "reply_count", "quote_count", "view_count"] as const) {
+    const valeur = brut[clef];
+    if (typeof valeur === "number" && Number.isFinite(valeur)) {
+      retenues[clef] = valeur;
+    }
+  }
+  return Object.keys(retenues).length > 0 ? retenues : null;
 }
 
 /** Ligne compacte de métriques, ou `null` si tout est à zéro ou absent. */
 export function formaterMetriques(metrics: unknown): string | null {
-	const m = metriquesTweet(metrics);
-	if (!m) {
-		return null;
-	}
-	const morceaux: string[] = [];
-	if (m.like_count) morceaux.push(`♥ ${m.like_count.toLocaleString("fr-FR")}`);
-	if (m.retweet_count) morceaux.push(`RT ${m.retweet_count.toLocaleString("fr-FR")}`);
-	if (m.reply_count) morceaux.push(`↩ ${m.reply_count.toLocaleString("fr-FR")}`);
-	if (m.quote_count) morceaux.push(`❝ ${m.quote_count.toLocaleString("fr-FR")}`);
-	if (m.view_count) morceaux.push(`👁 ${m.view_count.toLocaleString("fr-FR")}`);
-	return morceaux.length > 0 ? morceaux.join(" · ") : null;
+  const m = metriquesTweet(metrics);
+  if (!m) {
+    return null;
+  }
+  const morceaux: string[] = [];
+  if (m.like_count) morceaux.push(`♥ ${m.like_count.toLocaleString("fr-FR")}`);
+  if (m.retweet_count) morceaux.push(`RT ${m.retweet_count.toLocaleString("fr-FR")}`);
+  if (m.reply_count) morceaux.push(`↩ ${m.reply_count.toLocaleString("fr-FR")}`);
+  if (m.quote_count) morceaux.push(`❝ ${m.quote_count.toLocaleString("fr-FR")}`);
+  if (m.view_count) morceaux.push(`👁 ${m.view_count.toLocaleString("fr-FR")}`);
+  return morceaux.length > 0 ? morceaux.join(" · ") : null;
 }
 
 /** Retire les `https://t.co/…` de fin, qui ne sont que le lien du média déjà affiché. */
 export function texteSansLienMedia(texte: string | null | undefined): string {
-	if (!estChaineNonVide(texte)) {
-		return "";
-	}
-	return texte.replaceAll(/\s*https:\/\/t\.co\/\w+\s*$/gu, "").trim();
+  if (!estChaineNonVide(texte)) {
+    return "";
+  }
+  return texte.replaceAll(/\s*https:\/\/t\.co\/\w+\s*$/gu, "").trim();
 }
 
 /** Coupe proprement, avec une ellipse, sans jamais dépasser `max`. */
 export function couper(texte: string, max: number): string {
-	return borner(texte, max);
+  return borner(texte, max);
 }
 
 /**
@@ -495,21 +480,21 @@ export function couper(texte: string, max: number): string {
  * ils grignotent la marge du plafond de 6 000 par message.
  */
 export function citer(texte: string, budget: number): string {
-	if (budget <= 2 || texte.length === 0) {
-		return "";
-	}
-	let cible = budget - 2;
-	for (let garde = 0; garde < 8; garde++) {
-		const rendu = `> ${couper(texte, Math.max(1, cible)).replaceAll("\n", "\n> ")}`;
-		if (rendu.length <= budget) {
-			return rendu;
-		}
-		cible -= rendu.length - budget;
-		if (cible < 1) {
-			return "";
-		}
-	}
-	return "";
+  if (budget <= 2 || texte.length === 0) {
+    return "";
+  }
+  let cible = budget - 2;
+  for (let garde = 0; garde < 8; garde++) {
+    const rendu = `> ${couper(texte, Math.max(1, cible)).replaceAll("\n", "\n> ")}`;
+    if (rendu.length <= budget) {
+      return rendu;
+    }
+    cible -= rendu.length - budget;
+    if (cible < 1) {
+      return "";
+    }
+  }
+  return "";
 }
 
 /**
@@ -520,56 +505,53 @@ export function citer(texte: string, budget: number): string {
  * diffère, pour que rien ne soit perdu.
  */
 export function corpsTweet(tweet: LigneTweet, max = 700): string {
-	const original = texteSansLienMedia(tweet.text);
-	const traduction = texteSansLienMedia(tweet.translation);
-	if (traduction.length > 0 && traduction !== original) {
-		const part = Math.max(80, Math.floor(max * 0.6));
-		const bloc = couper(traduction, part);
-		// 2 = le `\n\n` qui sépare la traduction de la citation. En dessous de 40
-		// caractères utiles, la citation n'apprend rien : on garde la traduction seule.
-		const budget = max - bloc.length - 2;
-		const citation = original.length > 0 && budget >= 40 ? citer(original, budget) : "";
-		if (citation.length > 0) {
-			return `${bloc}\n\n${citation}`;
-		}
-		return bloc;
-	}
-	return couper(original.length > 0 ? original : traduction, max);
+  const original = texteSansLienMedia(tweet.text);
+  const traduction = texteSansLienMedia(tweet.translation);
+  if (traduction.length > 0 && traduction !== original) {
+    const part = Math.max(80, Math.floor(max * 0.6));
+    const bloc = couper(traduction, part);
+    // 2 = le `\n\n` qui sépare la traduction de la citation. En dessous de 40
+    // caractères utiles, la citation n'apprend rien : on garde la traduction seule.
+    const budget = max - bloc.length - 2;
+    const citation = original.length > 0 && budget >= 40 ? citer(original, budget) : "";
+    if (citation.length > 0) {
+      return `${bloc}\n\n${citation}`;
+    }
+    return bloc;
+  }
+  return couper(original.length > 0 ? original : traduction, max);
 }
 
 /** Date ISO d'un tweet, ou `null` si la colonne est vide. */
 export function dateTweet(tweet: LigneTweet): Date | null {
-	if (!tweet.created_at) {
-		return null;
-	}
-	const date = tweet.created_at instanceof Date ? tweet.created_at : new Date(tweet.created_at);
-	return Number.isNaN(date.getTime()) ? null : date;
+  if (!tweet.created_at) {
+    return null;
+  }
+  const date = tweet.created_at instanceof Date ? tweet.created_at : new Date(tweet.created_at);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 /** Horodatage Discord relatif (`<t:…:R>`), qui se localise chez chaque membre. */
 export function horodatageDiscord(tweet: LigneTweet): string {
-	return ilYA(dateTweet(tweet));
+  return ilYA(dateTweet(tweet));
 }
 
 /** Ligne d'un tweet dans la liste paginée. */
 export function ligneListe(tweet: LigneTweet, maxTexte = 180): string {
-	const auteur = tweet.author_username ? `@${tweet.author_username}` : "compte inconnu";
-	const etiquettes: string[] = [];
-	if (tweet.category) etiquettes.push(`*${tweet.category}*`);
-	if (tweet.is_thread) etiquettes.push(`fil de ${tweet.tweet_count ?? 1}`);
-	const images = imagesTweet(tweet.media);
-	if (images.length > 0) etiquettes.push(`${images.length} image${images.length > 1 ? "s" : ""}`);
-	const suffixe = etiquettes.length > 0 ? ` · ${etiquettes.join(" · ")}` : "";
-	const corps = couper(
-		texteSansLienMedia(tweet.translation) || texteSansLienMedia(tweet.text),
-		maxTexte
-	);
-	return `**[${auteur}](${urlTweet(tweet)})** · ${horodatageDiscord(tweet)}${suffixe}\n${corps || "*(sans texte)*"}`;
+  const auteur = tweet.author_username ? `@${tweet.author_username}` : "compte inconnu";
+  const etiquettes: string[] = [];
+  if (tweet.category) etiquettes.push(`*${tweet.category}*`);
+  if (tweet.is_thread) etiquettes.push(`fil de ${tweet.tweet_count ?? 1}`);
+  const images = imagesTweet(tweet.media);
+  if (images.length > 0) etiquettes.push(`${images.length} image${images.length > 1 ? "s" : ""}`);
+  const suffixe = etiquettes.length > 0 ? ` · ${etiquettes.join(" · ")}` : "";
+  const corps = couper(texteSansLienMedia(tweet.translation) || texteSansLienMedia(tweet.text), maxTexte);
+  return `**[${auteur}](${urlTweet(tweet)})** · ${horodatageDiscord(tweet)}${suffixe}\n${corps || "*(sans texte)*"}`;
 }
 
 /** Nombre total de pages pour un total et une taille de page donnés (jamais 0). */
 export function nombreDePages(total: number, parPage: number): number {
-	return nombreDePagesUi(total, parPage);
+  return nombreDePagesUi(total, parPage);
 }
 
 /**
@@ -580,19 +562,19 @@ export function nombreDePages(total: number, parPage: number): number {
  * garde que `entierPositif` côté site (`lib/x-campagnes/types.ts`).
  */
 export function bornerPage(page: number, total: number, parPage: number): number {
-	return bornerPageUi(page, total, parPage);
+  return bornerPageUi(page, total, parPage);
 }
 
 /** Décompte par auteur, du plus prolifique au moins, pour la synthèse d'un gros lot. */
 export function compterParAuteur(tweets: LigneTweet[]): Array<{ compte: string; n: number }> {
-	const compteurs = new Map<string, number>();
-	for (const tweet of tweets) {
-		const compte = tweet.author_username?.trim().replace(/^@/, "") || "inconnu";
-		compteurs.set(compte, (compteurs.get(compte) ?? 0) + 1);
-	}
-	return [...compteurs.entries()]
-		.map(([compte, n]) => ({ compte, n }))
-		.toSorted((a, b) => b.n - a.n || a.compte.localeCompare(b.compte, "fr"));
+  const compteurs = new Map<string, number>();
+  for (const tweet of tweets) {
+    const compte = tweet.author_username?.trim().replace(/^@/, "") || "inconnu";
+    compteurs.set(compte, (compteurs.get(compte) ?? 0) + 1);
+  }
+  return [...compteurs.entries()]
+    .map(([compte, n]) => ({ compte, n }))
+    .toSorted((a, b) => b.n - a.n || a.compte.localeCompare(b.compte, "fr"));
 }
 
 // ─── État de pagination transporté par les boutons ──────────────────────────
@@ -604,10 +586,10 @@ export const PREFIXE_BOUTON_TWEETS = "tw";
 export const MAX_CUSTOM_ID = MAX_CUSTOM_ID_UI;
 
 export interface EtatListeTweets {
-	page: number;
-	auteur: string | null;
-	categorie: string | null;
-	recherche: string | null;
+  page: number;
+  auteur: string | null;
+  categorie: string | null;
+  recherche: string | null;
 }
 
 /**
@@ -619,27 +601,22 @@ export interface EtatListeTweets {
  * seraient pires que pas de boutons du tout.
  */
 export function encoderEtatListe(etat: EtatListeTweets): string | null {
-	return encoderEtat(PREFIXE_BOUTON_TWEETS, [
-		etat.page,
-		etat.auteur,
-		etat.categorie,
-		etat.recherche,
-	]);
+  return encoderEtat(PREFIXE_BOUTON_TWEETS, [etat.page, etat.auteur, etat.categorie, etat.recherche]);
 }
 
 /** Décode un `customId` produit par `encoderEtatListe`. `null` si ce n'en est pas un. */
 export function decoderEtatListe(customId: string): EtatListeTweets | null {
-	const champs = decoderEtat(PREFIXE_BOUTON_TWEETS, customId, 4);
-	const page = pageDecodee(champs?.[0]);
-	if (!champs || page === null) {
-		return null;
-	}
-	return {
-		page,
-		auteur: champs[1] || null,
-		categorie: champs[2] || null,
-		recherche: champs[3] || null,
-	};
+  const champs = decoderEtat(PREFIXE_BOUTON_TWEETS, customId, 4);
+  const page = pageDecodee(champs?.[0]);
+  if (!champs || page === null) {
+    return null;
+  }
+  return {
+    page,
+    auteur: champs[1] || null,
+    categorie: champs[2] || null,
+    recherche: champs[3] || null,
+  };
 }
 
 /**
@@ -649,8 +626,8 @@ export function decoderEtatListe(customId: string): EtatListeTweets | null {
  * regroupement, c'est 245 messages d'affilée dans le salon.
  */
 export function resumeLot(tweets: LigneTweet[]): string {
-	const parAuteur = compterParAuteur(tweets)
-		.slice(0, 6)
-		.map(({ compte, n }) => `@${compte} (${n})`);
-	return `**${tweets.length} nouveaux tweets** — ${parAuteur.join(", ")}`;
+  const parAuteur = compterParAuteur(tweets)
+    .slice(0, 6)
+    .map(({ compte, n }) => `@${compte} (${n})`);
+  return `**${tweets.length} nouveaux tweets** — ${parAuteur.join(", ")}`;
 }

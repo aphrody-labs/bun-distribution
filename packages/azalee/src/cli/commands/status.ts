@@ -67,15 +67,13 @@ export function registerStatusCommand(program: Command): void {
             const stat = statSync(dbPath);
             sqliteStatus.fileSize = (stat.size / (1024 * 1024)).toFixed(2) + " MB";
 
-            const tablesResult = db
-              .query("SELECT count(*) as count FROM sqlite_master WHERE type='table'")
-              .get() as { count: number };
+            const tablesResult = db.query("SELECT count(*) as count FROM sqlite_master WHERE type='table'").get() as {
+              count: number;
+            };
             sqliteStatus.tables = tablesResult.count;
 
             try {
-              const charResult = db
-                .query("SELECT count(*) as count FROM inagle_characters")
-                .get() as {
+              const charResult = db.query("SELECT count(*) as count FROM inagle_characters").get() as {
                 count: number;
               };
               sqliteStatus.characterCount = charResult.count;
@@ -189,9 +187,7 @@ export function registerStatusCommand(program: Command): void {
           console.log(`  Uptime CLI : ${report.process.uptime}`);
           console.log(`  Heap Utilisé: ${report.process.memory.heapUsed}`);
           console.log(`  RSS Process: ${report.process.memory.rss}`);
-          console.log(
-            `  OS Mémoire : ${report.system.freeMemory} libres / ${report.system.totalMemory} total`,
-          );
+          console.log(`  OS Mémoire : ${report.system.freeMemory} libres / ${report.system.totalMemory} total`);
           console.log(`  Plateforme : ${report.system.platform} (${report.system.arch})`);
         }
       } catch (e) {

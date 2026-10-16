@@ -22,31 +22,31 @@ export const dynamic = "force-dynamic";
  * le contraire enverrait chercher un résultat qui n'existe pas encore.
  */
 export async function POST(requete: NextRequest) {
-	const garde = await requireApiAdmin();
-	if (!garde.ok) {
-		return garde.response;
-	}
+  const garde = await requireApiAdmin();
+  if (!garde.ok) {
+    return garde.response;
+  }
 
-	let corps: { tache?: unknown };
-	try {
-		corps = (await requete.json()) as { tache?: unknown };
-	} catch {
-		return NextResponse.json({ error: "Corps JSON illisible" }, { status: 400 });
-	}
+  let corps: { tache?: unknown };
+  try {
+    corps = (await requete.json()) as { tache?: unknown };
+  } catch {
+    return NextResponse.json({ error: "Corps JSON illisible" }, { status: 400 });
+  }
 
-	const nom = typeof corps.tache === "string" ? corps.tache.trim() : "";
-	if (nom === "") {
-		return NextResponse.json({ error: "Nom de tâche manquant" }, { status: 400 });
-	}
+  const nom = typeof corps.tache === "string" ? corps.tache.trim() : "";
+  if (nom === "") {
+    return NextResponse.json({ error: "Nom de tâche manquant" }, { status: 400 });
+  }
 
-	const resultat = await declencherTache(nom, garde.data.role);
+  const resultat = await declencherTache(nom, garde.data.role);
 
-	if (resultat.ok) {
-		await logAdminAction("cron.tache.lancer", "rg-cron", resultat.tache, {
-			role: garde.data.role,
-			via: "admin-web",
-		});
-	}
+  if (resultat.ok) {
+    await logAdminAction("cron.tache.lancer", "rg-cron", resultat.tache, {
+      role: garde.data.role,
+      via: "admin-web",
+    });
+  }
 
-	return NextResponse.json(resultat, { status: resultat.ok ? 202 : 403 });
+  return NextResponse.json(resultat, { status: resultat.ok ? 202 : 403 });
 }

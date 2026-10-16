@@ -23,74 +23,69 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-	alternates: { canonical: "/sons" },
-	description:
-		"Toutes les banques sonores d'Inazuma Eleven: Victory Road — voix des personnages, musiques, techniques et effets, décodées à la volée depuis les fichiers du jeu.",
-	openGraph: {
-		description:
-			"Voix, musiques, techniques et effets d'Inazuma Eleven: Victory Road, décodés live depuis les CPK.",
-		locale: "fr_FR",
-		siteName: "Azalée - Inazuma Eleven Victory Road",
-		title: "Sons & voix | Azalée",
-		type: "website",
-		url: "/wiki/sons",
-	},
-	title: "Sons & voix — Inazuma Eleven Victory Road - Azalée",
+  alternates: { canonical: "/sons" },
+  description:
+    "Toutes les banques sonores d'Inazuma Eleven: Victory Road — voix des personnages, musiques, techniques et effets, décodées à la volée depuis les fichiers du jeu.",
+  openGraph: {
+    description: "Voix, musiques, techniques et effets d'Inazuma Eleven: Victory Road, décodés live depuis les CPK.",
+    locale: "fr_FR",
+    siteName: "Azalée - Inazuma Eleven Victory Road",
+    title: "Sons & voix | Azalée",
+    type: "website",
+    url: "/wiki/sons",
+  },
+  title: "Sons & voix — Inazuma Eleven Victory Road - Azalée",
 };
 
 /** Les trois emplacements où vivent les banques : la racine commune, puis les deux langues. */
 const SOURCES = [
-	{ dir: "data/common/sound_asset", lang: null },
-	{ dir: "data/common/sound_asset/ja", lang: "ja" },
-	{ dir: "data/common/sound_asset/en", lang: "en" },
+  { dir: "data/common/sound_asset", lang: null },
+  { dir: "data/common/sound_asset/ja", lang: "ja" },
+  { dir: "data/common/sound_asset/en", lang: "en" },
 ] as const;
 
 export default async function SonsPage() {
-	const [listings, index] = await Promise.all([
-		Promise.all(SOURCES.map((s) => lsOrNull(s.dir, 20_000))),
-		ownerIndex(),
-	]);
+  const [listings, index] = await Promise.all([Promise.all(SOURCES.map(s => lsOrNull(s.dir, 20_000))), ownerIndex()]);
 
-	const banks: BankEntry[] = [];
-	for (const [i, listing] of listings.entries()) {
-		if (!listing) continue;
-		const lang = SOURCES[i].lang;
-		for (const f of listing.files) {
-			// L'ACB est le catalogue ; l'AWB frère n'est que le magasin d'octets, il ne se liste pas.
-			if (f.ext !== "acb") continue;
-			const owner = bankOwner(index, f.path);
-			banks.push({
-				path: f.path,
-				name: f.name.replace(/\.acb$/i, ""),
-				size: f.size,
-				kind: audioBankKind(f.path),
-				lang,
-				owner: owner?.name ?? null,
-				ownerSlug: owner?.slug ?? null,
-			});
-		}
-	}
-	banks.sort((a, b) => a.name.localeCompare(b.name, "fr", { numeric: true }));
+  const banks: BankEntry[] = [];
+  for (const [i, listing] of listings.entries()) {
+    if (!listing) continue;
+    const lang = SOURCES[i].lang;
+    for (const f of listing.files) {
+      // L'ACB est le catalogue ; l'AWB frère n'est que le magasin d'octets, il ne se liste pas.
+      if (f.ext !== "acb") continue;
+      const owner = bankOwner(index, f.path);
+      banks.push({
+        path: f.path,
+        name: f.name.replace(/\.acb$/i, ""),
+        size: f.size,
+        kind: audioBankKind(f.path),
+        lang,
+        owner: owner?.name ?? null,
+        ownerSlug: owner?.slug ?? null,
+      });
+    }
+  }
+  banks.sort((a, b) => a.name.localeCompare(b.name, "fr", { numeric: true }));
 
-	const indisponible = listings.every((l) => l === null);
-	const nommees = banks.filter((b) => b.owner).length;
+  const indisponible = listings.every(l => l === null);
+  const nommees = banks.filter(b => b.owner).length;
 
-	return (
-		<div className="w-full space-y-6">
-			<MediaHeader
-				title="Sons & voix"
-				active="/sons"
-				description={`${banks.length.toLocaleString("fr")} banques sonores d'Inazuma Eleven: Victory Road, décodées à la volée depuis les fichiers du jeu. Ouvrez une banque pour en lister les cues et les écouter un par un.`}
-			/>
+  return (
+    <div className="w-full space-y-6">
+      <MediaHeader
+        title="Sons & voix"
+        active="/sons"
+        description={`${banks.length.toLocaleString("fr")} banques sonores d'Inazuma Eleven: Victory Road, décodées à la volée depuis les fichiers du jeu. Ouvrez une banque pour en lister les cues et les écouter un par un.`}
+      />
 
-			{indisponible ? (
-				<MediaEmpty>
-					Le VFS du jeu est momentanément injoignable — la liste des banques ne peut pas être
-					établie.
-				</MediaEmpty>
-			) : (
-				<SoundGallery banks={banks} namedCount={nommees} />
-			)}
-		</div>
-	);
+      {indisponible ? (
+        <MediaEmpty>
+          Le VFS du jeu est momentanément injoignable — la liste des banques ne peut pas être établie.
+        </MediaEmpty>
+      ) : (
+        <SoundGallery banks={banks} namedCount={nommees} />
+      )}
+    </div>
+  );
 }

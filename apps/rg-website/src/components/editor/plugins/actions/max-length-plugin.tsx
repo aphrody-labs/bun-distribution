@@ -11,7 +11,7 @@ export function MaxLengthPlugin({ maxLength }: { maxLength: number }) {
 
   useEffect(
     () =>
-      editor.registerNodeTransform(RootNode, (rootNode) => {
+      editor.registerNodeTransform(RootNode, rootNode => {
         const textContent = rootNode.getTextContent();
         if (textContent.length > maxLength) {
           // Here we could try to truncate or just notify

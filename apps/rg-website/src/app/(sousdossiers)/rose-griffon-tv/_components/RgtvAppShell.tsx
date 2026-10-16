@@ -1,8 +1,5 @@
 "use client";
-import {
-  useNotificationPermission,
-  refreshNotificationPermission,
-} from "../_context/notification-permission";
+import { useNotificationPermission, refreshNotificationPermission } from "../_context/notification-permission";
 
 import { Button } from "@rosegriffon/ui";
 import { AnimatePresence, motion } from "motion/react";
@@ -160,9 +157,7 @@ export function RgtvAppShell({
               <span className="text-xs font-bold uppercase" style={{ color: "#345182" }}>
                 Live
               </span>
-              {viewerCount > 0 && (
-                <span className="text-xs text-muted-foreground">• {viewerCount}</span>
-              )}
+              {viewerCount > 0 && <span className="text-xs text-muted-foreground">• {viewerCount}</span>}
             </motion.div>
           )}
 
@@ -214,9 +209,7 @@ export function RgtvAppShell({
                   {notificationPermission === "default" && (
                     <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
                       <p className="text-sm font-semibold mb-3">🔔 Activez les notifications</p>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Soyez prévenu des prochains streams !
-                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">Soyez prévenu des prochains streams !</p>
                       <Button onClick={requestNotificationPermission} className="w-full" size="sm">
                         Activer
                       </Button>
@@ -224,19 +217,13 @@ export function RgtvAppShell({
                   )}
                   {notificationPermission === "granted" && (
                     <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                      <p className="text-sm font-semibold text-green-600">
-                        ✅ Notifications activées
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Vous serez prévenu des prochains streams
-                      </p>
+                      <p className="text-sm font-semibold text-green-600">✅ Notifications activées</p>
+                      <p className="text-xs text-muted-foreground mt-1">Vous serez prévenu des prochains streams</p>
                     </div>
                   )}
                   {notificationPermission === "denied" && (
                     <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                      <p className="text-sm font-semibold text-red-600">
-                        ❌ Notifications bloquées
-                      </p>
+                      <p className="text-sm font-semibold text-red-600">❌ Notifications bloquées</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Activez-les dans les paramètres du navigateur
                       </p>
@@ -304,11 +291,7 @@ export function RgtvAppShell({
                     <Share2 className="mr-2 size-4" />
                     Partager
                   </Button>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start"
-                    onClick={requestNotificationPermission}
-                  >
+                  <Button variant="ghost" className="w-full justify-start" onClick={requestNotificationPermission}>
                     <Bell className="mr-2 size-4" />
                     Notifications
                   </Button>

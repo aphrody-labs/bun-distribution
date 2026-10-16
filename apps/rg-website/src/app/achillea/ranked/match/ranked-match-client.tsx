@@ -40,8 +40,8 @@ export default function RankedMatchPage() {
   // Le joueur courant et son adversaire sortent de l'état du serveur, jamais
   // d'une valeur de repli : afficher « Adversaire_99 » à la place d'un nom
   // manquant rend une page crédible qui ne décrit rien.
-  const moi = match.joueurs.find((joueur) => joueur.userId === user?.id) ?? null;
-  const adversaire = match.joueurs.find((joueur) => joueur.userId !== user?.id) ?? null;
+  const moi = match.joueurs.find(joueur => joueur.userId === user?.id) ?? null;
+  const adversaire = match.joueurs.find(joueur => joueur.userId !== user?.id) ?? null;
 
   const [myScore, setMyScore] = useState<number>(moi?.myScore ?? 0);
   const [oppScore, setOppScore] = useState<number>(moi?.oppScore ?? 0);
@@ -106,9 +106,7 @@ export default function RankedMatchPage() {
         credentials: "include",
       }).ranked.uploadDisputeProof(match.lobbyId, dataUrl);
       if (!result.ok) {
-        setProofError(
-          "Le dépôt de la capture a échoué. Vérifiez que le match est bien ouvert puis réessayez.",
-        );
+        setProofError("Le dépôt de la capture a échoué. Vérifiez que le match est bien ouvert puis réessayez.");
         return;
       }
       match.signalerPreuve();
@@ -159,8 +157,7 @@ export default function RankedMatchPage() {
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
         <h1 className="text-2xl font-bold">Aucun match à rejoindre</h1>
         <p className="text-muted-foreground">
-          Lancez une recherche ou acceptez un défi depuis le mode classé pour ouvrir un salon de
-          match.
+          Lancez une recherche ou acceptez un défi depuis le mode classé pour ouvrir un salon de match.
         </p>
         <Link
           href="/achillea/ranked"
@@ -230,9 +227,7 @@ export default function RankedMatchPage() {
 
       {match.statut === "waiting" && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-center space-y-3">
-          <p className="text-sm">
-            Les deux joueurs doivent confirmer avant le début de la rencontre.
-          </p>
+          <p className="text-sm">Les deux joueurs doivent confirmer avant le début de la rencontre.</p>
           <button
             type="button"
             onClick={match.demarrer}
@@ -252,9 +247,7 @@ export default function RankedMatchPage() {
             disabled={moi?.confirmedFinish ?? true}
             className="px-5 py-2 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-50"
           >
-            {moi?.confirmedFinish
-              ? "Fin confirmée — en attente de l'adversaire"
-              : "Fin de la rencontre"}
+            {moi?.confirmedFinish ? "Fin confirmée — en attente de l'adversaire" : "Fin de la rencontre"}
           </button>
         </div>
       )}
@@ -302,9 +295,7 @@ export default function RankedMatchPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-6 text-center">
           {/* Home Player (Me) */}
           <div className="flex flex-col items-center space-y-3 p-4 rounded-xl bg-background/50 border border-border">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-              Domicile (Toi)
-            </span>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Domicile (Toi)</span>
             <UserAvatar
               avatar={user?.avatar}
               displayName={user?.username ?? "Joueur"}
@@ -312,9 +303,7 @@ export default function RankedMatchPage() {
             />
             <div>
               <div className="font-bold text-sm">{moi?.displayName || user?.username || "—"}</div>
-              <div className="text-xs text-[var(--achillea-lime)] font-mono mt-0.5">
-                {moi ? `${moi.elo} AP` : "—"}
-              </div>
+              <div className="text-xs text-[var(--achillea-lime)] font-mono mt-0.5">{moi ? `${moi.elo} AP` : "—"}</div>
             </div>
           </div>
 
@@ -338,9 +327,7 @@ export default function RankedMatchPage() {
               className="w-16 h-16 ring-2 ring-border"
             />
             <div>
-              <div className="font-bold text-sm">
-                {adversaire?.displayName ?? "En attente d'un adversaire"}
-              </div>
+              <div className="font-bold text-sm">{adversaire?.displayName ?? "En attente d'un adversaire"}</div>
               <div className="text-xs text-[var(--achillea-lime)] font-mono mt-0.5">
                 {adversaire ? `${adversaire.elo} AP` : "—"}
               </div>
@@ -379,7 +366,7 @@ export default function RankedMatchPage() {
                     min={0}
                     max={99}
                     value={myScore}
-                    onChange={(e) => setMyScore(Number(e.target.value))}
+                    onChange={e => setMyScore(Number(e.target.value))}
                     className="w-full p-2.5 rounded-lg border border-border bg-background text-center font-mono font-bold text-lg"
                   />
                 </div>
@@ -396,7 +383,7 @@ export default function RankedMatchPage() {
                     min={0}
                     max={99}
                     value={oppScore}
-                    onChange={(e) => setOppScore(Number(e.target.value))}
+                    onChange={e => setOppScore(Number(e.target.value))}
                     className="w-full p-2.5 rounded-lg border border-border bg-background text-center font-mono font-bold text-lg"
                   />
                 </div>
@@ -421,8 +408,7 @@ export default function RankedMatchPage() {
               <Check className="w-8 h-8 text-emerald-400 mx-auto" />
               <div className="font-bold text-sm text-emerald-400">Score soumis avec succès !</div>
               <p className="text-xs text-muted-foreground">
-                En attente de validation par l'adversaire. La mise à jour de vos AP sera appliquée
-                instantanément.
+                En attente de validation par l'adversaire. La mise à jour de vos AP sera appliquée instantanément.
               </p>
             </div>
           ) : match.statut === "finished" || match.statut === "disputed" ? (
@@ -452,7 +438,7 @@ export default function RankedMatchPage() {
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   className="sr-only"
-                  onChange={(event) => {
+                  onChange={event => {
                     const file = event.currentTarget.files?.[0];
                     event.currentTarget.value = "";
                     void handleUploadProof(file);
@@ -465,11 +451,7 @@ export default function RankedMatchPage() {
                   className="py-1.5 px-3 rounded-lg border border-border bg-background hover:bg-muted font-medium flex items-center gap-1.5"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  {proofUploading
-                    ? "Dépôt en cours…"
-                    : proofUploaded
-                      ? "Capture déposée !"
-                      : "Choisir une capture"}
+                  {proofUploading ? "Dépôt en cours…" : proofUploaded ? "Capture déposée !" : "Choisir une capture"}
                 </button>
               </div>
               {proofError && (
@@ -506,7 +488,7 @@ export default function RankedMatchPage() {
                 // n'envoie qu'un identifiant, et afficher cet identifiant brut
                 // dans une conversation ne veut rien dire pour un joueur.
                 const auteur =
-                  match.joueurs.find((joueur) => joueur.userId === m.userId)?.displayName ??
+                  match.joueurs.find(joueur => joueur.userId === m.userId)?.displayName ??
                   (m.userId ? "Joueur" : "Système");
                 return (
                   <div
@@ -530,15 +512,12 @@ export default function RankedMatchPage() {
           </div>
 
           {/* Input form */}
-          <form
-            onSubmit={handleSendChat}
-            className="flex items-center gap-2 pt-2 border-t border-border"
-          >
+          <form onSubmit={handleSendChat} className="flex items-center gap-2 pt-2 border-t border-border">
             <input
               type="text"
               placeholder="Écrire un message..."
               value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
+              onChange={e => setChatInput(e.target.value)}
               className="flex-1 px-3 py-1.5 text-xs bg-background border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <button

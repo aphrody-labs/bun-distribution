@@ -81,15 +81,14 @@ export function PatreonWebhooksCard() {
 
         {!loading && webhooks.length === 0 && !error && (
           <p className="text-sm text-muted-foreground">
-            Aucun webhook configuré sur ce compte créateur. Créer un webhook depuis le portail
-            Patreon avec l'URL :{" "}
+            Aucun webhook configuré sur ce compte créateur. Créer un webhook depuis le portail Patreon avec l'URL :{" "}
             <code className="rounded bg-muted px-1 py-0.5 text-xs">/api/auth/patreon/webhook</code>
           </p>
         )}
 
         {webhooks.length > 0 && (
           <div className="space-y-3">
-            {webhooks.map((w) => {
+            {webhooks.map(w => {
               const failing = (w.num_consecutive_times_failed ?? 0) > 0;
               return (
                 <div
@@ -119,7 +118,7 @@ export function PatreonWebhooksCard() {
                     <p className="break-all font-mono text-sm text-foreground">{w.uri ?? "—"}</p>
                     {w.triggers && w.triggers.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {w.triggers.map((t) => (
+                        {w.triggers.map(t => (
                           <span
                             key={t}
                             className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"

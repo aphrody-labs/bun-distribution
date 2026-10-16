@@ -9,83 +9,95 @@
  * shell Rose Griffon (Poppins), ce qui suffit à faire mentir la maquette.
  */
 @font-face {
-	font-family: "Achillea Sans";
-	font-style: normal;
-	font-weight: 100 900;
-	font-display: swap;
-	src: url("/achillea/fonts/InterVariable.woff2") format("woff2");
+  font-family: "Achillea Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/achillea/fonts/InterVariable.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Sans";
-	font-style: italic;
-	font-weight: 100 900;
-	font-display: swap;
-	src: url("/achillea/fonts/InterVariable-Italic.woff2") format("woff2");
+  font-family: "Achillea Sans";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/achillea/fonts/InterVariable-Italic.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Body";
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-	src: url("/achillea/fonts/MSGothic.woff2") format("woff2");
+  font-family: "Achillea Body";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/achillea/fonts/MSGothic.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Display";
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-	src: url("/achillea/fonts/Dirtyline-36DOT.woff2") format("woff2");
+  font-family: "Achillea Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/achillea/fonts/Dirtyline-36DOT.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Title";
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-	src: url("/achillea/fonts/HUMANE.woff2") format("woff2");
+  font-family: "Achillea Title";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/achillea/fonts/HUMANE.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Title";
-	font-style: normal;
-	font-weight: 700;
-	font-display: swap;
-	src: url("/achillea/fonts/HUMANE-Bold.woff2") format("woff2");
+  font-family: "Achillea Title";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/achillea/fonts/HUMANE-Bold.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Title Alt";
-	font-style: normal;
-	font-weight: 400 700;
-	font-display: swap;
-	src: url("/achillea/fonts/NeueMetanaNext.woff2") format("woff2");
+  font-family: "Achillea Title Alt";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/achillea/fonts/NeueMetanaNext.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Mono";
-	font-style: normal;
-	font-weight: 400 700;
-	font-display: swap;
-	src: url("/achillea/fonts/LiberationMono.woff2") format("woff2");
+  font-family: "Achillea Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/achillea/fonts/LiberationMono.woff2") format("woff2");
 }
 
 @font-face {
-	font-family: "Achillea Display Num";
-	font-style: normal;
-	font-weight: 900;
-	font-display: swap;
-	src: url("/achillea/fonts/Satoshi-Black.woff2") format("woff2");
+  font-family: "Achillea Display Num";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("/achillea/fonts/Satoshi-Black.woff2") format("woff2");
 }
 
-.font-achillea-display { font-family: "Achillea Display", "Achillea Title", sans-serif; }
-.font-achillea-title { font-family: "Achillea Title", sans-serif; }
-.font-achillea-title-alt { font-family: "Achillea Title Alt", sans-serif; }
-.font-achillea-mono { font-family: "Achillea Mono", monospace; }
-.font-achillea-num { font-family: "Achillea Display Num", sans-serif; }
-.font-achillea-body { font-family: "Achillea Body", "Achillea Sans", sans-serif; }
+.font-achillea-display {
+  font-family: "Achillea Display", "Achillea Title", sans-serif;
+}
+.font-achillea-title {
+  font-family: "Achillea Title", sans-serif;
+}
+.font-achillea-title-alt {
+  font-family: "Achillea Title Alt", sans-serif;
+}
+.font-achillea-mono {
+  font-family: "Achillea Mono", monospace;
+}
+.font-achillea-num {
+  font-family: "Achillea Display Num", sans-serif;
+}
+.font-achillea-body {
+  font-family: "Achillea Body", "Achillea Sans", sans-serif;
+}
 
 /*
  * APPLICATION RÉELLE DES POLICES
@@ -104,14 +116,14 @@
  * `.achillea-scope`.
  */
 .achillea-scope {
-	font-family: "Achillea Sans", var(--font-poppins), system-ui, sans-serif;
-	/* La zone est rendue dans le `SidebarInset` partagé. Ces garde-fous
+  font-family: "Achillea Sans", var(--font-poppins), system-ui, sans-serif;
+  /* La zone est rendue dans le `SidebarInset` partagé. Ces garde-fous
 	 * empêchent une grille ou une table de rétrécir son parent et garantissent
 	 * que le fond d'Achilléa occupe toute la zone disponible après le chrome. */
-	width: 100%;
-	min-width: 0;
-	overflow-x: clip;
-	color-scheme: dark;
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  color-scheme: dark;
 }
 
 /* ----------------------------------------------------------------------
@@ -123,205 +135,502 @@
  * fois. Le flux redevient volontairement court, lisible et data-driven.
  * -------------------------------------------------------------------- */
 .achillea-home-page {
-	padding-bottom: 4rem;
+  padding-bottom: 4rem;
 }
 
 .achillea-home {
-	position: relative;
-	min-height: min(760px, calc(100dvh - 3.5rem));
-	overflow: clip;
-	border-bottom: 1px solid rgba(223, 255, 87, 0.22);
+  position: relative;
+  min-height: min(760px, calc(100dvh - 3.5rem));
+  overflow: clip;
+  border-bottom: 1px solid rgba(223, 255, 87, 0.22);
 }
 
 .achillea-home__backdrop {
-	position: absolute;
-	inset: 0;
-	background:
-		linear-gradient(90deg, rgba(13, 8, 20, 0.98) 0%, rgba(13, 8, 20, 0.9) 43%, rgba(13, 8, 20, 0.48) 100%),
-		url("/achillea/site_bg_dark_home.png") center / cover no-repeat;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(13, 8, 20, 0.98) 0%, rgba(13, 8, 20, 0.9) 43%, rgba(13, 8, 20, 0.48) 100%),
+    url("/achillea/site_bg_dark_home.png") center / cover no-repeat;
 }
 
 .achillea-home__content,
 .achillea-vods {
-	position: relative;
-	width: min(100% - 2rem, 1160px);
-	margin-inline: auto;
+  position: relative;
+  width: min(100% - 2rem, 1160px);
+  margin-inline: auto;
 }
 
 .achillea-home__content {
-	display: grid;
-	grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-	gap: 2.5rem;
-	align-items: center;
-	min-height: inherit;
-	padding-block: 3rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 2.5rem;
+  align-items: center;
+  min-height: inherit;
+  padding-block: 3rem;
 }
 
 .achillea-home__intro {
-	display: grid;
-	gap: 1.25rem;
-	align-content: center;
+  display: grid;
+  gap: 1.25rem;
+  align-content: center;
 }
 
 .achillea-home__wordmark {
-	width: min(100%, 35rem);
-	height: auto;
-	filter: drop-shadow(0 0 2rem rgba(223, 255, 87, 0.18));
+  width: min(100%, 35rem);
+  height: auto;
+  filter: drop-shadow(0 0 2rem rgba(223, 255, 87, 0.18));
 }
 
 .achillea-home__intro > p {
-	max-width: 32rem;
-	margin: 0;
-	font-size: 1.125rem;
-	line-height: 1.5;
-	color: #f3edf7;
+  max-width: 32rem;
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: #f3edf7;
 }
 
 .achillea-home__stats {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 0.75rem;
-	margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
 }
 
 .achillea-home__stats div {
-	min-width: 0;
-	padding: 0.875rem;
-	border: 1px solid rgba(243, 237, 247, 0.2);
-	border-radius: 0.75rem;
-	background: rgba(13, 8, 20, 0.72);
+  min-width: 0;
+  padding: 0.875rem;
+  border: 1px solid rgba(243, 237, 247, 0.2);
+  border-radius: 0.75rem;
+  background: rgba(13, 8, 20, 0.72);
 }
 
 .achillea-home__stats dt,
-.achillea-home__stats dd { margin: 0; }
-.achillea-home__stats dt { font-size: 1.125rem; color: rgba(243, 237, 247, 0.82); }
-.achillea-home__stats dd { margin-top: 0.25rem; font-family: "Achillea Mono", monospace; font-size: 1.25rem; font-weight: 700; color: var(--achillea-lime); }
+.achillea-home__stats dd {
+  margin: 0;
+}
+.achillea-home__stats dt {
+  font-size: 1.125rem;
+  color: rgba(243, 237, 247, 0.82);
+}
+.achillea-home__stats dd {
+  margin-top: 0.25rem;
+  font-family: "Achillea Mono", monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--achillea-lime);
+}
 
-.achillea-home__featured { min-width: 0; }
+.achillea-home__featured {
+  min-width: 0;
+}
 .achillea-home__section-head,
 .achillea-vods__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
 }
-.achillea-home__section-head p { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.achillea-home__section-head p {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
 .achillea-home__text-link,
 .achillea-vods__header > a,
 .achillea-home__empty > a {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	min-height: 52px;
-	padding-inline: 0.5rem;
-	font-size: 1.125rem;
-	font-weight: 700;
-	color: var(--achillea-lime);
-	text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding-inline: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--achillea-lime);
+  text-decoration: none;
 }
-.achillea-home__text-link svg, .achillea-vods__header > a svg, .achillea-home__empty > a svg { width: 1.125rem; height: 1.125rem; }
+.achillea-home__text-link svg,
+.achillea-vods__header > a svg,
+.achillea-home__empty > a svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
 
 .achillea-home__featured-card {
-	position: relative;
-	display: block;
-	overflow: hidden;
-	min-height: 25rem;
-	border: 1px solid rgba(223, 255, 87, 0.46);
-	border-radius: 1.25rem;
-	background: #160d22;
-	color: #f3edf7;
-	text-decoration: none;
-	box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.35);
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-height: 25rem;
+  border: 1px solid rgba(223, 255, 87, 0.46);
+  border-radius: 1.25rem;
+  background: #160d22;
+  color: #f3edf7;
+  text-decoration: none;
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.35);
 }
-.achillea-home__featured-card:hover { border-color: var(--achillea-lime); }
+.achillea-home__featured-card:hover {
+  border-color: var(--achillea-lime);
+}
 .achillea-home__featured-card:focus-visible,
 .achillea-home__actions a:focus-visible,
 .achillea-home__other-events a:focus-visible,
 .achillea-vods__card:focus-visible,
 .achillea-home__text-link:focus-visible,
 .achillea-vods__header > a:focus-visible,
-.achillea-home__empty > a:focus-visible { outline: 4px solid var(--achillea-lime); outline-offset: 4px; }
-.achillea-home__featured-scrim { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(13, 8, 20, 0.98), rgba(13, 8, 20, 0.84) 52%, rgba(13, 8, 20, 0.42)); }
-.achillea-home__featured-body { position: relative; display: grid; align-content: end; gap: 1.25rem; min-height: inherit; padding: 2rem; }
-.achillea-home__featured-body h2 { max-width: 28rem; margin: 0; font-size: clamp(2.25rem, 5vw, 4rem); color: #fff; }
-.achillea-home__live { padding: 0.25rem 0.625rem; border-radius: 999px; background: #7f1d1d; color: #fecaca; font-size: 1.125rem; font-weight: 700; }
-.achillea-home__facts { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; padding: 0; margin: 0; list-style: none; font-size: 1.125rem; }
-.achillea-home__facts li { display: inline-flex; align-items: center; gap: 0.5rem; }
-.achillea-home__facts svg { width: 1.25rem; height: 1.25rem; color: var(--achillea-lime); }
-.achillea-home__progress { max-width: 27rem; font-size: 1.125rem; }
-.achillea-home__progress > div { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
-.achillea-home__progress > span { display: block; height: 0.625rem; overflow: hidden; border-radius: 999px; background: rgba(243, 237, 247, 0.24); }
-.achillea-home__progress i { display: block; height: 100%; border-radius: inherit; background: var(--achillea-lime); }
-.achillea-home__cta { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; font-weight: 800; color: var(--achillea-lime); }
-.achillea-home__cta svg { width: 1.25rem; height: 1.25rem; }
+.achillea-home__empty > a:focus-visible {
+  outline: 4px solid var(--achillea-lime);
+  outline-offset: 4px;
+}
+.achillea-home__featured-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(13, 8, 20, 0.98), rgba(13, 8, 20, 0.84) 52%, rgba(13, 8, 20, 0.42));
+}
+.achillea-home__featured-body {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 1.25rem;
+  min-height: inherit;
+  padding: 2rem;
+}
+.achillea-home__featured-body h2 {
+  max-width: 28rem;
+  margin: 0;
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  color: #fff;
+}
+.achillea-home__live {
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: #7f1d1d;
+  color: #fecaca;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.achillea-home__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: 1.125rem;
+}
+.achillea-home__facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.achillea-home__facts svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--achillea-lime);
+}
+.achillea-home__progress {
+  max-width: 27rem;
+  font-size: 1.125rem;
+}
+.achillea-home__progress > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.achillea-home__progress > span {
+  display: block;
+  height: 0.625rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(243, 237, 247, 0.24);
+}
+.achillea-home__progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--achillea-lime);
+}
+.achillea-home__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--achillea-lime);
+}
+.achillea-home__cta svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
 
-.achillea-home__other-events { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; padding: 0; margin: 0.75rem 0 0; list-style: none; }
-.achillea-home__other-events a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: center; min-height: 4.5rem; padding: 0.75rem; border: 1px solid rgba(243, 237, 247, 0.2); border-radius: 0.75rem; background: rgba(13, 8, 20, 0.78); color: #f3edf7; text-decoration: none; }
-.achillea-home__other-events span { overflow: hidden; font-size: 1.125rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.achillea-home__other-events small { font-size: 1.125rem; color: rgba(243, 237, 247, 0.8); }
-.achillea-home__other-events svg { grid-row: span 2; grid-column: 2; width: 1.125rem; height: 1.125rem; color: var(--achillea-lime); }
+.achillea-home__other-events {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  list-style: none;
+}
+.achillea-home__other-events a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  min-height: 4.5rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(243, 237, 247, 0.2);
+  border-radius: 0.75rem;
+  background: rgba(13, 8, 20, 0.78);
+  color: #f3edf7;
+  text-decoration: none;
+}
+.achillea-home__other-events span {
+  overflow: hidden;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.achillea-home__other-events small {
+  font-size: 1.125rem;
+  color: rgba(243, 237, 247, 0.8);
+}
+.achillea-home__other-events svg {
+  grid-row: span 2;
+  grid-column: 2;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--achillea-lime);
+}
 
-.achillea-home__empty { display: flex; align-items: center; gap: 1rem; min-height: 10rem; padding: 1.5rem; border: 1px solid rgba(243, 237, 247, 0.24); border-radius: 1rem; background: rgba(13, 8, 20, 0.76); }
-.achillea-home__empty > svg { width: 2rem; height: 2rem; color: var(--achillea-lime); }
-.achillea-home__empty h2, .achillea-home__empty p { margin: 0; }
-.achillea-home__empty h2 { font-size: 1.75rem; }
-.achillea-home__empty p { margin-top: 0.25rem; font-size: 1.125rem; }
-.achillea-home__empty > a { margin-left: auto; }
+.achillea-home__empty {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 10rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(243, 237, 247, 0.24);
+  border-radius: 1rem;
+  background: rgba(13, 8, 20, 0.76);
+}
+.achillea-home__empty > svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--achillea-lime);
+}
+.achillea-home__empty h2,
+.achillea-home__empty p {
+  margin: 0;
+}
+.achillea-home__empty h2 {
+  font-size: 1.75rem;
+}
+.achillea-home__empty p {
+  margin-top: 0.25rem;
+  font-size: 1.125rem;
+}
+.achillea-home__empty > a {
+  margin-left: auto;
+}
 
-.achillea-home__actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; grid-column: 1 / -1; }
-.achillea-home__actions a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; min-height: 5.5rem; padding: 1rem; border: 1px solid rgba(243, 237, 247, 0.24); border-radius: 1rem; background: rgba(13, 8, 20, 0.84); color: #f3edf7; text-decoration: none; }
-.achillea-home__actions a:hover { border-color: var(--achillea-lime); background: rgba(39, 21, 58, 0.95); }
-.achillea-home__actions > a > svg:first-child { width: 1.5rem; height: 1.5rem; color: var(--achillea-lime); }
-.achillea-home__actions > a > svg:last-child { width: 1.125rem; height: 1.125rem; color: var(--achillea-lime); }
-.achillea-home__actions span { display: grid; gap: 0.25rem; min-width: 0; }
-.achillea-home__actions strong { font-size: 1.125rem; }
-.achillea-home__actions small { font-size: 1.125rem; color: rgba(243, 237, 247, 0.8); }
+.achillea-home__actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  grid-column: 1 / -1;
+}
+.achillea-home__actions a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 5.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(243, 237, 247, 0.24);
+  border-radius: 1rem;
+  background: rgba(13, 8, 20, 0.84);
+  color: #f3edf7;
+  text-decoration: none;
+}
+.achillea-home__actions a:hover {
+  border-color: var(--achillea-lime);
+  background: rgba(39, 21, 58, 0.95);
+}
+.achillea-home__actions > a > svg:first-child {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--achillea-lime);
+}
+.achillea-home__actions > a > svg:last-child {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--achillea-lime);
+}
+.achillea-home__actions span {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.achillea-home__actions strong {
+  font-size: 1.125rem;
+}
+.achillea-home__actions small {
+  font-size: 1.125rem;
+  color: rgba(243, 237, 247, 0.8);
+}
 
-.achillea-vods { margin-top: 4rem; }
-.achillea-vods__header { padding-bottom: 1rem; border-bottom: 1px solid rgba(243, 237, 247, 0.2); }
-.achillea-vods__header > div { display: grid; gap: 0.25rem; }
-.achillea-vods__header span { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 700; color: #fca5a5; }
-.achillea-vods__header span svg { width: 1.25rem; height: 1.25rem; }
-.achillea-vods__header h2 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); }
-.achillea-vods__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-.achillea-vods__card { overflow: hidden; border: 1px solid rgba(243, 237, 247, 0.2); border-radius: 1rem; background: #160d22; color: #f3edf7; text-decoration: none; }
-.achillea-vods__card > div { position: relative; aspect-ratio: 16 / 9; background: #0d0814; }
-.achillea-vods__card > div > svg { position: absolute; inset: 50% auto auto 50%; width: 3rem; height: 3rem; transform: translate(-50%, -50%); color: #fff; filter: drop-shadow(0 0 0.5rem #000); }
-.achillea-vods__card > div > span { position: absolute; right: 0.75rem; bottom: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 0.375rem; background: rgba(0, 0, 0, 0.86); font-size: 0.875rem; }
-.achillea-vods__card h3 { margin: 1rem 1rem 0; font-size: 1.125rem; }
-.achillea-vods__card p { display: -webkit-box; overflow: hidden; margin: 0.5rem 1rem 1rem; color: rgba(243, 237, 247, 0.82); font-size: 1rem; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.achillea-vods {
+  margin-top: 4rem;
+}
+.achillea-vods__header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(243, 237, 247, 0.2);
+}
+.achillea-vods__header > div {
+  display: grid;
+  gap: 0.25rem;
+}
+.achillea-vods__header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fca5a5;
+}
+.achillea-vods__header span svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.achillea-vods__header h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+.achillea-vods__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.achillea-vods__card {
+  overflow: hidden;
+  border: 1px solid rgba(243, 237, 247, 0.2);
+  border-radius: 1rem;
+  background: #160d22;
+  color: #f3edf7;
+  text-decoration: none;
+}
+.achillea-vods__card > div {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0d0814;
+}
+.achillea-vods__card > div > svg {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 3rem;
+  height: 3rem;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  filter: drop-shadow(0 0 0.5rem #000);
+}
+.achillea-vods__card > div > span {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  background: rgba(0, 0, 0, 0.86);
+  font-size: 0.875rem;
+}
+.achillea-vods__card h3 {
+  margin: 1rem 1rem 0;
+  font-size: 1.125rem;
+}
+.achillea-vods__card p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0.5rem 1rem 1rem;
+  color: rgba(243, 237, 247, 0.82);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 
 @media (max-width: 1199px) {
-	.achillea-home__content { grid-template-columns: 1fr; max-width: 52rem; }
-	.achillea-home__intro { text-align: center; justify-items: center; }
-	.achillea-home__stats { width: min(100%, 38rem); }
+  .achillea-home__content {
+    grid-template-columns: 1fr;
+    max-width: 52rem;
+  }
+  .achillea-home__intro {
+    text-align: center;
+    justify-items: center;
+  }
+  .achillea-home__stats {
+    width: min(100%, 38rem);
+  }
 }
 @media (max-width: 839px) {
-	.achillea-home { min-height: auto; }
-	.achillea-home__content, .achillea-vods { width: min(100% - 2rem, 44rem); }
-	.achillea-home__content { gap: 2rem; padding-block: 2rem; }
-	.achillea-home__featured-card { min-height: 22rem; }
-	.achillea-home__other-events, .achillea-home__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	.achillea-vods__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .achillea-home {
+    min-height: auto;
+  }
+  .achillea-home__content,
+  .achillea-vods {
+    width: min(100% - 2rem, 44rem);
+  }
+  .achillea-home__content {
+    gap: 2rem;
+    padding-block: 2rem;
+  }
+  .achillea-home__featured-card {
+    min-height: 22rem;
+  }
+  .achillea-home__other-events,
+  .achillea-home__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .achillea-vods__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 599px) {
-	.achillea-home__stats, .achillea-home__other-events, .achillea-home__actions, .achillea-vods__grid { grid-template-columns: 1fr; }
-	.achillea-home__section-head, .achillea-vods__header { align-items: flex-start; flex-direction: column; }
-	.achillea-home__featured-body { padding: 1.25rem; }
-	.achillea-home__featured-body h2 { font-size: 2.5rem; }
-	.achillea-home__facts { font-size: 1.125rem; }
-	.achillea-home__empty { align-items: flex-start; flex-wrap: wrap; }
-	.achillea-home__empty > a { width: 100%; margin-left: 0; }
+  .achillea-home__stats,
+  .achillea-home__other-events,
+  .achillea-home__actions,
+  .achillea-vods__grid {
+    grid-template-columns: 1fr;
+  }
+  .achillea-home__section-head,
+  .achillea-vods__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .achillea-home__featured-body {
+    padding: 1.25rem;
+  }
+  .achillea-home__featured-body h2 {
+    font-size: 2.5rem;
+  }
+  .achillea-home__facts {
+    font-size: 1.125rem;
+  }
+  .achillea-home__empty {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .achillea-home__empty > a {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 .achillea-shell {
-	width: 100%;
-	min-width: 0;
-	min-height: 100%;
-	display: flex;
-	flex: 1 1 auto;
-	flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 /*
@@ -332,9 +641,9 @@
  */
 .achillea-scope h1,
 .achillea-scope h2 {
-	font-family: "Achillea Title", "Achillea Sans", sans-serif;
-	letter-spacing: 0.02em;
-	line-height: 1.05;
+  font-family: "Achillea Title", "Achillea Sans", sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
 }
 
 /*
@@ -348,20 +657,20 @@
 .achillea-scope .text-base,
 .achillea-scope .text-\[10px\],
 .achillea-scope .text-\[11px\] {
-	font-size: 1.125rem;
-	line-height: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
 }
 
 .achillea-scope :is(input, select, textarea) {
-	min-height: 2.75rem;
-	color: #f3edf7;
-	background-color: #150d20;
-	border-color: #948b9d;
+  min-height: 2.75rem;
+  color: #f3edf7;
+  background-color: #150d20;
+  border-color: #948b9d;
 }
 
 .achillea-scope :is(a, button, input, select, textarea):focus-visible {
-	outline: 0.25rem solid #dfff57;
-	outline-offset: 0.25rem;
+  outline: 0.25rem solid #dfff57;
+  outline-offset: 0.25rem;
 }
 
 /* Les chiffres de score et d'ELO sont monospacés dans l'original
@@ -369,8 +678,8 @@
  * rafraîchit fait danser les colonnes. */
 .achillea-scope .tabular-nums,
 .achillea-scope [data-achillea-score] {
-	font-family: "Achillea Mono", ui-monospace, monospace;
-	font-variant-numeric: tabular-nums;
+  font-family: "Achillea Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ----------------------------------------------------------------------
@@ -378,20 +687,20 @@
  * -------------------------------------------------------------------- */
 
 .achillea-scope {
-	--achillea-rank-1-stops: #959595, #919191, #d4d4d4, #494949, #797979;
-	--achillea-rank-2-stops: #b17253, #8c4a34, #cb8254, #6d483d, #8c503c;
-	--achillea-rank-3-stops: #7facb8, #546b71, #90aeb6, #6e8389, #cbe0e6;
-	--achillea-rank-4-stops: #c2ad88, #76685b, #7d735d, #554f42, #898063;
-	--achillea-rank-5-stops: #897e8b, #8a8297, #5b5663, #898195, #c5b4c9;
-	--achillea-rank-6-stops: #88f6ff, #547e8e, #5db0d0, #c3fbff, #5cd2dc;
-	--achillea-rank-7-stops: #2d925c, #23574a, #3f9c85, #54d38f, #25896f;
-	--achillea-rank-8-stops: #ff5648, #f5232a, #ff8485, #a6181e, #d0313a;
-	--achillea-rank-9-stops: #7edcb5, #b4ffe7, #4bc2b1, #368464, #3f9e9d;
-	--achillea-rank-10-stops: #f010ff, #f66aff, #d700af, #930e9c, #c731b2;
-	--achillea-rank-11-stops: #ffa910, #e18204, #ffe150, #a15b0e, #dab338;
+  --achillea-rank-1-stops: #959595, #919191, #d4d4d4, #494949, #797979;
+  --achillea-rank-2-stops: #b17253, #8c4a34, #cb8254, #6d483d, #8c503c;
+  --achillea-rank-3-stops: #7facb8, #546b71, #90aeb6, #6e8389, #cbe0e6;
+  --achillea-rank-4-stops: #c2ad88, #76685b, #7d735d, #554f42, #898063;
+  --achillea-rank-5-stops: #897e8b, #8a8297, #5b5663, #898195, #c5b4c9;
+  --achillea-rank-6-stops: #88f6ff, #547e8e, #5db0d0, #c3fbff, #5cd2dc;
+  --achillea-rank-7-stops: #2d925c, #23574a, #3f9c85, #54d38f, #25896f;
+  --achillea-rank-8-stops: #ff5648, #f5232a, #ff8485, #a6181e, #d0313a;
+  --achillea-rank-9-stops: #7edcb5, #b4ffe7, #4bc2b1, #368464, #3f9e9d;
+  --achillea-rank-10-stops: #f010ff, #f66aff, #d700af, #930e9c, #c731b2;
+  --achillea-rank-11-stops: #ffa910, #e18204, #ffe150, #a15b0e, #dab338;
 
-	position: relative;
-	/*
+  position: relative;
+  /*
 	 * ACHILLÉA EST SOMBRE, SANS CONDITION.
 	 *
 	 * Ce bloc déclarait un fond CLAIR (`#f3f1f8`, `site_bg_light.png`) et
@@ -412,14 +721,14 @@
 	 * (`--md-sys-color-surface` / `--md-sys-color-on-surface`), en littéral pour
 	 * qu'ils ne dépendent d'aucun ancêtre.
 	 */
-	background-color: #0d0814;
-	color: #f3edf7;
-	background-image: url("/achillea/site_bg_dark.png");
-	background-position: center top;
-	background-repeat: no-repeat;
-	background-size: cover;
-	background-attachment: fixed;
-	min-height: 100%;
+  background-color: #0d0814;
+  color: #f3edf7;
+  background-image: url("/achillea/site_bg_dark.png");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  min-height: 100%;
 }
 
 /*
@@ -429,65 +738,87 @@
  * tableaux, tandis que les paragraphes gardent déjà leur propre `max-w-*`.
  */
 .achillea-scope .max-w-7xl {
-	max-width: 112rem;
+  max-width: 112rem;
 }
 
 .achillea-scope .max-w-6xl {
-	max-width: 104rem;
+  max-width: 104rem;
 }
 
 .achillea-scope .max-w-5xl {
-	max-width: 96rem;
+  max-width: 96rem;
 }
 
 @media (min-width: 600px) {
-	.achillea-scope .max-w-7xl,
-	.achillea-scope .max-w-6xl,
-	.achillea-scope .max-w-5xl {
-		width: calc(100% - 3rem);
-	}
+  .achillea-scope .max-w-7xl,
+  .achillea-scope .max-w-6xl,
+  .achillea-scope .max-w-5xl {
+    width: calc(100% - 3rem);
+  }
 }
 
 @media (min-width: 840px) {
-	.achillea-scope .max-w-7xl,
-	.achillea-scope .max-w-6xl,
-	.achillea-scope .max-w-5xl {
-		width: calc(100% - 4rem);
-	}
+  .achillea-scope .max-w-7xl,
+  .achillea-scope .max-w-6xl,
+  .achillea-scope .max-w-5xl {
+    width: calc(100% - 4rem);
+  }
 }
 
 @media (max-width: 599px) {
-	.achillea-scope {
-		background-attachment: scroll;
-	}
+  .achillea-scope {
+    background-attachment: scroll;
+  }
 
-	.achillea-scope .max-w-7xl,
-	.achillea-scope .max-w-6xl,
-	.achillea-scope .max-w-5xl {
-		width: 100%;
-	}
+  .achillea-scope .max-w-7xl,
+  .achillea-scope .max-w-6xl,
+  .achillea-scope .max-w-5xl {
+    width: 100%;
+  }
 }
 
 /* Gradients de Paliers ELO */
-.rank-gradient-1 { background: linear-gradient(135deg, var(--achillea-rank-1-stops)); }
-.rank-gradient-2 { background: linear-gradient(135deg, var(--achillea-rank-2-stops)); }
-.rank-gradient-3 { background: linear-gradient(135deg, var(--achillea-rank-3-stops)); }
-.rank-gradient-4 { background: linear-gradient(135deg, var(--achillea-rank-4-stops)); }
-.rank-gradient-5 { background: linear-gradient(135deg, var(--achillea-rank-5-stops)); }
-.rank-gradient-6 { background: linear-gradient(135deg, var(--achillea-rank-6-stops)); }
-.rank-gradient-7 { background: linear-gradient(135deg, var(--achillea-rank-7-stops)); }
-.rank-gradient-8 { background: linear-gradient(135deg, var(--achillea-rank-8-stops)); }
-.rank-gradient-9 { background: linear-gradient(135deg, var(--achillea-rank-9-stops)); }
-.rank-gradient-10 { background: linear-gradient(135deg, var(--achillea-rank-10-stops)); }
-.rank-gradient-11 { background: linear-gradient(135deg, var(--achillea-rank-11-stops)); }
+.rank-gradient-1 {
+  background: linear-gradient(135deg, var(--achillea-rank-1-stops));
+}
+.rank-gradient-2 {
+  background: linear-gradient(135deg, var(--achillea-rank-2-stops));
+}
+.rank-gradient-3 {
+  background: linear-gradient(135deg, var(--achillea-rank-3-stops));
+}
+.rank-gradient-4 {
+  background: linear-gradient(135deg, var(--achillea-rank-4-stops));
+}
+.rank-gradient-5 {
+  background: linear-gradient(135deg, var(--achillea-rank-5-stops));
+}
+.rank-gradient-6 {
+  background: linear-gradient(135deg, var(--achillea-rank-6-stops));
+}
+.rank-gradient-7 {
+  background: linear-gradient(135deg, var(--achillea-rank-7-stops));
+}
+.rank-gradient-8 {
+  background: linear-gradient(135deg, var(--achillea-rank-8-stops));
+}
+.rank-gradient-9 {
+  background: linear-gradient(135deg, var(--achillea-rank-9-stops));
+}
+.rank-gradient-10 {
+  background: linear-gradient(135deg, var(--achillea-rank-10-stops));
+}
+.rank-gradient-11 {
+  background: linear-gradient(135deg, var(--achillea-rank-11-stops));
+}
 
 /* Effets de lueur et bordures néon Achilléa */
 .achillea-glow-violet {
-	box-shadow: 0 0 25px -5px rgba(109, 0, 206, 0.4);
+  box-shadow: 0 0 25px -5px rgba(109, 0, 206, 0.4);
 }
 
 .achillea-glow-lime {
-	box-shadow: 0 0 25px -5px rgba(223, 255, 87, 0.4);
+  box-shadow: 0 0 25px -5px rgba(223, 255, 87, 0.4);
 }
 
 /*
@@ -497,102 +828,86 @@
  * mesuré. La variante sombre devient donc la seule.
  */
 .achillea-card {
-	background: rgba(18, 12, 28, 0.75);
-	backdrop-filter: blur(12px);
-	border: 1px solid rgba(223, 255, 87, 0.12);
-	border-radius: 1rem;
-	transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(18, 12, 28, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(223, 255, 87, 0.12);
+  border-radius: 1rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .achillea-card:hover {
-	border-color: rgba(223, 255, 87, 0.35);
-	box-shadow: 0 4px 20px -2px rgba(223, 255, 87, 0.15);
-	transform: translateY(-2px);
+  border-color: rgba(223, 255, 87, 0.35);
+  box-shadow: 0 4px 20px -2px rgba(223, 255, 87, 0.15);
+  transform: translateY(-2px);
 }
 
 /* ----------------------------------------------------------------------
  * Hero Section — Interactive Parallax Art, Vignette & Ripples
  * -------------------------------------------------------------------- */
 .achillea-hero-bg {
-	position: absolute;
-	inset: -3%;
-	background-position: center;
-	background-size: cover;
-	background-repeat: no-repeat;
-	will-change: transform, filter;
-	transition: filter 0.22s ease;
-	transform-origin: center center;
-	/* Visuel sombre en base, pour la même raison que `.achillea-scope` : la
+  position: absolute;
+  inset: -3%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  will-change: transform, filter;
+  transition: filter 0.22s ease;
+  transform-origin: center center;
+  /* Visuel sombre en base, pour la même raison que `.achillea-scope` : la
 	 * bascule clair/sombre pendait à des sélecteurs inexistants et le héros
 	 * restait clair sous le texte clair de la section. */
-	background-image: url("/achillea/site_bg_dark_home.png");
+  background-image: url("/achillea/site_bg_dark_home.png");
 }
 
 .achillea-hero-vignette {
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	background:
-		radial-gradient(ellipse 70% 60% at 70% 45%, transparent 35%, rgba(0, 0, 0, 0.22) 100%),
-		linear-gradient(
-			180deg,
-			rgba(0, 0, 0, 0.12) 0%,
-			transparent 18%,
-			transparent 78%,
-			rgba(0, 0, 0, 0.28) 100%
-		);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 70% 45%, transparent 35%, rgba(0, 0, 0, 0.22) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, transparent 18%, transparent 78%, rgba(0, 0, 0, 0.28) 100%);
 }
 
 .hero-ripple {
-	position: absolute;
-	width: 12px;
-	height: 12px;
-	border-radius: 50%;
-	pointer-events: none;
-	transform: translate(-50%, -50%) scale(0);
-	opacity: 0.85;
-	animation: achillea-ripple-expand 0.72s cubic-bezier(0.15, 0.75, 0.25, 1) forwards;
-	z-index: 10;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.85;
+  animation: achillea-ripple-expand 0.72s cubic-bezier(0.15, 0.75, 0.25, 1) forwards;
+  z-index: 10;
 }
 
 .hero-ripple--ink {
-	border: 1.5px solid rgba(255, 255, 255, 0.75);
-	box-shadow:
-		0 0 12px rgba(255, 255, 255, 0.35),
-		inset 0 0 8px rgba(255, 255, 255, 0.2);
-	background: radial-gradient(
-		circle,
-		rgba(255, 255, 255, 0.14) 0%,
-		rgba(255, 255, 255, 0.04) 40%,
-		transparent 70%
-	);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.35),
+    inset 0 0 8px rgba(255, 255, 255, 0.2);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 70%);
 }
 
 .hero-ripple--violet {
-	border: 1.5px solid rgba(168, 85, 247, 0.7);
-	box-shadow: 0 0 18px rgba(139, 92, 246, 0.45);
-	background: radial-gradient(
-		circle,
-		rgba(168, 85, 247, 0.18) 0%,
-		rgba(139, 92, 246, 0.06) 45%,
-		transparent 72%
-	);
-	animation-delay: 0.05s;
-	animation-duration: 0.9s;
+  border: 1.5px solid rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.45);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(139, 92, 246, 0.06) 45%, transparent 72%);
+  animation-delay: 0.05s;
+  animation-duration: 0.9s;
 }
 
 @keyframes achillea-ripple-expand {
-	0% {
-		transform: translate(-50%, -50%) scale(0.15);
-		opacity: 0.9;
-	}
-	70% {
-		opacity: 0.45;
-	}
-	100% {
-		transform: translate(-50%, -50%) scale(18);
-		opacity: 0;
-	}
+  0% {
+    transform: translate(-50%, -50%) scale(0.15);
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(18);
+    opacity: 0;
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -608,26 +923,26 @@
  * fichiers est une couleur qui dérive au premier ajustement.
  * -------------------------------------------------------------------- */
 .achillea-scope {
-	--achillea-primary-50: #eee8ff;
-	--achillea-primary-100: #e0d4ff;
-	--achillea-primary-200: #c0a4ff;
-	--achillea-primary-300: #a675ff;
-	--achillea-primary-400: #9039ff;
-	--achillea-primary-500: #6d00ce;
-	--achillea-primary-600: #5900ab;
-	--achillea-primary-700: #450086;
-	--achillea-primary-800: #310063;
-	--achillea-primary-900: #210046;
-	--achillea-primary-950: #13002d;
+  --achillea-primary-50: #eee8ff;
+  --achillea-primary-100: #e0d4ff;
+  --achillea-primary-200: #c0a4ff;
+  --achillea-primary-300: #a675ff;
+  --achillea-primary-400: #9039ff;
+  --achillea-primary-500: #6d00ce;
+  --achillea-primary-600: #5900ab;
+  --achillea-primary-700: #450086;
+  --achillea-primary-800: #310063;
+  --achillea-primary-900: #210046;
+  --achillea-primary-950: #13002d;
 
-	/* Alias de marque. `--achillea-lime-rgb` est donné en composantes pour
+  /* Alias de marque. `--achillea-lime-rgb` est donné en composantes pour
 	 * pouvoir servir dans un `rgba()` de `drop-shadow`, que Tailwind ne sait
 	 * pas composer depuis une couleur hexadécimale. */
-	--achillea-primary: var(--achillea-primary-500);
-	--achillea-lime: #dfff57;
-	--achillea-lime-rgb: 223, 255, 87;
+  --achillea-primary: var(--achillea-primary-500);
+  --achillea-lime: #dfff57;
+  --achillea-lime-rgb: 223, 255, 87;
 
-	/* Bleu Discord officiel, et son état survolé. */
-	--discord-blurple: #5865f2;
-	--discord-blurple-hover: #4752c4;
+  /* Bleu Discord officiel, et son état survolé. */
+  --discord-blurple: #5865f2;
+  --discord-blurple-hover: #4752c4;
 }

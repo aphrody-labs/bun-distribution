@@ -2,8 +2,7 @@ import { Database } from "bun:sqlite";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const dbPath = process.env["KNOWLEDGE_DB"]
-  ?? join(homedir(), ".aphrody", "workspace", "knowledge.db");
+const dbPath = process.env["KNOWLEDGE_DB"] ?? join(homedir(), ".aphrody", "workspace", "knowledge.db");
 const dbFile = Bun.file(dbPath);
 
 if (!(await dbFile.exists())) {
@@ -12,13 +11,14 @@ if (!(await dbFile.exists())) {
 }
 
 const db = new Database(dbPath);
-const results = db.query(
-  "SELECT title, content FROM documents_fts WHERE documents_fts MATCH 'G4MT OR G4MA OR USM OR skill_base' LIMIT 5"
-).all();
+const results = db
+  .query(
+    "SELECT title, content FROM documents_fts WHERE documents_fts MATCH 'G4MT OR G4MA OR USM OR skill_base' LIMIT 5",
+  )
+  .all();
 
 console.log("Résultats FTS5 approfondis :");
 for (const r of results as Array<{ title: string; content: string }>) {
   console.log(`\n=== ${r.title} ===`);
   console.log(r.content.substring(0, 500) + "...\n");
 }
-

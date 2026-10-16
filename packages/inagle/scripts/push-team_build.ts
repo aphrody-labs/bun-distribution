@@ -17,7 +17,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importTeamBuild(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("Erreur fatale push-team_build:", e);
     process.exit(1);
   });

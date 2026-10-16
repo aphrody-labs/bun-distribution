@@ -4,44 +4,44 @@ import type { DiscordMember as MemberRow } from "@rosegriffon/types";
 import { sql } from "../lib/db";
 
 function resolveAvatarUrl(member: GuildMember): string | null {
-	const guildAvatar = member.avatarURL({ size: 256, extension: "webp" });
-	if (guildAvatar) return guildAvatar;
-	const userAvatar = member.user.avatarURL({ size: 256, extension: "webp" });
-	if (userAvatar) return userAvatar;
-	return member.user.defaultAvatarURL ?? null;
+  const guildAvatar = member.avatarURL({ size: 256, extension: "webp" });
+  if (guildAvatar) return guildAvatar;
+  const userAvatar = member.user.avatarURL({ size: 256, extension: "webp" });
+  if (userAvatar) return userAvatar;
+  return member.user.defaultAvatarURL ?? null;
 }
 
 function resolveUserAvatarUrl(user: User): string | null {
-	return user.avatarURL({ size: 256, extension: "webp" }) ?? user.defaultAvatarURL ?? null;
+  return user.avatarURL({ size: 256, extension: "webp" }) ?? user.defaultAvatarURL ?? null;
 }
 
 export function memberToRow(member: GuildMember): MemberRow {
-	const roleIds = [...member.roles.cache.keys()].filter((id) => id !== member.guild.id);
-	return {
-		discord_id: member.id,
-		username: member.user.username,
-		display_name: member.user.globalName ?? null,
-		nickname: member.nickname ?? null,
-		avatar_url: resolveAvatarUrl(member),
-		joined_at: member.joinedAt?.toISOString() ?? null,
-		premium_since: member.premiumSince?.toISOString() ?? null,
-		roles: roleIds,
-		is_bot: member.user.bot,
-		// La ligne décrit un membre que la passerelle vient de nous rendre : il est
-		// présent, donc sans date de départ. La colonne `left_at` (migration
-		// `20260811_discord_departs.sql`) remplace la suppression de la ligne.
-		left_at: null,
-		updated_at: new Date().toISOString(),
-	};
+  const roleIds = [...member.roles.cache.keys()].filter(id => id !== member.guild.id);
+  return {
+    discord_id: member.id,
+    username: member.user.username,
+    display_name: member.user.globalName ?? null,
+    nickname: member.nickname ?? null,
+    avatar_url: resolveAvatarUrl(member),
+    joined_at: member.joinedAt?.toISOString() ?? null,
+    premium_since: member.premiumSince?.toISOString() ?? null,
+    roles: roleIds,
+    is_bot: member.user.bot,
+    // La ligne décrit un membre que la passerelle vient de nous rendre : il est
+    // présent, donc sans date de départ. La colonne `left_at` (migration
+    // `20260811_discord_departs.sql`) remplace la suppression de la ligne.
+    left_at: null,
+    updated_at: new Date().toISOString(),
+  };
 }
 
 function toPgTextArray(values: string[]): string {
-	return `{${values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")}}`;
+  return `{${values.map(v => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")}}`;
 }
 
 async function upsertRow(row: MemberRow): Promise<void> {
-	const rolesLiteral = toPgTextArray(row.roles || []);
-	await sql`
+  const rolesLiteral = toPgTextArray(row.roles || []);
+  await sql`
     INSERT INTO discord_members (
       discord_id, username, display_name, nickname,
       avatar_url, joined_at, premium_since, roles, is_bot, updated_at
@@ -68,8 +68,8 @@ async function upsertRow(row: MemberRow): Promise<void> {
 }
 
 async function syncUserImage(discordId: string, avatarUrl: string | null): Promise<void> {
-	if (!avatarUrl) return;
-	await sql`
+  if (!avatarUrl) return;
+  await sql`
     UPDATE "user" u
     SET image = ${avatarUrl}, updated_at = NOW()
     FROM account a
@@ -97,8 +97,8 @@ async function syncUserImage(discordId: string, avatarUrl: string | null): Promi
  * rien du tout.
  */
 async function syncProfileAvatar(discordId: string, avatarUrl: string | null): Promise<void> {
-	if (!avatarUrl) return;
-	await sql`
+  if (!avatarUrl) return;
+  await sql`
     UPDATE profiles
     SET avatar_url = ${avatarUrl}, updated_at = NOW()
     WHERE discord_id = ${discordId}
@@ -109,59 +109,58 @@ async function syncProfileAvatar(discordId: string, avatarUrl: string | null): P
 
 /** Les trois tables où vit une photo de profil, mises à jour ensemble. */
 async function syncAvatars(discordId: string, avatarUrl: string | null): Promise<void> {
-	await syncUserImage(discordId, avatarUrl);
-	await syncProfileAvatar(discordId, avatarUrl);
+  await syncUserImage(discordId, avatarUrl);
+  await syncProfileAvatar(discordId, avatarUrl);
 }
 
 export interface SyncReport {
-	fetched: number;
-	upserted: number;
-	errors: { discordId: string; reason: string }[];
-	durationMs: number;
+  fetched: number;
+  upserted: number;
+  errors: { discordId: string; reason: string }[];
+  durationMs: number;
 }
 
 export async function syncAllMembers(guild: Guild): Promise<SyncReport> {
-	const start = Date.now();
-	const members = await guild.members.fetch();
-	const errors: SyncReport["errors"] = [];
-	let upserted = 0;
+  const start = Date.now();
+  const members = await guild.members.fetch();
+  const errors: SyncReport["errors"] = [];
+  let upserted = 0;
 
-	for (const member of members.values()) {
-		try {
-			const row = memberToRow(member);
-			await upsertRow(row);
-			await syncAvatars(row.discord_id, row.avatar_url);
-			upserted++;
-		} catch (err) {
-			errors.push({
-				discordId: member.id,
-				reason: err instanceof Error ? err.message : String(err),
-			});
-		}
-	}
+  for (const member of members.values()) {
+    try {
+      const row = memberToRow(member);
+      await upsertRow(row);
+      await syncAvatars(row.discord_id, row.avatar_url);
+      upserted++;
+    } catch (err) {
+      errors.push({
+        discordId: member.id,
+        reason: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 
-	return {
-		fetched: members.size,
-		upserted,
-		errors,
-		durationMs: Date.now() - start,
-	};
+  return {
+    fetched: members.size,
+    upserted,
+    errors,
+    durationMs: Date.now() - start,
+  };
 }
 
 export async function syncOneMember(member: GuildMember): Promise<void> {
-	const row = memberToRow(member);
-	await upsertRow(row);
-	await syncAvatars(row.discord_id, row.avatar_url);
+  const row = memberToRow(member);
+  await upsertRow(row);
+  await syncAvatars(row.discord_id, row.avatar_url);
 }
 
 export async function syncOneUser(user: User, guild: Guild): Promise<void> {
-	const member =
-		guild.members.cache.get(user.id) ?? (await guild.members.fetch(user.id).catch(() => null));
-	if (member) {
-		await syncOneMember(member);
-		return;
-	}
-	await sql`
+  const member = guild.members.cache.get(user.id) ?? (await guild.members.fetch(user.id).catch(() => null));
+  if (member) {
+    await syncOneMember(member);
+    return;
+  }
+  await sql`
     UPDATE discord_members
     SET username = ${user.username},
         display_name = ${user.globalName ?? null},
@@ -170,5 +169,5 @@ export async function syncOneUser(user: User, guild: Guild): Promise<void> {
         updated_at = NOW()
     WHERE discord_id = ${user.id}
   `;
-	await syncAvatars(user.id, resolveUserAvatarUrl(user));
+  await syncAvatars(user.id, resolveUserAvatarUrl(user));
 }

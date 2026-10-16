@@ -27,9 +27,7 @@ async function requeteEmailAuth(
     error?: { message?: string };
   } | null;
   if (!reponse.ok) {
-    throw new Error(
-      resultat?.message ?? resultat?.error?.message ?? "L'authentification a échoué.",
-    );
+    throw new Error(resultat?.message ?? resultat?.error?.message ?? "L'authentification a échoué.");
   }
 }
 
@@ -41,7 +39,7 @@ async function sessionEstDisponible(): Promise<boolean> {
       headers: { Accept: "application/json" },
     });
     if (!reponse.ok) {
-      await new Promise<void>((resolve) => setTimeout(resolve, DELAI_SESSION_MS));
+      await new Promise<void>(resolve => setTimeout(resolve, DELAI_SESSION_MS));
       continue;
     }
 
@@ -52,7 +50,7 @@ async function sessionEstDisponible(): Promise<boolean> {
     if (payload?.user || payload?.data?.user) {
       return true;
     }
-    await new Promise<void>((resolve) => setTimeout(resolve, DELAI_SESSION_MS));
+    await new Promise<void>(resolve => setTimeout(resolve, DELAI_SESSION_MS));
   }
   return false;
 }
@@ -79,9 +77,7 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
   const safeReturnTo = sanitizeReturnTo(returnTo);
   // Résolveur serveur : décide /dashboard (admin) vs returnTo selon le rôle réel.
-  const postLoginUrl = returnTo
-    ? `/auth/post-login?returnTo=${encodeURIComponent(safeReturnTo)}`
-    : "/auth/post-login";
+  const postLoginUrl = returnTo ? `/auth/post-login?returnTo=${encodeURIComponent(safeReturnTo)}` : "/auth/post-login";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -125,9 +121,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
         if (error) {
           toast.error(error.message || "Erreur lors de l'envoi.");
         } else {
-          toast.success(
-            "Si un compte existe avec cet email, tu recevras un lien de réinitialisation.",
-          );
+          toast.success("Si un compte existe avec cet email, tu recevras un lien de réinitialisation.");
         }
         return;
       }
@@ -239,9 +233,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               <span className="w-full border-t border-outline-variant" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-surface-container-lowest px-4 type-label-medium text-on-surface-variant">
-                ou
-              </span>
+              <span className="bg-surface-container-lowest px-4 type-label-medium text-on-surface-variant">ou</span>
             </div>
           </div>
         </>
@@ -287,7 +279,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                   placeholder="Ton pseudo"
                   className="h-14 pl-4 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   disabled={loading}
                 />
               </div>
@@ -306,7 +298,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                 placeholder="exemple@email.com"
                 className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 disabled={loading}
                 required
               />
@@ -337,7 +329,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
                   placeholder="••••••••"
                   className="h-14 pl-12 pr-4 rounded-xl border border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 type-body-large text-on-surface placeholder:text-on-surface-variant/60"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   disabled={loading}
                   required
                 />
@@ -382,9 +374,7 @@ export function LoginForm({ onSuccess, returnTo }: LoginFormProps) {
               onClick={() => setMode(mode === "signup" ? "login" : "signup")}
               className="w-full text-center type-body-small text-primary hover:underline transition-all"
             >
-              {mode === "signup"
-                ? "Déjà un compte ? Se connecter"
-                : "Pas encore de compte ? S'inscrire"}
+              {mode === "signup" ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? S'inscrire"}
             </button>
           </div>
         )}

@@ -48,16 +48,11 @@ export default async function QuetesPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
 
       {/* En-tête */}
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface font-display">
-          Quêtes
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface font-display">Quêtes</h1>
         <p className="text-sm text-on-surface-variant">
           Liste complète des objectifs d&apos;histoire principale et des quêtes annexes.
         </p>
@@ -75,7 +70,7 @@ export default async function QuetesPage({
       {/* Grille */}
       {quests.length > 0 ? (
         <FadeInStagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {quests.map((quest) => (
+          {quests.map(quest => (
             <FadeInItem key={quest.id}>
               <QuestCard quest={quest} />
             </FadeInItem>

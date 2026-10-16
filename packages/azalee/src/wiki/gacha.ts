@@ -145,11 +145,9 @@ export async function getCapsuleList(params: CapsuleListParams = {}): Promise<Ca
     .sort((a, b) => b.count - a.count);
 
   let filtered = all;
-  if (pool) filtered = filtered.filter((p) => p.poolRef === pool);
+  if (pool) filtered = filtered.filter(p => p.poolRef === pool);
   if (q) {
-    filtered = filtered.filter(
-      (p) => p.id.toLowerCase().includes(q) || p.contentRef.toLowerCase().includes(q),
-    );
+    filtered = filtered.filter(p => p.id.toLowerCase().includes(q) || p.contentRef.toLowerCase().includes(q));
   }
 
   const total = filtered.length;
@@ -174,7 +172,7 @@ export async function getCapsulePrize(id: string): Promise<CapsulePrize | null> 
  */
 export async function getCapsulePoolPrizes(poolRef: string): Promise<CapsulePrize[]> {
   const rows = await sql.selectFrom("inagle_capsules").select(["id", "prize_data"]).execute();
-  return rows.map(mapCapsuleRow).filter((p) => p.poolRef === poolRef);
+  return rows.map(mapCapsuleRow).filter(p => p.poolRef === poolRef);
 }
 
 // ============================================================================
@@ -230,12 +228,10 @@ export async function getCostumeList(params: CostumeListParams = {}): Promise<Co
 
   let filtered = all;
   if (typeof typeFilter === "number" && Number.isFinite(typeFilter)) {
-    filtered = filtered.filter((c) => c.type === typeFilter);
+    filtered = filtered.filter(c => c.type === typeFilter);
   }
   if (q) {
-    filtered = filtered.filter(
-      (c) => String(c.index).includes(q) || c.modelRef.toLowerCase().includes(q),
-    );
+    filtered = filtered.filter(c => String(c.index).includes(q) || c.modelRef.toLowerCase().includes(q));
   }
 
   const total = filtered.length;
@@ -253,11 +249,11 @@ export async function getGachaCounts(): Promise<GachaCounts> {
   const [capsuleRow, costumeRow] = await Promise.all([
     sql
       .selectFrom("inagle_capsules")
-      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .select(eb => eb.fn.countAll<number>().as("count"))
       .executeTakeFirst(),
     sql
       .selectFrom("inagle_costumes")
-      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .select(eb => eb.fn.countAll<number>().as("count"))
       .executeTakeFirst(),
   ]);
   return { capsules: Number(capsuleRow?.count ?? 0), costumes: Number(costumeRow?.count ?? 0) };

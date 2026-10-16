@@ -29,8 +29,8 @@ function sql(strings: TemplateStringsArray, ...values: unknown[]): SQL {
 sql.raw = (text: string) => new SQL(text);
 sql.join = (fragments: SQL[], separator: SQL) =>
   new SQL(
-    fragments.map((fragment) => fragment.text).join(separator.text),
-    fragments.flatMap((fragment) => fragment.params),
+    fragments.map(fragment => fragment.text).join(separator.text),
+    fragments.flatMap(fragment => fragment.params),
   );
 
 /**
@@ -316,10 +316,10 @@ export class SqliteQueryBuilder {
       return this;
     }
     const column = this.cleanCol(col);
-    const bound = arr.map((val) => (typeof val === "boolean" ? (val ? 1 : 0) : val));
+    const bound = arr.map(val => (typeof val === "boolean" ? (val ? 1 : 0) : val));
     // `sql.join` insère un placeholder `?` par valeur (binding paramétré).
     const list = sql.join(
-      bound.map((v) => sql`${v}`),
+      bound.map(v => sql`${v}`),
       sql`, `,
     );
     this.wheres.push(sql`${column} IN (${list})`);
@@ -479,13 +479,9 @@ export class SqliteQueryBuilder {
     // >= 3.30) pour matcher la sémantique supabase-js, sinon les lignes à
     // valeur NULL (ex. zukan_order) remontent en tête et cassent l'ordre.
     if (options?.nullsFirst === true) {
-      this.orders.push(
-        sql`CASE WHEN ${column} IS NULL OR ${column} = '\\\\N' THEN 0 ELSE 1 END, ${column} ${dir}`,
-      );
+      this.orders.push(sql`CASE WHEN ${column} IS NULL OR ${column} = '\\\\N' THEN 0 ELSE 1 END, ${column} ${dir}`);
     } else if (options?.nullsFirst === false) {
-      this.orders.push(
-        sql`CASE WHEN ${column} IS NULL OR ${column} = '\\\\N' THEN 1 ELSE 0 END, ${column} ${dir}`,
-      );
+      this.orders.push(sql`CASE WHEN ${column} IS NULL OR ${column} = '\\\\N' THEN 1 ELSE 0 END, ${column} ${dir}`);
     } else {
       this.orders.push(sql`${column} ${dir}`);
     }
@@ -570,15 +566,13 @@ export class SqliteQueryBuilder {
     return sql.join(parts, sql` `);
   }
 
-  private async execute(): Promise<
-    Record<string, unknown> | Array<Record<string, unknown>> | null
-  > {
+  private async execute(): Promise<Record<string, unknown> | Array<Record<string, unknown>> | null> {
     const query = this.compileSelect();
     const rawRows = getSqliteDb()
       .prepare(query.text)
       .all(...(query.params as never[])) as Array<Record<string, unknown>>;
 
-    const parsedRows = rawRows.map((r) => this.parseRow(r));
+    const parsedRows = rawRows.map(r => this.parseRow(r));
 
     if (this.isSingle) {
       if (parsedRows.length === 0) {

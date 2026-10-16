@@ -24,33 +24,21 @@ const directionClass: Record<AnimationDirection, string> = {
 // MD3 emphasized-decelerate easing
 const EMPHASIZED_DECELERATE: [number, number, number, number] = [0.05, 0.7, 0.1, 1];
 
-const initialByDirection: Record<
-  AnimationDirection,
-  { opacity: number; x?: number; y?: number; scale?: number }
-> = {
+const initialByDirection: Record<AnimationDirection, { opacity: number; x?: number; y?: number; scale?: number }> = {
   left: { opacity: 0, x: -40 },
   right: { opacity: 0, x: 40 },
   scale: { opacity: 0, scale: 0.92 },
   up: { opacity: 0, y: 40 },
 };
 
-const visibleByDirection: Record<
-  AnimationDirection,
-  { opacity: number; x?: number; y?: number; scale?: number }
-> = {
+const visibleByDirection: Record<AnimationDirection, { opacity: number; x?: number; y?: number; scale?: number }> = {
   left: { opacity: 1, x: 0 },
   right: { opacity: 1, x: 0 },
   scale: { opacity: 1, scale: 1 },
   up: { opacity: 1, y: 0 },
 };
 
-export function AnimatedSection({
-  children,
-  className,
-  delay = 0,
-  direction = "up",
-  stagger,
-}: AnimatedSectionProps) {
+export function AnimatedSection({ children, className, delay = 0, direction = "up", stagger }: AnimatedSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-60px 0px -60px 0px", once: true });
   const prefersReducedMotion = useReducedMotion();

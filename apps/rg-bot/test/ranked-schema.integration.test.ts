@@ -14,24 +14,21 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
 
   beforeAll(async () => {
     const url = new URL(fixtureUrl!);
-    if (
-      !url.pathname.startsWith("/ranked_test_") ||
-      !["127.0.0.1", "localhost"].includes(url.hostname)
-    ) {
+    if (!url.pathname.startsWith("/ranked_test_") || !["127.0.0.1", "localhost"].includes(url.hostname)) {
       throw new Error("Ranked integration requires a disposable loopback ranked_test_* database");
     }
     process.env.DATABASE_URL = fixtureUrl;
     db = await import("../src/api/ranked/db");
     sql = db.sql;
-    const [context] =
-      await sql`SELECT current_database() AS name, current_setting('search_path') AS path`;
+    const [context] = await sql`SELECT current_database() AS name, current_setting('search_path') AS path`;
     expect(context.name).toStartWith("ranked_test_");
     expect(context.path).not.toContain("achillea");
     const [existing] = await sql`SELECT to_regnamespace('achillea') AS namespace`;
     if (existing.namespace !== null) throw new Error("Ranked fixture database must be fresh");
 
     await sql
-      .unsafe(`
+      .unsafe(
+        `
       CREATE SCHEMA achillea;
       CREATE TABLE achillea."user" (id text PRIMARY KEY, display_name text, avatar text, role int);
       CREATE TABLE achillea.event (
@@ -50,14 +47,12 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
       );
       INSERT INTO achillea."user" VALUES ('p1', 'Player One', '', 0), ('p2', 'Player Two', '', 0);
       INSERT INTO achillea.rank VALUES (1, 'bronze', 0, 10000, '', '', '{}');
-    `)
+    `,
+      )
       .simple();
     // Lobby column and foreign-key contracts come from the owning RG migration.
     const migration = await Bun.file(
-      new URL(
-        "../../website/sql/migrations/20260922_achillea_tournament_lobbies.sql",
-        import.meta.url,
-      ),
+      new URL("../../website/sql/migrations/20260922_achillea_tournament_lobbies.sql", import.meta.url),
     ).text();
     await sql.unsafe(migration).simple();
     const telemetryMigration = await Bun.file(
@@ -66,9 +61,8 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
     await sql.unsafe(telemetryMigration).simple();
     await sql.unsafe(telemetryMigration).simple();
     await Promise.all(
-      ["event", "lobby", "lobby_user", "lobby_match", "user_elo", "ranked_match_event", "user"].map(
-        (table) =>
-          sql.unsafe(`CREATE TABLE public."${table}" (LIKE achillea."${table}" INCLUDING ALL)`),
+      ["event", "lobby", "lobby_user", "lobby_match", "user_elo", "ranked_match_event", "user"].map(table =>
+        sql.unsafe(`CREATE TABLE public."${table}" (LIKE achillea."${table}" INCLUDING ALL)`),
       ),
     );
     persistence = await import("../src/api/ranked/persistence");
@@ -98,19 +92,17 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
     expect(typeof eventId).toBe("number");
     expect(await persistence.getOrCreatePerpetualRankedEventId()).toBe(eventId);
     expect(typeof lobbyId).toBe("number");
-    expect((await persistence.listActiveLobbies()).map((lobby) => lobby.lobbyId)).toContain(
-      lobbyId,
-    );
+    expect((await persistence.listActiveLobbies()).map(lobby => lobby.lobbyId)).toContain(lobbyId);
     await persistence.finalizeOngoingLobby(lobbyId, match(), 20);
     await persistence.finalizeOngoingLobby(lobbyId, match(), 20);
     const players = await sql<
       Array<{ games_played: number }>
     >`SELECT games_played FROM achillea.user_elo ORDER BY user_id`;
-    expect(players.map((player) => player.games_played)).toEqual([1, 1]);
+    expect(players.map(player => player.games_played)).toEqual([1, 1]);
     expect((await persistence.getRankedOverview()).finishedToday).toBe(1);
     expect(await persistence.cancelLobby(lobbyId)).toBe(false);
     await Promise.all(
-      ["event", "lobby", "lobby_user", "lobby_match", "user_elo"].map(async (table) => {
+      ["event", "lobby", "lobby_user", "lobby_match", "user_elo"].map(async table => {
         const [row] = await sql.unsafe(`SELECT count(*)::int AS count FROM public."${table}"`);
         expect(row.count).toBe(0);
       }),
@@ -152,7 +144,7 @@ describe.skipIf(!fixtureUrl)("ranked SQL schema isolation", () => {
     const rows = await sql<
       Array<{ event_type: string; state: string }>
     >`SELECT event_type, state FROM achillea.lobby WHERE created_at < now() - interval '1 day' ORDER BY id`;
-    expect(rows.map((row) => [row.event_type, row.state])).toEqual([
+    expect(rows.map(row => [row.event_type, row.state])).toEqual([
       ["RANKED", "Canceled"],
       ["TOURNAMENT", "Ongoing"],
       ["RANKED", "Contested"],

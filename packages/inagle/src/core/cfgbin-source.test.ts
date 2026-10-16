@@ -10,7 +10,7 @@ test("owned SQLite cfg.bin cache serves configs without PostgreSQL or a native g
   const directory = await mkdtemp(join(tmpdir(), "inagle-cfgbin-test-"));
   const path = join(directory, "cfgbin.sqlite");
   const keys = ["NIE_DATA_SOURCE", "INAGLE_DATA_SOURCE", "IEVR_CFGBIN_DB"] as const;
-  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   try {
     const db = new Database(path);
     db.exec("CREATE TABLE cfgbin(path TEXT PRIMARY KEY, parsed INTEGER, json TEXT, error TEXT)");

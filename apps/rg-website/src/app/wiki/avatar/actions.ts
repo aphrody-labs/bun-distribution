@@ -17,18 +17,8 @@ import { cdnOrigin } from "@rosegriffon/assets";
 
 import { getServerSession } from "@/lib/auth-helpers";
 import { createPostgresClient } from "@rosegriffon/db/service";
-import {
-	enregistrerDansDepot,
-	listerDansDepot,
-	ouvrirDansDepot,
-	supprimerDansDepot,
-} from "./sauvegardes";
-import type {
-	AvatarEnregistre,
-	DepotSauvegardes,
-	LigneSauvegarde,
-	Sauvegarde,
-} from "./sauvegardes";
+import { enregistrerDansDepot, listerDansDepot, ouvrirDansDepot, supprimerDansDepot } from "./sauvegardes";
+import type { AvatarEnregistre, DepotSauvegardes, LigneSauvegarde, Sauvegarde } from "./sauvegardes";
 
 export type { AvatarEnregistre, Sauvegarde } from "./sauvegardes";
 
@@ -55,134 +45,123 @@ const NOM_VALIDE = /^[A-Za-z0-9_]{3,64}$/;
  * @param icone nom d'icône tel que le catalogue le fournit, p. ex. `icon_ava_face05_001`.
  * @returns l'URL publique enregistrée, ou un message d'erreur affichable.
  */
-export async function definirPhotoDepuisAvatar(
-	icone: string
-): Promise<{ url?: string; error?: string }> {
-	const session = await getServerSession();
-	if (!session?.user) {
-		return { error: "Connecte-toi pour utiliser cet avatar comme photo de profil." };
-	}
-	if (!NOM_VALIDE.test(icone)) {
-		return { error: "Vignette inconnue." };
-	}
+export async function definirPhotoDepuisAvatar(icone: string): Promise<{ url?: string; error?: string }> {
+  const session = await getServerSession();
+  if (!session?.user) {
+    return { error: "Connecte-toi pour utiliser cet avatar comme photo de profil." };
+  }
+  if (!NOM_VALIDE.test(icone)) {
+    return { error: "Vignette inconnue." };
+  }
 
-	let octets: ArrayBuffer;
-	try {
-		// La vignette est un fichier du jeu : elle ne change pas. `no-store` faisait re-décoder
-		// l'atlas au serveur d'assets à chaque clic, pour un résultat identique.
-		const reponse = await fetch(`${CDN}/avatar/icon/${icone}.png`, { cache: "force-cache" });
-		if (!reponse.ok) {
-			return { error: "Cette vignette n'a pas pu être récupérée." };
-		}
-		octets = await reponse.arrayBuffer();
-	} catch {
-		return { error: "Le service d'images du jeu est injoignable." };
-	}
-	if (octets.byteLength === 0 || octets.byteLength > TAILLE_MAX) {
-		return { error: "Cette vignette n'a pas pu être récupérée." };
-	}
+  let octets: ArrayBuffer;
+  try {
+    // La vignette est un fichier du jeu : elle ne change pas. `no-store` faisait re-décoder
+    // l'atlas au serveur d'assets à chaque clic, pour un résultat identique.
+    const reponse = await fetch(`${CDN}/avatar/icon/${icone}.png`, { cache: "force-cache" });
+    if (!reponse.ok) {
+      return { error: "Cette vignette n'a pas pu être récupérée." };
+    }
+    octets = await reponse.arrayBuffer();
+  } catch {
+    return { error: "Le service d'images du jeu est injoignable." };
+  }
+  if (octets.byteLength === 0 || octets.byteLength > TAILLE_MAX) {
+    return { error: "Cette vignette n'a pas pu être récupérée." };
+  }
 
-	const admin = createPostgresClient();
-	// Chemin daté, comme le téléversement des réglages : un chemin fixe resservirait l'ancienne
-	// image depuis le cache du CDN et du navigateur.
-	const chemin = `${session.user.id}/avatar-${Date.now()}.png`;
-	const { error: erreurEnvoi } = await admin.storage
-		.from(SEAU)
-		.upload(chemin, octets, { contentType: "image/png", upsert: true });
-	if (erreurEnvoi) {
-		console.error("[avatar] téléversement impossible", erreurEnvoi);
-		return { error: "Impossible d'enregistrer cette photo." };
-	}
+  const admin = createPostgresClient();
+  // Chemin daté, comme le téléversement des réglages : un chemin fixe resservirait l'ancienne
+  // image depuis le cache du CDN et du navigateur.
+  const chemin = `${session.user.id}/avatar-${Date.now()}.png`;
+  const { error: erreurEnvoi } = await admin.storage
+    .from(SEAU)
+    .upload(chemin, octets, { contentType: "image/png", upsert: true });
+  if (erreurEnvoi) {
+    console.error("[avatar] téléversement impossible", erreurEnvoi);
+    return { error: "Impossible d'enregistrer cette photo." };
+  }
 
-	const {
-		data: { publicUrl },
-	} = admin.storage.from(SEAU).getPublicUrl(chemin);
+  const {
+    data: { publicUrl },
+  } = admin.storage.from(SEAU).getPublicUrl(chemin);
 
-	const { error: erreurProfil } = await admin
-		.from("profiles")
-		.update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
-		.eq("id", session.user.id);
-	if (erreurProfil) {
-		console.error("[avatar] écriture du profil impossible", erreurProfil);
-		return { error: "Impossible d'enregistrer cette photo." };
-	}
+  const { error: erreurProfil } = await admin
+    .from("profiles")
+    .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+    .eq("id", session.user.id);
+  if (erreurProfil) {
+    console.error("[avatar] écriture du profil impossible", erreurProfil);
+    return { error: "Impossible d'enregistrer cette photo." };
+  }
 
-	revalidatePath("/settings");
-	revalidatePath("/avatar");
-	return { url: publicUrl };
+  revalidatePath("/settings");
+  revalidatePath("/avatar");
+  return { url: publicUrl };
 }
 
 // ─── Sauvegarde et partage ────────────────────────────────────────────────────
 
 function creerDepot(): DepotSauvegardes {
-	const admin = createPostgresClient();
-	return {
-		async compter(userId) {
-			const { count } = await admin
-				.from("avatar_saves")
-				.select("id", { count: "exact", head: true })
-				.eq("user_id", userId);
-			return count ?? 0;
-		},
-		async inserer({ userId, nom, donnees, code }) {
-			const { data, error } = await admin
-				.from("avatar_saves")
-				.insert({ user_id: userId, nom, donnees, code })
-				.select("id")
-				.single();
-			return { id: data?.id as string | undefined, error: error ?? undefined };
-		},
-		async lister(userId, limite) {
-			const { data, error } = await admin
-				.from("avatar_saves")
-				.select("id, user_id, nom, code, donnees, modifie_le")
-				.eq("user_id", userId)
-				.order("modifie_le", { ascending: false })
-				.limit(limite);
-			const lignes = (data ?? []).map((r: {
-				id: string;
-				user_id: string;
-				nom: string;
-				code: string;
-				donnees: unknown;
-				modifie_le: string;
-			}) => ({
-				id: r.id,
-				userId: r.user_id,
-				nom: r.nom,
-				code: r.code,
-				donnees: r.donnees as AvatarEnregistre,
-				modifieLe: r.modifie_le,
-			})) as LigneSauvegarde[];
-			return { lignes, error: error ?? undefined };
-		},
-		async trouverParCode(code) {
-			const { data, error } = await admin
-				.from("avatar_saves")
-				.select("id, user_id, nom, code, donnees, modifie_le")
-				.eq("code", code)
-				.maybeSingle();
-			const ligne = data
-				? {
-						id: data.id,
-						userId: data.user_id,
-						nom: data.nom,
-						code: data.code,
-						donnees: data.donnees as AvatarEnregistre,
-						modifieLe: data.modifie_le,
-					}
-				: null;
-			return { ligne, error: error ?? undefined };
-		},
-		async supprimer(userId, id) {
-			const { error } = await admin
-				.from("avatar_saves")
-				.delete()
-				.eq("id", id)
-				.eq("user_id", userId);
-			return { error: error ?? undefined };
-		},
-	};
+  const admin = createPostgresClient();
+  return {
+    async compter(userId) {
+      const { count } = await admin
+        .from("avatar_saves")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+      return count ?? 0;
+    },
+    async inserer({ userId, nom, donnees, code }) {
+      const { data, error } = await admin
+        .from("avatar_saves")
+        .insert({ user_id: userId, nom, donnees, code })
+        .select("id")
+        .single();
+      return { id: data?.id as string | undefined, error: error ?? undefined };
+    },
+    async lister(userId, limite) {
+      const { data, error } = await admin
+        .from("avatar_saves")
+        .select("id, user_id, nom, code, donnees, modifie_le")
+        .eq("user_id", userId)
+        .order("modifie_le", { ascending: false })
+        .limit(limite);
+      const lignes = (data ?? []).map(
+        (r: { id: string; user_id: string; nom: string; code: string; donnees: unknown; modifie_le: string }) => ({
+          id: r.id,
+          userId: r.user_id,
+          nom: r.nom,
+          code: r.code,
+          donnees: r.donnees as AvatarEnregistre,
+          modifieLe: r.modifie_le,
+        }),
+      ) as LigneSauvegarde[];
+      return { lignes, error: error ?? undefined };
+    },
+    async trouverParCode(code) {
+      const { data, error } = await admin
+        .from("avatar_saves")
+        .select("id, user_id, nom, code, donnees, modifie_le")
+        .eq("code", code)
+        .maybeSingle();
+      const ligne = data
+        ? {
+            id: data.id,
+            userId: data.user_id,
+            nom: data.nom,
+            code: data.code,
+            donnees: data.donnees as AvatarEnregistre,
+            modifieLe: data.modifie_le,
+          }
+        : null;
+      return { ligne, error: error ?? undefined };
+    },
+    async supprimer(userId, id) {
+      const { error } = await admin.from("avatar_saves").delete().eq("id", id).eq("user_id", userId);
+      return { error: error ?? undefined };
+    },
+  };
 }
 
 /**
@@ -192,24 +171,18 @@ function creerDepot(): DepotSauvegardes {
  * RLS ; seule `ouvrirParCode`, après validation, effectue la lecture privilégiée côté serveur.
  */
 export async function enregistrerAvatar(
-	nom: string,
-	donnees: AvatarEnregistre,
-	code: string | null
+  nom: string,
+  donnees: AvatarEnregistre,
+  code: string | null,
 ): Promise<{ id?: string; error?: string }> {
-	const resultat = await enregistrerDansDepot(
-		creerDepot(),
-		(await getServerSession())?.user?.id,
-		nom,
-		donnees,
-		code
-	);
-	if (resultat.id) revalidatePath("/avatar");
-	return resultat;
+  const resultat = await enregistrerDansDepot(creerDepot(), (await getServerSession())?.user?.id, nom, donnees, code);
+  if (resultat.id) revalidatePath("/avatar");
+  return resultat;
 }
 
 /** Les avatars enregistrés du compte connecté, du plus récent au plus ancien. */
 export async function listerAvatars(): Promise<{ avatars?: Sauvegarde[]; error?: string }> {
-	return listerDansDepot(creerDepot(), (await getServerSession())?.user?.id);
+  return listerDansDepot(creerDepot(), (await getServerSession())?.user?.id);
 }
 
 /**
@@ -219,14 +192,14 @@ export async function listerAvatars(): Promise<{ avatars?: Sauvegarde[]; error?:
  * cette Server Action validée est l'unique passage vers le client de service.
  */
 export async function ouvrirParCode(
-	code: string
+  code: string,
 ): Promise<{ avatar?: AvatarEnregistre; nom?: string; error?: string }> {
-	return ouvrirDansDepot(creerDepot(), code);
+  return ouvrirDansDepot(creerDepot(), code);
 }
 
 /** Supprime une sauvegarde du compte connecté. */
 export async function supprimerAvatar(id: string): Promise<{ error?: string }> {
-	const resultat = await supprimerDansDepot(creerDepot(), (await getServerSession())?.user?.id, id);
-	if (!resultat.error) revalidatePath("/avatar");
-	return resultat;
+  const resultat = await supprimerDansDepot(creerDepot(), (await getServerSession())?.user?.id, id);
+  if (!resultat.error) revalidatePath("/avatar");
+  return resultat;
 }

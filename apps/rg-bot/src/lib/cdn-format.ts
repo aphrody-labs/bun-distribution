@@ -29,12 +29,12 @@
 
 import { formaterOctets as formaterOctetsUi } from "./ui/nombres";
 import {
-	MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
-	bornerPage as bornerPageUi,
-	decoderEtat,
-	encoderEtat,
-	nombreDePages as nombreDePagesUi,
-	pageDecodee,
+  MAX_CUSTOM_ID as MAX_CUSTOM_ID_UI,
+  bornerPage as bornerPageUi,
+  decoderEtat,
+  encoderEtat,
+  nombreDePages as nombreDePagesUi,
+  pageDecodee,
 } from "./ui/etat";
 
 // ─── Variantes d'image ──────────────────────────────────────────────────────
@@ -82,28 +82,28 @@ export const ASSET_SONDE = "/dx11/menu/220_img/vsroute_map/grid_map00.png";
 
 /** Résultat de la normalisation d'un chemin d'asset. */
 export type ResolutionAsset =
-	| {
-			readonly ok: true;
-			/** Chemin absolu prêt à concaténer à la base publique, `/dx11/…`. */
-			readonly chemin: string;
-			/** Premier segment du chemin (`dx11`, `g4tx`, `static`, `""` à la racine). */
-			readonly surface: string;
-			/** Extension finale, en minuscules, sans le point. */
-			readonly extension: string;
-			/** `true` si `?w=` est honoré sur cette surface. */
-			readonly variante: boolean;
-			/** `true` si la saisie était un chemin de l'index CPK (`data/dx11/…`). */
-			readonly depuisCpk: boolean;
-	  }
-	| { readonly ok: false; readonly raison: string };
+  | {
+      readonly ok: true;
+      /** Chemin absolu prêt à concaténer à la base publique, `/dx11/…`. */
+      readonly chemin: string;
+      /** Premier segment du chemin (`dx11`, `g4tx`, `static`, `""` à la racine). */
+      readonly surface: string;
+      /** Extension finale, en minuscules, sans le point. */
+      readonly extension: string;
+      /** `true` si `?w=` est honoré sur cette surface. */
+      readonly variante: boolean;
+      /** `true` si la saisie était un chemin de l'index CPK (`data/dx11/…`). */
+      readonly depuisCpk: boolean;
+    }
+  | { readonly ok: false; readonly raison: string };
 
 /** Hôte d'une base d'URL, en minuscules ; `""` si la base est illisible. */
 function hoteDe(base: string): string {
-	try {
-		return new URL(base).host.toLowerCase();
-	} catch {
-		return "";
-	}
+  try {
+    return new URL(base).host.toLowerCase();
+  } catch {
+    return "";
+  }
 }
 
 /**
@@ -121,121 +121,121 @@ function hoteDe(base: string): string {
  * img_room_b10g001.png?w=800&format=webp` → 200, 112 042 octets).
  */
 export function normaliserCheminAsset(saisie: string, baseCdn: string): ResolutionAsset {
-	const brut = (saisie ?? "").trim();
-	if (brut.length === 0) {
-		return { ok: false, raison: "Chemin vide." };
-	}
-	if (brut.length > 300) {
-		return { ok: false, raison: "Chemin trop long (300 caractères au maximum)." };
-	}
-	if (/\s/.test(brut)) {
-		return { ok: false, raison: "Un chemin d'asset ne contient pas d'espace." };
-	}
+  const brut = (saisie ?? "").trim();
+  if (brut.length === 0) {
+    return { ok: false, raison: "Chemin vide." };
+  }
+  if (brut.length > 300) {
+    return { ok: false, raison: "Chemin trop long (300 caractères au maximum)." };
+  }
+  if (/\s/.test(brut)) {
+    return { ok: false, raison: "Un chemin d'asset ne contient pas d'espace." };
+  }
 
-	let chemin = brut;
-	let depuisCpk = false;
+  let chemin = brut;
+  let depuisCpk = false;
 
-	if (/^https?:\/\//i.test(brut)) {
-		let url: URL;
-		try {
-			url = new URL(brut);
-		} catch {
-			return { ok: false, raison: "URL illisible." };
-		}
-		const attendu = hoteDe(baseCdn);
-		if (attendu.length > 0 && url.host.toLowerCase() !== attendu) {
-			return {
-				ok: false,
-				raison: `Cette URL n'est pas servie par le CDN (hôte \`${url.host}\`, attendu \`${attendu}\`).`,
-			};
-		}
-		chemin = url.pathname;
-	}
+  if (/^https?:\/\//i.test(brut)) {
+    let url: URL;
+    try {
+      url = new URL(brut);
+    } catch {
+      return { ok: false, raison: "URL illisible." };
+    }
+    const attendu = hoteDe(baseCdn);
+    if (attendu.length > 0 && url.host.toLowerCase() !== attendu) {
+      return {
+        ok: false,
+        raison: `Cette URL n'est pas servie par le CDN (hôte \`${url.host}\`, attendu \`${attendu}\`).`,
+      };
+    }
+    chemin = url.pathname;
+  }
 
-	// On coupe une éventuelle query collée à un chemin nu : le `?w=` est reforgé.
-	const coupure = chemin.search(/[?#]/);
-	if (coupure >= 0) {
-		chemin = chemin.slice(0, coupure);
-	}
+  // On coupe une éventuelle query collée à un chemin nu : le `?w=` est reforgé.
+  const coupure = chemin.search(/[?#]/);
+  if (coupure >= 0) {
+    chemin = chemin.slice(0, coupure);
+  }
 
-	let segments: string[];
-	try {
-		segments = chemin
-			.split("/")
-			.filter((s) => s.length > 0)
-			.map(decodeSegment);
-	} catch {
-		return { ok: false, raison: "Chemin illisible (encodage invalide)." };
-	}
-	if (segments.some((s) => s === "." || s === "..")) {
-		return { ok: false, raison: "Chemin invalide : `.` et `..` sont refusés." };
-	}
-	if (segments.length === 0) {
-		return { ok: false, raison: "Chemin vide." };
-	}
+  let segments: string[];
+  try {
+    segments = chemin
+      .split("/")
+      .filter(s => s.length > 0)
+      .map(decodeSegment);
+  } catch {
+    return { ok: false, raison: "Chemin illisible (encodage invalide)." };
+  }
+  if (segments.some(s => s === "." || s === "..")) {
+    return { ok: false, raison: "Chemin invalide : `.` et `..` sont refusés." };
+  }
+  if (segments.length === 0) {
+    return { ok: false, raison: "Chemin vide." };
+  }
 
-	// Forme de l'index CPK : `data/dx11/…`. Le CDN sert la même arborescence sans
-	// le préfixe `data/`.
-	if (segments[0] === "data" && segments.length > 1) {
-		segments = segments.slice(1);
-		depuisCpk = true;
-	}
+  // Forme de l'index CPK : `data/dx11/…`. Le CDN sert la même arborescence sans
+  // le préfixe `data/`.
+  if (segments[0] === "data" && segments.length > 1) {
+    segments = segments.slice(1);
+    depuisCpk = true;
+  }
 
-	const dernier = segments[segments.length - 1] ?? "";
-	const point = dernier.lastIndexOf(".");
-	if (point <= 0 || point === dernier.length - 1) {
-		return {
-			ok: false,
-			raison: "Il manque l'extension du fichier (par exemple `.png`).",
-		};
-	}
-	let extension = dernier.slice(point + 1).toLowerCase();
+  const dernier = segments[segments.length - 1] ?? "";
+  const point = dernier.lastIndexOf(".");
+  if (point <= 0 || point === dernier.length - 1) {
+    return {
+      ok: false,
+      raison: "Il manque l'extension du fichier (par exemple `.png`).",
+    };
+  }
+  let extension = dernier.slice(point + 1).toLowerCase();
 
-	const surface = segments.length > 1 ? (segments[0] as string) : "";
-	const variante = (SURFACES_VARIANTE as readonly string[]).includes(surface);
-	const directe = (SURFACES_DIRECTES as readonly string[]).includes(surface);
-	const upload = surface === "" && UPLOAD_RACINE.test(dernier.toLowerCase());
+  const surface = segments.length > 1 ? (segments[0] as string) : "";
+  const variante = (SURFACES_VARIANTE as readonly string[]).includes(surface);
+  const directe = (SURFACES_DIRECTES as readonly string[]).includes(surface);
+  const upload = surface === "" && UPLOAD_RACINE.test(dernier.toLowerCase());
 
-	if (!variante && !directe && !upload) {
-		return {
-			ok: false,
-			raison:
-				"Surface inconnue du CDN. Formes acceptées : `dx11/…`, `g4tx/…`, " +
-				"`data/dx11/…` (chemin de l'index CPK), `static/<app>/…` ou un identifiant " +
-				"de téléversement (`<16 hexa>.png`).",
-		};
-	}
+  if (!variante && !directe && !upload) {
+    return {
+      ok: false,
+      raison:
+        "Surface inconnue du CDN. Formes acceptées : `dx11/…`, `g4tx/…`, " +
+        "`data/dx11/…` (chemin de l'index CPK), `static/<app>/…` ou un identifiant " +
+        "de téléversement (`<16 hexa>.png`).",
+    };
+  }
 
-	// Le CDN ne sert jamais l'archive de texture elle-même, seulement le PNG décodé.
-	if (variante && extension === "g4tx") {
-		extension = "png";
-		segments[segments.length - 1] = `${dernier.slice(0, point)}.png`;
-	}
+  // Le CDN ne sert jamais l'archive de texture elle-même, seulement le PNG décodé.
+  if (variante && extension === "g4tx") {
+    extension = "png";
+    segments[segments.length - 1] = `${dernier.slice(0, point)}.png`;
+  }
 
-	if (!EXTENSIONS_IMAGE.has(extension) && !(upload && extension === "svg")) {
-		return {
-			ok: false,
-			raison: `Extension \`.${extension}\` non servie en image — le CDN ne décline en WebP que des images (${[...EXTENSIONS_IMAGE].join(", ")}).`,
-		};
-	}
+  if (!EXTENSIONS_IMAGE.has(extension) && !(upload && extension === "svg")) {
+    return {
+      ok: false,
+      raison: `Extension \`.${extension}\` non servie en image — le CDN ne décline en WebP que des images (${[...EXTENSIONS_IMAGE].join(", ")}).`,
+    };
+  }
 
-	return {
-		ok: true,
-		chemin: `/${segments.join("/")}`,
-		surface,
-		extension,
-		variante,
-		depuisCpk,
-	};
+  return {
+    ok: true,
+    chemin: `/${segments.join("/")}`,
+    surface,
+    extension,
+    variante,
+    depuisCpk,
+  };
 }
 
 /** Décode un segment d'URL, en laissant passer les `%` littéraux mal formés. */
 function decodeSegment(segment: string): string {
-	try {
-		return decodeURIComponent(segment);
-	} catch {
-		return segment;
-	}
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 /**
@@ -246,29 +246,29 @@ function decodeSegment(segment: string): string {
  * membre soit celle qui sera réellement servie.
  */
 export function largeurAutorisee(brut: number | null | undefined): LargeurVariante {
-	if (typeof brut !== "number" || !Number.isFinite(brut)) {
-		return LARGEUR_VIGNETTE;
-	}
-	let meilleure: LargeurVariante = LARGEURS_VARIANTE[0];
-	let ecart = Math.abs(brut - meilleure);
-	for (const largeur of LARGEURS_VARIANTE) {
-		const candidat = Math.abs(brut - largeur);
-		if (candidat < ecart) {
-			meilleure = largeur;
-			ecart = candidat;
-		}
-	}
-	return meilleure;
+  if (typeof brut !== "number" || !Number.isFinite(brut)) {
+    return LARGEUR_VIGNETTE;
+  }
+  let meilleure: LargeurVariante = LARGEURS_VARIANTE[0];
+  let ecart = Math.abs(brut - meilleure);
+  for (const largeur of LARGEURS_VARIANTE) {
+    const candidat = Math.abs(brut - largeur);
+    if (candidat < ecart) {
+      meilleure = largeur;
+      ecart = candidat;
+    }
+  }
+  return meilleure;
 }
 
 /** URL directe d'un asset (source, sans déclinaison). */
 export function urlAsset(baseCdn: string, chemin: string): string {
-	return `${baseCdn.replace(/\/+$/, "")}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
+  return `${baseCdn.replace(/\/+$/, "")}${chemin.startsWith("/") ? chemin : `/${chemin}`}`;
 }
 
 /** URL de la variante WebP redimensionnée. */
 export function urlVariante(baseCdn: string, chemin: string, largeur: LargeurVariante): string {
-	return `${urlAsset(baseCdn, chemin)}?w=${largeur}&format=webp`;
+  return `${urlAsset(baseCdn, chemin)}?w=${largeur}&format=webp`;
 }
 
 // ─── Modèles 3D ─────────────────────────────────────────────────────────────
@@ -285,8 +285,8 @@ export function urlVariante(baseCdn: string, chemin: string, largeur: LargeurVar
 export type FamilleModele = "personnage" | "armure" | "keshin";
 
 export interface CodeModele {
-	readonly code: string;
-	readonly famille: FamilleModele;
+  readonly code: string;
+  readonly famille: FamilleModele;
 }
 
 /**
@@ -303,48 +303,47 @@ export interface CodeModele {
  * l'existence — c'est l'appel réel qui tranche.
  */
 export function normaliserCodeModele(saisie: string): CodeModele | { readonly raison: string } {
-	let code = (saisie ?? "").trim().toLowerCase();
-	code = code.replace(/^.*\/model-full\//, "").replace(/^\/+/, "");
-	code = code.replace(/\.glb$/, "");
+  let code = (saisie ?? "").trim().toLowerCase();
+  code = code.replace(/^.*\/model-full\//, "").replace(/^\/+/, "");
+  code = code.replace(/\.glb$/, "");
 
-	if (code.length === 0) {
-		return { raison: "Code de modèle vide." };
-	}
-	if (!/^[a-z]{1,2}[0-9]{5,9}$/.test(code)) {
-		return {
-			raison:
-				"Code invalide. Attendu : des lettres suivies de chiffres — " +
-				"`c01000010` (personnage), `ka000101` (armure), `k000010` (keshin).",
-		};
-	}
+  if (code.length === 0) {
+    return { raison: "Code de modèle vide." };
+  }
+  if (!/^[a-z]{1,2}[0-9]{5,9}$/.test(code)) {
+    return {
+      raison:
+        "Code invalide. Attendu : des lettres suivies de chiffres — " +
+        "`c01000010` (personnage), `ka000101` (armure), `k000010` (keshin).",
+    };
+  }
 
-	// `ka` AVANT `k`, sinon toute armure serait classée keshin.
-	const famille: FamilleModele | null = code.startsWith("ka")
-		? "armure"
-		: code.startsWith("k")
-			? "keshin"
-			: code.startsWith("c")
-				? "personnage"
-				: null;
+  // `ka` AVANT `k`, sinon toute armure serait classée keshin.
+  const famille: FamilleModele | null = code.startsWith("ka")
+    ? "armure"
+    : code.startsWith("k")
+      ? "keshin"
+      : code.startsWith("c")
+        ? "personnage"
+        : null;
 
-	if (famille === null) {
-		return {
-			raison:
-				"Seuls les codes `c…` (personnages), `ka…` (armures) et `k…` (keshins) sont assemblés en 3D.",
-		};
-	}
+  if (famille === null) {
+    return {
+      raison: "Seuls les codes `c…` (personnages), `ka…` (armures) et `k…` (keshins) sont assemblés en 3D.",
+    };
+  }
 
-	return { code, famille };
+  return { code, famille };
 }
 
 /** Libellé français d'une famille de modèle. */
 export function libelleFamille(famille: FamilleModele): string {
-	return famille === "armure" ? "Armure" : famille === "keshin" ? "Keshin" : "Personnage";
+  return famille === "armure" ? "Armure" : famille === "keshin" ? "Keshin" : "Personnage";
 }
 
 /** URL du modèle 3D complet (corps + visage + uniforme, assemblé en direct). */
 export function urlModele(baseCdn: string, code: string): string {
-	return `${baseCdn.replace(/\/+$/, "")}/model-full/${code}.glb`;
+  return `${baseCdn.replace(/\/+$/, "")}/model-full/${code}.glb`;
 }
 
 /**
@@ -370,33 +369,28 @@ export const LIMITE_PIECE_JOINTE_OCTETS = 8 * 1024 * 1024;
  * qu'une de ses déclinaisons numérotées.
  */
 export function choisirTextureModele(
-	code: string,
-	fichiers: ReadonlyArray<{ path?: string | null; ext?: string | null; name?: string | null }>
+  code: string,
+  fichiers: ReadonlyArray<{ path?: string | null; ext?: string | null; name?: string | null }>,
 ): string | null {
-	const candidats = fichiers
-		.filter(
-			(f) =>
-				typeof f.path === "string" &&
-				f.path.startsWith("data/dx11/") &&
-				(f.ext ?? "").toLowerCase() === "g4tx"
-		)
-		.map((f) => f.path as string);
+  const candidats = fichiers
+    .filter(
+      f => typeof f.path === "string" && f.path.startsWith("data/dx11/") && (f.ext ?? "").toLowerCase() === "g4tx",
+    )
+    .map(f => f.path as string);
 
-	if (candidats.length === 0) {
-		return null;
-	}
+  if (candidats.length === 0) {
+    return null;
+  }
 
-	const nomExact = `/${code}.g4tx`;
-	const trie = candidats.toSorted((a, b) => {
-		const exactA = a.endsWith(nomExact) ? 0 : 1;
-		const exactB = b.endsWith(nomExact) ? 0 : 1;
-		return exactA - exactB || a.length - b.length || a.localeCompare(b);
-	});
+  const nomExact = `/${code}.g4tx`;
+  const trie = candidats.toSorted((a, b) => {
+    const exactA = a.endsWith(nomExact) ? 0 : 1;
+    const exactB = b.endsWith(nomExact) ? 0 : 1;
+    return exactA - exactB || a.length - b.length || a.localeCompare(b);
+  });
 
-	const choisi = trie[0];
-	return typeof choisi === "string"
-		? `/${choisi.slice("data/".length).replace(/\.g4tx$/i, ".png")}`
-		: null;
+  const choisi = trie[0];
+  return typeof choisi === "string" ? `/${choisi.slice("data/".length).replace(/\.g4tx$/i, ".png")}` : null;
 }
 
 // ─── Galerie ────────────────────────────────────────────────────────────────
@@ -413,26 +407,26 @@ export function choisirTextureModele(
  * catégorie 360. Aucune n'est vide.
  */
 export const CATEGORIES_GALERIE = [
-	{ valeur: "story", libelle: "Histoire" },
-	{ valeur: "chronicle", libelle: "Chroniques" },
-	{ valeur: "special", libelle: "Spéciales" },
-	{ valeur: "kizuna", libelle: "Liens" },
-	{ valeur: "other", libelle: "Autres" },
-	{ valeur: "gallery_img2", libelle: "Galerie du menu" },
-	{ valeur: "ev_pic", libelle: "Événements" },
-	{ valeur: "stadium", libelle: "Stades" },
-	{ valeur: "vsroute_map", libelle: "Cartes de route" },
-	{ valeur: "hlp", libelle: "Aide en jeu" },
-	{ valeur: "telop_waza", libelle: "Télops de techniques" },
-	{ valeur: "menu", libelle: "Tout le menu du jeu" },
+  { valeur: "story", libelle: "Histoire" },
+  { valeur: "chronicle", libelle: "Chroniques" },
+  { valeur: "special", libelle: "Spéciales" },
+  { valeur: "kizuna", libelle: "Liens" },
+  { valeur: "other", libelle: "Autres" },
+  { valeur: "gallery_img2", libelle: "Galerie du menu" },
+  { valeur: "ev_pic", libelle: "Événements" },
+  { valeur: "stadium", libelle: "Stades" },
+  { valeur: "vsroute_map", libelle: "Cartes de route" },
+  { valeur: "hlp", libelle: "Aide en jeu" },
+  { valeur: "telop_waza", libelle: "Télops de techniques" },
+  { valeur: "menu", libelle: "Tout le menu du jeu" },
 ] as const;
 
 /** Libellé français d'une catégorie, ou la valeur brute si elle est inconnue. */
 export function libelleCategorieGalerie(valeur: string | null | undefined): string {
-	if (!valeur) {
-		return "Toutes";
-	}
-	return CATEGORIES_GALERIE.find((c) => c.valeur === valeur)?.libelle ?? valeur;
+  if (!valeur) {
+    return "Toutes";
+  }
+  return CATEGORIES_GALERIE.find(c => c.valeur === valeur)?.libelle ?? valeur;
 }
 
 /** Nombre d'illustrations par page de `/cdn galerie` (1 entête + 4 visuels ≤ 10 embeds). */
@@ -440,7 +434,7 @@ export const GALERIE_PAR_PAGE = 4;
 
 /** Nombre total de pages pour un total d'éléments. */
 export function nombreDePages(total: number, parPage: number): number {
-	return nombreDePagesUi(total, parPage);
+  return nombreDePagesUi(total, parPage);
 }
 
 /**
@@ -450,7 +444,7 @@ export function nombreDePages(total: number, parPage: number): number {
  * que la catégorie est vide alors qu'il a simplement dépassé la fin.
  */
 export function bornerPage(page: number, total: number, parPage: number): number {
-	return bornerPageUi(page, total, parPage);
+  return bornerPageUi(page, total, parPage);
 }
 
 /** Préfixe du `customId` des boutons de pagination de la galerie. */
@@ -460,9 +454,9 @@ export const PREFIXE_BOUTON_GALERIE = "cdng";
 export const MAX_CUSTOM_ID = MAX_CUSTOM_ID_UI;
 
 export interface EtatGalerie {
-	page: number;
-	categorie: string | null;
-	recherche: string | null;
+  page: number;
+  categorie: string | null;
+  recherche: string | null;
 }
 
 /**
@@ -474,25 +468,21 @@ export interface EtatGalerie {
  * les boutons plutôt que d'envoyer un composant qui sera refusé.
  */
 export function encoderEtatGalerie(etat: EtatGalerie): string | null {
-	return encoderEtat(PREFIXE_BOUTON_GALERIE, [
-		Math.max(1, Math.trunc(etat.page)),
-		etat.categorie,
-		etat.recherche,
-	]);
+  return encoderEtat(PREFIXE_BOUTON_GALERIE, [Math.max(1, Math.trunc(etat.page)), etat.categorie, etat.recherche]);
 }
 
 /** Décode un `customId` produit par `encoderEtatGalerie`. `null` si ce n'en est pas un. */
 export function decoderEtatGalerie(customId: string): EtatGalerie | null {
-	const champs = decoderEtat(PREFIXE_BOUTON_GALERIE, customId, 3);
-	const page = pageDecodee(champs?.[0]);
-	if (!champs || page === null) {
-		return null;
-	}
-	return {
-		page,
-		categorie: champs[1] || null,
-		recherche: champs[2] || null,
-	};
+  const champs = decoderEtat(PREFIXE_BOUTON_GALERIE, customId, 3);
+  const page = pageDecodee(champs?.[0]);
+  if (!champs || page === null) {
+    return null;
+  }
+  return {
+    page,
+    categorie: champs[1] || null,
+    recherche: champs[2] || null,
+  };
 }
 
 // ─── Mise en forme ──────────────────────────────────────────────────────────
@@ -505,25 +495,25 @@ export function decoderEtatGalerie(customId: string): EtatGalerie | null {
  * documentation incomparables avec ceux qu'affiche le bot.
  */
 export function formaterOctets(octets: number | null | undefined): string {
-	return formaterOctetsUi(octets, "taille inconnue");
+  return formaterOctetsUi(octets, "taille inconnue");
 }
 
 /** `true` si le type MIME annoncé est bien celui d'une image. */
 export function estTypeImage(typeMime: string | null | undefined): boolean {
-	return typeof typeMime === "string" && typeMime.trim().toLowerCase().startsWith("image/");
+  return typeof typeMime === "string" && typeMime.trim().toLowerCase().startsWith("image/");
 }
 
 /** `true` si le type MIME annoncé est bien celui d'un modèle glTF binaire. */
 export function estTypeModele(typeMime: string | null | undefined): boolean {
-	const propre = (typeMime ?? "").trim().toLowerCase();
-	return propre.startsWith("model/gltf-binary") || propre.startsWith("model/gltf+json");
+  const propre = (typeMime ?? "").trim().toLowerCase();
+  return propre.startsWith("model/gltf-binary") || propre.startsWith("model/gltf+json");
 }
 
 /** Santé de `rg-cdn.service` telle qu'il la renvoie sur `/health`. */
 export interface SanteCdn {
-	ok?: boolean;
-	storage?: string;
-	assetsManifest?: { bytes?: number; etag?: string } | null;
+  ok?: boolean;
+  storage?: string;
+  assetsManifest?: { bytes?: number; etag?: string } | null;
 }
 
 /**
@@ -531,16 +521,16 @@ export interface SanteCdn {
  * (`{"ok":true,"storage":"/var/www/cdn/images","assetsManifest":null}`).
  */
 export function decrireSanteCdn(charge: SanteCdn | null | undefined): string[] {
-	if (!charge) {
-		return ["Sonde muette."];
-	}
-	const lignes = [`Stockage des téléversements : \`${charge.storage ?? "inconnu"}\``];
-	lignes.push(
-		charge.assetsManifest
-			? `Manifeste d'assets : ${formaterOctets(charge.assetsManifest.bytes ?? 0)}`
-			: "Manifeste d'assets : aucun (les assets du jeu passent par les CPK, pas par un manifeste)"
-	);
-	return lignes;
+  if (!charge) {
+    return ["Sonde muette."];
+  }
+  const lignes = [`Stockage des téléversements : \`${charge.storage ?? "inconnu"}\``];
+  lignes.push(
+    charge.assetsManifest
+      ? `Manifeste d'assets : ${formaterOctets(charge.assetsManifest.bytes ?? 0)}`
+      : "Manifeste d'assets : aucun (les assets du jeu passent par les CPK, pas par un manifeste)",
+  );
+  return lignes;
 }
 
 /**
@@ -549,14 +539,14 @@ export function decrireSanteCdn(charge: SanteCdn | null | undefined): string[] {
  * c'est la seule façon honnête de parler du cache sans inventer un compteur.
  */
 export function libelleCache(entete: string | null | undefined): string {
-	const propre = (entete ?? "").trim().toUpperCase();
-	if (propre === "HIT") {
-		return "déjà en cache";
-	}
-	if (propre === "MISS") {
-		return "décodée à la demande";
-	}
-	return "cache non renseigné";
+  const propre = (entete ?? "").trim().toUpperCase();
+  if (propre === "HIT") {
+    return "déjà en cache";
+  }
+  if (propre === "MISS") {
+    return "décodée à la demande";
+  }
+  return "cache non renseigné";
 }
 
 /**
@@ -564,12 +554,12 @@ export function libelleCache(entete: string | null | undefined): string {
  * servi. Sert l'autocomplétion : elle ne propose que ce qui s'affichera.
  */
 export function cheminCdnDepuisCpk(pathCpk: string | null | undefined): string | null {
-	if (typeof pathCpk !== "string" || !pathCpk.startsWith("data/dx11/")) {
-		return null;
-	}
-	const sansData = pathCpk.slice("data/".length);
-	if (!/\.g4tx$/i.test(sansData)) {
-		return null;
-	}
-	return `/${sansData.replace(/\.g4tx$/i, ".png")}`;
+  if (typeof pathCpk !== "string" || !pathCpk.startsWith("data/dx11/")) {
+    return null;
+  }
+  const sansData = pathCpk.slice("data/".length);
+  if (!/\.g4tx$/i.test(sansData)) {
+    return null;
+  }
+  return `/${sansData.replace(/\.g4tx$/i, ".png")}`;
 }

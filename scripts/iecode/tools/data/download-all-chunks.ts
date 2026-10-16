@@ -1,10 +1,10 @@
-import fs from "fs";
+import fs from "node:fs";
 
 const BASE = "https://ievr-ultimate-team.fly.dev/assets";
 const outDir = "var/mirror/ievr-ut/site/ievr-ultimate-team.fly.dev/assets";
 fs.mkdirSync(outDir, { recursive: true });
 
-const chunks = fs.readFileSync("var/mirror/ievr-ut/chunks.txt", "utf8").trim().split("\n");
+const chunks = (await Bun.file("var/mirror/ievr-ut/chunks.txt").text()).trim().split("\n");
 
 console.log(`Downloading ${chunks.length} chunks...`);
 
@@ -14,7 +14,7 @@ let errors = 0;
 async function downloadChunk(chunk: string) {
   const url = `${BASE}/${chunk}`;
   const target = `${outDir}/${chunk}`;
-  if (fs.existsSync(target) && fs.statSync(target).size > 0) {
+  if (await Bun.file(target).exists() && fs.statSync(target).size > 0) {
     downloaded++;
     return;
   }

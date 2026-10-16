@@ -68,10 +68,7 @@ describe("fuzzy-match — distance et normalisation", () => {
   });
 
   test("getNameVariations normalise et écarte les langues absentes", () => {
-    expect(getNameVariations({ en: "Mark Evans", fr: "Mark Evans", ja: null })).toEqual([
-      "mark evans",
-      "mark evans",
-    ]);
+    expect(getNameVariations({ en: "Mark Evans", fr: "Mark Evans", ja: null })).toEqual(["mark evans", "mark evans"]);
     expect(getNameVariations({})).toEqual([]);
   });
 
@@ -90,9 +87,7 @@ describe("fuzzy-match — distance et normalisation", () => {
     ]);
     // Terme absent ou vide → un seul segment non surligné.
     expect(highlightMatches("Mark Evans", "")).toEqual([{ highlight: false, text: "Mark Evans" }]);
-    expect(highlightMatches("Mark Evans", "zzz")).toEqual([
-      { highlight: false, text: "Mark Evans" },
-    ]);
+    expect(highlightMatches("Mark Evans", "zzz")).toEqual([{ highlight: false, text: "Mark Evans" }]);
   });
 });
 
@@ -137,7 +132,7 @@ describe("smart-search — priorisation, cache et suggestions", () => {
 
   test("la langue détectée et le nom correspondant sont annotés", async () => {
     const res = await smartSearch("円堂", bruts, { context: "global" });
-    const perso = res.find((r) => r.type === "character") as SmartSearchResult;
+    const perso = res.find(r => r.type === "character") as SmartSearchResult;
     expect(perso.matchedLanguage).toBe("JP");
     expect(perso.matchedName).toBe("円堂 守");
   });
@@ -194,7 +189,7 @@ describe("smart-search — priorisation, cache et suggestions", () => {
     // Régression : `minScore` était absent de la clé de cache → le 2e appel
     // renvoyait les résultats filtrés du 1er.
     const filtre = await smartSearch("Mark", bruts, { minScore: 2 });
-    expect(filtre.every((r) => r.id === "")).toBe(true);
+    expect(filtre.every(r => r.id === "")).toBe(true);
     const complet = await smartSearch("Mark", bruts, { minScore: 0 });
     expect(complet).toHaveLength(bruts.length);
   });
@@ -205,7 +200,7 @@ describe.skipIf(!hasPostgres)("smart-search sur de VRAIS personnages du miroir",
 
   test("les noms réels du wiki sont annotés dans la bonne langue", async () => {
     const liste = await wikiService.getCharactersList({ limit: 10, q: "Mark" });
-    const bruts = (liste.data as Array<Record<string, any>>).map((chara) => ({
+    const bruts = (liste.data as Array<Record<string, any>>).map(chara => ({
       data: { names: chara.names },
       id: String(chara.charaId),
       name: String(chara.names?.fr ?? ""),

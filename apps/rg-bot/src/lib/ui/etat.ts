@@ -39,10 +39,10 @@ export const SEPARATEUR_ETAT = "|";
 
 /** Nombre total de pages (jamais 0 : une liste vide a une page, qui dit « vide »). */
 export function nombreDePages(total: number, parPage: number): number {
-	if (!Number.isFinite(total) || total <= 0 || parPage <= 0) {
-		return 1;
-	}
-	return Math.max(1, Math.ceil(total / parPage));
+  if (!Number.isFinite(total) || total <= 0 || parPage <= 0) {
+    return 1;
+  }
+  return Math.max(1, Math.ceil(total / parPage));
 }
 
 /**
@@ -53,28 +53,28 @@ export function nombreDePages(total: number, parPage: number): number {
  * en bigint : la commande échouerait au lieu de montrer la dernière page.
  */
 export function bornerPage(page: number, total: number, parPage: number): number {
-	const pages = nombreDePages(total, parPage);
-	if (!Number.isFinite(page)) {
-		return 1;
-	}
-	return Math.min(pages, Math.max(1, Math.trunc(page)));
+  const pages = nombreDePages(total, parPage);
+  if (!Number.isFinite(page)) {
+    return 1;
+  }
+  return Math.min(pages, Math.max(1, Math.trunc(page)));
 }
 
 /** Tranche d'une liste déjà entièrement chargée. */
 export function tranche<T>(entrees: readonly T[], page: number, parPage: number): T[] {
-	const sure = bornerPage(page, entrees.length, parPage);
-	const debut = (sure - 1) * parPage;
-	return entrees.slice(debut, debut + parPage);
+  const sure = bornerPage(page, entrees.length, parPage);
+  const debut = (sure - 1) * parPage;
+  return entrees.slice(debut, debut + parPage);
 }
 
 // ─── État transporté par le `customId` ──────────────────────────────────────
 
 /** Retire le séparateur d'un fragment pour qu'il ne casse pas le décodage. */
 export function sansSeparateur(valeur: string | number | null | undefined): string {
-	if (typeof valeur === "number") {
-		return Number.isFinite(valeur) ? String(Math.trunc(valeur)) : "";
-	}
-	return typeof valeur === "string" ? valeur.replaceAll(SEPARATEUR_ETAT, " ").trim() : "";
+  if (typeof valeur === "number") {
+    return Number.isFinite(valeur) ? String(Math.trunc(valeur)) : "";
+  }
+  return typeof valeur === "string" ? valeur.replaceAll(SEPARATEUR_ETAT, " ").trim() : "";
 }
 
 /**
@@ -84,12 +84,9 @@ export function sansSeparateur(valeur: string | number | null | undefined): stri
  *                routage : un gestionnaire de bouton ne doit répondre qu'aux
  *                identifiants de SA surface.
  */
-export function encoderEtat(
-	prefixe: string,
-	champs: ReadonlyArray<string | number | null | undefined>
-): string | null {
-	const identifiant = [prefixe, ...champs.map(sansSeparateur)].join(SEPARATEUR_ETAT);
-	return identifiant.length <= MAX_CUSTOM_ID ? identifiant : null;
+export function encoderEtat(prefixe: string, champs: ReadonlyArray<string | number | null | undefined>): string | null {
+  const identifiant = [prefixe, ...champs.map(sansSeparateur)].join(SEPARATEUR_ETAT);
+  return identifiant.length <= MAX_CUSTOM_ID ? identifiant : null;
 }
 
 /**
@@ -99,25 +96,21 @@ export function encoderEtat(
  *          pas à cette surface ou n'a pas le bon nombre de champs — un état
  *          partiel produirait une page avec des filtres arbitraires.
  */
-export function decoderEtat(
-	prefixe: string,
-	customId: string,
-	nombreChamps: number
-): string[] | null {
-	const morceaux = customId.split(SEPARATEUR_ETAT);
-	if (morceaux.length !== nombreChamps + 1 || morceaux[0] !== prefixe) {
-		return null;
-	}
-	return morceaux.slice(1);
+export function decoderEtat(prefixe: string, customId: string, nombreChamps: number): string[] | null {
+  const morceaux = customId.split(SEPARATEUR_ETAT);
+  if (morceaux.length !== nombreChamps + 1 || morceaux[0] !== prefixe) {
+    return null;
+  }
+  return morceaux.slice(1);
 }
 
 /** Vrai si l'identifiant appartient à cette surface. */
 export function estEtatDe(prefixe: string, customId: string): boolean {
-	return customId.startsWith(`${prefixe}${SEPARATEUR_ETAT}`);
+  return customId.startsWith(`${prefixe}${SEPARATEUR_ETAT}`);
 }
 
 /** Numéro de page décodé, ou `null` s'il est inexploitable. */
 export function pageDecodee(brut: string | undefined): number | null {
-	const page = Number.parseInt(brut ?? "", 10);
-	return Number.isFinite(page) && page >= 1 ? page : null;
+  const page = Number.parseInt(brut ?? "", 10);
+  return Number.isFinite(page) && page >= 1 ? page : null;
 }

@@ -17,12 +17,7 @@
  */
 
 import { crc32String } from "../hash/crc32.js";
-import {
-  RDBN_MAGIC,
-  parseRdbnHeader,
-  probeFormat,
-  type RdbnHeaderInfo,
-} from "../../nie-bridge/index.js";
+import { RDBN_MAGIC, parseRdbnHeader, probeFormat, type RdbnHeaderInfo } from "../../nie-bridge/index.js";
 
 // ============================================================================
 // Types

@@ -4,14 +4,7 @@ import { useResetState } from "@/hooks/use-reset-state";
 
 import { Box, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@rosegriffon/ui";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@rosegriffon/ui";
 
 interface CharacterModelViewerProps {
   /** URL absolue du GLB complet (cdn.rosegriffon.fr/model-full/<code>.glb, nie-model-serve). */
@@ -130,7 +123,7 @@ export default function CharacterModelViewer({ glbUrl, name, inline }: Character
     <a
       href={glbUrl}
       download={`${name ?? "modele"}.glb`}
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
       className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-surface/70 backdrop-blur px-2.5 py-1 text-xs font-medium text-on-surface hover:bg-surface border border-outline-variant/30 transition-colors"
       title="Télécharger le modèle 3D (GLB)"
     >
@@ -171,11 +164,7 @@ export default function CharacterModelViewer({ glbUrl, name, inline }: Character
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 sm:size-8 text-on-surface-variant hover:text-primary"
-        >
+        <Button variant="ghost" size="icon" className="size-11 sm:size-8 text-on-surface-variant hover:text-primary">
           <Box className="size-4" />
           <span className="sr-only">Voir le modèle 3D de {name}</span>
         </Button>

@@ -63,7 +63,7 @@ export function FormSelector({ forms, currentFormId }: FormSelectorProps) {
         Versions officielles · ordre Zukan
       </span>
       <div className="flex items-center justify-center sm:justify-start gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
-        {forms.map((form) => {
+        {forms.map(form => {
           const isCurrent = form.id === currentFormId;
           const pos = POSITION_MAP[form.position] || form.position;
           const posLabel = POSITION_FR[pos] || pos;
@@ -94,25 +94,13 @@ export function FormSelector({ forms, currentFormId }: FormSelectorProps) {
                 isBasara && !isCurrent && "ring-purple-400/40",
                 isBasara && isCurrent && "ring-2 ring-purple-400 shadow-purple-500/30",
                 isHero && !isCurrent && form.heroType === "fire" && "ring-red-400/40",
-                isHero &&
-                  isCurrent &&
-                  form.heroType === "fire" &&
-                  "ring-2 ring-red-400 shadow-red-500/30",
+                isHero && isCurrent && form.heroType === "fire" && "ring-2 ring-red-400 shadow-red-500/30",
                 isHero && !isCurrent && form.heroType === "black" && "ring-gray-500/40",
-                isHero &&
-                  isCurrent &&
-                  form.heroType === "black" &&
-                  "ring-2 ring-gray-500 shadow-gray-500/30",
+                isHero && isCurrent && form.heroType === "black" && "ring-2 ring-gray-500 shadow-gray-500/30",
                 isHero && !isCurrent && form.heroType === "pink" && "ring-pink-400/40",
-                isHero &&
-                  isCurrent &&
-                  form.heroType === "pink" &&
-                  "ring-2 ring-pink-400 shadow-pink-500/30",
+                isHero && isCurrent && form.heroType === "pink" && "ring-2 ring-pink-400 shadow-pink-500/30",
                 isHero && !isCurrent && !form.heroType && "ring-amber-400/40",
-                isHero &&
-                  isCurrent &&
-                  !form.heroType &&
-                  "ring-2 ring-amber-400 shadow-amber-500/30",
+                isHero && isCurrent && !form.heroType && "ring-2 ring-amber-400 shadow-amber-500/30",
               )}
               title={(() => {
                 const heroLabels: Record<string, string> = {
@@ -120,16 +108,10 @@ export function FormSelector({ forms, currentFormId }: FormSelectorProps) {
                   fire: "Feu",
                   pink: "Rose",
                 };
-                const heroSuffix = form.heroType
-                  ? ` ${heroLabels[form.heroType] || form.heroType}`
-                  : "";
-                const raritySuffix =
-                  form.rarity !== "Normal" ? ` (${form.rarity}${heroSuffix})` : "";
-                const age = [form.ageGroup, form.schoolYear]
-                  .filter((value) => value && value !== "-")
-                  .join(" · ");
-                const order =
-                  form.zukanOrder !== undefined ? ` · Zukan #${form.zukanOrder + 1}` : "";
+                const heroSuffix = form.heroType ? ` ${heroLabels[form.heroType] || form.heroType}` : "";
+                const raritySuffix = form.rarity !== "Normal" ? ` (${form.rarity}${heroSuffix})` : "";
+                const age = [form.ageGroup, form.schoolYear].filter(value => value && value !== "-").join(" · ");
+                const order = form.zukanOrder !== undefined ? ` · Zukan #${form.zukanOrder + 1}` : "";
                 return `${form.series || "Version"} · ${posLabel} ${elemLabel}${raritySuffix}${age ? ` · ${age}` : ""}${order}`;
               })()}
             >
@@ -138,9 +120,7 @@ export function FormSelector({ forms, currentFormId }: FormSelectorProps) {
                 <SafeImage
                   src={imageUrl}
                   zukanHash={form.zukanHash}
-                  fallbackSrc={
-                    form.internalCode ? getCharacterFaceUrl(form.internalCode) : undefined
-                  }
+                  fallbackSrc={form.internalCode ? getCharacterFaceUrl(form.internalCode) : undefined}
                   alt={`${posLabel} ${elemLabel}`}
                   fill
                   unoptimized
@@ -152,13 +132,7 @@ export function FormSelector({ forms, currentFormId }: FormSelectorProps) {
               {/* Element badge overlay */}
               {elemIcon && (
                 <div className="absolute bottom-0.5 right-0.5 size-4 rounded-full bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                  <NextImage
-                    src={elemIcon}
-                    alt=""
-                    width={12}
-                    height={12}
-                    className="size-3 object-contain"
-                  />
+                  <NextImage src={elemIcon} alt="" width={12} height={12} className="size-3 object-contain" />
                 </div>
               )}
 

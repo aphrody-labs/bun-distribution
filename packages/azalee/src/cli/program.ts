@@ -46,10 +46,7 @@ export const CLI_NAME = "azalee";
 export function createAzaleeProgram(): Command {
   const program = new Command();
 
-  program
-    .name(CLI_NAME)
-    .description("CLI d'Azalée pour Inazuma Eleven: Victory Road")
-    .version(CLI_VERSION);
+  program.name(CLI_NAME).description("CLI d'Azalée pour Inazuma Eleven: Victory Road").version(CLI_VERSION);
 
   // Données & traduction
   registerTranslateCommand(program);

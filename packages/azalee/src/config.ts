@@ -61,10 +61,7 @@ export function resetAzaleeConfig(): void {
  */
 function packageRoot(): string {
   // `import.meta.dir` (Bun) / `import.meta.url` (Node) → `<pkg>/src`.
-  const here =
-    typeof import.meta.dir === "string"
-      ? import.meta.dir
-      : path.dirname(new URL(import.meta.url).pathname);
+  const here = typeof import.meta.dir === "string" ? import.meta.dir : path.dirname(new URL(import.meta.url).pathname);
   return path.resolve(here, "..");
 }
 
@@ -103,7 +100,7 @@ const DATA_DIR_MARKERS = ["backups/mirror.sqlite", "schema-snapshot"];
 export function resolveDataDir(): string | null {
   for (const candidate of dataDirCandidates()) {
     if (!existsSync(candidate)) continue;
-    if (DATA_DIR_MARKERS.some((marker) => existsSync(path.join(candidate, marker)))) {
+    if (DATA_DIR_MARKERS.some(marker => existsSync(path.join(candidate, marker)))) {
       return candidate;
     }
   }
@@ -129,9 +126,7 @@ export function resolveMirrorPath(): string | null {
   const candidates = [
     process.env.NIERS_MIRROR,
     path.resolve(repoRoot, "var/mirror.sqlite"),
-    process.env.IECODE_DATA_DIR
-      ? path.resolve(process.env.IECODE_DATA_DIR, "../var/mirror.sqlite")
-      : undefined,
+    process.env.IECODE_DATA_DIR ? path.resolve(process.env.IECODE_DATA_DIR, "../var/mirror.sqlite") : undefined,
   ].filter((p): p is string => Boolean(p));
 
   for (const candidate of candidates) {

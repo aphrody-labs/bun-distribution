@@ -9,8 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 const STORAGE_BUCKET = "article";
-const BASE_URL =
-  process.env.NEXT_PUBLIC_STORAGE_URL || "https://azalee.rosegriffon.fr/storage/v1/object/public";
+const BASE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || "https://azalee.rosegriffon.fr/storage/v1/object/public";
 
 interface ImageVariant {
   suffix: string;
@@ -60,10 +59,7 @@ function validateFile(file: File): string | null {
   return null;
 }
 
-async function processAndUpload(
-  inputBuffer: Buffer,
-  filenameBase: string,
-): Promise<UploadResult | { error: string }> {
+async function processAndUpload(inputBuffer: Buffer, filenameBase: string): Promise<UploadResult | { error: string }> {
   const supabase = await createClient();
   const metadata = await sharp(inputBuffer).metadata();
 
@@ -72,7 +68,7 @@ async function processAndUpload(
   }
 
   // Générer toutes les variantes en parallèle
-  const uploads = VARIANTS.map(async (variant) => {
+  const uploads = VARIANTS.map(async variant => {
     const filename = `${filenameBase}${variant.suffix}.webp`;
 
     const buffer = await sharp(inputBuffer)
@@ -157,9 +153,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult | { 
  * Les valeurs de crop sont en pourcentages (0-100) des dimensions originales.
  * Génère les mêmes 3 variantes que uploadImage.
  */
-export async function uploadImageWithCrop(
-  formData: FormData,
-): Promise<UploadResult | { error: string }> {
+export async function uploadImageWithCrop(formData: FormData): Promise<UploadResult | { error: string }> {
   try {
     const file = formData.get("file") as File;
     const cropX = Number.parseFloat(formData.get("cropX") as string);

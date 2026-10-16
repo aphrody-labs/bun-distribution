@@ -11,37 +11,37 @@ import type { importLibrary as ImportLibraryFn } from "@googlemaps/js-api-loader
 let loaderConfigured = false;
 
 export const useGoogleMaps = () => {
-	const [isLoaded, setIsLoaded] = useState(false);
-	const [error, setError] = useState<Error | null>(null);
-	const [importLibrary, setImportLibrary] = useState<typeof ImportLibraryFn | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [importLibrary, setImportLibrary] = useState<typeof ImportLibraryFn | null>(null);
 
-	useEffect(() => {
-		let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-		(async () => {
-			try {
-				const loader = await import("@googlemaps/js-api-loader");
-				if (!loaderConfigured) {
-					loader.setOptions({
-						key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-						libraries: ["marker", "places"],
-						v: "weekly",
-					});
-					loaderConfigured = true;
-				}
-				if (cancelled) return;
-				setImportLibrary(() => loader.importLibrary);
-				await loader.importLibrary("maps");
-				if (!cancelled) setIsLoaded(true);
-			} catch (err: unknown) {
-				if (!cancelled) setError(err as Error);
-			}
-		})();
+    (async () => {
+      try {
+        const loader = await import("@googlemaps/js-api-loader");
+        if (!loaderConfigured) {
+          loader.setOptions({
+            key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+            libraries: ["marker", "places"],
+            v: "weekly",
+          });
+          loaderConfigured = true;
+        }
+        if (cancelled) return;
+        setImportLibrary(() => loader.importLibrary);
+        await loader.importLibrary("maps");
+        if (!cancelled) setIsLoaded(true);
+      } catch (err: unknown) {
+        if (!cancelled) setError(err as Error);
+      }
+    })();
 
-		return () => {
-			cancelled = true;
-		};
-	}, []);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-	return { error, isLoaded, importLibrary };
+  return { error, isLoaded, importLibrary };
 };

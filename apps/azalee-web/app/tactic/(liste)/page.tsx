@@ -57,16 +57,11 @@ export default async function TacticsPage({
 
   return (
     <div className="space-y-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
 
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface font-display">
-          Tactiques
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface font-display">Tactiques</h1>
         <p className="text-sm text-on-surface-variant">
           Liste complète des tactiques spéciales dans Inazuma Eleven: Victory Road.
         </p>
@@ -104,9 +99,7 @@ export default async function TacticsPage({
       )}
 
       {/* Pagination */}
-      {total > ITEMS_PER_PAGE && (
-        <WikiPagination currentPage={page} totalItems={total} itemsPerPage={ITEMS_PER_PAGE} />
-      )}
+      {total > ITEMS_PER_PAGE && <WikiPagination currentPage={page} totalItems={total} itemsPerPage={ITEMS_PER_PAGE} />}
     </div>
   );
 }

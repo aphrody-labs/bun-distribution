@@ -64,9 +64,7 @@ export function FeaturedImageSection({
         </div>
         <div className="text-center">
           <p className="text-xs font-medium text-on-surface">Optimisation en cours...</p>
-          <p className="text-[10px] text-on-surface-variant/50 mt-0.5">
-            3 variantes (hero, carte, miniature)
-          </p>
+          <p className="text-[10px] text-on-surface-variant/50 mt-0.5">3 variantes (hero, carte, miniature)</p>
         </div>
       </output>
     );
@@ -119,7 +117,7 @@ export function FeaturedImageSection({
         {/* Alt text */}
         <Input
           value={imageAlt}
-          onChange={(e) => onAltChange(e.target.value)}
+          onChange={e => onAltChange(e.target.value)}
           className="bg-surface-container-high border-none rounded-xl text-xs h-8 font-sans"
           placeholder="Texte alternatif (accessibilité, SEO)"
           aria-label="Texte alternatif de l'image"
@@ -127,12 +125,7 @@ export function FeaturedImageSection({
 
         {/* Action buttons (mobile fallback — toujours visibles) */}
         <div className="flex gap-2 sm:hidden">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 rounded-lg h-8 text-xs gap-1.5"
-            onClick={onUploadClick}
-          >
+          <Button variant="outline" size="sm" className="flex-1 rounded-lg h-8 text-xs gap-1.5" onClick={onUploadClick}>
             <Upload className="size-3" />
             Remplacer
           </Button>
@@ -175,16 +168,9 @@ export function FeaturedImageSection({
           : "border-outline-variant/20 hover:border-primary/40 hover:bg-primary/5 text-on-surface-variant/40 hover:text-primary/60",
       )}
     >
-      <ImagePlus
-        className={cn("size-8 transition-transform", isDragging && "scale-110")}
-        aria-hidden="true"
-      />
-      <span className="text-xs font-medium">
-        {isDragging ? "Déposer l'image ici" : "Cliquer ou glisser une image"}
-      </span>
-      <span className="text-[10px] text-on-surface-variant/30">
-        JPEG, PNG, WebP, AVIF ou GIF — max 10 Mo
-      </span>
+      <ImagePlus className={cn("size-8 transition-transform", isDragging && "scale-110")} aria-hidden="true" />
+      <span className="text-xs font-medium">{isDragging ? "Déposer l'image ici" : "Cliquer ou glisser une image"}</span>
+      <span className="text-[10px] text-on-surface-variant/30">JPEG, PNG, WebP, AVIF ou GIF — max 10 Mo</span>
     </button>
   );
 }

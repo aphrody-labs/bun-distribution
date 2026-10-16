@@ -1,9 +1,4 @@
-import {
-  cpk_parse_entries,
-  cpk_extract_file,
-  crilayla_decompress,
-  detect_format,
-} from "./wasm/nie_wasm.js";
+import { cpk_parse_entries, cpk_extract_file, crilayla_decompress, detect_format } from "./wasm/nie_wasm.js";
 
 export interface CpkEntry {
   path: string;

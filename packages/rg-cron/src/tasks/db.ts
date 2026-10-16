@@ -37,15 +37,15 @@ const RACINE_JEU = process.env.NIERS_ROOT ?? checkoutRoot("iecode");
  * PostgreSQL avec les fichiers de données du jeu les plus récents.
  */
 export async function runInaglePush(): Promise<{ success: boolean; error?: string }> {
-	console.log("[Cron DB] Démarrage de la synchronisation Inagle avec la base de données...");
-	try {
-		await $`${BUN} run --filter @rosegriffon/inagle push`.cwd(RACINE_JEU);
-		console.log("[Cron DB] Synchronisation réussie.");
-		return { success: true };
-	} catch (err: unknown) {
-		console.error("[Cron DB] Erreur lors du push d'Inagle :", err);
-		return { success: false, error: describeShellError(err) };
-	}
+  console.log("[Cron DB] Démarrage de la synchronisation Inagle avec la base de données...");
+  try {
+    await $`${BUN} run --filter @rosegriffon/inagle push`.cwd(RACINE_JEU);
+    console.log("[Cron DB] Synchronisation réussie.");
+    return { success: true };
+  } catch (err: unknown) {
+    console.error("[Cron DB] Erreur lors du push d'Inagle :", err);
+    return { success: false, error: describeShellError(err) };
+  }
 }
 
 /**
@@ -56,14 +56,14 @@ export async function runInaglePush(): Promise<{ success: boolean; error?: strin
  * était indiagnosticable dans le journal.
  */
 function describeShellError(err: unknown): string {
-	if (typeof err !== "object" || err === null) return String(err);
-	const shell = err as { exitCode?: number; stderr?: { toString(): string }; message?: string };
-	const base = shell.message ?? String(err);
-	const details: string[] = [];
-	if (shell.exitCode === 127) {
-		details.push("commande introuvable — vérifier le PATH du service (le binaire Bun n'y est pas par défaut)");
-	}
-	const stderr = shell.stderr?.toString().trim();
-	if (stderr) details.push(stderr.slice(0, 500));
-	return details.length > 0 ? `${base} : ${details.join(" | ")}` : base;
+  if (typeof err !== "object" || err === null) return String(err);
+  const shell = err as { exitCode?: number; stderr?: { toString(): string }; message?: string };
+  const base = shell.message ?? String(err);
+  const details: string[] = [];
+  if (shell.exitCode === 127) {
+    details.push("commande introuvable — vérifier le PATH du service (le binaire Bun n'y est pas par défaut)");
+  }
+  const stderr = shell.stderr?.toString().trim();
+  if (stderr) details.push(stderr.slice(0, 500));
+  return details.length > 0 ? `${base} : ${details.join(" | ")}` : base;
 }

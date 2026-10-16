@@ -42,12 +42,7 @@ const STATS_CONFIG = [
 /**
  * Heptagonal (7-sided) stat radar chart matching the official game design
  */
-export function StatHeptagon({
-  stats,
-  size: sizeProp = 280,
-  showLabels = true,
-  className,
-}: StatHeptagonProps) {
+export function StatHeptagon({ stats, size: sizeProp = 280, showLabels = true, className }: StatHeptagonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState(sizeProp);
 
@@ -55,7 +50,7 @@ export function StatHeptagon({
     if (!containerRef.current) {
       return;
     }
-    const observer = new ResizeObserver((entries) => {
+    const observer = new ResizeObserver(entries => {
       const width = entries[0]?.contentRect.width;
       if (width) {
         setContainerSize(Math.min(sizeProp, width));
@@ -95,7 +90,7 @@ export function StatHeptagon({
   // Inner grid rings
   const innerRings = useMemo(
     () =>
-      [0.25, 0.5, 0.75].map((scale) => {
+      [0.25, 0.5, 0.75].map(scale => {
         return Array.from({ length: 7 }, (_, i) => {
           const p = getPoint(i, radius * scale);
           return `${p.x},${p.y}`;
@@ -164,15 +159,7 @@ export function StatHeptagon({
 
           {/* Soccer ball pattern (simplified) */}
           <pattern id="soccerPattern" patternUnits="userSpaceOnUse" width="40" height="40">
-            <circle
-              cx="20"
-              cy="20"
-              r="8"
-              fill="none"
-              stroke="#4a5a6c"
-              strokeWidth="0.5"
-              opacity="0.3"
-            />
+            <circle cx="20" cy="20" r="8" fill="none" stroke="#4a5a6c" strokeWidth="0.5" opacity="0.3" />
             <path
               d="M20 12 L26 18 L24 26 L16 26 L14 18 Z"
               fill="none"
@@ -184,15 +171,7 @@ export function StatHeptagon({
         </defs>
 
         {/* Outer glow/shadow */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius + 8}
-          fill="none"
-          stroke="#0a1a2c"
-          strokeWidth="16"
-          opacity="0.3"
-        />
+        <circle cx={center} cy={center} r={radius + 8} fill="none" stroke="#0a1a2c" strokeWidth="16" opacity="0.3" />
 
         {/* Background heptagon with pattern */}
         <polygon points={heptagonPoints} fill="url(#heptBg)" stroke="#2a3a4c" strokeWidth="2" />
@@ -202,60 +181,30 @@ export function StatHeptagon({
 
         {/* Inner grid rings */}
         {innerRings.map((ring, i) => (
-          <polygon
-            key={i}
-            points={ring}
-            fill="none"
-            stroke="#4a5a6c"
-            strokeWidth="0.5"
-            opacity="0.4"
-          />
+          <polygon key={i} points={ring} fill="none" stroke="#4a5a6c" strokeWidth="0.5" opacity="0.4" />
         ))}
 
         {/* Axis lines from center to vertices */}
         {Array.from({ length: 7 }).map((_, i) => {
           const p = getPoint(i, radius);
           return (
-            <line
-              key={i}
-              x1={center}
-              y1={center}
-              x2={p.x}
-              y2={p.y}
-              stroke="#4a5a6c"
-              strokeWidth="0.5"
-              opacity="0.4"
-            />
+            <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#4a5a6c" strokeWidth="0.5" opacity="0.4" />
           );
         })}
 
         {/* Stat polygon */}
-        <polygon
-          points={statPoints}
-          fill="url(#statGradient)"
-          fillOpacity="0.7"
-          stroke="#fbbf24"
-          strokeWidth="2"
-        />
+        <polygon points={statPoints} fill="url(#statGradient)" fillOpacity="0.7" stroke="#fbbf24" strokeWidth="2" />
 
         {/* Center dot */}
         <circle cx={center} cy={center} r="4" fill="#fbbf24" />
 
         {/* Outer decorative ring */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius + 2}
-          fill="none"
-          stroke="#5a6a7c"
-          strokeWidth="1"
-          opacity="0.6"
-        />
+        <circle cx={center} cy={center} r={radius + 2} fill="none" stroke="#5a6a7c" strokeWidth="1" opacity="0.6" />
       </svg>
 
       {/* Labels around the heptagon */}
       {showLabels &&
-        labelPositions.map((label) => (
+        labelPositions.map(label => (
           <div
             key={label.key}
             className="absolute flex flex-col items-center gap-0 sm:gap-0.5 -translate-x-1/2 -translate-y-1/2"
@@ -266,13 +215,8 @@ export function StatHeptagon({
           >
             {/* Position sprites — hidden on very small screens to save space */}
             <div className="hidden sm:flex gap-0.5 items-center">
-              {label.positions.map((pos) => (
-                <SpriteIcon
-                  key={pos}
-                  name={POSITION_SPRITES[pos]}
-                  scale={0.35}
-                  className="drop-shadow-sm"
-                />
+              {label.positions.map(pos => (
+                <SpriteIcon key={pos} name={POSITION_SPRITES[pos]} scale={0.35} className="drop-shadow-sm" />
               ))}
             </div>
 
@@ -294,11 +238,7 @@ export function StatHeptagon({
 /**
  * Compact version for cards (no labels, smaller size)
  */
-export function MiniStatHeptagon({
-  stats,
-  size = 56,
-  className,
-}: Omit<StatHeptagonProps, "showLabels">) {
+export function MiniStatHeptagon({ stats, size = 56, className }: Omit<StatHeptagonProps, "showLabels">) {
   const center = size / 2;
   const radius = size / 2 - 4;
 
@@ -324,7 +264,7 @@ export function MiniStatHeptagon({
 
   const innerRings = useMemo(
     () =>
-      [0.33, 0.66].map((scale) => {
+      [0.33, 0.66].map(scale => {
         return Array.from({ length: 7 }, (_, i) => {
           const p = getPoint(i, radius * scale);
           return `${p.x},${p.y}`;
@@ -366,22 +306,10 @@ export function MiniStatHeptagon({
     return values.reduce((a, b) => a + b, 0) / values.length;
   }, [stats]);
 
-  const statColor =
-    avgStat >= 600
-      ? "#8b5cf6"
-      : avgStat >= 400
-        ? "#f59e0b"
-        : avgStat >= 200
-          ? "#22c55e"
-          : "#ef4444";
+  const statColor = avgStat >= 600 ? "#8b5cf6" : avgStat >= 400 ? "#f59e0b" : avgStat >= 200 ? "#22c55e" : "#ef4444";
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      className={cn("shrink-0", className)}
-    >
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={cn("shrink-0", className)}>
       <defs>
         <radialGradient id="miniBg" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#3a4a5c" />
@@ -394,41 +322,19 @@ export function MiniStatHeptagon({
 
       {/* Inner rings */}
       {innerRings.map((ring, i) => (
-        <polygon
-          key={i}
-          points={ring}
-          fill="none"
-          stroke="#4a5a6c"
-          strokeWidth="0.3"
-          opacity="0.5"
-        />
+        <polygon key={i} points={ring} fill="none" stroke="#4a5a6c" strokeWidth="0.3" opacity="0.5" />
       ))}
 
       {/* Axis lines */}
       {Array.from({ length: 7 }).map((_, i) => {
         const p = getPoint(i, radius);
         return (
-          <line
-            key={i}
-            x1={center}
-            y1={center}
-            x2={p.x}
-            y2={p.y}
-            stroke="#4a5a6c"
-            strokeWidth="0.3"
-            opacity="0.4"
-          />
+          <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#4a5a6c" strokeWidth="0.3" opacity="0.4" />
         );
       })}
 
       {/* Stat polygon */}
-      <polygon
-        points={statPoints}
-        fill={statColor}
-        fillOpacity="0.5"
-        stroke={statColor}
-        strokeWidth="1.5"
-      />
+      <polygon points={statPoints} fill={statColor} fillOpacity="0.5" stroke={statColor} strokeWidth="1.5" />
 
       {/* Center */}
       <circle cx={center} cy={center} r="2" fill={statColor} />

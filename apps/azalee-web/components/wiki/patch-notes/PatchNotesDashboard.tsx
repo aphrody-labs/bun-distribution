@@ -70,9 +70,7 @@ function PatchNoteListItem({
               {dateObj ? format(dateObj, "d MMM yyyy", { locale: fr }) : note.date}
             </span>
             {isNew && (
-              <span className="text-[10px] font-bold uppercase text-error bg-error/10 px-1.5 py-0.5 rounded">
-                New
-              </span>
+              <span className="text-[10px] font-bold uppercase text-error bg-error/10 px-1.5 py-0.5 rounded">New</span>
             )}
           </div>
 
@@ -90,9 +88,7 @@ function PatchNoteListItem({
         <ChevronRight
           className={cn(
             "size-4 shrink-0 mt-1 transition-all",
-            isActive
-              ? "text-primary opacity-100"
-              : "text-on-surface-variant/30 opacity-0 group-hover:opacity-100",
+            isActive ? "text-primary opacity-100" : "text-on-surface-variant/30 opacity-0 group-hover:opacity-100",
           )}
         />
       </div>
@@ -195,9 +191,7 @@ export default function PatchNotesPageClient({ initialNotes }: PatchNotesDashboa
               onClick={() => selectPlatform(key)}
               className={cn(
                 "flex-1 py-4 sm:py-3 text-sm font-bold transition-all relative",
-                platform === key
-                  ? "text-on-surface"
-                  : "text-on-surface-variant/50 hover:text-on-surface-variant",
+                platform === key ? "text-on-surface" : "text-on-surface-variant/50 hover:text-on-surface-variant",
               )}
             >
               {label}
@@ -216,7 +210,7 @@ export default function PatchNotesPageClient({ initialNotes }: PatchNotesDashboa
                 <Loader2 className="animate-spin text-primary size-6" />
               </div>
             ) : list.length > 0 ? (
-              list.map((note) => (
+              list.map(note => (
                 <PatchNoteListItem
                   key={note.id}
                   note={note}
@@ -235,10 +229,7 @@ export default function PatchNotesPageClient({ initialNotes }: PatchNotesDashboa
 
       {/* Detail — hidden on mobile when no detail selected */}
       <div
-        className={cn(
-          "lg:col-span-8 xl:col-span-9",
-          showMobileDetail ? "block" : "hidden lg:block",
-        )}
+        className={cn("lg:col-span-8 xl:col-span-9", showMobileDetail ? "block" : "hidden lg:block")}
         ref={detailRef}
       >
         {/* Mobile back button */}

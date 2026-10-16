@@ -81,4 +81,3 @@ for (const [code, group] of [
 }
 
 console.log("\nModèles 3D et textures générés avec succès.");
-

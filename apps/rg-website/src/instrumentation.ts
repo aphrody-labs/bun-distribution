@@ -5,8 +5,8 @@
  */
 
 export async function register() {
-	// Désactivé temporairement - cause des erreurs avec Edge Runtime
-	/*
+  // Désactivé temporairement - cause des erreurs avec Edge Runtime
+  /*
   If (process.env.NEXT_RUNTIME === "nodejs") {
     const { validateEnv } = await import("./lib/env");
     const { logger } = await import("./lib/logger");

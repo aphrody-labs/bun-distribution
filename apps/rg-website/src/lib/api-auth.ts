@@ -10,36 +10,34 @@ import type { RgRole } from "@rosegriffon/types/roles";
 type Role = RgRole | null;
 
 export interface ApiAuthSuccess {
-	user: { id: string; email: string; name: string };
-	role: Role;
+  user: { id: string; email: string; name: string };
+  role: Role;
 }
 
-export type ApiAuthResult =
-	| { ok: true; data: ApiAuthSuccess }
-	| { ok: false; response: NextResponse };
+export type ApiAuthResult = { ok: true; data: ApiAuthSuccess } | { ok: false; response: NextResponse };
 
 /**
  * API-route equivalent of `requireAuth()` — returns 401 JSON instead of redirecting.
  */
 export async function requireApiAuth(): Promise<ApiAuthResult> {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return {
-			ok: false,
-			response: NextResponse.json({ error: "Non authentifié" }, { status: 401 }),
-		};
-	}
-	return {
-		data: {
-			role: null,
-			user: {
-				email: session.user.email,
-				id: session.user.id,
-				name: session.user.name,
-			},
-		},
-		ok: true,
-	};
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Non authentifié" }, { status: 401 }),
+    };
+  }
+  return {
+    data: {
+      role: null,
+      user: {
+        email: session.user.email,
+        id: session.user.id,
+        name: session.user.name,
+      },
+    },
+    ok: true,
+  };
 }
 
 /**
@@ -48,22 +46,22 @@ export async function requireApiAuth(): Promise<ApiAuthResult> {
  * as the page-level helper.
  */
 export async function requireApiAdmin(): Promise<ApiAuthResult> {
-	const authed = await requireApiAuth();
-	if (!authed.ok) {
-		return authed;
-	}
+  const authed = await requireApiAuth();
+  if (!authed.ok) {
+    return authed;
+  }
 
-	const { user } = authed.data;
-	const profile = await resolveProfile(createPostgresClient(), user);
-	const role = (profile?.role ?? null) as Role;
-	if (!isAdmin(role)) {
-		return {
-			ok: false,
-			response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
-		};
-	}
+  const { user } = authed.data;
+  const profile = await resolveProfile(createPostgresClient(), user);
+  const role = (profile?.role ?? null) as Role;
+  if (!isAdmin(role)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
 
-	return { data: { role, user }, ok: true };
+  return { data: { role, user }, ok: true };
 }
 
 /**
@@ -72,16 +70,16 @@ export async function requireApiAdmin(): Promise<ApiAuthResult> {
  * Discord définie dans `lib/patreon/admin-access.ts`. Renvoie 401/403 JSON.
  */
 export async function requireApiPatreonCreator(): Promise<ApiAuthResult> {
-	const authed = await requireApiAuth();
-	if (!authed.ok) {
-		return authed;
-	}
-	const allowed = await isPatreonAdmin(authed.data.user);
-	if (!allowed) {
-		return {
-			ok: false,
-			response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
-		};
-	}
-	return authed;
+  const authed = await requireApiAuth();
+  if (!authed.ok) {
+    return authed;
+  }
+  const allowed = await isPatreonAdmin(authed.data.user);
+  if (!allowed) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+  return authed;
 }

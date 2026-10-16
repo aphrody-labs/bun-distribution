@@ -10,24 +10,20 @@
  * rester importable côté navigateur.
  */
 
-import {
-	AchilleaClient,
-	DEFAULT_ACHILLEA_API_URL,
-	type AchilleaClientOptions,
-} from "@rosegriffon/achillea-client";
+import { AchilleaClient, DEFAULT_ACHILLEA_API_URL, type AchilleaClientOptions } from "@rosegriffon/achillea-client";
 
 /**
  * Origine de l'API. `NEXT_PUBLIC_*` est inliné au build : lancer le déploiement
  * depuis l'app, pas depuis la racine, sinon le `.env` racine l'écrase.
  */
 export function achilleaApiUrl(): string {
-	// Next only inlines direct NEXT_PUBLIC_* lookups. The variable is optional,
-	// so an unconfigured browser build must also work without a global process.
-	try {
-		return process.env.NEXT_PUBLIC_ACHILLEA_API_URL || DEFAULT_ACHILLEA_API_URL;
-	} catch {
-		return DEFAULT_ACHILLEA_API_URL;
-	}
+  // Next only inlines direct NEXT_PUBLIC_* lookups. The variable is optional,
+  // so an unconfigured browser build must also work without a global process.
+  try {
+    return process.env.NEXT_PUBLIC_ACHILLEA_API_URL || DEFAULT_ACHILLEA_API_URL;
+  } catch {
+    return DEFAULT_ACHILLEA_API_URL;
+  }
 }
 
 /**
@@ -38,11 +34,11 @@ export function achilleaApiUrl(): string {
  * périmé. Les appelants qui veulent du cache passent leur propre `fetch`.
  */
 export function createAchilleaClient(options: AchilleaClientOptions = {}): AchilleaClient {
-	return new AchilleaClient({
-		baseUrl: achilleaApiUrl(),
-		// Le cookie HttpOnly est posé sur .rosegriffon.fr et l'API est sur une
-		// autre origine : fetch ne l'envoie pas avec son mode same-origin implicite.
-		...(typeof window !== "undefined" ? { credentials: "include" as const } : {}),
-		...options,
-	});
+  return new AchilleaClient({
+    baseUrl: achilleaApiUrl(),
+    // Le cookie HttpOnly est posé sur .rosegriffon.fr et l'API est sur une
+    // autre origine : fetch ne l'envoie pas avec son mode same-origin implicite.
+    ...(typeof window !== "undefined" ? { credentials: "include" as const } : {}),
+    ...options,
+  });
 }

@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 import { Database } from "bun:sqlite";
 
 // Third-party project mirrored read-only. Its public anon key is supplied at run time and is

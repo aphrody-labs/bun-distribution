@@ -5,14 +5,14 @@
 import { MapSchema, Schema, type } from "@colyseus/schema";
 
 export class LobbyPlayer extends Schema {
-	@type("string") userId: string = "";
-	@type("string") displayName: string = "";
-	@type("string") avatar: string = "";
-	@type("number") elo: number = 0;
-	@type("number") mode: number = 2; // mode de prédilection affiché (1v1 par défaut)
+  @type("string") userId: string = "";
+  @type("string") displayName: string = "";
+  @type("string") avatar: string = "";
+  @type("number") elo: number = 0;
+  @type("number") mode: number = 2; // mode de prédilection affiché (1v1 par défaut)
 }
 
 export class LobbyState extends Schema {
-	// Indexé par sessionId (un joueur peut être sur plusieurs onglets → 1 entrée/session).
-	@type({ map: LobbyPlayer }) players = new MapSchema<LobbyPlayer>();
+  // Indexé par sessionId (un joueur peut être sur plusieurs onglets → 1 entrée/session).
+  @type({ map: LobbyPlayer }) players = new MapSchema<LobbyPlayer>();
 }

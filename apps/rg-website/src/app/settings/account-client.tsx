@@ -104,7 +104,7 @@ export function AccountClient({
   const reload = () => router.refresh();
 
   const unlink = async (providerId: string) => {
-    const account = accounts.find((linked) => linked.provider === providerId);
+    const account = accounts.find(linked => linked.provider === providerId);
     if (!account) {
       throw new Error("Compte lié introuvable.");
     }
@@ -207,7 +207,7 @@ export function AccountClient({
                   values={profile}
                   profileUrlPrefix="/profil/"
                   showCosmetics
-                  onSubmit={async (values) => updateProfile(values)}
+                  onSubmit={async values => updateProfile(values)}
                 />
                 <section className="mt-6 rounded-xl border border-border bg-muted/20 p-4">
                   <h2 className="text-sm font-semibold">Espace Achilléa</h2>
@@ -218,10 +218,7 @@ export function AccountClient({
                     <Link className="text-primary hover:underline" href="/achillea/wallet">
                       Portefeuille ACH
                     </Link>
-                    <Link
-                      className="text-primary hover:underline"
-                      href="/achillea/ranked/leaderboard"
-                    >
+                    <Link className="text-primary hover:underline" href="/achillea/ranked/leaderboard">
                       Classement
                     </Link>
                   </div>
@@ -245,7 +242,7 @@ export function AccountClient({
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <AccountEmailCard
                   currentEmail={email}
-                  onChangeEmail={async (newEmail) => {
+                  onChangeEmail={async newEmail => {
                     const { error } = await authClient.changeEmail({
                       callbackURL: "/settings?tab=security",
                       newEmail,
@@ -272,7 +269,7 @@ export function AccountClient({
                         totpURI: data.totpURI,
                       };
                     },
-                    confirmer: async (code) => {
+                    confirmer: async code => {
                       const { error } = await authClient.twoFactor.verifyTotp({
                         code,
                       });
@@ -299,7 +296,7 @@ export function AccountClient({
 
               <AccountSessions
                 sessions={sessions}
-                onRevoke={async (id) => {
+                onRevoke={async id => {
                   const { error } = await revokeAccountSession(id);
                   if (error) {
                     throw new Error(error);

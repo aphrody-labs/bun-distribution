@@ -121,7 +121,7 @@ function nameScore(nameNorm: string, queryNorm: string, queryTokens: string[]): 
     let prefixOnly = false;
     for (const qt of queryTokens) {
       const exact = nameTokens.includes(qt);
-      const asPrefix = !exact && nameTokens.some((nt) => nt.startsWith(qt) || qt.startsWith(nt));
+      const asPrefix = !exact && nameTokens.some(nt => nt.startsWith(qt) || qt.startsWith(nt));
       if (!exact && !asPrefix) {
         matchedAll = false;
         break;
@@ -231,19 +231,13 @@ async function searchGlossary(query: string, entityType?: string): Promise<Trans
   // Candidats kana à partir de la saisie latine (romaji → kana).
   const hiraCandidate = toHiragana(queryNorm).toLowerCase();
   const kataCandidate = toKatakana(queryNorm).toLowerCase();
-  const isValidHira =
-    hiraCandidate.length > 0 && [...hiraCandidate].every((c) => isKana(c) || c === "ー");
-  const isValidKata =
-    kataCandidate.length > 0 && [...kataCandidate].every((c) => isKana(c) || c === "ー");
+  const isValidHira = hiraCandidate.length > 0 && [...hiraCandidate].every(c => isKana(c) || c === "ー");
+  const isValidKata = kataCandidate.length > 0 && [...kataCandidate].every(c => isKana(c) || c === "ー");
 
   const results: TranslationResult[] = [];
 
   const searchCategory = (catName: string, type: string, typeLabel: string, urlPrefix: string) => {
-    if (
-      entityType &&
-      entityType !== type &&
-      !(type === "aura" && (entityType === "keshin" || entityType === "soul"))
-    ) {
+    if (entityType && entityType !== type && !(type === "aura" && (entityType === "keshin" || entityType === "soul"))) {
       return;
     }
     const list = (glossary[catName] || []) as GlossaryItem[];
@@ -280,9 +274,7 @@ async function searchGlossary(query: string, entityType?: string): Promise<Trans
       let finalUrl = `${urlPrefix}/${id}`;
 
       if (type === "aura") {
-        const isSoul =
-          entry.subType === "soul" ||
-          (entry.subType && entry.subType.toLowerCase().includes("soul"));
+        const isSoul = entry.subType === "soul" || (entry.subType && entry.subType.toLowerCase().includes("soul"));
         finalType = isSoul ? "soul" : "keshin";
         finalTypeLabel = isSoul ? "Totem" : "Esprit Guerrier";
         finalUrl = isSoul ? `/aura/totems/${id}` : `/aura/esprits-guerriers/${id}`;
@@ -370,10 +362,10 @@ async function searchSupabase(query: string, entityType?: string): Promise<Trans
   const kanaVariants = new Set<string>();
   const hiraCandidate = toHiragana(queryNorm);
   const kataCandidate = toKatakana(queryNorm);
-  if ([...hiraCandidate].every((c) => isKana(c) || c === "ー") && hiraCandidate !== queryNorm) {
+  if ([...hiraCandidate].every(c => isKana(c) || c === "ー") && hiraCandidate !== queryNorm) {
     kanaVariants.add(hiraCandidate);
   }
-  if ([...kataCandidate].every((c) => isKana(c) || c === "ー") && kataCandidate !== queryNorm) {
+  if ([...kataCandidate].every(c => isKana(c) || c === "ー") && kataCandidate !== queryNorm) {
     kanaVariants.add(kataCandidate);
   }
 
@@ -613,10 +605,7 @@ async function searchSupabase(query: string, entityType?: string): Promise<Trans
  * (AND désordonné) et passe fuzzy de secours (Levenshtein) si peu de résultats
  * exacts. Dédup + tri par pertinence (exact > prefix > token > fuzzy).
  */
-export async function searchTranslations(
-  query: string,
-  entityType?: string,
-): Promise<TranslationResult[]> {
+export async function searchTranslations(query: string, entityType?: string): Promise<TranslationResult[]> {
   if (!query || query.length < 2) {
     return [];
   }
@@ -662,14 +651,14 @@ export async function searchTranslations(
   // Filtre : on ne garde que ce qui dépasse le seuil fuzzy. Les lignes DB
   // remontées par ilike mais qui ne matchent pas après normalisation
   // (faux positifs du sur-ensemble) sont écartées ici.
-  let kept = merged.filter((r) => (r.score ?? 0) >= FUZZY_THRESHOLD);
+  let kept = merged.filter(r => (r.score ?? 0) >= FUZZY_THRESHOLD);
 
   // Si la passe stricte/fuzzy ne donne rien mais que la DB a quand même
   // renvoyé des lignes (sur-ensemble large), on les garde en dernier recours
   // pour ne pas afficher un écran vide trompeur.
   if (kept.length === 0 && merged.length > 0) {
     kept = merged
-      .map((r) => ({ ...r, fuzzy: true }))
+      .map(r => ({ ...r, fuzzy: true }))
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, 12);
   }

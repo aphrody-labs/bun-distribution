@@ -17,18 +17,24 @@ const outRoot = join(root, "var", "afubuki", "unified");
 mkdirSync(outRoot, { recursive: true });
 const args = new Set(Bun.argv.slice(2));
 
-type Asset = { player?: string; kind?: string; localPath?: string; sizeBytes?: number; sha256?: string; vfsPath?: string };
+type Asset = {
+  player?: string;
+  kind?: string;
+  localPath?: string;
+  sizeBytes?: number;
+  sha256?: string;
+  vfsPath?: string;
+};
 
 const readJson = async <T>(path: string): Promise<T> => Bun.file(path).json() as Promise<T>;
 const sha256 = async (path: string) => {
-
   const bytes = await Bun.file(path).arrayBuffer();
   return createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
 };
 
 const walk = (dir: string): string[] => {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
     const path = join(dir, entry.name);
     return entry.isDirectory() ? walk(path) : [path];
   });
@@ -39,14 +45,25 @@ const profile = await readJson<Record<string, unknown>>(join(ocRoot, "game", "co
 const identity = await readJson<Record<string, unknown>>(join(ocRoot, "game", "identity.json"));
 const seo = await readJson<Record<string, unknown>>(join(ocRoot, "seo.json"));
 const files = walk(refRoot);
-const counts = Object.fromEntries([...new Set(manifest.map((asset) => asset.kind ?? "unknown"))].map((kind) => [kind, manifest.filter((asset) => asset.kind === kind).length]));
-const players = Object.fromEntries([...new Set(manifest.map((asset) => asset.player ?? "unknown"))].map((player) => [player, manifest.filter((asset) => asset.player === player).length]));
-const missing = manifest.filter((asset) => !asset.localPath || !existsSync(asset.localPath));
+const counts = Object.fromEntries(
+  [...new Set(manifest.map(asset => asset.kind ?? "unknown"))].map(kind => [
+    kind,
+    manifest.filter(asset => asset.kind === kind).length,
+  ]),
+);
+const players = Object.fromEntries(
+  [...new Set(manifest.map(asset => asset.player ?? "unknown"))].map(player => [
+    player,
+    manifest.filter(asset => asset.player === player).length,
+  ]),
+);
+const missing = manifest.filter(asset => !asset.localPath || !existsSync(asset.localPath));
 const mismatched: Array<{ path: string; expected: string; actual: string }> = [];
 for (const asset of manifest) {
   if (!asset.localPath || !existsSync(asset.localPath) || !asset.sha256) continue;
   const actual = await sha256(asset.localPath);
-  if (actual.toLowerCase() !== asset.sha256.toLowerCase()) mismatched.push({ path: asset.localPath, expected: asset.sha256, actual });
+  if (actual.toLowerCase() !== asset.sha256.toLowerCase())
+    mismatched.push({ path: asset.localPath, expected: asset.sha256, actual });
 }
 
 const report = {
@@ -82,7 +99,24 @@ const report = {
 };
 
 await Bun.write(join(outRoot, "report.json"), JSON.stringify(report, null, 2));
-await Bun.write(join(outRoot, "manifest.json"), JSON.stringify({ schema: "nie.afubuki.derived-manifest/v1", source: "data/ref/afubuki/meta/manifest.json", outputs: [] }, null, 2));
+await Bun.write(
+  join(outRoot, "manifest.json"),
+  JSON.stringify(
+    { schema: "nie.afubuki.derived-manifest/v1", source: "data/ref/afubuki/meta/manifest.json", outputs: [] },
+    null,
+    2,
+  ),
+);
 
-console.log(JSON.stringify({ status: missing.length || mismatched.length ? "INCOMPLET" : "FAIT", report: relative(root, join(outRoot, "report.json")), entries: manifest.length, files: files.length, missing: missing.length, sha256_mismatches: mismatched.length, render_requested: args.has("--render") }));
+console.log(
+  JSON.stringify({
+    status: missing.length || mismatched.length ? "INCOMPLET" : "FAIT",
+    report: relative(root, join(outRoot, "report.json")),
+    entries: manifest.length,
+    files: files.length,
+    missing: missing.length,
+    sha256_mismatches: mismatched.length,
+    render_requested: args.has("--render"),
+  }),
+);
 if (missing.length || mismatched.length) process.exitCode = 2;

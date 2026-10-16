@@ -36,7 +36,14 @@ réponse (`succes`, `echec`, `vide`, `refus`). Aucune commande n'écrit une
 couleur, une émoji d'état ni une limite Discord en dur :
 
 ```ts
-import { differer, echec, fiche, piedDeCommande, rangeePagination, repondre } from "../lib/ui";
+import {
+  differer,
+  echec,
+  fiche,
+  piedDeCommande,
+  rangeePagination,
+  repondre,
+} from "../lib/ui";
 ```
 
 La charte complète (patron d'une commande, palette, règles de nommage, ce qui

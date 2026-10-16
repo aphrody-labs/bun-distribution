@@ -19,7 +19,7 @@ import { createPostgresAdapter } from "../src/push-adapter.ts";
 const db = createPostgresAdapter();
 await importConstellations(null, db)
   .then(() => db.close())
-  .catch((e) => {
+  .catch(e => {
     console.error("[push-constellations] échec :", e);
     process.exit(1);
   });

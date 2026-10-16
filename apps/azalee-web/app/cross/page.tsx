@@ -72,25 +72,14 @@ export default function CrossPage() {
       <div className="mb-6 rounded-xl border border-tertiary/30 bg-tertiary-container/40 px-4 py-3">
         <p className="type-body-medium text-on-tertiary-container">
           <span className="font-bold">À noter :</span> Inazuma Eleven Cross est un jeu mobile
-          <span className="font-bold"> distinct</span> d&apos;Inazuma Eleven: Victory Road (le jeu
-          console/PC couvert par le reste du wiki). Il est actuellement{" "}
-          <span className="font-bold">en pré-enregistrement</span>. Cette page est une{" "}
-          <span className="font-bold">traduction factuelle</span> du site officiel{" "}
-          <a
-            href={OFFICIAL_SITE}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
+          <span className="font-bold"> distinct</span> d&apos;Inazuma Eleven: Victory Road (le jeu console/PC couvert
+          par le reste du wiki). Il est actuellement <span className="font-bold">en pré-enregistrement</span>. Cette
+          page est une <span className="font-bold">traduction factuelle</span> du site officiel{" "}
+          <a href={OFFICIAL_SITE} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             inazuma-cross.jp
           </a>{" "}
           et des tweets de{" "}
-          <a
-            href={X_ACCOUNT}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
+          <a href={X_ACCOUNT} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
             @inazuma_cross
           </a>
           .
@@ -183,11 +172,7 @@ export default function CrossPage() {
             >
               {/* badge Apple = SVG officiel, rendu en <img> (Next/Image n'optimise pas le SVG). */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={localImages.badgeAppStore}
-                alt="Télécharger dans l'App Store"
-                className="h-[52px] w-auto"
-              />
+              <img src={localImages.badgeAppStore} alt="Télécharger dans l'App Store" className="h-[52px] w-auto" />
             </a>
             <a
               href={GOOGLE_PLAY}
@@ -245,20 +230,12 @@ export default function CrossPage() {
         {/* fond décoratif intro (parallaxe légère via Ken Burns lent) */}
         <div className="absolute inset-0 -z-10">
           <KenBurns className="absolute inset-0">
-            <Image
-              src={localImages.introBg}
-              alt=""
-              fill
-              sizes="100vw"
-              className="object-cover opacity-[0.08]"
-            />
+            <Image src={localImages.introBg} alt="" fill sizes="100vw" className="object-cover opacity-[0.08]" />
           </KenBurns>
         </div>
         <div className="p-1 sm:p-4">
           <Reveal>
-            <h2 className="type-headline-medium mb-1 font-bold text-primary">
-              {introduction.headingFr}
-            </h2>
+            <h2 className="type-headline-medium mb-1 font-bold text-primary">{introduction.headingFr}</h2>
             <p className="mb-6 type-body-small text-on-surface-variant/60">
               D&apos;après la section « INTRODUCTION » d&apos;inazuma-cross.jp
             </p>
@@ -267,9 +244,7 @@ export default function CrossPage() {
             <RevealGroup className="prose prose-lg max-w-none dark:prose-invert">
               {introduction.storyFr.split("Mais ").map((chunk, i) => (
                 <RevealChild key={i}>
-                  <p className="type-body-large text-on-surface-variant">
-                    {i === 0 ? chunk : `Mais ${chunk}`}
-                  </p>
+                  <p className="type-body-large text-on-surface-variant">{i === 0 ? chunk : `Mais ${chunk}`}</p>
                 </RevealChild>
               ))}
             </RevealGroup>
@@ -288,18 +263,12 @@ export default function CrossPage() {
                   <CardHeader>
                     <CardTitle className="type-title-large">
                       {protagonist.nameRomaji}
-                      <span className="ml-2 type-body-medium text-on-surface-variant">
-                        {protagonist.nameJa}
-                      </span>
+                      <span className="ml-2 type-body-medium text-on-surface-variant">{protagonist.nameJa}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Badge className="mb-3 bg-secondary-container text-on-secondary-container">
-                      Protagoniste
-                    </Badge>
-                    <p className="type-body-medium text-on-surface-variant">
-                      {protagonist.descriptionFr}
-                    </p>
+                    <Badge className="mb-3 bg-secondary-container text-on-secondary-container">Protagoniste</Badge>
+                    <p className="type-body-medium text-on-surface-variant">{protagonist.descriptionFr}</p>
                   </CardContent>
                 </Card>
               </Float>
@@ -322,7 +291,7 @@ export default function CrossPage() {
             ariaLabel="Vidéos officielles Inazuma Eleven Cross"
             itemClassName="w-[280px] sm:w-[360px]"
           >
-            {movies.youtube.map((m) => (
+            {movies.youtube.map(m => (
               <a
                 key={m.id}
                 href={`https://www.youtube.com/watch?v=${m.id}`}
@@ -345,9 +314,7 @@ export default function CrossPage() {
                   </span>
                 </div>
                 <div className="px-4 py-3">
-                  <span className="type-body-large text-on-surface group-hover:text-primary">
-                    {m.labelFr}
-                  </span>
+                  <span className="type-body-large text-on-surface group-hover:text-primary">{m.labelFr}</span>
                 </div>
               </a>
             ))}
@@ -381,13 +348,7 @@ export default function CrossPage() {
             <Card className="border-l-8 border-l-primary bg-surface-container-low shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 type-title-large">
-                  <Image
-                    src={localImages.appicon}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="size-10 rounded-lg"
-                  />
+                  <Image src={localImages.appicon} alt="" width={40} height={40} className="size-10 rounded-lg" />
                   Fiche technique
                 </CardTitle>
               </CardHeader>
@@ -402,9 +363,7 @@ export default function CrossPage() {
                   <dt className="type-label-large text-on-surface-variant">Modèle</dt>
                   <dd className="type-body-large text-on-surface">{spec.pricingFr}</dd>
                   <dt className="type-label-large text-on-surface-variant">Sortie</dt>
-                  <dd className="type-body-large text-on-surface">
-                    {formatFrDate(status.serviceStart)}
-                  </dd>
+                  <dd className="type-body-large text-on-surface">{formatFrDate(status.serviceStart)}</dd>
                   <dt className="type-label-large text-on-surface-variant">Studios</dt>
                   <dd className="type-body-large text-on-surface">{spec.developers.join(" × ")}</dd>
                 </dl>
@@ -497,13 +456,11 @@ export default function CrossPage() {
       {/* ===================== ACTUALITÉS / TWEETS RÉCENTS ===================== */}
       <section className="mb-12">
         <Reveal>
-          <h2 className="type-headline-medium mb-1 font-bold text-primary">
-            Actualités / Tweets récents
-          </h2>
+          <h2 className="type-headline-medium mb-1 font-bold text-primary">Actualités / Tweets récents</h2>
           <p className="mb-6 type-body-small text-on-surface-variant/60">{tweetsNote}</p>
         </Reveal>
         <RevealGroup className="grid grid-cols-1 gap-4 md:grid-cols-2" stagger={0.08}>
-          {tweets.map((t) => (
+          {tweets.map(t => (
             <RevealChild key={t.id}>
               <a
                 href={t.url}
@@ -515,9 +472,7 @@ export default function CrossPage() {
                   <span className="flex items-center gap-2 type-label-large text-primary">
                     <span className="font-bold">@inazuma_cross</span>
                   </span>
-                  <time className="type-label-medium text-on-surface-variant">
-                    {formatFrDate(t.date)}
-                  </time>
+                  <time className="type-label-medium text-on-surface-variant">{formatFrDate(t.date)}</time>
                 </div>
                 <p className="type-body-medium text-on-surface">{t.textFr}</p>
                 <span className="mt-1 inline-flex items-center gap-1 type-label-medium text-on-surface-variant group-hover:text-primary">
@@ -540,7 +495,7 @@ export default function CrossPage() {
         <Reveal>
           <Card className="bg-surface-container-low shadow-sm">
             <CardContent className="divide-y divide-outline-variant/20 p-0">
-              {news.map((item) => (
+              {news.map(item => (
                 <a
                   key={`${item.date}-${item.titleJa}`}
                   href={item.url}
@@ -548,9 +503,7 @@ export default function CrossPage() {
                   rel="noopener noreferrer"
                   className="flex flex-col gap-1 px-5 py-4 transition-colors hover:bg-surface-container-high sm:flex-row sm:items-center sm:gap-4"
                 >
-                  <time className="type-label-large shrink-0 text-primary">
-                    {formatFrDate(item.date)}
-                  </time>
+                  <time className="type-label-large shrink-0 text-primary">{formatFrDate(item.date)}</time>
                   <span className="type-body-large text-on-surface">{item.titleFr}</span>
                 </a>
               ))}
@@ -562,10 +515,7 @@ export default function CrossPage() {
       {/* ===================== COLLABORATION SAMURAI BLUE 2026 ===================== */}
       <section className="mb-12">
         {/* Key visual de la page spéciale */}
-        <Reveal
-          blur
-          className="mb-6 overflow-hidden rounded-3xl border-2 border-secondary/30 shadow-level-2"
-        >
+        <Reveal blur className="mb-6 overflow-hidden rounded-3xl border-2 border-secondary/30 shadow-level-2">
           <div className="relative aspect-[16/9] bg-[#0c1730]">
             <Image
               src={localImages.samuraiBlueKeyVisual}
@@ -577,9 +527,7 @@ export default function CrossPage() {
           </div>
         </Reveal>
         <Reveal>
-          <h2 className="type-headline-medium mb-1 font-bold text-primary">
-            {samuraiBlue2026.titleFr}
-          </h2>
+          <h2 className="type-headline-medium mb-1 font-bold text-primary">{samuraiBlue2026.titleFr}</h2>
           <p className="mb-6 type-body-small text-on-surface-variant/60">
             D&apos;après{" "}
             <a
@@ -596,9 +544,7 @@ export default function CrossPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
           <div>
             <Reveal>
-              <p className="mb-4 type-body-large text-on-surface-variant">
-                {samuraiBlue2026.leadFr}
-              </p>
+              <p className="mb-4 type-body-large text-on-surface-variant">{samuraiBlue2026.leadFr}</p>
               <p className="mb-4 type-body-medium text-on-surface-variant/80">
                 Période : {samuraiBlue2026.eventPeriodFr}
               </p>
@@ -607,7 +553,7 @@ export default function CrossPage() {
               </h3>
             </Reveal>
             <RevealGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2" stagger={0.12}>
-              {samuraiBlue2026.limitedCharacters.map((c) => (
+              {samuraiBlue2026.limitedCharacters.map(c => (
                 <RevealChild key={c.nameJa} blur>
                   <Card className="h-full overflow-hidden border-l-8 border-l-secondary bg-surface-container-low shadow-sm transition-transform hover:-translate-y-1 hover:shadow-level-2">
                     {c.image ? (
@@ -624,13 +570,7 @@ export default function CrossPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 type-title-medium">
                         {c.icon ? (
-                          <Image
-                            src={c.icon}
-                            alt=""
-                            width={28}
-                            height={28}
-                            className="size-7 rounded-full"
-                          />
+                          <Image src={c.icon} alt="" width={28} height={28} className="size-7 rounded-full" />
                         ) : null}
                         <Badge className="bg-primary text-on-primary">{c.position}</Badge>
                         {c.nameFr}
@@ -657,7 +597,7 @@ export default function CrossPage() {
                         </div>
                       ) : null}
                       <ul className="list-inside list-disc type-body-medium text-on-surface-variant">
-                        {c.skillsFr.map((s) => (
+                        {c.skillsFr.map(s => (
                           <li key={s}>{s}</li>
                         ))}
                       </ul>
@@ -667,12 +607,8 @@ export default function CrossPage() {
               ))}
             </RevealGroup>
             <Reveal>
-              <p className="mt-4 type-body-medium text-on-surface-variant">
-                {samuraiBlue2026.designNoteFr}
-              </p>
-              <p className="mt-1 type-body-small italic text-on-surface-variant/70">
-                {samuraiBlue2026.catchFr}
-              </p>
+              <p className="mt-4 type-body-medium text-on-surface-variant">{samuraiBlue2026.designNoteFr}</p>
+              <p className="mt-1 type-body-small italic text-on-surface-variant/70">{samuraiBlue2026.catchFr}</p>
             </Reveal>
           </div>
           <Reveal blur amount={0.2}>
@@ -694,12 +630,8 @@ export default function CrossPage() {
 
         {/* Slider des uniformes (wear item) — carousel comme le site */}
         <Reveal className="mt-8">
-          <h3 className="mb-3 type-title-medium font-bold text-on-surface">
-            {samuraiBlue2026.wearItem.headingFr}
-          </h3>
-          <p className="mb-4 type-body-medium text-on-surface-variant">
-            {samuraiBlue2026.wearItem.descriptionFr}
-          </p>
+          <h3 className="mb-3 type-title-medium font-bold text-on-surface">{samuraiBlue2026.wearItem.headingFr}</h3>
+          <p className="mb-4 type-body-medium text-on-surface-variant">{samuraiBlue2026.wearItem.descriptionFr}</p>
         </Reveal>
         <Reveal amount={0.15}>
           <Carousel
@@ -712,13 +644,7 @@ export default function CrossPage() {
                 key={src}
                 className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-container-high"
               >
-                <Image
-                  src={src}
-                  alt={`Uniforme ${i + 1}`}
-                  fill
-                  sizes="300px"
-                  className="object-cover"
-                />
+                <Image src={src} alt={`Uniforme ${i + 1}`} fill sizes="300px" className="object-cover" />
               </div>
             ))}
           </Carousel>
@@ -738,31 +664,21 @@ export default function CrossPage() {
                 />
               </div>
               <CardHeader>
-                <CardTitle className="type-title-small">
-                  {samuraiBlue2026.loginBonus.headingFr}
-                </CardTitle>
+                <CardTitle className="type-title-small">{samuraiBlue2026.loginBonus.headingFr}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="type-body-medium text-on-surface-variant">
-                  {samuraiBlue2026.loginBonus.descriptionFr}
-                </p>
-                <p className="mt-2 type-body-small text-on-surface-variant/70">
-                  {samuraiBlue2026.loginBonus.periodFr}
-                </p>
+                <p className="type-body-medium text-on-surface-variant">{samuraiBlue2026.loginBonus.descriptionFr}</p>
+                <p className="mt-2 type-body-small text-on-surface-variant/70">{samuraiBlue2026.loginBonus.periodFr}</p>
               </CardContent>
             </Card>
           </RevealChild>
           <RevealChild>
             <Card className="h-full bg-surface-container-low shadow-sm">
               <CardHeader>
-                <CardTitle className="type-title-small">
-                  {samuraiBlue2026.advertisement.headingFr}
-                </CardTitle>
+                <CardTitle className="type-title-small">{samuraiBlue2026.advertisement.headingFr}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="type-body-medium text-on-surface-variant">
-                  {samuraiBlue2026.advertisement.outdoorFr}
-                </p>
+                <p className="type-body-medium text-on-surface-variant">{samuraiBlue2026.advertisement.outdoorFr}</p>
                 <p className="mt-2 type-body-medium text-on-surface-variant">
                   {samuraiBlue2026.advertisement.adTruckFr}
                 </p>
@@ -788,9 +704,7 @@ export default function CrossPage() {
                 <CardTitle className="type-title-small">Affichage urbain</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="type-body-medium text-on-surface-variant">
-                  {samuraiBlue2026.advertisement.outdoorFr}
-                </p>
+                <p className="type-body-medium text-on-surface-variant">{samuraiBlue2026.advertisement.outdoorFr}</p>
               </CardContent>
             </Card>
           </RevealChild>
@@ -799,10 +713,7 @@ export default function CrossPage() {
 
       {/* ===================== RAPPORT BÊTA FERMÉE (CBT) ===================== */}
       <section className="mb-12">
-        <Reveal
-          blur
-          className="mb-6 overflow-hidden rounded-3xl border border-tertiary/30 shadow-level-1"
-        >
+        <Reveal blur className="mb-6 overflow-hidden rounded-3xl border border-tertiary/30 shadow-level-1">
           <div className="relative aspect-[16/7] bg-surface-container-high">
             <Image
               src={localImages.cbtBanner}
@@ -814,17 +725,10 @@ export default function CrossPage() {
           </div>
         </Reveal>
         <Reveal>
-          <h2 className="type-headline-medium mb-1 font-bold text-primary">
-            {cbtReport.headingFr}
-          </h2>
+          <h2 className="type-headline-medium mb-1 font-bold text-primary">{cbtReport.headingFr}</h2>
           <p className="mb-6 type-body-small text-on-surface-variant/60">
             D&apos;après{" "}
-            <a
-              href={cbtReport.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
-            >
+            <a href={cbtReport.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
               la page « cbt-report »
             </a>{" "}
             d&apos;inazuma-cross.jp
@@ -833,9 +737,7 @@ export default function CrossPage() {
         </Reveal>
 
         <Reveal>
-          <h3 className="mb-3 type-title-medium font-bold text-on-surface">
-            Contenus testés (modes de jeu)
-          </h3>
+          <h3 className="mb-3 type-title-medium font-bold text-on-surface">Contenus testés (modes de jeu)</h3>
         </Reveal>
         <RevealGroup className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2" stagger={0.1}>
           {cbtReport.modes.map((m, i) => (
@@ -845,7 +747,7 @@ export default function CrossPage() {
                   <div className="grid grid-cols-2 gap-px">
                     {[localImages.cbtScreenshots[i * 2], localImages.cbtScreenshots[i * 2 + 1]]
                       .filter(Boolean)
-                      .map((src) => (
+                      .map(src => (
                         <div key={src} className="relative aspect-[16/9] bg-surface-container-high">
                           <Image
                             src={src as string}
@@ -881,7 +783,7 @@ export default function CrossPage() {
           <Card className="bg-surface-container-low shadow-sm">
             <CardContent className="p-5">
               <ul className="list-inside list-disc space-y-2 type-body-medium text-on-surface-variant">
-                {cbtReport.plannedAdjustmentsFr.map((a) => (
+                {cbtReport.plannedAdjustmentsFr.map(a => (
                   <li key={a}>{a}</li>
                 ))}
               </ul>
@@ -923,8 +825,8 @@ export default function CrossPage() {
             Démonstrateur d'Assets & Preuve de Concept
           </h2>
           <p className="mb-6 type-body-small text-on-surface-variant/60">
-            Visualisation des ressources (images, rendus, structures 3D) extraites directement du
-            client de jeu Inazuma Eleven Cross
+            Visualisation des ressources (images, rendus, structures 3D) extraites directement du client de jeu Inazuma
+            Eleven Cross
           </p>
         </Reveal>
         <Reveal>
@@ -938,10 +840,7 @@ export default function CrossPage() {
           <h2 className="type-headline-medium mb-6 font-bold text-primary">Liens officiels</h2>
         </Reveal>
         {/* Bannières du footer du site officiel */}
-        <RevealGroup
-          className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
-          stagger={0.08}
-        >
+        <RevealGroup className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" stagger={0.08}>
           {[
             {
               src: localImages.footerBanners.youtube,
@@ -960,7 +859,7 @@ export default function CrossPage() {
               href: "https://www.inazuma.jp/victory-road/",
               label: "Victory Road",
             },
-          ].map((b) => (
+          ].map(b => (
             <RevealChild key={b.href}>
               <a
                 href={b.href}

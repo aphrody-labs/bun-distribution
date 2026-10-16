@@ -45,46 +45,50 @@ const TACHES_INTERDITES = new Set(["db", "crawl", "github-publish", "discord:bac
 
 /** Normalisation identique à celle du bot : `discord-backfill` ≡ `discord:backfill`. */
 function normaliserNomTache(nom: string): string {
-	return nom.trim().toLowerCase().replaceAll("-", ":").replace(/^github:/, "github-");
+  return nom
+    .trim()
+    .toLowerCase()
+    .replaceAll("-", ":")
+    .replace(/^github:/, "github-");
 }
 
 export interface RequeteIpc {
-	cmd?: string;
-	[clef: string]: unknown;
+  cmd?: string;
+  [clef: string]: unknown;
 }
 
 export interface ReponseIpc {
-	success: boolean;
-	error?: string;
-	code?: string;
-	[clef: string]: unknown;
+  success: boolean;
+  error?: string;
+  code?: string;
+  [clef: string]: unknown;
 }
 
 export interface EvenementIpc {
-	event: string;
-	[clef: string]: unknown;
+  event: string;
+  [clef: string]: unknown;
 }
 
 /** Ce que le démon doit fournir au pont. Aucune de ces fonctions n'est optionnelle par confort. */
 export interface DependancesIpc {
-	/** Métriques d'exécution (dont `lastExecution` par tâche). */
-	metriques: () => unknown;
-	/** Télémétrie Discord, ou `null` si la passerelle n'est pas prête. */
-	telemetrie: () => unknown;
-	/** Catalogue des tâches et leurs planifications. */
-	catalogue: () => { taches: string[]; schedules: Record<string, string> };
-	/** Lance une tâche. Renvoie `null` si le nom est inconnu du démon. */
-	lancerTache: (nom: string) => Promise<{ success: boolean; error?: string }> | null;
-	/** Publication d'une annonce Discord (l'équivalent local de `POST :3006/announce`). */
-	annoncer?: (charge: Record<string, unknown>) => Promise<{ ok: boolean; detail?: string }>;
+  /** Métriques d'exécution (dont `lastExecution` par tâche). */
+  metriques: () => unknown;
+  /** Télémétrie Discord, ou `null` si la passerelle n'est pas prête. */
+  telemetrie: () => unknown;
+  /** Catalogue des tâches et leurs planifications. */
+  catalogue: () => { taches: string[]; schedules: Record<string, string> };
+  /** Lance une tâche. Renvoie `null` si le nom est inconnu du démon. */
+  lancerTache: (nom: string) => Promise<{ success: boolean; error?: string }> | null;
+  /** Publication d'une annonce Discord (l'équivalent local de `POST :3006/announce`). */
+  annoncer?: (charge: Record<string, unknown>) => Promise<{ ok: boolean; detail?: string }>;
 }
 
 export interface PontIpc {
-	/** Diffuse un événement à tous les abonnés (le bot). Silencieux s'il n'y en a aucun. */
-	diffuser: (evenement: EvenementIpc) => void;
-	/** Nombre d'abonnés connectés. */
-	abonnes: () => number;
-	arreter: () => void;
+  /** Diffuse un événement à tous les abonnés (le bot). Silencieux s'il n'y en a aucun. */
+  diffuser: (evenement: EvenementIpc) => void;
+  /** Nombre d'abonnés connectés. */
+  abonnes: () => number;
+  arreter: () => void;
 }
 
 /**
@@ -103,220 +107,220 @@ export interface PontIpc {
 const tachesEnCours = new Map<string, number>();
 
 export function tacheEnCours(nom: string): boolean {
-	return tachesEnCours.has(normaliserNomTache(nom));
+  return tachesEnCours.has(normaliserNomTache(nom));
 }
 
 export function demarrerIpcUnix(deps: DependancesIpc): PontIpc {
-	const abonnes = new Set<Socket<undefined>>();
-	const tampons = new WeakMap<Socket<undefined>, string>();
+  const abonnes = new Set<Socket<undefined>>();
+  const tampons = new WeakMap<Socket<undefined>, string>();
 
-	try {
-		unlinkSync(CHEMIN_SOCKET_CRON);
-	} catch {
-		// Pas de socket résiduelle : c'est le cas nominal au premier démarrage.
-	}
+  try {
+    unlinkSync(CHEMIN_SOCKET_CRON);
+  } catch {
+    // Pas de socket résiduelle : c'est le cas nominal au premier démarrage.
+  }
 
-	function diffuser(evenement: EvenementIpc): void {
-		if (abonnes.size === 0) {
-			return;
-		}
-		const ligne = `${JSON.stringify(evenement)}\n`;
-		for (const socket of abonnes) {
-			try {
-				socket.write(ligne);
-			} catch {
-				abonnes.delete(socket);
-			}
-		}
-	}
+  function diffuser(evenement: EvenementIpc): void {
+    if (abonnes.size === 0) {
+      return;
+    }
+    const ligne = `${JSON.stringify(evenement)}\n`;
+    for (const socket of abonnes) {
+      try {
+        socket.write(ligne);
+      } catch {
+        abonnes.delete(socket);
+      }
+    }
+  }
 
-	async function repondreA(requete: RequeteIpc, socket: Socket<undefined>): Promise<ReponseIpc> {
-		const verbe = typeof requete.cmd === "string" ? requete.cmd : "";
+  async function repondreA(requete: RequeteIpc, socket: Socket<undefined>): Promise<ReponseIpc> {
+    const verbe = typeof requete.cmd === "string" ? requete.cmd : "";
 
-		switch (verbe) {
-			case "health": {
-				return { success: true, uptime: process.uptime(), abonnes: abonnes.size };
-			}
+    switch (verbe) {
+      case "health": {
+        return { success: true, uptime: process.uptime(), abonnes: abonnes.size };
+      }
 
-			case "subscribe": {
-				abonnes.add(socket);
-				return { success: true, subscribed: true };
-			}
+      case "subscribe": {
+        abonnes.add(socket);
+        return { success: true, subscribed: true };
+      }
 
-			case "tasks.list":
-			case "tasks.schedules": {
-				return { success: true, ...deps.catalogue() };
-			}
+      case "tasks.list":
+      case "tasks.schedules": {
+        return { success: true, ...deps.catalogue() };
+      }
 
-			case "metrics": {
-				return { success: true, metrics: deps.metriques() };
-			}
+      case "metrics": {
+        return { success: true, metrics: deps.metriques() };
+      }
 
-			case "telemetry.discord": {
-				const telemetrie = deps.telemetrie();
-				if (!telemetrie) {
-					return { success: false, error: "Télémétrie Discord indisponible.", code: "indisponible" };
-				}
-				return { success: true, telemetry: telemetrie };
-			}
+      case "telemetry.discord": {
+        const telemetrie = deps.telemetrie();
+        if (!telemetrie) {
+          return { success: false, error: "Télémétrie Discord indisponible.", code: "indisponible" };
+        }
+        return { success: true, telemetry: telemetrie };
+      }
 
-			case "task.status": {
-				const nom = typeof requete.nom === "string" ? requete.nom : "";
-				const metriques = deps.metriques() as { lastExecution?: Record<string, unknown> };
-				const derniere = metriques.lastExecution?.[nom] ?? null;
-				return { success: true, nom, derniere, enCours: tacheEnCours(nom) };
-			}
+      case "task.status": {
+        const nom = typeof requete.nom === "string" ? requete.nom : "";
+        const metriques = deps.metriques() as { lastExecution?: Record<string, unknown> };
+        const derniere = metriques.lastExecution?.[nom] ?? null;
+        return { success: true, nom, derniere, enCours: tacheEnCours(nom) };
+      }
 
-			case "task.run": {
-				return await lancer(requete);
-			}
+      case "task.run": {
+        return await lancer(requete);
+      }
 
-			case "announce": {
-				if (!deps.annoncer) {
-					return { success: false, error: "Annonce non branchée.", code: "indisponible" };
-				}
-				const resultat = await deps.annoncer(requete);
-				return { success: resultat.ok, error: resultat.ok ? undefined : resultat.detail };
-			}
+      case "announce": {
+        if (!deps.annoncer) {
+          return { success: false, error: "Annonce non branchée.", code: "indisponible" };
+        }
+        const resultat = await deps.annoncer(requete);
+        return { success: resultat.ok, error: resultat.ok ? undefined : resultat.detail };
+      }
 
-			default: {
-				// Verbes de scraping (`scrape.*`, `x.*`) : les moteurs
-				// `@aphrody/agent-browser` et `@aphrody/x` vivent ici, pas dans le
-				// bot, et n'y seront pas installés (le fichier de verrouillage doit
-				// rester en version 1). `servirVerbeScrape` ne lève jamais : il
-				// porte ses propres délais, ses propres plafonds de débit et rend
-				// toujours une réponse — un scraping ne peut donc pas arrêter le
-				// démon ni monopoliser la machine. Contrat détaillé en tête de
-				// `tasks/ie-crawl/scrape-service.ts`.
-				if (estVerbeScrape(verbe)) {
-					return await servirVerbeScrape(verbe, requete);
-				}
-				return { success: false, error: `Commande inconnue : « ${verbe} ».`, code: "verbe_inconnu" };
-			}
-		}
-	}
+      default: {
+        // Verbes de scraping (`scrape.*`, `x.*`) : les moteurs
+        // `@aphrody/agent-browser` et `@aphrody/x` vivent ici, pas dans le
+        // bot, et n'y seront pas installés (le fichier de verrouillage doit
+        // rester en version 1). `servirVerbeScrape` ne lève jamais : il
+        // porte ses propres délais, ses propres plafonds de débit et rend
+        // toujours une réponse — un scraping ne peut donc pas arrêter le
+        // démon ni monopoliser la machine. Contrat détaillé en tête de
+        // `tasks/ie-crawl/scrape-service.ts`.
+        if (estVerbeScrape(verbe)) {
+          return await servirVerbeScrape(verbe, requete);
+        }
+        return { success: false, error: `Commande inconnue : « ${verbe} ».`, code: "verbe_inconnu" };
+      }
+    }
+  }
 
-	async function lancer(requete: RequeteIpc): Promise<ReponseIpc> {
-		const demande = typeof requete.nom === "string" ? requete.nom : "";
-		const cle = normaliserNomTache(demande);
+  async function lancer(requete: RequeteIpc): Promise<ReponseIpc> {
+    const demande = typeof requete.nom === "string" ? requete.nom : "";
+    const cle = normaliserNomTache(demande);
 
-		if (TACHES_INTERDITES.has(cle)) {
-			console.warn(
-				`[ipc-unix] refus de « ${demande} » : tâche non déclenchable à distance (demandé par ${
-					typeof requete.discordId === "string" ? requete.discordId : "inconnu"
-				}).`
-			);
-			return {
-				success: false,
-				error: `La tâche « ${demande} » ne peut pas être déclenchée à distance.`,
-				code: "interdit",
-			};
-		}
-		if (tachesEnCours.has(cle)) {
-			const depuis = Date.now() - (tachesEnCours.get(cle) ?? Date.now());
-			return {
-				success: false,
-				error: `La tâche « ${demande} » tourne déjà (depuis ${Math.round(depuis / 1000)} s).`,
-				code: "deja_en_cours",
-			};
-		}
+    if (TACHES_INTERDITES.has(cle)) {
+      console.warn(
+        `[ipc-unix] refus de « ${demande} » : tâche non déclenchable à distance (demandé par ${
+          typeof requete.discordId === "string" ? requete.discordId : "inconnu"
+        }).`,
+      );
+      return {
+        success: false,
+        error: `La tâche « ${demande} » ne peut pas être déclenchée à distance.`,
+        code: "interdit",
+      };
+    }
+    if (tachesEnCours.has(cle)) {
+      const depuis = Date.now() - (tachesEnCours.get(cle) ?? Date.now());
+      return {
+        success: false,
+        error: `La tâche « ${demande} » tourne déjà (depuis ${Math.round(depuis / 1000)} s).`,
+        code: "deja_en_cours",
+      };
+    }
 
-		const execution = deps.lancerTache(demande);
-		if (!execution) {
-			return { success: false, error: `Tâche « ${demande} » inconnue.`, code: "inconnue" };
-		}
+    const execution = deps.lancerTache(demande);
+    if (!execution) {
+      return { success: false, error: `Tâche « ${demande} » inconnue.`, code: "inconnue" };
+    }
 
-		tachesEnCours.set(cle, Date.now());
-		const debut = Date.now();
-		console.info(
-			`[ipc-unix] lancement de « ${demande} » demandé par ${
-				typeof requete.discordId === "string" ? requete.discordId : "inconnu"
-			} (profil ${typeof requete.profileId === "string" ? requete.profileId : "inconnu"}).`
-		);
+    tachesEnCours.set(cle, Date.now());
+    const debut = Date.now();
+    console.info(
+      `[ipc-unix] lancement de « ${demande} » demandé par ${
+        typeof requete.discordId === "string" ? requete.discordId : "inconnu"
+      } (profil ${typeof requete.profileId === "string" ? requete.profileId : "inconnu"}).`,
+    );
 
-		// Volontairement SANS `await` ici : `executeTask` peut durer plusieurs
-		// minutes et l'appelant Discord n'a que 15 minutes de jeton d'interaction.
-		// Le résultat repart par `task.done` sur la connexion d'abonnement.
-		void (async () => {
-			let verdict: { success: boolean; error?: string };
-			try {
-				verdict = await execution;
-			} catch (err) {
-				verdict = { success: false, error: err instanceof Error ? err.message : String(err) };
-			}
-			tachesEnCours.delete(cle);
-			diffuser({
-				event: "task.done",
-				nom: demande,
-				success: verdict.success,
-				durationMs: Date.now() - debut,
-				error: verdict.error,
-			});
-		})();
+    // Volontairement SANS `await` ici : `executeTask` peut durer plusieurs
+    // minutes et l'appelant Discord n'a que 15 minutes de jeton d'interaction.
+    // Le résultat repart par `task.done` sur la connexion d'abonnement.
+    void (async () => {
+      let verdict: { success: boolean; error?: string };
+      try {
+        verdict = await execution;
+      } catch (err) {
+        verdict = { success: false, error: err instanceof Error ? err.message : String(err) };
+      }
+      tachesEnCours.delete(cle);
+      diffuser({
+        event: "task.done",
+        nom: demande,
+        success: verdict.success,
+        durationMs: Date.now() - debut,
+        error: verdict.error,
+      });
+    })();
 
-		return { success: true, demarree: true, nom: demande };
-	}
+    return { success: true, demarree: true, nom: demande };
+  }
 
-	const serveur = Bun.listen<undefined>({
-		unix: CHEMIN_SOCKET_CRON,
-		socket: {
-			async data(socket, donnees) {
-				let tampon = (tampons.get(socket) ?? "") + donnees.toString();
-				let coupure = tampon.indexOf("\n");
-				while (coupure >= 0) {
-					const ligne = tampon.slice(0, coupure).trim();
-					tampon = tampon.slice(coupure + 1);
-					coupure = tampon.indexOf("\n");
-					if (ligne.length === 0) {
-						continue;
-					}
-					let reponse: ReponseIpc;
-					try {
-						reponse = await repondreA(JSON.parse(ligne) as RequeteIpc, socket);
-					} catch (err) {
-						reponse = {
-							success: false,
-							error: err instanceof Error ? err.message : String(err),
-							code: "erreur_interne",
-						};
-					}
-					try {
-						socket.write(`${JSON.stringify(reponse)}\n`);
-					} catch {
-						/* connexion déjà fermée par l'appelant */
-					}
-				}
-				tampons.set(socket, tampon);
-			},
-			close(socket) {
-				abonnes.delete(socket);
-			},
-			error(socket, err) {
-				abonnes.delete(socket);
-				console.warn("[ipc-unix] connexion en erreur :", err.message);
-			},
-		},
-	});
+  const serveur = Bun.listen<undefined>({
+    unix: CHEMIN_SOCKET_CRON,
+    socket: {
+      async data(socket, donnees) {
+        let tampon = (tampons.get(socket) ?? "") + donnees.toString();
+        let coupure = tampon.indexOf("\n");
+        while (coupure >= 0) {
+          const ligne = tampon.slice(0, coupure).trim();
+          tampon = tampon.slice(coupure + 1);
+          coupure = tampon.indexOf("\n");
+          if (ligne.length === 0) {
+            continue;
+          }
+          let reponse: ReponseIpc;
+          try {
+            reponse = await repondreA(JSON.parse(ligne) as RequeteIpc, socket);
+          } catch (err) {
+            reponse = {
+              success: false,
+              error: err instanceof Error ? err.message : String(err),
+              code: "erreur_interne",
+            };
+          }
+          try {
+            socket.write(`${JSON.stringify(reponse)}\n`);
+          } catch {
+            /* connexion déjà fermée par l'appelant */
+          }
+        }
+        tampons.set(socket, tampon);
+      },
+      close(socket) {
+        abonnes.delete(socket);
+      },
+      error(socket, err) {
+        abonnes.delete(socket);
+        console.warn("[ipc-unix] connexion en erreur :", err.message);
+      },
+    },
+  });
 
-	try {
-		// 0600 : seul `ubuntu` — l'utilisateur des deux démons — peut s'y connecter.
-		chmodSync(CHEMIN_SOCKET_CRON, 0o600);
-	} catch (err) {
-		console.warn("[ipc-unix] chmod de la socket impossible :", err);
-	}
+  try {
+    // 0600 : seul `ubuntu` — l'utilisateur des deux démons — peut s'y connecter.
+    chmodSync(CHEMIN_SOCKET_CRON, 0o600);
+  } catch (err) {
+    console.warn("[ipc-unix] chmod de la socket impossible :", err);
+  }
 
-	console.info(`🔌 Pont IPC UNIX à l'écoute sur ${CHEMIN_SOCKET_CRON}`);
+  console.info(`🔌 Pont IPC UNIX à l'écoute sur ${CHEMIN_SOCKET_CRON}`);
 
-	return {
-		diffuser,
-		abonnes: () => abonnes.size,
-		arreter: () => {
-			serveur.stop(true);
-			try {
-				unlinkSync(CHEMIN_SOCKET_CRON);
-			} catch {
-				/* déjà retirée */
-			}
-		},
-	};
+  return {
+    diffuser,
+    abonnes: () => abonnes.size,
+    arreter: () => {
+      serveur.stop(true);
+      try {
+        unlinkSync(CHEMIN_SOCKET_CRON);
+      } catch {
+        /* déjà retirée */
+      }
+    },
+  };
 }

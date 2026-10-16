@@ -29,7 +29,7 @@ test("GPU startup orders input, avoids CPU frame transfers, and reports fallback
   const source = await build.outputs[0]!.text();
   const globals = globalThis as any;
   const names = ["self", "postMessage", "setTimeout", "clearTimeout", "__workerTest"];
-  const descriptors = names.map((name) => Object.getOwnPropertyDescriptor(globals, name));
+  const descriptors = names.map(name => Object.getOwnPropertyDescriptor(globals, name));
   const settle = async () => {
     for (let i = 0; i < 40; i++) await Promise.resolve();
   };
@@ -87,15 +87,9 @@ test("GPU startup orders input, avoids CPU frame transfers, and reports fallback
       expect(calls).toEqual(["enable", "input"]);
       timer();
       expect(calls.at(-1)).toBe(fails ? "cpu-frame" : "gpu-frame");
-      expect(messages.some((message) => message.type === EmuToUi.MessageType.RenderFrame)).toBe(
-        fails,
-      );
-      expect(messages.some((message) => message.type === EmuToUi.MessageType.StartRenderer)).toBe(
-        fails,
-      );
-      const fallback = messages.find(
-        (message) => message.type === EmuToUi.MessageType.RendererFallback,
-      );
+      expect(messages.some(message => message.type === EmuToUi.MessageType.RenderFrame)).toBe(fails);
+      expect(messages.some(message => message.type === EmuToUi.MessageType.StartRenderer)).toBe(fails);
+      const fallback = messages.find(message => message.type === EmuToUi.MessageType.RendererFallback);
       expect(Boolean(fallback)).toBe(fails);
       if (fallback?.type === EmuToUi.MessageType.RendererFallback) {
         expect(fallback.reason).toContain("Adapter unavailable");

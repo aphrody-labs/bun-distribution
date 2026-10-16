@@ -215,15 +215,9 @@ export interface AzaleeDataSource {
   /** Sonde de disponibilité et état des sources locales. */
   health(options?: AzaleeRequestOptions): Promise<AzaleeHealth>;
 
-  characters(
-    params?: AzaleeListParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleeCharacterList>;
+  characters(params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeCharacterList>;
   character(idOrSlug: string, options?: AzaleeRequestOptions): Promise<AzaleeCharacter>;
-  coordinators(
-    params?: AzaleeListParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleeCharacterList>;
+  coordinators(params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeCharacterList>;
 
   skills(params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeSkillList>;
   skill(id: string, options?: AzaleeRequestOptions): Promise<AzaleeSkill>;
@@ -231,11 +225,7 @@ export interface AzaleeDataSource {
   items(params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeItemList>;
   item(id: string, options?: AzaleeRequestOptions): Promise<AzaleeItem>;
 
-  auras(
-    type: string,
-    params?: AzaleeListParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleeAuraList>;
+  auras(type: string, params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeAuraList>;
   aura(type: string, id: string, options?: AzaleeRequestOptions): Promise<AzaleeAura>;
 
   tactics(params?: AzaleeListParams, options?: AzaleeRequestOptions): Promise<AzaleeTacticList>;
@@ -259,10 +249,7 @@ export interface AzaleeDataSource {
   trophies(params?: AzaleeTrophyParams, options?: AzaleeRequestOptions): Promise<AzaleeTrophyList>;
   trophy(id: string, options?: AzaleeRequestOptions): Promise<AzaleeTrophy>;
 
-  passives(
-    params?: AzaleePassiveParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleePassiveList>;
+  passives(params?: AzaleePassiveParams, options?: AzaleeRequestOptions): Promise<AzaleePassiveList>;
   passive(id: string, options?: AzaleeRequestOptions): Promise<AzaleePassive>;
 
   gallery(params?: AzaleeGalleryParams, options?: AzaleeRequestOptions): Promise<AzaleeGalleryList>;
@@ -273,10 +260,7 @@ export interface AzaleeDataSource {
   invocation(options?: AzaleeRequestOptions): Promise<AzaleeInvocation>;
 
   cpkList(params?: AzaleeCpkListParams, options?: AzaleeRequestOptions): Promise<AzaleeCpkListing>;
-  cpkSearch(
-    params: AzaleeCpkSearchParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleeCpkSearchResult>;
+  cpkSearch(params: AzaleeCpkSearchParams, options?: AzaleeRequestOptions): Promise<AzaleeCpkSearchResult>;
   cpkFile(path: string, options?: AzaleeRequestOptions): Promise<AzaleeCpkFileMeta>;
 
   text(params: AzaleeTextParams, options?: AzaleeRequestOptions): Promise<AzaleeTextResult>;
@@ -286,8 +270,5 @@ export interface AzaleeDataSource {
   crossTables(options?: AzaleeRequestOptions): Promise<AzaleeCrossTables>;
   crossStats(options?: AzaleeRequestOptions): Promise<AzaleeCrossStats>;
 
-  search(
-    params: AzaleeCrossSearchParams,
-    options?: AzaleeRequestOptions,
-  ): Promise<AzaleeSearchResult>;
+  search(params: AzaleeCrossSearchParams, options?: AzaleeRequestOptions): Promise<AzaleeSearchResult>;
 }

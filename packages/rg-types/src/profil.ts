@@ -73,15 +73,15 @@ const SCHEMAS_LIEN = new Set(["http:", "https:"]);
  * quelqu'un d'autre, dans sa propre session.
  */
 export const SchemaLienPublic = z
-	.string()
-	.url("URL invalide")
-	.refine((valeur) => {
-		try {
-			return SCHEMAS_LIEN.has(new URL(valeur).protocol);
-		} catch {
-			return false;
-		}
-	}, "Le lien doit commencer par http:// ou https://");
+  .string()
+  .url("URL invalide")
+  .refine(valeur => {
+    try {
+      return SCHEMAS_LIEN.has(new URL(valeur).protocol);
+    } catch {
+      return false;
+    }
+  }, "Le lien doit commencer par http:// ou https://");
 
 /**
  * Ce qu'une page de compte a le droit d'écrire sur `profiles`.
@@ -105,71 +105,67 @@ export type PosteProfil = (typeof POSTES_PROFIL)[number];
 
 /** Nom complet d'un poste, tel que le wiki le nomme. */
 export const LIBELLES_POSTES: Readonly<Record<PosteProfil, string>> = Object.freeze({
-	ATT: "Attaquant",
-	DEF: "Défenseur",
-	GAR: "Gardien",
-	MIL: "Milieu",
+  ATT: "Attaquant",
+  DEF: "Défenseur",
+  GAR: "Gardien",
+  MIL: "Milieu",
 });
 
 export const SchemaProfilPublic = z.object({
-	/**
-	 * Les badges inconnus sont ÉCARTÉS, pas refusés.
-	 *
-	 * Un `z.enum` strict paraît plus sûr, et c'est un piège : le catalogue change
-	 * (les cinq distinctions d'hier sont devenues les quatre éléments du jeu), et
-	 * les profils qui portaient un badge disparu renvoient cette valeur au premier
-	 * enregistrement — le formulaire répondait alors « Données invalides » sur un
-	 * champ que la personne ne voit même plus, sans aucun moyen de s'en sortir.
-	 * On filtre donc : ce qui n'est plus au catalogue s'efface en silence, et
-	 * l'enregistrement passe.
-	 */
-	badges: z
-		.array(z.string())
-		.max(MAX_BADGES_PROFIL)
-		.transform((liste) =>
-			liste.filter((badge): badge is BadgeProfil =>
-				(BADGES_PROFIL as readonly string[]).includes(badge)
-			)
-		),
-	banner_url: z.string().optional().or(z.literal("")),
-	/**
-	 * Cadrage vertical de la bannière, de 0 (haut de l'image) à 100 (bas).
-	 *
-	 * Une illustration du jeu fait 3840×2160 et la bannière n'en montre qu'une
-	 * bande : sans ce réglage, `object-cover` prenait toujours le centre, et un
-	 * visage placé dans le tiers supérieur se retrouvait coupé sans recours.
-	 * 50 reproduit exactement l'ancien comportement.
-	 */
-	banner_position: z.coerce.number().int().min(0).max(100).default(50),
-	/** Poste affiché sur la carte, ou rien. */
-	/**
-	 * Poste affiché sur la carte, ou rien.
-	 *
-	 * La chaîne vide est traduite en `null` : un `<select>` sans choix renvoie
-	 * `""`, que l'enum refuserait — le formulaire afficherait alors une erreur
-	 * sur un champ que l'on vient justement de vider.
-	 */
-	poste: z
-		.string()
-		.nullable()
-		.default(null)
-		// Même règle que les badges : ce qui n'est pas au catalogue est ÉCARTÉ, pas
-		// refusé. Un `<select>` vide renvoie `""`, et le jour où un poste
-		// disparaîtra du jeu, les profils qui le portaient doivent rester
-		// enregistrables.
-		.transform((valeur) =>
-			valeur && (POSTES_PROFIL as readonly string[]).includes(valeur)
-				? (valeur as PosteProfil)
-				: null
-		),
-	bio: z.string().max(MAX_BIO_PROFIL).optional(),
-	full_name: z.string().optional(),
-	twitter_handle: z.string().optional(),
-	username: z
-		.string()
-		.min(3, "Le nom d'utilisateur doit faire au moins 3 caractères.")
-		.max(20, "Le nom d'utilisateur ne peut pas dépasser 20 caractères."),
-	website: SchemaLienPublic.optional().or(z.literal("")),
+  /**
+   * Les badges inconnus sont ÉCARTÉS, pas refusés.
+   *
+   * Un `z.enum` strict paraît plus sûr, et c'est un piège : le catalogue change
+   * (les cinq distinctions d'hier sont devenues les quatre éléments du jeu), et
+   * les profils qui portaient un badge disparu renvoient cette valeur au premier
+   * enregistrement — le formulaire répondait alors « Données invalides » sur un
+   * champ que la personne ne voit même plus, sans aucun moyen de s'en sortir.
+   * On filtre donc : ce qui n'est plus au catalogue s'efface en silence, et
+   * l'enregistrement passe.
+   */
+  badges: z
+    .array(z.string())
+    .max(MAX_BADGES_PROFIL)
+    .transform(liste =>
+      liste.filter((badge): badge is BadgeProfil => (BADGES_PROFIL as readonly string[]).includes(badge)),
+    ),
+  banner_url: z.string().optional().or(z.literal("")),
+  /**
+   * Cadrage vertical de la bannière, de 0 (haut de l'image) à 100 (bas).
+   *
+   * Une illustration du jeu fait 3840×2160 et la bannière n'en montre qu'une
+   * bande : sans ce réglage, `object-cover` prenait toujours le centre, et un
+   * visage placé dans le tiers supérieur se retrouvait coupé sans recours.
+   * 50 reproduit exactement l'ancien comportement.
+   */
+  banner_position: z.coerce.number().int().min(0).max(100).default(50),
+  /** Poste affiché sur la carte, ou rien. */
+  /**
+   * Poste affiché sur la carte, ou rien.
+   *
+   * La chaîne vide est traduite en `null` : un `<select>` sans choix renvoie
+   * `""`, que l'enum refuserait — le formulaire afficherait alors une erreur
+   * sur un champ que l'on vient justement de vider.
+   */
+  poste: z
+    .string()
+    .nullable()
+    .default(null)
+    // Même règle que les badges : ce qui n'est pas au catalogue est ÉCARTÉ, pas
+    // refusé. Un `<select>` vide renvoie `""`, et le jour où un poste
+    // disparaîtra du jeu, les profils qui le portaient doivent rester
+    // enregistrables.
+    .transform(valeur =>
+      valeur && (POSTES_PROFIL as readonly string[]).includes(valeur) ? (valeur as PosteProfil) : null,
+    ),
+  bio: z.string().max(MAX_BIO_PROFIL).optional(),
+  full_name: z.string().optional(),
+  twitter_handle: z.string().optional(),
+  username: z
+    .string()
+    .min(3, "Le nom d'utilisateur doit faire au moins 3 caractères.")
+    .max(20, "Le nom d'utilisateur ne peut pas dépasser 20 caractères."),
+  website: SchemaLienPublic.optional().or(z.literal("")),
 });
 
 export type ProfilPublic = z.infer<typeof SchemaProfilPublic>;
@@ -177,7 +173,7 @@ export type ProfilPublicSaisi = z.input<typeof SchemaProfilPublic>;
 
 /** Un badge doit-il être mérité pour être ajouté ? */
 export function badgeMerite(badge: string): boolean {
-	return (BADGES_MERITES as readonly string[]).includes(badge);
+  return (BADGES_MERITES as readonly string[]).includes(badge);
 }
 
 /**
@@ -189,17 +185,17 @@ export function badgeMerite(badge: string): boolean {
  * effet de bord silencieux, et dans le sens le plus difficile à diagnostiquer.
  */
 export function filtrerBadges(
-	demandes: readonly string[],
-	droits: { estStaff: boolean; estMecene: boolean; dejaPoses: readonly string[] }
+  demandes: readonly string[],
+  droits: { estStaff: boolean; estMecene: boolean; dejaPoses: readonly string[] },
 ): string[] {
-	const deja = new Set(droits.dejaPoses);
-	return demandes.filter((badge) => {
-		if (!badgeMerite(badge)) {
-			return true;
-		}
-		if (deja.has(badge)) {
-			return true;
-		}
-		return badge === "staff" ? droits.estStaff : droits.estMecene;
-	});
+  const deja = new Set(droits.dejaPoses);
+  return demandes.filter(badge => {
+    if (!badgeMerite(badge)) {
+      return true;
+    }
+    if (deja.has(badge)) {
+      return true;
+    }
+    return badge === "staff" ? droits.estStaff : droits.estMecene;
+  });
 }

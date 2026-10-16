@@ -4,11 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  extendZodWithOpenApi,
-  OpenApiGeneratorV3,
-  OpenAPIRegistry,
-} from "@asteasolutions/zod-to-openapi";
+import { extendZodWithOpenApi, OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 // Étendre Zod avec les méthodes OpenAPI
@@ -38,9 +34,7 @@ export const HealthResponseSchema = registry.register(
       })
       .openapi({ description: "Utilisation de la mémoire du processus" }),
     time: z.string().datetime().openapi({ description: "Date et heure actuelle du serveur" }),
-    wsConnections: z
-      .number()
-      .openapi({ description: "Nombre de clients WebSocket connectés", example: 2 }),
+    wsConnections: z.number().openapi({ description: "Nombre de clients WebSocket connectés", example: 2 }),
   }),
 );
 
@@ -55,9 +49,7 @@ export const MetricsResponseSchema = registry.register(
   "MetricsResponse",
   z.object({
     startedAt: z.string().datetime().openapi({ description: "Heure de démarrage du daemon" }),
-    tasksTriggered: z
-      .number()
-      .openapi({ description: "Nombre total de tâches lancées", example: 42 }),
+    tasksTriggered: z.number().openapi({ description: "Nombre total de tâches lancées", example: 42 }),
     tasksSucceeded: z.number().openapi({ description: "Nombre de tâches réussies", example: 40 }),
     tasksFailed: z.number().openapi({ description: "Nombre de tâches en échec", example: 2 }),
     lastExecution: z.record(z.string(), LastExecutionItemSchema).openapi({
@@ -77,9 +69,7 @@ export const TasksResponseSchema = registry.register(
   "TasksResponse",
   z.object({
     tasks: z.array(z.string()).openapi({ description: "Liste des noms de tâches disponibles" }),
-    schedules: z
-      .record(z.string(), z.string())
-      .openapi({ description: "Planifications associées (Cron Expressions)" }),
+    schedules: z.record(z.string(), z.string()).openapi({ description: "Planifications associées (Cron Expressions)" }),
   }),
 );
 
@@ -182,8 +172,7 @@ export function getOpenApiDocument(): Record<string, any> {
     openapi: "3.0.0",
     info: {
       title: "Rose Griffon Cron Daemon API",
-      description:
-        "API de monitoring et d'administration du daemon de tâches planifiées (rg-cron).",
+      description: "API de monitoring et d'administration du daemon de tâches planifiées (rg-cron).",
       version: "1.0.0",
     },
     servers: [

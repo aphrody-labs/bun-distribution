@@ -26,39 +26,39 @@ import { decouperTexteDiscord, urlEmojiDiscord } from "@/lib/x-campagnes/discord
  * sont deux), sans avoir à choisir un camp.
  */
 export function TexteDiscord({ texte, className }: { texte: string; className?: string }) {
-	const morceaux = decouperTexteDiscord(texte);
+  const morceaux = decouperTexteDiscord(texte);
 
-	if (morceaux.length === 0) {
-		return null;
-	}
+  if (morceaux.length === 0) {
+    return null;
+  }
 
-	// Aucun émoji : on rend la chaîne telle quelle plutôt qu'un `<span>` par morceau.
-	if (morceaux.every((morceau) => morceau.type === "texte")) {
-		return <span className={className}>{texte}</span>;
-	}
+  // Aucun émoji : on rend la chaîne telle quelle plutôt qu'un `<span>` par morceau.
+  if (morceaux.every(morceau => morceau.type === "texte")) {
+    return <span className={className}>{texte}</span>;
+  }
 
-	return (
-		<span className={className}>
-			{morceaux.map((morceau, position) =>
-				morceau.type === "emoji" ? (
-					<img
-						// eslint-disable-next-line @next/next/no-img-element
-						key={`${morceau.id}-${position}`}
-						src={urlEmojiDiscord(morceau.id, morceau.anime)}
-						alt={`:${morceau.nom}:`}
-						width={20}
-						height={20}
-						loading="lazy"
-						decoding="async"
-						// `align-text-bottom` plutôt que `middle` : à hauteur de ligne serrée, un
-						// émoji centré verticalement pousse la ligne d'une paire de pixels et fait
-						// « respirer » le paragraphe de façon irrégulière.
-						className="inline-block size-5 align-text-bottom"
-					/>
-				) : (
-					<span key={`t-${position}`}>{morceau.valeur}</span>
-				)
-			)}
-		</span>
-	);
+  return (
+    <span className={className}>
+      {morceaux.map((morceau, position) =>
+        morceau.type === "emoji" ? (
+          <img
+            // eslint-disable-next-line @next/next/no-img-element
+            key={`${morceau.id}-${position}`}
+            src={urlEmojiDiscord(morceau.id, morceau.anime)}
+            alt={`:${morceau.nom}:`}
+            width={20}
+            height={20}
+            loading="lazy"
+            decoding="async"
+            // `align-text-bottom` plutôt que `middle` : à hauteur de ligne serrée, un
+            // émoji centré verticalement pousse la ligne d'une paire de pixels et fait
+            // « respirer » le paragraphe de façon irrégulière.
+            className="inline-block size-5 align-text-bottom"
+          />
+        ) : (
+          <span key={`t-${position}`}>{morceau.valeur}</span>
+        ),
+      )}
+    </span>
+  );
 }

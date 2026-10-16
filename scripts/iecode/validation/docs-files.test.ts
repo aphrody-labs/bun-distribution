@@ -24,10 +24,7 @@ test("documentation inventory excludes ignored notes, retains ignored tracked fi
     };
     git(["init", "--quiet"]);
     git(["add", "-f", "docs/private/tracked.md"]);
-    const files = documentationSourceFiles(root, [
-      "docs/history/expanded.md",
-      "docs/history/packed.md",
-    ]);
+    const files = documentationSourceFiles(root, ["docs/history/expanded.md", "docs/history/packed.md"]);
     expect(files).not.toContain("docs/private/local.md");
     expect(files).toContain("docs/private/tracked.md");
     expect(files).toContain("docs/current.md");

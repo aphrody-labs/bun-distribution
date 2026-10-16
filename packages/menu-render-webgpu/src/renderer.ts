@@ -16,12 +16,7 @@
  * exige un navigateur.
  */
 
-import type {
-  MenuLayout,
-  MenuObject,
-  MenuObjectOverride,
-  MenuText,
-} from "@rosegriffon/menu-render";
+import type { MenuLayout, MenuObject, MenuObjectOverride, MenuText } from "@rosegriffon/menu-render";
 import { blendForDrawType, type BlendState } from "./blend";
 import { renderTextBitmap, textCacheKey, type TextBitmap } from "./text-atlas";
 import { type GlyphAtlas, layoutText, parseFontMetrics } from "./glyph-atlas";
@@ -89,7 +84,7 @@ const SPRITE_RETRY_BACKOFF_MS = [200, 600];
 
 /** Attente non bloquante (no-op si pas de timer, ex. environnement de test). */
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -142,9 +137,7 @@ export async function fetchWithRetry(url: string, retries: number): Promise<Resp
     }
     if (attempt < retries) {
       await delay(
-        SPRITE_RETRY_BACKOFF_MS[attempt] ??
-          SPRITE_RETRY_BACKOFF_MS[SPRITE_RETRY_BACKOFF_MS.length - 1] ??
-          600,
+        SPRITE_RETRY_BACKOFF_MS[attempt] ?? SPRITE_RETRY_BACKOFF_MS[SPRITE_RETRY_BACKOFF_MS.length - 1] ?? 600,
       );
     }
   }
@@ -246,9 +239,7 @@ export function buildDrawList(
     if (obj.sprite) {
       items.push({ ...base, opacity: 1, kind: "sprite", pngUrl: obj.sprite.pngUrl });
     } else if (obj.text) {
-      const liveText =
-        ov?.text ??
-        (ov?.number !== undefined ? String(ov.number) : localizedTextValue(obj.text, lang));
+      const liveText = ov?.text ?? (ov?.number !== undefined ? String(ov.number) : localizedTextValue(obj.text, lang));
       items.push({
         ...base,
         opacity: 1,
@@ -270,7 +261,7 @@ export function buildDrawList(
   return items
     .map((item, i) => ({ item, i }))
     .sort((a, b) => a.item.drawPriority - b.item.drawPriority || a.i - b.i)
-    .map((e) => e.item);
+    .map(e => e.item);
 }
 
 /* ── instances de glyphes (logique pure, testable headless) ──────────────────── */
@@ -372,7 +363,7 @@ export function parseHexColor(hex: string): [number, number, number] {
   if (h.length === 3) {
     h = h
       .split("")
-      .map((c) => c + c)
+      .map(c => c + c)
       .join("");
   }
   const n = Number.parseInt(h, 16);
@@ -623,17 +614,9 @@ export class WebGpuMenuRenderer {
     const texture = this.device.createTexture({
       size: [1, 1, 1],
       format: "rgba8unorm",
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    this.device.queue.writeTexture(
-      { texture },
-      new Uint8Array([255, 255, 255, 255]),
-      { bytesPerRow: 4 },
-      [1, 1, 1],
-    );
+    this.device.queue.writeTexture({ texture }, new Uint8Array([255, 255, 255, 255]), { bytesPerRow: 4 }, [1, 1, 1]);
     const view = texture.createView();
     this.whiteTexture = {
       texture,
@@ -660,9 +643,7 @@ export class WebGpuMenuRenderer {
     }
     // Concurrence bornée : ne pas lancer N fetches d'un coup (le décodeur live du CDN
     // sature sous burst). Pool de `SPRITE_FETCH_CONCURRENCY` requêtes simultanées max.
-    await mapWithConcurrency([...urls], SPRITE_FETCH_CONCURRENCY, (pngUrl) =>
-      this.loadSpriteTexture(pngUrl),
-    );
+    await mapWithConcurrency([...urls], SPRITE_FETCH_CONCURRENCY, pngUrl => this.loadSpriteTexture(pngUrl));
   }
 
   private async loadSpriteTexture(pngUrl: string): Promise<void> {
@@ -706,10 +687,7 @@ export class WebGpuMenuRenderer {
     const texture = this.device.createTexture({
       size: [width, height, 1],
       format: "rgba8unorm",
-      usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
     this.device.queue.copyExternalImageToTexture({ source }, { texture }, [width, height]);
     const view = texture.createView();
@@ -729,10 +707,7 @@ export class WebGpuMenuRenderer {
   }
 
   /** Récupère (ou crée) la texture d'un label texte, mémoïsée par clé. */
-  private getTextTexture(
-    text: MenuText,
-    value: string,
-  ): { entry: TexEntry; bmp: TextBitmap } | null {
+  private getTextTexture(text: MenuText, value: string): { entry: TexEntry; bmp: TextBitmap } | null {
     const key = textCacheKey(text, value);
     const cached = this.textTextures.get(key);
     if (cached) {

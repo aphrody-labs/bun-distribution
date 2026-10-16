@@ -44,7 +44,7 @@ export interface DecodedTeamCode {
  * occupés. L'ordre des emplacements est conservé tel quel.
  */
 export function encodeTeamCode(formationId: string, slots: readonly TeamCodeSlot[]): string {
-  const parts = [formationId, ...slots.map((s) => `${s.slot}:${s.charaId}`)];
+  const parts = [formationId, ...slots.map(s => `${s.slot}:${s.charaId}`)];
   return utf8ToBase64(parts.join("|"));
 }
 

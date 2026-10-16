@@ -28,33 +28,33 @@ const POLICES_WEBSITE = `${PUBLIC_WEBSITE}/fonts`;
  * commune — c'est le NOM qui devait suivre le profil, pas la palette.
  */
 export const MARQUE_CANVAS = {
-	/** Surtitre de l'en-tête, en capitales. */
-	surtitre: profilActif().titre.toUpperCase(),
-	/** Domaine affiché en pied de carte. */
-	domaine: profilActif().marque.piedDePage,
+  /** Surtitre de l'en-tête, en capitales. */
+  surtitre: profilActif().titre.toUpperCase(),
+  /** Domaine affiché en pied de carte. */
+  domaine: profilActif().marque.piedDePage,
 } as const;
 
 /** Mascottes et logos servis par le site, réutilisés tels quels sur les cartes. */
 export const VISUELS = {
-	griffon: `${PUBLIC_WEBSITE}/RG_Logo_V2.5.webp`,
-	emote: `${PUBLIC_WEBSITE}/emote.webp`,
-	royCarte: `${PUBLIC_WEBSITE}/RG_roy_LC.webp`,
-	azalee: `${PUBLIC_WEBSITE}/RG_Azalee-logo.webp`,
+  griffon: `${PUBLIC_WEBSITE}/RG_Logo_V2.5.webp`,
+  emote: `${PUBLIC_WEBSITE}/emote.webp`,
+  royCarte: `${PUBLIC_WEBSITE}/RG_roy_LC.webp`,
+  azalee: `${PUBLIC_WEBSITE}/RG_Azalee-logo.webp`,
 } as const;
 
 let policesChargees = false;
 
 /** Enregistre les polices de marque. Idempotent, sûr à appeler avant chaque rendu. */
 export function ensureFonts(): void {
-	if (policesChargees) return;
-	try {
-		GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/Super Cartoon.ttf`, "SuperCartoon");
-		GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/DEFAULT_BradBunR.ttf`, "BradBunR");
-		GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/Autre police/aklatan.ttf`, "Aklatan");
-	} catch (err) {
-		console.warn("[canvas] enregistrement des polices impossible :", err);
-	}
-	policesChargees = true;
+  if (policesChargees) return;
+  try {
+    GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/Super Cartoon.ttf`, "SuperCartoon");
+    GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/DEFAULT_BradBunR.ttf`, "BradBunR");
+    GlobalFonts.registerFromPath(`${POLICES_WEBSITE}/Autre police/aklatan.ttf`, "Aklatan");
+  } catch (err) {
+    console.warn("[canvas] enregistrement des polices impossible :", err);
+  }
+  policesChargees = true;
 }
 
 /**
@@ -68,19 +68,19 @@ export function ensureFonts(): void {
 const SECOURS = `"Droid Sans Fallback", "DejaVu Sans", sans-serif`;
 
 export const POLICES = {
-	/** Titres cartoon — la police display de la DA. */
-	display: `"SuperCartoon", ${SECOURS}`,
-	/** Texte courant. */
-	corps: `BradBunR, ${SECOURS}`,
+  /** Titres cartoon — la police display de la DA. */
+  display: `"SuperCartoon", ${SECOURS}`,
+  /** Texte courant. */
+  corps: `BradBunR, ${SECOURS}`,
 } as const;
 
 /** Fabrique une déclaration `font` Canvas 2D. */
 export function police(
-	famille: (typeof POLICES)[keyof typeof POLICES],
-	taille: number,
-	graisse: "normal" | "bold" = "normal"
+  famille: (typeof POLICES)[keyof typeof POLICES],
+  taille: number,
+  graisse: "normal" | "bold" = "normal",
 ): string {
-	return `${graisse === "bold" ? "bold " : ""}${taille}px ${famille}`;
+  return `${graisse === "bold" ? "bold " : ""}${taille}px ${famille}`;
 }
 
 const ROY = THEMES["theme-roy"];
@@ -95,41 +95,41 @@ const AZALEE_SOMBRE = THEMES["theme-azalee-dark"];
  * surface claire.
  */
 export const PALETTE = {
-	/** Fond général des images. */
-	fond: MARQUE.marine,
-	fondClair: MARQUE.marineClair,
-	/** Or des bordures et des filets. */
-	or: MARQUE.griffon,
-	/** Rouge brique de l'association. */
-	brique: MARQUE.brique,
-	briqueClair: MARQUE.briqueClair,
-	/** Orange Azalée — accent secondaire. */
-	azalee: "#F89C5A",
-	azaleeVif: AZALEE_SOMBRE.md3.primary,
-	/** Texte posé sur le marine. */
-	surFond: MARQUE.surMarine,
-	/** Surface des cartes et texte associé. */
-	carte: ROY.md3.surfaceContainerLowest,
-	carteAlt: ROY.md3.surfaceContainerLow,
-	carteCreuse: ROY.md3.surfaceContainerHigh,
-	texte: ROY.md3.onSurface,
-	texteAttenue: ROY.md3.onSurfaceVariant,
-	/** Textes posés sur les pastilles. */
-	surOr: ROY.md3.onPrimary,
-	surBrique: ROY.md3.onSecondary,
-	/** Filets discrets à l'intérieur des cartes. */
-	filet: ROY.md3.outlineVariant,
-	/** Noir des ombres dures et des contours de titre. */
-	ombre: ROY.md3.shadow,
+  /** Fond général des images. */
+  fond: MARQUE.marine,
+  fondClair: MARQUE.marineClair,
+  /** Or des bordures et des filets. */
+  or: MARQUE.griffon,
+  /** Rouge brique de l'association. */
+  brique: MARQUE.brique,
+  briqueClair: MARQUE.briqueClair,
+  /** Orange Azalée — accent secondaire. */
+  azalee: "#F89C5A",
+  azaleeVif: AZALEE_SOMBRE.md3.primary,
+  /** Texte posé sur le marine. */
+  surFond: MARQUE.surMarine,
+  /** Surface des cartes et texte associé. */
+  carte: ROY.md3.surfaceContainerLowest,
+  carteAlt: ROY.md3.surfaceContainerLow,
+  carteCreuse: ROY.md3.surfaceContainerHigh,
+  texte: ROY.md3.onSurface,
+  texteAttenue: ROY.md3.onSurfaceVariant,
+  /** Textes posés sur les pastilles. */
+  surOr: ROY.md3.onPrimary,
+  surBrique: ROY.md3.onSecondary,
+  /** Filets discrets à l'intérieur des cartes. */
+  filet: ROY.md3.outlineVariant,
+  /** Noir des ombres dures et des contours de titre. */
+  ombre: ROY.md3.shadow,
 } as const;
 
 /** Rayons d'arrondi — échelle de formes M3 partagée. */
 export const RAYONS = {
-	xs: FORMES.extraSmall,
-	sm: FORMES.small,
-	md: FORMES.medium,
-	lg: FORMES.large,
-	xl: FORMES.extraLarge,
+  xs: FORMES.extraSmall,
+  sm: FORMES.small,
+  md: FORMES.medium,
+  lg: FORMES.large,
+  xl: FORMES.extraLarge,
 } as const;
 
 /**
@@ -147,24 +147,24 @@ export const MARGE = 40;
 // ─── Contraste ─────────────────────────────────────────────────────────────
 
 function canalLineaire(octet: number): number {
-	const c = octet / 255;
-	return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  const c = octet / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
 /** Luminance relative WCAG d'une couleur `#rrggbb`. */
 export function luminance(hex: string): number {
-	const n = hex.replace("#", "");
-	const r = Number.parseInt(n.slice(0, 2), 16);
-	const v = Number.parseInt(n.slice(2, 4), 16);
-	const b = Number.parseInt(n.slice(4, 6), 16);
-	return 0.2126 * canalLineaire(r) + 0.7152 * canalLineaire(v) + 0.0722 * canalLineaire(b);
+  const n = hex.replace("#", "");
+  const r = Number.parseInt(n.slice(0, 2), 16);
+  const v = Number.parseInt(n.slice(2, 4), 16);
+  const b = Number.parseInt(n.slice(4, 6), 16);
+  return 0.2126 * canalLineaire(r) + 0.7152 * canalLineaire(v) + 0.0722 * canalLineaire(b);
 }
 
 /** Rapport de contraste WCAG entre deux couleurs `#rrggbb` (1 → 21). */
 export function contraste(premier: string, second: string): number {
-	const a = luminance(premier);
-	const b = luminance(second);
-	return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const a = luminance(premier);
+  const b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
 /**
@@ -174,20 +174,20 @@ export function contraste(premier: string, second: string): number {
  * en gras, ce qui est le cas de tous les titres cartoon).
  */
 export const PAIRES_CONTRASTE = [
-	{ role: "texte de carte", texte: PALETTE.texte, fond: PALETTE.carte, min: 4.5 },
-	{ role: "texte atténué de carte", texte: PALETTE.texteAttenue, fond: PALETTE.carte, min: 4.5 },
-	{ role: "texte de carte alternée", texte: PALETTE.texte, fond: PALETTE.carteAlt, min: 4.5 },
-	{
-		role: "texte atténué sur carte alternée",
-		texte: PALETTE.texteAttenue,
-		fond: PALETTE.carteAlt,
-		min: 4.5,
-	},
-	{ role: "état vide", texte: PALETTE.texteAttenue, fond: PALETTE.carteCreuse, min: 4.5 },
-	{ role: "titre sur marine", texte: PALETTE.surFond, fond: PALETTE.fond, min: 3 },
-	{ role: "sous-titre sur marine", texte: PALETTE.or, fond: PALETTE.fond, min: 4.5 },
-	{ role: "pied de page", texte: PALETTE.or, fond: PALETTE.fond, min: 4.5 },
-	{ role: "pastille or", texte: PALETTE.surOr, fond: PALETTE.or, min: 4.5 },
-	{ role: "pastille brique", texte: PALETTE.surBrique, fond: PALETTE.brique, min: 4.5 },
-	{ role: "en-tête brique", texte: PALETTE.surFond, fond: PALETTE.brique, min: 3 },
+  { role: "texte de carte", texte: PALETTE.texte, fond: PALETTE.carte, min: 4.5 },
+  { role: "texte atténué de carte", texte: PALETTE.texteAttenue, fond: PALETTE.carte, min: 4.5 },
+  { role: "texte de carte alternée", texte: PALETTE.texte, fond: PALETTE.carteAlt, min: 4.5 },
+  {
+    role: "texte atténué sur carte alternée",
+    texte: PALETTE.texteAttenue,
+    fond: PALETTE.carteAlt,
+    min: 4.5,
+  },
+  { role: "état vide", texte: PALETTE.texteAttenue, fond: PALETTE.carteCreuse, min: 4.5 },
+  { role: "titre sur marine", texte: PALETTE.surFond, fond: PALETTE.fond, min: 3 },
+  { role: "sous-titre sur marine", texte: PALETTE.or, fond: PALETTE.fond, min: 4.5 },
+  { role: "pied de page", texte: PALETTE.or, fond: PALETTE.fond, min: 4.5 },
+  { role: "pastille or", texte: PALETTE.surOr, fond: PALETTE.or, min: 4.5 },
+  { role: "pastille brique", texte: PALETTE.surBrique, fond: PALETTE.brique, min: 4.5 },
+  { role: "en-tête brique", texte: PALETTE.surFond, fond: PALETTE.brique, min: 3 },
 ] as const;

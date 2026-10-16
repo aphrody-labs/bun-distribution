@@ -13,11 +13,7 @@
  */
 
 import { Database } from "bun:sqlite";
-import {
-  createBunPgClient,
-  type BunPgClient,
-  type BunPgQueryResult,
-} from "@rosegriffon/db/bun-sql";
+import { createBunPgClient, type BunPgClient, type BunPgQueryResult } from "@rosegriffon/db/bun-sql";
 
 import { resolveMirrorPath } from "../config";
 
@@ -127,7 +123,7 @@ export function renderAsciiTable(rows: readonly TableRow[]): string {
   if (!rows || rows.length === 0) return "Aucun résultat (0 ligne).";
   const keys = Object.keys(rows[0]);
 
-  const stringifiedRows = rows.map((row) => {
+  const stringifiedRows = rows.map(row => {
     const newRow: Record<string, string> = {};
     for (const key of keys) {
       const val = row[key];
@@ -145,15 +141,15 @@ export function renderAsciiTable(rows: readonly TableRow[]): string {
     return newRow;
   });
 
-  const colWidths = keys.map((k) => Math.max(k.length, ...stringifiedRows.map((r) => r[k].length)));
+  const colWidths = keys.map(k => Math.max(k.length, ...stringifiedRows.map(r => r[k].length)));
 
-  const topBorder = "┌─" + colWidths.map((w) => "─".repeat(w)).join("─┬─") + "─┐";
+  const topBorder = "┌─" + colWidths.map(w => "─".repeat(w)).join("─┬─") + "─┐";
   const headerLine = "│ " + keys.map((k, i) => k.padEnd(colWidths[i])).join(" │ ") + " │";
-  const midBorder = "├─" + colWidths.map((w) => "─".repeat(w)).join("─┼─") + "─┤";
-  const bottomBorder = "└─" + colWidths.map((w) => "─".repeat(w)).join("─┴─") + "─┘";
+  const midBorder = "├─" + colWidths.map(w => "─".repeat(w)).join("─┼─") + "─┤";
+  const bottomBorder = "└─" + colWidths.map(w => "─".repeat(w)).join("─┴─") + "─┘";
 
   const formattedRows = stringifiedRows.map(
-    (r) => "│ " + keys.map((k, i) => r[k].padEnd(colWidths[i])).join(" │ ") + " │",
+    r => "│ " + keys.map((k, i) => r[k].padEnd(colWidths[i])).join(" │ ") + " │",
   );
 
   return [topBorder, headerLine, midBorder, ...formattedRows, bottomBorder].join("\n");

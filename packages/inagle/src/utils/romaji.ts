@@ -75,7 +75,7 @@ export async function toRomajiTitleCase(text: string): Promise<string> {
   return rawRomaji
     .split(/[・\s]+/)
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(part.length > 1 ? 1 : 0).toLowerCase())
+    .map(part => part.charAt(0).toUpperCase() + part.slice(part.length > 1 ? 1 : 0).toLowerCase())
     .join(" ");
 }
 

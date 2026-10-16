@@ -151,8 +151,7 @@ async function main() {
       dbNameEn.includes(zukanFirst);
 
     const posMismatch = z.position && db.position && normPos(z.position) !== normPos(db.position);
-    const elemMismatch =
-      !isMixiMax && z.element && db.element && normElem(z.element) !== normElem(db.element);
+    const elemMismatch = !isMixiMax && z.element && db.element && normElem(z.element) !== normElem(db.element);
     const zGender = z.gender === "Male" ? "M" : z.gender === "Female" ? "F" : null;
     const genderMismatch = zGender && db.gender && zGender !== db.gender;
 
@@ -199,9 +198,9 @@ async function main() {
 
     if (reasons.length > 0) {
       mismatches.push({
-        type: reasons.some((r) => r.startsWith("NAME"))
+        type: reasons.some(r => r.startsWith("NAME"))
           ? "NAME_MISMATCH"
-          : reasons.some((r) => r.startsWith("GENDER"))
+          : reasons.some(r => r.startsWith("GENDER"))
             ? "GENDER_MISMATCH"
             : "ATTR_MISMATCH",
         dbId: db.id,
@@ -234,17 +233,16 @@ async function main() {
     const isStatsInverted = m.statCorrelation !== undefined && m.statCorrelation < 0;
     const problems: string[] = [];
     if (isStatsInverted) problems.push(`Stats inversées (corr=${m.statCorrelation!.toFixed(2)})`);
-    if (m.reasons.some((r) => r.startsWith("ERA"))) problems.push(`Ère`);
-    if (m.reasons.some((r) => r.startsWith("NAME")))
-      problems.push(`Nom: DB="${m.dbName}" image="${m.zukanName}"`);
-    if (m.reasons.some((r) => r.startsWith("POS"))) problems.push(`Position`);
-    if (m.reasons.some((r) => r.startsWith("ELEM"))) problems.push(`Élément`);
+    if (m.reasons.some(r => r.startsWith("ERA"))) problems.push(`Ère`);
+    if (m.reasons.some(r => r.startsWith("NAME"))) problems.push(`Nom: DB="${m.dbName}" image="${m.zukanName}"`);
+    if (m.reasons.some(r => r.startsWith("POS"))) problems.push(`Position`);
+    if (m.reasons.some(r => r.startsWith("ELEM"))) problems.push(`Élément`);
 
     const category = isStatsInverted
       ? "stats_inverted"
-      : m.reasons.some((r) => r.startsWith("ERA"))
+      : m.reasons.some(r => r.startsWith("ERA"))
         ? "era_mismatch"
-        : m.reasons.some((r) => r.startsWith("NAME"))
+        : m.reasons.some(r => r.startsWith("NAME"))
           ? "name_mismatch"
           : "attribute_mismatch";
     const severity = isStatsInverted ? ("high" as const) : ("medium" as const);
@@ -270,7 +268,7 @@ async function main() {
     if (names.size <= 1) continue;
     dupHashGroups++;
     jsonIssues.push({
-      code: rows.find((r) => r.zukan_hash === hash)?.id || "",
+      code: rows.find(r => r.zukan_hash === hash)?.id || "",
       hash,
       dbNameEn: [...names].join(" / "),
       severity: "medium",
@@ -279,8 +277,8 @@ async function main() {
     });
   }
 
-  const highCount = jsonIssues.filter((i) => i.severity === "high").length;
-  const mediumCount = jsonIssues.filter((i) => i.severity === "medium").length;
+  const highCount = jsonIssues.filter(i => i.severity === "high").length;
+  const mediumCount = jsonIssues.filter(i => i.severity === "medium").length;
   const byCat: Record<string, number> = {};
   for (const i of jsonIssues) byCat[i.category] = (byCat[i.category] || 0) + 1;
 

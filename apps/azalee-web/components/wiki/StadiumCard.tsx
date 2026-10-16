@@ -54,9 +54,7 @@ export function StadiumCard({ id, code, title, index, thumb, className }: Stadiu
       </div>
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-            Stade
-          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Stade</span>
           {typeof index === "number" && (
             <span className="text-[10px] font-mono text-on-surface-variant/50">#{index}</span>
           )}
@@ -64,9 +62,7 @@ export function StadiumCard({ id, code, title, index, thumb, className }: Stadiu
         <h3 className="line-clamp-1 text-sm font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
           {title}
         </h3>
-        <p className="mt-0.5 line-clamp-1 font-mono text-[10px] text-on-surface-variant/50">
-          {code}
-        </p>
+        <p className="mt-0.5 line-clamp-1 font-mono text-[10px] text-on-surface-variant/50">{code}</p>
       </div>
     </Link>
   );

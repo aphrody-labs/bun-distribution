@@ -248,11 +248,7 @@ export function parseTextures(data: Uint8Array): G4txTexture[] {
     let mipMapCount = 0;
 
     if (textureData.length >= 4) {
-      const texView = new DataView(
-        textureData.buffer,
-        textureData.byteOffset,
-        textureData.byteLength,
-      );
+      const texView = new DataView(textureData.buffer, textureData.byteOffset, textureData.byteLength);
       const texMagic = texView.getUint32(0, true);
 
       if (texMagic === DDS_MAGIC) {
@@ -369,8 +365,7 @@ function createDdsHeader(nxtchHeader: NxtchHeader): Uint8Array {
   view.setInt32(16, nxtchHeader.width, true);
 
   // Calculate pitch
-  const isPitchBC1 =
-    nxtchHeader.format === NxtchTextureFormat.BC1 || nxtchHeader.format === NxtchTextureFormat.BC4;
+  const isPitchBC1 = nxtchHeader.format === NxtchTextureFormat.BC1 || nxtchHeader.format === NxtchTextureFormat.BC4;
   const pitchOrLinearSize = isPitchBC1
     ? Math.max(1, Math.floor((nxtchHeader.width + 3) / 4)) * 8
     : Math.max(1, Math.floor((nxtchHeader.width + 3) / 4)) * 16;
@@ -462,13 +457,13 @@ export function getG4txInfo(data: Uint8Array): G4txInfo {
   return {
     textureCount: header.textureCount,
     subTextureCount: header.subTextureCount,
-    textures: textures.map((t) => ({
+    textures: textures.map(t => ({
       name: t.name,
       width: t.width,
       height: t.height,
       format: getFormatName(t.format),
       isDds: t.isDds,
-      subTextures: t.subTextures.map((s) => ({
+      subTextures: t.subTextures.map(s => ({
         name: s.name,
         x: s.x,
         y: s.y,

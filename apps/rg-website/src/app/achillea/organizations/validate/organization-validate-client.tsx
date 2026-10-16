@@ -20,9 +20,7 @@ export default function OrganizationsPendingValidationPage() {
     user?.role,
   ]);
   if (
-    [authLoading, isAuthenticated, user?.role].some(
-      (value, position) => !Object.is(value, requestIdentity1[position]),
-    )
+    [authLoading, isAuthenticated, user?.role].some((value, position) => !Object.is(value, requestIdentity1[position]))
   ) {
     setRequestIdentity1([authLoading, isAuthenticated, user?.role]);
     (() => {
@@ -39,7 +37,7 @@ export default function OrganizationsPendingValidationPage() {
 
     client.organizations
       .list({ page: 1, pagination: 50, state: OrganizationState.Pending })
-      .then((res) => {
+      .then(res => {
         if (cancelled) return;
         if (res.ok) {
           setOrgs(res.value.data);
@@ -48,7 +46,7 @@ export default function OrganizationsPendingValidationPage() {
           signalerException("organizations/validate", new Error(`${res.kind}: ${res.detail}`));
         }
       })
-      .catch((cause) => {
+      .catch(cause => {
         if (cancelled) return;
         setLoadError("Impossible de charger la file de validation des organisations.");
         signalerException("organizations/validate", cause);
@@ -88,9 +86,7 @@ export default function OrganizationsPendingValidationPage() {
       ) : !isAuthenticated ? (
         <div className="py-16 text-center space-y-4">
           <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto" />
-          <p className="text-sm text-muted-foreground">
-            Connectez-vous pour accéder à cette file de validation.
-          </p>
+          <p className="text-sm text-muted-foreground">Connectez-vous pour accéder à cette file de validation.</p>
           <button
             type="button"
             onClick={() => login("/achillea/organizations/validate")}
@@ -102,9 +98,7 @@ export default function OrganizationsPendingValidationPage() {
       ) : (user?.role ?? 0) < 2 ? (
         <div className="py-16 text-center space-y-3">
           <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto" />
-          <p className="text-sm text-muted-foreground">
-            Cette file est réservée aux administrateurs.
-          </p>
+          <p className="text-sm text-muted-foreground">Cette file est réservée aux administrateurs.</p>
         </div>
       ) : loading ? (
         <div className="py-20 text-center space-y-3">
@@ -131,7 +125,7 @@ export default function OrganizationsPendingValidationPage() {
         </div>
       ) : (
         <div className="divide-y divide-border border border-border rounded-2xl bg-card overflow-hidden">
-          {orgs.map((org) => (
+          {orgs.map(org => (
             <div key={org.id ?? org.name} className="p-4 flex items-center justify-between gap-4">
               <div>
                 <div className="font-bold text-sm">{org.name}</div>

@@ -27,11 +27,11 @@ import "reflect-metadata";
 import { Client } from "discordx";
 import { Partials } from "discord.js";
 import {
-	clearGuildCommandsSafe,
-	createProductionCacheOptions,
-	initApplicationCommandsSafe,
-	resolveGrantedIntents,
-	safeExecuteInteraction,
+  clearGuildCommandsSafe,
+  createProductionCacheOptions,
+  initApplicationCommandsSafe,
+  resolveGrantedIntents,
+  safeExecuteInteraction,
 } from "@aphrody/discord-kit";
 
 import { MODULE_LOADERS } from "./modules";
@@ -46,10 +46,10 @@ import { demarrerNotifieurTweets } from "./services/tweetsNotifier";
  * Modules chargés en plus des commandes, pour le seul profil Rose Griffon.
  */
 const MODULES_EVENEMENTS_RG = [
-	"events/ready.ts",
-	"events/memberEvents.ts",
-	"events/experience.ts",
-	"events/accueil.ts",
+  "events/ready.ts",
+  "events/memberEvents.ts",
+  "events/experience.ts",
+  "events/accueil.ts",
 ] as const;
 
 const isApiMode = process.argv.includes("api");
@@ -59,138 +59,135 @@ const isAllMode = process.argv.includes("all") || (!isApiMode && !isBotMode);
 let apiServerInstance: ReturnType<typeof startApiServer> | null = null;
 
 if (isApiMode) {
-	console.log(`[rg-backend] Démarrage du serveur API unifié Rose Griffon (ElysiaJS + WebSockets)...`);
-	apiServerInstance = startApiServer();
+  console.log(`[rg-backend] Démarrage du serveur API unifié Rose Griffon (ElysiaJS + WebSockets)...`);
+  apiServerInstance = startApiServer();
 } else {
-	if (isAllMode && (process.env.START_API === "1" || process.env.API_PORT || !DISCORD_TOKEN)) {
-		console.log(`[rg-backend] Démarrage des services d'API unifiés (port ${process.env.API_PORT ?? 8800})...`);
-		apiServerInstance = startApiServer();
-	}
+  if (isAllMode && (process.env.START_API === "1" || process.env.API_PORT || !DISCORD_TOKEN)) {
+    console.log(`[rg-backend] Démarrage des services d'API unifiés (port ${process.env.API_PORT ?? 8800})...`);
+    apiServerInstance = startApiServer();
+  }
 }
 
-if (!isApiMode && (!DISCORD_TOKEN && !isBotMode)) {
-	console.log(`[rg-backend] Aucun DISCORD_TOKEN spécifié, le serveur API tourne de manière autonome.`);
+if (!isApiMode && !DISCORD_TOKEN && !isBotMode) {
+  console.log(`[rg-backend] Aucun DISCORD_TOKEN spécifié, le serveur API tourne de manière autonome.`);
 } else if (!isApiMode) {
-const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
-	desiredIntents: PROFIL.intents,
-});
+  const intents = await resolveGrantedIntents(DISCORD_TOKEN, {
+    desiredIntents: PROFIL.intents,
+  });
 
-const client = new Client({
-	intents: [...intents],
-	partials: [Partials.GuildMember, Partials.User],
-	silent: false,
-	botId: PROFIL.identifiantBot,
-	...createProductionCacheOptions(),
-	...(PROFIL.porteeCommandes === "guildes"
-		? {
-				botGuilds: [
-					(bot: Client) =>
-						bot.guilds.cache.map((g) => g.id).filter((id) => GUILD_IDS.includes(id)),
-				],
-			}
-		: {}),
-});
+  const client = new Client({
+    intents: [...intents],
+    partials: [Partials.GuildMember, Partials.User],
+    silent: false,
+    botId: PROFIL.identifiantBot,
+    ...createProductionCacheOptions(),
+    ...(PROFIL.porteeCommandes === "guildes"
+      ? {
+          botGuilds: [(bot: Client) => bot.guilds.cache.map(g => g.id).filter(id => GUILD_IDS.includes(id))],
+        }
+      : {}),
+  });
 
-/**
- * Charge les modules du profil pour leurs décorateurs.
- *
- * Un chemin faux ne se voit pas au type-check (ce sont des chaînes) : on le
- * rattrape ici, en nommant le module ET le profil, plutôt que de laisser une
- * trace d'appel qui ne dit ni l'un ni l'autre. `profil.test.ts` vérifie en plus
- * que chaque chemin listé existe réellement sur le disque.
- */
-async function chargerModules(chemins: readonly string[]): Promise<void> {
-	for (const chemin of chemins) {
-		try {
-			const loader = MODULE_LOADERS[chemin];
-			if (loader) {
-				await loader();
-			} else {
-				await import(`./${chemin}`);
-			}
-		} catch (err) {
-			console.error(
-				`✗ profil « ${PROFIL.nom} » : échec du chargement de src/${chemin} —`,
-				err instanceof Error ? (err.stack ?? err.message) : err
-			);
-			throw err;
-		}
-	}
-}
+  /**
+   * Charge les modules du profil pour leurs décorateurs.
+   *
+   * Un chemin faux ne se voit pas au type-check (ce sont des chaînes) : on le
+   * rattrape ici, en nommant le module ET le profil, plutôt que de laisser une
+   * trace d'appel qui ne dit ni l'un ni l'autre. `profil.test.ts` vérifie en plus
+   * que chaque chemin listé existe réellement sur le disque.
+   */
+  async function chargerModules(chemins: readonly string[]): Promise<void> {
+    for (const chemin of chemins) {
+      try {
+        const loader = MODULE_LOADERS[chemin];
+        if (loader) {
+          await loader();
+        } else {
+          await import(`./${chemin}`);
+        }
+      } catch (err) {
+        console.error(
+          `✗ profil « ${PROFIL.nom} » : échec du chargement de src/${chemin} —`,
+          err instanceof Error ? (err.stack ?? err.message) : err,
+        );
+        throw err;
+      }
+    }
+  }
 
-await chargerModules(PROFIL.modules);
-if (PROFIL.nom === "rg") {
-	await chargerModules(MODULES_EVENEMENTS_RG);
-}
+  await chargerModules(PROFIL.modules);
+  if (PROFIL.nom === "rg") {
+    await chargerModules(MODULES_EVENEMENTS_RG);
+  }
 
-/** Coupe le notifieur de posts (minuteurs + abonnement au pont cron). */
-let arreterNotifieur: (() => void) | null = null;
+  /** Coupe le notifieur de posts (minuteurs + abonnement au pont cron). */
+  let arreterNotifieur: (() => void) | null = null;
 
-/**
- * Fenêtre du site sur l'exécution de CE processus (`lib/serveur-admin.ts`).
- *
- * Démarrée après `ready` comme le notifieur : `/etat` et `/commandes` n'ont de
- * sens qu'une fois l'arbre construit et la passerelle ouverte. Répondre « zéro
- * commande » à un tableau de bord parce qu'on a ouvert le port trop tôt, c'est
- * signaler une panne qui n'existe pas.
- */
-let serveurAdmin: ServeurAdmin | null = null;
+  /**
+   * Fenêtre du site sur l'exécution de CE processus (`lib/serveur-admin.ts`).
+   *
+   * Démarrée après `ready` comme le notifieur : `/etat` et `/commandes` n'ont de
+   * sens qu'une fois l'arbre construit et la passerelle ouverte. Répondre « zéro
+   * commande » à un tableau de bord parce qu'on a ouvert le port trop tôt, c'est
+   * signaler une panne qui n'existe pas.
+   */
+  let serveurAdmin: ServeurAdmin | null = null;
 
-// `clientReady`, pas `ready` : discord.js 14.26 déprécie le second (« The ready
-// event has been renamed to clientReady […] and will only emit under that name
-// in v15 », WebSocketManager.js). L'écouter émettait un `DeprecationWarning` à
-// chaque démarrage et aurait rendu le bot muet en v15. Les deux sont émis à la
-// suite dans cette version, la bascule est donc sans effet de bord.
-client.once("clientReady", async () => {
-	await initApplicationCommandsSafe(client);
+  // `clientReady`, pas `ready` : discord.js 14.26 déprécie le second (« The ready
+  // event has been renamed to clientReady […] and will only emit under that name
+  // in v15 », WebSocketManager.js). L'écouter émettait un `DeprecationWarning` à
+  // chaque démarrage et aurait rendu le bot muet en v15. Les deux sont émis à la
+  // suite dans cette version, la bascule est donc sans effet de bord.
+  client.once("clientReady", async () => {
+    await initApplicationCommandsSafe(client);
 
-	// Portée globale : effacer les commandes de guilde héritées de l'ancien mode.
-	if (PROFIL.porteeCommandes === "globale") {
-		await clearGuildCommandsSafe(client, PROFIL.guildes);
-	}
+    // Portée globale : effacer les commandes de guilde héritées de l'ancien mode.
+    if (PROFIL.porteeCommandes === "globale") {
+      await clearGuildCommandsSafe(client, PROFIL.guildes);
+    }
 
-	// Dire OÙ les commandes ont atterri, et surtout où elles manquent : un bot en
-	// ligne mais sans commande sur un serveur est indiscernable d'un bot en panne
-	// pour qui le regarde depuis Discord.
-	console.log(
-		`✓ Profil « ${PROFIL.nom} » (${PROFIL.titre}) — ${PROFIL.modules.length} module(s) de commandes chargé(s).`
-	);
-	if (PROFIL.porteeCommandes === "globale") {
-		const rejointes = client.guilds.cache.map((g) => g.name).join(", ") || "aucun";
-		console.log(
-			`✓ Commandes publiées GLOBALEMENT — servies sur les ${client.guilds.cache.size} serveur(s) rejoint(s) (${rejointes}) et sur tout serveur qui invitera le bot. Discord propage une modification globale en quelques minutes.`
-		);
-	} else {
-		const servies = client.guilds.cache.filter((g) => GUILD_IDS.includes(g.id));
-		const absentes = GUILD_IDS.filter((id) => !client.guilds.cache.has(id));
-		console.log(
-			`✓ Commandes enregistrées sur ${servies.size} serveur(s) : ${servies.map((g) => g.name).join(", ") || "aucun"}`
-		);
-		if (absentes.length > 0) {
-			console.warn(
-				`⚠ Guilde(s) configurée(s) mais non rejointe(s) : ${absentes.join(", ")} — le bot doit y être autorisé via l'URL OAuth2 avant que ses commandes n'y apparaissent.`
-			);
-		}
-	}
+    // Dire OÙ les commandes ont atterri, et surtout où elles manquent : un bot en
+    // ligne mais sans commande sur un serveur est indiscernable d'un bot en panne
+    // pour qui le regarde depuis Discord.
+    console.log(
+      `✓ Profil « ${PROFIL.nom} » (${PROFIL.titre}) — ${PROFIL.modules.length} module(s) de commandes chargé(s).`,
+    );
+    if (PROFIL.porteeCommandes === "globale") {
+      const rejointes = client.guilds.cache.map(g => g.name).join(", ") || "aucun";
+      console.log(
+        `✓ Commandes publiées GLOBALEMENT — servies sur les ${client.guilds.cache.size} serveur(s) rejoint(s) (${rejointes}) et sur tout serveur qui invitera le bot. Discord propage une modification globale en quelques minutes.`,
+      );
+    } else {
+      const servies = client.guilds.cache.filter(g => GUILD_IDS.includes(g.id));
+      const absentes = GUILD_IDS.filter(id => !client.guilds.cache.has(id));
+      console.log(
+        `✓ Commandes enregistrées sur ${servies.size} serveur(s) : ${servies.map(g => g.name).join(", ") || "aucun"}`,
+      );
+      if (absentes.length > 0) {
+        console.warn(
+          `⚠ Guilde(s) configurée(s) mais non rejointe(s) : ${absentes.join(", ")} — le bot doit y être autorisé via l'URL OAuth2 avant que ses commandes n'y apparaissent.`,
+        );
+      }
+    }
 
-	console.log(`✓ Logged in as ${client.user?.tag}`);
+    console.log(`✓ Logged in as ${client.user?.tag}`);
 
-	// Notification des nouveaux posts. Démarrée APRÈS `ready` : le drain a besoin
-	// d'un client capable de résoudre un salon. Le bot est le SEUL écrivain
-	// Discord pour les posts — rg-cron se contente de signaler — et chaque profil
-	// draine SON curseur, donc les deux bots peuvent annoncer sans se voler leurs
-	// posts ni se doubler.
-	// La fonction d'arrêt était jetée par le passé : son minuteur de 5 min et sa
-	// connexion d'abonnement survivaient au `client.destroy()` et retenaient la
-	// boucle d'événements (arrêt du service en timeout, puis SIGKILL).
-	arreterNotifieur = demarrerNotifieurTweets(client, PROFIL_ANNONCEUR);
+    // Notification des nouveaux posts. Démarrée APRÈS `ready` : le drain a besoin
+    // d'un client capable de résoudre un salon. Le bot est le SEUL écrivain
+    // Discord pour les posts — rg-cron se contente de signaler — et chaque profil
+    // draine SON curseur, donc les deux bots peuvent annoncer sans se voler leurs
+    // posts ni se doubler.
+    // La fonction d'arrêt était jetée par le passé : son minuteur de 5 min et sa
+    // connexion d'abonnement survivaient au `client.destroy()` et retenaient la
+    // boucle d'événements (arrêt du service en timeout, puis SIGKILL).
+    arreterNotifieur = demarrerNotifieurTweets(client, PROFIL_ANNONCEUR);
 
-	// Sans `BOT_ADMIN_TOKEN`, rend `null` et n'ouvre aucun port : un serveur
-	// d'administration sans secret est une porte, pas une fenêtre.
-	serveurAdmin = demarrerServeurAdmin(client);
-});
+    // Sans `BOT_ADMIN_TOKEN`, rend `null` et n'ouvre aucun port : un serveur
+    // d'administration sans secret est une porte, pas une fenêtre.
+    serveurAdmin = demarrerServeurAdmin(client);
+  });
 
-/**
+  /**
  * Filet de dernier recours des interactions.
  *
  * Deux situations très différentes arrivaient ici avec le MÊME message :
@@ -219,60 +216,54 @@ client.on("interactionCreate", async (interaction) => {
  * côté serveur jusqu'à son expiration. On coupe donc dans l'ordre : minuteurs,
  * passerelle, cache Redis, pool Postgres.
  */
-let arretEnCours = false;
+  let arretEnCours = false;
 
-async function arreter(signal: string): Promise<void> {
-	if (arretEnCours) {
-		return;
-	}
-	arretEnCours = true;
-	console.log(`↔ ${signal} reçu — arrêt propre du profil « ${PROFIL.nom} ».`);
+  async function arreter(signal: string): Promise<void> {
+    if (arretEnCours) {
+      return;
+    }
+    arretEnCours = true;
+    console.log(`↔ ${signal} reçu — arrêt propre du profil « ${PROFIL.nom} ».`);
 
-	arreterNotifieur?.();
-	arreterNotifieur = null;
+    arreterNotifieur?.();
+    arreterNotifieur = null;
 
-	// Avant la passerelle : un port encore ouvert retient la boucle d'événements
-	// et fait finir l'arrêt en timeout puis SIGKILL, exactement comme le
-	// minuteur du notifieur avant qu'on ne le coupe ici.
-	serveurAdmin?.stop();
-	serveurAdmin = null;
+    // Avant la passerelle : un port encore ouvert retient la boucle d'événements
+    // et fait finir l'arrêt en timeout puis SIGKILL, exactement comme le
+    // minuteur du notifieur avant qu'on ne le coupe ici.
+    serveurAdmin?.stop();
+    serveurAdmin = null;
 
-	try {
-		await client.destroy();
-	} catch (err) {
-		console.error(
-			"✗ fermeture de la passerelle Discord :",
-			err instanceof Error ? err.message : err
-		);
-	}
+    try {
+      await client.destroy();
+    } catch (err) {
+      console.error("✗ fermeture de la passerelle Discord :", err instanceof Error ? err.message : err);
+    }
 
-	closeCache();
+    closeCache();
 
-	try {
-		// `timeout` en SECONDES : on laisse les requêtes en vol finir, sans jamais
-		// bloquer l'arrêt du service au-delà de ce délai.
-		await sql.close({ timeout: 5 });
-	} catch (err) {
-		console.error(
-			"✗ fermeture de la connexion Postgres :",
-			err instanceof Error ? err.message : err
-		);
-	}
+    try {
+      // `timeout` en SECONDES : on laisse les requêtes en vol finir, sans jamais
+      // bloquer l'arrêt du service au-delà de ce délai.
+      await sql.close({ timeout: 5 });
+    } catch (err) {
+      console.error("✗ fermeture de la connexion Postgres :", err instanceof Error ? err.message : err);
+    }
 
-	if (apiServerInstance) {
-		try {
-			apiServerInstance.stop();
-		} catch {}
-		apiServerInstance = null;
-	}
+    if (apiServerInstance) {
+      try {
+        apiServerInstance.stop();
+      } catch {}
+      apiServerInstance = null;
+    }
 
-	process.exit(0);
-}
+    process.exit(0);
+  }
 
-process.on("SIGTERM", () => void arreter("SIGTERM"));
-process.on("SIGINT", () => void arreter("SIGINT"));
+  process.on("SIGTERM", () => void arreter("SIGTERM"));
+  process.on("SIGINT", () => void arreter("SIGINT"));
 
-if (DISCORD_TOKEN) {
-	await client.login(DISCORD_TOKEN);
-}
+  if (DISCORD_TOKEN) {
+    await client.login(DISCORD_TOKEN);
+  }
 }

@@ -113,12 +113,12 @@ async function metadonnees(): Promise<Paquet[]> {
 
 /** Rang mesuré : 1 + le plus long chemin de dépendances internes. */
 function rangsMesures(paquets: Paquet[]): Map<string, number> {
-  const noms = new Set(paquets.map((p) => p.name));
+  const noms = new Set(paquets.map(p => p.name));
   const voisins = new Map<string, string[]>();
   for (const p of paquets) {
     voisins.set(
       p.name,
-      p.dependencies.map((d) => d.name).filter((n) => noms.has(n) && n !== p.name),
+      p.dependencies.map(d => d.name).filter(n => noms.has(n) && n !== p.name),
     );
   }
   const memo = new Map<string, number>();
@@ -140,7 +140,7 @@ function rangsMesures(paquets: Paquet[]): Map<string, number> {
 
 // Cette porte décrit les couches du domaine NIE. Le workspace IECODE inclut désormais
 // Bevy, wgpu et plusieurs émulateurs upstream, qui ont leurs propres graphes de dépendances.
-const paquets = (await metadonnees()).filter((p) => p.name.startsWith("aphrody-nie-"));
+const paquets = (await metadonnees()).filter(p => p.name.startsWith("aphrody-nie-"));
 const mesures = rangsMesures(paquets);
 const ecrire = Bun.argv.includes("--write");
 
@@ -187,17 +187,13 @@ for (const p of paquets) {
     if (dep.kind === "dev") continue;
     if (cible >= source) {
       const nature = dep.optional ? "optionnelle" : "non optionnelle";
-      problemes.push(
-        `${p.name} (N${source}) dépend de ${dep.name} (N${cible}) — ${nature}, ${dep.kind ?? "normal"}`,
-      );
+      problemes.push(`${p.name} (N${source}) dépend de ${dep.name} (N${cible}) — ${nature}, ${dep.kind ?? "normal"}`);
     }
   }
 }
 
 const rangs = [...mesures.values()];
-console.log(
-  `${paquets.length} crates, ${Math.max(...rangs) + 1} rangs (N0..N${Math.max(...rangs)})`,
-);
+console.log(`${paquets.length} crates, ${Math.max(...rangs) + 1} rangs (N0..N${Math.max(...rangs)})`);
 if (problemes.length > 0) {
   console.error(`\n${problemes.length} problème(s) d'architecture :`);
   for (const p of problemes.sort()) console.error(`  ${p}`);

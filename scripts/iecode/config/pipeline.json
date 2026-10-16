@@ -10,10 +10,7 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "check:workspace"
-          ]
+          "command": ["run", "check:workspace"]
         }
       ]
     },
@@ -23,17 +20,11 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "check:rust"
-          ]
+          "command": ["run", "check:rust"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "test:rust"
-          ]
+          "command": ["run", "test:rust"]
         }
       ]
     },
@@ -43,21 +34,11 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/iecode-web",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@aphrody/iecode-web", "typecheck"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/iecode-web",
-            "build"
-          ]
+          "command": ["run", "--filter", "@aphrody/iecode-web", "build"]
         }
       ]
     },
@@ -67,39 +48,19 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/azalee",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/azalee", "lint"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/azalee",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/azalee", "typecheck"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/azalee",
-            "test"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/azalee", "test"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/azalee",
-            "build"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/azalee", "build"]
         }
       ]
     },
@@ -109,21 +70,11 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "iecode-homebrew",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "iecode-homebrew", "typecheck"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "iecode-homebrew",
-            "test"
-          ]
+          "command": ["run", "--filter", "iecode-homebrew", "test"]
         }
       ]
     },
@@ -133,21 +84,11 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "ieverse",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "ieverse", "typecheck"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "ieverse",
-            "test"
-          ]
+          "command": ["run", "--filter", "ieverse", "test"]
         }
       ]
     },
@@ -157,39 +98,19 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle", "lint"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle", "typecheck"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle",
-            "test"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle", "test"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle",
-            "build"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle", "build"]
         }
       ]
     },
@@ -199,21 +120,11 @@
       "steps": [
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle-cross",
-            "lint"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle-cross", "lint"]
         },
         {
           "repo": "iecode",
-          "command": [
-            "run",
-            "--filter",
-            "@rosegriffon/inagle-cross",
-            "typecheck"
-          ]
+          "command": ["run", "--filter", "@rosegriffon/inagle-cross", "typecheck"]
         }
       ]
     }

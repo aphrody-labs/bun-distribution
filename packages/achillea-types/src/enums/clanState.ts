@@ -1,5 +1,5 @@
 export enum ClanState {
-	Creating,
-	PendingReview,
-	Approved,
+  Creating,
+  PendingReview,
+  Approved,
 }

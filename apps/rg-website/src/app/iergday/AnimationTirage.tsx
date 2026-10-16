@@ -101,8 +101,8 @@ function CanvasConfettis({ actif }: { actif: boolean }) {
       styles.getPropertyValue("--color-tertiary"),
       styles.getPropertyValue("--color-on-surface"),
     ]
-      .map((valeur) => valeur.trim())
-      .filter((valeur) => valeur.length > 0);
+      .map(valeur => valeur.trim())
+      .filter(valeur => valeur.length > 0);
     if (palette.length === 0) palette.push(styles.color);
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -157,13 +157,7 @@ function CanvasConfettis({ actif }: { actif: boolean }) {
   }, [actif, reduit]);
 
   if (!actif || reduit) return null;
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden
-      className="pointer-events-none absolute inset-0 size-full"
-    />
-  );
+  return <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 size-full" />;
 }
 
 /* ──────────────────────────── ANIMATION ──────────────────────────────────── */
@@ -184,7 +178,7 @@ export function AnimationTirage({
   const reduit = useReducedMotion();
   const initialWinner = gagnants[0];
   const initialWinnerIndex = initialWinner?.cleCreation
-    ? posts.findIndex((post) => clePost(post) === initialWinner.cleCreation)
+    ? posts.findIndex(post => clePost(post) === initialWinner.cleCreation)
     : -1;
   const initialImmediate = reduit || initialWinnerIndex < 0 || posts.length === 0;
   const [phase, setPhase] = useState<Phase>(
@@ -250,7 +244,7 @@ export function AnimationTirage({
         return;
       }
       // On balaie en évitant de retomber deux fois de suite au même endroit.
-      setSurligne((precedent) => {
+      setSurligne(precedent => {
         let suivant = Math.floor(Math.random() * posts.length);
         if (posts.length > 1 && suivant === precedent) {
           suivant = (suivant + 1) % posts.length;
@@ -268,10 +262,7 @@ export function AnimationTirage({
   useEffect(() => {
     if (phase !== "revelation") return;
     if (rangCourant >= gagnants.length - 1) return;
-    const minuteur = setTimeout(
-      () => setRangCourant((r) => r + 1),
-      reduit ? 2600 : PAUSE_ENTRE_GAGNANTS_MS,
-    );
+    const minuteur = setTimeout(() => setRangCourant(r => r + 1), reduit ? 2600 : PAUSE_ENTRE_GAGNANTS_MS);
     return () => clearTimeout(minuteur);
   }, [phase, rangCourant, gagnants.length, reduit]);
 
@@ -298,7 +289,7 @@ export function AnimationTirage({
   return (
     <dialog
       ref={dialogue}
-      onCancel={(event) => {
+      onCancel={event => {
         event.preventDefault();
         fermer();
       }}
@@ -311,9 +302,7 @@ export function AnimationTirage({
       <div className="relative mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
         <div className="flex items-center justify-between gap-4">
           <Badge variant="secondary" className="text-sm">
-            {gagnants.length > 1
-              ? `Gagnant ${rangCourant + 1} sur ${gagnants.length}`
-              : "Tirage au sort"}
+            {gagnants.length > 1 ? `Gagnant ${rangCourant + 1} sur ${gagnants.length}` : "Tirage au sort"}
           </Badge>
           <Button variant="ghost" size="icon" onClick={fermer} aria-label="Fermer">
             <X className="size-5" aria-hidden />
@@ -336,9 +325,7 @@ export function AnimationTirage({
                 exit={reduit ? undefined : { opacity: 0, y: -12 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
               >
-                <p className="text-fluid-headline-md font-bold text-on-surface">
-                  Bravo {gagnant.pseudoAffichage} !
-                </p>
+                <p className="text-fluid-headline-md font-bold text-on-surface">Bravo {gagnant.pseudoAffichage} !</p>
                 {gagnant.lot && (
                   <p className="mt-1 text-fluid-body-md text-on-surface-variant">
                     Lot {gagnant.rang} — {gagnant.lot}

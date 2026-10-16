@@ -5,14 +5,14 @@
 import { resolveGuildId } from "@rosegriffon/types/discord";
 
 import {
-	couleurDeMarque,
-	guildesDuProfil,
-	jetonDuProfil,
-	profilActif,
-	salonAnnonceDuProfil,
-	urlBaseDuProfil,
-	type EnvLisible,
-	type Profil,
+  couleurDeMarque,
+  guildesDuProfil,
+  jetonDuProfil,
+  profilActif,
+  salonAnnonceDuProfil,
+  urlBaseDuProfil,
+  type EnvLisible,
+  type Profil,
 } from "./profil";
 
 const ENV = Bun.env as EnvLisible;
@@ -87,11 +87,11 @@ export const BOT_SYNC_MEMBRES = Bun.env.BOT_SYNC_MEMBRES === "1";
 export const REDIS_URL = Bun.env.REDIS_URL ?? "redis://127.0.0.1:6379/1";
 
 export function requireEnv(key: string): string {
-	const v = Bun.env[key];
-	if (!v) {
-		throw new Error(`[config] ${key} is required (see .env.example)`);
-	}
-	return v;
+  const v = Bun.env[key];
+  if (!v) {
+    throw new Error(`[config] ${key} is required (see .env.example)`);
+  }
+  return v;
 }
 
 /**
@@ -158,23 +158,23 @@ export const CURSEUR_ANNONCE_POSTS = PROFIL.annoncePosts?.curseur ?? null;
  *    primaire, pas un paramètre.
  */
 export const PROFIL_ANNONCEUR: {
-	readonly nom: string;
-	readonly annoncePosts: {
-		readonly salon: string;
-		readonly curseur: string;
-		readonly roleMention: string | null;
-		readonly salonValidation: string | null;
-		readonly comptes: readonly string[] | null;
-	} | null;
+  readonly nom: string;
+  readonly annoncePosts: {
+    readonly salon: string;
+    readonly curseur: string;
+    readonly roleMention: string | null;
+    readonly salonValidation: string | null;
+    readonly comptes: readonly string[] | null;
+  } | null;
 } = {
-	nom: PROFIL.nom,
-	annoncePosts: PROFIL.annoncePosts
-		? {
-				salon: SALON_ANNONCE_POSTS ?? "",
-				curseur: PROFIL.annoncePosts.curseur,
-				roleMention: PROFIL.annoncePosts.roleMention,
-				salonValidation: PROFIL.annoncePosts.salonValidation,
-				comptes: PROFIL.annoncePosts.comptes,
-			}
-		: null,
+  nom: PROFIL.nom,
+  annoncePosts: PROFIL.annoncePosts
+    ? {
+        salon: SALON_ANNONCE_POSTS ?? "",
+        curseur: PROFIL.annoncePosts.curseur,
+        roleMention: PROFIL.annoncePosts.roleMention,
+        salonValidation: PROFIL.annoncePosts.salonValidation,
+        comptes: PROFIL.annoncePosts.comptes,
+      }
+    : null,
 };

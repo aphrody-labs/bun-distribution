@@ -52,7 +52,7 @@ export function loadMenuMaps(dirPath?: string): MenuEntry[] {
   const allEntries: MenuEntry[] = [];
 
   try {
-    const files = readdirSync(targetDir).filter((f) => f.endsWith(".json"));
+    const files = readdirSync(targetDir).filter(f => f.endsWith(".json"));
 
     for (const file of files) {
       try {

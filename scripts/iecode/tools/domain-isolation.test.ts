@@ -15,7 +15,7 @@ function nativeBash(): string {
       ? [resolve(dirname(git), "../bin/bash.exe"), resolve(dirname(git), "../../../bin/bash.exe")]
       : [];
   const bash = candidates.find(
-    (path) => existsSync(path) && existsSync(resolve(dirname(path), "../usr/bin/msys-2.0.dll")),
+    path => existsSync(path) && existsSync(resolve(dirname(path), "../usr/bin/msys-2.0.dll")),
   );
   if (!bash)
     throw new Error(
@@ -26,9 +26,7 @@ function nativeBash(): string {
 
 function shellPath(path: string): string {
   if (process.platform !== "win32") return path;
-  return path
-    .replaceAll("\\", "/")
-    .replace(/^([a-z]):/i, (_, drive: string) => `/${drive.toLowerCase()}`);
+  return path.replaceAll("\\", "/").replace(/^([a-z]):/i, (_, drive: string) => `/${drive.toLowerCase()}`);
 }
 
 function shellEnvironment(extra: Record<string, string>): Record<string, string> {
@@ -63,7 +61,7 @@ async function execute(args: string[], env: Record<string, string>) {
 }
 
 test("IECODE memory uses the ie profile despite an inherited foreign domain", async () => {
-  await fixture(async (directory) => {
+  await fixture(async directory => {
     const state = join(directory, "state");
     const memory = join(state, "workspaces", "ie", "memory");
     const target = join(directory, "explicit-adapter");
@@ -80,22 +78,16 @@ test("IECODE memory uses the ie profile despite an inherited foreign domain", as
       },
     );
     expect(output).toContain(join(memory, "project-memory.md"));
-    expect(await readFile(join(target, "nie-workspace.md"), "utf8")).toContain(
-      "IECODE fixture note",
+    expect(await readFile(join(target, "nie-workspace.md"), "utf8")).toContain("IECODE fixture note");
+    expect(await Bun.file(join(state, "workspaces", "aphrody", "memory", "project-memory.md")).exists()).toBe(false);
+    expect(await Bun.file(join(state, "workspaces", "renamed-checkout", "memory", "project-memory.md")).exists()).toBe(
+      false,
     );
-    expect(
-      await Bun.file(join(state, "workspaces", "aphrody", "memory", "project-memory.md")).exists(),
-    ).toBe(false);
-    expect(
-      await Bun.file(
-        join(state, "workspaces", "renamed-checkout", "memory", "project-memory.md"),
-      ).exists(),
-    ).toBe(false);
   });
 });
 
 test("repository environment never maps another domain's database URL", async () => {
-  await fixture(async (directory) => {
+  await fixture(async directory => {
     const script = join(directory, "repo", "scripts", "dev", "env.sh");
     await mkdir(join(directory, "repo", "scripts", "dev"), { recursive: true });
     await copyFile(join(root, "scripts/dev/env.sh"), script);
@@ -131,7 +123,7 @@ test("repository environment never maps another domain's database URL", async ()
 });
 
 test("an inherited NIE_ENV_ACTIVE does not skip a new checkout", async () => {
-  await fixture(async (directory) => {
+  await fixture(async directory => {
     const checkout = join(directory, "repo");
     const script = join(checkout, "scripts", "dev", "nie-env.sh");
     await mkdir(join(checkout, "scripts", "dev"), { recursive: true });
