@@ -15,7 +15,7 @@
         "shenron-server-sqlite"
       ],
       "unit": "shenron-container-backup.timer",
-      "source": "docker exec pg_dump/pg_restore --list (aphrody-postgres-1), redis-cli --rdb + redis-check-rdb (aphrody-redis-1), SQLite online backup + quick_check",
+      "source": "docker exec pg_dump/pg_restore --list (shenron-postgres), redis-cli --rdb + redis-check-rdb (shenron-redis), SQLite online backup + quick_check",
       "retention": "newest snapshot only under /home/ubuntu/apps/shenron/shared/backups/container",
       "capacityPolicy": {
         "archiveMaxBytes": 8589934592,

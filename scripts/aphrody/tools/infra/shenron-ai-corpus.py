@@ -85,7 +85,7 @@ def psql(sql):
             "-i",
             "-u",
             "postgres",
-            "aphrody-postgres-1",
+            "shenron-postgres",
             "/usr/lib/postgresql/18/bin/psql",
             "-d",
             "shenron_site",

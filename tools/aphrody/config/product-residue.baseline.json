@@ -442,8 +442,6 @@
     "scripts/tools/infra/provision-shenron-ai-access.sh": 14,
     "scripts/tools/infra/shenron-ai-corpus.py": 18,
     "scripts/tools/infra/shenron-ai-setup.py": 13,
-    "scripts/tools/infra/shenron-offsite-backup.test.ts": 8,
-    "scripts/tools/infra/shenron-offsite-backup.ts": 21,
     "scripts/tools/infra/site-gateway.test.ts": 7,
     "scripts/tools/infra/test_certbot_shenron_container.py": 4,
     "scripts/tools/infra/test_shenron_ai_corpus.py": 5,
