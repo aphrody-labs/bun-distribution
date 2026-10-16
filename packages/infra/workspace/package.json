@@ -89,7 +89,6 @@
     "@aphrody/update": "workspace:*",
     "@aphrody/web-source": "workspace:*",
     "@aphrody/yolo-core": "workspace:*",
-    "@typescript/typescript6": "catalog:",
     "ts-morph": "catalog:"
   },
   "devDependencies": {

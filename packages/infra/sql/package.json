@@ -23,7 +23,7 @@
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "test": "bun test",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "lint": "bun lint -c ../../../.oxlintrc.json src test"
+    "lint": "bun lint src test"
   },
   "dependencies": {
     "sqlite-vec": "catalog:"

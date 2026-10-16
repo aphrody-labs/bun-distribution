@@ -24,7 +24,7 @@
     "lint": "bun lint src test scripts"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@aphrody/bun-types": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"

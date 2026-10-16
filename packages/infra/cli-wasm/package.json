@@ -30,7 +30,7 @@
     "test": "bun test"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@aphrody/bun-types": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"
