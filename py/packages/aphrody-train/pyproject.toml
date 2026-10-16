@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "aphrody-train"
+version = "0.1.0"
+description = "Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = ["click>=8.1"]
+classifiers = ["Operating System :: POSIX :: Linux"]
+
+[project.optional-dependencies]
+dedup = ["datasketch>=2.0"]
+full = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transformers>=6.1", "onnx>=1.18", "onnxscript>=0.5", "onnxruntime>=1.20", "peft>=0.10", "trl>=0.8", "torch==2.13.0"]
+mine = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transformers>=6.1", "torch==2.13.0"]
+qlora = ["bitsandbytes==0.50.0"]
+
+[tool.uv]
+index = [{ "name" = "pytorch-cu130", "url" = "https://download.pytorch.org/whl/cu130", "explicit" = true }]
+
+[tool.uv.sources]
+torch = [{ "index" = "pytorch-cu130", "marker" = "sys_platform == 'linux' or sys_platform == 'win32'" }]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aphrody_train"]
+
+[tool.pytest.ini_options]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

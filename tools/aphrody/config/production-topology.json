@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "strategy": "context-selected-development-build-and-deployment",
+  "hosts": {
+    "vps": {
+      "role": "ssh-build-test-release-factory",
+      "capacityObserved": {
+        "memoryGiB": 45,
+        "diskGiB": 290
+      },
+      "allocations": {
+        "nie": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "reserved",
+          "disk": "active-model-and-runtime",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "runtime/data root and units removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "aphrody-web": {
+          "priority": 95,
+          "cpu": "high",
+          "memory": "high",
+          "disk": "versioned-site-releases",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "aphrody-site/aphrody-web-api removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "aphrody-ai": {
+          "priority": 85,
+          "cpu": "medium",
+          "memory": "medium",
+          "disk": "ai-agent-and-rag-state",
+          "status": "retired",
+          "retiredAt": "2026-09-25",
+          "note": "aphrody-ai-http/aphrody-shenron-embed/aphrody-a2a/shenron-mcp removed from vps; allocation reserved for redeploy under the Aphrody convergence plan"
+        },
+        "rg": {
+          "priority": 95,
+          "cpu": "high",
+          "memory": "high",
+          "disk": "versioned-releases",
+          "status": "shutdown-requested",
+          "requestedAt": "2026-10-03",
+          "note": "Owner requests complete RG shutdown; preserve releases, data and rollback. Live completion recorded separately."
+        },
+        "shenron": {
+          "priority": 90,
+          "cpu": "medium",
+          "memory": "medium",
+          "disk": "shared-media-and-release",
+          "status": "migration-requested",
+          "target": "dbfr",
+          "note": "Owner directive 2026-10-07: all Shenron runtime, data, media, CDN and ingress move to DBFR; VPS is reserved for Aphrody. Verify protected copies before retiring the source."
+        },
+        "nginx": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "small",
+          "disk": "small"
+        },
+        "build-factory": {
+          "priority": 90,
+          "cpu": "bounded",
+          "memory": "bounded",
+          "disk": "persistent-caches-and-immutable-artifacts",
+          "policy": "tools/config/build-factory.json"
+        }
+      },
+      "network": {
+        "publicPorts": [80],
+        "internalOnly": [
+          3004, 3007, 3014, 4000, 4002, 4005, 5006, 5010, 5011, 8083, 8085, 8789, 8790, 8793, 8794,
+          8796, 8797, 8798, 8800, 8801, 8810, 8812, 18804, 29000, 29001, 29002, 29003, 29004, 29005,
+          29006, 29007, 29008, 29009, 29010, 29011, 29012, 29013, 29020, 29021, 29022, 29030
+        ],
+        "reservedNoCurrentOwner": [3000, 3005, 3006]
+      },
+      "forbidden": ["24h-crawler", "duplicate-db-mirror", "per-app-nginx", "per-app-supervisor"]
+    },
+    "dbfr": {
+      "role": "production-deployment",
+      "capacityObserved": {
+        "memoryGiB": 11,
+        "diskGiB": 96
+      },
+      "allocations": {
+        "postgresql": {
+          "priority": 100,
+          "cpu": "reserved",
+          "memory": "high",
+          "disk": "primary-data"
+        },
+        "redis": {
+          "priority": 90,
+          "cpu": "medium",
+          "memory": "bounded",
+          "disk": "small"
+        },
+        "asset-cdn": {
+          "priority": 90,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "large"
+        },
+        "backups": {
+          "priority": 100,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "retention-bounded"
+        },
+        "release-slot": {
+          "priority": 85,
+          "cpu": "low",
+          "memory": "low",
+          "disk": "one-rollback-slot"
+        },
+        "shenron": {
+          "priority": 95,
+          "cpu": "bounded",
+          "memory": "bounded",
+          "disk": "versioned-releases-and-shared-state",
+          "status": "migration-requested",
+          "source": "vps",
+          "note": "Owner directive 2026-10-07: sole Shenron production host, including bot, site, MCP, PostgreSQL, Redis, chat, media, CDN and ingress."
+        }
+      },
+      "network": {
+        "publicPorts": [80, 443],
+        "internalOnly": [
+          5432, 6379, 3014, 3599, 4010, 5006, 5010, 5011, 8786, 8788, 8793, 8796, 8797, 8799, 8810,
+          8812, 18803, 20243
+        ]
+      },
+      "forbidden": ["crawler", "iecode-build"]
+    },
+    "windows-local": {
+      "role": "native-development-and-source",
+      "allocations": {
+        "iecode": "full-source-assets-tools",
+        "aphrody-ui": "desktop-build",
+        "aphrody-os": "kernel-control-plane",
+        "aphrody-ai": "developer-checkout",
+        "linux-validation": "bounded-local-docker-alpine-3.24-or-ubuntu-26.04"
+      },
+      "forbidden": ["production-secrets", "public-runtime"]
+    },
+    "linux-container-26.04": {
+      "role": "local-docker-linux-validation",
+      "allocations": {
+        "rust": "bounded-local-linux-gates-or-remote-vps-heavy-gates",
+        "bun": "bounded-local-linux-gates-or-remote-vps-heavy-gates",
+        "uv": "bounded-local-linux-gates-or-remote-vps-heavy-gates"
+      },
+      "forbidden": ["production-database", "public-runtime"]
+    },
+    "alpine-container-3.24": {
+      "role": "local-docker-linux-validation",
+      "allocations": {
+        "runtime": "aphrody-alpine-musl",
+        "build": "bounded-linux-gates"
+      },
+      "forbidden": ["production-database", "public-runtime"]
+    },
+    "omar-pc": {
+      "role": "remote-gpu-workstation",
+      "allocations": {
+        "ai-gateway": "omar-llama-cuda",
+        "redis": "omar-cache"
+      },
+      "network": {
+        "internalOnly": [6379, 8081],
+        "publicPorts": []
+      },
+      "forbidden": ["production-database", "public-runtime"]
+    }
+  },
+  "portPolicy": "nginx or explicitly catalogued read-only native Rust site ingress owns public80/443; MCP/A2A and all other application ports stay loopback or private-network",
+  "bandwidthPolicy": "serve-site-api-cdn-first; backups rate-limited; crawlers paused by default",
+  "diskBlockerPolicy": {
+    "requestedAt": "2026-10-07",
+    "action": "reclaim substantially when capacity blocks work",
+    "safety": "Use Infra plans, protect active work and credentials, verify retained copies before deleting replaced protected stores."
+  },
+  "trainingPlacement": {
+    "requestedAt": "2026-10-07",
+    "host": "omar-wsl",
+    "ownerLocalWsl": "retired-from-development; no owner-local WSL training",
+    "activation": "requires authenticated access to Omar host and hardware qualification"
+  },
+  "developmentPlacement": {
+    "requestedAt": "2026-10-09",
+    "selection": "current-context-tools-target-resources-and-permissions",
+    "supportedContexts": [
+      "native-windows",
+      "native-linux",
+      "native-macos",
+      "ssh-factory",
+      "docker"
+    ],
+    "currentWorkstation": "windows-local",
+    "checkoutResolution": "current workspace or APHRODY_WORKSPACE / APHRODY_BUN_CHECKOUT",
+    "homeResolution": "configured Aphrody home or platform user home",
+    "wsl": "retired-on-current-owner-workstation",
+    "currentDeployment": "dbfr",
+    "currentSshBuild": "vps",
+    "localLinuxExamples": ["Alpine 3.24", "Ubuntu 26.04"],
+    "authority": {
+      "aphrodyLabs": "yoyo / aphrody-dev",
+      "dbfr": "omar"
+    }
+  }
+}

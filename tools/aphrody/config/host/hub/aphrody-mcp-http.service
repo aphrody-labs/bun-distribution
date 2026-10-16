@@ -1,0 +1,22 @@
+[Unit]
+Description=Aphrody MCP HTTP (loopback 127.0.0.1:23889, tunnel Windows 24889)
+After=network.target aphrody-a2a.service
+
+[Service]
+WorkingDirectory=%h/.aphrody/checkout
+Type=simple
+EnvironmentFile=%h/.aphrody/private/mcp/mcp-http.env
+Environment=PATH=%h/.cargo/bin:%h/.bun/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=APHRODY_A2A_ENDPOINT=http://127.0.0.1:23888/
+Environment=APHRODY_A2A_TOKEN_FILE=%h/.aphrody/private/a2a/bearer
+ExecStart=%h/.local/bin/aphrody-mcp http --bind 127.0.0.1:23889
+Restart=always
+RestartSec=2
+Nice=10
+CPUWeight=20
+MemoryHigh=512M
+MemoryMax=1G
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

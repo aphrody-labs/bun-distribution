@@ -1,0 +1,50 @@
+[package]
+name = "aphrody-a2a-coord"
+publish = true
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+homepage = "https://github.com/aphrody-labs/aphrody"
+readme = "README.md"
+description = "Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener."
+keywords = ["a2a", "agent", "coordination", "mailbox", "sse"]
+categories = ["network-programming", "asynchronous", "web-programming::http-server"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
+aphrody-a2a-server = { path = "../aphrody-a2a-server", version = "1.4.4", default-features = false, features = [] }
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tracing = "0.1.44"
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+chrono = { version = "0.4", features = ["serde"] }
+getrandom = "0.4"
+which = { version = "8", features = [] }
+futures = "0.3.34"
+async-trait = "0.1.92"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-agent-runtime"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Wiring/factory layer that assembles a ready-to-run aphrody agent: builds a ModelClient (Gemini or stub), a ToolRegistry preloaded with the shell-exec + apply-patch tools, an optional rollout recorder, and spawns an aphrody-engine session. The ergonomic entry point every surface (CLI / TUI / desktop) uses to start an autonomous agent."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+rag = ["dep:aphrody-rag"]
+# Managed local models run inside this process (libllama through aphrody-llama) instead of a
+# detached `llama-server` daemon that re-executes the host executable. Needs libclang to build.
+in-process = ["aphrody-llama-server/in-process"]
+
+[dependencies]
+aphrody-engine = { path = "../aphrody-engine", version = "1.4.4", features = [] }
+aphrody-agent-proto = { path = "../aphrody-agent-proto", version = "1.4.4", features = [] }
+aphrody-agent-tools = { path = "../aphrody-agent-tools", version = "1.4.4", features = [] }
+aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.4", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
+aphrody-toolcall-repair = { path = "../aphrody-toolcall-repair", version = "1.4.4", features = [] }
+aphrody-rollout = { path = "../aphrody-rollout", version = "1.4.4", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-mcp-client = { path = "../aphrody-mcp-client", version = "1.4.4", features = [] }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.4", features = [], optional = true }
+aphrody-model-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/model-antigravity", version = "1.4.4", features = [] }
+aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", version = "1.4.4", features = [] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+futures = "0.3.34"
+async-trait = "0.1.92"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+which = { version = "8", features = [] }
+tracing = "0.1.44"
+
+[dev-dependencies]
+aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
+pretty_assertions = { version = "1", features = [] }
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

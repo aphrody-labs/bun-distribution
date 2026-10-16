@@ -1,0 +1,32 @@
+{
+  "name": "@aphrody/a2a",
+  "version": "1.4.4",
+  "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./legacy": "./src/legacy.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "bun scripts/generate-types.ts",
+    "generate:check": "bun scripts/generate-types.ts --check",
+    "typecheck": "bun check --noEmit",
+    "test": "bun test",
+    "lint": "bun lint src test scripts"
+  },
+  "devDependencies": {
+    "@aphrody/bun-types": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

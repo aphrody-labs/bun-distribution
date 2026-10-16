@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-voice"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Voice I/O (TTS + STT) provider traits + ElevenLabs/Whisper adapters + Discord shim."
+
+[features]
+# Run Whisper *in-process* through whisper-rs instead of driving the upstream
+# whisper.cpp binary. This is a backend choice, not an on/off switch: with the
+# feature off, `stt::whisper_cpp` still transcribes locally by spawning the
+# release binary (same posture as `aphrody-infer` towards llama.cpp).
+# Cost of turning it on: a C++ toolchain at build time.
+local-whisper = ["dep:whisper-rs"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+async-trait = "0.1.92"
+futures = "0.3.34"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+bytes = "1.12.1"
+thiserror = "2.0.20"
+
+[package.metadata.cargo-machete]
+ignored = ["wasm-bindgen", "js-sys", "web-sys"]
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+serde_json = "1.0.151"

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "owner": "@aphrody/workspace",
+  "visibility": "private",
+  "inventory": "docs/reference/workspace/documentation.json",
+  "agentIndex": "docs/llms.txt",
+  "entrypoints": [
+    "docs/guides/workspace/documentation.md",
+    "docs/reference/workspace/LAYOUT.md",
+    "docs/reference/workspace/STATE.md",
+    "docs/ecosystem/CLI.md",
+    "docs/ecosystem/MCP-TOOLS.md",
+    "docs/research/workspace/documentation-practices.md"
+  ],
+  "sources": [
+    {
+      "root": ".",
+      "id": "workspace-typescript",
+      "language": "typescript",
+      "paths": ["packages/infra/workspace/src/index.ts", "packages/infra/workspace/src/client.ts"]
+    },
+    {
+      "root": ".",
+      "id": "infra-rust",
+      "language": "rust",
+      "paths": ["crates/infra/infra/src/lib.rs", "crates/infra/git/src/lib.rs"]
+    }
+  ],
+  "site": {
+    "output": ".cache/documentation-site",
+    "include": [
+      "docs/guides/workspace/documentation.md",
+      "docs/research/workspace/documentation-practices.md",
+      "docs/apis/generated/*.md"
+    ]
+  }
+}

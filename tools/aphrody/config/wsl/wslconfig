@@ -1,0 +1,11 @@
+[wsl2]
+firewall=true
+# Host: 32 GiB, 20 logical CPUs. Leave Windows 12 GiB and 4 CPUs so neither side starves.
+memory=20GB
+processors=16
+swap=8GB
+
+[experimental]
+autoMemoryReclaim=gradual
+# Freed ext4 blocks are returned to C: (the VHD shrinks after fstrim).
+sparseVhd=true

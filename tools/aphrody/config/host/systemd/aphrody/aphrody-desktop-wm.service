@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Minimal window manager of the virtual desktop (focus, decorations, windows that can be dragged).
+[Unit]
+Description=Aphrody virtual desktop window manager (openbox on :99)
+Requires=aphrody-desktop-xvfb.service
+After=aphrody-desktop-xvfb.service
+PartOf=aphrody-desktop-xvfb.service
+
+[Service]
+Type=simple
+User=ubuntu
+Environment=DISPLAY=:99
+Environment=HOME=/home/ubuntu
+ExecStartPre=/bin/sh -c 'for i in 1 2 3 4 5 6 7 8 9 10; do [ -S /tmp/.X11-unix/X99 ] && exit 0; sleep 0.5; done; exit 1'
+ExecStart=/usr/bin/openbox --startup /bin/true
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+RestrictRealtime=true
+UMask=0077
+MemoryMax=256M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-desktop-wm
+
+[Install]
+WantedBy=multi-user.target

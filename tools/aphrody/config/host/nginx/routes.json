@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 1,
+  "proxy": "nginx",
+  "sourceOfTruth": "tools/config/service-catalog.json",
+  "vhostRoot": "$YOLO_ROOT/tools/config/host",
+  "routes": [
+    {
+      "host": "omar.aphrody.com",
+      "service": "aphrody-public-webos",
+      "upstream": "static:403",
+      "probePath": "/",
+      "response": 403,
+      "vhost": "nginx/aphrody/omar.aphrody.com.conf"
+    },
+    {
+      "host": "aphrody.com",
+      "service": "aphrody-dbfr-site",
+      "upstream": "10.200.77.3:18803",
+      "probePath": "/docs",
+      "vhost": "nginx/aphrody/aphrody.com.conf"
+    },
+    {
+      "host": "os.aphrody.com",
+      "service": "aphrody-os",
+      "upstream": "static:/var/www/os.aphrody.com",
+      "probePath": "/",
+      "vhost": "nginx/aphrody/os.aphrody.com.conf"
+    },
+    {
+      "host": "bot.aphrody.com",
+      "service": "aphrody-reserved",
+      "upstream": "static:410",
+      "probePath": "/",
+      "response": 410,
+      "reservedAt": "2026-10-10",
+      "vhost": "nginx/aphrody/reserved.aphrody.com.conf"
+    },
+    {
+      "host": "mcp.aphrody.com",
+      "service": "aphrody-reserved",
+      "upstream": "static:410",
+      "probePath": "/",
+      "response": 410,
+      "reservedAt": "2026-10-10",
+      "vhost": "nginx/aphrody/reserved.aphrody.com.conf"
+    },
+    {
+      "host": "nie.aphrody.com",
+      "service": "aphrody-reserved",
+      "upstream": "static:410",
+      "probePath": "/",
+      "response": 410,
+      "reservedAt": "2026-10-10",
+      "vhost": "nginx/aphrody/reserved.aphrody.com.conf"
+    },
+    {
+      "host": "admin.aphrody.com",
+      "service": "aphrody-reserved",
+      "upstream": "static:410",
+      "probePath": "/",
+      "response": 410,
+      "reservedAt": "2026-10-10",
+      "vhost": "nginx/aphrody/reserved.aphrody.com.conf"
+    },
+    {
+      "host": "downloads.aphrody.com",
+      "service": "aphrody-downloads",
+      "upstream": "127.0.0.1:8797",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/downloads.aphrody.com.conf"
+    },
+    {
+      "host": "creator.aphrody.com",
+      "service": "aphrody-creator",
+      "upstream": "static:/home/ubuntu/apps/creator/current",
+      "probePath": "/latest.json",
+      "vhost": "nginx/aphrody/creator.aphrody.com.conf"
+    },
+    {
+      "host": "bun.aphrody.com",
+      "service": "aphrody-bun-site",
+      "upstream": "static:301",
+      "probePath": "/",
+      "response": 301,
+      "vhost": "nginx/aphrody/bun.aphrody.com.conf"
+    },
+    {
+      "host": "dragonballfr.com",
+      "service": "shenron-site",
+      "upstream": "127.0.0.1:5011",
+      "probePath": "/api/health",
+      "vhost": "nginx/shenron/dragonballfr.com.conf"
+    },
+    {
+      "host": "bot.dragonballfr.com",
+      "service": "shenron-bot",
+      "upstream": "127.0.0.1:5006",
+      "probePath": "/health",
+      "vhost": "nginx/shenron/bot.dragonballfr.com.conf"
+    },
+    {
+      "host": "cdn.aphrody.com",
+      "service": "aphrody-fonts-proxy",
+      "upstream": "127.0.0.1:8796",
+      "probePath": "/health",
+      "paths": ["/css2", "/css", "/icon", "/s/", "/h/"],
+      "vhost": "nginx/aphrody/cdn.aphrody.com.conf"
+    },
+    {
+      "host": "cdn.dragonballfr.com",
+      "service": "shenron-site",
+      "upstream": "127.0.0.1:5011",
+      "probePath": "/health",
+      "paths": [
+        "/_next/static/",
+        "/_next/image",
+        "/wiki/",
+        "/assets/wiki/",
+        "/assets/",
+        "/health",
+        "/api/health",
+        "/"
+      ],
+      "vhost": "nginx/shenron/cdn.dragonballfr.com.conf"
+    },
+    {
+      "host": "mcp.dragonballfr.com",
+      "service": "shenron-mcp",
+      "upstream": "127.0.0.1:5010",
+      "protocol": "mcp-a2a",
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "host": "app-video.aphrody.app",
+      "service": "aphrody-app-video",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-generation.aphrody.app",
+      "service": "aphrody-app-generation",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-images.aphrody.app",
+      "service": "aphrody-app-images",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-vectors.aphrody.app",
+      "service": "aphrody-app-vectors",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-compositing.aphrody.app",
+      "service": "aphrody-app-compositing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-photo-processing.aphrody.app",
+      "service": "aphrody-app-photo-processing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-pdf.aphrody.app",
+      "service": "aphrody-app-pdf",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-documents.aphrody.app",
+      "service": "aphrody-app-documents",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-audio.aphrody.app",
+      "service": "aphrody-app-audio",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-layout.aphrody.app",
+      "service": "aphrody-app-layout",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-cad.aphrody.app",
+      "service": "aphrody-app-cad",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-slides.aphrody.app",
+      "service": "aphrody-app-slides",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-tables.aphrody.app",
+      "service": "aphrody-app-tables",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "app-interface-layouts.aphrody.app",
+      "service": "aphrody-app-interface-layouts",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "filmcraft.aphrody.app",
+      "service": "aphrody-app-video",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "artcraft.aphrody.app",
+      "service": "aphrody-app-generation",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "photocraft.aphrody.app",
+      "service": "aphrody-app-images",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "vectorcraft.aphrody.app",
+      "service": "aphrody-app-vectors",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "effectcraft.aphrody.app",
+      "service": "aphrody-app-compositing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "lightcraft.aphrody.app",
+      "service": "aphrody-app-photo-processing",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "pdfcraft.aphrody.app",
+      "service": "aphrody-app-pdf",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "wordcraft.aphrody.app",
+      "service": "aphrody-app-documents",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "soundcraft.aphrody.app",
+      "service": "aphrody-app-audio",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "designcraft.aphrody.app",
+      "service": "aphrody-app-layout",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "cadcraft.aphrody.app",
+      "service": "aphrody-app-cad",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "deckcraft.aphrody.app",
+      "service": "aphrody-app-slides",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "gridcraft.aphrody.app",
+      "service": "aphrody-app-tables",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "figcraft.aphrody.app",
+      "service": "aphrody-app-interface-layouts",
+      "upstream": "static:503",
+      "probePath": "/health",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "git.aphrody.app",
+      "service": "aphrody-forge",
+      "upstream": "127.0.0.1:29020",
+      "probePath": "/user/login",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "source.aphrody.app",
+      "service": "aphrody-forge",
+      "upstream": "127.0.0.1:29020",
+      "probePath": "/user/login",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
+      "host": "deploy.aphrody.app",
+      "service": "aphrody-deploy",
+      "upstream": "127.0.0.1:29021",
+      "probePath": "/",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    }
+  ],
+  "internal": [
+    {
+      "service": "aphrody-bun-os",
+      "upstream": "127.0.0.1:18804",
+      "via": "nginx",
+      "publicHost": "os.aphrody.com",
+      "paths": [
+        "/desktop/",
+        "/api/webos/capabilities",
+        "/dist/workers/repl.js",
+        "/dist/wasm/bun/bun_wasm.wasm"
+      ]
+    },
+    {
+      "service": "aphrody-downloads",
+      "upstream": "127.0.0.1:8797",
+      "via": "nginx",
+      "publicHost": "aphrody.com",
+      "paths": ["/api/search", "/api/index/search"]
+    },
+    {
+      "service": "aphrody-downloads",
+      "upstream": "127.0.0.1:8797",
+      "via": "nginx",
+      "publicHost": "os.aphrody.com",
+      "paths": ["/api/search"]
+    },
+    {
+      "service": "aphrody-ai-http",
+      "upstream": "127.0.0.1:8789",
+      "via": "nginx",
+      "publicHost": "aphrody.com",
+      "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"],
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "service": "aphrody-web-api",
+      "upstream": "127.0.0.1:3007",
+      "via": "nginx",
+      "publicHost": "aphrody.com",
+      "paths": ["/api/v1/web/"],
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "service": "aphrody-bun-os-server",
+      "upstream": "127.0.0.1:29030",
+      "via": "nginx",
+      "publicHost": "source.aphrody.app",
+      "paths": ["/api/product/healthz", "/api/product/v1/"],
+      "note": "Authenticated product namespace on the existing forge TLS vhost. Gitea keeps its primary public route and /api/v1/."
+    }
+  ],
+  "policy": "one-nginx-instance-one-route-per-public-service"
+}

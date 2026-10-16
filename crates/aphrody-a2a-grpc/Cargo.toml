@@ -1,0 +1,50 @@
+[package]
+name = "aphrody-a2a-grpc"
+publish = true
+version = "1.4.4"
+description = "A2A v1 gRPC protocol binding for client and server"
+readme = "README.md"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
+categories = ["command-line-utilities", "development-tools", "web-programming"]
+
+[lib]
+name = "aphrody_a2a_grpc"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
+aphrody-a2a-client = { path = "../aphrody-a2a-client", version = "1.4.4", default-features = false, features = [] }
+aphrody-a2a-server = { path = "../aphrody-a2a-server", version = "1.4.4", default-features = false, features = [] }
+aphrody-a2a-pb = { path = "../aphrody-a2a-pb", version = "1.4.4" }
+tonic = { version = "0.14", features = [] }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+futures = "0.3.34"
+async-trait = "0.1.92"
+http = "1"
+tokio-rustls = { version = "0.26", features = [], optional = true }
+tonic-tls = { version = "0.7", default-features = false, features = ["rustls"], optional = true }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"], optional = true }
+
+[features]
+default = ["rustls-tls"]
+native-tls = ["aphrody-a2a-client/native-tls", "aphrody-a2a-server/native-tls"]
+rustls-tls = ["aphrody-a2a-client/rustls-tls", "aphrody-a2a-server/rustls-tls"]
+rustls = ["dep:tokio-rustls", "dep:tonic-tls", "dep:rcgen", "rustls-tls"]

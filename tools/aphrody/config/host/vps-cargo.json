@@ -1,0 +1,118 @@
+{
+  "$comment": "SSH build context defaults. Override with --config or VPS_CARGO_CONFIG and --host or VPS_CARGO_HOST. Local checkout paths resolve from this worktree. Primary factory is vps. Owner directive 2026-10-09 (\"exploite nos deux VPS pour build et prod\") restores dbfr as a bounded secondary host (production: Postgres, Redis, nginx, Shenron containers): `--host dbfr`, or `--host auto` when the vps heavy lock is busy; 3 jobs at most, nice 10, sccache 8G, no desktop libraries. Existing remote -wsl names are retained store/cache identifiers; no protected data is moved.",
+  "schemaVersion": 1,
+  "host": "vps",
+  "controlPath": "~/.ssh/cm/vps-cargo",
+  "localSession": "vps-tunnel",
+  "remoteSession": "vps-cargo",
+  "remoteWorkspace": "/home/ubuntu/build/wsl/aphrody",
+  "remoteSeed": "/home/ubuntu/src/aphrody",
+  "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/aphrody-wsl",
+  "remoteLockDir": "/home/ubuntu/build/locks",
+  "remoteHeavyLock": "/home/ubuntu/build/locks/heavy.lock",
+  "remoteLogDir": "/home/ubuntu/build/storage/artifacts/wsl",
+  "remoteEnv": {
+    "APHRODY_BUILD_HOST": "vps",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
+    "SCCACHE_DIR": "/home/ubuntu/build/storage/cache/sccache",
+    "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/build/storage/cache/bun",
+    "CEF_PATH": "/home/ubuntu/build/storage/cache/cef"
+  },
+  "jobs": 12,
+  "desktopSysCrates": ["gdk4-sys", "gtk4-sys"],
+  "forwards": {
+    "remote": [
+      {
+        "bind": "127.0.0.1:19418",
+        "to": "127.0.0.1:9418",
+        "purpose": "Factory fetches the selected worktree snapshot through the reverse Git forward; no WSL dependency."
+      }
+    ],
+    "local": []
+  },
+  "gitDaemon": {
+    "listen": "127.0.0.1",
+    "port": 9418,
+    "basePath": "",
+    "repository": ""
+  },
+  "snapshotRef": "refs/workspace/snapshot",
+  "repositories": {
+    "vu": {
+      "root": "../vu",
+      "remoteWorkspace": "/home/ubuntu/build/wsl/vu",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/vu-wsl",
+      "snapshotRef": "refs/vu/snapshot",
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+    },
+    "shenron": {
+      "root": "../shenron",
+      "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
+      "snapshotRef": "refs/shenron/snapshot",
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+    },
+    "shenron-release": {
+      "root": "../shenron",
+      "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
+      "snapshotRef": "refs/shenron/snapshot",
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+    },
+    "shenron-omar": {
+      "root": "../shenron",
+      "remoteWorkspace": "/home/ubuntu/build/wsl/shenron",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
+      "snapshotRef": "refs/shenron/snapshot",
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+    }
+  },
+  "refuseSnapshotPaths": [
+    "(^|/)\\.env(\\..*)?$",
+    "\\.(pem|key|p12|pfx)$",
+    "(^|/)id_(rsa|ed25519|ecdsa)(\\.pub)?$",
+    "(^|/)credentials(\\.json)?$",
+    "(^|/)secrets?\\.(json|toml|ya?ml)$"
+  ],
+  "hosts": {
+    "dbfr": {
+      "host": "dbfr",
+      "controlPath": "~/.ssh/cm/dbfr-cargo",
+      "localSession": "dbfr-tunnel",
+      "remoteSession": "dbfr-cargo",
+      "remoteWorkspace": "/home/ubuntu/build/wsl/aphrody",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/build/cache/cargo/aphrody-wsl",
+      "remoteLockDir": "/home/ubuntu/build/locks",
+      "remoteHeavyLock": "/home/ubuntu/build/locks/heavy.lock",
+      "remoteLogDir": "/home/ubuntu/build/artifacts/wsl",
+      "desktopLibraries": false,
+      "jobs": 3,
+      "maxJobs": 3,
+      "remoteEnv": {
+        "SCCACHE_DIR": "/home/ubuntu/build/cache/sccache",
+        "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/build/cache/bun",
+        "SCCACHE_CACHE_SIZE": "8G",
+        "APHRODY_BUILD_HOST": "dbfr",
+        "CEF_PATH": ""
+      },
+      "remoteTransientRoot": "/home/ubuntu/build/transient",
+      "resources": {
+        "reserveMemoryGiB": 4,
+        "reserveDiskGiB": 20,
+        "memoryPerJobGiB": 1
+      }
+    }
+  },
+  "maxJobs": 12,
+  "resources": {
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 32,
+    "memoryPerJobGiB": 1
+  },
+  "remoteTransientRoot": "/home/ubuntu/build/storage/transient"
+}

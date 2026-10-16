@@ -1,0 +1,3 @@
+# runtime:* modules resolve through the package preload plugin in tests, as in consumers.
+[test]
+preload = ["./src/preload.ts"]

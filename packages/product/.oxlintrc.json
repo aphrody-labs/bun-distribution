@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../docs/aphrody/.oxlintrc.json"],
+  "overrides": [
+    {
+      "files": ["src/creator/**", "src/shared/**", "test/creator/**"],
+      "rules": {
+        "no-await-in-loop": "off",
+        "unicorn/no-array-sort": "off",
+        "promise/always-return": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ]
+}

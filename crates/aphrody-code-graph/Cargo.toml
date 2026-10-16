@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-code-graph"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE)."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+aphrody-store = { path = "../aphrody-store", version = "1.4.4", features = [] }
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+oxc_allocator = "0.153.0"
+oxc_ast = "0.153.0"
+oxc_ast_visit = "0.153.0"
+oxc_parser = "0.153.0"
+oxc_span = "0.153.0"
+oxc_syntax = "0.153.0"
+tree-sitter = "0.27"
+tree-sitter-rust = "0.24"
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+
+[[bin]]
+name = "aphrody-graph"
+path = "src/bin/aphrody-graph.rs"
+
+[dev-dependencies]
+tempfile = "3.27.0"

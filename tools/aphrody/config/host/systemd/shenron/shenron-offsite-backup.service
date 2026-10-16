@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# VPS pull of the DBFR container snapshots (shenron-container-backup.timer, 03:00 UTC): SHA-256 verified copy under
+# /mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron, then a restore of the PostgreSQL dump into a disposable pgvector/pgvector:0.8.1-pg18
+# container and SQLite quick_check. Reads DBFR over the wg path (ssh alias dbfr-wg, sudo -n cat of the root-owned
+# snapshots). Code: scripts/tools/infra/shenron-offsite-backup.ts in the single checkout ~/src/aphrody.
+[Unit]
+Description=Off-host pull and restore check of the Shenron container snapshots (DBFR to VPS)
+After=network-online.target docker.service wg-quick@wg1.service
+Wants=network-online.target
+Requires=docker.service
+RequiresMountsFor=/mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=docker
+Environment=SHENRON_OFFSITE_HOST=dbfr-wg
+Environment=SHENRON_OFFSITE_DIR=/mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron
+WorkingDirectory=/home/ubuntu/src/aphrody
+ExecStart=/home/ubuntu/.bun/bin/bun --no-env-file scripts/tools/infra/shenron-offsite-backup.ts --restore-check
+TimeoutStartSec=90min
+UMask=0077
+Nice=15
+IOSchedulingClass=idle
+SyslogIdentifier=shenron-offsite-backup

@@ -1,0 +1,74 @@
+[package]
+name = "aphrody-backend"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
+categories = ["command-line-utilities", "development-tools", "web-programming"]
+description           = "Aphrody forensics and backend logic (Rust)."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+serde_json = "1.0.151"
+anyhow = "1.0.104"
+tracing = "0.1.44"
+aes-gcm = { version = "0.11", features = [] }
+
+[package.metadata.cargo-machete]
+ignored = ["getrandom"]
+
+# Browser-WASM: aes-gcm pulls getrandom, which must opt into the "wasm_js" backend.
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security_Cryptography",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+] }
+
+# stdio capture redirects the OS standard streams and the MD3 mirror writes to disk with a
+# multi-thread runtime: host-only (wasm32 keeps the Vfs model and an empty capture module).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tempfile           = { workspace = true }
+tokio              = { workspace = true }
+reqwest            = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[target.'cfg(all(not(target_arch = "wasm32"), unix))'.dependencies]
+rustix = { workspace = true, features = ["stdio"] }
+
+[target.'cfg(all(not(target_arch = "wasm32"), windows))'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
+
+[dev-dependencies]
+criterion = { version = "0.8.2", features = ["html_reports"] }
+sha2 = "0.11.0"
+
+[[bench]]
+name    = "backend_bench"
+harness = false
+
+[[bench]]
+name    = "base_bench"
+harness = false

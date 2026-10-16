@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "hosts": [
+    {
+      "id": "local",
+      "os": "win32",
+      "local": true,
+      "reserveGiB": 4,
+      "maxJobs": 4,
+      "heavy": true,
+      "externalLocks": ["$APHRODY_BUN_CHECKOUT/build/chromium/setup.lock"]
+    },
+    {
+      "id": "omar",
+      "os": "win32",
+      "local": false,
+      "reserveGiB": 4,
+      "maxJobs": 2,
+      "heavy": true,
+      "externalLocks": ["$APHRODY_BUN_CHECKOUT/build/chromium/setup.lock"]
+    },
+    { "id": "vps", "os": "linux", "local": false, "reserveGiB": 4, "maxJobs": 6, "heavy": true },
+    { "id": "dbfr", "os": "linux", "local": false, "reserveGiB": 8, "maxJobs": 1, "heavy": false }
+  ]
+}

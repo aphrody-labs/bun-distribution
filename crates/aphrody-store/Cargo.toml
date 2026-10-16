@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-store"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "aphrody-store: the single agent-home database (`<home>/db/aphrody.sqlite`): per-profile path resolution, versioned migrations, source/file fingerprints, pipeline journal, sync state and checksum-verified backups."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+# Register sqlite-vec (`vec0`) on every connection (migration 0007 and later add the vec tables).
+vec = ["aphrody-sql/vec"]
+
+[dependencies]
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["sqlite"] }
+blake3 = "1.8.7"
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+ignore = { version = "0.4", features = [] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+thiserror = "2.0.20"
+
+[[bin]]
+name = "aphrody-store"
+path = "src/bin/aphrody-store.rs"
+
+[dev-dependencies]
+tempfile = "3.27.0"

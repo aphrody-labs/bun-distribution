@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Forward VPS loopback SOCKS to the Japan Mullvad namespace
+Requires=aphrody-mullvad-loopback.socket aphrody-mullvad-socks.service
+After=aphrody-mullvad-loopback.socket aphrody-mullvad-socks.service
+PartOf=aphrody-mullvad-netns.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 10.200.1.2:1080
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8 10.200.1.0/30
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=yes
+MemoryMax=64M
+TasksMax=32
+UMask=0077

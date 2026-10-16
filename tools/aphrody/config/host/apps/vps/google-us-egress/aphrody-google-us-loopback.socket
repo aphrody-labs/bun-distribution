@@ -1,0 +1,13 @@
+[Unit]
+Description=Loopback-only Google US SOCKS bridge
+Requires=aphrody-google-us-netns.service aphrody-google-us-socks.service
+After=aphrody-google-us-netns.service aphrody-google-us-socks.service
+PartOf=aphrody-google-us-netns.service
+
+[Socket]
+ListenStream=127.0.0.1:1081
+NoDelay=true
+Accept=no
+
+[Install]
+WantedBy=sockets.target

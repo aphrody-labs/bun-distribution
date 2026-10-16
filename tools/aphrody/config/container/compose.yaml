@@ -1,0 +1,399 @@
+# SPDX-License-Identifier: Apache-2.0
+# Aphrody services in containers. From the repository root:
+#   docker compose -f tools/config/container/compose.yaml up --build api
+#   docker compose -f tools/config/container/compose.yaml run --rm dev            # interactive build shell
+#   docker compose -f tools/config/container/compose.yaml run --rm -T mcp         # MCP over stdio for a client
+# Secrets come from the environment or an untracked env file (tools/config/container/.env), never from the image.
+# On vps and dbfr this file is ~/apps/aphrody/compose.yaml, included by the host project ~/apps/compose.yaml
+# (tools/config/host/apps/<host>/compose.yaml, installed by scripts/tools/infra/host-apps.ts).
+
+name: aphrody
+
+x-build: &build
+  context: ../../../../docs/aphrody
+  dockerfile: tools/config/container/Dockerfile
+  args:
+    APHRODY_RELEASE: ${APHRODY_RELEASE:-}
+
+x-runtime: &runtime
+  build:
+    <<: *build
+    target: runtime
+  image: ${APHRODY_RUNTIME_IMAGE:-aphrody:runtime}
+  init: true
+  volumes:
+    - aphrody-home:/home/aphrody/.aphrody
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+# dbfr services on aphrody:toolbox (the VPS toolbox build, scripts/release/toolbox-image.ts --ship dbfr-wg; never
+# built on dbfr): host network on the loopback ports of the former units, uid 1000 = ubuntu, host paths bound at the
+# same place, empty tmpfs home as ProtectHome=tmpfs did.
+x-toolbox: &toolbox
+  image: ${APHRODY_TOOLBOX_IMAGE:-aphrody:toolbox}
+  pull_policy: never
+  init: true
+  user: "1000:1000"
+  network_mode: host
+  read_only: true
+  tmpfs: [/tmp, "/home/ubuntu:uid=1000,gid=1000,mode=0700"]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  profiles: [prod]
+
+# dbfr Bun services on the published Bun image (the bun-prod tag): host network on the loopback ports of the former
+# units, uid 1000 = ubuntu, release trees bound read-only at their host path (relative `current` links), writable
+# paths bound one by one as the units' ReadWritePaths were.
+x-bun: &bun
+  image: ${APHRODY_BUN_IMAGE:-ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3}
+  pull_policy: missing
+  entrypoint: ["bun"]
+  init: true
+  user: "1000:1000"
+  network_mode: host
+  read_only: true
+  tmpfs: [/tmp]
+  environment:
+    HOME: /tmp
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  profiles: [prod]
+
+services:
+  # MCP Streamable HTTP for the wg clients (aphrody-wg-proxy@ forwards 10.200.77.3:8793 here); Bearer token from the
+  # env file. The M3 tool host runs with the image's bun.
+  mcp-http:
+    <<: *toolbox
+    command: ["aphrody-mcp", "http", "--bind", "127.0.0.1:8793"]
+    working_dir: /home/ubuntu/.aphrody
+    env_file: [/etc/aphrody/aphrody-mcp-http.env, /etc/aphrody/discord-debate-rag.env]
+    environment:
+      HOME: /home/ubuntu
+      XDG_CACHE_HOME: /home/ubuntu/.aphrody/xdg/cache
+      XDG_CONFIG_HOME: /home/ubuntu/.aphrody/xdg/config
+      XDG_DATA_HOME: /home/ubuntu/.aphrody/xdg/data
+      RUST_LOG: info
+      APHRODY_M3_TOOL_HOST: bun /home/ubuntu/apps/lab/m3-tool-host.mjs
+    volumes:
+      - /home/ubuntu/.aphrody:/home/ubuntu/.aphrody
+      - /home/ubuntu/apps/lab:/home/ubuntu/apps/lab:ro
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8793/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Private MCP and RAG bridge of shenron-bot (127.0.0.1:8789).
+  shenron-compute:
+    <<: *toolbox
+    command: ["aphrody-mcp", "http", "--bind", "127.0.0.1:8789"]
+    working_dir: /home/ubuntu/apps/shenron/shared/agent-home
+    env_file: [/etc/aphrody/shenron-compute.env]
+    environment:
+      HOME: /home/ubuntu
+      APHRODY_HOME: /home/ubuntu/apps/shenron/shared/agent-home
+    volumes:
+      - /home/ubuntu/apps/shenron/shared/agent-home:/home/ubuntu/apps/shenron/shared/agent-home
+    mem_limit: 3g
+    depends_on: [shenron-embed]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8789/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Multilingual E5 embeddings (127.0.0.1:8085).
+  shenron-embed:
+    <<: *toolbox
+    command:
+      - aphrody-embed
+      - serve
+      - --host
+      - 127.0.0.1
+      - --port
+      - "8085"
+      - --threads
+      - "4"
+      - --model-dir
+      - /home/ubuntu/apps/shenron/shared/models/intfloat--multilingual-e5-small
+    volumes:
+      - /home/ubuntu/apps/shenron/shared/models:/home/ubuntu/apps/shenron/shared/models:ro
+    mem_limit: 2500m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8085/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Persistent job worker (jobs.db in ~/.aphrody, shared with mcp-http as on the host).
+  jobs-worker:
+    <<: *toolbox
+    command: ["aphrody", "job", "run", "--forever", "--host", "dbfr", "--worker", "dbfr-native", "--concurrency", "2"]
+    working_dir: /home/ubuntu/.aphrody
+    environment:
+      HOME: /home/ubuntu
+      APHRODY_HOME: /home/ubuntu/.aphrody
+    volumes:
+      - /home/ubuntu/.aphrody:/home/ubuntu/.aphrody
+    mem_limit: 3g
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "aphrody", "job", "stats"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # Discord gateway and HTTP interactions of bot.aphrody.com (127.0.0.1:4010); releases activated by
+  # scripts/release/atomic-deploy-aphrody-discord.sh, which restarts this service.
+  discord:
+    <<: *bun
+    command: ["/home/ubuntu/apps/discord/current/server.js"]
+    working_dir: /home/ubuntu/apps/discord/current
+    env_file: [/etc/aphrody-discord.env]
+    environment:
+      NODE_ENV: production
+      HOME: /home/ubuntu/apps/discord/shared
+    volumes:
+      - /home/ubuntu/apps/discord:/home/ubuntu/apps/discord:ro
+      - /home/ubuntu/apps/discord/shared:/home/ubuntu/apps/discord/shared
+    mem_limit: 512m
+    stop_signal: SIGINT
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4010/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Google Fonts edge proxy and static CDN of cdn.aphrody.com (127.0.0.1:8796); scripts/tools/infra/cdn.ts publishes
+  # the trees it serves.
+  fonts-proxy:
+    <<: *bun
+    command:
+      - /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts
+      - --port
+      - "8796"
+      - --cache
+      - /home/ubuntu/apps/cdn/google
+      - --origin
+      - https://cdn.aphrody.com
+      - --static
+      - /home/ubuntu/apps/cdn/current
+      - --static
+      - /home/ubuntu/apps/cdn/symbols/current
+    working_dir: /home/ubuntu/apps/cdn/src
+    volumes:
+      - /home/ubuntu/apps/cdn:/home/ubuntu/apps/cdn:ro
+      - /home/ubuntu/apps/cdn/google:/home/ubuntu/apps/cdn/google
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8796/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Private JSON/GraphQL projections of the Shenron timeline (127.0.0.1:8813); the host timer
+  # shenron-timeline-refresh rewrites the tree it reads.
+  shenron-timeline-api:
+    <<: *bun
+    command:
+      - /home/ubuntu/.local/lib/aphrody/shenron/workspace.mjs
+      - timeline
+      - serve
+      - --output
+      - /home/ubuntu/.aphrody/workspaces/dbfr/private/web/timeline
+      - --port
+      - "8813"
+    working_dir: /home/ubuntu/.aphrody/workspaces/dbfr/private/web
+    volumes:
+      - /home/ubuntu/.local/lib/aphrody/shenron:/home/ubuntu/.local/lib/aphrody/shenron:ro
+      - /home/ubuntu/.aphrody/workspaces/dbfr/private/web:/home/ubuntu/.aphrody/workspaces/dbfr/private/web:ro
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8813/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # downloads.aphrody.com origin (127.0.0.1:8797, behind the gateway); scripts/release/publish-downloads.ts swaps
+  # `current` and uploads app/server.ts.
+  downloads:
+    <<: *bun
+    command: ["/home/ubuntu/apps/downloads/app/server.ts"]
+    working_dir: /home/ubuntu/apps/downloads/app
+    environment:
+      HOME: /tmp
+      DOWNLOADS_ROOT: /home/ubuntu/apps/downloads/current
+      DOWNLOADS_PORT: "8797"
+      DOWNLOADS_HOST: 127.0.0.1
+    volumes:
+      - /home/ubuntu/apps/downloads:/home/ubuntu/apps/downloads:ro
+    mem_limit: 384m
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8797/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api:
+    <<: *runtime
+    command: ["api"]
+    environment:
+      # Only the API entrypoint requires the token; other profiles can run without it.
+      APHRODY_MCP_HTTP_TOKEN: ${APHRODY_MCP_HTTP_TOKEN:-}
+      PORT: "8999"
+    ports:
+      # Published on the host loopback only; put a reverse proxy with TLS in front for anything wider.
+      - "127.0.0.1:8999:8999"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    # Naming the service (`up api`) enables it; a host project (~/apps/compose.yaml) never starts it next to prod.
+    profiles: [api]
+
+  # Complete Aphrody (API + MCP surfaces) as a long-running PC service. The hidden task AphrodyContainer (boot
+  # catalog entry `Container`) runs scripts/install/container-service.ts, which starts it with `--profile pc` on the
+  # owner PC and on Omar's PC.
+  pc:
+    <<: *runtime
+    container_name: aphrody-pc
+    command: ["api"]
+    environment:
+      APHRODY_MCP_HTTP_TOKEN: ${APHRODY_MCP_HTTP_TOKEN:-}
+      PORT: "8999"
+      APHRODY_PC: ${APHRODY_PC:-local}
+    ports:
+      - "127.0.0.1:${APHRODY_PC_PORT:-8999}:8999"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    profiles: [pc]
+
+  # Production (dbfr): the image shipped by the VPS build service (release-image.ts ship), never built on dbfr.
+  prod:
+    <<: *runtime
+    build: !reset null
+    container_name: aphrody-prod
+    pull_policy: never
+    command: ["api"]
+    environment:
+      APHRODY_MCP_HTTP_TOKEN: ""
+      APHRODY_MCP_HTTP_TOKEN_FILE: /run/secrets/aphrody_mcp_http_token
+      PORT: "8999"
+    secrets:
+      - aphrody_mcp_http_token
+    ports:
+      - "127.0.0.1:${APHRODY_PROD_PORT:-8999}:8999"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    profiles: [prod]
+
+  # Build service (VPS): the shared aphrody-build image, reached over SSH (`aphrody infra ssh exec --host vps`).
+  # It idles; builds enter through `docker exec` or scripts/build/container/aphrody-build.ts run (bounded, locked).
+  build:
+    image: aphrody-build:latest
+    container_name: aphrody-build
+    command: ["sleep", "infinity"]
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    cpus: ${APHRODY_BUILD_CPUS:-6}
+    mem_limit: ${APHRODY_BUILD_MEMORY:-16g}
+    pids_limit: 8192
+    working_dir: /work
+    user: "${APHRODY_BUILD_UID:-1000}:1500"
+    volumes:
+      - ${APHRODY_BUILD_REPO:-/home/ubuntu/src/aphrody}:/work
+      - aphrody-build-cargo:/cache/cargo
+      - aphrody-build-sccache:/cache/sccache
+      - aphrody-build-bun:/cache/bun
+    healthcheck:
+      test: ["CMD-SHELL", "cargo --version >/dev/null && bun --version >/dev/null && test -w /cache/cargo"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    profiles: [build]
+
+  mcp:
+    <<: *runtime
+    command: ["mcp"]
+    stdin_open: true
+    profiles: [tools]
+
+  dev:
+    build:
+      <<: *build
+      target: dev
+    image: aphrody:dev
+    command: ["shell"]
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    volumes:
+      # The checkout is bind mounted over the image copy; caches live in named volumes so they survive rebuilds.
+      - ../../..:/app
+      - aphrody-home:/home/aphrody/.aphrody
+      - cargo-registry:/home/aphrody/.cargo/registry
+      - cargo-git:/home/aphrody/.cargo/git
+      - cargo-target:/app/target
+      - bun-cache:/home/aphrody/.bun/install/cache
+    environment:
+      APHRODY_CLOUD: "1"
+    profiles: [dev]
+    init: true
+
+  release-builder:
+    build:
+      <<: *build
+      target: release-builder
+    image: aphrody:release-builder
+    command: ["shell"]
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    volumes:
+      - ../../..:/app
+      - aphrody-home:/home/aphrody/.aphrody
+      - cargo-registry:/home/aphrody/.cargo/registry
+      - cargo-git:/home/aphrody/.cargo/git
+      - cargo-target:/app/target
+      - bun-cache:/home/aphrody/.bun/install/cache
+      - uv-cache:/home/aphrody/.cache/uv
+    profiles: [release]
+    init: true
+
+volumes:
+  aphrody-home:
+  cargo-registry:
+  cargo-git:
+  cargo-target:
+  bun-cache:
+  uv-cache:
+  aphrody-build-cargo:
+    external: true
+  aphrody-build-sccache:
+    external: true
+  aphrody-build-bun:
+    external: true
+
+secrets:
+  aphrody_mcp_http_token:
+    file: ${APHRODY_API_TOKEN_FILE:-/etc/aphrody/aphrody_mcp_http_token}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "note": "Data for `yolo update rust doctor|fix` (packages/infra/update/src/ecosystems/rust-doctor.ts). Every entry carries its reason; a skip is reported as a note on each run, never as a pass. `*` is a wildcard. docs/operations/infra/update/RUST.md has the long form.",
+  "vendored": [
+    { "crates": "aphrody-bindgen", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
+    { "crates": "aphrody-ml-*", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
+    { "crates": "aphrody-llama", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
+    { "crates": "aphrody-llama-sys", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
+    { "crates": "obscura*", "reason": "vendored upstream (h4ckf0r0day/obscura): not rewritten, keeps its upstream style" },
+    { "crates": "aphrody-taffy", "reason": "vendored upstream (DioxusLabs/taffy) with local patches: not rewritten" }
+  ],
+  "features": {
+    "skip": [
+      { "feature": "taffy/*", "reason": "vendored manifest: the workspace consumes the default feature set only" }
+    ]
+  },
+  "targets": [
+    {
+      "triple": "wasm32-unknown-unknown",
+      "packages": "auto",
+      "match": "wasm32",
+      "isolate": true,
+      "include": ["aphrody-shell-web", "aphrody-shell-session", "aphrody-shell-vfs"],
+      "exclude": [
+        { "crates": "aphrody-google", "reason": "host-only: built on aphrody-gemini-runtime and aphrody-model-client, which need tokio net; the wasm stub of the aphrody CLI does not link it" },
+        { "crates": "aphrody-jev", "reason": "host-only: links rustls with ring" },
+        { "crates": "aphrody-mcp", "reason": "host-only: MCP server over stdio, process and filesystem tools" },
+        { "crates": "aphrody-mcp-client", "reason": "host-only: its async traits require Send futures, which browser fetch does not give" },
+        { "crates": "aphrody-messaging", "reason": "host-only: reads the host name through rustix and sends through reqwest with tokio net" },
+        { "crates": "aphrody-session", "reason": "host-only: tokio net and the filesystem session mirror" }
+      ]
+    },
+    {
+      "triple": "x86_64-pc-windows-msvc",
+      "runner": "xwin",
+      "packages": "auto",
+      "match": "windows",
+      "env": { "CL_FLAGS": "-msse4.1" }
+    }
+  ],
+  "tests": {
+    "doc": true,
+    "exclude": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "note": "Advisories that cannot be fixed by a bump here. Each entry names why; `yolo update deps inventory` lists them as held instead of open. Re-check on every inventory: remove the entry as soon as the blocker moves.",
+  "holds": [
+    { "ecosystem": "crates.io", "name": "yara-x", "reason": "optional `yara` feature of aphrody-re. The fix for GHSA-2jx3-ff3v-j7jj lands in 1.19.0, but 1.19 to 1.21 need wasmtime ^43 to ^45, which carry RUSTSEC-2026-0222/0269/0316 (fixed only from 46.0.3). 1.7.0 keeps wasmtime 36.0.16 (patched). Rules are not deserialised from untrusted input." },
+    { "ecosystem": "crates.io", "name": "bincode", "reason": "RUSTSEC-2025-0141 is an unmaintained notice; 3.0.0 is not a drop-in replacement. Transitive (heed-types and others)." },
+    { "ecosystem": "crates.io", "name": "glib", "reason": "gtk3-rs 0.18 stack required by tauri/wry on Linux (atk, cairo-rs, gdk); moves with the Tauri toolchain." },
+    { "ecosystem": "crates.io", "name": "quick-xml", "reason": "0.38.4 comes from plist 1.7.4; 0.31.0 from an older transitive parent. Moves with its parent." },
+    { "ecosystem": "crates.io", "name": "ttf-parser", "reason": "fontdb 0.16 and the usvg/rustybuzz text stack; no patched release exists for 0.25.1 either." },
+    { "ecosystem": "crates.io", "name": "paste", "reason": "unmaintained notice, transitive (rav1e, specta, safer-bytes); no replacement release." },
+    { "ecosystem": "crates.io", "name": "rsa", "reason": "RUSTSEC-2023-0071 has no patched release; transitive of jsonwebtoken 10." },
+    { "ecosystem": "crates.io", "name": "serial", "reason": "unmaintained notice; portable-pty 0.8 (pinned, 0.9 breaks headless Windows clients)." },
+    { "ecosystem": "crates.io", "name": "rustybuzz", "reason": "usvg and athena-text text stack; no newer release." },
+    { "ecosystem": "crates.io", "name": "proc-macro-error", "reason": "unmaintained notice; used by glib-macros and gtk3-macros." },
+    { "ecosystem": "crates.io", "name": "proc-macro-error2", "reason": "unmaintained notice; used by nu-derive-value." },
+    { "ecosystem": "crates.io", "name": "encoding", "reason": "unmaintained notice, transitive; no newer release." },
+    { "ecosystem": "crates.io", "name": "number_prefix", "reason": "unmaintained notice, transitive; no newer release." },
+    { "ecosystem": "crates.io", "name": "atomic-polyfill", "reason": "unmaintained notice, transitive; no newer release." },
+    { "ecosystem": "npm", "name": "esbuild", "reason": "0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only." },
+    { "ecosystem": "npm", "name": "vite", "reason": "vite 5.4 is a transitive dependency of tooling that has not moved to vite 7+; dev server only." },
+    { "ecosystem": "npm", "name": "uuid", "reason": "uuid 9 is a transitive major; only v3/v5/v6 with a caller-supplied buffer is affected." },
+    { "ecosystem": "npm", "name": "basic-ftp", "reason": "transitive major (5 to 6); moves with its consumer." },
+    { "ecosystem": "npm", "name": "extract-zip", "reason": "no newer release (2.0.1 is latest)." },
+    { "ecosystem": "npm", "name": "quill", "reason": "no newer release (2.0.3 is latest)." }
+  ]
+}

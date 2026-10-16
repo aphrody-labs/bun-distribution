@@ -1,0 +1,28 @@
+[Unit]
+Description=Private Google US namespace SOCKS endpoint
+Requires=aphrody-google-us-netns.service
+After=aphrody-google-us-netns.service
+PartOf=aphrody-google-us-netns.service
+
+[Service]
+Type=simple
+NetworkNamespacePath=/run/netns/aphrody-google-us
+BindReadOnlyPaths=/etc/netns/aphrody-google-us/resolv.conf:/etc/resolv.conf
+ExecStart=/usr/bin/microsocks -i 10.200.2.2 -p 1081
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryMax=64M
+TasksMax=32
+Restart=on-failure
+RestartSec=2s
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

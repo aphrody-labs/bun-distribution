@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["bun-native-build @ git+https://github.com/aphrody-labs/bun.git@fcfc2a6dca114193a1d7120ad9cd7c2855a022b0#subdirectory=packages/bun-python-native/python/build-backend"]
+build-backend = "bun_native_build"
+
+[project]
+name = "aphrody"
+version = "0.1.0"
+description = "Aphrody Python SDK: authenticated AI, web, document and media clients."
+readme = "README.md"
+license = "Apache-2.0 AND AGPL-3.0-only"
+requires-python = ">=3.11"
+authors = [{ "name" = "aphrody contributors" }]
+keywords = ["gemini", "vertex-ai", "cloud-code", "antigravity", "oauth", "cli"]
+classifiers = ["Development Status :: 3 - Alpha", "Intended Audience :: Developers", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Operating System :: POSIX :: Linux"]
+dependencies = ["httpx>=0.28", "google-genai>=1.0", "google-auth>=2.30"]
+license-files = ["LICENSE", "NOTICE", "LICENSES/AGPL-3.0-only.txt"]
+
+[project.optional-dependencies]
+decision = ["pydantic==2.14.1", "pydantic-ai-slim==2.55.0", "pydantic-graph==2.55.0", "pydantic-evals==2.55.0", "typesafe-sdk==0.7.4"]
+decision-compare = ["aphrody[decision]", "system-one-adapter==0.2.1"]
+voice = ["google-antigravity>=0.1.1", "faster-whisper>=1.0", "kokoro-onnx>=0.3", "sounddevice>=0.4.6", "numpy>=1.22"]
+images = ["pyoxipng>=9.1", "Pillow>=12.0"]
+icons = ["aphrody[images]", "resvg-py>=0.3", "scour>=0.38", "pyconify>=0.2"]
+to3d = ["aphrody[images]", "trimesh>=4.4", "numpy>=1.26", "scipy>=1.11"]
+depth = ["aphrody[to3d]", "transformers>=4.44", "torch>=2.2"]
+antigravity = ["google-antigravity>=0.1.1"]
+forensic = ["magika~=0.6.1", "lief>=0.17", "markitdown[pdf,docx,pptx,xlsx]>=0.1.5", "fastembed>=0.8", "numpy>=1.26"]
+rag = ["scikit-learn>=1.4", "umap-learn>=0.5", "networkx>=3.0", "numpy>=1.26", "tiktoken>=0.6"]
+docling = ["docling>=2.130", "docling-core>=2.98", "pypdfium2>=5.0", "Pillow>=10.0"]
+data = ["polars>=1.0", "pyarrow>=15.0"]
+
+
+[project.urls]
+Repository = "https://github.com/aphrody-labs/aphrody"
+Documentation = "https://github.com/aphrody-labs/aphrody/tree/main/py/docs/sdk"
+
+[tool.maturin]
+# Native source and lock are staged from the pinned Bun fork, outside this checkout.
+manifest-path = "Cargo.toml"
+locked = true
+exclude = [{ "path" = "tests/**", "format" = "wheel" }, { "path" = "build/**", "format" = "wheel" }]
+python-source = "src"
+module-name = "aphrody.aphrody_rust"
+
+[tool.aphrody.bun-native]
+revision = "84a5f33140cef2a63088d8484e84c0a2e5aba785"
+workspace = "packages/bun-python-native"
+manifest = "crates/aphrody-rust/Cargo.toml"
+
+[tool.uv.sources.google-antigravity]
+git = "https://github.com/aphrody-labs/antigravity-sdk-python.git"
+rev = "02fa7fa362d815f788074ae09998041b34f9a770"

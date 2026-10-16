@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Exact published fork executable, archive verified against release SHA256SUMS.
+services:
+  downloads:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  discord:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  fonts-proxy:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  shenron-timeline-api:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  mcp-http:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  shenron-compute:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  shenron-embed:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+  jobs-worker:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro

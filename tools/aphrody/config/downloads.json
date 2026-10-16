@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "authority": "owner order 2026-10-06: explicit publication authority for the artifacts below, on existing repositories only",
+  "runbook": "docs/operations/infra/DOWNLOADS.md",
+  "site": {
+    "baseUrl": "https://downloads.aphrody.com",
+    "hosts": ["downloads.aphrody.com"],
+    "certName": "aphrody.com",
+    "appUi": {
+      "owner": "m3/packages/app-ui",
+      "directory": "app-ui",
+      "declaration": "app-ui/deployment.json",
+      "assetsPrefix": "/_app-ui/",
+      "routes": ["/", "/os"],
+      "nativeRpc": false,
+      "googleSearch": {
+        "owner": "/home/ubuntu/.local/bin/aphrody",
+        "module": "current/google-search.ts",
+        "environmentFile": "current/google-search.env"
+      },
+      "runbook": "docs/operations/workspace/public-app-ui-artifact.md"
+    }
+  },
+  "host": {
+    "target": "vps",
+    "root": "/home/ubuntu/apps/downloads",
+    "service": "aphrody-downloads",
+    "port": 8797,
+    "bun": "/home/ubuntu/.bun/bin/bun",
+    "keepReleases": 5
+  },
+  "factory": {
+    "repo": "aphrody",
+    "workspace": "/home/ubuntu/src/aphrody",
+    "cargoTargetDir": "/home/ubuntu/build/cache/cargo/aphrody",
+    "jobPrefix": "downloads",
+    "target": "vps"
+  },
+  "assets": {
+    "install.sh": "scripts/install/install.sh",
+    "install.ps1": "scripts/install/install.ps1",
+    "install-full.sh": "packages/infra/workspace/assets/downloads/install-full.sh",
+    "install-full.ps1": "packages/infra/workspace/assets/downloads/install-full.ps1",
+    "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
+    "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg"
+  },
+  "artifacts": [
+    {
+      "id": "aphrody",
+      "kind": "factory-binary",
+      "description": "Single aphrody multi-call binary: CLI, MCP server (aphrody-mcp), infra, ovh, kernel and every former standalone CLI name",
+      "versionFrom": { "cargoWorkspace": "Cargo.toml" },
+      "executable": "aphrody",
+      "provides": ["aphrody", "aphrody-mcp", "aphrody-infra", "aphrody-kernel"],
+      "platforms": [
+        {
+          "platform": "linux-x86_64",
+          "target": "x86_64-unknown-linux-gnu",
+          "cargo": [
+            "scripts/build/rust/cargo-serial.sh",
+            "build",
+            "--release",
+            "--locked",
+            "-p",
+            "aphrody",
+            "--bin",
+            "aphrody"
+          ],
+          "binary": "release/aphrody",
+          "glibcMax": "2.39",
+          "archive": "tar.gz",
+          "enabled": true
+        },
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "cargo": [
+            "env",
+            "TARGET_CPU=x86-64-v2",
+            "scripts/build/rust/cargo-serial.sh",
+            "xwin",
+            "build",
+            "--release",
+            "--locked",
+            "--target",
+            "x86_64-pc-windows-msvc",
+            "-p",
+            "aphrody",
+            "-p",
+            "aphrody-mcp",
+            "--features",
+            "aphrody-mcp/winclean",
+            "--bin",
+            "aphrody"
+          ],
+          "binary": "x86_64-pc-windows-msvc/release/aphrody.exe",
+          "archive": "zip",
+          "enabled": true,
+          "optional": true,
+          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host), with aphrody-mcp/winclean so the embedded MCP server carries the Windows computer_* tools; TARGET_CPU=x86-64-v2 lets libwebp-sys pass -march to clang-cl, which otherwise rejects its SSE4.1 sources (MSVC compiles them without a target flag); skipped, with a note in latest.json, when the binary is absent"
+        },
+        {
+          "platform": "macos-aarch64",
+          "target": "aarch64-apple-darwin",
+          "enabled": false,
+          "reason": "no macOS target is declared by the factory or the toolchain catalog"
+        }
+      ]
+    },
+    {
+      "id": "yolo",
+      "kind": "bun-compile",
+      "description": "yolo Bun CLI (bun build --compile) with its verified native runtime artifact, runtime SDK and project templates",
+      "versionFrom": { "file": "packages/engine/yolo/VERSION" },
+      "entry": "packages/engine/yolo/src/index.ts",
+      "compileFlags": [
+        "--bytecode",
+        "--no-compile-autoload-dotenv",
+        "--no-compile-autoload-bunfig"
+      ],
+      "sdk": "packages/engine/runtime",
+      "templates": "m3/templates",
+      "provides": ["yolo"],
+      "platforms": [
+        {
+          "platform": "linux-x86_64",
+          "target": "x86_64-unknown-linux-gnu",
+          "bunTarget": "bun-linux-x64",
+          "runtimeArtifact": "~/.yolo/runtime/x86_64-unknown-linux-gnu/current",
+          "archive": "tar.gz",
+          "enabled": true
+        },
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "bunTarget": "bun-windows-x64",
+          "enabled": false,
+          "reason": "no packaged yolo-runtime artifact for Windows (dist/runtime/x86_64-pc-windows-msvc)"
+        }
+      ]
+    },
+    {
+      "id": "aphrody-setup",
+      "kind": "desktop",
+      "description": "Aphrody-Setup.exe, the one-click installer for everyone (packages/infra/product): aphrody, yolo, the desktop app, the Claude plugins and the MCP declaration, optional administrator and creator roles; the « Download Aphrody » button of the site",
+      "versionFrom": { "packageJson": "packages/infra/product/package.json" },
+      "stage": {
+        "script": "scripts/release/stage-setup.ts",
+        "manifest": "aphrody-setup.manifest.json"
+      },
+      "platforms": [
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": true,
+          "note": "Bun compile (bun-windows-x64-baseline) branded with the pet icon by rcedit under Wine, not signed; the exe (kind desktop) and its flat tar.gz update archive (kind update)"
+        }
+      ]
+    },
+    {
+      "id": "omar-kit",
+      "kind": "kit",
+      "description": "Aphrody-Omar.exe, the administrator kit (packages/infra/product): the Windows pack zip and the flat tar.gz its updater reads; installed by Aphrody-Setup for the administrator role",
+      "versionFrom": { "packageJson": "packages/infra/product/package.json" },
+      "stage": {
+        "script": "scripts/release/stage-omar-kit.ts",
+        "manifest": "omar-kit.manifest.json"
+      },
+      "platforms": [
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": false,
+          "reason": "fused into aphrody-setup (packages/infra/product, 3311e4dce): the administrator module ships inside Aphrody-Setup and its updater reads the aphrody-setup artifact; stage-omar-kit.ts only rebuilds aphrody-setup"
+        }
+      ]
+    },
+    {
+      "id": "aphrody-cli-wasm",
+      "kind": "wasm",
+      "description": "Pure Rust CLI commands with the typed browser/Bun/Node facade, optimized WebAssembly, declarations, Apache license and independent build provenance",
+      "versionFrom": { "packageJson": "packages/infra/cli-wasm/package.json" },
+      "stage": {
+        "script": "scripts/release/stage-cli-wasm.ts",
+        "manifest": "aphrody-cli-wasm.manifest.json"
+      },
+      "platforms": [{ "platform": "wasm", "target": "wasm32-unknown-unknown", "enabled": true }]
+    },
+    {
+      "id": "aphrody-app",
+      "kind": "desktop-app",
+      "description": "Tauri NSIS installer of the single desktop app (crates/ui/app); Aphrody-Setup installs it silently (/S) once it is published",
+      "platforms": [
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": false,
+          "reason": "no Windows build of the desktop app (CEF and Tauri bundle) is produced by the factory yet"
+        }
+      ]
+    },
+    {
+      "id": "plugin-aphrody",
+      "kind": "plugin",
+      "description": "Aphrody Claude Code plugin (repository aphrody-labs/plugin-aphrody)",
+      "git": { "path": "plugins/aphrody", "ref": "HEAD", "subdir": "" },
+      "manifest": "plugin.json",
+      "repository": "aphrody-labs/plugin-aphrody"
+    },
+    {
+      "id": "plugin-yolo",
+      "kind": "plugin",
+      "description": "yolo Claude Code plugin, generic toolkit (repository aphrody-labs/plugin-yolo)",
+      "git": { "path": "plugins/yolo", "ref": "HEAD", "subdir": "" },
+      "manifest": "plugin.json",
+      "repository": "aphrody-labs/plugin-yolo"
+    },
+    {
+      "id": "plugin-shenron",
+      "kind": "plugin",
+      "description": "Shenron Claude Code plugin (plugin/ of aphrody-labs/shenron)",
+      "git": { "path": "~/src/shenron", "ref": "HEAD", "subdir": "plugin" },
+      "manifest": ".claude-plugin/plugin.json",
+      "repository": "aphrody-labs/shenron"
+    }
+  ],
+  "github": {
+    "tool": "gh api upload (asset upload is binary; `aphrody git api` carries JSON only), release creation through `aphrody git api`",
+    "tagPrefix": "downloads-",
+    "releases": [
+      {
+        "repository": "aphrody-labs/aphrody",
+        "artifacts": ["aphrody", "yolo"],
+        "extra": ["install.sh", "install.ps1", "SHA256SUMS", "latest.json"]
+      },
+      { "repository": "aphrody-labs/plugin-aphrody", "artifacts": ["plugin-aphrody"], "extra": [] },
+      { "repository": "aphrody-labs/plugin-yolo", "artifacts": ["plugin-yolo"], "extra": [] },
+      {
+        "repository": "aphrody-labs/plugins",
+        "artifacts": ["plugin-aphrody", "plugin-yolo", "plugin-shenron"],
+        "extra": ["SHA256SUMS"]
+      }
+    ]
+  },
+  "secrets": {
+    "deniedNames": [
+      "(^|/)\\.env($|\\.)",
+      "\\.pem$",
+      "\\.key$",
+      "(^|/)id_(rsa|dsa|ecdsa|ed25519)",
+      "\\.(sqlite3?|db)(-wal|-shm)?$",
+      "\\.(gguf|safetensors|onnx|ckpt)$",
+      "(^|/)\\.netrc$",
+      "(^|/)\\.npmrc$",
+      "cookies?\\.(json|txt|sqlite)$",
+      "(^|/)credentials(\\.json)?$"
+    ],
+    "contentPatterns": [
+      "-----BEGIN [A-Z ]*PRIVATE KEY-----\\r?\\n[A-Za-z0-9+/]{64}",
+      "gh[pousr]_[A-Za-z0-9]{36,}",
+      "github_pat_[A-Za-z0-9_]{50,}",
+      "sk-ant-[A-Za-z0-9_-]{20,}",
+      "sk-[A-Za-z0-9]{40,}",
+      "AIza[0-9A-Za-z_-]{35}",
+      "xox[baprs]-[0-9A-Za-z-]{10,}",
+      "AKIA[0-9A-Z]{16}",
+      "[MNO][A-Za-z0-9]{23,25}\\.[A-Za-z0-9_-]{6}\\.[A-Za-z0-9_-]{27,}"
+    ]
+  }
+}

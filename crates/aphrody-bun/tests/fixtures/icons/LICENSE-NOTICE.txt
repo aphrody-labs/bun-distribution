@@ -1,0 +1,4 @@
+Source: fonts.gstatic.com "short-term/release/materialsymbolsoutlined/<icon>/<variant>/24px.svg"
+(the official Material Symbols SVG export, same family as google/material-design-icons).
+License: Apache-2.0. Used only to verify pixel-perfect path geometry in
+`tests/icons_svg_parity.rs`; not shipped in the published crate output beyond test fixtures.

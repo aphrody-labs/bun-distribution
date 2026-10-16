@@ -1,0 +1,10 @@
+[Unit]
+Description=Aphrody sync toutes les 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

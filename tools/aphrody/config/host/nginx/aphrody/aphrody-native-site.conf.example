@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Proposal only: render host/port through Infra before nginx validation/apply.
+# Preserve existing hostnames/TLS/gateway routes; merge the selected site route
+# into the existing gateway when it owns port80, rather than adding a duplicate.
+upstream aphrody_native_product_site {
+    server 127.0.0.1:__APHRODY_SITE_PORT__;
+    keepalive 8;
+}
+
+server {
+    listen 80;
+    server_name __APHRODY_SITE_SERVER_NAME__;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" always;
+
+    # Only the product site's public HTTP/SSR/catalog routes. Control plane
+    # MCP/A2A/Infra uses its own listener/authentication; not a wildcard proxy.
+    location / {
+        limit_except GET { deny all; }
+        proxy_pass http://aphrody_native_product_site;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Authorization "";
+        proxy_set_header Cookie "";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+}

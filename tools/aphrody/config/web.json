@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "name": "aphrody-web",
+  "owner": "crates/web (aphrody-web-engine) and packages/web/agent-browser (@aphrody/agent-browser)",
+  "description": "Single configuration contract of the Aphrody web layer: engine binary and listener, fetch/crawl defaults, allowed hosts, robots policy, storage paths and Tauri debug bridge. Consumers read it through @aphrody/agent-browser/config; environment variables listed under env override the file, command-line flags override both. Secrets, cookies and browser profiles never live here.",
+  "docs": {
+    "contract": "../bun/docs/aphrody-source/apis/web/WEB-SERVICE-CONTRACT.md",
+    "operations": "../bun/docs/aphrody-source/operations/web/AUTOMATION.md",
+    "architecture": "../bun/packages/web/rust/integrations/docs/architecture/web/ARCHITECTURE.md"
+  },
+  "engine": {
+    "package": "aphrody-web-engine",
+    "binary": "aphrody-web",
+    "workerBinary": "aphrody-web-worker",
+    "binaryEnv": "APHRODY_WEB_BIN",
+    "binaryCandidates": ["target/debug/aphrody-web", "target/release/aphrody-web", "~/.local/bin/aphrody-web"],
+    "host": "127.0.0.1",
+    "port": 9222,
+    "ephemeralPortForTests": true,
+    "endpointEnv": ["APHRODY_BROWSER_CDP_URL", "APHRODY_CDP_URL"],
+    "testEndpointEnv": "APHRODY_WEB_TEST_CDP_URL",
+    "workers": 1,
+    "stealth": false,
+    "allowFileAccess": false,
+    "allowPrivateNetwork": false,
+    "startupTimeoutMs": 30000,
+    "shutdownGraceMs": 5000,
+    "systemdUnit": "yolo:units/aphrody-web.service"
+  },
+  "fetch": {
+    "timeoutSecs": 30,
+    "waitUntil": "load",
+    "dump": "markdown",
+    "userAgent": null,
+    "proxyEnv": "OBSCURA_PROXY",
+    "maxBodyBytesEnv": "OBSCURA_FETCH_MAX_BODY_BYTES"
+  },
+  "crawl": {
+    "maxDepth": 2,
+    "maxPages": 25,
+    "concurrency": 4,
+    "delayMs": 250,
+    "timeoutSecs": 300,
+    "obeyRobots": true,
+    "sitemaps": false,
+    "userAgent": "AphrodyWeb/1.0",
+    "allowedHosts": [],
+    "allowedHostsPolicy": "An empty list means the seed hosts only; subdomains of a listed host are included.",
+    "robotsPolicy": "obey",
+    "robotsNote": "robots.txt Disallow and Crawl-delay are honoured when obeyRobots is true; set it to false only for first-party hosts you own."
+  },
+  "network": {
+    "privateNetworkPolicy": "deny",
+    "privateNetworkNote": "Loopback, RFC1918 and link-local targets are rejected by the SSRF guard. Local fixtures opt in per process with --allow-private-network (crawl) or OBSCURA_ALLOW_PRIVATE_NETWORK=1 (CDP server).",
+    "allowedSchemes": ["http", "https"]
+  },
+  "storage": {
+    "stateDir": "~/.aphrody/web",
+    "frontierDb": "~/.aphrody/web/frontier.sqlite",
+    "reports": "~/.aphrody/web/reports",
+    "crawlabilityReport": "~/.aphrody/web/reports/crawlability.json",
+    "secretsPolicy": "Cookies, tokens and Chromium profiles stay in their protected stores (tools/config/secrets-contract.json). Nothing in this layer prints or logs cookie values."
+  },
+  "mcp": {
+    "server": "aphrody-mcp",
+    "cargoFeature": "native-browser",
+    "toolPrefix": "browser_",
+    "tauriServer": "aphrody-mcp",
+    "tauriToolPrefix": "aphrody_tauri_"
+  },
+  "tauriDebug": {
+    "plugin": "aphrody-tauri-wrap",
+    "module": "aphrody_tauri_wrap::debug",
+    "cargoFeature": "debug-bridge",
+    "enabledEnv": "APHRODY_TAURI_DEBUG",
+    "portEnv": "APHRODY_TAURI_DEBUG_PORT",
+    "defaultPort": 0,
+    "bind": "127.0.0.1",
+    "tokenPolicy": "A random per-process token is written to the discovery file; clients present it as ?token=. The file is mode 0600.",
+    "discoveryFile": "~/.aphrody/web/tauri-debug/<identifier>.json",
+    "releaseBuilds": "The plugin is compiled only with the debug-bridge feature and only registered under cfg(debug_assertions)."
+  },
+  "env": {
+    "APHRODY_WEB_BIN": "Absolute path of the aphrody-web binary (overrides binaryCandidates).",
+    "APHRODY_BROWSER_CDP_URL": "ws:// endpoint of a running engine; clients attach instead of spawning.",
+    "APHRODY_CDP_URL": "Legacy alias of APHRODY_BROWSER_CDP_URL.",
+    "APHRODY_WEB_TEST_CDP_URL": "Endpoint used by the test harness instead of spawning an engine.",
+    "OBSCURA_ALLOW_PRIVATE_NETWORK": "1 lets the CDP server and fetch reach loopback/private addresses (tests, fixtures).",
+    "OBSCURA_PROXY": "HTTP(S)/SOCKS proxy for fetch, scrape and the CDP server.",
+    "OBSCURA_FETCH_MAX_BODY_BYTES": "Cap on a fetched response body.",
+    "OBSCURA_NAV_TIMEOUT_MS": "Navigation timeout of the CDP server.",
+    "OBSCURA_CDP_COMMAND_TIMEOUT_MS": "Per-command timeout of the CDP server.",
+    "OBSCURA_CDP_TOKEN": "Bearer token required by the CDP server when set.",
+    "OBSCURA_MCP_TOKEN": "Bearer token required by the Obscura MCP HTTP transport when set.",
+    "APHRODY_TAURI_DEBUG": "1 enables the Tauri debug bridge in debug builds.",
+    "APHRODY_TAURI_DEBUG_PORT": "Fixed port for the Tauri debug bridge (default: ephemeral)."
+  }
+}

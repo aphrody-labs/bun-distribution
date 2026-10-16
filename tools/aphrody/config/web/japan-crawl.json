@@ -1,0 +1,17 @@
+{
+  "schema": "aphrody.web-japan-crawl/1",
+  "owner": "crates/web/web-engine",
+  "launcher": "/usr/local/bin/aphrody-web-japan-crawl",
+  "transport": "native aphrody web-engine crawl --proxy socks5h://127.0.0.1:1080",
+  "proxyScope": "single Aphrody Web or Shenron crawl invocation",
+  "region": "Japan",
+  "seedPolicy": "public HTTPS websites; discovered links remain within the native crawler's seed-host scope",
+  "defaults": {
+    "maxDepth": 3,
+    "maxPages": 25,
+    "concurrency": 1,
+    "obeyRobots": true
+  },
+  "failurePolicy": "fail closed when the private VPS Japan SOCKS endpoint is unavailable",
+  "neverSetGlobalProxy": true
+}

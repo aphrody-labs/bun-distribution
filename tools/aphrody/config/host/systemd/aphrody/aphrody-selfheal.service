@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Self-healing pass for the owner hosts: clears failed units whose file is gone, restarts failed aphrody-*,
+# shenron-*, nie-* and rg-* services (not the long-running one-shot syncs), and frees journal/apt space above 85 % disk.
+# Never touches databases, nginx or the Shenron releases.
+[Unit]
+Description=Aphrody self-heal pass
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '\
+  for u in $(systemctl --failed --no-legend --plain | awk "{print \\$1}"); do \
+    if [ "$(systemctl show -p LoadState --value "$u")" = not-found ]; then systemctl reset-failed "$u"; continue; fi; \
+    case "$u" in \
+      shenron-cdn-sync.service|shenron-container-backup.service|shenron-offsite-backup.service|*.timer|*.mount|*.socket) continue ;; \
+      aphrody-*.service|shenron-*.service|nie-*.service|rg-*.service) echo "restart $u"; systemctl reset-failed "$u"; systemctl restart "$u" ;; \
+    esac; \
+  done; \
+  use=$(df --output=pcent / | tail -1 | tr -dc 0-9); \
+  if [ "$use" -ge 85 ]; then echo "disk $use%: vacuum"; journalctl --vacuum-size=500M; apt-get clean; fi'
+Nice=10

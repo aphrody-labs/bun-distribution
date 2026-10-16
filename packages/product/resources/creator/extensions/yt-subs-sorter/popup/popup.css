@@ -1,0 +1,179 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+:root {
+  --fg: #0f0f0f;
+  --dim: #606060;
+  --bg: #ffffff;
+  --line: rgba(0, 0, 0, 0.15);
+  --chip: rgba(0, 0, 0, 0.06);
+  --accent: #0f0f0f;
+  --on-accent: #ffffff;
+  --danger: #d93025;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #f1f1f1;
+    --dim: #aaaaaa;
+    --bg: #212121;
+    --line: rgba(255, 255, 255, 0.2);
+    --chip: rgba(255, 255, 255, 0.1);
+    --accent: #f1f1f1;
+    --on-accent: #0f0f0f;
+    --danger: #ff8a80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 380px;
+  max-width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    14px/20px system-ui,
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
+main {
+  padding: 12px 16px 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+h2 {
+  margin: 16px 0 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.dim {
+  color: var(--dim);
+  margin: 6px 0;
+}
+
+.error {
+  color: var(--danger);
+  margin: 6px 0;
+}
+
+.groups {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.groups li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.groups input[type="text"] {
+  flex: 1;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.row .line {
+  margin: 0;
+}
+
+input[type="text"],
+select,
+textarea {
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+
+#new-name {
+  flex: 1;
+}
+
+textarea {
+  width: 100%;
+  font:
+    12px/16px ui-monospace,
+    monospace;
+  resize: vertical;
+}
+
+input[type="color"] {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+button,
+.file {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--chip);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover,
+.file:hover {
+  background: var(--line);
+}
+
+button[type="submit"],
+#import {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+button[data-armed] {
+  background: var(--danger);
+  color: #fff;
+}
+
+.file input {
+  display: none;
+}
+
+.count {
+  min-width: 70px;
+  color: var(--dim);
+  text-align: right;
+}
+
+:focus-visible {
+  outline: 2px solid #3ea6ff;
+  outline-offset: 1px;
+}

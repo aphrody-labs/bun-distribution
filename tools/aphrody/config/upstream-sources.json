@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "description": "Local patched Rust source is integrated into the Aphrody Cargo workspace. Reference upstreams are read live; build-only checkouts are restored on demand.",
+  "root": ".cache/upstream",
+  "rootNote": "Used only for optional build-on-demand upstream inputs. Cargo no longer requires a sibling source directory.",
+  "sources": [],
+  "reference": [
+    {
+      "id": "mcp-server-tauri",
+      "kind": "git",
+      "url": "https://github.com/hypothesi/mcp-server-tauri",
+      "ref": "main",
+      "observedCommit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Bridge upstream reference; the build consumes only its patched crates.io package.",
+      "consumers": "Cargo.toml tauri-plugin-mcp-bridge; tools/config/tauri-upstream.json"
+    },
+    {
+      "id": "tauri",
+      "kind": "git",
+      "url": "https://github.com/tauri-apps/tauri",
+      "ref": "v3",
+      "sparse": ["crates/tauri-runtime-cef"],
+      "license": "Apache-2.0 OR MIT",
+      "tier": "reference",
+      "purpose": "Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix.",
+      "consumers": "tools/config/tauri-upstream.json patches (tauri-runtime-cef-glib-work-source) and debuggers; docs/guides/web/TAURI-DEBUG.md; vendor.toml",
+      "observedCommit": "a8703ee487c659efbebb27c799752d523a6d09a1"
+    },
+    {
+      "id": "tauri-plugin-webdriver",
+      "kind": "git",
+      "url": "https://github.com/Choochmeque/tauri-plugin-webdriver",
+      "ref": "main",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "In-process W3C WebDriver server for Tauri 2; reading base for the Tauri 3 downcast_ref patch.",
+      "consumers": "tools/config/tauri-upstream.json debuggers",
+      "observedCommit": "007d18ece8fe5d27ec1ad4df483db3ebb5f55aca"
+    },
+    {
+      "id": "victauri",
+      "kind": "git",
+      "url": "https://github.com/4DA-Systems/Victauri",
+      "ref": "main",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Rust-native Tauri MCP; read for its hardening and tool surface.",
+      "consumers": "tools/config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design",
+      "observedCommit": "bb17a652963a58e99df661e7d50e67517b6136ae"
+    },
+    {
+      "id": "WSL",
+      "kind": "git",
+      "url": "https://github.com/microsoft/WSL.git",
+      "ref": "master",
+      "tier": "build",
+      "purpose": "Microsoft WSL; native WSL build recipe input.",
+      "consumers": "tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
+      "observedCommit": "11c74d836cc76e45cbb8259cd4efcdb474920395"
+    },
+    {
+      "id": "WSL2-Linux-Kernel",
+      "kind": "git",
+      "url": "https://github.com/microsoft/WSL2-Linux-Kernel.git",
+      "ref": "linux-msft-wsl-6.18.y",
+      "tier": "build",
+      "purpose": "WSL2 Linux kernel; kernel build recipe input.",
+      "consumers": "tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
+      "observedCommit": "14794180686c2fb6307fbe359c359bec765249f3"
+    },
+    {
+      "id": "linux-stable",
+      "kind": "git",
+      "url": "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git",
+      "ref": "v7.2.9",
+      "license": "GPL-2.0-only WITH Linux-syscall-note",
+      "tier": "build",
+      "purpose": "kernel.org stable Linux with Rust-for-Linux; mainline kernel recipe input. `aphrody-wsl latest --apply` moves the pin.",
+      "consumers": "tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl",
+      "observedCommit": "5fce161649b4d779d1b76d9fcd52dc77779774b8"
+    },
+    {
+      "id": "jan",
+      "kind": "git",
+      "url": "https://github.com/janhq/jan.git",
+      "ref": "14a720628f9592c8e60f7e081ef733076db8a6a9",
+      "tier": "reference",
+      "purpose": "Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending.",
+      "consumers": "m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; docs/migration/jan-absorption",
+      "note": "Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license.",
+      "observedCommit": "14a720628f9592c8e60f7e081ef733076db8a6a9"
+    },
+    {
+      "id": "terminal",
+      "kind": "git",
+      "url": "https://github.com/microsoft/terminal.git",
+      "ref": "main",
+      "tier": "build",
+      "purpose": "Windows Terminal; WSL build recipe input.",
+      "consumers": "tools/config/os/wsl-build.json",
+      "observedCommit": "2b5336c1fca1e53ceeaac09710a13c478938cc8d"
+    },
+    {
+      "id": "wslg",
+      "kind": "git",
+      "url": "https://github.com/microsoft/wslg.git",
+      "ref": "main",
+      "tier": "build",
+      "purpose": "WSLg; system distro build recipe input.",
+      "consumers": "tools/config/os/wsl-build.json; scripts/build/os/build-wslg.py",
+      "observedCommit": "6942bb534b537302a7a22617261d9274db3cfa37"
+    },
+    {
+      "id": "vu-uv",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/uv",
+      "ref": "0.12.23",
+      "observedCommit": "46b84fd0bfec23b72f29e8e2185ba68a65052f48",
+      "forkUrl": "https://github.com/aphrody-labs/uv",
+      "forkRef": "vu-pin-0.12.23",
+      "forkCommit": "46b84fd0bfec23b72f29e8e2185ba68a65052f48",
+      "license": "MIT OR Apache-2.0",
+      "tier": "build",
+      "purpose": "uv 0.12.23 (resolver, installer, Python manager; crates uv-* 0.0.90) pinned for the vu runtime of the planned vu monorepo; the fork carries no Aphrody patch yet.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/uv created 2026-10-05, branch vu-pin-0.12.23 at the release commit. crates.io uv 0.12.23 and uv-* 0.0.90 carry .cargo_vcs_info.json sha1 46b84fd0 (verified). Cargo.lock: 737 packages, no git source, no ruff and no pyo3. The uv-* crates are internal components upstream; the CLI is the public interface."
+    },
+    {
+      "id": "vu-ruff",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/ruff",
+      "ref": "0.16.10",
+      "observedCommit": "3265ed1f944c98bb4c04d632fbefb1257cdb583d",
+      "forkUrl": "https://github.com/aphrody-labs/ruff",
+      "forkRef": "vu-pin-0.16.10",
+      "forkCommit": "3265ed1f944c98bb4c04d632fbefb1257cdb583d",
+      "license": "MIT",
+      "tier": "build",
+      "purpose": "ruff 0.16.10 (linter, formatter; the ty crates live in the same tree) pinned for the vu runtime of the planned vu monorepo; the fork carries no Aphrody patch yet.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/ruff created 2026-10-05, branch vu-pin-0.16.10 at the release commit. crates.io ruff 0.16.10 and ruff_* 0.0.16 carry .cargo_vcs_info.json sha1 3265ed1f (verified). Cargo.lock: 558 packages, no git source, no pyo3. ty 0.0.84 vendors ruff 11aaa39f, 107 commits older: no separate branch."
+    },
+    {
+      "id": "vu-pyo3",
+      "kind": "git",
+      "url": "https://github.com/PyO3/pyo3",
+      "ref": "v0.29.3",
+      "observedCommit": "451d99fdcdcddf159e8e0a1186960b332cdb5d7c",
+      "forkUrl": "https://github.com/aphrody-labs/pyo3",
+      "forkRef": "vu-pin-0.29.3",
+      "forkCommit": "451d99fdcdcddf159e8e0a1186960b332cdb5d7c",
+      "license": "MIT OR Apache-2.0",
+      "tier": "build",
+      "purpose": "PyO3 0.29.3, the version of the Aphrody workspace Cargo.lock, pinned for the CPython embedding of the vu runtime.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "Fork aphrody-labs/pyo3 created 2026-10-05, branch vu-pin-0.29.3 at tag v0.29.3. crates.io pyo3 and pyo3-ffi 0.29.3 carry .cargo_vcs_info.json sha1 451d99fd (verified). Static embedding of libpython is not first-class upstream. Checked by scripts/audit/workspace/vu-pins.ts."
+    },
+    {
+      "id": "vu-python-build-standalone",
+      "kind": "git",
+      "url": "https://github.com/astral-sh/python-build-standalone",
+      "ref": "20261003",
+      "observedCommit": "5e46737f6480fc315ebfea83866910cbfcc772f0",
+      "license": "MPL-2.0",
+      "tier": "build",
+      "purpose": "Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked.",
+      "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
+      "note": "MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst)."
+    },
+    {
+      "id": "bun",
+      "kind": "git",
+      "url": "https://github.com/oven-sh/bun",
+      "ref": "main",
+      "license": "MIT",
+      "tier": "reference",
+      "checkout": "../bun",
+      "fork": "https://github.com/aphrody-labs/bun",
+      "purpose": "Bun runtime upstream; Aphrody runs the aphrody-labs/bun fork, checked out next to this repository, which merges oven-sh/bun main. upstream_search reads that checkout when no GitHub token is available.",
+      "consumers": "docs/reference/upstream-bun (pin and licence); packages/infra/update; aphrody yolo verify (Bun source gates)"
+    },
+    {
+      "id": "codex",
+      "kind": "git",
+      "url": "https://github.com/openai/codex",
+      "ref": "main",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "fork": "https://github.com/aphrody-labs/codex",
+      "purpose": "OpenAI Codex CLI upstream and fork aphrody-labs/codex; Aphrody absorbs its app-server v2 protocol, configuration shapes, execution events and agent lifecycle natively into the workspace.",
+      "consumers": "crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai/rollout; crates/ai/engine; crates/ai/session; tools/config/codex-absorption.json; docs/reference/ai/THIRD_PARTY_CODEX.md; docs/plans/ai/plans/codex-oss.md",
+      "observedCommit": "bd274564e1b1b3febb3886d274e6d97c2a3d275e"
+    },
+    {
+      "id": "jev-aaddrick-building-with-typesafe-jev",
+      "kind": "git",
+      "url": "https://github.com/aaddrick/building-with-typesafe-jev",
+      "ref": "a46856c9fbc890653891e25f85ee2f16e1d9b513",
+      "observedCommit": "a46856c9fbc890653891e25f85ee2f16e1d9b513",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-integrate-your-mind-jev-codex-plugin",
+      "kind": "git",
+      "url": "https://github.com/integrate-your-mind/jev-codex-plugin",
+      "ref": "f67f0f35df13cbc0556539e6f86fe14e2c04d6f8",
+      "observedCommit": "f67f0f35df13cbc0556539e6f86fe14e2c04d6f8",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-yijunyu-jev-rs",
+      "kind": "git",
+      "url": "https://github.com/yijunyu/jev-rs",
+      "ref": "a56901b67358796c74d6a4e86f89aec78339ea35",
+      "observedCommit": "a56901b67358796c74d6a4e86f89aec78339ea35",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-codesoda-systemone",
+      "kind": "git",
+      "url": "https://github.com/codesoda/systemone",
+      "ref": "6772abbbc37b25fb0c43a43f8232aa36f89b17df",
+      "observedCommit": "6772abbbc37b25fb0c43a43f8232aa36f89b17df",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-kunobi-ninja-kunobi-jev",
+      "kind": "git",
+      "url": "https://github.com/kunobi-ninja/kunobi-jev",
+      "ref": "1ccae8619eaa7c1e1b8e33cab4cd779ace745b67",
+      "observedCommit": "1ccae8619eaa7c1e1b8e33cab4cd779ace745b67",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-Shearerbeard-jev-driver",
+      "kind": "git",
+      "url": "https://github.com/Shearerbeard/jev-driver",
+      "ref": "62f09484399e198e0ef720a642b0a7db6628c5d1",
+      "observedCommit": "62f09484399e198e0ef720a642b0a7db6628c5d1",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-SC0d3r-jev-systemone",
+      "kind": "git",
+      "url": "https://github.com/SC0d3r/jev-systemone",
+      "ref": "fb277d30d3bef5034cd664e72122cc0d5b91f9c3",
+      "observedCommit": "fb277d30d3bef5034cd664e72122cc0d5b91f9c3",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-AbdelStark-awesome-typesafe-jev",
+      "kind": "git",
+      "url": "https://github.com/AbdelStark/awesome-typesafe-jev",
+      "ref": "1c0a0e4e08b1f1aa47e2d6d405c9f09879089194",
+      "observedCommit": "1c0a0e4e08b1f1aa47e2d6d405c9f09879089194",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-logan-markewich-jeff",
+      "kind": "git",
+      "url": "https://github.com/logan-markewich/jeff",
+      "ref": "34b32f99a727c47b679adde33f4702a001e02979",
+      "observedCommit": "34b32f99a727c47b679adde33f4702a001e02979",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    }
+  ],
+  "integrated": [
+    {
+      "id": "tauri-plugin-mcp-bridge",
+      "kind": "crate",
+      "crate": "tauri-plugin-mcp-bridge",
+      "version": "0.13.0",
+      "upstreamUrl": "https://github.com/hypothesi/mcp-server-tauri",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "patches": [
+        {
+          "id": "tauri-plugin-mcp-bridge-tauri3",
+          "file": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
+          "strip": 1,
+          "marker": {
+            "file": "Cargo.toml",
+            "contains": "rust-version = \"1.97\""
+          }
+        }
+      ],
+      "note": "Registry archive, not a Git clone. Preserve Tauri 3/security patches until an equivalent upstream release. Rust/JS/build/license files match the previous pinned Git tree before patching.",
+      "integratedPath": "crates/ui/tauri-plugin-mcp-bridge",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "rfb-encodings",
+      "kind": "crate",
+      "crate": "rfb-encodings",
+      "version": "0.1.7",
+      "upstreamUrl": "https://github.com/dustinmcafee/rfb-encodings",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0",
+      "patches": [
+        {
+          "id": "rfb-encodings-truecolour-compare",
+          "file": "patches/rfb-encodings-0.1.7-truecolour.patch",
+          "strip": 1,
+          "marker": {
+            "file": "src/translate.rs",
+            "contains": "a.true_colour_flag == 0"
+          }
+        }
+      ],
+      "note": "crates.io 0.1.7 archive (src, build.rs, LICENSE, NOTICE, README). pixel_formats_equal used a bitwise NOT on a u8 (!flag != 0 is always true), so every 32 bpp true-colour client format was treated as the server rgba32 and never translated: BGRA viewers saw red and blue swapped. Fixture tests and the generate_fixture binary are not integrated. Drop once upstream ships the fix.",
+      "integratedPath": "crates/compat/rfb-encodings",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "simdutf-rio",
+      "kind": "crate",
+      "crate": "simdutf",
+      "version": "0.7.0",
+      "upstreamUrl": "https://github.com/Nugine/simdutf-rs",
+      "upstreamTag": "v0.7.0",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "patches": [
+        {
+          "id": "simdutf-private-namespace",
+          "file": "patches/simdutf-rio-0.7.0.patch",
+          "strip": 1,
+          "marker": {
+            "file": "build.rs",
+            "contains": "aphrody_rio_simdutf"
+          }
+        }
+      ],
+      "note": "crates.io 0.7.0 archive, as extracted before the move. The patch gives the bundled C++ a private namespace so it does not collide with V8's own simdutf in the same process.",
+      "integratedPath": "crates/native/simdutf",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "tauri-plugin-dialog",
+      "kind": "crate",
+      "crate": "tauri-plugin-dialog",
+      "version": "3.0.0-alpha.3",
+      "upstreamUrl": "https://github.com/tauri-apps/plugins-workspace",
+      "upstreamTag": "dialog-v3.0.0-alpha.3",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0 OR MIT",
+      "note": "Vendored at plugins-workspace dialog 3.0.0-alpha.3, which imports Manager upstream (patch dropped 2026-10-09).",
+      "integratedPath": "crates/tauri/aphrody-tauri-plugin-dialog",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
+      "id": "koharu-ml-base",
+      "kind": "crate",
+      "crate": "aphrody-llama",
+      "version": "0.83.5",
+      "upstreamUrl": "https://github.com/koharu-rs/koharu",
+      "upstreamTag": "0.83.5",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT OR Apache-2.0",
+      "patches": [],
+      "note": "ML base crates of Koharu 0.83.5 (tag 0.83.5, commit 52bb4f55e2266f72c1523562a583c827ec191ceb) (bindgen, config, runtime, llama, llama-sys, torch, torch-sys, diffusion, diffusion-sys) integrated under crates/ml as aphrody-* packages: crates.io holds older koharu-* releases under the upstream names. Divergence from the tag is not yet audited, so no patch is recorded. On-disk contracts kept: ~/.koharu/config.toml, the `koharu` runtime store and the libkoharu-torch shim of koharu-rs/torch releases. The Koharu product crates live in aphrody-labs/shenron.",
+      "integratedPath": "crates/ml/llama",
+      "upstreamPackageIdentityPreserved": false
+    },
+    {
+      "id": "obscura",
+      "kind": "crate",
+      "crate": "aphrody-obscura",
+      "version": "0.1.0",
+      "upstreamUrl": "https://github.com/h4ckf0r0day/obscura",
+      "upstreamCommit": "2bda71a557247bd2d6fabf01fa66eb4b07dcb2e8",
+      "forkUrl": "https://github.com/aphrody-labs/obscura",
+      "forkRef": "yolo",
+      "forkCommit": "0c6fe8c0bc3f1a717349e207a407666e97d0bb98",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0",
+      "patches": [],
+      "note": "Obscura headless browser crates copied under crates/web. Base: upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04), synced through 1f8eb7643 (2026-10-08) and then 2bda71a557247bd2d6fabf01fa66eb4b07dcb2e8 (2026-10-10) by a three-way merge on 2026-10-11. The upstream merge is published in aphrody-labs/obscura yolo commit 0c6fe8c0bc3f1a717349e207a407666e97d0bb98, first parent 41b0d90953aa27fdc5c72d84dd17cc1fb82a4519. Installed obscura CLI remains sourced from the fork. Local adaptations are retained in the integrated source and described in docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt. vendor/taffy remains aphrody-labs/taffy and cosmic-text resolves to athena-text from crates.io.",
+      "integratedPath": "crates/web/obscura",
+      "upstreamPackageIdentityPreserved": false
+    },
+    {
+      "id": "taffy-aphrody-fork",
+      "kind": "crate",
+      "crate": "aphrody-taffy",
+      "version": "0.12.1",
+      "upstreamUrl": "https://github.com/DioxusLabs/taffy",
+      "fork": "aphrody-labs/taffy (private)",
+      "forkRevision": "4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8",
+      "pinned": true,
+      "role": "dependency",
+      "license": "MIT",
+      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as the aphrody-taffy package (library name taffy, published on crates.io) so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Local patch: TaffyTree::remove releases measured-node context data and invalidates the parent layout cache; LOCAL-PATCHES.md and MIGRATION.json retain the patch and regression fixture. Preserve this patch or qualify its upstream replacement when re-importing the fork revision. Subsequent retained-node removal patch and regression are recorded in crates/ui/taffy/LOCAL-PATCHES.md and MIGRATION.json; native and cross-target source qualification is recorded in docs/operations/workspace/taffy-integration-2026-10-07.md.",
+      "integratedPath": "crates/ui/taffy",
+      "upstreamPackageIdentityPreserved": false
+    }
+  ]
+}

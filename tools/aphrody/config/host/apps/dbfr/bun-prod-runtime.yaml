@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Exact published fork executable, archive verified against release SHA256SUMS.
+services:
+  bun-prod:
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro

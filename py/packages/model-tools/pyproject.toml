@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "koharu-model-tools"
+version = "0.1.0"
+description = "Export pretrained vision models for the Koharu Rust implementation"
+requires-python = ">=3.12"
+dependencies = []
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+classifiers = ["Operating System :: POSIX :: Linux"]
+
+[project.scripts]
+koharu-export-dinov2 = "koharu_model_tools.export_dinov2:main"
+koharu-export-efficientnet = "koharu_model_tools.export_models:main"
+
+[project.optional-dependencies]
+export = ["safetensors>=0.4", "torch>=2.2", "torchvision>=0.17"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/koharu_model_tools"]

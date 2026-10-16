@@ -1,0 +1,17 @@
+{
+  "extends": "../../docs/aphrody/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "bindings",
+    "scripts",
+    "src",
+    "src/**/*.ts",
+    "test",
+    "test-ffi.ts",
+    "test-library.test.ts",
+    "test-native-artifact.test.ts",
+    "test-native-installation.test.ts"
+  ]
+}

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Staged: activate only after Linux binary, protected token and HTTP probes qualify.
+[Unit]
+Description=Aphrody unified Bun OS product catalog API
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/src/bun-os/install/bin
+ExecStart=/home/ubuntu/src/bun-os/install/bin/bun-os-server
+Environment=HOST=127.0.0.1
+Environment=PORT=29030
+Environment=APHRODY_APP_ORIGIN=https://source.aphrody.app
+EnvironmentFile=/home/ubuntu/.aphrody/secrets/bun-os/server.env
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

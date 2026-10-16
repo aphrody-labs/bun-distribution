@@ -1,0 +1,105 @@
+[package]
+name = "aphrody-command"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+description           = "Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts."
+
+# Shared command implementation; crates/infra/aphrody and the FFI are thin consumers.
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+native = ["aphrody-rag/native"]
+rag = ["aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
+train = ["aphrody-train/registry"]
+# The MCP server entry point (`aphrody-mcp`, argv0 or `aphrody mcp-server`) with the local-inference toolbox of
+# aphrody-mcp (`toolbox`: ocr, vision, stt-local, jobs, rag-ort). Without it the binary advertises the default tool set
+# (127 over `tools/list`); with it 137. Opt-in because each backend is a dependency the base server has no use for.
+# Build with: cargo build -p aphrody --features mcp-toolbox
+mcp-toolbox = ["aphrody-mcp/toolbox"]
+
+# Native Google Magika deep-learning file-type classification, exposed via
+# `aphrody re classify <path>`. Opt-in because it links the ONNX Runtime
+# (`ort`), which fetches a prebuilt backend at build time — host-only, not
+# hermetic-offline, not wasm. Build with:
+#   cargo build -p aphrody --features magika
+magika = ["aphrody-re/magika", "dep:ort"]
+
+# Reproducible forensic extraction, exposed via `aphrody forensics ...`.
+# Opt-in because it links `rusqlite` with the `bundled` libsqlite3 C source,
+# which requires a C compiler at build time (host-only, not hermetic-offline,
+# not wasm). The command maps + classifies + dumps schema ONLY; it never
+# emits secret values (tokens / cookie bytes / `secret://` rows). Build with:
+#   cargo build -p aphrody --features forensics
+forensics = ["dep:rusqlite", "dep:hex"]
+
+# Persistent local-filesystem search index (`aphrody index build/search`),
+# backed by aphrody-fsindex (SQLite FTS5, bundled libsqlite3 — host-only, not
+# wasm). Build with: cargo build -p aphrody --features index
+index = ["dep:aphrody-fsindex"]
+
+# Local ONNX inference (`aphrody infer runtime/probe`), backed by aphrody-infer.
+# Opt-in because it links ONNX Runtime through `ort` in load-dynamic mode: the
+# shared library is discovered at RUNTIME under ~/.aphrody/runtimes (aphrody
+# forces +crt-static on MSVC while every prebuilt ORT is /MD, so static linking
+# is impossible — CLAUDE.md §7). Host-only, not wasm. Build with:
+#   cargo build -p aphrody --features infer
+infer = ["dep:aphrody-infer"]
+
+# Image-to-text via a local vision-language model (`aphrody ocr page/batch`),
+# backed by aphrody-ocr. Drives llama.cpp's llama-mtmd-cli, which is resolved
+# at RUNTIME under ~/.aphrody/runtimes — nothing is linked, so this feature is
+# cheap; it is opt-in only because the command is useless without a vision
+# model pulled. Build with: cargo build -p aphrody --features ocr
+ocr = ["dep:aphrody-ocr", "aphrody-ocr/sqlite", "infer"]
+
+# Persistent background job queue (`aphrody job submit/run/status/logs`),
+# backed by aphrody-jobs. Opt-in because it links `rusqlite` with the bundled
+# libsqlite3 C source, which needs a C compiler at build time — host-only, not
+# wasm, same reason as `forensics` and `index`. Build with:
+#   cargo build -p aphrody --features jobs
+jobs = ["dep:aphrody-jobs"]
+
+# YARA-X pattern matching (`aphrody re yara --rules <rules.yara> <binary>`).
+# Pure Rust (BSD-3-Clause). Activates the `yara` feature in aphrody-re.
+# Host-only (reads files + compiles rules at runtime). Build with:
+#   cargo build -p aphrody --features yara
+yara = ["aphrody-re/yara"]
+
+# Cross-platform note (Linux > Windows > wasm) :
+# - `cli` ships a full native binary on Linux/Windows/macOS.
+# - On wasm32-*, only a minimal stub (Version + help) is built, because
+#   backend/a2a* pull tokio "full" + mio + reqwest + rustls + ring which
+#   do not compile on wasm. The cfg-gated dep sets below keep both ends
+#   buildable from the same crate.
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+clap_complete = { version = "4", features = [] }
+miette = { version = "7", features = ["fancy"] }
+async-trait = "0.1.92"
+aphrody-command-pure = { path = "../aphrody-command-pure", version = "1.4.4", features = [] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+chrono = { version = "0.4", features = ["serde"] }
+bytes = "1.12.1"
+
+[package.metadata.cargo-machete]
+ignored = ["ort"]

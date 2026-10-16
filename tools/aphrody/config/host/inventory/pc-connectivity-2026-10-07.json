@@ -1,0 +1,298 @@
+{
+  "observedAt": "2026-10-07T12:23:05.787092+00:00",
+  "ownerWindows": {
+    "address": "10.200.77.4",
+    "wireguard": {
+      "tunnel": "aphrody",
+      "service": "WireGuardTunnel$aphrody",
+      "startup": "automatic",
+      "state": "running",
+      "hubHandshakeObserved": true,
+      "driverRepair": "Verified Microsoft signature; restored disabled WireGuard kernel driver to demand start."
+    },
+    "sshServer": {
+      "bind": "10.200.77.4:22",
+      "startup": "automatic",
+      "dependsOn": "WireGuardTunnel$aphrody",
+      "passwordAuthentication": false,
+      "clientKeySources": ["10.200.77.1", "10.200.77.3"],
+      "hostKeysPinned": true
+    },
+    "sshProofs": [
+      {
+        "from": "vps",
+        "to": "owner-windows",
+        "alias": "aphro-pc",
+        "identity": "aphrody\\aphro",
+        "exitCode": 0
+      },
+      {
+        "from": "dbfr",
+        "to": "owner-windows",
+        "alias": "aphro-pc",
+        "identity": "aphrody\\aphro",
+        "exitCode": 0
+      },
+      {
+        "from": "owner-windows",
+        "to": "vps",
+        "alias": "vps",
+        "identity": "ubuntu",
+        "exitCode": 0
+      },
+      {
+        "from": "owner-windows",
+        "to": "dbfr",
+        "alias": "dbfr",
+        "identity": "ubuntu",
+        "exitCode": 0
+      }
+    ],
+    "computerUse": {
+      "from": "vps",
+      "transport": "WireGuard SSH to authenticated native Windows desktop pipe",
+      "observeVerified": true,
+      "typingVerified": true,
+      "probeScope": "Exact HWND and PID of an owned disposable test window; native click/type with activate=false after pinning that window; native close.",
+      "captureStorage": "Protected local Windows store; never sent to Discord.",
+      "requiresInteractiveSession": true
+    },
+    "authentication": {
+      "bridgeCredentialRotated": true,
+      "revokedCredentialRejectedOnBothBridges": true,
+      "replacementAcceptedOnBothBridges": true,
+      "privateKeysRemainOnOriginHosts": true
+    }
+  },
+  "omar": {
+    "address": "10.200.77.10",
+    "state": "pending-local-activation",
+    "handshake": "never",
+    "discordUserId": "1527405876695142620",
+    "activationPrompt": {
+      "channelId": "1557348890347573279",
+      "messageIds": [
+        "1557367100220112918",
+        "1557367101688254508",
+        "1557367104376807516",
+        "1557367105622380644"
+      ],
+      "containsPrivateKeys": false
+    },
+    "dedicatedVpsClientKeyPrepared": true,
+    "missing": [
+      "Local tunnel activation and matching public key",
+      "Windows account and SSH inbound setup",
+      "Authenticated native desktop bridge test",
+      "Actual authenticated Codex/AGY/Claude A2A endpoints"
+    ],
+    "serverFollowup": {
+      "observedAt": "2026-10-07T13:01:28.526207+00:00",
+      "guildId": "1554189180030947338",
+      "channelId": "1557354118710829117",
+      "channelName": "start-here",
+      "messageIds": [
+        "1557376931291209898",
+        "1557376932285386815",
+        "1557376933535289472",
+        "1557376934923731096"
+      ],
+      "omarExplicitlyMentioned": true,
+      "codexLocalSetupPromptIncluded": true,
+      "codexDistinctDiscordIdentityObserved": false,
+      "containsPrivateCredentials": false
+    }
+  },
+  "limits": [
+    "No complete bidirectional Drive or agent-memory synchronization is asserted.",
+    "Gemma Bun-fork recipe and tokenizer validation do not establish completed fine-tuning; training placement remains Omar WSL.",
+    "Windows SSH server currently negotiates classical key exchange; client SSH to Linux negotiates hybrid ML-KEM."
+  ],
+  "evidence": {
+    "nativeCli": "aphrody infra ssh exec",
+    "wireguardPlan": "wireguard/aphrody-tunnel.json",
+    "dbfrReturnRule": "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp",
+    "codexReference": "https://developers.openai.com/codex/mcp"
+  },
+  "persistentNativeBridge": {
+    "observedAt": "2026-10-07T12:48:13.696054+00:00",
+    "services": [
+      "aphrody-kernel.service",
+      "aphrody-host-bridge@windows.service",
+      "aphrody-host-bridge@desktop.service",
+      "aphrody-host-bridge@privileged.service"
+    ],
+    "enabled": false,
+    "state": "superseded-by-bun-pc-agent",
+    "credentialRefresh": "Linux protected client files refreshed from the already rotated Windows policy; verified backups retained.",
+    "nativeObservationFacade": "aphrody winclean call desktop_computer_observe",
+    "observationVerified": true,
+    "reverseWindowsToLinuxCallVerified": true,
+    "eventsBothDirectionsVerified": true,
+    "invalidCredentialRejected": true,
+    "nativeA2ADesktopDispatchVerified": true,
+    "canonicalMcp": {
+      "installedToolCount": 871,
+      "installedNativeToolCount": 534,
+      "installedImportsNativeBridge": true,
+      "sourceImportAdded": true,
+      "runtimeQualification": "deployed and authenticated desktop observation verified",
+      "binarySnapshot": "7aa2681d8193",
+      "binarySha256": "3ec5531c459a2400a5f052144527eca8d149d9145ccb86dba12e83a802192f4f",
+      "glibcMaximum": "2.39",
+      "canonicalExecutable": "/home/aphro/.local/bin/aphrody-mcp",
+      "codexConfigurationRetainsCanonicalServer": true,
+      "nativeYoloToolHost": "/home/aphro/aphrody/bin/yolo tool",
+      "captureStorage": "Protected owner store; no screenshots posted to Discord."
+    },
+    "qualification": {
+      "mcpTestsPassed": 107,
+      "mcpNetworkTestsIgnored": 1,
+      "strictClippyPassed": true,
+      "unitCatalogTestsPassed": 3,
+      "systemdUnitVerifyPassed": true,
+      "bridgePingSamples": 10,
+      "bridgePingMedianMs": 0.0965595,
+      "bridgePingP95Ms": 0.150553,
+      "mcpCrossTargetChecks": {
+        "x86_64-unknown-linux-gnu": "passed (default-feature tests and strict Clippy)",
+        "x86_64-pc-windows-msvc": "passed (cargo xwin check, no-default-features)",
+        "wasm32-unknown-unknown": "not applicable to native socket and stdio hosting"
+      }
+    },
+    "evidenceScope": "Historical qualification before the 2026-10-07 Bun service cutover"
+  },
+  "remotePcMcp": {
+    "observedAt": "2026-10-07T14:20:39.258Z",
+    "transport": "WireGuard SSH native Aphrody persistent forwarding",
+    "clientHosts": ["vps", "dbfr"],
+    "clientEndpoint": "http://127.0.0.1:18793/mcp",
+    "ownerEndpoint": "http://127.0.0.1:8793/mcp",
+    "forwardingUnit": "aphrody-pc-mcp-forward.service",
+    "enabled": true,
+    "unauthenticatedStatus": 401,
+    "ownerSudoUid": 0,
+    "ownerWindowsAdministrator": true,
+    "protectedBearer": true,
+    "containsPrivateCredentials": false,
+    "computerUse": {
+      "captureVerified": true,
+      "captureScope": "Owned disposable WinForms probe PID 16440, HWND 2754018",
+      "capturedPngBytes": 10829,
+      "nativeTypeAccepted": true,
+      "automatedExactTextReadback": false,
+      "ownerVisualAcknowledgement": true,
+      "probeClosed": true,
+      "capturesPublished": false
+    },
+    "clientHostsVerifiedAfterRestart": ["vps", "dbfr"]
+  },
+  "bunUnifiedAgent": {
+    "state": "deployed-active",
+    "sourceSnapshot": "7e9329297ba356d34b074b3565391ae24f5e1253",
+    "entry": "packages/interop/native/src/pc-agent.ts",
+    "canonicalFfi": "aphrody_ffi",
+    "canonicalMcpCrate": "aphrody-mcp",
+    "unit": "aphrody-pc-agent.service",
+    "worker": "Bun Worker thread in the host PID",
+    "scope": "One Linux PC control-plane process; Windows brokers keep their OS session boundaries",
+    "runtimeCutoverVerified": true,
+    "qualification": {
+      "kernelTestsPassed": 124,
+      "mcpTestsPassed": 111,
+      "networkTestsIgnored": 2,
+      "strictClippyPassed": true,
+      "typescriptPassed": true,
+      "oxlintPassed": true,
+      "systemdVerifyPassed": true,
+      "unitCatalogTestsPassed": 3,
+      "globalHostCatalogCheck": "Five unrelated unlisted inventory/unit files remain in concurrent Shenron work",
+      "windowsMcpCheck": "passed (x86_64-pc-windows-msvc, no-default-features)"
+    },
+    "observedAt": "2026-10-07T14:20:39.258Z",
+    "mainPid": 3386674,
+    "processCountInServiceCgroup": 1,
+    "bunVersion": "1.4.2",
+    "sdkPackageVersion": "3.3.7",
+    "ffiSha256": "3212bfd18223e188e4cb2bc4bcd6ab4027a9359d522d5ba59d34c3e297789d3d",
+    "ffiBytes": 237999112,
+    "glibcMaximum": "2.39",
+    "developmentArtifactMode": false,
+    "consumerSmoke": "passed",
+    "toolCount": 644,
+    "desktopToolCount": 166,
+    "windowsToolCount": 166,
+    "rootUid": 0,
+    "windowsAdministrator": true,
+    "unauthenticatedStatus": 401,
+    "kernelSocketOwner": "aphro:aphro 0600",
+    "restartRecoveryVerified": true,
+    "imageMcpContentVerified": true,
+    "pngBytes": 1050524,
+    "longWindowsCallMs": 8234,
+    "longWindowsCallTimedOut": false,
+    "oldUserUnitsDisabled": [
+      "aphrody-kernel.service",
+      "aphrody-host-bridge@windows.service",
+      "aphrody-host-bridge@desktop.service",
+      "aphrody-host-bridge@privileged.service",
+      "aphrody-pc-mcp-http.service"
+    ],
+    "oldSystemUnitsDisabled": ["aphrody-privileged-kernel.service"],
+    "windowsBrokerScope": "Native Windows system and interactive brokers retain their separate sessions",
+    "retiredDuplicatedToolExposure": "Privileged bridge names are replaced by native root calls; separate Bun tool hosts are disabled in this daemon"
+  },
+  "computerUseRequalification": {
+    "observedAt": "2026-10-07T14:36:17Z",
+    "service": {
+      "unit": "aphrody-pc-agent.service",
+      "pid": 3386674,
+      "active": true,
+      "automaticRestarts": 0
+    },
+    "remoteClients": ["vps", "dbfr"],
+    "mcp": {
+      "tools": 644,
+      "desktopTools": 166,
+      "windowsTools": 166,
+      "linuxUid": 0,
+      "windowsAdministrator": true,
+      "unauthenticatedStatus": 401
+    },
+    "computerUse": {
+      "transport": "Authenticated MCP over persistent WireGuard SSH forwarding",
+      "probe": {
+        "pid": 13732,
+        "hwnd": 4195136,
+        "ownedTemporaryWindow": true,
+        "visible": true,
+        "closed": true,
+        "processTerminated": true
+      },
+      "observation": {
+        "pngMcpContent": true,
+        "pngBytes": 14368,
+        "exactWindowIdentityVerified": true,
+        "includeUiTree": false
+      },
+      "typing": {
+        "acceptedCharacters": 32,
+        "allMarkerCharactersReadBack": true,
+        "exactFieldEquality": false,
+        "additionalCharactersObserved": 7
+      },
+      "afterInputObservationVerified": true,
+      "hiddenWindowObservationQualified": false,
+      "capturesPublished": false
+    },
+    "omar": {
+      "wireguardAddress": "10.200.77.10",
+      "handshakeTimestamp": 0,
+      "setupPromptPresent": true,
+      "activationConfirmationObserved": false,
+      "windowsSshAccountAndEndpointQualified": false,
+      "wslEndpointQualified": false,
+      "codingAgentEndpointsQualified": false
+    }
+  }
+}

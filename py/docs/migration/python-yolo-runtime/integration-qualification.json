@@ -1,0 +1,25 @@
+{
+  "schema": "aphrody.python.integration-qualification/1",
+  "date": "2026-10-04",
+  "target": "linux-x64",
+  "workspace": {"passed": 695, "skipped": 22, "duration_seconds": 24.14},
+  "ruff_check": "passed",
+  "ruff_format": {"passed": true, "files": 298},
+  "mypy": {"passed": true, "sources": 147},
+  "locked_dependencies": {"passed": true, "packages": 243, "offline": true},
+  "wheel_receipt": "wheel-qualification.json",
+  "installed_wheel_runtime_tests": {
+    "passed": 22,
+    "skipped": 0,
+    "duration_seconds": 0.62,
+    "python": "3.12.3",
+    "isolated_interpreter": true,
+    "outside_checkout": true,
+    "abi": "1.4",
+    "producer_revision": "0ade1c71ccb52bcc9d255188a252c28c5b789b48",
+    "library_sha256": "ae14394bcfb291b9da4a4aa79acdcac2193f30966ae5672f02adf9f6b3ec695e",
+    "capabilities": ["system.stats", "bench.compute", "process.supervise", "http.probe"]
+  },
+  "installed_app_server_python_tests": {"passed": 4, "deselected": 1, "duration_seconds": 2.51},
+  "unqualified": ["native Windows", "native macOS", "ARM64", "other producer revisions", "reserved desktop/headless capabilities", "optional providers and ML models", "complete cross-repository Jan absorption"]
+}

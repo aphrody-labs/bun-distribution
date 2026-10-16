@@ -1,0 +1,4 @@
+# Compiled extension of crates/engine/yolo-pyo3 (build output, produced by maturin through `yolo py build --engine`)
+python/yolo/*.so
+python/yolo/*.pyd
+python/yolo/__pycache__/

@@ -1,0 +1,20 @@
+[package]
+name = "aphrody-bindgen"
+version = "1.4.4"
+edition = "2024"
+description = "Bindgen-based generator for dynamically loaded native-library bindings."
+license = "MIT OR Apache-2.0"
+authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
+repository = "https://github.com/aphrody-labs/aphrody"
+keywords = ["bindgen", "ffi", "code-generation", "dynamic-loading", "bindings"]
+categories = ["development-tools::ffi", "development-tools::build-utils"]
+publish = true
+
+[dependencies]
+anyhow = "1.0.104"
+bindgen = "0.73.2"
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+prettyplease = "0.3.0"
+proc-macro2 = "1.0.107"
+quote = "1.0.47"
+syn = { version = "3.0.5", features = ["full", "extra-traits"] }

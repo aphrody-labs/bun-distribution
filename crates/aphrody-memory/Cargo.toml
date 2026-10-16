@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-memory"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1)."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+
+[dependencies]
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+async-trait = "0.1.92"
+futures = "0.3.34"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.26.0", features = ["v4", "v7", "serde"] }
+time = { version = "0.3", features = ["macros", "formatting", "parsing", "serde"] }
+tracing = "0.1.44"
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rusqlite = { version = "0.40", features = ["bundled"] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["sqlite"] }
+aphrody-web-index = { path = "../../toolchains/bun/src/browser/crates/index", version = "1.4.4", package = "bun_browser_index" }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+tempfile = "3.27.0"
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[package.metadata.cargo-machete]
+ignored = ["time"]
+
+# ---------------------------------------------------------------------------
+# Bench harness — R3.7 recall benchmark over 100k events.
+# `harness = false` opts out of the default libtest harness so criterion's
+# `criterion_main!` macro owns the entry point. The criterion group inside is
+# named `bench_recall_100k`, matching the PLAN verify filter.
+# ---------------------------------------------------------------------------
+[[bench]]
+name    = "recall"
+harness = false

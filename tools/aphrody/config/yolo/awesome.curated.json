@@ -1,0 +1,129 @@
+[
+  {
+    "name": "Website",
+    "url": "https://bun.com/",
+    "description": "",
+    "section": "Essentials",
+    "verdict": "keep",
+    "reason": "official Bun site",
+    "httpStatus": 200
+  },
+  {
+    "name": "Docs",
+    "url": "https://bun.com/docs",
+    "description": "",
+    "section": "Essentials",
+    "verdict": "keep",
+    "reason": "official Bun site",
+    "httpStatus": 200
+  },
+  {
+    "name": "Extro - open source browser extension starter kit",
+    "url": "https://github.com/turbostarter/extro",
+    "description": "",
+    "section": "Boilerplates",
+    "github": "turbostarter/extro",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-08-21)"
+  },
+  {
+    "name": "Nixpacks Bun web server",
+    "url": "https://github.com/railwayapp/nixpacks/tree/main/examples/node-bun-web-server",
+    "description": "",
+    "section": "Boilerplates",
+    "github": "railwayapp/nixpacks",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-02)",
+    "httpStatus": 200
+  },
+  {
+    "name": "Elysia",
+    "url": "https://github.com/elysiajs/elysia",
+    "description": "Fast, and friendly Bun web framework.",
+    "section": "Extensions",
+    "github": "elysiajs/elysia",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-02)"
+  },
+  {
+    "name": "Hono",
+    "url": "https://github.com/honojs/hono",
+    "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun. Fast, but not only fast.",
+    "section": "Extensions",
+    "github": "honojs/hono",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-02)"
+  },
+  {
+    "name": "GraphQL Yoga",
+    "url": "https://github.com/dotansimha/graphql-yoga",
+    "description": "A fast, fully featured GraphQL Framework that [runs on Bun](https://the-guild.dev/graphql/yoga-server/v3/integrations/integration-with-bun), Cloudflare Workers, Deno, and any JS environment.",
+    "section": "Extensions",
+    "github": "dotansimha/graphql-yoga",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-02)"
+  },
+  {
+    "name": "Hattip",
+    "url": "https://github.com/hattipjs/hattip",
+    "description": "Set of JavaScript packages for building HTTP server applications, with Bun support.",
+    "section": "Extensions",
+    "github": "hattipjs/hattip",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-08-10)"
+  },
+  {
+    "name": "Fluxify",
+    "url": "https://github.com/simylein/fluxify",
+    "description": "A neat little library powered by Bun for building apis.",
+    "section": "Extensions",
+    "github": "simylein/fluxify",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-08-19)"
+  },
+  {
+    "name": "GraphQL Mesh",
+    "url": "https://github.com/urigo/graphql-mesh",
+    "description": "Gateway that takes any source API and exposes GraphQL. Runs on Bun, Cloudflare Workers, Deno, and any JS environment.",
+    "section": "Extensions",
+    "github": "urigo/graphql-mesh",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-03)"
+  },
+  {
+    "name": "Orama",
+    "url": "https://github.com/oramasearch/orama",
+    "description": "🌌 Fast, in-memory, typo-tolerant, full-text search engine written in TypeScript.",
+    "section": "Extensions",
+    "github": "oramasearch/orama",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-10-03)"
+  },
+  {
+    "name": "Bum",
+    "url": "https://github.com/owenizedd/bum",
+    "description": "A fast Bun version manager written in Rust.",
+    "section": "Tools",
+    "github": "owenizedd/bum",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-06-27)"
+  },
+  {
+    "name": "Discord",
+    "url": "https://bun.com/discord",
+    "description": "",
+    "section": "Community",
+    "verdict": "keep",
+    "reason": "official Bun site",
+    "httpStatus": 200
+  },
+  {
+    "name": "Bun HTTP Framework Benchmark",
+    "url": "https://github.com/SaltyAom/bun-http-framework-benchmark",
+    "description": "Compare throughput benchmark from various Bun HTTP frameworks.",
+    "section": "Community",
+    "github": "SaltyAom/bun-http-framework-benchmark",
+    "verdict": "keep",
+    "reason": "active since the Rust rewrite (last push 2026-08-12)"
+  }
+]

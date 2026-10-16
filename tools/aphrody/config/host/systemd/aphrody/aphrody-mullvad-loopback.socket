@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Host-loopback-only SOCKS bridge. SSH PermitOpen authorizes this exact endpoint.
+[Unit]
+Description=Aphrody Mullvad SOCKS endpoint on VPS loopback only
+Requires=aphrody-mullvad-netns.service aphrody-mullvad-socks.service
+PartOf=aphrody-mullvad-netns.service
+After=aphrody-mullvad-netns.service aphrody-mullvad-socks.service
+
+[Socket]
+ListenStream=127.0.0.1:1080
+NoDelay=true
+Backlog=16
+Accept=no
+
+[Install]
+WantedBy=sockets.target

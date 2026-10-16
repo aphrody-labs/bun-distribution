@@ -1,0 +1,136 @@
+[package]
+name = "aphrody-mcp"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+description           = "aphrody-mcp — unified Rust MCP stdio server. Pure Rust."
+
+# Library only: the `aphrody-mcp` entry point (`aphrody_mcp::cli_main`) is dispatched by the
+# `aphrody` multi-call binary (symlink `aphrody-mcp` or `aphrody mcp-server`).
+[lib]
+path = "src/lib.rs"
+
+[features]
+# The Obscura browser (HTTP + DOM + V8, plus the layout/paint engine for
+# screenshots and PDF) served natively. On by default: V8 ships prebuilt for
+# Linux and Windows MSVC (the only Windows toolchain aphrody uses).
+default = ["native-browser", "managed-llama", "gateway-cache"]
+# Redis cache of the Shenron HTTP gateway search (`/api/v1/shenron/rag/search`), built on
+# `aphrody-rag::redis_cache`. On by default, as it was under the former `dragonball` feature.
+gateway-cache = ["dep:aphrody-rag"]
+# Managed llama.cpp daemon as the Shenron LLM backend when no chat base URL is configured.
+managed-llama = ["dep:aphrody-llama-server"]
+native-browser = ["aphrody-web-service/render"]
+# Obscura stealth (fingerprint + tracker blocking, wreq TLS impersonation).
+browser-stealth = ["native-browser", "aphrody-web-service/stealth"]
+
+# --- Local inference toolbox (docs/plans/local-inference-toolbox.md, step 7) ---
+# Opt-in because each tool pulls a backend the base MCP server has no use for.
+# CLAUDE.md §7: an opt-in feature is verified by nobody, so clippy/test/build
+# must be run explicitly WITH `--features toolbox`, not just the default set.
+
+# `aphrody_ocr` — vision-language OCR driven through llama.cpp, plus fast PP-OCRv5 ONNX.
+ocr       = [
+    "dep:aphrody-ocr",
+    "dep:aphrody-ocr-vlm",
+    "dep:aphrody-ocr-core",
+    "dep:aphrody-infer",
+    "dep:tempfile",
+]
+# `aphrody_transcribe` — fully local STT driven through whisper.cpp. Its
+# backend lives in `aphrody-voice`, already a hard dependency, so the cost is
+# only the tool surface; the feature exists so the local path and the
+# ElevenLabs/OpenAI path (`voice_transcribe`) can ship independently.
+stt-local = []
+# `aphrody_describe_image` — visual transcription (caption / regions / VQA).
+# Separate from `ocr` on purpose: the two tools grant the model different
+# permissions, and a deployment that must never receive a description of a
+# picture in place of a transcription can ship `ocr` without this.
+vision    = ["dep:aphrody-vision", "dep:tempfile"]
+# `aphrody_job_submit` / `aphrody_job_status` — persistent background queue.
+# Drags bundled libsqlite3 into the binary, hence opt-in.
+jobs      = ["dep:aphrody-jobs", "dep:chrono"]
+# `aphrody_rag_search` / `aphrody_rag_context` — the local aphrody-rag SQLite
+# index (`$APHRODY_RAG_DB`, default `~/.aphrody/rag/index.db`).
+rag       = ["dep:aphrody-rag"]
+# Local ONNX Runtime embedder for RAG. Keep it out of the default server; the
+# full local-inference toolbox enables it explicitly.
+rag-ort   = ["rag", "aphrody-rag/ort"]
+native    = ["rag", "aphrody-rag/native"]
+rag-native = ["native"]
+# Everything the toolbox exposes over MCP.
+toolbox   = ["ocr", "stt-local", "vision", "jobs", "rag-ort"]
+
+# `winclean` — the 166 tools of aphrody-winclean (Windows computer use + OS control)
+# advertised and dispatched in-process via aphrody-winclean. Opt-in because the
+# WinClean Claude plugin already exposes the same catalog through
+# Winclean.Mcp.exe; enable it when aphrody-mcp is the single MCP server.
+# Windows-only at runtime; off Windows the tools are simply not advertised.
+winclean  = ["dep:aphrody-winclean"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.4", default-features = false, features = ["builtins"] }
+aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", version = "1.4.4", package = "bun_browser_extract" }
+aphrody-web-detect = { path = "../../toolchains/bun/src/browser/crates/detect", version = "1.4.4", package = "bun_browser_detect", features = ["fetch"] }
+aphrody-web-crawl = { path = "../../toolchains/bun/src/browser/crates/crawl", version = "1.4.4", package = "bun_browser_crawl" }
+aphrody-x = { path = "../../toolchains/bun/packages/web/rust/crates/x", version = "1.4.4", features = [] }
+rmcp = { version = "=3.5.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
+tokio-postgres = { version = "0.7.18", features = ["with-serde_json-1"] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["postgres"] }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
+aphrody-a2a-server = { path = "../aphrody-a2a-server", version = "1.4.4", default-features = false, features = [] }
+aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
+anyhow = "1.0.104"
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt", "json", "regex", "registry"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+schemars = { version = "1.2.2", features = ["derive", "chrono04", "indexmap2", "uuid1"] }
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+aphrody-http-error = { path = "../aphrody-http-error", version = "1.4.4", features = [] }
+aphrody-mcp-client = { path = "../aphrody-mcp-client", version = "1.4.4", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.4", features = [] }
+tokio-tungstenite = { version = "0.30", features = [] }
+futures-util = { version = "0.3", features = [] }
+sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
+aphrody-backend = { path = "../aphrody-backend", version = "1.4.4", features = [] }
+aphrody-gemini-runtime = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-runtime", version = "1.4.4", features = [] }
+aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", version = "1.4.4", features = [] }
+aphrody-firefly = { path = "../aphrody-firefly", version = "1.4.4", features = [] }
+aphrody-capture = { path = "../aphrody-capture", version = "1.4.4", features = [] }
+which = { version = "8", features = [] }
+aphrody-n2b-core = { version = "=0.7.0", features = [] }
+aphrody-n2b-types = { version = "=0.7.0", features = [] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name    = "initialize_handshake"
+harness = false

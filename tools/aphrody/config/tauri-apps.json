@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "description": "Single registry of every Tauri project in the monorepo: first-party apps and plugins, workspace-excluded or git-ignored ones; upstream checkouts live outside the repo (tools/config/upstream-sources.json). `bun run desktop:apps:check` scans the whole tree (git-ignored and workspace-excluded paths included, only target/node_modules/.git are skipped) and fails on any Tauri project missing here. tauri-sync derives its cargo gate and generated-file list from this file.",
+  "scanSkip": ["target", "node_modules", ".git", ".turbo", ".coord"],
+  "projects": [
+    {
+      "id": "aphrody-app",
+      "kind": "app",
+      "path": "crates/ui/app",
+      "package": "aphrody-app",
+      "runtime": "cef",
+      "workspace": "member",
+      "confs": ["tauri.conf.json", "tauri.drive.conf.json"],
+      "gate": true,
+      "generated": ["crates/ui/app/gen"],
+      "note": "Desktop agent console, the only desktop application. Embeds the prebuilt ui-dist bundle until @aphrody/app-ui joins the workspace. Also the Yolo desktop SDK host (--host-info, --runtime-host: former yolo-desktop), opens the M3 showcase window with --showcase (former m3-showcase; the Bun sidecar of m3/packages/app-ui/showcase serves UI and API) and hosts the real-webview shell e2e as the shell_e2e example (former aphrody-shell-tauri-e2e)."
+    },
+    {
+      "id": "aphrody-drive",
+      "kind": "plugin",
+      "path": "crates/ui/drive",
+      "package": "aphrody-drive",
+      "workspace": "member",
+      "gate": true,
+      "note": "Tauri plugin: Drive daemon commands for aphrody-app."
+    },
+    {
+      "id": "scaffold",
+      "kind": "generator",
+      "path": "m3/packages/scaffold",
+      "note": "@aphrody/scaffold: the single scaffolder (Tauri 3 shell, web/app/example templates, no-overwrite writer). Owns TAURI_3, mirrored from the root pins (tools/config/tauri-upstream.json mirrors); m3 new, m3-next-migrate and web-to-tauri write through it."
+    },
+    {
+      "id": "web-to-tauri",
+      "kind": "generator",
+      "path": "m3/packages/web-to-tauri",
+      "note": "@aphrody/web-to-tauri: probes a site or project, plans remote/bundle/sidecar, generates a Tauri 3 project around aphrody-tauri-wrap and checks parity against the original."
+    },
+    {
+      "id": "aphrody-tauri-wrap",
+      "kind": "plugin",
+      "path": "crates/ui/tauri-wrap",
+      "package": "aphrody-tauri-wrap",
+      "workspace": "member",
+      "gate": true,
+      "note": "Runtime plugin of web-to-tauri: navigation policy, downloads, loopback server with backend proxy (feature bundle, default), sidecar (std only). Reads src-tauri/wrap.json; shares policy-cases.json with the TypeScript policy. Also hosts the feature-gated (debug-bridge) Tauri 3 debug bridge aphrody_tauri_wrap::debug for aphrody-web and aphrody-mcp (aphrody_tauri_* tools): wraps the patched upstream tauri-plugin-mcp-bridge (screenshot through the CEF DevTools protocol) (patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch); loopback, per-process token, 0600 discovery file, debug builds only. Enabled in aphrody-model-view through its debug-bridge feature."
+    },
+    {
+      "id": "m3-next-migrate",
+      "kind": "generator",
+      "path": "m3/packages/m3-next-migrate",
+      "note": "Migrates Next.js projects to Tauri 3 apps. Writes them through @aphrody/scaffold (the single scaffolder); TAURI_3 is re-exported from there. Its next16/tailwind4 codemods come from @aphrody/next-bun (aphrody-labs/bun); mui-to-m3 stays here."
+    },
+    {
+      "id": "m3",
+      "kind": "integration",
+      "path": "m3/packages/m3",
+      "note": "buildM3 / M3App Tauri webview layout; no Tauri dependency."
+    },
+    {
+      "id": "aphrody-shell-tauri",
+      "kind": "plugin",
+      "path": "crates/shell/tauri",
+      "package": "aphrody-shell-tauri",
+      "runtime": "cef",
+      "workspace": "member",
+      "gate": true,
+      "note": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."
+    },
+    {
+      "id": "aphrody-tauri-fork",
+      "kind": "upstream",
+      "path": "crates/tauri",
+      "subtree": true,
+      "note": "Vendored Tauri 3 fork (aphrody-tauri*, the 15 plugins aphrody-app registers, tauri-runtime-cef, CLI); upstream line and patches in tools/config/tauri-upstream.json. Its fixtures and templates are covered by this entry."
+    },
+    {
+      "id": "aphrody-command",
+      "kind": "tool",
+      "path": "crates/infra/aphrody-command",
+      "package": "aphrody-command",
+      "workspace": "member",
+      "note": "Serves the vendored Tauri CLIs in process (`aphrody tauri`, `aphrody create-tauri-app`)."
+    },
+    {
+      "id": "tauri-plugin-mcp-bridge",
+      "kind": "upstream",
+      "path": "crates/ui/tauri-plugin-mcp-bridge",
+      "package": "aphrody-tauri-plugin-mcp-bridge",
+      "workspace": "member",
+      "note": "Patched upstream MCP bridge plugin wrapped by aphrody-tauri-wrap (feature debug-bridge)."
+    },
+    {
+      "id": "m3-desktop-template",
+      "kind": "template",
+      "path": "m3/templates/desktop/src-tauri",
+      "note": "Desktop src-tauri template written by @aphrody/scaffold. Its tauri.conf.json is a template (frontendDist and $schema are filled at generation).",
+      "subtree": true
+    }
+  ]
+}

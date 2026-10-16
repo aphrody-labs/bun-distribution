@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Proposal only: Infra renders placeholders and catalogues the selected host.
+# Do not install this unrendered template or replace an existing service identity.
+[Unit]
+Description=Aphrody native read-only product site
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=__APHRODY_SITE_USER__
+Group=__APHRODY_SITE_GROUP__
+WorkingDirectory=__APHRODY_WORKSPACE_ROOT__
+# Host-resolved config, not provider authentication/session/cookie storage.
+# Set APHRODY_WORKSPACE_ROOT and APHRODY_SITE_BIND=127.0.0.1:<allocated-port>.
+# Optional BUN_WEBOS_URL is a separate-runtime redirect origin.
+EnvironmentFile=__APHRODY_SITE_ENV_FILE__
+ExecStart=__APHRODY_SITE_BINARY__
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadOnlyPaths=__APHRODY_WORKSPACE_ROOT__
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

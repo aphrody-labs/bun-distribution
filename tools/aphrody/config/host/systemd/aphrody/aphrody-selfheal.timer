@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody self-heal pass every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

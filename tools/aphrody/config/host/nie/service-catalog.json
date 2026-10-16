@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "owner": "iecode",
+  "supervisor": "systemd",
+  "proxy": "nginx",
+  "services": [
+    {
+      "id": "nie-site",
+      "application": "nie",
+      "kind": "rust-http",
+      "runtime": "rust",
+      "unit": "nie-site.service",
+      "health": "http://127.0.0.1:8085/healthz",
+      "sourceRepo": "nie",
+      "workingDirectory": "/home/ubuntu/nie",
+      "environmentFile": "/etc/nie/nie.env",
+      "note": "no nie release plane yet: units run from the checkout",
+      "public": true,
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "id": "nie-model-serve",
+      "application": "nie",
+      "kind": "rust-http",
+      "runtime": "rust",
+      "unit": "nie-model-serve.service",
+      "health": "http://127.0.0.1:8792/health",
+      "port": 8792,
+      "capabilities": ["3d-assets"],
+      "sourceRepo": "nie",
+      "workingDirectory": "/home/ubuntu/nie",
+      "publicProxy": "nginx",
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    }
+  ],
+  "policies": {
+    "oneUnitPerWorkload": true,
+    "onePublicProxy": true,
+    "releasePlanes": {},
+    "applicationRoots": {
+      "aphrody-web": "/home/ubuntu/apps/aphrody/current",
+      "aphrody-ai": "/home/ubuntu/apps/aphrody/current",
+      "rg": "/home/ubuntu/apps/rg/current",
+      "shenron": "/home/ubuntu/apps/shenron/current",
+      "nie": "/home/ubuntu/nie"
+    },
+    "secrets": "operator-managed-environment-files",
+    "retiredUnits": [
+      "rg-watchdog@.service",
+      "rg-repo-sync.service",
+      "shenron.service",
+      "shenron-site-b.service",
+      "shenron-api.service",
+      "shenron-mcp.service",
+      "shenron-watchdog.service",
+      "shenron-watchdog.timer",
+      "shenron-clean-vps.service",
+      "shenron-clean-vps.timer",
+      "shenron-log-watcher.service",
+      "shenron-zswap.service",
+      "filebrowser.service"
+    ],
+    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
+    "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
+    "authPolicy": "one-better-auth-contract-per-public-origin"
+  }
+}

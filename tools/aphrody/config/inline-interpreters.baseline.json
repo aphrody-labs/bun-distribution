@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
+  "files": {
+    "packages/engine/yolo/test/startup-benchmark.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/yolo/test/upgrade.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/yolo/test/verify-python.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/yolo/test/web-command.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/yolo/install.sh": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/yolo/yolo.just": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "m3/packages/m3-front/test/production-contract.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/src/sys/supervisor-benchmark.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/src/verify/engine.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/engine/core/test/vendor-catalog.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/update/test/tauri-sync-apply.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/src/build-factory-jobs.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/src/bun-native.ts": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Fresh Bun process isolates the native library consumer under test."
+    },
+    "packages/infra/workspace/src/docs-source.ts": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Python API references come from the CPython ast module (python3 -I -c, stdin only); already present, detected since the Bun.spawn migration."
+    },
+    "packages/infra/workspace/src/infra-audit.ts": {
+      "count": 2,
+      "scope": "remote",
+      "reason": "Read-only SSH probe of runtime-only hosts; only system CPython is guaranteed there."
+    },
+    "packages/infra/workspace/src/runtime-gate.ts": {
+      "count": 2,
+      "scope": "local",
+      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    },
+    "packages/infra/workspace/test/build-factory-concurrency.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/test/build-factory-jobs.test.ts": {
+      "count": 4,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/test/build-factory.test.ts": {
+      "count": 1,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/infra/workspace/test/bun-native.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/test/infra-audit.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "packages/infra/workspace/test/native-consumer-imports.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/infra/workspace/test/repo-sync.test.ts": {
+      "count": 2,
+      "scope": "unclassified",
+      "reason": ""
+    },
+    "packages/interop/native/test-http-request.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/interop/native/test-library.test.ts": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/interop/native/test-native-artifact.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "packages/web/agent-browser/test/engine-lifecycle.test.ts": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "scripts/audit/ai/scripts/test-xai-grok-bxc.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/audit/bench/run-shell-benchmark.sh": {
+      "count": 4,
+      "scope": "local",
+      "reason": "Benchmark of Bun process startup itself; the bun -e snippets are the measured subjects."
+    },
+    "scripts/audit/verify-google-pipeline.ts": {
+      "count": 1,
+      "scope": "local",
+      "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    },
+    "scripts/audit/web-verify.test.ts": {
+      "count": 3,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "scripts/build/os/build-wsl-distro.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Root-only Linux rootfs builder run through sudo by `aphrody wsl build distro`; system CPython validates the payload manifest before debootstrap, the user's Bun install is not on root's PATH."
+    },
+    "scripts/build/os/test-wsl-distro.sh": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Root-only fixture suite of build-wsl-distro.sh with the same root interpreter; bootstrap, chroot and mounts are intercepted."
+    },
+    "scripts/release/atomic-deploy-aphrody-discord.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-aphrody-stack.sh": {
+      "count": 3,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-bundle.sh": {
+      "count": 7,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-rg.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/atomic-deploy-shenron.sh": {
+      "count": 9,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/install-linux-host-bridge.sh": {
+      "count": 2,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/release/test-atomic-deploy-bundle.sh": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "scripts/release/test-atomic-deploy-shenron.sh": {
+      "count": 2,
+      "scope": "test",
+      "reason": "Exercises a host or Python owner exactly as shipped."
+    },
+    "scripts/tools/ai/py/aphrody/scripts/autopilot.sh": {
+      "count": 1,
+      "scope": "local",
+      "reason": "Imported autopilot interpolates shell values into Python source; factor or retire."
+    },
+    "scripts/tools/infra/prepare-aphrody-data-contract.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/tools/infra/provision-shenron-ai-access.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
+    },
+    "scripts/tools/install-vps-adapter.sh": {
+      "count": 4,
+      "scope": "host",
+      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/tools/os/mullvad-switch-relay.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Root WireGuard relay switch on the runtime-only VPS; Bun is absent there, system CPython reads the Mullvad relay API."
+    }
+  }
+}

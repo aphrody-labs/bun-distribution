@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody scoped Japan Mullvad network namespace for web crawling
+Wants=network-online.target
+After=network-online.target
+Before=aphrody-mullvad-socks.service aphrody-mullvad-loopback.socket
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/local/bin/aphrody-mullvad-switch jp
+ExecStart=/usr/local/libexec/aphrody-mullvad-netns-setup
+User=root
+Group=root
+UMask=0077
+NoNewPrivileges=yes
+# ip netns add installs a named namespace bind mount in /run/netns. Keep the
+# service in the host mount namespace so the handle survives this oneshot unit.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_NETLINK AF_UNIX
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_ADMIN
+TasksMax=32
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target

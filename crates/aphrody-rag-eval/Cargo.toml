@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-rag-eval"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-rag-core = { path = "../aphrody-rag-core", version = "1.4.4", features = [] }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.4", features = [] }
+async-trait = "0.1.92"
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+tracing = "0.1.44"
+
+[dev-dependencies]
+pretty_assertions = { version = "1", features = [] }
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

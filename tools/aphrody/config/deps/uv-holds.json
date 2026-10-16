@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "note": "Python / uv version holds, read by `yolo update uv status|plan|apply`. A hold refuses a release above `maxMajor` or `maxVersion` and names the blocker; the pinned or capped state must stay in the pyproject it lives in (torch ==2.13.0, magika ~=0.6.1, markitdown). Entries with scope `transitive` explain packages the resolver keeps back because a parent caps them; they carry no manifest edit. `name` may end in `*`. Re-check on every `uv lock --upgrade`: remove the entry as soon as the blocker moves (yolo update uv status lists a cap without an entry as NO REASON). Advisory-only holds live in tools/config/deps/advisory-holds.json.",
+  "holds": [
+    { "name": "torch", "maxVersion": "2.13.0", "since": "2026-10", "reason": "aphrody-train pins ==2.13.0 (cu130 index on Linux and Windows, PyPI elsewhere), the first release that fixes GHSA-rrmf-rvhw-rf47; the Windows CPU smoke (import torch.amp) and the embed/rerank ONNX export pass on it. The 2.14.0 Windows wheel failed to import torch.amp; re-run the Windows CPU smoke and the ONNX export on 2.14.x before lifting, and the cu130 index must carry the wheel." },
+    { "name": "magika", "maxMajor": 0, "since": "2026-09", "reason": "markitdown hard-pins magika~=0.6.1 as a core dependency, so magika 1.x and markitdown cannot share an environment; classify.py supports both result shapes, a markitdown bump makes the upgrade a no-op." },
+    { "name": "maturin", "maxVersion": "1.14.1", "since": "2026-10", "reason": "exact build-backend pin of the aphrody SDK (py/docs/sdk/native-build.md). The wheel is built in place from crates/ai/rag-python since 2026-10-05; 1.15.0 hardens the PEP 517 build-wheel path, so the cargo-built wheel needs a full requalification (uv build --wheel, tools/sdk/verify-wheel.py), which needs Cargo and stays with the lead's serialized build." },
+    { "name": "torchvision", "maxVersion": "0.28.0", "scope": "transitive", "reason": "follows the torch 2.13.0 hold (torchvision 0.28 is the 2.13 release)." },
+    { "name": "triton", "scope": "transitive", "reason": "bound by the torch 2.13.0 hold (torch pins its triton release)." },
+    { "name": "nvidia-*", "scope": "transitive", "reason": "CUDA runtime wheels are pinned by the torch wheel that pulls them (2.13.0+cu130 in aphrody-train); they move with torch." },
+    { "name": "cuda-*", "scope": "transitive", "reason": "CUDA runtime wheels are pinned by torch." },
+    { "name": "huggingface-hub", "scope": "transitive", "reason": "docling-slim and sentence-transformers 6.1 require huggingface-hub <2; 2.x needs both to move." },
+    { "name": "typer", "scope": "transitive", "reason": "docling-slim[standard] requires typer <0.27; moves with the next docling release." },
+    { "name": "semchunk", "scope": "transitive", "reason": "docling-core[chunking] requires semchunk <4; moves with docling-core." },
+    { "name": "mammoth", "scope": "transitive", "reason": "markitdown[docx] requires mammoth >=1.11,<1.12.dev0; moves with markitdown." },
+    { "name": "websockets", "scope": "transitive", "reason": "google-genai requires websockets <17; moves with google-genai." },
+    { "name": "fsspec", "scope": "transitive", "reason": "datasets 5.0.1 requires fsspec[http] <=2026.6.0; moves with the next datasets release." },
+    { "name": "multidict", "scope": "transitive", "reason": "aiohttp (datasets, fsspec[http]) requires multidict <7." },
+    { "name": "antlr4-python3-runtime", "scope": "transitive", "reason": "omegaconf 2.3.1 requires antlr4-python3-runtime==4.9.*." },
+    { "name": "mpmath", "scope": "transitive", "reason": "sympy 1.14 requires mpmath <1.4." },
+    { "name": "pydantic-core", "scope": "transitive", "reason": "pydantic 2.13.5 pins pydantic-core==2.46.5; the newer core ships with the 2.14 beta only." },
+    { "name": "onnxruntime", "scope": "transitive", "reason": "magika 0.6.x requires onnxruntime <=1.20.1 on Windows (magika hold); onnxruntime 1.30 also ships no macOS x86_64 wheel, so the SDK lock forks per platform." }
+  ]
+}

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ocr-onnx"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description = "PP-OCR ONNX recognition primitives for aphrody."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.4", features = ["onnx"] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.4", features = [] }
+image = { version = "0.25.10", features = ["jpeg", "png"] }
+ndarray = "0.17.2"
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "ndarray", "tracing"] }
+serde_yaml = { package = "yaml_serde", version = "0.10", features = [] }
+thiserror = "2.0.20"

@@ -1,0 +1,55 @@
+{
+  "$comment": "vps: disposition unique des chemins (décision 2026-10-09, voir tools/config/host/host-policy.toml [layout]). Appliquée sur l'hôte ; /srv supprimé.",
+  "schemaVersion": 1,
+  "host": "vps",
+  "home": "/home/ubuntu",
+  "volumes": {
+    "/mnt/aphrody-storage/disk500": "/dev/sdc1 (ext4, UUID 2fc98d6e-d1e0-4683-8179-d5c75534963d), 500 GiB additional disk, fstab",
+    "/home/ubuntu/build/storage": "mergerfs 2.42.0: disk500 + dedicated directories on sdb1 and root; shared capacity, fstab",
+    "/home/ubuntu/build": "/dev/sdb1 (ext4, UUID 4f515ab9-c3cf-4b81-96d5-8c90f7d43c2a), fstab"
+  },
+  "paths": {
+    "~/src": {
+      "kind": "bind",
+      "source": "~/build/workspaces",
+      "note": "une copie git par dépôt : aphrody, bun, shenron, forks/<nom>"
+    },
+    "~/apps": {
+      "kind": "bind",
+      "source": "~/build/apps",
+      "note": "runtime des services ; bind et non lien symbolique (checkouts : realpath = chemin déclaré)"
+    },
+    "~/archive": {
+      "kind": "symlink",
+      "target": "~/build/archive",
+      "note": "données froides : dbfr/, dbfr-archive/, k-archive/, tar"
+    },
+    "~/build": { "kind": "dir", "note": "caches, artefacts, locks, workspaces, toolchains de build" },
+    "~/fork-target": { "kind": "symlink", "target": "~/build/fork-target" },
+    "~/xmsvc": { "kind": "symlink", "target": "~/build/xmsvc" },
+    "~/llama-build": { "kind": "symlink", "target": "~/build/llama-build" },
+    "~/tools-build": { "kind": "symlink", "target": "~/build/tools-build" },
+    "~/.cargo/registry": { "kind": "symlink", "target": "~/build/cargo/registry" },
+    "~/.cargo/git": { "kind": "symlink", "target": "~/build/cargo/git" }
+  },
+  "removed": {
+    "/srv": "supprimé (plus de liens de transition)",
+    "~/.git": "dossier vide à la racine du home, supprimé",
+    "/home/omar/src": "lien symbolique vers /home/ubuntu/src (copies omar propres, sans commit non poussé, supprimées)",
+    "/home/shenron-build/runner": "copie retirée après bascule du runner"
+  },
+  "services": {
+    "aphrody-shenron-build-runner.service": {
+      "user": "ubuntu",
+      "group": "aphrody",
+      "workingDirectory": "~/build/runners/shenron",
+      "note": "runner réenregistré non requis (même jeton) ; le compte shenron-build reste en place, sans service"
+    }
+  },
+  "kept": {
+    "~/yolo/w/rel-glibc, ~/yolo/w/rel-musl": "workspaces des builds yolo en cours (conteneur yolo-rel-musl), à déplacer quand le build est arrêté",
+    "~/.codex/.tmp/plugins/.git": "état Codex, non touché",
+    "~/.aphrody/private/native-discord-sdk-*/.git": "état Aphrody privé, non touché",
+    "~/.cache/uv/sdists-v9/.git": "cache uv"
+  }
+}

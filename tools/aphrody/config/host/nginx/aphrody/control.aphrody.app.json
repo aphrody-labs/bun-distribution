@@ -1,0 +1,235 @@
+{
+  "servers": [
+    {
+      "server_names": [
+        "app-video.aphrody.app",
+        "app-generation.aphrody.app",
+        "app-images.aphrody.app",
+        "app-vectors.aphrody.app",
+        "app-compositing.aphrody.app",
+        "app-photo-processing.aphrody.app",
+        "app-pdf.aphrody.app",
+        "app-documents.aphrody.app",
+        "app-audio.aphrody.app",
+        "app-layout.aphrody.app",
+        "app-cad.aphrody.app",
+        "app-slides.aphrody.app",
+        "app-tables.aphrody.app",
+        "app-interface-layouts.aphrody.app",
+        "filmcraft.aphrody.app",
+        "artcraft.aphrody.app",
+        "photocraft.aphrody.app",
+        "vectorcraft.aphrody.app",
+        "effectcraft.aphrody.app",
+        "lightcraft.aphrody.app",
+        "pdfcraft.aphrody.app",
+        "wordcraft.aphrody.app",
+        "soundcraft.aphrody.app",
+        "designcraft.aphrody.app",
+        "cadcraft.aphrody.app",
+        "deckcraft.aphrody.app",
+        "gridcraft.aphrody.app",
+        "figcraft.aphrody.app",
+        "git.aphrody.app",
+        "source.aphrody.app",
+        "deploy.aphrody.app"
+      ],
+      "listen_ports": ["80", "[::]:80"],
+      "locations": [
+        {
+          "path": "^~ /.well-known/acme-challenge/",
+          "custom_directives": [
+            "root /var/www/letsencrypt",
+            "default_type text/plain",
+            "try_files $uri =404"
+          ]
+        },
+        {
+          "path": "/",
+          "custom_directives": ["return 301 https://$host$request_uri"]
+        }
+      ]
+    },
+    {
+      "server_names": [
+        "app-video.aphrody.app",
+        "app-generation.aphrody.app",
+        "app-images.aphrody.app",
+        "app-vectors.aphrody.app",
+        "app-compositing.aphrody.app",
+        "app-photo-processing.aphrody.app",
+        "app-pdf.aphrody.app",
+        "app-documents.aphrody.app",
+        "app-audio.aphrody.app",
+        "app-layout.aphrody.app",
+        "app-cad.aphrody.app",
+        "app-slides.aphrody.app",
+        "app-tables.aphrody.app",
+        "app-interface-layouts.aphrody.app",
+        "filmcraft.aphrody.app",
+        "artcraft.aphrody.app",
+        "photocraft.aphrody.app",
+        "vectorcraft.aphrody.app",
+        "effectcraft.aphrody.app",
+        "lightcraft.aphrody.app",
+        "pdfcraft.aphrody.app",
+        "wordcraft.aphrody.app",
+        "soundcraft.aphrody.app",
+        "designcraft.aphrody.app",
+        "cadcraft.aphrody.app",
+        "deckcraft.aphrody.app",
+        "gridcraft.aphrody.app",
+        "figcraft.aphrody.app"
+      ],
+      "listen_ports": ["443 ssl", "[::]:443 ssl"],
+      "ssl_certificate": "/etc/letsencrypt/live/aphrody-control/fullchain.pem",
+      "ssl_certificate_key": "/etc/letsencrypt/live/aphrody-control/privkey.pem",
+      "custom_directives": [
+        "http2 on",
+        "ssl_protocols TLSv1.2 TLSv1.3",
+        "server_tokens off",
+        "client_max_body_size 512m",
+        "include snippets/aphrody-security.inc",
+        "include snippets/bun-os-product-api.inc"
+      ],
+      "locations": [
+        {
+          "path": "= /install",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "/",
+          "custom_directives": [
+            "default_type application/json",
+            "return 503 '{\"error\":\"Native artifact is not installed\"}'"
+          ]
+        }
+      ]
+    },
+    {
+      "server_names": ["git.aphrody.app"],
+      "listen_ports": ["443 ssl", "[::]:443 ssl"],
+      "ssl_certificate": "/home/ubuntu/.aphrody/secrets/tls/source-origin/fullchain.pem",
+      "ssl_certificate_key": "/home/ubuntu/.aphrody/secrets/tls/source-origin/privkey.pem",
+      "custom_directives": [
+        "http2 on",
+        "ssl_protocols TLSv1.2 TLSv1.3",
+        "server_tokens off",
+        "client_max_body_size 512m",
+        "include snippets/aphrody-security.inc",
+        "include snippets/bun-os-product-api.inc"
+      ],
+      "locations": [
+        {
+          "path": "= /install",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "/",
+          "proxy_pass": "http://127.0.0.1:29020",
+          "proxy_http_version": "1.1",
+          "headers": [
+            ["Host", "$host"],
+            ["X-Forwarded-Proto", "$scheme"],
+            ["X-Forwarded-For", "$remote_addr"],
+            ["X-WEBAUTH-USER", ""],
+            ["X-WEBAUTH-EMAIL", ""],
+            ["X-WEBAUTH-FULLNAME", ""],
+            ["X-Aphrody-Tunnel-User", ""],
+            ["Upgrade", "$http_upgrade"],
+            ["Connection", "upgrade"]
+          ],
+          "custom_directives": [
+            "proxy_connect_timeout 5s",
+            "proxy_read_timeout 300s",
+            "proxy_send_timeout 300s",
+            "proxy_buffering off"
+          ]
+        }
+      ]
+    },
+    {
+      "server_names": ["source.aphrody.app"],
+      "listen_ports": ["443 ssl", "[::]:443 ssl"],
+      "ssl_certificate": "/etc/letsencrypt/live/source.aphrody.app/fullchain.pem",
+      "ssl_certificate_key": "/etc/letsencrypt/live/source.aphrody.app/privkey.pem",
+      "custom_directives": [
+        "http2 on",
+        "ssl_protocols TLSv1.2 TLSv1.3",
+        "server_tokens off",
+        "client_max_body_size 512m",
+        "include snippets/aphrody-security.inc",
+        "include snippets/bun-os-product-api.inc"
+      ],
+      "locations": [
+        {
+          "path": "= /install",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "^~ /.well-known/acme-challenge/",
+          "custom_directives": [
+            "root /var/www/letsencrypt",
+            "default_type text/plain",
+            "try_files $uri =404"
+          ]
+        },
+        {
+          "path": "/",
+          "proxy_pass": "http://127.0.0.1:29020",
+          "proxy_http_version": "1.1",
+          "headers": [
+            ["Host", "$host"],
+            ["X-Forwarded-Proto", "$scheme"],
+            ["Upgrade", "$http_upgrade"],
+            ["Connection", "upgrade"]
+          ],
+          "custom_directives": [
+            "include snippets/source-tunnel-auth.inc",
+            "proxy_connect_timeout 5s",
+            "proxy_read_timeout 300s",
+            "proxy_send_timeout 300s",
+            "proxy_buffering off"
+          ]
+        }
+      ]
+    },
+    {
+      "server_names": ["deploy.aphrody.app"],
+      "listen_ports": ["443 ssl", "[::]:443 ssl"],
+      "ssl_certificate": "/etc/letsencrypt/live/aphrody-control/fullchain.pem",
+      "ssl_certificate_key": "/etc/letsencrypt/live/aphrody-control/privkey.pem",
+      "custom_directives": [
+        "http2 on",
+        "ssl_protocols TLSv1.2 TLSv1.3",
+        "server_tokens off",
+        "client_max_body_size 512m",
+        "include snippets/aphrody-security.inc"
+      ],
+      "locations": [
+        {
+          "path": "= /install",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "/",
+          "proxy_pass": "http://127.0.0.1:29021",
+          "proxy_http_version": "1.1",
+          "headers": [
+            ["Host", "$host"],
+            ["X-Forwarded-Proto", "$scheme"],
+            ["X-Forwarded-For", "$proxy_add_x_forwarded_for"],
+            ["Upgrade", "$http_upgrade"],
+            ["Connection", "upgrade"]
+          ],
+          "custom_directives": [
+            "proxy_connect_timeout 5s",
+            "proxy_read_timeout 300s",
+            "proxy_send_timeout 300s",
+            "proxy_buffering off"
+          ]
+        }
+      ]
+    }
+  ]
+}

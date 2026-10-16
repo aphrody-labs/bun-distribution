@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "before": {
+    "observed_at": "2026-09-30T19:36:38.607840+00:00",
+    "repo": {
+      "id": 1393398828,
+      "node_id": "R_kgDOUw2ULA",
+      "full_name": "aphrody-code/bun",
+      "private": false,
+      "fork": true,
+      "default_branch": "main",
+      "permissions": {
+        "admin": true,
+        "maintain": true,
+        "push": true,
+        "triage": true,
+        "pull": true
+      },
+      "archived": false,
+      "visibility": "public"
+    },
+    "parent": "oven-sh/bun",
+    "source": "oven-sh/bun",
+    "refs": {
+      "main": "a2671046afbfc818fba21a4925f384b75dc8e109",
+      "claude/aphrody-unified-ffi": "0ba45879b04c123a4dbf8307d65b19fbb440cf4b"
+    },
+    "rulesets": [
+      {
+        "id": 24140930,
+        "name": "Protect Aphrody Bun main history",
+        "target": "branch",
+        "source_type": "Repository",
+        "source": "aphrody-code/bun",
+        "enforcement": "active",
+        "node_id": "RRS_lACqUmVwb3NpdG9yec5TDZQszgFwXII",
+        "_links": {
+          "self": {
+            "href": "https://api.github.com/repos/aphrody-code/bun/rulesets/24140930"
+          },
+          "html": {
+            "href": "https://github.com/aphrody-code/bun/rules/24140930"
+          }
+        },
+        "created_at": "2026-09-28T22:39:22.989+02:00",
+        "updated_at": "2026-09-28T22:39:23.008+02:00"
+      }
+    ],
+    "actions_secrets": [],
+    "webhooks": [],
+    "actions_permissions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": false
+    },
+    "target_collision": {
+      "error": "gh: Not Found (HTTP 404)"
+    }
+  },
+  "after": {
+    "observed_at": "2026-09-30T19:45:12.476247+00:00",
+    "repo": {
+      "id": 1393398828,
+      "node_id": "R_kgDOUw2ULA",
+      "full_name": "aphrody-labs/bun",
+      "private": false,
+      "fork": true,
+      "default_branch": "main",
+      "permissions": {
+        "admin": true,
+        "maintain": true,
+        "push": true,
+        "triage": true,
+        "pull": true
+      },
+      "archived": false,
+      "visibility": "public"
+    },
+    "parent": "oven-sh/bun",
+    "source": "oven-sh/bun",
+    "refs": {
+      "main": "a2671046afbfc818fba21a4925f384b75dc8e109",
+      "claude/aphrody-unified-ffi": "0ba45879b04c123a4dbf8307d65b19fbb440cf4b"
+    },
+    "rulesets": [
+      {
+        "id": 24140930,
+        "name": "Protect Aphrody Bun main history",
+        "target": "branch",
+        "source_type": "Repository",
+        "source": "aphrody-labs/bun",
+        "enforcement": "active",
+        "node_id": "RRS_lACqUmVwb3NpdG9yec5TDZQszgFwXII",
+        "_links": {
+          "self": {
+            "href": "https://api.github.com/repos/aphrody-labs/bun/rulesets/24140930"
+          },
+          "html": {
+            "href": "https://github.com/aphrody-labs/bun/rules/24140930"
+          }
+        },
+        "created_at": "2026-09-28T22:39:22.989+02:00",
+        "updated_at": "2026-09-28T22:39:23.008+02:00"
+      }
+    ],
+    "actions_secrets": [],
+    "webhooks": [],
+    "actions_permissions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": false
+    },
+    "workflows": [
+      {
+        "id": 369512497,
+        "name": "Auto Assign Types Issues",
+        "path": ".github/workflows/auto-assign-types.yml",
+        "state": "disabled_manually"
+      },
+      {
+        "id": 369512498,
+        "name": "Auto-close duplicate issues",
+        "path": ".github/workflows/auto-close-duplicates.yml",
+        "state": "disabled_manually"
+      },
+      {
+        "id": 369512500,
+        "name": "Auto-label Claude PRs",
+        "path": ".github/workflows/auto-label-claude-prs.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512502,
+        "name": "bun-types",
+        "path": ".github/workflows/bun-types.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512504,
+        "name": "Cancel BuildKite on PR close",
+        "path": ".github/workflows/cancel-buildkite-on-pr-close.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512505,
+        "name": "Claude Issue Dedupe",
+        "path": ".github/workflows/claude-dedupe-issues.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512507,
+        "name": "Claude Find Issues for PR",
+        "path": ".github/workflows/claude-find-issues-for-pr.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512510,
+        "name": "Close issues linked from merged PRs",
+        "path": ".github/workflows/close-linked-issues.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512512,
+        "name": "Close stale robobun PRs",
+        "path": ".github/workflows/close-stale-robobun-prs.yml",
+        "state": "disabled_manually"
+      },
+      {
+        "id": 369512514,
+        "name": "Comment Cop",
+        "path": ".github/workflows/comment-cop.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512515,
+        "name": "Deploy bun.com",
+        "path": ".github/workflows/deploy-site.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512516,
+        "name": "autofix.ci",
+        "path": ".github/workflows/format.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512517,
+        "name": "FreeBSD smoke test",
+        "path": ".github/workflows/freebsd-smoke.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512520,
+        "name": "Lint",
+        "path": ".github/workflows/lint.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512522,
+        "name": "Close AI Slop PRs",
+        "path": ".github/workflows/on-slop.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512524,
+        "name": "Packages CI",
+        "path": ".github/workflows/packages-ci.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512525,
+        "name": "Release",
+        "path": ".github/workflows/release.yml",
+        "state": "disabled_manually"
+      },
+      {
+        "id": 369512526,
+        "name": "Rust lints",
+        "path": ".github/workflows/rust-lints.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512527,
+        "name": "source-lints",
+        "path": ".github/workflows/source-lints.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512528,
+        "name": "Close inactive issues",
+        "path": ".github/workflows/stale.yaml",
+        "state": "disabled_manually"
+      },
+      {
+        "id": 369512529,
+        "name": "Update c-ares",
+        "path": ".github/workflows/update-cares.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512530,
+        "name": "Update hdrhistogram",
+        "path": ".github/workflows/update-hdrhistogram.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512532,
+        "name": "Update highway",
+        "path": ".github/workflows/update-highway.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512533,
+        "name": "Update libarchive",
+        "path": ".github/workflows/update-libarchive.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512534,
+        "name": "Update libdeflate",
+        "path": ".github/workflows/update-libdeflate.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512536,
+        "name": "Update lolhtml",
+        "path": ".github/workflows/update-lolhtml.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512538,
+        "name": "Update lshpack",
+        "path": ".github/workflows/update-lshpack.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512540,
+        "name": "Update SQLite3",
+        "path": ".github/workflows/update-sqlite3.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512541,
+        "name": "Update vendor",
+        "path": ".github/workflows/update-vendor.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512542,
+        "name": "Update zstd",
+        "path": ".github/workflows/update-zstd.yml",
+        "state": "active"
+      },
+      {
+        "id": 369512543,
+        "name": "VSCode Extension Publish",
+        "path": ".github/workflows/vscode-release.yml",
+        "state": "disabled_manually"
+      }
+    ],
+    "redirect_id": 1393398828,
+    "checks": {
+      "same_id": true,
+      "same_refs": true,
+      "same_parent": true,
+      "same_ruleset_ids": true,
+      "same_secret_names": true,
+      "same_webhooks": true,
+      "redirect": true
+    }
+  },
+  "validation": {
+    "localOrigin": "https://github.com/aphrody-labs/bun.git",
+    "upstreamOrigin": "https://github.com/oven-sh/bun.git",
+    "featurePullRequest": "https://github.com/aphrody-labs/bun/pull/1",
+    "actionsRun": "https://github.com/aphrody-labs/bun/actions/runs/36767941431",
+    "actionsConclusion": "success",
+    "otherRepositoriesTransferred": false,
+    "fullRegistryInventoryComplete": false,
+    "actionsGate": "Lint JavaScript: frozen dependency install, lint, build/CI script types, built-in module types, remaining src types",
+    "sourceSyncDryRun": {
+      "passed": false,
+      "reason": "Existing source-sync watcher owns target/source-sync.lock; preserved active watcher."
+    }
+  }
+}

@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1.8
+# SPDX-License-Identifier: Apache-2.0
+# Source-only repository context. Build on the declared VPS factory, never the dev PC.
+# The named runtime image must already qualify the fork's Bun/Buv/PyJS, CPython 3.12
+# and native Aphrody train feature; this Dockerfile does not compile those engines.
+ARG APHRODY_NATIVE_RUNTIME_IMAGE
+FROM ${APHRODY_NATIVE_RUNTIME_IMAGE} AS trainer
+ARG APHRODY_NATIVE_RUNTIME_IMAGE
+RUN case "${APHRODY_NATIVE_RUNTIME_IMAGE}" in *@sha256:*) ;; *) exit 64 ;; esac
+ARG APHRODY_SDK_WHEEL
+ARG APHRODY_SDK_WHEEL_SHA256
+
+WORKDIR /opt/aphrody/py
+COPY py/ ./
+COPY tools/config/container/gpu-fleet/train-runtime-contract.json /opt/aphrody/train-runtime-contract.json
+ENV UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/opt/aphrody/py/.venv \
+    VIRTUAL_ENV=/opt/aphrody/py/.venv \
+    TOKENIZERS_PARALLELISM=false \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    APHRODY_LORA_CONVERTER_PYTHON=/opt/aphrody/py/.venv/bin/python \
+    APHRODY_LORA_QUANTIZATION=nf4
+
+# Buv/uv consumes the existing root lock; no ad hoc dependencies or model downloads.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    bun uv sync --locked --package aphrody --package aphrody-train --no-install-package aphrody --extra full --extra qlora --no-dev --python 3.12 --no-python-downloads
+# Aphrody's PyO3 binding comes from the qualified Bun-fork wheel already inside
+# the immutable runtime image. Never let UV rebuild its native engine here.
+RUN test -n "${APHRODY_SDK_WHEEL}" && test -f "${APHRODY_SDK_WHEEL}" \
+ && test "${#APHRODY_SDK_WHEEL_SHA256}" -eq 64 \
+ && printf '%s  %s\n' "${APHRODY_SDK_WHEEL_SHA256}" "${APHRODY_SDK_WHEEL}" | sha256sum -c - \
+ && bun uv pip install --no-index --no-deps --python /opt/aphrody/py/.venv/bin/python "${APHRODY_SDK_WHEEL}"
+RUN bun uv run --no-sync --no-dev --package aphrody-train python -c \
+    "import importlib.metadata as m; assert m.version('bitsandbytes') == '0.50.0'; assert m.version('torch').startswith('2.13.0'); print({p:m.version(p) for p in ('aphrody','torch','transformers','peft','trl','bitsandbytes','datasets','safetensors')})"
+RUN aphrody train --help >/dev/null
+
+# Runtime jobs receive only declared protected dataset/model/output mounts. The
+# host scheduler acquires the exclusive GPU allocation before executing this image.
+# An unattended owner job or the native Python SDK supplies the real run request.
+ENTRYPOINT ["bun"]
+CMD ["uv", "run", "--no-sync", "--no-dev", "--package", "aphrody-train", "python", "-m", "aphrody_train.lora", "--help"]

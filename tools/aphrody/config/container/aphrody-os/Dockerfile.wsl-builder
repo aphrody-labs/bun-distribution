@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Bootstrap Ubuntu guests with signed APT metadata; this ephemeral image carries no product/auth payload.
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl debootstrap gnupg python3 util-linux tar gzip \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+ENTRYPOINT ["bash", "/build/build-wsl-distro.sh"]

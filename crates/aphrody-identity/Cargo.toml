@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-identity"
+description = "Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions)."
+version                = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-sprite-sheet = { path = "../aphrody-sprite-sheet", version = "1.4.4" }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+png = "0.18"
+image = { version = "0.25.10", features = ["png", "jpeg", "webp", "gif"] }
+image-compare = "0.5"
+palette = { version = "0.7", default-features = false, features = ["std"] }
+aphrody-svg = { path = "../aphrody-svg", version = "1.4.4", default-features = false, features = ["raster", "glyph", "symbols"] }
+ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = ["serde"] }
+base64 = "0.23.1"
+ico = "0.5"
+thiserror = "2.0.20"
+
+[dev-dependencies]
+toml = "1.1.5"
+
+[features]
+# `fs`: entry points that read the disk. Off for web and mobile, where `Image::depuis_octets`
+# and `Pet::from_png` are enough; everything else works in memory.
+default = ["fs"]
+fs = []
+# `net`: `loader::fetch_https`, the default downloader of `Loader::from_env`.
+net = ["fs", "dep:ureq"]
+
+# Option A of the web pet runtime (the crate clock in wasm32 behind a C ABI), kept to measure it
+# against the TypeScript port: m3/packages/identity/scripts/measure.ts --wasm.
+[[example]]
+name       = "pet_wasm"
+crate-type = ["cdylib"]

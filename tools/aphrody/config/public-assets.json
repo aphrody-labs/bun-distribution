@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-dev",
+  "baseUrl": "https://assets.aphrody.app",
+  "petAtlas": "pet/spritesheet.webp",
+  "petSymbols": "pet/symbols/",
+  "fontDirectory": "m3/fonts/",
+  "materialSymbolsIndex": "m3/symbols/material-symbols-index.json",
+  "localFontFallbacks": ["material-symbols-outlined.woff2"]
+}

@@ -1,0 +1,69 @@
+#!/usr/local/bin/bun
+// SPDX-License-Identifier: Apache-2.0
+// Checks that the image runs on Rust/Bun tools rather than GNU or busybox ones.
+
+import { readlinkSync, realpathSync } from "node:fs";
+
+let failed = 0;
+
+function report(label: string, ok: boolean, detail = "") {
+  if (!ok) failed++;
+  console.log(`[${ok ? "OK  " : "FAIL"}] ${label}`);
+  if (detail) console.log(detail.trimEnd().replace(/^/gm, "        "));
+}
+
+function run(label: string, argv: string[], expect?: RegExp) {
+  const p = Bun.spawnSync(argv, { stdout: "pipe", stderr: "pipe" });
+  const out = (p.stdout.toString() + p.stderr.toString()).trim();
+  const ok = p.exitCode === 0 && (!expect || expect.test(out));
+  report(`${label}  $ ${argv.join(" ")}`, ok, out.split("\n").slice(0, 4).join("\n"));
+}
+
+const which = (cmd: string) => Bun.which(cmd) ?? "(missing)";
+const target = (cmd: string) => {
+  const path = Bun.which(cmd);
+  return path ? realpathSync(path) : "(missing)";
+};
+
+console.log(`== Aphrody container: Bun ${Bun.version}, uid ${process.getuid?.()}\n`);
+
+// Every coreutils command must resolve to uutils, never busybox.
+const coreutils = ["ls", "cp", "mv", "rm", "cat", "sort", "wc", "head", "tail", "chmod", "chown", "id", "date", "env", "sha256sum", "tr", "seq", "mkdir", "ln", "du", "df", "uname", "whoami"];
+const offenders = coreutils.filter((c) => !target(c).endsWith("/uutils"));
+report(`${coreutils.length} coreutils commands resolve to uutils`, offenders.length === 0, offenders.map((c) => `${c} -> ${target(c)}`).join("\n"));
+const uutilsMore: [string, string][] = [["find", "/find"], ["xargs", "/xargs"], ["diff", "/diffutils"], ["cmp", "/diffutils"]];
+const moreOffenders = uutilsMore.filter(([c, end]) => !target(c).endsWith(end) || target(c).includes("busybox"));
+report("find, xargs, diff, cmp resolve to uutils findutils/diffutils", moreOffenders.length === 0, moreOffenders.map(([c]) => `${c} -> ${target(c)}`).join("\n"));
+report("su is sudo-rs, not busybox", !target("su").endsWith("busybox"), `su -> ${target("su")}`);
+report("/bin/sh kept on busybox ash for apk scripts", readlinkSync("/bin/sh").includes("busybox"), `/bin/sh -> ${readlinkSync("/bin/sh")}`);
+
+run("uutils version", ["ls", "--version"], /uutils/);
+run("uutils pipeline (in Ion)", ["ion", "-c", "seq 1 5 | sort -rn | tr '\\n' ' ' | wc -w"], /^5$/);
+run("uutils sha256sum", ["ion", "-c", "echo aphrody | sha256sum"], /^22ab1294/);
+run("sudo-rs version", ["sudo", "--version"], /sudo-rs/);
+run("sudo-rs: agent -> root, no password (yolo)", ["sudo", "-n", "id", "-u"], /^0$/);
+run("sudo-rs: root -> agent", ["sudo", "-n", "sudo", "-u", "agent", "whoami"], /^agent$/);
+run("sudo-rs su", ["sudo", "-n", "su", "agent", "-c", "id -un"], /^agent$/);
+run("uutils find", ["find", "/usr/local/bin", "-name", "bun", "-type", "f"], /^\/usr\/local\/bin\/bun$/);
+run("uutils diff", ["ion", "-c", "diff /etc/hostname /etc/hostname && echo same"], /^same$/);
+run("ntpd-rs", ["ntp-ctl", "--version"], /ntp-ctl/);
+run("Sequoia sq", ["sq", "version"], /sq/);
+run("fish 4", ["fish", "-c", "echo $version"], /^4\./);
+run("eza", ["eza", "-l", "--no-time", "--no-user", "/usr/local/bin"], /bun/);
+run("Nushell structured pipeline", ["nu", "-c", "[3 1 2] | sort | to json -r"], /^\[1,2,3\]$/);
+run("Nushell starship autoload", ["nu", "-c", "$env.PROMPT_COMMAND | describe"], /closure/);
+run("Ion shell", ["ion", "-c", "let x = [a b c]; echo @x"], /^a b c$/);
+run("ripgrep", ["rg", "--version"], /ripgrep/);
+run("fd", ["fd", "--version"], /^fd/);
+run("bottom", ["btm", "--version"], /bottom/);
+run("helix", ["hx", "--version"], /helix/);
+run("yazi", ["yazi", "--version"], /Yazi/i);
+run("zellij", ["zellij", "--version"], /zellij/);
+run("starship", ["starship", "--version"], /starship/);
+run("Bun shell", ["bun", "exec", "echo bun-shell | wc -c"], /^10$/);
+run("Bun TypeScript", ["bun", "-e", "const n: number = 6 * 7; console.log(n)"], /^42$/);
+run("Bun HTTP server", ["bun", "-e", "const s = Bun.serve({ port: 0, fetch: () => new Response('ok') }); console.log(await (await fetch(s.url)).text()); s.stop()"], /^ok$/);
+
+console.log(`\nbun: ${which("bun")}  nu: ${which("nu")}  ion: ${which("ion")}  sudo: ${which("sudo")}`);
+console.log(failed === 0 ? "APHRODY_SELFTEST_PASS" : `APHRODY_SELFTEST_FAIL (${failed})`);
+process.exit(failed === 0 ? 0 : 1);

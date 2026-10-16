@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-infer"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Local ONNX inference backend for aphrody: runtime discovery, execution-provider selection with CUDA/DirectML/CPU fallback, and session loading driven by the aphrody-models catalog."
+
+[lib]
+crate-type = ["rlib"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+onnx = ["dep:ort"]
+
+[dependencies]
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+thiserror = "2.0.20"
+tracing = "0.1.44"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+dirs = "7.0.0"
+
+[dev-dependencies]
+tempfile = "3.27.0"

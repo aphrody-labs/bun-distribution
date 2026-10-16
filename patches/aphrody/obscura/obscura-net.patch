@@ -1,0 +1,2147 @@
+diff -ruN -w -x render-repros a/obscura-net/Cargo.toml b/obscura-net/Cargo.toml
+--- a/obscura-net/Cargo.toml	2026-10-06 18:04:10.110470469 +0200
++++ b/obscura-net/Cargo.toml	2026-10-06 18:04:10.114488212 +0200
+@@ -1,9 +1,12 @@
+ [package]
+ name = "obscura-net"
+-version.workspace = true
+-edition.workspace = true
+-license.workspace = true
+-repository.workspace = true
++description = "Aphrody platform crate obscura-net."
++# Transitional version avoids a same-name/same-version collision with the
++# retained source checkout while its MCP consumers still compile there.
++version = "0.1.1"
++edition = "2021"
++license = "Apache-2.0"
++repository = "https://github.com/h4ckf0r0day/obscura"
+ 
+ [features]
+ default = []
+@@ -12,23 +15,28 @@
+ [dependencies]
+ obscura-ssrf = { workspace = true }
+ reqwest = { workspace = true }
++rustls = { workspace = true }
+ tokio = { workspace = true }
+ url = { workspace = true }
+ serde = { workspace = true }
+ serde_json = { workspace = true }
++# aphrody addition: error type of the local dns.rs module.
++anyhow = { workspace = true }
+ tracing = { workspace = true }
+ thiserror = { workspace = true }
+-async-trait = "0.1"
+-encoding_rs = "0.8"
+-tempfile = "3"
++chrono = { workspace = true }
++async-trait = { workspace = true }
++encoding_rs = { workspace = true }
++tempfile = { workspace = true }
+ psl = "2"
+-futures-util = { version = "0.3", optional = true }
++cookie = { workspace = true }
++futures-util = { workspace = true, optional = true }
+ # wreq and wreq-util are pre-release crates whose API changes between rc builds
+ # (CertStore moved out of `tls`, `cert_store` renamed to `tls_cert_store`, the
+ # Emulation builder reshuffled). A caret requirement let a fresh resolve pull a
+ # newer, incompatible rc and broke `cargo build --features stealth` (issue #234).
+ # Pin exact versions so the build always resolves to the API wreq_client.rs targets.
+-wreq-util = { version = "=3.0.0-rc.12", optional = true, features = ["emulation-compression"] }
++wreq-util = { version = "=3.0.0-rc.14", optional = true, features = ["emulation-compression"] }
+ 
+ [dev-dependencies]
+ socket2 = "0.6"
+@@ -36,8 +44,8 @@
+ # tokio-rustls serves one HTTPS response with them. Pinned to the ring
+ # provider so the test binary has a single rustls CryptoProvider (reqwest's
+ # rustls also uses ring; adding aws-lc-rs would make provider auto-selection
+-# panic).
+-rcgen = "0.13"
++# panic). The workspace pin is rcgen 0.14 with `crypto`, `pem` and `ring` only.
++rcgen = { workspace = true }
+ tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+ 
+ # `prefix-symbols` renames BoringSSL exports to avoid clashes with system OpenSSL,
+@@ -45,7 +53,21 @@
+ # Enabling it on other platforms produces unresolved `build_script_main_*`
+ # symbols at link time (see issue #39).
+ [target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
+-wreq = { version = "=6.0.0-rc.29", optional = true, features = ["prefix-symbols", "socks", "stream", "gzip", "brotli", "deflate", "zstd"] }
++wreq = { version = "=6.0.0-rc.31", optional = true, features = ["prefix-symbols", "socks", "stream", "gzip", "brotli", "deflate", "zstd"] }
+ 
+ [target.'cfg(not(any(target_os = "linux", target_os = "android")))'.dependencies]
+-wreq = { version = "=6.0.0-rc.29", optional = true, features = ["socks", "stream", "gzip", "brotli", "deflate", "zstd"] }
++wreq = { version = "=6.0.0-rc.31", optional = true, features = ["socks", "stream", "gzip", "brotli", "deflate", "zstd"] }
++
++# Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint
++# set, so the workspace -D warnings gate does not rewrite upstream style.
++[lints.rust]
++warnings = "allow"
++unexpected_cfgs = "allow"
++# `-D warnings` on the command line outranks the group above; name the groups
++# upstream code actually trips so the vendored tree stays out of the gate.
++unused = { level = "allow", priority = -1 }
++deprecated = "allow"
++
++[lints.clippy]
++all = { level = "allow", priority = -1 }
++pedantic = { level = "allow", priority = -1 }
+diff -ruN -w -x render-repros a/obscura-net/src/blocklist.rs b/obscura-net/src/blocklist.rs
+--- a/obscura-net/src/blocklist.rs	2026-10-06 18:04:10.142612413 +0200
++++ b/obscura-net/src/blocklist.rs	2026-10-06 18:04:10.114488212 +0200
+@@ -1,5 +1,4 @@
+-use std::collections::HashSet;
+-use std::sync::OnceLock;
++use std::{collections::HashSet, sync::OnceLock};
+ 
+ const PGL_LIST: &str = include_str!("pgl_domains.txt");
+ 
+diff -ruN -w -x render-repros a/obscura-net/src/client.rs b/obscura-net/src/client.rs
+--- a/obscura-net/src/client.rs	2026-10-06 18:04:10.154665641 +0200
++++ b/obscura-net/src/client.rs	2026-10-06 18:04:10.259126956 +0200
+@@ -1,19 +1,26 @@
+-use std::collections::{HashMap, VecDeque};
+-use std::sync::atomic::{AtomicU32, Ordering};
+-use std::sync::{Arc, OnceLock};
+-use std::time::{Duration, Instant};
+-
+-use std::net::{IpAddr, SocketAddr};
+-
+-use reqwest::dns::{Addrs, Name, Resolve, Resolving};
+-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, USER_AGENT};
+-use reqwest::redirect::Policy;
+-use reqwest::{Client, Method};
++use std::{
++    collections::{HashMap, VecDeque},
++    net::{IpAddr, SocketAddr},
++    sync::{
++        atomic::{AtomicBool, AtomicU32, Ordering},
++        Arc, OnceLock,
++    },
++    time::{Duration, Instant},
++};
++
++use reqwest::{
++    dns::{Addrs, Name, Resolve, Resolving},
++    header::{HeaderMap, HeaderName, HeaderValue, USER_AGENT},
++    redirect::Policy,
++    Client, Method,
++};
+ use tokio::sync::{watch, RwLock};
+ use url::Url;
+ 
+-use crate::cookies::{same_site, CookieJar, SameSiteContext};
+-use crate::interceptor::{InterceptAction, RequestInterceptor};
++use crate::{
++    cookies::{same_site, CookieJar, SameSiteContext},
++    interceptor::{InterceptAction, RequestInterceptor},
++};
+ 
+ fn configured_root_paths() -> Vec<std::path::PathBuf> {
+     let mut paths = Vec::new();
+@@ -191,7 +198,7 @@
+     }
+ }
+ 
+-#[derive(Debug, Clone, PartialEq, Eq)]
++#[derive(Debug, Clone)]
+ pub struct ResourceRequest {
+     pub resource_type: ResourceType,
+     /// Origin-bearing environment that owns the request. This controls CORS,
+@@ -207,8 +214,30 @@
+     /// Hard limit for the decoded response body retained by this request.
+     /// Callers can lower it for especially constrained resource consumers.
+     pub max_response_bytes: usize,
++    /// Optional text-preview completion flag; ordinary requests retain strict size rejection.
++    pub body_preview: Option<Arc<AtomicBool>>,
+ }
+ 
++impl PartialEq for ResourceRequest {
++    fn eq(&self, other: &Self) -> bool {
++        self.resource_type == other.resource_type
++            && self.initiator == other.initiator
++            && self.referrer == other.referrer
++            && self.mode == other.mode
++            && self.credentials == other.credentials
++            && self.max_response_bytes == other.max_response_bytes
++            && match (&self.body_preview, &other.body_preview) {
++                (None, None) => true,
++                (Some(a), Some(b)) => {
++                    Arc::ptr_eq(a, b) || a.load(Ordering::Relaxed) == b.load(Ordering::Relaxed)
++                }
++                _ => false,
++            }
++    }
++}
++
++impl Eq for ResourceRequest {}
++
+ impl ResourceRequest {
+     pub fn navigation() -> Self {
+         Self {
+@@ -217,6 +246,7 @@
+             referrer: None,
+             mode: RequestMode::Navigate,
+             credentials: RequestCredentials::Include,
++            body_preview: None,
+             max_response_bytes: 64 * 1024 * 1024,
+         }
+     }
+@@ -246,6 +276,7 @@
+             referrer: Some(initiator.clone()),
+             mode,
+             credentials,
++            body_preview: None,
+             max_response_bytes: match resource_type {
+                 ResourceType::Stylesheet | ResourceType::Font => 16 * 1024 * 1024,
+                 ResourceType::Script | ResourceType::Other => 32 * 1024 * 1024,
+@@ -271,6 +302,7 @@
+             // OBSCURA_FETCH_MAX_BODY_BYTES (the fetch()/XHR override from #581)
+             // also raises this cap: a large SPA bundle otherwise dies silently
+             // at 32 MiB while fetch() of the same URL succeeds (#849).
++            body_preview: None,
+             max_response_bytes: std::env::var("OBSCURA_FETCH_MAX_BODY_BYTES")
+                 .ok()
+                 .and_then(|v| v.parse().ok())
+@@ -296,7 +328,10 @@
+ 
+     pub(crate) fn accept(&self) -> &'static str {
+         match self.resource_type {
+-            ResourceType::Document => "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
++            ResourceType::Document => {
++                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/\
++                 apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
++            }
+             ResourceType::Stylesheet => "text/css,*/*;q=0.1",
+             // AVIF is intentionally omitted until obscura's decoder can paint
+             // it. Advertising a format and then discarding the selected body
+@@ -602,17 +637,29 @@
+ /// guard away for a better TLS fingerprint.
+ pub struct SsrfGuardResolver {
+     pub(crate) allow_private: bool,
++    honor_environment: bool,
+ }
+ 
+ impl SsrfGuardResolver {
+     pub fn new(allow_private: bool) -> Self {
+-        Self { allow_private }
++        Self {
++            allow_private,
++            honor_environment: true,
++        }
++    }
++
++    /// An embedder can require context-only permissions without inheriting a CLI opt-in.
++    pub fn with_environment_policy(allow_private: bool, honor_environment: bool) -> Self {
++        Self {
++            allow_private,
++            honor_environment,
++        }
+     }
+ }
+ 
+ impl Resolve for SsrfGuardResolver {
+     fn resolve(&self, name: Name) -> Resolving {
+-        let allow = self.allow_private || env_allows_private_network();
++        let allow = self.allow_private || (self.honor_environment && env_allows_private_network());
+         let host = name.as_str().to_string();
+         Box::pin(async move {
+             let addrs: Vec<SocketAddr> = tokio::net::lookup_host((host.as_str(), 0))
+@@ -636,7 +683,16 @@
+ }
+ 
+ pub(crate) fn validate_url(url: &Url, allow_private_network: bool) -> Result<(), ObscuraNetError> {
+-    let allow_private_network = allow_private_network || env_allows_private_network();
++    validate_url_with_environment(url, allow_private_network, true)
++}
++
++fn validate_url_with_environment(
++    url: &Url,
++    allow_private_network: bool,
++    honor_environment: bool,
++) -> Result<(), ObscuraNetError> {
++    let allow_private_network =
++        allow_private_network || (honor_environment && env_allows_private_network());
+     let scheme = url.scheme();
+     if scheme != "http" && scheme != "https" && scheme != "file" {
+         return Err(ObscuraNetError::Network(format!(
+@@ -804,8 +860,11 @@
+     mut response: reqwest::Response,
+     url: &Url,
+     limit: usize,
++    preview: Option<&AtomicBool>,
+ ) -> Result<Vec<u8>, ObscuraNetError> {
++    if preview.is_none() {
+     reject_oversized_content_length(response.headers(), url, limit)?;
++    }
+     let capacity = response
+         .content_length()
+         .and_then(|length| usize::try_from(length).ok())
+@@ -818,6 +877,11 @@
+         .map_err(|error| ObscuraNetError::Network(format!("Failed to read body: {}", error)))?
+     {
+         if chunk.len() > limit.saturating_sub(body.len()) {
++            if let Some(truncated) = preview {
++                body.extend_from_slice(&chunk[..limit.saturating_sub(body.len())]);
++                truncated.store(true, Ordering::Relaxed);
++                break;
++            }
+             return Err(response_too_large(url, limit));
+         }
+         body.extend_from_slice(&chunk);
+@@ -841,6 +905,9 @@
+     /// through in addition to the `OBSCURA_ALLOW_PRIVATE_NETWORK` env var.
+     /// Set via `--allow-private-network` on the CLI (issue #33).
+     pub allow_private_network: bool,
++    /// Native embedders set false before first use to enforce this context's permission only.
++    /// Legacy CLI behavior continues to honor OBSCURA_ALLOW_PRIVATE_NETWORK by default.
++    pub honor_private_network_environment: bool,
+ }
+ 
+ const RESOURCE_CACHE_MAX_ENTRIES: usize = 256;
+@@ -1049,7 +1116,9 @@
+             proxy_url: proxy_url.map(|s| s.to_string()),
+             cookie_jar,
+             user_agent: RwLock::new(
+-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36".to_string(),
++                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
++                 Chrome/145.0.0.0 Safari/537.36"
++                    .to_string(),
+             ),
+             accept_language: RwLock::new("en-US,en;q=0.9".to_string()),
+             extra_headers: RwLock::new(HashMap::new()),
+@@ -1059,12 +1128,29 @@
+             block_trackers: false,
+             resource_loader: std::sync::Mutex::new(ResourceLoaderState::default()),
+             allow_private_network,
++            honor_private_network_environment: true,
++        }
++    }
++
++    fn validate_context_url(&self, url: &Url) -> Result<(), ObscuraNetError> {
++        if self.honor_private_network_environment {
++            validate_url(url, self.allow_private_network)
++        } else {
++            // File resources otherwise return before the HTTP interceptor below.
++            // Remote native contexts have no authority to read host resources.
++            if !matches!(url.scheme(), "http" | "https") {
++                return Err(ObscuraNetError::Blocked(
++                    "native contexts permit only HTTP(S) resources".into(),
++                ));
++            }
++            validate_url_with_environment(url, self.allow_private_network, false)
+         }
+     }
+ 
+     async fn get_client(&self) -> &Client {
+         self.client
+             .get_or_init(|| async {
++                crate::ensure_rustls_crypto_provider();
+                 let mut builder = Client::builder()
+                     .redirect(Policy::none())
+                     .timeout(self.timeout)
+@@ -1073,7 +1159,16 @@
+                     // failing the response.
+                     .http1_allow_obsolete_multiline_headers_in_responses(true)
+                     // SSRF guard: reject hostnames that resolve to a private/loopback IP.
+-                    .dns_resolver(Arc::new(SsrfGuardResolver::new(self.allow_private_network)));
++                    .dns_resolver(Arc::new(SsrfGuardResolver::with_environment_policy(
++                        self.allow_private_network,
++                        self.honor_private_network_environment,
++                    )));
++                // An inherited proxy can resolve the target itself and bypass our DNS guard.
++                // Strict native contexts inherit neither private-network opt-ins nor proxy routing.
++                // An explicit configured proxy is still applied below for its owner.
++                if !self.honor_private_network_environment {
++                    builder = builder.no_proxy();
++                }
+ 
+                 if std::env::var_os("SSL_CERT_FILE").is_some()
+                     || std::env::var_os("SSL_CERT_DIR").is_some()
+@@ -1111,10 +1206,69 @@
+         self.proxy_url.as_deref()
+     }
+ 
++    /// One authenticated HTTP request with explicit headers/body and no redirects.
++    /// No process-global cookie state is injected into this request.
++    pub async fn send_single(
++        &self,
++        method: &str,
++        url: &Url,
++        headers: &HashMap<String, String>,
++        body: &[u8],
++    ) -> Result<Response, ObscuraNetError> {
++        validate_url(url, self.allow_private_network)?;
++        let method = method
++            .parse::<Method>()
++            .map_err(|_| ObscuraNetError::Network("invalid HTTP method".into()))?;
++        let mut request = self.request_client().await.request(method, url.as_str());
++        for (name, value) in headers {
++            request = request.header(name.as_str(), value.as_str());
++        }
++        if !body.is_empty() {
++            request = request.body(body.to_vec());
++        }
++        let response = request
++            .send()
++            .await
++            .map_err(|_| ObscuraNetError::Network("HTTP request failed".into()))?;
++        let status = response.status().as_u16();
++        let mut headers = HashMap::new();
++        for (name, value) in response.headers() {
++            merge_response_header(
++                &mut headers,
++                name.as_str().to_lowercase(),
++                value.to_str().unwrap_or("").to_string(),
++            );
++        }
++        let body = read_reqwest_body_limited(response, url, 64 * 1024 * 1024, None).await?;
++        Ok(Response {
++            url: url.clone(),
++            status,
++            headers,
++            body,
++            redirected_from: Vec::new(),
++        })
++    }
++
+     pub async fn fetch(&self, url: &Url) -> Result<Response, ObscuraNetError> {
+         self.fetch_with_method(Method::GET, url, None, None).await
+     }
+ 
++    /// Bounded textual preview through the canonical redirect/cookie/proxy path.
++    /// Binary bodies are skipped; oversized textual bodies return a prefix and truncation flag.
++    pub async fn fetch_text_preview(
++        &self,
++        url: &Url,
++        max_bytes: usize,
++    ) -> Result<(Response, bool), ObscuraNetError> {
++        let truncated = Arc::new(AtomicBool::new(false));
++        let mut request = ResourceRequest::navigation().with_max_response_bytes(max_bytes);
++        request.body_preview = Some(truncated.clone());
++        let response = self
++            .fetch_resource_with_callbacks(url, request, None)
++            .await?;
++        Ok((response, truncated.load(Ordering::Relaxed)))
++    }
++
+     /// `fetch` that also fires the page's passive on_request/on_response
+     /// callbacks (issue #408: callbacks are page-scoped, so the page-driven
+     /// fetch paths pass their registry in).
+@@ -1183,6 +1337,7 @@
+     ) -> Option<ResourceCacheKey> {
+         if *method != Method::GET
+             || body.is_some()
++            || request.body_preview.is_some()
+             || request.resource_type == ResourceType::Document
+             || !matches!(url.scheme(), "http" | "https")
+             || self.interceptor.read().await.is_some()
+@@ -1379,7 +1534,7 @@
+         callbacks: Option<&CallbackRegistry>,
+         request: ResourceRequest,
+     ) -> Result<Response, ObscuraNetError> {
+-        validate_url(url, self.allow_private_network)?;
++        self.validate_context_url(url)?;
+         validate_request_mode(&request, url)?;
+ 
+         if url.scheme() == "file" {
+@@ -1454,8 +1609,12 @@
+             // accept-language rather than before it; the rest matches Chrome.)
+             headers.insert(
+                 HeaderName::from_static("sec-ch-ua"),
+-                HeaderValue::from_str(&sec_ch_ua)
+-                    .unwrap_or_else(|_| HeaderValue::from_static("\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"")),
++                HeaderValue::from_str(&sec_ch_ua).unwrap_or_else(|_| {
++                    HeaderValue::from_static(
++                        "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \
++                         \"Chromium\";v=\"145\"",
++                    )
++                }),
+             );
+             headers.insert(
+                 HeaderName::from_static("sec-ch-ua-mobile"),
+@@ -1472,9 +1631,15 @@
+                     HeaderValue::from_static("1"),
+                 );
+             }
+-            headers.insert(USER_AGENT, HeaderValue::from_str(&ua).unwrap_or_else(|_| {
+-                HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
+-            }));
++            headers.insert(
++                USER_AGENT,
++                HeaderValue::from_str(&ua).unwrap_or_else(|_| {
++                    HeaderValue::from_static(
++                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, \
++                         like Gecko) Chrome/145.0.0.0 Safari/537.36",
++                    )
++                }),
++            );
+             headers.insert(
+                 reqwest::header::ACCEPT,
+                 HeaderValue::from_static(request.accept()),
+@@ -1626,7 +1791,7 @@
+                     let next_url = current_url.join(location_str).map_err(|e| {
+                         ObscuraNetError::Network(format!("Invalid redirect URL: {}", e))
+                     })?;
+-                    validate_url(&next_url, self.allow_private_network)?;
++                    self.validate_context_url(&next_url)?;
+                     validate_request_mode(&request, &next_url)?;
+                     redirect_tainted |= redirect_taints_origin(&request, &current_url, &next_url);
+                     redirects.push(current_url.clone());
+@@ -1642,8 +1807,27 @@
+                 }
+             }
+ 
+-            let body_bytes =
+-                read_reqwest_body_limited(resp, &current_url, request.max_response_bytes).await?;
++            let text_response = response_headers
++                .iter()
++                .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
++                .is_some_and(|(_, value)| {
++                    let value = value.to_ascii_lowercase();
++                    value.contains("text/")
++                        || value.contains("json")
++                        || value.contains("xml")
++                        || value.contains("javascript")
++                });
++            let body_bytes = if request.body_preview.is_some() && !text_response {
++                Vec::new()
++            } else {
++                read_reqwest_body_limited(
++                    resp,
++                    &current_url,
++                    request.max_response_bytes,
++                    request.body_preview.as_deref(),
++                )
++                .await?
++            };
+             drop(in_flight);
+ 
+             let response = Response {
+@@ -1710,21 +1894,73 @@
+ }
+ 
+ #[cfg(test)]
+-mod ssrf_tests {
++pub(crate) mod ssrf_tests {
++    #[test]
++    fn strict_context_permissions_do_not_inherit_the_cli_environment() {
++        let mut client = super::ObscuraHttpClient::new();
++        assert!(client.honor_private_network_environment);
++        client.honor_private_network_environment = false;
++        let loopback = url::Url::parse("http://127.0.0.1/").unwrap();
++        assert!(client.validate_context_url(&loopback).is_err());
++        assert!(client
++            .validate_context_url(&url::Url::parse("https://example.test/").unwrap())
++            .is_ok());
++        client.allow_private_network = true;
++        assert!(client.validate_context_url(&loopback).is_ok());
++        let resolver = super::SsrfGuardResolver::with_environment_policy(false, false);
++        assert!(!resolver.allow_private);
++        assert!(!resolver.honor_environment);
++        assert!(super::SsrfGuardResolver::new(false).honor_environment);
++    }
++
++    #[tokio::test]
++    async fn strict_context_resources_cannot_take_the_local_file_shortcut() {
++        let mut client = ObscuraHttpClient::new();
++        client.honor_private_network_environment = false;
++        client.allow_private_network = true;
++        let file = Url::parse("file:///__yolo_nonexistent_browser_permission_fixture__").unwrap();
++        assert!(matches!(
++            client.fetch(&file).await,
++            Err(ObscuraNetError::Blocked(_))
++        ));
++        for value in ["data:text/plain,fixture", "ftp://example.test/"] {
++            assert!(matches!(
++                client.validate_context_url(&Url::parse(value).unwrap()),
++                Err(ObscuraNetError::Blocked(_))
++            ));
++        }
++    }
++
++    #[tokio::test]
++    async fn strict_context_dns_does_not_resolve_loopback_without_permission() {
++        let resolver = SsrfGuardResolver::with_environment_policy(false, false);
++        let loopback = || Name::from_str("127.0.0.1").unwrap();
++        assert!(Resolve::resolve(&resolver, loopback()).await.is_err());
++        let allowed = SsrfGuardResolver::with_environment_policy(true, false);
++        let mut addresses = Resolve::resolve(&allowed, loopback()).await.unwrap();
++        assert!(addresses.next().unwrap().ip().is_loopback());
++    }
++
++    use std::{
++        collections::HashMap,
++        net::IpAddr,
++        str::FromStr,
++        sync::{
++            atomic::{AtomicUsize, Ordering},
++            Arc,
++        },
++        time::Duration,
++    };
++
++    use reqwest::dns::{Name, Resolve};
++    use url::Url;
++
+     use super::{
+         is_forbidden_ip, merge_response_header, request_fetch_site, request_referrer, validate_url,
+         CallbackRegistry, ObscuraHttpClient, ObscuraNetError, RequestCredentials, RequestMode,
+         ResourceRequest, ResourceType, SsrfGuardResolver,
+     };
+     use crate::cookies::CookieJar;
+-    use reqwest::dns::{Name, Resolve};
+-    use std::collections::HashMap;
+-    use std::net::IpAddr;
+-    use std::str::FromStr;
+-    use std::sync::atomic::{AtomicUsize, Ordering};
+-    use std::sync::Arc;
+-    use std::time::Duration;
+-    use url::Url;
+ 
+     fn ip(s: &str) -> IpAddr {
+         IpAddr::from_str(s).unwrap()
+@@ -1984,7 +2220,7 @@
+         assert_eq!(request_referrer(&request, &downgrade), None);
+     }
+ 
+-    async fn http_fixture(
++    pub(crate) async fn http_fixture(
+         responses: Vec<String>,
+     ) -> (Url, tokio::sync::mpsc::UnboundedReceiver<String>) {
+         use tokio::io::{AsyncReadExt, AsyncWriteExt};
+@@ -2007,10 +2243,20 @@
+                         break;
+                     }
+                     request.extend_from_slice(&buffer[..read]);
+-                    if request.windows(4).any(|window| window == b"\r\n\r\n") {
++                    if let Some(end) = request.windows(4).position(|window| window == b"\r\n\r\n") {
++                        let header = String::from_utf8_lossy(&request[..end]).to_ascii_lowercase();
++                        let body_len = header
++                            .lines()
++                            .find_map(|line| {
++                                line.strip_prefix("content-length:")
++                                    .and_then(|value| value.trim().parse::<usize>().ok())
++                            })
++                            .unwrap_or(0);
++                        if request.len() >= end + 4 + body_len {
+                         break;
+                     }
+                 }
++                }
+                 let _ = request_tx.send(String::from_utf8_lossy(&request).into_owned());
+                 let _ = stream.write_all(response.as_bytes()).await;
+                 let _ = stream.shutdown().await;
+@@ -2022,6 +2268,71 @@
+         )
+     }
+ 
++    pub(crate) async fn assert_explicit_api_transport(stealth: bool) {
++        let responses = vec![
++            ok_response("X-Test: first\r\n", "{\"ok\":true}"),
++            ok_response("", "post"), ok_response("", "put"),
++            "HTTP/1.1 302 Found\r\nLocation: https://example.org/login\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".into(),
++        ];
++        let (target, mut received) = http_fixture(responses).await;
++        let jar = Arc::new(CookieJar::new());
++        jar.set_cookie("unrelated=must-not-leak; Path=/", &target);
++        let plain = ObscuraHttpClient::with_full_options(jar.clone(), None, true);
++        #[cfg(feature = "stealth")]
++        let native = crate::StealthHttpClient::with_proxy(jar, None, true);
++        for method in ["GET", "POST", "PUT", "DELETE"] {
++            let body: &[u8] = if method == "GET" {
++                b""
++            } else {
++                b"{\"item\":42}"
++            };
++            let headers = HashMap::from([
++                ("cookie".into(), "sid=fixture-cookie".into()),
++                ("x-ut-sid".into(), "fixture-session".into()),
++                ("authorization".into(), "Bearer fixture-token".into()),
++                ("content-type".into(), "application/json".into()),
++            ]);
++            let response = if stealth {
++                #[cfg(feature = "stealth")]
++                {
++                    native
++                        .send_single(method, &target, &headers, body, false, false)
++                        .await
++                        .unwrap()
++                }
++                #[cfg(not(feature = "stealth"))]
++                {
++                    panic!("stealth fixture requires the stealth feature")
++                }
++            } else {
++                plain
++                    .send_single(method, &target, &headers, body)
++                    .await
++                    .unwrap()
++            };
++            assert_eq!(response.status, if method == "DELETE" { 302 } else { 200 });
++            if method == "DELETE" {
++                assert_eq!(
++                    response.header("location"),
++                    Some("https://example.org/login")
++                );
++            }
++            let request = received.recv().await.unwrap();
++            let lower = request.to_ascii_lowercase();
++            assert!(request.starts_with(&format!("{method} /resource ")));
++            assert!(lower.contains("cookie: sid=fixture-cookie\r\n"));
++            assert!(lower.contains("x-ut-sid: fixture-session\r\n"));
++            assert!(lower.contains("authorization: bearer fixture-token\r\n"));
++            assert!(!lower.contains("unrelated=must-not-leak"));
++            assert!(request.ends_with(std::str::from_utf8(body).unwrap()));
++        }
++    }
++
++    #[tokio::test]
++    async fn authenticated_single_requests_preserve_method_headers_body_and_redirect() {
++        assert_explicit_api_transport(false).await;
++    }
++
+     fn ok_response(headers: &str, body: &str) -> String {
+         format!(
+             "HTTP/1.1 200 OK\r\n{headers}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+@@ -2030,7 +2341,8 @@
+     }
+ 
+     fn redirect_to_self() -> String {
+-        "HTTP/1.1 302 Found\r\nLocation: /resource\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
++        "HTTP/1.1 302 Found\r\nLocation: /resource\r\nContent-Length: 0\r\nConnection: \
++         close\r\n\r\n"
+             .to_string()
+     }
+ 
+@@ -2178,7 +2490,8 @@
+             "blocked",
+         );
+         let exact = ok_response(
+-            "Access-Control-Allow-Origin: http://127.0.0.1:1\r\nAccess-Control-Allow-Credentials: true\r\nSet-Cookie: accepted=1; Path=/\r\n",
++            "Access-Control-Allow-Origin: http://127.0.0.1:1\r\nAccess-Control-Allow-Credentials: \
++             true\r\nSet-Cookie: accepted=1; Path=/\r\n",
+             "allowed",
+         );
+         let (target, mut received) = http_fixture(vec![wildcard, exact]).await;
+@@ -2249,7 +2562,8 @@
+     #[tokio::test]
+     async fn response_limits_reject_content_length_and_streamed_overflow() {
+         let advertised = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\n";
+-        let chunked = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n";
++        let chunked = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: \
++                       close\r\n\r\n4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n";
+         let (target, _) = http_fixture(vec![advertised.to_string(), chunked.to_string()]).await;
+         let client = ObscuraHttpClient::with_full_options(Arc::new(CookieJar::new()), None, true);
+         let initiator = target.clone();
+@@ -2269,6 +2583,34 @@
+         }
+     }
+ 
++    #[tokio::test]
++    async fn text_previews_truncate_advertised_and_chunked_bodies() {
++        let advertised = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh";
++        let chunked = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n";
++        let exact = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 6\r\nConnection: close\r\n\r\nabcdef";
++        let binary = "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh";
++        let (target, _) = http_fixture(vec![
++            advertised.into(),
++            chunked.into(),
++            exact.into(),
++            binary.into(),
++        ])
++        .await;
++        let client = ObscuraHttpClient::with_full_options(Arc::new(CookieJar::new()), None, true);
++        for _ in 0..2 {
++            let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
++            assert_eq!(response.body, b"abcdef");
++            assert!(truncated);
++            assert_eq!(client.active_requests(), 0);
++        }
++        let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
++        assert_eq!(response.body, b"abcdef");
++        assert!(!truncated);
++        let (response, truncated) = client.fetch_text_preview(&target, 6).await.unwrap();
++        assert!(response.body.is_empty());
++        assert!(!truncated);
++    }
++
+     async fn hanging_fixture() -> (Url, tokio::sync::oneshot::Receiver<()>) {
+         use tokio::io::AsyncReadExt;
+ 
+@@ -2321,7 +2663,8 @@
+                 }
+                 let body = "shared";
+                 let response = format!(
+-                    "HTTP/1.1 200 OK\r\nCache-Control: public, max-age=3600\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
++                    "HTTP/1.1 200 OK\r\nCache-Control: public, max-age=3600\r\nContent-Length: \
++                     {}\r\nConnection: close\r\n\r\n{body}",
+                     body.len(),
+                 );
+                 let _ = stream.write_all(response.as_bytes()).await;
+@@ -2444,7 +2787,8 @@
+ 
+     #[tokio::test]
+     async fn callbacks_fire_once_across_redirects() {
+-        let redirect = "HTTP/1.1 302 Found\r\nLocation: /final\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
++        let redirect = "HTTP/1.1 302 Found\r\nLocation: /final\r\nContent-Length: \
++                        0\r\nConnection: close\r\n\r\n";
+         let (target, _) = http_fixture(vec![redirect.to_string(), ok_response("", "done")]).await;
+         let client = ObscuraHttpClient::with_full_options(Arc::new(CookieJar::new()), None, true);
+         let callbacks = CallbackRegistry::new();
+@@ -2487,7 +2831,9 @@
+                     tokio::time::sleep(Duration::from_millis(80)).await;
+                     let body = "globalThis.__sharedRuns=(globalThis.__sharedRuns||0)+1;";
+                     let response = format!(
+-                        "HTTP/1.1 {status} Test\r\nContent-Type: application/javascript\r\nContent-Length: {}\r\n{headers}Connection: close\r\n\r\n{body}",
++                        "HTTP/1.1 {status} Test\r\nContent-Type: \
++                         application/javascript\r\nContent-Length: {}\r\n{headers}Connection: \
++                         close\r\n\r\n{body}",
+                         body.len(),
+                     );
+                     let _ = stream.write_all(response.as_bytes()).await;
+@@ -2707,6 +3053,8 @@
+     /// canned HTTPS response with the leaf on an ephemeral port. Returns the
+     /// port and the CA certificate as PEM.
+     async fn https_fixture_with_private_ca() -> (u16, String) {
++        // Feature unification can enable both ring and aws-lc-rs; pick ring explicitly.
++        let _ = tokio_rustls::rustls::crypto::ring::default_provider().install_default();
+         use tokio::io::{AsyncReadExt, AsyncWriteExt};
+ 
+         let ca_key = rcgen::KeyPair::generate().unwrap();
+@@ -2716,7 +3064,10 @@
+ 
+         let leaf_key = rcgen::KeyPair::generate().unwrap();
+         let leaf_params = rcgen::CertificateParams::new(vec!["127.0.0.1".to_string()]).unwrap();
+-        let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_cert, &ca_key).unwrap();
++        // rcgen 0.14: leaf signing takes an `Issuer` (CA params + CA key) instead
++        // of the issued CA `Certificate`.
++        let ca_issuer = rcgen::Issuer::from_params(&ca_params, &ca_key);
++        let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_issuer).unwrap();
+ 
+         let certs = vec![tokio_rustls::rustls::pki_types::CertificateDer::from(
+             leaf_cert.der().to_vec(),
+@@ -2743,7 +3094,8 @@
+                     let _ = tls.read(&mut buf).await;
+                     let body = "private ca ok";
+                     let resp = format!(
+-                        "HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
++                        "HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: \
++                         {}\r\nconnection: close\r\n\r\n{}",
+                         body.len(),
+                         body
+                     );
+@@ -2811,9 +3163,10 @@
+ 
+ #[cfg(test)]
+ mod cert_env_tests {
+-    use super::custom_cert_store_requested;
+     use std::ffi::OsStr;
+ 
++    use super::custom_cert_store_requested;
++
+     #[test]
+     fn empty_ssl_cert_env_is_treated_as_unset() {
+         // Set-but-empty must NOT request a custom store: for the stealth client
+diff -ruN -w -x render-repros a/obscura-net/src/cookies.rs b/obscura-net/src/cookies.rs
+--- a/obscura-net/src/cookies.rs	2026-10-06 18:04:10.166718870 +0200
++++ b/obscura-net/src/cookies.rs	2026-10-06 18:04:10.267162443 +0200
+@@ -1,5 +1,9 @@
+-use std::collections::HashMap;
+-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
++use std::{
++    collections::HashMap,
++    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
++};
++
++use serde::Deserialize;
+ use url::Url;
+ 
+ const DEFAULT_SAME_SITE: &str = "Lax";
+@@ -10,12 +14,66 @@
+ fn normalize_same_site(value: &str) -> String {
+     match value.trim().to_ascii_lowercase().as_str() {
+         "strict" => "Strict",
+-        "none" => "None",
++        "none" | "no_restriction" => "None",
+         _ => "Lax",
+     }
+     .to_string()
+ }
+ 
++struct ParsedCookie {
++    name: String,
++    value: String,
++    domain_attr: Option<String>,
++    /// Raw Path attribute (None when omitted), for the `__Host-` prefix rule.
++    path_attr: Option<String>,
++    path: String,
++    secure: bool,
++    http_only: bool,
++    expires: Option<u64>,
++    same_site: String,
++}
++
++fn parse_cookie(input: &str, url: &Url) -> Option<ParsedCookie> {
++    let parsed = cookie::Cookie::parse(input.to_owned()).ok()?;
++    let now = std::time::SystemTime::now()
++        .duration_since(std::time::UNIX_EPOCH)
++        .unwrap_or_default()
++        .as_secs();
++    // Max-Age takes precedence over Expires. Saturation prevents overflow.
++    let expires = if let Some(age) = parsed.max_age() {
++        let seconds = age.whole_seconds();
++        Some(if seconds <= 0 {
++            0
++        } else {
++            now.saturating_add(seconds as u64)
++        })
++    } else {
++        parsed
++            .expires_datetime()
++            .map(|date| date.unix_timestamp().max(0) as u64)
++    };
++    let same_site = match parsed.same_site() {
++        Some(cookie::SameSite::Strict) => "Strict",
++        Some(cookie::SameSite::None) => "None",
++        _ => DEFAULT_SAME_SITE,
++    };
++    let path = parsed
++        .path()
++        .filter(|path| path.starts_with('/'))
++        .map_or_else(|| default_cookie_path(url.path()), str::to_string);
++    Some(ParsedCookie {
++        name: parsed.name().to_string(),
++        value: parsed.value().to_string(),
++        domain_attr: parsed.domain().map(canonical_domain),
++        path_attr: parsed.path().map(str::to_string),
++        path,
++        secure: parsed.secure().unwrap_or(false),
++        http_only: parsed.http_only().unwrap_or(false),
++        expires,
++        same_site: same_site.to_string(),
++    })
++}
++
+ /// The jar key for a domain. RFC 6265 4.1.2.3 ignores a leading dot, and hosts are
+ /// case-insensitive, so both spellings have to collapse before they reach the map.
+ /// Not intended for `domain_matches`, which compares without allocating on the
+@@ -85,74 +143,27 @@
+     }
+ 
+     pub fn set_cookie(&self, set_cookie_str: &str, url: &Url) {
+-        let parts: Vec<&str> = set_cookie_str.splitn(2, ';').collect();
+-        let name_value = parts[0].trim();
+-        let (name, value) = match name_value.split_once('=') {
+-            Some((n, v)) => (n.trim().to_string(), v.trim().to_string()),
+-            None => return,
++        let Some(parsed) = parse_cookie(set_cookie_str, url) else {
++            return;
+         };
+-
++        let ParsedCookie {
++            name,
++            value,
++            domain_attr,
++            path_attr,
++            path,
++            secure,
++            http_only,
++            expires,
++            same_site,
++        } = parsed;
+         let request_host = url.host_str().unwrap_or("").to_lowercase();
+-        let mut domain_attr: Option<String> = None;
+-        let mut path_attr: Option<&str> = None;
+-        let mut secure = false;
+-        let mut http_only = false;
+-        let mut expires: Option<u64> = None;
+-        let mut same_site = "Lax".to_string();
+-
+-        if parts.len() > 1 {
+-            for attr in parts[1].split(';') {
+-                let attr = attr.trim();
+-                if let Some((key, val)) = attr.split_once('=') {
+-                    match key.trim().to_lowercase().as_str() {
+-                        "domain" => {
+-                            domain_attr = Some(canonical_domain(val));
+-                        }
+-                        "path" => {
+-                            path_attr = Some(val.trim());
+-                        }
+-                        "expires" => {
+-                            if let Ok(ts) = parse_http_date(val.trim()) {
+-                                expires = Some(ts);
+-                            }
+-                        }
+-                        "max-age" => {
+-                            if let Ok(secs) = val.trim().parse::<i64>() {
+-                                if secs <= 0 {
+-                                    expires = Some(0);
+-                                } else {
+-                                    let now = std::time::SystemTime::now()
+-                                        .duration_since(std::time::UNIX_EPOCH)
+-                                        .unwrap_or_default()
+-                                        .as_secs();
+-                                    expires = Some(now + secs as u64);
+-                                }
+-                            }
+-                        }
+-                        "samesite" => {
+-                            same_site = normalize_same_site(val);
+-                        }
+-                        _ => {}
+-                    }
+-                } else {
+-                    match attr.to_lowercase().as_str() {
+-                        "secure" => secure = true,
+-                        "httponly" => http_only = true,
+-                        _ => {}
+-                    }
+-                }
+-            }
+-        }
+-
+         // Validate Domain against the response origin (RFC 6265): an unrelated
+         // or public-suffix Domain rejects the cookie so a response from attacker.test
+         // cannot scope a cookie to victim.test (GHSA-f22c-8v6q-v6h6).
+-        if !cookie_prefix_allows(&name, secure, domain_attr.is_some(), path_attr) {
++        if !cookie_prefix_allows(&name, secure, domain_attr.is_some(), path_attr.as_deref()) {
+             return;
+         }
+-        let path = path_attr
+-            .map(str::to_string)
+-            .unwrap_or_else(|| default_cookie_path(url.path()));
+         let (domain, host_only) = match resolve_cookie_domain(&request_host, domain_attr.as_deref())
+         {
+             Some(d) => d,
+@@ -294,6 +305,45 @@
+         result
+     }
+ 
++    /// Export a Cookie-Editor compatible array without changing Obscura's
++    /// persisted cookie format or exposing its internal storage representation.
++    pub fn to_cookie_editor_json(&self) -> Result<String, serde_json::Error> {
++        let cookies = self.cookies.read().unwrap();
++        let now = std::time::SystemTime::now()
++            .duration_since(std::time::UNIX_EPOCH)
++            .unwrap_or_default()
++            .as_secs();
++        let mut exported = Vec::new();
++        for domain_cookies in cookies.values() {
++            for entry in domain_cookies.values() {
++                if entry.expires.is_some_and(|expires| expires <= now) {
++                    continue;
++                }
++                exported.push(CookieEditorExport {
++                    name: &entry.name,
++                    value: &entry.value,
++                    domain: if entry.host_only {
++                        entry.domain.clone()
++                    } else {
++                        format!(".{}", entry.domain)
++                    },
++                    path: &entry.path,
++                    host_only: entry.host_only,
++                    http_only: entry.http_only,
++                    secure: entry.secure,
++                    session: entry.expires.is_none(),
++                    expiration_date: entry.expires.map(|expires| expires as f64),
++                    same_site: match entry.same_site.as_str() {
++                        "None" => "no_restriction",
++                        "Strict" => "strict",
++                        _ => "lax",
++                    },
++                });
++            }
++        }
++        serde_json::to_string_pretty(&exported)
++    }
++
+     pub fn set_cookies_from_cdp(&self, cookies: Vec<CookieInfo>) {
+         self.set_cookies_from_import(cookies.into_iter().map(|cookie| (cookie, false)));
+     }
+@@ -420,69 +470,24 @@
+     }
+ 
+     pub fn set_cookie_from_js(&self, cookie_str: &str, url: &Url) {
+-        let parts: Vec<&str> = cookie_str.splitn(2, ';').collect();
+-        let name_value = parts[0].trim();
+-        let (name, value) = match name_value.split_once('=') {
+-            Some((n, v)) => (n.trim().to_string(), v.trim().to_string()),
+-            None => return,
++        let Some(parsed) = parse_cookie(cookie_str, url) else {
++            return;
+         };
+-
++        let ParsedCookie {
++            name,
++            value,
++            domain_attr,
++            path_attr,
++            path,
++            secure,
++            expires,
++            same_site,
++            ..
++        } = parsed;
+         let request_host = url.host_str().unwrap_or("").to_lowercase();
+-        let mut domain_attr: Option<String> = None;
+-        let mut path_attr: Option<&str> = None;
+-        let mut secure = false;
+-        let mut expires: Option<u64> = None;
+-        let mut same_site = "Lax".to_string();
+-
+-        if parts.len() > 1 {
+-            for attr in parts[1].split(';') {
+-                let attr = attr.trim();
+-                if let Some((key, val)) = attr.split_once('=') {
+-                    match key.trim().to_lowercase().as_str() {
+-                        "domain" => {
+-                            domain_attr = Some(canonical_domain(val));
+-                        }
+-                        "path" => {
+-                            path_attr = Some(val.trim());
+-                        }
+-                        "expires" => {
+-                            if let Ok(ts) = parse_http_date(val.trim()) {
+-                                expires = Some(ts);
+-                            }
+-                        }
+-                        "max-age" => {
+-                            if let Ok(secs) = val.trim().parse::<i64>() {
+-                                if secs <= 0 {
+-                                    expires = Some(0);
+-                                } else {
+-                                    let now = std::time::SystemTime::now()
+-                                        .duration_since(std::time::UNIX_EPOCH)
+-                                        .unwrap_or_default()
+-                                        .as_secs();
+-                                    expires = Some(now + secs as u64);
+-                                }
+-                            }
+-                        }
+-                        "samesite" => {
+-                            same_site = normalize_same_site(val);
+-                        }
+-                        _ => {}
+-                    }
+-                } else {
+-                    match attr.to_lowercase().as_str() {
+-                        "secure" => secure = true,
+-                        _ => {}
+-                    }
+-                }
+-            }
+-        }
+-
+-        if !cookie_prefix_allows(&name, secure, domain_attr.is_some(), path_attr) {
++        if !cookie_prefix_allows(&name, secure, domain_attr.is_some(), path_attr.as_deref()) {
+             return;
+         }
+-        let path = path_attr
+-            .map(str::to_string)
+-            .unwrap_or_else(|| default_cookie_path(url.path()));
+         let (domain, host_only) = match resolve_cookie_domain(&request_host, domain_attr.as_deref())
+         {
+             Some(d) => d,
+@@ -603,6 +608,7 @@
+                         expires: entry.expires.map(|e| e as i64),
+                     },
+                     host_only: Some(entry.host_only),
++                    session: None,
+                 });
+             }
+         }
+@@ -630,11 +636,12 @@
+         let cookies: Vec<PersistedCookie> = serde_json::from_str(&data)
+             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+         let count = cookies.len();
+-        self.set_cookies_from_import(
+-            cookies
+-                .into_iter()
+-                .map(|persisted| (persisted.cookie, persisted.host_only.unwrap_or(false))),
+-        );
++        self.set_cookies_from_import(cookies.into_iter().map(|mut persisted| {
++            if persisted.session == Some(true) {
++                persisted.cookie.expires = None;
++            }
++            (persisted.cookie, persisted.host_only.unwrap_or(false))
++        }));
+         Ok(count)
+     }
+ }
+@@ -654,9 +661,17 @@
+     pub secure: bool,
+     #[serde(rename = "httpOnly")]
+     pub http_only: bool,
+-    #[serde(default, rename = "sameSite")]
++    #[serde(
++        default,
++        rename = "sameSite",
++        deserialize_with = "deserialize_same_site"
++    )]
+     pub same_site: String,
+-    #[serde(default)]
++    #[serde(
++        default,
++        alias = "expirationDate",
++        deserialize_with = "deserialize_expiration"
++    )]
+     pub expires: Option<i64>,
+ }
+ 
+@@ -669,61 +684,57 @@
+     /// distinction explicitly.
+     #[serde(default, rename = "hostOnly", skip_serializing_if = "Option::is_none")]
+     host_only: Option<bool>,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    session: Option<bool>,
+ }
+ 
+-fn parse_http_date(s: &str) -> Result<u64, ()> {
+-    let months = [
+-        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+-    ];
+-
+-    let s = s.replace('-', " ");
+-    let parts: Vec<&str> = s.split_whitespace().collect();
++#[derive(serde::Serialize)]
++#[serde(rename_all = "camelCase")]
++struct CookieEditorExport<'a> {
++    name: &'a str,
++    value: &'a str,
++    domain: String,
++    path: &'a str,
++    host_only: bool,
++    http_only: bool,
++    secure: bool,
++    session: bool,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    expiration_date: Option<f64>,
++    same_site: &'a str,
++}
+ 
+-    if parts.len() < 5 {
+-        return Err(());
++fn deserialize_same_site<'de, D>(deserializer: D) -> Result<String, D::Error>
++where
++    D: serde::Deserializer<'de>,
++{
++    let value = Option::<String>::deserialize(deserializer)?;
++    Ok(value.map_or_else(String::new, |value| normalize_same_site(&value)))
+     }
+ 
+-    let day: u64 = parts[1].parse().map_err(|_| ())?;
+-    let month = months
+-        .iter()
+-        .position(|m| parts[2].to_lowercase().starts_with(m))
+-        .ok_or(())? as u64
+-        + 1;
+-    let year: u64 = parts[3].parse().map_err(|_| ())?;
+-
+-    let time_parts: Vec<&str> = parts[4].split(':').collect();
+-    let hour: u64 = time_parts.first().and_then(|s| s.parse().ok()).unwrap_or(0);
+-    let minute: u64 = time_parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+-    let second: u64 = time_parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+-
+-    // RFC 6265 5.1.1 field ranges. Bounding the year also bounds the calendar
+-    // walk below: any server can send `Expires=Thu, 01 Jan 99999999999 ...`,
+-    // which otherwise spins this parser for hours with no JS involved.
+-    if !(1..=31).contains(&day)
+-        || !(1601..=9999).contains(&year)
+-        || hour > 23
+-        || minute > 59
+-        || second > 59
++fn deserialize_expiration<'de, D>(deserializer: D) -> Result<Option<i64>, D::Error>
++where
++    D: serde::Deserializer<'de>,
+     {
+-        return Err(());
++    #[derive(serde::Deserialize)]
++    #[serde(untagged)]
++    enum ExpirationSeconds {
++        Integer(i64),
++        Fractional(f64),
+     }
+ 
+-    let mut days_total: u64 = 0;
+-    for y in 1970..year {
+-        days_total += if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) {
+-            366
+-        } else {
+-            365
+-        };
++    match Option::<ExpirationSeconds>::deserialize(deserializer)? {
++        None => Ok(None),
++        Some(ExpirationSeconds::Integer(seconds)) => Ok(Some(seconds)),
++        Some(ExpirationSeconds::Fractional(seconds))
++            if seconds.is_finite() && seconds >= i64::MIN as f64 && seconds < i64::MAX as f64 =>
++        {
++            Ok(Some(seconds.trunc() as i64))
+     }
+-    let days_in_month = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+-    let is_leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+-    for m in 1..month {
+-        days_total += days_in_month[m as usize] + if m == 2 && is_leap { 1 } else { 0 };
++        Some(ExpirationSeconds::Fractional(_)) => Err(serde::de::Error::custom(
++            "invalid cookie expiration timestamp",
++        )),
+     }
+-    days_total += day - 1;
+-
+-    Ok(days_total * 86400 + hour * 3600 + minute * 60 + second)
+ }
+ 
+ /// Resolve the storage domain and host-only flag for a cookie being set from
+@@ -733,7 +744,6 @@
+ /// is not a public suffix. Invalid Domain attributes reject the cookie rather
+ /// than silently widening or changing its scope. Per RFC 6265, a public suffix
+ /// equal to the request host is retained as a host-only cookie.
+-///
+ fn resolve_cookie_domain(origin_host: &str, domain_attr: Option<&str>) -> Option<(String, bool)> {
+     let origin = canonical_domain(origin_host);
+     if origin.is_empty() {
+@@ -1676,20 +1686,28 @@
+         // A hostile Set-Cookie can name any year. The parser must bound the
+         // field before it walks the calendar year by year.
+         let started = std::time::Instant::now();
+-        assert!(parse_http_date("Thu, 01 Jan 99999999999 00:00:00 GMT").is_err());
+-        assert!(parse_http_date("Thu, 00 Jan 2030 00:00:00 GMT").is_err());
+-        assert!(parse_http_date("Thu, 32 Jan 2030 00:00:00 GMT").is_err());
+-        assert!(parse_http_date("Thu, 01 Jan 2030 24:00:00 GMT").is_err());
+-        assert!(parse_http_date("Thu, 01 Jan 2030 00:60:00 GMT").is_err());
+-        assert!(parse_http_date("Thu, 01 Jan 2030 00:00:60 GMT").is_err());
+-        assert!(parse_http_date("Thu, 01 Jan 1600 00:00:00 GMT").is_err());
++        let jar = CookieJar::new();
++        let url = Url::parse("http://example.test/").unwrap();
++        for date in [
++            "Thu, 01 Jan 99999999999 00:00:00 GMT",
++            "Thu, 00 Jan 2030 00:00:00 GMT",
++            "Thu, 32 Jan 2030 00:00:00 GMT",
++            "Thu, 01 Jan 2030 24:00:00 GMT",
++            "Thu, 01 Jan 2030 00:60:00 GMT",
++            "Thu, 01 Jan 2030 00:00:60 GMT",
++        ] {
++            jar.set_cookie(&format!("sid=abc; Expires={date}"), &url);
++            // Out-of-range fields never become a (possibly far-future) expiry.
++            assert!(
++                jar.get_all_cookies().iter().all(|c| c.expires.is_none()),
++                "{date}"
++            );
++            jar.clear();
++        }
+         assert!(
+             started.elapsed() < std::time::Duration::from_secs(1),
+             "rejecting a bad date must not cost a calendar walk"
+         );
+-        assert!(parse_http_date("Thu, 01 Jan 2030 00:00:00 GMT").is_ok());
+-        assert!(parse_http_date("Thu, 01-Jan-2030 23:59:59 GMT").is_ok());
+-
+         // Through the public path the cookie degrades to a session cookie.
+         let jar = CookieJar::new();
+         let url = Url::parse("http://example.test/").unwrap();
+@@ -2085,4 +2103,98 @@
+             jar.get_js_visible_cookies(&checkout)
+         );
+     }
++
++    #[test]
++    fn cookie_editor_import_preserves_scope_and_same_site() {
++        let dir = tempfile::tempdir().unwrap();
++        let file = dir.path().join("cookies.json");
++        std::fs::write(
++            &file,
++            r#"[
++              {"name":"shared","value":"one","domain":".example.com","path":"/",
++               "secure":true,"httpOnly":true,"hostOnly":false,"session":false,
++               "sameSite":"no_restriction","expirationDate":4102444800.125},
++              {"name":"local","value":"two","domain":"www.example.com","path":"/",
++               "secure":true,"httpOnly":false,"hostOnly":true,"session":true,
++               "sameSite":null,"expirationDate":4102444800.125}
++            ]"#,
++        )
++        .unwrap();
++
++        let jar = CookieJar::new();
++        assert_eq!(jar.load_from_file(&file).unwrap(), 2);
++        let www = Url::parse("https://www.example.com/").unwrap();
++        let sub = Url::parse("https://sub.www.example.com/").unwrap();
++        assert_eq!(
++            jar.get_cookie_header_in_context(&www, SameSiteContext::CrossSite),
++            "shared=one"
++        );
++        assert!(jar.get_cookie_header_same_site(&www).contains("local=two"));
++        assert!(!jar.get_cookie_header_same_site(&sub).contains("local=two"));
++        assert_eq!(
++            jar.get_all_cookies()
++                .iter()
++                .find(|cookie| cookie.name == "local")
++                .unwrap()
++                .expires,
++            None
++        );
++        assert_eq!(
++            jar.get_all_cookies()
++                .iter()
++                .find(|cookie| cookie.name == "shared")
++                .unwrap()
++                .expires,
++            Some(4_102_444_800)
++        );
++    }
++
++    #[test]
++    fn cookie_editor_export_round_trips() {
++        let original = CookieJar::new();
++        let url = Url::parse("https://www.example.com/").unwrap();
++        original.set_cookie(
++            "shared=one; Domain=example.com; Path=/; Secure; SameSite=None",
++            &url,
++        );
++        original.set_cookie("local=two; Path=/; Secure; HttpOnly", &url);
++
++        let exported = original.to_cookie_editor_json().unwrap();
++        let json: serde_json::Value = serde_json::from_str(&exported).unwrap();
++        let rows = json.as_array().unwrap();
++        assert_eq!(rows.len(), 2);
++        let shared = rows.iter().find(|row| row["name"] == "shared").unwrap();
++        assert_eq!(shared["domain"], ".example.com");
++        assert_eq!(shared["sameSite"], "no_restriction");
++        assert_eq!(shared["hostOnly"], false);
++        let local = rows.iter().find(|row| row["name"] == "local").unwrap();
++        assert_eq!(local["hostOnly"], true);
++        assert_eq!(local["session"], true);
++
++        let dir = tempfile::tempdir().unwrap();
++        let file = dir.path().join("cookies.json");
++        std::fs::write(&file, exported).unwrap();
++        let restored = CookieJar::new();
++        assert_eq!(restored.load_from_file(&file).unwrap(), 2);
++        assert_eq!(
++            restored.get_cookie_header_in_context(&url, SameSiteContext::CrossSite),
++            "shared=one"
++        );
++        assert!(!restored
++            .get_cookie_header_same_site(&Url::parse("https://sub.www.example.com/").unwrap())
++            .contains("local=two"));
++    }
++
++    #[test]
++    fn cookie_parser_honors_max_age_before_expires_and_validates_names() {
++        let jar = CookieJar::new();
++        let url = Url::parse("https://example.com/").unwrap();
++        jar.set_cookie("active=yes; Expires=Wed, 21 Oct 2099 07:28:00 GMT", &url);
++        jar.set_cookie(
++            "active=no; Expires=Wed, 21 Oct 2099 07:28:00 GMT; Max-Age=0",
++            &url,
++        );
++        jar.set_cookie("=invalid", &url);
++        assert!(jar.get_all_cookies().is_empty());
++    }
+ }
+diff -ruN -w -x render-repros a/obscura-net/src/dns.rs b/obscura-net/src/dns.rs
+--- a/obscura-net/src/dns.rs	1970-01-01 01:00:00.000000000 +0100
++++ b/obscura-net/src/dns.rs	2026-10-06 18:04:10.271180185 +0200
+@@ -0,0 +1,77 @@
++// SPDX-License-Identifier: Apache-2.0
++use anyhow::Result;
++use reqwest::Client;
++use serde_json::Value;
++
++pub struct DnsRecon {
++    client: Client,
++}
++
++impl Default for DnsRecon {
++    fn default() -> Self {
++        Self::new()
++    }
++}
++
++impl DnsRecon {
++    pub fn new() -> Self {
++        crate::ensure_rustls_crypto_provider();
++        Self {
++            client: Client::new(),
++        }
++    }
++
++    pub async fn fetch_crtsh(&self, domain: &str) -> Result<Vec<String>> {
++        let url = format!("https://crt.sh/?q=%.{}&output=json", domain);
++        let resp = self.client.get(&url).send().await?;
++        if !resp.status().is_success() {
++            return Ok(Vec::new());
++        }
++
++        let mut results = Vec::new();
++        if let Ok(data) = serde_json::from_str::<Vec<Value>>(&resp.text().await?) {
++            for entry in data {
++                if let Some(name_value) = entry.get("name_value").and_then(|v| v.as_str()) {
++                    for line in name_value.split('\n') {
++                        results.push(line.to_string());
++                    }
++                }
++            }
++        }
++        Ok(results)
++    }
++
++    pub async fn fetch_hackertarget(&self, domain: &str) -> Result<Vec<String>> {
++        let url = format!("https://api.hackertarget.com/hostsearch/?q={}", domain);
++        let resp = self.client.get(&url).send().await?;
++        if !resp.status().is_success() {
++            return Ok(Vec::new());
++        }
++        let text = resp.text().await?;
++        let results = text
++            .lines()
++            .map(|l| l.split(',').next().unwrap_or("").to_string())
++            .collect();
++        Ok(results)
++    }
++
++    pub async fn run_osint(&self, domain: &str) -> Result<Vec<String>> {
++        let (crtsh, ht) = tokio::join!(self.fetch_crtsh(domain), self.fetch_hackertarget(domain));
++
++        let mut all = crtsh.unwrap_or_default();
++        all.extend(ht.unwrap_or_default());
++
++        all.push(domain.to_string());
++
++        let mut unique: Vec<String> = all
++            .into_iter()
++            .map(|s| s.trim().to_lowercase())
++            .filter(|s| s.ends_with(domain))
++            .collect();
++
++        unique.sort();
++        unique.dedup();
++
++        Ok(unique)
++    }
++}
+diff -ruN -w -x render-repros a/obscura-net/src/encoding.rs b/obscura-net/src/encoding.rs
+--- a/obscura-net/src/encoding.rs	2026-10-06 18:04:10.166718870 +0200
++++ b/obscura-net/src/encoding.rs	2026-10-06 18:04:10.271180185 +0200
+@@ -7,8 +7,8 @@
+ //!
+ //! Detection order, mirroring real browsers (HTML5 spec § 8.2.2.4):
+ //!   1. `Content-Type: text/html; charset=...` from the HTTP response header.
+-//!   2. `<meta charset="...">` or `<meta http-equiv="Content-Type" content="text/html; charset=...">`
+-//!      sniffed from the first 1024 bytes of the body.
++//!   2. `<meta charset="...">` or `<meta http-equiv="Content-Type" content="text/html;
++//!      charset=...">` sniffed from the first 1024 bytes of the body.
+ //!   3. Default UTF-8.
+ //!
+ //! For non-HTML resources (JS, CSS, JSON), only steps 1 and 3 apply.
+@@ -78,7 +78,7 @@
+ /// the parser also sniffs `<meta charset>` in the first 1KB.
+ pub fn decode_response(bytes: &[u8], content_type_header: Option<&str>) -> String {
+     let (encoding, _) = detect_encoding(bytes, content_type_header);
+-    let (cow, _, _) = encoding.decode(bytes);
++    let (cow, ..) = encoding.decode(bytes);
+     cow.into_owned()
+ }
+ 
+@@ -91,7 +91,7 @@
+     content_type_header: Option<&str>,
+ ) -> (String, &'static str) {
+     let (encoding, _) = detect_encoding(bytes, content_type_header);
+-    let (cow, _, _) = encoding.decode(bytes);
++    let (cow, ..) = encoding.decode(bytes);
+     (cow.into_owned(), encoding.name())
+ }
+ 
+@@ -180,7 +180,7 @@
+         .and_then(charset_from_content_type)
+         .and_then(|name| Encoding::for_label(name.as_bytes()))
+         .unwrap_or(UTF_8);
+-    let (cow, _, _) = encoding.decode(bytes);
++    let (cow, ..) = encoding.decode(bytes);
+     cow.into_owned()
+ }
+ 
+@@ -308,7 +308,8 @@
+ 
+     // Look for any `<meta ... charset=...>` pattern in the first 1KB. We
+     // intentionally accept both the modern shorthand (`<meta charset=gbk>`)
+-    // and the legacy http-equiv form (`<meta http-equiv="content-type" content="text/html; charset=gbk">`).
++    // and the legacy http-equiv form (`<meta http-equiv="content-type" content="text/html;
++    // charset=gbk">`).
+     let mut pos = 0;
+     while let Some(meta_start) = s[pos..].find("<meta") {
+         let abs = pos + meta_start;
+diff -ruN -w -x render-repros a/obscura-net/src/har.rs b/obscura-net/src/har.rs
+--- a/obscura-net/src/har.rs	1970-01-01 01:00:00.000000000 +0100
++++ b/obscura-net/src/har.rs	2026-10-06 18:04:10.275197928 +0200
+@@ -0,0 +1,416 @@
++// SPDX-License-Identifier: Apache-2.0
++
++//! HTTP Archive (HAR 1.2) specification data models and serialization.
++//!
++//! Provides native Rust types for capturing, serializing, and replaying
++//! browser and HTTP network traffic according to the HAR 1.2 specification.
++
++use chrono::{DateTime, Utc};
++use serde::{Deserialize, Serialize};
++use std::collections::HashMap;
++
++/// Root HAR object container.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct Har {
++    pub log: HarLog,
++}
++
++impl Har {
++    #[must_use]
++    pub fn new(creator_name: impl Into<String>, creator_version: impl Into<String>) -> Self {
++        Self {
++            log: HarLog::new(creator_name, creator_version),
++        }
++    }
++}
++
++/// The root log object representing captured network traffic.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarLog {
++    pub version: String,
++    pub creator: HarCreator,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub browser: Option<HarCreator>,
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub pages: Vec<HarPage>,
++    pub entries: Vec<HarEntry>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++impl HarLog {
++    #[must_use]
++    pub fn new(creator_name: impl Into<String>, creator_version: impl Into<String>) -> Self {
++        Self {
++            version: "1.2".into(),
++            creator: HarCreator {
++                name: creator_name.into(),
++                version: creator_version.into(),
++                comment: None,
++            },
++            browser: None,
++            pages: Vec::new(),
++            entries: Vec::new(),
++            comment: None,
++        }
++    }
++}
++
++/// Information about the creator application or browser.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarCreator {
++    pub name: String,
++    pub version: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// An individual page visited during recording.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarPage {
++    #[serde(rename = "startedDateTime")]
++    pub started_date_time: DateTime<Utc>,
++    pub id: String,
++    pub title: String,
++    #[serde(rename = "pageTimings")]
++    pub page_timings: HarPageTimings,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Timing details for a recorded page.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
++pub struct HarPageTimings {
++    #[serde(rename = "onContentLoad", skip_serializing_if = "Option::is_none")]
++    pub on_content_load: Option<f64>,
++    #[serde(rename = "onLoad", skip_serializing_if = "Option::is_none")]
++    pub on_load: Option<f64>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// An individual HTTP request/response exchange recorded in HAR.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarEntry {
++    #[serde(rename = "pageref", skip_serializing_if = "Option::is_none")]
++    pub pageref: Option<String>,
++    #[serde(rename = "startedDateTime")]
++    pub started_date_time: DateTime<Utc>,
++    pub time: f64,
++    pub request: HarRequest,
++    pub response: HarResponse,
++    pub cache: HarCache,
++    pub timings: HarTimings,
++    #[serde(rename = "serverIPAddress", skip_serializing_if = "Option::is_none")]
++    pub server_ip_address: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub connection: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Captured HTTP request data.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarRequest {
++    pub method: String,
++    pub url: String,
++    #[serde(rename = "httpVersion")]
++    pub http_version: String,
++    pub cookies: Vec<HarCookie>,
++    pub headers: Vec<HarHeader>,
++    #[serde(rename = "queryString")]
++    pub query_string: Vec<HarQueryParam>,
++    #[serde(rename = "postData", skip_serializing_if = "Option::is_none")]
++    pub post_data: Option<HarPostData>,
++    #[serde(rename = "headersSize")]
++    pub headers_size: i64,
++    #[serde(rename = "bodySize")]
++    pub body_size: i64,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Captured HTTP response data.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarResponse {
++    pub status: u16,
++    #[serde(rename = "statusText")]
++    pub status_text: String,
++    #[serde(rename = "httpVersion")]
++    pub http_version: String,
++    pub cookies: Vec<HarCookie>,
++    pub headers: Vec<HarHeader>,
++    pub content: HarContent,
++    #[serde(rename = "redirectURL")]
++    pub redirect_url: String,
++    #[serde(rename = "headersSize")]
++    pub headers_size: i64,
++    #[serde(rename = "bodySize")]
++    pub body_size: i64,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// An HTTP header name-value pair.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarHeader {
++    pub name: String,
++    pub value: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// An HTTP cookie item.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarCookie {
++    pub name: String,
++    pub value: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub path: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub domain: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub expires: Option<String>,
++    #[serde(rename = "httpOnly", skip_serializing_if = "Option::is_none")]
++    pub http_only: Option<bool>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub secure: Option<bool>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// A parsed query string parameter.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarQueryParam {
++    pub name: String,
++    pub value: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// POST request body data.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarPostData {
++    #[serde(rename = "mimeType")]
++    pub mime_type: String,
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub params: Vec<HarPostParam>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub text: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Individual parameter in form-encoded POST body.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarPostParam {
++    pub name: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub value: Option<String>,
++    #[serde(rename = "fileName", skip_serializing_if = "Option::is_none")]
++    pub file_name: Option<String>,
++    #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
++    pub content_type: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Response payload content details.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
++pub struct HarContent {
++    pub size: i64,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub compression: Option<i64>,
++    #[serde(rename = "mimeType")]
++    pub mime_type: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub text: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub encoding: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Cache status info.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
++pub struct HarCache {
++    #[serde(rename = "beforeRequest", skip_serializing_if = "Option::is_none")]
++    pub before_request: Option<HarCacheEntry>,
++    #[serde(rename = "afterRequest", skip_serializing_if = "Option::is_none")]
++    pub after_request: Option<HarCacheEntry>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Cache entry metadata.
++#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
++pub struct HarCacheEntry {
++    #[serde(rename = "expires", skip_serializing_if = "Option::is_none")]
++    pub expires: Option<String>,
++    #[serde(rename = "lastAccess")]
++    pub last_access: String,
++    #[serde(rename = "eTag")]
++    pub etag: String,
++    #[serde(rename = "hitCount")]
++    pub hit_count: i64,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Granular millisecond timings for request phases.
++#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
++pub struct HarTimings {
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub blocked: Option<f64>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub dns: Option<f64>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub connect: Option<f64>,
++    pub send: f64,
++    pub wait: f64,
++    pub receive: f64,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub ssl: Option<f64>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub comment: Option<String>,
++}
++
++/// Helper builder to construct an `HarEntry` from an Obscura Request and Response pair.
++impl HarEntry {
++    #[must_use]
++    pub fn from_exchange(
++        method: &str,
++        url: &url::Url,
++        request_headers: &HashMap<String, String>,
++        status: u16,
++        response_headers: &HashMap<String, String>,
++        response_body: &[u8],
++        duration_ms: f64,
++    ) -> Self {
++        let started = Utc::now();
++        let query_string = url
++            .query_pairs()
++            .map(|(k, v)| HarQueryParam {
++                name: k.to_string(),
++                value: v.to_string(),
++                comment: None,
++            })
++            .collect();
++
++        let req_headers = request_headers
++            .iter()
++            .map(|(k, v)| HarHeader {
++                name: k.clone(),
++                value: v.clone(),
++                comment: None,
++            })
++            .collect();
++
++        let resp_headers = response_headers
++            .iter()
++            .map(|(k, v)| HarHeader {
++                name: k.clone(),
++                value: v.clone(),
++                comment: None,
++            })
++            .collect();
++
++        let mime_type = response_headers
++            .get("content-type")
++            .cloned()
++            .unwrap_or_else(|| "application/octet-stream".to_string());
++
++        let text = String::from_utf8(response_body.to_vec()).ok();
++        let encoding = if text.is_none() && !response_body.is_empty() {
++            Some("base64".to_string())
++        } else {
++            None
++        };
++
++        Self {
++            pageref: None,
++            started_date_time: started,
++            time: duration_ms,
++            request: HarRequest {
++                method: method.to_uppercase(),
++                url: url.to_string(),
++                http_version: "HTTP/1.1".into(),
++                cookies: Vec::new(),
++                headers: req_headers,
++                query_string,
++                post_data: None,
++                headers_size: -1,
++                body_size: 0,
++                comment: None,
++            },
++            response: HarResponse {
++                status,
++                status_text: if status == 200 {
++                    "OK".into()
++                } else {
++                    "HTTP".into()
++                },
++                http_version: "HTTP/1.1".into(),
++                cookies: Vec::new(),
++                headers: resp_headers,
++                content: HarContent {
++                    size: response_body.len() as i64,
++                    compression: None,
++                    mime_type,
++                    text,
++                    encoding,
++                    comment: None,
++                },
++                redirect_url: String::new(),
++                headers_size: -1,
++                body_size: response_body.len() as i64,
++                comment: None,
++            },
++            cache: HarCache::default(),
++            timings: HarTimings {
++                send: 0.0,
++                wait: duration_ms,
++                receive: 0.0,
++                ..Default::default()
++            },
++            server_ip_address: None,
++            connection: None,
++            comment: None,
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn har_serialization_roundtrip() {
++        let mut har = Har::new("aphrody-har", "1.0.0");
++        let url = url::Url::parse("https://example.com/test?a=1&b=2").unwrap();
++        let mut req_headers = HashMap::new();
++        req_headers.insert("accept".into(), "text/html".into());
++        let mut resp_headers = HashMap::new();
++        resp_headers.insert("content-type".into(), "text/html".into());
++
++        let entry = HarEntry::from_exchange(
++            "GET",
++            &url,
++            &req_headers,
++            200,
++            &resp_headers,
++            b"Hello World",
++            12.5,
++        );
++
++        har.log.entries.push(entry);
++
++        let json = serde_json::to_string(&har).expect("serialize");
++        assert!(json.contains("Hello World"));
++        assert!(json.contains("example.com"));
++
++        let deserialized: Har = serde_json::from_str(&json).expect("deserialize");
++        assert_eq!(deserialized.log.entries.len(), 1);
++        assert_eq!(deserialized.log.entries[0].response.status, 200);
++    }
++}
+diff -ruN -w -x render-repros a/obscura-net/src/lib.rs b/obscura-net/src/lib.rs
+--- a/obscura-net/src/lib.rs	2026-10-06 18:04:10.166718870 +0200
++++ b/obscura-net/src/lib.rs	2026-10-06 18:04:10.275197928 +0200
+@@ -7,6 +7,14 @@
+ #[cfg(feature = "stealth")]
+ pub mod wreq_client;
+ 
++/// Configure the workspace's rustls provider before constructing a reqwest client.
++/// An existing provider remains authoritative when the host already installed one.
++pub fn ensure_rustls_crypto_provider() {
++    if rustls::crypto::CryptoProvider::get_default().is_none() {
++        let _ = rustls::crypto::ring::default_provider().install_default();
++    }
++}
++
+ pub use blocklist::is_blocked as is_tracker_blocked;
+ pub use client::{
+     env_allows_private_network, is_forbidden_ip, CallbackRegistry, ObscuraHttpClient,
+@@ -27,5 +35,12 @@
+     STEALTH_UA_PLATFORM_VERSION, STEALTH_USER_AGENT,
+ };
+ 
++// aphrody addition: subdomain OSINT (crt.sh + hackertarget) used by the web engine.
++pub mod dns;
++pub use dns::DnsRecon;
++
++// aphrody addition: RFC HAR 1.2 serialization and replay
++pub mod har;
++pub use har::{Har, HarEntry, HarLog, HarRequest, HarResponse};
+ mod operator_hint;
+ pub use operator_hint::private_network_error_hint;
+diff -ruN -w -x render-repros a/obscura-net/src/operator_hint.rs b/obscura-net/src/operator_hint.rs
+--- a/obscura-net/src/operator_hint.rs	2026-10-06 18:04:10.110470469 +0200
++++ b/obscura-net/src/operator_hint.rs	2026-10-06 18:04:10.235020499 +0200
+@@ -1,6 +1,8 @@
+ use std::net::{IpAddr, Ipv6Addr};
+ 
+-const PRIVATE_NETWORK_HINT: &str = "Local/private network access is blocked by the SSRF guard. For your own local services, start Obscura with --allow-private-network or set OBSCURA_ALLOW_PRIVATE_NETWORK=1.";
++const PRIVATE_NETWORK_HINT: &str =
++    "Local/private network access is blocked by the SSRF guard. For your own local services, \
++     start Obscura with --allow-private-network or set OBSCURA_ALLOW_PRIVATE_NETWORK=1.";
+ 
+ /// Hint for an operator-facing error, not a policy change. CLI and stdio MCP
+ /// opt into presenting it; remote transports should keep the original error.
+@@ -50,7 +52,8 @@
+     fn local_denials_offer_the_existing_operator_opt_in() {
+         for message in [
+             "Access to localhost domain 'localhost' is not allowed",
+-            "Network error: Network error: Access to localhost domain 'app.localhost' is not allowed",
++            "Network error: Network error: Access to localhost domain 'app.localhost' is not \
++             allowed",
+             "Access to private/internal IP address 127.0.0.1 is not allowed",
+             "Access to private/internal IP address 192.168.1.1 is not allowed",
+             "Access to private/internal IP address 10.0.0.1 is not allowed",
+diff -ruN -w -x render-repros a/obscura-net/src/robots.rs b/obscura-net/src/robots.rs
+--- a/obscura-net/src/robots.rs	2026-10-06 18:04:10.170736612 +0200
++++ b/obscura-net/src/robots.rs	2026-10-06 18:04:10.275197928 +0200
+@@ -1,5 +1,7 @@
+-use std::collections::{HashMap, VecDeque};
+-use std::sync::RwLock;
++use std::{
++    collections::{HashMap, VecDeque},
++    sync::RwLock,
++};
+ 
+ /// Origins whose robots.txt rules are kept per context; past this the oldest is
+ /// evicted and refetched if visited again.
+@@ -209,7 +211,8 @@
+         // RFC 9309 2.2.1: a group applies when its product token equals one of
+         // ours. Substring matching in either direction let "User-agent: Moz"
+         // govern a Mozilla/5.0 UA and "User-agent: ObscuraBot" govern "Obscura".
+-        let chrome = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36";
++        let chrome = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
++                      Chrome/145.0.0.0 Safari/537.36";
+         let cache = RobotsCache::new();
+         cache.parse_and_store("a.test", "User-agent: Moz\nDisallow: /\n", chrome);
+         assert!(
+diff -ruN -w -x render-repros a/obscura-net/src/wreq_client.rs b/obscura-net/src/wreq_client.rs
+--- a/obscura-net/src/wreq_client.rs	2026-10-06 18:04:10.174754355 +0200
++++ b/obscura-net/src/wreq_client.rs	2026-10-06 18:04:10.279215671 +0200
+@@ -58,8 +58,9 @@
+ }
+ 
+ #[cfg(feature = "stealth")]
+-pub const STEALTH_USER_AGENT: &str =
+-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36";
++pub const STEALTH_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
++                                      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 \
++                                      Safari/537.36";
+ 
+ // The wreq emulation (Profile::Chrome145, Platform::Windows) sends this exact
+ // UA and sec-ch-ua-platform "Windows" on the wire. navigator has to report the
+@@ -538,6 +539,7 @@
+         store_cookies: bool,
+         max_body_bytes: usize,
+     ) -> Result<StealthResponseHeaders, ObscuraNetError> {
++        validate_url(url, self.allow_private_network)?;
+         if is_tracker_blocked(url, self.block_trackers) {
+             tracing::debug!("Blocked tracker: {}", url);
+             return Ok(StealthResponseHeaders {
+@@ -618,25 +620,34 @@
+ 
+ #[cfg(all(test, feature = "stealth"))]
+ mod tests {
+-    use std::io::{Read, Write};
+-    use std::sync::Arc;
+-    use std::time::Duration;
++    use std::{
++        io::{Read, Write},
++        sync::Arc,
++        time::Duration,
++    };
+ 
+     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+     use url::Url;
++    use wreq::dns::{Name, Resolve};
+ 
+     use super::{
+         is_tracker_blocked, send_get_with_connection_reset_retry, tracker_blocking_enabled,
+         StealthHttpClient,
+     };
+-    use crate::client::{ObscuraNetError, SsrfGuardResolver};
+-    use crate::cookies::CookieJar;
+-    use wreq::dns::{Name, Resolve};
++    use crate::{
++        client::{ObscuraNetError, SsrfGuardResolver},
++        cookies::CookieJar,
++    };
+ 
+     // Mirrors client::ssrf_tests::resolver_blocks_hostname_that_resolves_to_loopback.
+     // Both transports must agree: a host-string check alone cannot see that a
+     // public name points inward, so the stealth client needs the same resolver.
+     #[tokio::test]
++    async fn authenticated_single_requests_preserve_method_headers_body_and_redirect() {
++        crate::client::ssrf_tests::assert_explicit_api_transport(true).await;
++    }
++
++    #[tokio::test]
+     async fn stealth_resolver_blocks_hostname_that_resolves_to_loopback() {
+         let resolver = SsrfGuardResolver::new(false);
+         let res = resolver.resolve(Name::from("localtest.me")).await;
+@@ -910,7 +921,9 @@
+                     let mut buf = [0u8; 1024];
+                     let _ = stream.read(&mut buf).await;
+                     let head = format!(
+-                        "HTTP/1.1 200 OK\r\ncontent-type: text/html; charset=utf-8\r\ncontent-encoding: gzip\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
++                        "HTTP/1.1 200 OK\r\ncontent-type: text/html; \
++                         charset=utf-8\r\ncontent-encoding: gzip\r\ncontent-length: \
++                         {}\r\nconnection: close\r\n\r\n",
+                         GZIP_BODY.len()
+                     );
+                     let _ = stream.write_all(head.as_bytes()).await;

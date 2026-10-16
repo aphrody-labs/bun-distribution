@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody local native MCP and HTTP backend
+After=network-online.target aphrody-kernel.service
+Wants=aphrody-kernel.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/aphrody
+ExecStart=%h/.local/share/aphrody/local-app/current/bin/aphrody-mcp http --bind 127.0.0.1:8791
+Environment=APHRODY_AGENT_DOMAIN=aphrody
+Environment=APHRODY_PROFILE=aphrody
+Environment=PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=%h/.config/aphrody/local-app/mcp.env
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=default.target

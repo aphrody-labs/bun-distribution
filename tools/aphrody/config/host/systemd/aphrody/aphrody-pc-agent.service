@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+# One Bun PC control-plane process: canonical FFI, loopback HTTP MCP, the OS
+# kernel socket and Windows/desktop bridges on the same runtime. The owner
+# explicitly authorized full administrator access on 2026-10-07. The private
+# socket belongs to that owner; remote clients require their protected Bearer.
+# Windows desktop capture remains in the Windows interactive session.
+[Unit]
+Description=Aphrody Bun PC MCP and OS control plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=aphro
+WorkingDirectory=/home/aphro/aphrody
+Environment=HOME=/home/aphro
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=APHRODY_AGENT_DOMAIN=aphrody
+Environment=APHRODY_OS_SOCKET=/run/user/1000/aphrody-os.sock
+Environment=APHRODY_MCP_NATIVE_DAEMON=/home/aphro/.aphrody/private/connectivity/native-daemon.json
+Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+# External tool-host processes are disabled in this daemon; native MCP routes
+# and the shared FFI retain their existing capability owners.
+Environment=APHRODY_M3_TOOL_HOST=
+Environment=APHRODY_BROWSER_MCP_BIN=
+Environment=APHRODY_AI_MCP_BIN=
+EnvironmentFile=/home/aphro/.aphrody/private/connectivity/mcp-http.env
+ExecStart=/home/aphro/.bun/bin/bun /home/aphro/.local/lib/aphrody/pc-agent/current/src/pc-agent.ts --bind 127.0.0.1:8793
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=yes
+MemoryAccounting=yes
+TasksMax=1024
+CPUWeight=50
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

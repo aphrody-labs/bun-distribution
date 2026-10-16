@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+# Aphrody download server (downloads.aphrody.com, aphrody.com): read-only Bun.serve over the published
+# release tree. Source: packages/infra/product/src/downloads/server.ts (installed as /home/ubuntu/apps/downloads/app/server.ts).
+# Release tree: /home/ubuntu/apps/downloads/releases/<id>, `current` is flipped by scripts/release/publish-downloads.ts.
+# aphrody.com and www.aphrody.com serve the Bun fork site from /home/ubuntu/apps/downloads/site/current (SITE_ROOT, SITE_HOSTS
+# defaults; published by packages/web/site/publish.ts in aphrody-labs/bun), falling back to the download routes.
+# Port 8797 is loopback only; nginx (nginx/aphrody/downloads.aphrody.com.conf) is the single public entry.
+[Unit]
+Description=Aphrody download server (downloads.aphrody.com)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/apps/downloads/app
+Environment=DOWNLOADS_ROOT=/home/ubuntu/apps/downloads/current
+Environment=DOWNLOADS_PORT=8797
+Environment=DOWNLOADS_HOST=127.0.0.1
+EnvironmentFile=-/home/ubuntu/apps/downloads/app-ui/current/google-search.env
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/downloads/app/server.ts
+Restart=always
+RestartSec=2
+TimeoutStopSec=15
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadOnlyPaths=/home/ubuntu/apps/downloads
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-downloads
+
+[Install]
+WantedBy=multi-user.target

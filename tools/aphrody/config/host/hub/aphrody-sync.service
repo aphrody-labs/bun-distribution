@@ -1,0 +1,12 @@
+[Unit]
+Description=Aphrody sync (fast-forward, build, installation atomique, redemarrage)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/aphrody-sync
+Nice=15
+CPUWeight=10
+IOWeight=10
+MemoryHigh=6G
+MemoryMax=8G
+TimeoutStartSec=3h

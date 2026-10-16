@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-render"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description = "Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback."
+
+[features]
+default = ["cpu", "parallel"]
+cpu = []
+# Multi-threaded CPU 3D rasterization (row bands + per-instance vertex
+# stage). Output is bit-identical with or without it.
+parallel = ["dep:rayon"]
+# `gpu` is the single real backend switch: a headless wgpu offscreen pipeline
+# used for parity testing and native-scene rendering. Individual backend
+# names stay declarative until wgpu selects them at `request_adapter` time.
+gpu = ["dep:wgpu", "dep:pollster", "dep:bytemuck"]
+vulkan = ["gpu"]
+dx12 = ["gpu"]
+metal = ["gpu"]
+webgpu = ["gpu"]
+webgl = ["gpu"]
+all-gpu = ["vulkan", "dx12", "metal", "webgpu", "webgl"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+png = "0.18"
+fontdue = "0.9"
+rayon = { version = "1.12.0", optional = true }
+base64 = "0.23.1"
+gltf = { version = "1.4.1", default-features = false, features = ["utils", "names", "KHR_materials_emissive_strength", "KHR_materials_unlit"] }
+tobj = { version = "4.0.5", default-features = false }
+wgpu = { version = "30.0.1", default-features = false, optional = true, features = ["wgsl", "dx12", "vulkan", "metal", "webgpu", "webgl"] }
+pollster = { version = "1.0.1", optional = true }
+bytemuck = { version = "1", features = ["derive"], optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "frame"
+harness = false

@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# ============================================================================
+#  Bun-RS — High-Performance native FFI plugin for Bun (bun:ffi)
+# ============================================================================
+
+[package]
+name = "aphrody-bun"
+repository = "https://github.com/aphrody-labs/aphrody"
+version = "1.4.4"
+edition = "2024"
+license = "Apache-2.0"
+description = "Native Rust plugin for Bun applications using bun:ffi."
+
+[lib]
+name = "bun_rs"
+crate-type = ["rlib"]
+
+[features]
+# Render 3D frames on the GPU (`wgpu`) when an adapter exists; without it
+# `bun_rs_render3d_png` always uses the deterministic CPU rasterizer.
+gpu = ["aphrody-render/gpu"]
+
+[dependencies]
+memchr = "2"
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }
+aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", version = "1.4.4", features = ["crawl", "network"] }
+aphrody-svg = { path = "../aphrody-svg", version = "1.4.4", default-features = false, features = ["raster", "glyph", "m3", "symbols"] }
+base64 = "0.23.1"
+aphrody-render = { path = "../aphrody-render", version = "1.4.4" }
+grass = "0.13"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+ts-rs = { version = "12", features = ["serde-compat"] }
+
+[build-dependencies]
+serde_json = "1.0.151"
+sha2 = "0.11.0"

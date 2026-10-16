@@ -1,0 +1,28 @@
+Aphrody Python SDK
+
+Copyright 2026 aphrody contributors. Existing source notices remain in place.
+
+This distribution contains components under Apache-2.0 and AGPL-3.0-only.
+The SPDX package expression describes these included components; individual
+source headers retain their applicable licenses. The Apache-2.0 text is in
+LICENSE, and the AGPL-3.0-only text is in LICENSES/AGPL-3.0-only.txt.
+
+The module src/aphrody/jan_adk.py is a semantic adapter informed by the Jan
+Python and JavaScript/TypeScript ADKs, source revision
+14a720628f9592c8e60f7e081ef733076db8a6a9, at:
+  https://github.com/janhq/jan/tree/14a720628f9592c8e60f7e081ef733076db8a6a9/adk/python
+  https://github.com/janhq/jan/tree/14a720628f9592c8e60f7e081ef733076db8a6a9/packages/adk
+Those ADK package manifests declare AGPL-3.0 and identify Jan
+<service@jan.ai> as author. The Aphrody adapter retains AGPL-3.0-only source
+notices. Jan's repository-root Apache-2.0 license is not a substitute for the
+ADK package licenses. No Jan runtime binary or model weights are included.
+
+The canonical app-server transport, src/aphrody/agent.py, includes portions
+derived from openai/codex sdk/python/src/openai_codex/{client,_message_router}.py
+at revision 78245b47af2a7aafcabe025828ceecca69db4df1 (Apache-2.0), as recorded
+in that module. These transport notices are retained.
+
+The native math extension is the Rust crate crates/ai/rag-python (package
+aphrody-rust, Apache-2.0) of the Aphrody monorepo, built in place with the
+workspace Cargo.lock together with crates/ai/rag-core. This is provenance, not
+proof of a newly compiled wheel or compatibility with every Yolo runtime/platform.

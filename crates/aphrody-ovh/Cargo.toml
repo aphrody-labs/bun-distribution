@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ovh"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+description = "Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management."
+
+[dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+anyhow = "1.0.104"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+ring = "0.17"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }

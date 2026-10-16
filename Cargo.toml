@@ -1,7 +1,93 @@
 [workspace]
-exclude = ["apps/pdfcraft/vendor", "apps/figcraft/plugins"]
+exclude = ["apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins"]
 resolver = "3"
 members = [
+  "crates/aphrody-svg",
+  "crates/aphrody-sprite-sheet",
+  "crates/aphrody-softraster",
+  "crates/aphrody-render",
+  "crates/aphrody-m3-reproduce",
+  "crates/aphrody-identity",
+  "crates/aphrody-drive",
+  "crates/aphrody-bun",
+  "apps/aphrody-app",
+  "crates/aphrody-yolo",
+  "crates/aphrody-wireguard",
+  "crates/aphrody-vpn",
+  "crates/aphrody-ssh",
+  "crates/aphrody-sql",
+  "crates/aphrody-remote-desktop",
+  "crates/aphrody-ovh",
+  "crates/aphrody-infra",
+  "crates/aphrody-discord",
+  "crates/aphrody-certificates",
+  "crates/aphrody-command-wasm",
+  "crates/aphrody-command-pure",
+  "crates/aphrody-command",
+  "crates/aphrody",
+  "crates/aphrody-secrets",
+  "crates/aphrody-backend",
+  "crates/aphrody-kernel",
+  "crates/aphrody-kernel-client",
+  "crates/aphrody-jobs",
+  "crates/aphrody-diagnostics",
+  "crates/aphrody-a2a-server",
+  "crates/aphrody-a2a-pb",
+  "crates/aphrody-a2a-grpc",
+  "crates/aphrody-a2a-coord",
+  "crates/aphrody-a2a-client",
+  "crates/aphrody-fsindex",
+  "crates/aphrody-capture",
+  "crates/aphrody-terminal-backend",
+  "crates/aphrody-shell-tauri",
+  "crates/aphrody-nu",
+  "crates/aphrody-term",
+  "crates/aphrody-toolchains",
+  "crates/rfb-encodings",
+  "crates/aphrody-bun-docs",
+  "crates/simdutf",
+  "crates/aphrody-gpu-backend",
+  "crates/aphrody-ml-runtime",
+  "crates/aphrody-ml-config",
+  "crates/aphrody-llama-sys",
+  "crates/aphrody-llama",
+  "crates/aphrody-bindgen",
+  "crates/aphrody-voice",
+  "crates/aphrody-vision",
+  "crates/aphrody-translate",
+  "crates/aphrody-train",
+  "crates/aphrody-store",
+  "crates/aphrody-session",
+  "crates/aphrody-rollout",
+  "crates/aphrody-rag-eval",
+  "crates/aphrody-rag-core",
+  "crates/aphrody-rag",
+  "crates/aphrody-ocr-vlm",
+  "crates/aphrody-ocr-onnx",
+  "crates/aphrody-ocr-core",
+  "crates/aphrody-ocr",
+  "crates/aphrody-models",
+  "crates/aphrody-model-client",
+  "crates/aphrody-memory",
+  "crates/aphrody-mcp-client",
+  "crates/aphrody-mcp",
+  "crates/aphrody-llama-server",
+  "crates/aphrody-infer",
+  "crates/aphrody-gateway",
+  "crates/aphrody-firefly",
+  "crates/aphrody-engine",
+  "crates/aphrody-embed",
+  "crates/aphrody-code-graph",
+  "crates/aphrody-app-server",
+  "crates/aphrody-agent-tools",
+  "crates/aphrody-agent-runtime",
+  "crates/aphrody-agent-home",
+  "crates/aphrody-ffi",
+  "crates/yolo-runtime",
+  "crates/aphrody-m3",
+  "crates/aphrody-m3-tokens",
+  "crates/libm3",
+  "crates/libm3-wasm",
     "crates/craft-atomic",
     "crates/craft-settings",
     "crates/craft-cms",
@@ -531,6 +617,9 @@ zbus = { version = "=5.19.0", default-features = false }
 # Vendored crates carried by PdfCraft (patch notes in apps/pdfcraft/vendor/README.md).
 # DesignCraft's former winit git patch (skylartaylor/winit 3d51077) is superseded by this vendored copy.
 [patch.crates-io]
+simdutf = { path = "crates/simdutf" }
+rfb-encodings = { path = "crates/rfb-encodings" }
+aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens" }
 hayro = { path = "apps/pdfcraft/vendor/hayro" }
 hayro-interpret = { path = "apps/pdfcraft/vendor/hayro-interpret" }
 hayro-syntax = { path = "apps/pdfcraft/vendor/hayro-syntax" }
@@ -538,3 +627,12 @@ hayro-jbig2 = { path = "apps/pdfcraft/vendor/hayro-jbig2" }
 lopdf = { path = "apps/pdfcraft/vendor/lopdf" }
 winit = { path = "apps/pdfcraft/vendor/winit" }
 egui-wgpu = { path = "apps/pdfcraft/vendor/egui-wgpu" }
+
+[patch."https://github.com/aphrody-labs/aphrody"]
+aphrody-config = { path = "crates/aphrody-config" }
+aphrody-mcp-client = { path = "crates/aphrody-mcp-client" }
+aphrody-model-client = { path = "crates/aphrody-model-client" }
+aphrody-patch = { path = "crates/aphrody-patch" }
+aphrody-proc = { path = "crates/aphrody-proc" }
+aphrody-rag-core = { path = "crates/aphrody-rag-core" }
+aphrody-toolcall = { path = "crates/aphrody-toolcall" }

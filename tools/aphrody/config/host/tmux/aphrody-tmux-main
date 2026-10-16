@@ -1,0 +1,13 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Create tmux session `main` with a local window and one self-reconnecting window per peer alias
+# listed in ~/.config/aphrody/tmux-peers (peers reuse the multiplexed ~/.ssh/config masters).
+set -eu
+tmux has-session -t main 2>/dev/null && exit 0
+tmux new-session -d -s main -n "$(hostname -s)" -c "$HOME"
+peers="$HOME/.config/aphrody/tmux-peers"
+[ -f "$peers" ] || exit 0
+grep -v '^[[:space:]]*\(#\|$\)' "$peers" | while read -r peer; do
+  tmux new-window -d -t main -n "$peer" \
+    "while :; do ssh -t $peer 'tmux new-session -A -s main'; sleep 3; done"
+done

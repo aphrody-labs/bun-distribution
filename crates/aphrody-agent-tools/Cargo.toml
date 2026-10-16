@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-agent-tools"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Concrete ToolExecutor implementations for the aphrody agent engine: a streaming sandboxed shell-exec tool and an apply_patch tool that wraps aphrody-patch. These are the real capabilities the engine's ToolRegistry exposes to the model."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
+aphrody-patch = { path = "../aphrody-patch", version = "1.4.4", features = [] }
+aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+async-trait = "0.1.92"
+
+[dev-dependencies]
+pretty_assertions = { version = "1", features = [] }
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

@@ -1,0 +1,18 @@
+[Unit]
+Description=Aphrody compute loopback forwarding to DBFR
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py --run
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=15
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+# ~/.profile des hôtes Linux Aphrody (vps, dbfr), versionné : tools/config/host/shell/profile.
+# Shell de login : tout passe par ~/.bashrc (PATH, env, interactif) ; rien d'autre ici.
+[ -n "${BASH_VERSION:-}" ] && [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"

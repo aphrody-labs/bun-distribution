@@ -1,0 +1,33 @@
+# Native Rio with the embedded Material 3 theme and the packaged Bun Shell.
+
+theme = "m3"
+line-height = 1.2
+enable-all-features = true
+confirm-before-quit = false
+
+[shell]
+program = "rio-shell"
+args = []
+
+[fonts]
+family = "Cascadia Code"
+size = 18
+
+[navigation]
+mode = "Tab"
+current-working-directory = true
+hide-if-single = false
+
+[renderer]
+backend = "Webgpu"
+
+[cursor]
+shape = "beam"
+
+[bindings]
+keys = [
+  { key = "a", with = "control | alt", action = "CreateTab" },
+  { key = "b", with = "control | alt", action = "run(rio -e rio-shell)" },
+  { key = "v", with = "control | alt", action = "run(rio -e ssh -t vps tmux attach -t wt || tmux new -s wt)" },
+  { key = "f", with = "control | alt", action = "run(rio -e ssh -t dbfr tmux attach -t wt || tmux new -s wt)" },
+]

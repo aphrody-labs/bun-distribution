@@ -1,0 +1,203 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "actions": [
+    {
+      "command": { "action": "newTab", "profile": "Aphrody Shell" },
+      "id": "User.Aphrody.Shell"
+    },
+    {
+      "command": { "action": "newTab", "profile": "Bun Shell" },
+      "id": "User.Aphrody.Bun"
+    },
+    {
+      "command": { "action": "newTab", "profile": "PowerShell (admin)" },
+      "id": "User.Aphrody.PwshAdmin"
+    },
+    {
+      "command": { "action": "newTab", "profile": "Docker" },
+      "id": "User.Aphrody.Docker"
+    },
+    {
+      "command": { "action": "newTab", "profile": "ssh vps" },
+      "id": "User.Aphrody.Vps"
+    },
+    {
+      "command": { "action": "newTab", "profile": "ssh dbfr" },
+      "id": "User.Aphrody.Dbfr"
+    }
+  ],
+  "compatibility.allowHeadless": true,
+  "copyFormatting": "none",
+  "copyOnSelect": false,
+  "defaultProfile": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
+  "disableAnimations": true,
+  "disabledProfileSources": ["Windows.Terminal.Azure", "Windows.Terminal.VisualStudio"],
+  "keybindings": [
+    { "id": "Terminal.CopyToClipboard", "keys": "ctrl+c" },
+    { "id": "Terminal.PasteFromClipboard", "keys": "ctrl+v" },
+    { "id": "Terminal.DuplicatePaneAuto", "keys": "alt+shift+d" },
+    { "id": "User.Aphrody.Shell", "keys": "ctrl+alt+a" },
+    { "id": "User.Aphrody.Bun", "keys": "ctrl+alt+b" },
+    { "id": "User.Aphrody.PwshAdmin", "keys": "ctrl+alt+p" },
+    { "id": "User.Aphrody.Docker", "keys": "ctrl+alt+d" },
+    { "id": "User.Aphrody.Vps", "keys": "ctrl+alt+v" },
+    { "id": "User.Aphrody.Dbfr", "keys": "ctrl+alt+f" }
+  ],
+  "language": "fr-FR",
+  "newTabMenu": [
+    { "type": "profile", "profile": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}" },
+    { "type": "profile", "profile": "{c3d4e5f6-a7b8-9012-cdef-123456789012}" },
+    { "type": "profile", "profile": "{6f1e0c2a-3b7d-4e59-9a1c-0d2b8e4f7a31}" },
+    { "type": "separator" },
+    { "type": "profile", "profile": "{2d9c4b7e-8a15-4f3c-b6e2-91a0c5d3e7f4}" },
+    { "type": "profile", "profile": "{8b3f6a1d-c472-4e0b-9d5a-7e2c1f4b8a60}" },
+    { "type": "profile", "profile": "{e4a7c2b9-15d6-4f83-a0b1-3c9d8e7f6a52}" },
+    { "type": "separator" },
+    { "type": "remainingProfiles" }
+  ],
+  "profiles": {
+    "defaults": {
+      "colorScheme": {
+        "dark": "Aphrody M3",
+        "light": "Aphrody M3 Light"
+      },
+      "cursorShape": "bar",
+      "font": {
+        "face": "Cascadia Code",
+        "size": 18
+      },
+      "historySize": 100000,
+      "padding": "8",
+      "startingDirectory": null
+    },
+    "list": [
+      {
+        "commandline": "cmd.exe /d /s /c \"%LOCALAPPDATA%\\Aphrody\\bin\\aphrody.exe shell start\"",
+        "guid": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
+        "hidden": false,
+        "icon": "C:\\src\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
+        "name": "Aphrody Shell",
+        "tabTitle": "aphrody"
+      },
+      {
+        "commandline": "C:\\Users\\aphro\\.bun\\bin\\bun.exe C:\\src\\aphrody\\tools\\config\\host\\windows\\terminal\\bun-shell.ts",
+        "guid": "{c3d4e5f6-a7b8-9012-cdef-123456789012}",
+        "hidden": false,
+        "icon": "C:\\Users\\aphro\\.bun\\bin\\bun.exe",
+        "name": "Bun Shell",
+        "tabTitle": "bun"
+      },
+      {
+        "commandline": "pwsh.exe -NoLogo",
+        "elevate": true,
+        "guid": "{6f1e0c2a-3b7d-4e59-9a1c-0d2b8e4f7a31}",
+        "hidden": false,
+        "icon": "ms-appx:///ProfileIcons/pwsh.png",
+        "name": "PowerShell (admin)",
+        "tabColor": "#91704C",
+        "tabTitle": "admin"
+      },
+      {
+        "commandline": "C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start -e \"docker context ls; docker ps\"",
+        "guid": "{2d9c4b7e-8a15-4f3c-b6e2-91a0c5d3e7f4}",
+        "hidden": false,
+        "icon": "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe",
+        "name": "Docker",
+        "tabTitle": "docker"
+      },
+      {
+        "commandline": "\"C:\\Program Files\\OpenSSH\\ssh.exe\" -t vps \"tmux new -A -s wt\"",
+        "guid": "{8b3f6a1d-c472-4e0b-9d5a-7e2c1f4b8a60}",
+        "hidden": false,
+        "icon": "\ud83d\udee0\ufe0f",
+        "name": "ssh vps",
+        "tabColor": "#17335C",
+        "tabTitle": "vps (build)"
+      },
+      {
+        "commandline": "\"C:\\Program Files\\OpenSSH\\ssh.exe\" -t dbfr \"tmux new -A -s wt\"",
+        "guid": "{e4a7c2b9-15d6-4f83-a0b1-3c9d8e7f6a52}",
+        "hidden": false,
+        "icon": "\ud83c\udf10",
+        "name": "ssh dbfr",
+        "tabColor": "#8B2E2E",
+        "tabTitle": "dbfr (PROD)"
+      },
+      {
+        "commandline": "pwsh.exe",
+        "elevate": false,
+        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+        "hidden": true,
+        "name": "PowerShell",
+        "source": "Windows.Terminal.PowershellCore"
+      },
+      {
+        "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+        "hidden": true,
+        "name": "Windows PowerShell"
+      },
+      {
+        "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+        "hidden": true,
+        "name": "Command Prompt"
+      },
+      {
+        "guid": "{ad2267e7-45ed-50bc-99cc-a9b0dada134f}",
+        "hidden": false,
+        "name": "AphrodyAlpine",
+        "source": "Microsoft.WSL"
+      }
+    ]
+  },
+  "schemes": [
+    {
+      "name": "Aphrody M3",
+      "background": "#171216",
+      "foreground": "#ebdfe6",
+      "cursorColor": "#efb4e9",
+      "selectionBackground": "#643663",
+      "black": "#3a3338",
+      "red": "#ffb4ab",
+      "green": "#a0d756",
+      "yellow": "#ffb95b",
+      "blue": "#b0c6ff",
+      "purple": "#efb4e9",
+      "cyan": "#63d3ff",
+      "white": "#d1c3cc",
+      "brightBlack": "#9a8d96",
+      "brightRed": "#ffdad6",
+      "brightGreen": "#bbf46f",
+      "brightYellow": "#ffddb6",
+      "brightBlue": "#d9e2ff",
+      "brightPurple": "#ffd6f8",
+      "brightCyan": "#bce9ff",
+      "brightWhite": "#ebdfe6"
+    },
+    {
+      "name": "Aphrody M3 Light",
+      "background": "#fff7fa",
+      "foreground": "#201a1e",
+      "cursorColor": "#7e4d7c",
+      "selectionBackground": "#ffd6f8",
+      "black": "#201a1e",
+      "red": "#ba1a1a",
+      "green": "#426900",
+      "yellow": "#845400",
+      "blue": "#1a59c2",
+      "purple": "#7e4d7c",
+      "cyan": "#006783",
+      "white": "#ebdfe6",
+      "brightBlack": "#4e444b",
+      "brightRed": "#93000a",
+      "brightGreen": "#304f00",
+      "brightYellow": "#643f00",
+      "brightBlue": "#00419c",
+      "brightPurple": "#643663",
+      "brightCyan": "#004d63",
+      "brightWhite": "#ffffff"
+    }
+  ],
+  "themes": [],
+  "warning.confirmCloseAllTabs": false
+}

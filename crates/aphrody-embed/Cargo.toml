@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-embed"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Local, offline text embeddings for aphrody — fastembed (ONNX Runtime) text vectorisation with no external API. Feeds semantic memory/search."
+
+[lib]
+crate-type = ["rlib"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+# OFF by default: the embeddings stack links the ONNX Runtime via `ort`
+# (host-only, fetches a prebuilt backend at build time) plus tokenizers /
+# safetensors / ndarray, and downloads the model from HuggingFace on first use.
+# None of that is hermetic-offline or wasm-safe, so the default build of
+# aphrody-embed (and the `aphrody` CLI that may depend on it) stays light and
+# pulls NONE of it. Build with: cargo build -p aphrody-embed --features embeddings
+default     = []
+embeddings  = ["dep:fastembed", "dep:ort"]
+# Pure-Rust CPU engine (formerly the `aphrody-web-embed` crate): padding-free
+# BERT on `gemm` kernels, pinned Hugging Face manifest with sha256 checks,
+# cross-encoder reranker. Serves the Aphrody worker and E5 HTTP endpoint.
+native      = [
+    "dep:tokenizers", "dep:ureq", "dep:sha2", "dep:serde", "dep:serde_json",
+    "dep:rayon", "dep:gemm", "dep:safetensors", "dep:memmap2", "dep:base64",
+]
+# candle-transformers BERT as a reference backend for parity tests.
+candle      = ["native", "dep:candle-core", "dep:candle-nn", "dep:candle-transformers"]
+# `cli_main` (the former `aphrody-embed` binary): `worker` (framed stdio) and `serve`
+# (OpenAI-compatible `/v1/embeddings`, the former shenron-embed contract).
+server      = ["native", "dep:axum", "dep:tokio", "dep:aphrody-http-error"]
+
+[dependencies]
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+thiserror = "2.0.20"
+tracing = "0.1.44"
+dirs = "7.0.0"
+tokenizers = { version = "0.23.2", features = ["fancy-regex", "onig"], default-features = false, optional = true }
+ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
+sha2 = { version = "0.11.0", optional = true }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false, optional = true }
+serde_json = { version = "1.0.151", optional = true }
+rayon = { version = "1.12.0", optional = true }
+gemm = { version = "0.19", default-features = false, features = ["std", "rayon", "x86-v4"], optional = true }
+safetensors = { version = "0.8.0", optional = true }
+memmap2 = { version = "0.9.11", optional = true }
+base64 = { version = "0.23.1", optional = true }
+candle-core = { version = "0.11", features = [], optional = true }
+candle-nn = { version = "0.11", features = [], optional = true }
+candle-transformers = { version = "0.11", features = [], optional = true }
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"], optional = true }
+aphrody-http-error = { path = "../aphrody-http-error", version = "1.4.4", features = [], optional = true }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"], optional = true }
+
+[dev-dependencies]
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tempfile = "3.27.0"
+
+[package.metadata.cargo-machete]
+# `fastembed` is feature-gated AND target-gated; machete's symbol scan cannot
+# see its uses when the feature is inactive. `tracing` is macro-only usage
+# (tracing::debug!/info!) which machete under-counts.
+ignored = ["fastembed", "tracing", "candle-core", "candle-nn", "candle-transformers"]
+
+[[example]]
+name              = "native_bench"
+required-features = ["native"]
+
+[[example]]
+name              = "gemm_probe"
+required-features = ["native"]
+
+[[test]]
+name              = "native_parity"
+required-features = ["candle"]
+
+[[test]]
+name              = "native_rerank"
+required-features = ["native"]
+
+[[test]]
+name              = "native_semantics"
+required-features = ["native"]

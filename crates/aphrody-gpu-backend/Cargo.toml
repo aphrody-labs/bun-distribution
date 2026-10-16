@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-gpu-backend"
+description = "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers, plus the process-wide GPU hub (wgpu + CUDA)."
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = ["wgsl", "native-backends"]
+wgsl = ["wgpu/wgsl"]
+native-backends = ["wgpu/vulkan", "wgpu/dx12", "wgpu/metal"]
+webgpu = ["wgpu/web", "wgpu/webgpu"]
+webgl = ["wgpu/web", "wgpu/webgl"]
+# Process-wide GPU hub shared by Bun, Obscura and Tauri hosts: one wgpu device, adapter
+# inventory and WGSL compute jobs.
+hub = ["wgsl", "native-backends", "dep:pollster", "dep:serde", "dep:serde_json"]
+# NVIDIA CUDA through the official driver (libcuda) and NVRTC, loaded at run time.
+cuda = ["hub", "dep:cudarc"]
+
+[dependencies]
+wgpu = { version = "30.0.1", default-features = false }
+pollster = { version = "1.0.1", optional = true }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false, optional = true }
+serde_json = { version = "1.0.151", optional = true }
+cudarc = { version = "0.19.10", default-features = false, features = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13040"], optional = true }

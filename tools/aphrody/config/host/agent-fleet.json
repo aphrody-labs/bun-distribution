@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": "@aphrody/workspace",
+  "hub": {
+    "host": "vps",
+    "workspace": "/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody",
+    "seed": "/home/ubuntu/src/aphrody",
+    "branch": "main",
+    "remote": "git@github-dev:aphrody-labs/aphrody.git",
+    "profile": "/home/ubuntu/.aphrody/workspaces/aphrody",
+    "clientTokenFile": "/home/ubuntu/.aphrody/private/a2a/bearer",
+    "a2a": "http://127.0.0.1:23888/",
+    "mcp": "http://127.0.0.1:23889/mcp",
+    "stdio": "/home/ubuntu/.local/bin/aphrody-mcp",
+    "transport": "authenticated-ssh-over-wireguard",
+    "provider": "codex",
+    "restartPolicy": "persist-results-without-replaying-interrupted-code",
+    "launcher": "/home/ubuntu/apps/lab/fleet-mcp.mjs",
+    "toolHosts": {
+      "bun": "/home/ubuntu/.bun/bin/bun",
+      "m3": "/home/ubuntu/apps/lab/m3-tool-host.mjs"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$comment": "Declared third-party documentation trees copied into docs/ from upstream projects. docs-links skips local-link and backtick-path checks for these files because their relative links target the upstream site/repository layout, which is not imported. First-party additions inside a tree are listed under `except` and stay checked. Decision: docs/decisions/infra/docs-imported-upstream-link-scope.md.",
+  "schemaVersion": 1,
+  "trees": [
+    {
+      "id": "upstream-copies",
+      "upstream": "per-directory upstream-<id> (see tools/config/upstream-sources.json)",
+      "include": ["docs/*/upstream-*/**"],
+      "except": []
+    },
+    {
+      "id": "discordjs-discordx",
+      "upstream": "https://github.com/discordjs/discord.js @ 8a22bc3e, https://github.com/discordx-ts/discordx @ 017c6e8c",
+      "include": ["docs/*/discord/apps/**", "docs/*/discord/packages/**"],
+      "except": ["docs/*/discord/packages/aphrody-messaging/**"]
+    },
+    {
+      "id": "spacedrive",
+      "upstream": "https://github.com/spacedriveapp/spacedrive",
+      "include": ["docs/*/ui/drive/**"],
+      "except": []
+    },
+    {
+      "id": "material-web",
+      "upstream": "https://github.com/material-components/material-web",
+      "include": ["docs/*/ui/packages/material-web/**"],
+      "except": [
+        "docs/*/ui/packages/material-web/migration/**",
+        "docs/*/ui/packages/material-web/tests-web/**"
+      ]
+    },
+    {
+      "id": "antigravity-sdk-python",
+      "upstream": "Google Antigravity SDK for Python (packages/google/antigravity-sdk-python)",
+      "include": ["docs/*/ai/py/antigravity-sdk-python/**"],
+      "except": []
+    }
+  ]
+}

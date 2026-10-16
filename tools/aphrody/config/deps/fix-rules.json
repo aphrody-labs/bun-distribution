@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "note": "Pre-fix catalogue: a rule matches build/typecheck output and either runs a deterministic fix (kind=script) or yields an agent brief (kind=brief). Applied only with --apply-fixes.",
+  "rules": [
+    { "id": "tauri-macos-private-api", "match": "macos-private-api|macOSPrivateApi", "kind": "script", "action": "strip-lines", "files": ["crates/**/tauri.conf.json", "apps/**/tauri.conf.json"], "pattern": "\"macOSPrivateApi\"\\s*:\\s*(true|false),?", "note": "Removed in tauri 3.0.0-alpha.4" },
+    { "id": "patch-no-longer-applies", "match": "patches/.* no longer applies", "kind": "brief", "note": "Rebase the bun patch on the new package version (bun patch <pkg>, re-apply hunks, update patchedDependencies)." },
+    { "id": "tauri-plugin-pin-conflict", "match": "failed to select a version for `tauri", "kind": "brief", "note": "A path dependency under the upstream source root pins an older tauri; update it and its patch in patches/ and tools/config/upstream-sources.json." },
+    { "id": "ts-missing-export", "match": "has no exported member named", "kind": "brief", "note": "API rename in a major bump: read the migration guide in the fact sheet." },
+    { "id": "ts-generic-arity", "match": "requires between \\d+ and \\d+ type arguments", "kind": "brief", "note": "Generic signature changed in a major bump." }
+  ]
+}

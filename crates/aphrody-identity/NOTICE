@@ -1,0 +1,49 @@
+aphrody-identity (formerly nie-aphrody)
+Copyright 2026 aphrody-code
+
+Licensed under the Apache License, Version 2.0 (SPDX: Apache-2.0), like the rest of the Aphrody monorepo.
+The code and every asset of this crate (emblem, brand icons, favicon, webmanifest, pet
+spritesheet and animations, dossier) were relicensed from the nie commercial agreement
+RG-L5-VR-2026-001 to Apache-2.0 by the operator on 2026-09-26.
+
+Le module `src/pets.rs` est une réimplémentation dérivée du sous-système `pets` de
+OpenAI Codex (https://github.com/openai/codex, `codex-rs/tui/src/pets/`), distribué
+sous licence Apache License 2.0 :
+
+    OpenAI Codex
+    Copyright 2025 OpenAI
+
+En sont repris : le schéma du manifeste `pet.json`, ses valeurs par défaut et ses
+bornes de validation, la sémantique `loop_start` / `fallback` des pistes d'animation,
+l'algorithme de sélection de frame par accumulation de durées, et le modèle d'état
+ambiant à durée de vie.
+
+Modifications apportées par rapport à l'original, et leur raison :
+
+  - la géométrie de la grille est lue dans le manifeste au lieu d'être figée à
+    8 x 9 cellules. L'atlas d'Aphrody v2 est un 8 x 11 (1536 x 2288) que la
+    validation d'origine rejetterait ; la cellule (192 x 208) et le nombre de
+    colonnes (8) sont, eux, inchangés.
+  - le module ne lit jamais l'horloge : le temps écoulé est passé en argument, en
+    millisecondes, ce qui le rend utilisable en navigateur, sur mobile et dans un
+    test déterministe.
+  - aucun accès au système de fichiers, au réseau ni au terminal n'est repris : le
+    téléchargement CDN, le cache disque et les protocoles image du terminal restent
+    hors de cette crate.
+  - les durées sont des millisecondes entières (Codex : `Duration`), pour que le
+    port web (`m3/packages/identity/src/runtime.ts`) rende exactement les mêmes
+    ticks ; `tests/fixtures/parite-web.json` le vérifie.
+
+`src/codex.rs` reproduit les contrôles de `load_pet_manifest` (dont l'atlas de 1536 x 1872
+exigé par le TUI) et le comportement de l'installeur de la galerie `legeling/awesome-codex-pet`
+(`scripts/install.mjs`, licence MIT) : plafonds de 64 Kio et 5 Mo, en-tête RIFF/WEBP, refus des
+liens symboliques, remplacement limité aux paquets gérés, écriture dans un dossier temporaire
+puis renommage. Ni code ni asset de la galerie (CC BY-NC 4.0) n'est copié.
+
+Les ASSETS de Codex (spritesheets des pets) ne sont pas repris : ils ne figurent pas
+dans le dépôt d'origine et ne sont donc pas couverts par sa licence.
+
+Le logo d'Aphrody (`assets/logo/source/byron_r0.png`, `byron_r0_fullbody.png`, et tout ce que
+`aphrody identity export-assets` en dérive dans `assets/logo/` et `assets/brand/`) part des rendus
+détourés de face du personnage c01001900 « Byron Love » publiés par l'encyclopédie officielle
+Inazuma Eleven (https://zukan.inazuma.jp/), © LEVEL5 Inc.

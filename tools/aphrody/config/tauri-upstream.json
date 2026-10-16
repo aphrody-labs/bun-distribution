@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "line": 3,
+  "description": "Single source of truth for the Tauri 3 upstream line carried by the monorepo. Versions live in root Cargo.toml [workspace.dependencies] and package.json workspaces.catalog; this file records tracked refs, the crates/packages to sync, the gate and the local patches. Driven by `bun run desktop:sync`. The cargo gate packages, generated paths and per-app config files live in tools/config/tauri-apps.json.",
+  "upstream": {
+    "tauri": {
+      "repository": "tauri-apps/tauri",
+      "trackedRef": "v3",
+      "lineOfDev": 2,
+      "observedCommit": "70541fe2",
+      "observedAt": "2026-09-30T17:31:26Z"
+    },
+    "plugins": {
+      "repository": "tauri-apps/plugins-workspace",
+      "trackedRef": "v3",
+      "observedCommit": "d9be6d04",
+      "observedAt": "2026-09-30T12:32:04Z"
+    }
+  },
+  "policy": {
+    "pin": "released-alpha-from-crates-io",
+    "rationale": "Pin released alphas with exact `=` requirements; use a git/path patch only for a documented, upstream-missing fix (see patches).",
+    "runtime": {
+      "default": "tauri-runtime-cef",
+      "retired": [
+        "tauri-runtime-wry"
+      ]
+    },
+    "npmMinimumReleaseAgeSeconds": 259200
+  },
+  "rust": {
+    "crates": [
+      "tauri",
+      "tauri-build",
+      "tauri-runtime-cef",
+      "tauri-plugin",
+      "tauri-plugin-log",
+      "tauri-plugin-opener",
+      "tauri-plugin-process",
+      "tauri-plugin-single-instance",
+      "tauri-plugin-window-state",
+      "tauri-plugin-os",
+      "tauri-plugin-dialog",
+      "tauri-plugin-clipboard-manager",
+      "tauri-plugin-notification",
+      "tauri-plugin-store",
+      "tauri-plugin-updater",
+      "tauri-plugin-global-shortcut",
+      "tauri-plugin-autostart",
+      "tauri-plugin-deep-link",
+      "tauri-plugin-fs"
+    ],
+    "forks": []
+  },
+  "js": {
+    "catalog": [
+      "@tauri-apps/api",
+      "@tauri-apps/plugin-opener"
+    ],
+    "cli": {
+      "package": "@tauri-apps/cli",
+      "version": "3.0.0-alpha.4"
+    }
+  },
+  "gate": {
+    "bun": [
+      "bun install",
+      "bun install --frozen-lockfile"
+    ]
+  },
+  "patches": [
+    {
+      "id": "tauri-runtime-cef-glib-work-source",
+      "kind": "vendored-crate",
+      "crate": "tauri-runtime-cef",
+      "base": "3.0.0-alpha.5",
+      "path": "crates/tauri/aphrody-tauri-runtime-cef",
+      "patchFile": "patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch",
+      "appliedFile": "crates/tauri/aphrody-tauri-runtime-cef/src/external_message_pump/linux.rs",
+      "appliedMarker": "destroy_chromium_work_source",
+      "rationale": "tauri-apps/tauri#16189 (open, 2026-10-05): on Linux Chromium's MessagePumpGlib work source returns a zero timeout under external_message_pump, so the winit-gtk4 event loop spins the main thread at 100% of a core while idle. The reporter's fix (destroy that source after cef::initialize) took the process tree from about 105% to about 3% of a core idle on the reporter's machine; the Aphrody measurement is in MEMORY.md. Re-based from alpha.4 to alpha.5 line numbers; carried by three vendor.toml rewrites.",
+      "upstreamContains": {
+        "url": "https://raw.githubusercontent.com/tauri-apps/tauri/v3/crates/tauri-runtime-cef/src/external_message_pump/linux.rs",
+        "regex": "destroy_chromium_work_source|g_source_destroy\\(.*work"
+      },
+      "disposition": "drop the patch and its three vendor.toml rewrites once a published tauri-runtime-cef fixes #16189"
+    },
+    {
+      "id": "tauri-runtime-cef-linux-locales",
+      "kind": "vendored-crate",
+      "crate": "aphrody-tauri-bundler",
+      "path": "crates/tauri/aphrody-tauri-bundler",
+      "appliedFile": "crates/tauri/aphrody-tauri-bundler/src/bundle/linux/mod.rs",
+      "appliedMarker": "CEF_OPTIONAL_LOCALES",
+      "rationale": "The Linux bundlers (deb, rpm, AppImage) shipped only the en-US locale paks of the CEF distribution. The French paks (and gender variants, when present) now ship so Chromium's own strings follow a French session; the runtime locale stays unset. Carried by vendor.toml rewrites.",
+      "disposition": "keep: Aphrody-specific packaging"
+    }
+  ],
+  "mirrors": [
+    {
+      "file": "m3/packages/scaffold/src/pins.ts",
+      "keys": {
+        "tauri": "tauri",
+        "runtimeCef": "tauri-runtime-cef",
+        "build": "tauri-build",
+        "pluginOpener": "tauri-plugin-opener",
+        "jsApi": "@tauri-apps/api",
+        "jsPluginOpener": "@tauri-apps/plugin-opener",
+        "jsCli": "@tauri-apps/cli"
+      }
+    }
+  ],
+  "retired": [
+    {
+      "id": "aphrody-code-tauri-no-redirection-bitmap",
+      "repository": "aphrody-code/tauri",
+      "rev": "89499afc6c19068746a850e7bee71f7e4ed36ecf",
+      "change": "WindowBuilder::no_redirection_bitmap (Windows DirectComposition) on a v2.11 base",
+      "retiredBecause": "tauri 3.0.0-alpha.3 tauri-runtime-wry already ships no_redirection_bitmap (WindowBuilder and config); crates/ui/model-view uses it unchanged.",
+      "verified": "2026-10-01"
+    },
+    {
+      "id": "aphrody-code-plugins-workspace",
+      "repository": "aphrody-code/plugins-workspace",
+      "rev": "5baf71a47292d8490f0ba3d53f15224e55c48327",
+      "change": "none (identical to tauri-apps/plugins-workspace v2 at that commit, ahead 0)",
+      "retiredBecause": "no local change; replaced by crates.io 3.0.0-alpha.2 plugins.",
+      "verified": "2026-10-01"
+    },
+    {
+      "id": "tauri-runtime-wry-stack",
+      "change": "aphrody-wry, aphrody-tao, aphrody-tao-macros, aphrody-tauri-runtime-wry, aphrody-tauri-driver, the gtk3 feature of aphrody-tauri, libappindicator and the GTK 3 / webkit2gtk dependencies of tauri-plugin-mcp-bridge",
+      "retiredBecause": "Owner order 2026-10-05 (plan decision 21): one desktop runtime, tauri-runtime-cef (CEF + tauri-winit + GTK 4). tauri-driver only proxied WebKitWebDriver and msedgedriver and set TAURI_WEBVIEW_AUTOMATION, which only the wry runtime read; CEF is driven over CDP (RemoteDebugging, Playwright connectOverCDP). Debugger survey entries for WebView2, WebKitGTK and WKWebView are retired with it.",
+      "retiredDebuggers": [
+        "tauri-driver",
+        "WebView2 (wry 0.57 / tauri-runtime-wry 3.0.0-alpha.3)",
+        "WebKitGTK (libwebkit2gtk-4.1 2.52.6 on this host)",
+        "WKWebView (macOS)"
+      ],
+      "verified": "2026-10-05"
+    }
+  ],
+  "debuggers": {
+    "schemaVersion": 1,
+    "owner": "packages/web / crates/web",
+    "survey": "docs/research/web/tauri-debugging-survey-2026-10-01.md",
+    "surveyedAt": "2026-10-01",
+    "policy": "Bridge build input is a integrated patched crate in crates/ui/tauri-plugin-mcp-bridge. Debugger repositories are reference entries read live; no debugger Git clone is required. Archived fork metadata records provenance only.",
+    "forks": [
+      {
+        "name": "mcp-server-tauri",
+        "upstream": "hypothesi/mcp-server-tauri",
+        "upstreamRef": "main",
+        "fork": "aphrody-code/mcp-server-tauri",
+        "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
+        "license": "MIT",
+        "licenseFiles": [
+          "crates/ui/tauri-plugin-mcp-bridge/LICENSE"
+        ],
+        "licenseSha256": "35bb5aef685437b8aee0199e86a12c6dec2163d173fa153f48ff76267e47fca3",
+        "pinnedCommit": "4451b2b1d1eb3a817674f60957e148224c24d3a8",
+        "pinnedAt": "2026-10-01",
+        "commitDate": "2026-08-28",
+        "treeSha256": "a2fecff981973b0c4e6ece61d822cfd3b1c5b2384b2a846a2093ba6082d1c7e8",
+        "localPath": "crates/ui/tauri-plugin-mcp-bridge",
+        "role": "mcp-bridge",
+        "tauriSupport": "Tauri 2 only. tauri-plugin-mcp-bridge 0.13.0 depends on tauri = \"2\" and tauri-plugin = \"2\"; no v3 branch, no Tauri 3 issue. Same revision that m3/docs/research/integrations/tauri-mcp-parity.md already uses as the tool-name reference.",
+        "notes": "Rust bridge plugin (packages/tauri-plugin-mcp-bridge: WebSocket on 0.0.0.0:9223-9322 by default, no auth, no Origin check - upstream issue #36) plus a Node MCP server (packages/mcp-server, @hypothesi/tauri-mcp-server) whose DOM/a11y scripts are plain JS reusable from a Rust MCP. Harden before use: bind 127.0.0.1, per-process token, Origin check, cfg(debug_assertions) + cargo-feature gate. Patch list for Tauri 3 is in the survey.",
+        "patches": [
+          {
+            "id": "tauri-plugin-mcp-bridge-tauri3",
+            "patchFile": "patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch",
+            "patchSha256": "2bc296ad729254e01b8eb58c2e24cb0db47c59620abb25ef50a9657ae93d5cfa",
+            "appliesTo": "crates/ui/tauri-plugin-mcp-bridge",
+            "appliedMarker": "Aphrody patch",
+            "wiredIn": "crates/ui/tauri-wrap (aphrody-tauri-wrap, module debug, feature debug-bridge) via workspace path dependency to the patched registry archive outside the repository.",
+            "covers": "Survey patches P1 (Cargo.toml pins), P3 (initialization_script), P4 (downcast_ref to tauri_runtime_wry::Webview; Windows and macOS call sites unverified), P6 (eval_with_callback polling instead of the __script_result IPC round trip), P7 (no committed command permission files needed), P8 (loopback default, Host/Origin checks, per-process token, ephemeral port with an on_listen hook). IPC trace events are kept in a page-side ring buffer, so no capability or permission is needed in the host app.",
+            "notStarted": "P5 (CEF in-process CDP): CEF apps attach over CDP directly (RemoteDebugging::Port), see docs/guides/web/TAURI-DEBUG.md",
+            "status": "Linux consumer check passed 2026-10-03 with the freshly restored crates.io archive: cargo check -p aphrody-tauri-wrap --no-default-features --features debug-bridge --locked. Windows/macOS and runtime behavior remain unverified.",
+            "regenerate": "Diff pristine crates.io 0.13.0 archive against the patched package; apply patch -p1 in the extracted package.",
+            "cefPort": "2026-10-05 (decision 21): the registry patch is a further local change: the per-platform screenshot modules (WebKitGTK, WKWebView, WebView2, Android, iOS) and their dependencies are replaced by one CDP backend, crates/ui/tauri-plugin-mcp-bridge/src/screenshot/cef.rs (Page.captureScreenshot through tauri_runtime_cef). The committed patch files stay the provenance of the upstream diff."
+          }
+        ],
+        "access": "Build input: patched crates.io tauri-plugin-mcp-bridge 0.13.0 archive. Upstream repository read live, never cloned by source sync.",
+        "archiveSha256": "db0e3b2116693ae3ea616e041d83d8d95898ee2393629b2d1b8ee1d80f2eedb0"
+      },
+      {
+        "name": "tauri-plugin-webdriver",
+        "upstream": "Choochmeque/tauri-plugin-webdriver",
+        "upstreamRef": "main",
+        "fork": "aphrody-code/tauri-plugin-webdriver",
+        "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
+        "license": "MIT",
+        "licenseFiles": [
+          "LICENSE"
+        ],
+        "licenseSha256": "921c963e883bc01b409f85955cf7977a1e41d01d4f5ddd890a78684696d93591",
+        "pinnedCommit": "007d18ece8fe5d27ec1ad4df483db3ebb5f55aca",
+        "pinnedAt": "2026-10-01",
+        "commitDate": "2026-09-23",
+        "treeSha256": "05691b682def45ef5c644393eb79c788701ad2dc93073143cdd6549e53de617a",
+        "role": "secondary",
+        "tauriSupport": "Tauri 2 only (tauri = 2.10.0, tauri-plugin 2.5.3 in Cargo.toml 0.2.3). No Tauri 3 branch.",
+        "notes": "In-process W3C WebDriver server (axum, 127.0.0.1:4445) on WKWebView/WebView2/WebKitGTK/Android/iOS using with_webview native APIs; needs no external driver and no CDP port, so it is the macOS option and is not affected by the WebView2 Runtime 150 elevated-host hardening. 13 with_webview call sites need the Tauri 3 downcast_ref patch.",
+        "access": "reference upstream `tauri-plugin-webdriver`: aphrody git upstream read tauri-plugin-webdriver <path> (no local checkout since 2026-10-02)"
+      },
+      {
+        "name": "victauri",
+        "upstream": "4DA-Systems/Victauri",
+        "upstreamRef": "main",
+        "fork": "aphrody-code/Victauri",
+        "forkStatus": "created 2026-10-01 with gh repo fork --clone=false; nothing pushed",
+        "license": "Apache-2.0",
+        "licenseFiles": [
+          "LICENSE",
+          "crates/*/LICENSE"
+        ],
+        "licenseSha256": "5930de3579573b4af6c55bc706ecb4c8f026ad25f93b47a503cb3e6695b49a9d",
+        "pinnedCommit": "bb17a652963a58e99df661e7d50e67517b6136ae",
+        "pinnedAt": "2026-10-01",
+        "commitDate": "2026-09-30",
+        "treeSha256": "e14977a353d1505ccacc1a013f050414a9518b596ea07e72e64744621b0b76c5",
+        "role": "secondary",
+        "tauriSupport": "Tauri 2 only (workspace tauri = \"2\", victauri-plugin enables the wry feature that Tauri 3 removed; uses plugin Builder::js_init_script renamed in Tauri 3 alpha.2). No Tauri 3 branch.",
+        "notes": "Rust-native design closest to the aphrody-mcp Tauri tools (rmcp, axum, embedded streamable-HTTP MCP on 127.0.0.1:7373, Bearer token on by default, DNS-rebinding Host check, 403 on browser-initiated Sec-Fetch-Site: cross-site requests, rate limits, whole server behind cfg(debug_assertions)). Young project (created 2026-04-25, 5 stars, AI-assisted authorship per its branch names): read for its hardening and tool surface, do not depend on it for release gates.",
+        "access": "reference upstream `victauri`: aphrody git upstream read victauri <path> (no local checkout since 2026-10-02)"
+      }
+    ],
+    "notForked": [
+      {
+        "upstream": "crabnebula-dev/devtools",
+        "license": "mixed: crates MIT OR Apache-2.0, web client PolyForm Noncommercial 1.0.0 (LICENSE.md; GitHub reports NOASSERTION; the folders named in LICENSE.md no longer match the layout)",
+        "tauriSupport": "Tauri 3: yes, tauri-plugin-devtools 3.0.0-alpha.0 on crates.io (stable line 2.2.2)",
+        "reason": "unclear/incompatible licensing of the repository as a whole; consume the published MIT OR Apache-2.0 crate instead (tracing/IPC/event telemetry, no DOM, no eval)."
+      },
+      {
+        "upstream": "crabnebula-dev/webdriver (tauri-plugin-automation)",
+        "license": "crate Apache-2.0 OR MIT, repository not publicly resolvable",
+        "tauriSupport": "Tauri 3: yes, tauri-plugin-automation 3.0.0-alpha.2 (wry and CEF)",
+        "reason": "no public source repository to fork (crates.io tarball only); the plugin dlopens a prebuilt library from AUTOMATION_LIBRARY_PATH shipped in the npm package @crabnebula/test-runner-backend 0.3.0 (platform binaries), and webdriverio/desktop-mobile documents a CrabNebula subscription for macOS."
+      },
+      {
+        "upstream": "P3GLEG/tauri-plugin-mcp",
+        "license": "none (no LICENSE file, GitHub reports no license)",
+        "tauriSupport": "Tauri 2 only (tauri 2.11)",
+        "reason": "no license grant; all rights reserved by default."
+      },
+      {
+        "upstream": "DraviaVemal/tauri-remote-ui",
+        "license": "AGPL-3.0-only",
+        "tauriSupport": "Tauri 2 only",
+        "reason": "copyleft incompatible with the Apache-2.0 repository."
+      },
+      {
+        "upstream": "moinsen-dev/tauri-plugin-mcp",
+        "license": "NOASSERTION",
+        "tauriSupport": "Tauri 2 only",
+        "reason": "unclear license, stale since 2025-10-22."
+      }
+    ],
+    "builtIn": [
+      {
+        "runtime": "CEF (tauri-runtime-cef 3.0.0-alpha.5)",
+        "mechanism": "tauri_runtime_cef::RemoteDebugging::{Disabled (default), Port{port,allowed_origins}, Pipe} and WebviewCefExt::{send_dev_tools_message,on_dev_tools_protocol}",
+        "inUse": "aphrody-app (APHRODY_CEF_REMOTE_DEBUGGING_PORT, loopback opt-in, crates/ui/app/src/cef.rs), the mcp-bridge screenshot (Page.captureScreenshot through WebviewCefExt) and aphrody-labs/shenron crates/koharu-app/src/app.rs (Port 4000 under cfg(debug_assertions))",
+        "tauriSupport": "Tauri 3"
+      }
+    ]
+  }
+}

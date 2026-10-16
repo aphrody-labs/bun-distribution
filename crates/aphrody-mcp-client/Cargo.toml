@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-mcp-client"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Model Context Protocol client for Aphrody: the single MCP client of the workspace. Stdio and streamable HTTP transports, ToolExecutor adapter, fail-closed credential expansion, built-in tools, and shared Rust web tools."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+async-trait = "0.1.92"
+base64 = "0.23.1"
+futures-util = { version = "0.3", features = [] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tracing = "0.1.44"
+
+[dev-dependencies]
+pretty_assertions = { version = "1", features = [] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

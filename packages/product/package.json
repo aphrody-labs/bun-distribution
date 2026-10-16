@@ -1,0 +1,65 @@
+{
+  "name": "@aphrody/product",
+  "version": "1.4.4",
+  "private": false,
+  "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
+  "license": "Apache-2.0",
+  "bin": {
+    "aphrody-omar": "src/cli.ts",
+    "aphrody-product": "src/cli.ts",
+    "aphrody-setup": "src/cli.ts",
+    "creator-kit": "src/cli.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "!src/**/*.test.ts",
+    "resources/creator/glossaries",
+    "resources/creator/site/build.ts",
+    "resources/creator/site/theme.json",
+    "resources/creator/site/src",
+    "resources/creator/site/assets"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./setup": "./src/setup/cli.ts",
+    "./setup/r2": "./src/setup/r2.ts",
+    "./admin": "./src/admin/cli.ts",
+    "./admin/context": "./src/admin/lib/context.ts",
+    "./admin/guide": "./src/admin/guide.ts",
+    "./creator": "./src/creator/cli.ts",
+    "./creator/site": "./resources/creator/site/build.ts",
+    "./access": "./src/admin/lib/profile.ts",
+    "./access-pack": "./src/admin/access.ts",
+    "./train": "./src/admin/lib/train.ts",
+    "./doctor": "./src/admin/lib/doctor.ts",
+    "./wireguard": "./src/admin/lib/wireguard.ts",
+    "./desktop": "./src/shared/desktop.ts",
+    "./web": "./src/web.ts",
+    "./build-inputs": "./src/build-inputs.ts",
+    "./downloads": "./src/downloads/server.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "start": "bun src/cli.ts",
+    "test": "bun test test",
+    "typecheck": "bun check --noEmit -p tsconfig.json",
+    "stage": "bun ../../scripts/aphrody/release/stage-setup.ts"
+  },
+  "dependencies": {
+    "@aphrody/app-ui": "workspace:*",
+    "@aphrody/bun-cloudflare": "1.4.4",
+    "@aphrody/m3": "workspace:*",
+    "@aphrody/m3-fonts": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/web": "workspace:*",
+    "@aphrody/web-source": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

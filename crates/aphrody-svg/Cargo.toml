@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-svg"
+description = "The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff."
+version                = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = ["raster", "glyph"]
+# usvg/resvg/tiny-skia: normalize, optimize, rasterize (PNG, ICO) and pixel diff.
+raster = ["dep:resvg", "dep:usvg", "dep:tiny-skia"]
+# skrifa: font glyph outlines (TTF/OTF, variable axes) to SVG path data.
+glyph = ["dep:skrifa"]
+# Material Symbols: GSUB ligature lookup by icon name, 960-grid paths, gstatic layout, WOFF2 decoding.
+symbols = ["glyph", "dep:woff2"]
+# Theme::m3: build a theme from aphrody-m3-tokens colour roles (`--md-sys-color-*`).
+m3 = ["dep:aphrody-m3-tokens"]
+
+[dependencies]
+roxmltree = "0.21"
+svgtypes = "0.16"
+thiserror = "2.0.20"
+resvg = { version = "0.48", default-features = false, optional = true, features = ["text"] }
+usvg = { version = "0.48", optional = true }
+tiny-skia = { version = "0.12", optional = true }
+skrifa = { version = "0.47.0", optional = true }
+woff2 = { package = "woff2-patched", version = "0.4.0", optional = true }
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = ["std"], optional = true }
+
+[dev-dependencies]
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }

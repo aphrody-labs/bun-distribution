@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "input_mode": "committed-clone",
+  "python_revision": "92dc9d6531ab0fdedb09b427de2f8d51b471cc0e",
+  "source_notice_revision": "aphrody-ai@4a9e529fb721d5fb7a0ba87313a98928c2ab47a5",
+  "uv_lock_sha256": "950d1d26d08d8c43ec905424d58db02f14c11cf2bc637fba26c6811721a13191",
+  "packages": {
+    "aphrody-train": {
+      "license_expression": "Apache-2.0",
+      "notice_sha256": {
+        "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "NOTICE": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0"
+      },
+      "record": "passed",
+      "input_sha256": {
+        "README.md": "3a0c3a237cf520a39e3d1180428bd44a6ac03b34183d67c8aed4a59b3e642942",
+        "pyproject.toml": "c01fba0f681375f4a60f5b741f14df348f7e9ffa616933ad373e4cc8223eb66e",
+        "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "NOTICE": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
+        "tests/test_protocol.py": "15407f5010fb2d24866829012660e23451724c7d36d0175a88e1aee98a2ae1ee",
+        "tests/test_lora.py": "d2082c9cf7d2259c6e60b2ae045a48d19022d9a332cdcdfb7bf3d4f02d87fa71",
+        "tests/test_multimodal_api.py": "6315fb2ddfbc4d0804e0a01fb7855a7a81ae863cdff685433b65938c9c6ccef8",
+        "tests/test_dataset.py": "5526638b824b08b06122c12cb6ca27aaae53e839ac07eddbfd826a1f91337ab6",
+        "tests/test_training_failures.py": "b7ce2746f73505407e128451b88844dccac3b6775555eabee90be40cd578e0c7",
+        "tests/test_triples.py": "cfbeb3abe106eab80974e6cecc5d92c2fd0890af2723952e8f0e2dc39dfaeb17",
+        "src/aphrody_train/protocol.py": "f5ad7b301820b94eb6a22d11b300dd8733fac2a3287c20a98ebcd4a47b1f1a04",
+        "src/aphrody_train/dataset.py": "8cda426312d4b043f1c59ccd24bdd803e03b034f564724e6f026aba03000716d",
+        "src/aphrody_train/multimodal_rag.py": "1f5306581ae9e302d91e0d8a2155c5f08d14d95a1cf094560e5bad4a36db6312",
+        "src/aphrody_train/triples.py": "9aefb01f41f94f5a1fbc4051f4019445814602b7b99a1cf3cef4f8a5e9c4fa9b",
+        "src/aphrody_train/lora.py": "d8557d0bf3e3f78ccb03f7eaa163140cbf06364bf25b1bf539fdb036fa7aba8e",
+        "src/aphrody_train/training_data.py": "4fd92480c18f2f6d71118cc9f18981d14aa4b3c3fd1eab78ff097ab22dc2a1f2",
+        "src/aphrody_train/shenron_ffi.py": "4ae932b8453b00222fd066f59e097e1df75ca9b3bebfccf304ca3aea070dcdaf",
+        "src/aphrody_train/rerank.py": "e2bbc10638bfa6580d274f8e4b867131002cc916aaf5dd7d482a4957527cb1a7",
+        "src/aphrody_train/dry_run.py": "0c73b048cdba083f551e4600f40c084a17f0127273510fa3eff49cd23c9311c4",
+        "src/aphrody_train/embed.py": "9d3dd1b2a349456b6062310bc71739a57e0d52615ecf3f28bd75a8007457ccf6",
+        "src/aphrody_train/__init__.py": "5656778ab55d602ed413f46338b322f0bfd8f453112d097ade508be150c348e7"
+      },
+      "wheel_sha256": "b5ff2e030e85f716b2fb577ba5b8052ec43b6b543ac55cfaa794978e1ca95a9b",
+      "sdist_sha256": "3b5e840f97ecf277a0d679e87bd1106ade49c20c24f573d8b7d36f36ffd604a8",
+      "rebuilt_wheel_sha256": "b5ff2e030e85f716b2fb577ba5b8052ec43b6b543ac55cfaa794978e1ca95a9b",
+      "wheel_bytes_identical": true
+    },
+    "aphrody-embedding-fixtures": {
+      "license_expression": "Apache-2.0",
+      "notice_sha256": {
+        "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "NOTICE": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0"
+      },
+      "record": "passed",
+      "input_sha256": {
+        "pyproject.toml": "35b12ce1ea696a8804ac25ff3a0ebe5711462bfe3981891438e1af3345f0b564",
+        "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "NOTICE": "8ada1e46ed5127386bf3816ce54513f175de5890a167893303d0d88b44c766f0",
+        "tests/test_generators.py": "bb214e19d67d9789c750f28779076d8f423861f5c1e15764228a9d0e4901e3e8",
+        "src/aphrody_embedding_fixtures/generate_rerank_reference.py": "271c708bec7e82125704d6bb514d9e58c8bb9427f6d614daa102e42d9cd13c7c",
+        "src/aphrody_embedding_fixtures/generate_reference.py": "f919d646120eac61e2cedca467df6d9e5f0f654d36dfe437b856674ef3099e83",
+        "src/aphrody_embedding_fixtures/__init__.py": "9090faee9f223ee816b903e3338a97e49174f976ef06d406ef7e4d87f1b7d7ff"
+      },
+      "wheel_sha256": "6732138e19a5eee7c99532d6d83357799f094728c4629a90b5937928d64ce137",
+      "sdist_sha256": "21478bbe7ab6fdbe1b6f96c8e3620a9e53b429a4ee1e234ff287bd66f360466f",
+      "rebuilt_wheel_sha256": "6732138e19a5eee7c99532d6d83357799f094728c4629a90b5937928d64ce137",
+      "wheel_bytes_identical": true
+    }
+  },
+  "unqualified": [
+    "Model generation/training",
+    "Native Shenron provider",
+    "CPU/CUDA full extras",
+    "Windows/macOS release artifacts"
+  ],
+  "installed_outside_checkout": true,
+  "public_object_imports": "passed without undeclared optional ML dependencies",
+  "requirements_sha256": "b96e147fe3fb081ff6e59ef5bee1c053b0aa9ff05f3df448da6974a488e8fea1"
+}

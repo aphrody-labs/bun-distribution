@@ -1,0 +1,245 @@
+{
+  "upstreams": [],
+  "servers": [
+    {
+      "server_names": [
+        "omar-webos",
+        "localhost",
+        "omar",
+        "10.200.77.10",
+        "omar.aphrody.com"
+      ],
+      "listen_ports": [
+        "127.0.0.1:80",
+        "10.200.77.10:80"
+      ],
+      "custom_directives": [
+        "allow 127.0.0.1",
+        "allow 10.200.77.1",
+        "allow 10.200.77.3",
+        "allow 10.200.77.4",
+        "allow 10.200.77.10",
+        "deny all"
+      ],
+      "locations": [
+        {
+          "path": "/",
+          "proxy_pass": "http://127.0.0.1:3000",
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Host",
+              "$http_host"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ],
+            [
+              "Origin",
+              "$http_origin"
+            ],
+            [
+              "Sec-Fetch-Site",
+              "$http_sec_fetch_site"
+            ]
+          ],
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s",
+            "proxy_send_timeout 3600s",
+            "add_header Cross-Origin-Opener-Policy same-origin always",
+            "add_header Cross-Origin-Embedder-Policy require-corp always"
+          ]
+        },
+        {
+          "path": "/system-stream/",
+          "proxy_pass": "http://127.0.0.1:8796/events",
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Host",
+              "$http_host"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ],
+            [
+              "Origin",
+              "$http_origin"
+            ]
+          ],
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s"
+          ]
+        },
+        {
+          "path": "/llama/",
+          "proxy_pass": "http://127.0.0.1:8081/",
+          "proxy_http_version": "1.1",
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 600s"
+          ]
+        },
+        {
+          "path": "/desktop/",
+          "custom_directives": [
+            "return 302 http://10.200.77.10:8795/"
+          ]
+        },
+        {
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Authorization",
+              "$http_authorization"
+            ],
+            [
+              "Host",
+              "$host"
+            ]
+          ],
+          "proxy_pass": "http://127.0.0.1:8081/v1/",
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 600s"
+          ],
+          "path": "/v1/"
+        },
+        {
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Authorization",
+              "$http_authorization"
+            ],
+            [
+              "Host",
+              "$host"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ]
+          ],
+          "proxy_pass": "http://127.0.0.1:8793",
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s"
+          ],
+          "path": "/mcp/"
+        },
+        {
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Authorization",
+              "$http_authorization"
+            ],
+            [
+              "Host",
+              "$host"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ]
+          ],
+          "proxy_pass": "http://127.0.0.1:8788/",
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s"
+          ],
+          "path": "/a2a/"
+        },
+        {
+          "headers": [
+            [
+              "Host",
+              "$http_host"
+            ]
+          ],
+          "proxy_pass": "http://127.0.0.1:8796/snapshot",
+          "custom_directives": [
+            "proxy_buffering off",
+            "add_header Cache-Control no-store"
+          ],
+          "path": "/system-snapshot/"
+        },
+        {
+          "path": "/obscura/",
+          "proxy_pass": "http://127.0.0.1:9222/",
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Host",
+              "127.0.0.1:9222"
+            ],
+            [
+              "Authorization",
+              "$http_authorization"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ]
+          ],
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s"
+          ]
+        },
+        {
+          "path": "/devtools/",
+          "proxy_pass": "http://127.0.0.1:9222/devtools/",
+          "proxy_http_version": "1.1",
+          "headers": [
+            [
+              "Host",
+              "127.0.0.1:9222"
+            ],
+            [
+              "Authorization",
+              "$http_authorization"
+            ],
+            [
+              "Upgrade",
+              "$http_upgrade"
+            ],
+            [
+              "Connection",
+              "$connection_upgrade"
+            ]
+          ],
+          "custom_directives": [
+            "proxy_buffering off",
+            "proxy_read_timeout 3600s"
+          ]
+        }
+      ]
+    }
+  ]
+}

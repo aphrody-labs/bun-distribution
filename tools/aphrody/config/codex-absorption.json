@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "upstream": "https://github.com/openai/codex",
+  "privateFork": "https://github.com/aphrody-labs/codex",
+  "upstreamRevision": "bd274564e1b1b3febb3886d274e6d97c2a3d275e",
+  "policy": "Absorb Codex open-source capabilities into Aphrody's native architecture without duplicating runtimes or competing stacks. Upstream code is absorbed under capability owners as declared interfaces and verified contracts.",
+  "comparisons": [
+    {
+      "id": "app-server-protocol",
+      "upstream": [
+        "codex-rs/app-server-protocol/src/protocol/v1.rs",
+        "codex-rs/app-server-protocol/src/protocol/v2/thread.rs",
+        "codex-rs/app-server-protocol/src/protocol/v2/turn.rs",
+        "codex-rs/app-server-protocol/schema/json/"
+      ],
+      "aphrody": [
+        "crates/contracts/app-protocol/src/lib.rs",
+        "crates/contracts/app-protocol/src/rpc.rs",
+        "crates/contracts/app-protocol/tests/tier1_contract.rs",
+        "crates/contracts/app-protocol/tests/upstream_fixtures_test.rs"
+      ],
+      "status": "fully_absorbed_and_verified"
+    },
+    {
+      "id": "app-server-engine",
+      "upstream": [
+        "codex-rs/app-server/src/lib.rs",
+        "codex-rs/app-server-daemon/src/lib.rs"
+      ],
+      "aphrody": [
+        "crates/ai/app-server/src/lib.rs",
+        "crates/ai/app-server/src/host_tools.rs",
+        "crates/ai/app-server/src/web.rs"
+      ],
+      "status": "fully_absorbed_and_verified"
+    },
+    {
+      "id": "config-and-providers",
+      "upstream": [
+        "codex-rs/config/src/config_toml.rs",
+        "codex-rs/model-provider-info/src/lib.rs",
+        "codex-rs/protocol/src/protocol.rs"
+      ],
+      "aphrody": [
+        "crates/ai/config/src/lib.rs",
+        "crates/ai/config/src/provider.rs",
+        "crates/ai/config/src/resolve.rs"
+      ],
+      "status": "fully_absorbed_and_verified"
+    },
+    {
+      "id": "execpolicy-and-sandboxing",
+      "upstream": [
+        "codex-rs/execpolicy/src/lib.rs",
+        "codex-rs/core/src/tools/sandboxing.rs"
+      ],
+      "aphrody": [
+        "crates/ai/agent-tools/src/lib.rs",
+        "crates/os/kernel/comps/diagnostics/src/config.rs"
+      ],
+      "status": "absorbed_nhitl_enforced"
+    },
+    {
+      "id": "session-tracking-and-rollouts",
+      "upstream": [
+        "codex-rs/history/src/lib.rs",
+        "codex-rs/rollout/src/lib.rs"
+      ],
+      "aphrody": [
+        "crates/ai/rollout/src/lib.rs",
+        "crates/ai/session/src/lib.rs",
+        "crates/ai/session/src/external/codex.rs"
+      ],
+      "status": "fully_absorbed_and_verified"
+    },
+    {
+      "id": "python-sdk",
+      "upstream": [
+        "sdk/python/src/openai_codex/client.py",
+        "sdk/python/src/openai_codex/_message_router.py"
+      ],
+      "aphrody": [
+        "py/packages/aphrody/src/aphrody/agent.py"
+      ],
+      "status": "fully_absorbed_and_verified"
+    },
+    {
+      "id": "typescript-bun-adapter",
+      "upstream": [
+        "sdk/python/src/openai_codex/client.py",
+        "sdk/python/src/openai_codex/_message_router.py"
+      ],
+      "aphrody": [
+        "packages/interop/native/src/agent.ts"
+      ],
+      "status": "fully_absorbed_and_verified"
+    }
+  ]
+}

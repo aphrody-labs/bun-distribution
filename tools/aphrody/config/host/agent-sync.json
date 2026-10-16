@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "root": ".",
+  "aphrody": "aphrody",
+  "yolo": "yolo",
+  "receiptRoot": "~/.aphrody/automation",
+  "drive": {
+    "home": "~/.aphrody/workspaces/dbfr",
+    "folderId": "1RTkDa77DQBH-zpQLmjPSngksrcJznkxa",
+    "intervalSeconds": 300
+  },
+  "agents": {
+    "intervalSeconds": 300
+  },
+  "homes": [
+    {
+      "profile": "dbfr",
+      "intervalSeconds": 86400
+    },
+    {
+      "profile": "aphrody",
+      "intervalSeconds": 86400
+    }
+  ],
+  "retrieval": {
+    "root": "~/.aphrody/drive-sync/retrieval-markdown",
+    "intervalSeconds": 3600
+  },
+  "replica": {
+    "incoming": "~/.aphrody/drive-sync/incoming-markdown",
+    "contract": "packages/google/google/src/sync-contract.json",
+    "homeDocuments": ["MEMORY.md"],
+    "directory": "/home/ubuntu/.aphrody/workspaces/dbfr/incoming/drive",
+    "stateRoot": "/home/ubuntu/.aphrody",
+    "shenronRoot": "/home/ubuntu/apps/shenron/shared/agent-home",
+    "intervalSeconds": 300
+  },
+  "ragMonitor": {
+    "unit": "shenron-rag-sync.service",
+    "reportPath": "~/.aphrody/workspaces/dbfr/indexes/shenron-rag-latest.json",
+    "intervalSeconds": 60
+  },
+  "publication": {
+    "host": "vps",
+    "directory": "/home/ubuntu/apps/lab/state"
+  }
+}

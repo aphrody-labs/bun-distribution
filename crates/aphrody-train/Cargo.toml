@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-train"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Training surface for aphrody: exclusive GPU lease, job runner, streaming event protocol, and measured promotion gates (P10, docs/plans/codex-oss.md)."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+# Generic training registry (ADR D11): dataset lineage, runs, artifacts, metrics and
+# promotions in PostgreSQL through `aphrody-sql`. Inert unless
+# `APHRODY_TRAINING_DATABASE_URL[_POOLED]` is set.
+registry = ["dep:aphrody-sql"]
+
+[dependencies]
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+aphrody-rag-core = { path = "../aphrody-rag-core", version = "1.4.4", features = [] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.4", default-features = false, features = ["postgres"], optional = true }
+aphrody-toolchains = { path = "../aphrody-toolchains", version = "1.4.4", features = [] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+tracing = "0.1.44"
+blake3 = "1.8.7"
+
+[dev-dependencies]
+pretty_assertions = { version = "1", features = [] }
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }

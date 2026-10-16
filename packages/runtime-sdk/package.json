@@ -1,0 +1,53 @@
+{
+  "name": "@aphrody/runtime-sdk",
+  "version": "1.4.4",
+  "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
+  "license": "MIT AND Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
+    "directory": "packages/engine/runtime"
+  },
+  "files": [
+    "src",
+    "runtime.d.ts",
+    "README.md",
+    "LICENSE-APACHE"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./modules": "./src/modules.ts",
+    "./preload": "./src/preload.ts",
+    "./runtime.d.ts": "./runtime.d.ts",
+    "./bundler": "./src/bundler.ts",
+    "./artifact": "./src/artifact.ts",
+    "./target": "./src/target.ts",
+    "./release": "./src/release.ts",
+    "./ffi": "./src/ffi.ts",
+    "./tooling": "./src/tooling.ts",
+    "./tooling-schema": "./src/tooling-schema.ts",
+    "./desktop": "./src/desktop.ts",
+    "./browser": "./src/browser.ts",
+    "./gpu": "./src/gpu.ts",
+    "./python": "./src/python.ts",
+    "./desktop-artifact": "./src/desktop-artifact.ts",
+    "./src/*": "./src/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "bun test test/runtime_sdk.test.ts test/runtime-ffi.test.ts test/runtime_release.test.ts test/ffi.test.ts test/privilege.test.ts test/gpu.test.ts test/python-native.test.ts",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/web-source": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

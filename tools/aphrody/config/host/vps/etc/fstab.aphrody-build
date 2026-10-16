@@ -1,0 +1,8 @@
+# Lignes fstab du volume de build (sdb1, ex-/srv) : monté sur ~/build, plus de /srv.
+UUID=4f515ab9-c3cf-4b81-96d5-8c90f7d43c2a /home/ubuntu/build ext4 defaults,noatime,nofail,x-systemd.device-timeout=10 0 2
+# ~/src et ~/apps de la disposition (tools/config/host/host-policy.toml [layout]) vivent sur ce volume : montages bind,
+# pas de liens symboliques (l'usine de build refuse un checkout dont le realpath diffère du chemin déclaré).
+/home/ubuntu/build/workspaces /home/ubuntu/src none bind,nofail,x-systemd.requires-mounts-for=/home/ubuntu/build 0 0
+/home/ubuntu/build/apps /home/ubuntu/apps none bind,nofail,x-systemd.requires-mounts-for=/home/ubuntu/build 0 0
+UUID=2fc98d6e-d1e0-4683-8179-d5c75534963d /mnt/aphrody-storage/disk500 ext4 defaults,noatime,nofail,x-systemd.device-timeout=10 0 2
+/mnt/aphrody-storage/disk500:/home/ubuntu/build/storage-pool-branch:/var/lib/aphrody/storage-pool /home/ubuntu/build/storage mergerfs defaults,allow_other,cache.files=off,category.create=mfs,func.getattr=newest,dropcacheonclose=false,minfreespace=32G,moveonenospc=false,fsname=aphrody-pool,nofail,x-systemd.requires-mounts-for=/mnt/aphrody-storage/disk500,x-systemd.requires-mounts-for=/home/ubuntu/build 0 0

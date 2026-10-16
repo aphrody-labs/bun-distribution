@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-models"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Local model lifecycle for aphrody: pinned HuggingFace/URL references, a curated catalog of OCR / visual-transcription / speech-to-text / embedding models, a digest-checked resumable downloader, hand-rolled GGUF / GGML / safetensors / ONNX header inspection, and an LRU-evicting on-disk store under ~/.aphrody/models."
+
+[lib]
+crate-type = ["rlib"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+thiserror = "2.0.20"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+hex = { version = "0.4", features = [] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+
+[package.metadata.cargo-machete]
+# `rustls` is referenced only through `rustls::crypto::ring::default_provider()`
+# inside a `Once`, which machete's symbol scan under-counts.
+ignored = ["rustls"]

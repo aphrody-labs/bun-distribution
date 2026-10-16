@@ -1,0 +1,13 @@
+{
+  "platform": "linux",
+  "architecture": "x86_64",
+  "python": "3.13",
+  "gates": {
+    "installedWheel": "pass",
+    "independentSdistWheel": "pass"
+  },
+  "wheelHashes": {
+    "dist": "98432aed2f87f825be93d556881f41c4ea79c781ed9cf8c2e75bb57caffae923",
+    "rebuilt": "e67bfe9d94365e8de09e5c2678c91f338a157f47310e71a920498ac03f78d50b"
+  }
+}

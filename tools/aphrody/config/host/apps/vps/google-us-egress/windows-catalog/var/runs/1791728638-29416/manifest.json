@@ -1,0 +1,16 @@
+{
+  "run_id": "1791728638-29416",
+  "requested_scope": "Boot { action: Plan, host: Some(\"local\"), entry: None, json: true }",
+  "tool_versions": {},
+  "inputs": [],
+  "actions": [
+    {
+      "name": "boot",
+      "status": "conforme",
+      "detail": {}
+    }
+  ],
+  "outputs": [],
+  "status": "success",
+  "evidence": []
+}

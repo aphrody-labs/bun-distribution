@@ -1,0 +1,12 @@
+{
+  "name": "@aphrody/yt-subs-sorter",
+  "version": "1.4.4",
+  "private": true,
+  "description": "WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network.",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "scripts": {
+    "test": "bun test",
+    "icons": "bun tools/make-icons.ts"
+  }
+}

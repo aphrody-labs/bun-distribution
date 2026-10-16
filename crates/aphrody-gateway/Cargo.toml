@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-gateway"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Provider-agnostic OpenAI-compatible AI gateway: Cloudflare AI Gateway, Vercel AI Gateway, and BYOK OpenAI proxy."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.4", features = [] }
+async-trait = "0.1.92"
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+bytes = "1.12.1"
+dirs = "7.0.0"
+futures = "0.3.34"
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+url = { version = "2.5.8", features = ["serde"] }
+which = { version = "8", features = [] }
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+serde_json = "1.0.151"
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[package.metadata.cargo-machete]
+# reqwest features are cfg-gated; keep all declared features from workspace.
+ignored = []

@@ -1,0 +1,63 @@
+[package]
+name = "aphrody-a2a-server"
+publish = true
+version = "1.4.4"
+description = "A2A v1 async server framework"
+readme = "README.md"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
+categories = ["command-line-utilities", "development-tools", "web-programming"]
+
+[lib]
+name = "aphrody_a2a_server"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
+aphrody-a2a-pb = { path = "../aphrody-a2a-pb", version = "1.4.4" }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+tokio-stream = { version = "0.1", features = [] }
+futures = "0.3.34"
+async-trait = "0.1.92"
+axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["cors"] }
+hyper = { version = "1", features = [] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+tracing = "0.1.44"
+uuid = { version = "1.26.0", features = ["v4", "v7", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.23.1"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
+axum-server = { version = "0.8", default-features = false, features = ["tls-rustls-no-provider"], optional = true }
+
+[features]
+default = ["rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-no-provider", "dep:rustls", "dep:axum-server"]
+rustls = ["dep:rustls", "rustls-tls"]
+
+[dev-dependencies]
+http-body-util = "0.1"
+tempfile = "3.27.0"
+
+[package.metadata.cargo-machete]
+ignored = ["hyper", "tower-http", "tokio-stream"]

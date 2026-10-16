@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "purpose": "production-stack-knowledge-for-aphrody-infra",
+  "selectionRule": "value = production-fit + reuse + maintenance - duplication - runtime-cost; assign one implementation owner per capability: product integration in Aphrody, runtime and SDK in Bun, shared UI in Material, distribution assembly in Bun OS, host policy in Aphrody Infra, and Debian APT sources in its fork",
+  "repositories": [
+    {
+      "id": "aphrody",
+      "role": "Aphrody product workflows and integration: native CLI, browser and desktop surfaces, application delivery, and Infra desired-state catalogs. Imported capability owners retain runtime, SDK, shared UI, distribution and package-manager implementation.",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": false,
+      "note": "Product integration repository; runtime, UI framework, distribution and Debian APT sources stay with their named capability owners."
+    },
+    {
+      "id": "bun",
+      "role": "Bun runtime and SDK: JavaScriptCore/WebKit, built-ins, package manager, system APIs, native integrations and Bun Cloudflare capabilities. Runtime source changes belong to the aphrody-labs/bun fork; product configuration and release orchestration stay with Aphrody Infra.",
+      "source": "https://github.com/aphrody-labs/bun",
+      "production": true,
+      "note": "Canonical runtime and system SDK owner; produces SDK artifacts consumed by Bun OS and served from bun-lib.aphrody.app. Infra owns DNS and R2 state. Resolve the checkout from workspace configuration."
+    },
+    {
+      "id": "material",
+      "role": "Material 3 framework: native tokens, shared controls, libm3, WASM adapters and shared app UI packages. Aphrody and Bun consume pinned Material owners without duplicating framework implementation.",
+      "source": "https://github.com/aphrody-labs/material",
+      "production": true,
+      "note": "Canonical Material 3, libm3, tokens, controls, WASM adapters and shared app-ui source owner."
+    },
+    {
+      "id": "apt",
+      "role": "Debian APT source fork and package manager implementation. Bun OS owns distribution integration and cross-ecosystem package conversion.",
+      "source": "https://github.com/aphrody-labs/apt",
+      "production": true,
+      "note": "Retains official Debian APT history and package identity."
+    },
+    {
+      "id": "aphrody-ai",
+      "role": "AI layer: agents, model clients, inference, RAG, MCP servers, the AI side of A2A and the aphrody CLI; builds the aphrody, aphrody-mcp (with the dragonball.* tools) and aphrody-embed release binaries",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/ai, packages/ai",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-os",
+      "role": "System layer: aphrody-kernel control plane, sandbox, services, WinClean, reverse engineering and the Aphrody plugin marketplace",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/os",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-ui",
+      "role": "Aphrody UI application integration: product layouts, renderers, canvas, Aphrody Drive and native app wiring. Material framework, controls, tokens and shared app-ui belong to Material; Bun system UI and SDK integrations belong to Bun.",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/ui/app, crates/ui/drive, crates/ui/identity, crates/ui/render, packages/infra/product",
+      "note": "Aphrody owns application integration and host wiring. Shared M3 framework, libm3, tokens, controls and @aphrody/app-ui are owned by Material and consumed through pinned package/crate interfaces."
+    },
+    {
+      "id": "aphrody-web",
+      "role": "Web layer: aphrody-site public origin, BXC Bun engine and Web API, Obscura browser, web engine, CDN-served web assets and the X client; builds the aphrody-site, aphrody-web-api, libaphrody_web_ffi and libbxc_render release artifacts",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/web, packages/web",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-compat",
+      "role": "Node-to-Bun compatibility: n2b analyzer and codemods, aphrody-toolchains (Bun/uv/Nushell discovery) and the offline Bun docs",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/compat",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-contracts",
+      "role": "Protocol contracts: A2A v1 stack, app-server v2 protocol, agent protocol and N2B schemas",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/contracts",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-shell",
+      "role": "Shell and terminal layer: embedded Nushell, PTY/WebSocket terminal backend and TUI",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/shell",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-native",
+      "role": "Rust host probes for CPU, memory, CUDA and monotonic time; Llama and Whisper inference is owned by aphrody-ai",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/native",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "aphrody-infra",
+      "role": "single deployment, topology and policy authority; owns aphrody-ssh, aphrody-git, aphrody-vpn, aphrody-ovh and aphrody-yolo",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": true,
+      "monorepoPaths": "crates/infra, packages/infra, config",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "rg",
+      "role": "canonical Next/Bun/UI/Auth/API/DB platform",
+      "source": "https://github.com/rose-griffon/rg",
+      "production": true
+    },
+    {
+      "id": "shenron",
+      "role": "Dragon Ball domain application on the RG runtime plane",
+      "source": "https://github.com/aphrody-labs/shenron",
+      "production": true,
+      "monorepoPaths": "apps/site, apps/bot, packages/* (aphrody-labs/shenron, extracted from the Aphrody monorepo on 2026-10-05 with history)",
+      "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The vps release 4cac743f (now under ~/apps/shenron/releases) is a self-contained artifact."
+    },
+    {
+      "id": "aphrody-discord",
+      "role": "Development-only Bun Discord bot, interactions endpoint and OAuth test app",
+      "source": "https://github.com/aphrody-labs/aphrody",
+      "production": false,
+      "monorepoPaths": "crates/discord, packages/discord",
+      "note": "Domain of the aphrody monorepo since 2026-10-01; the former split repository was deleted after a verified backup (~/.aphrody/private/backups/github/aphrody-labs-2026-10-01)."
+    },
+    {
+      "id": "nie",
+      "role": "IEVR data and model runtime; desktop/source-first",
+      "source": "https://github.com/aphrody-labs/iecode",
+      "production": true,
+      "note": "NIE is part of the IECODE workspace; the separate nie repository was deleted after a verified backup on 2026-10-01."
+    },
+    {
+      "id": "iecode",
+      "role": "Inazuma Eleven modding toolchain (.NET, native C/C++, Rust, Bun, Python); desktop and WSL only",
+      "source": "https://github.com/aphrody-labs/iecode",
+      "production": false
+    },
+    {
+      "id": "bun-distribution",
+      "role": "Bun OS workspace: Bun Libraries history, shared workspace/process/artifact/assets packages, independent library app builds, OS distribution and Ubuntu factory, APT adapters and cross-ecosystem package conversion. Aphrody Infra owns host orchestration, services, routes, DNS desired state and activation.",
+      "source": "https://github.com/aphrody-labs/bun-distribution",
+      "production": false,
+      "note": "Canonical Bun OS checkout is branch os in the C:/src workspace. It owns distribution assembly and package conversion; APT implementation stays in apt. Infra owns hosts, DNS state and activation."
+    }
+  ],
+  "retiredRepositories": [],
+  "aphrodyPackages": [
+    {
+      "name": "@aphrody/bxc",
+      "value": "high",
+      "role": "Bun CLI/MCP/browser engine",
+      "source": "https://www.npmjs.com/package/@aphrody/bxc",
+      "policy": "adopt-before-new-browser-code"
+    },
+    {
+      "name": "@aphrody/x",
+      "value": "high",
+      "role": "headless X client with SQLite/FTS",
+      "versionObserved": "1.2.5",
+      "source": "https://www.npmjs.com/package/@aphrody/x",
+      "policy": "reuse-for-agent-social-connectors"
+    },
+    {
+      "name": "@aphrody/xai",
+      "value": "high",
+      "role": "Bun xAI/Grok client and tool calling",
+      "versionObserved": "1.1.5",
+      "source": "https://www.npmjs.com/package/@aphrody/xai",
+      "policy": "reuse-with-@aphrody/x"
+    },
+    {
+      "name": "@aphrody/challonge",
+      "value": "medium",
+      "role": "tournament data adapter",
+      "source": "https://github.com/aphrody-labs/shenron (packages/pipeline BxcBridge; former bxc repository deleted 2026-10-01)",
+      "policy": "domain-optional"
+    },
+    {
+      "name": "@aphrody/zukan",
+      "value": "medium",
+      "role": "catalog/data adapter",
+      "source": "local: rg workspace catalog",
+      "policy": "reuse-before-reimplementation"
+    },
+    {
+      "name": "@aphrody/canvas",
+      "value": "high",
+      "role": "image/canvas primitives",
+      "source": "git-submodule: aphrody-ui/third_party/canvas",
+      "policy": "single-canonical-package"
+    },
+    {
+      "name": "@aphrody/bun",
+      "value": "high",
+      "role": "bun:ffi wrapper over the bun_rs native library (M3 tokens, icons, SVG)",
+      "source": "local: packages/bun",
+      "policy": "single-native-bun-ffi"
+    }
+  ],
+  "canonicalExternalStack": {
+    "runtime": "Bun workspace + Rust native bridge + uv Python projects",
+    "web": "Next 16 canary only where already pinned; one build per release",
+    "api": "Elysia/Kysely in RG; Rust/Axum for new infra control endpoints",
+    "database": "PostgreSQL primary, Redis cache, SQLite bounded local mirror",
+    "ui": "RG UI/app-shell contract reused by Shenron",
+    "proxy": "one Nginx route registry",
+    "observability": "systemd journal + structured JSON evidence manifests"
+  },
+  "rejectedDuplication": [
+    "second browser engine beside BXC/Obscura",
+    "second Next site build for a mounted domain",
+    "per-repository Nginx and systemd supervisors",
+    "continuous crawler in production",
+    "bidirectional database mirrors running concurrently",
+    "copying npm packages into vendor trees without provenance"
+  ],
+  "trainingInputPolicy": {
+    "include": [
+      "README.md",
+      "docs/",
+      "package.json",
+      "Cargo.toml",
+      "lockfiles",
+      "public API contracts",
+      "deployment manifests"
+    ],
+    "exclude": [
+      ".env",
+      "cookies",
+      "tokens",
+      "database dumps",
+      "node_modules",
+      "target",
+      "generated build output",
+      "private user data"
+    ],
+    "refresh": "on release or dependency policy change",
+    "evidence": "source URL, observed version and local commit"
+  },
+  "historicalRepositoryLayouts": [
+    {
+      "id": "aphrody",
+      "replacedBy": [
+        "aphrody-ai",
+        "aphrody-os",
+        "aphrody-ui",
+        "aphrody-web",
+        "aphrody-compat",
+        "aphrody-contracts",
+        "aphrody-shell",
+        "aphrody-native"
+      ],
+      "note": "AI monolith and its aphrody-os mirror, split into the category repositories on 2026-09-25; archived, never a build or deploy source"
+    }
+  ]
+}

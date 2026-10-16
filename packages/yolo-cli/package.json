@@ -1,0 +1,44 @@
+{
+  "name": "@aphrody/yolo-cli",
+  "version": "1.4.4",
+  "description": "Yolo command line on Bun: workspace operations, documentation generation, code scan/rename/parse, plugin and forge commands",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
+    "directory": "packages/engine/yolo"
+  },
+  "bin": {
+    "yolo": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./forge": "./src/cli/forge/main.ts",
+    "./forge/plan": "./src/cli/forge/plan.ts",
+    "./forge/run": "./src/cli/forge/run.ts",
+    "./forge/glibc": "./src/cli/forge/glibc.ts",
+    "./plugin": "./src/cli/plugin/index.ts",
+    "./plugin/generator": "./src/cli/plugin/generator.ts",
+    "./plugin/schema": "./src/cli/plugin/schema.ts",
+    "./cli": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "test": "bun test test/cli_app.test.ts test/aphrody.test.ts test/api.test.ts test/host.test.ts test/host-space.test.ts test/import.test.ts test/mcp.test.ts test/package-commands.test.ts test/rename.test.ts test/scan.test.ts test/stack.test.ts test/verify.test.ts test/vu.test.ts test/python-supervised.test.ts test/forge test/plugins.test.ts",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/workspace": "workspace:*",
+    "@aphrody/yolo-core": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

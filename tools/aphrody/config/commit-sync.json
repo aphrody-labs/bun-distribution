@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "owners": ["aphrody-labs", "aphrody-dev", "yohan971", "rose-griffon"],
+  "pollIntervalMs": 60000,
+  "debounceMs": 250,
+  "commandTimeoutMs": 30000,
+  "repositories": [
+    {
+      "id": "aphrody",
+      "path": ".",
+      "remote": "workspace",
+      "sourceBranch": "main",
+      "destinationBranch": "main",
+      "fastForward": true,
+      "buildCommand": [
+        "scripts/build/rust/cargo-serial.sh",
+        "build",
+        "--locked",
+        "--release",
+        "--package",
+        "aphrody",
+        "--bin",
+        "aphrody"
+      ]
+    },
+    {
+      "id": "bun-os",
+      "repositoryName": "bun",
+      "path": "../bun",
+      "remote": "origin",
+      "sourceBranch": "main",
+      "destinationBranch": "main",
+      "fastForward": true,
+      "buildEnabled": false,
+      "buildCommand": ["bun", "scripts/aphrody/native-ci.ts", "worker"]
+    }
+  ]
+}

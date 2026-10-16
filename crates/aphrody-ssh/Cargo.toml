@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ssh"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+description = "Aphrody SSH operator: safe command execution and diagnostics for configured hosts."
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.6", features = ["derive", "env", "color"] }
+fast_rsync = "0.2"
+russh = { version = "0.63", default-features = false, features = ["ring", "flate2"] }
+russh-sftp = "3.0"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }

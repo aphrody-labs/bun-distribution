@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-diagnostics"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = [] }
+aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.4", default-features = false, features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.4", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+chrono = { version = "0.4", features = ["serde"] }
+miette = { version = "7", features = ["fancy"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+which = { version = "8", features = [] }

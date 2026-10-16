@@ -1,0 +1,44 @@
+{
+  "$comment": "Dedicated Infra boot catalog for the native owner workstation only. Deployed under configured Aphrody home/automation/ovh, never merged with unrelated task changes. Credentials are CurrentUser DPAPI; interactive user task is required (S4U cannot access user DPAPI reliably).",
+  "schemaVersion": 1,
+  "owner": "aphrody-dev",
+  "supervisor": "task-scheduler",
+  "proxy": "none",
+  "services": [],
+  "boot": {
+    "entries": [
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody OVH protected audit",
+        "path": "\\Aphrody\\",
+        "triggers": ["atLogon", "every:360m"],
+        "principal": "user",
+        "runLevel": "limited",
+        "desktop": true,
+        "periodic": true,
+        "execute": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "arguments": "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{root}\\ovh-protected.ps1\" -Action Audit",
+        "workingDirectory": "{root}",
+        "timeLimitMinutes": 5,
+        "description": "Read-only native OVH OAuth health/domain rights audit; credentials remain user DPAPI. No DNS, nameserver, renewal or mail mutation."
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody OVH Dragon Ball FR audit",
+        "path": "\\Aphrody\\",
+        "triggers": ["atLogon", "every:360m"],
+        "principal": "user",
+        "runLevel": "limited",
+        "desktop": true,
+        "periodic": true,
+        "execute": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "arguments": "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{root}\\ovh-protected-dbfr.ps1\" -Action Audit",
+        "workingDirectory": "{root}",
+        "timeLimitMinutes": 5,
+        "description": "Read-only OVH Dragon Ball FR domain, DNS, service and VPS health audit through the owner-only per-profile credential file. No DNS, IAM, renewal, billing or deletion mutation."
+      }
+    ]
+  }
+}

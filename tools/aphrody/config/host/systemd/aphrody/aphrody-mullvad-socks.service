@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Private SOCKS5 endpoint inside Aphrody Japan Mullvad namespace
+Requires=aphrody-mullvad-netns.service
+After=aphrody-mullvad-netns.service
+PartOf=aphrody-mullvad-netns.service
+
+[Service]
+Type=simple
+NetworkNamespacePath=/run/netns/mullvad
+BindReadOnlyPaths=/etc/netns/mullvad/resolv.conf:/etc/resolv.conf
+ExecStart=/usr/bin/microsocks -i 10.200.1.2 -p 1080
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=yes
+MemoryMax=64M
+TasksMax=32
+Restart=on-failure
+RestartSec=2s
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

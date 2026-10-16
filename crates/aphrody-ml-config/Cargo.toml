@@ -1,0 +1,21 @@
+[package]
+name = "aphrody-ml-config"
+version = "1.4.4"
+edition = "2024"
+description = "Extensible typed TOML configuration storage of the Aphrody ML base (~/.koharu/config.toml)."
+license = "MIT OR Apache-2.0"
+authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
+repository = "https://github.com/aphrody-labs/aphrody"
+keywords = ["config", "toml", "settings", "machine-learning"]
+publish = true
+[dependencies]
+anyhow = "1.0.104"
+atomicwrites = "0.4.4"
+dirs = "7.0.0"
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+toml = "1.1.5"
+tracing = "0.1.44"
+
+[dev-dependencies]
+tempfile = "3.27.0"

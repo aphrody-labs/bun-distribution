@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Persistent tmux hub (user unit, linger enabled): ensures session `main`, one window per peer in
+# ~/.config/aphrody/tmux-peers. Idempotent; aphrody-tmux.timer recreates it within a minute.
+# Install with aphrody-tmux-main in ~/.local/bin and both units in ~/.config/systemd/user/.
+[Unit]
+Description=Ensure Aphrody persistent tmux session main
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/aphrody-tmux-main

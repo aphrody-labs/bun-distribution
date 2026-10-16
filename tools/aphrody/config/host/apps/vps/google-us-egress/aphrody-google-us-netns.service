@@ -1,0 +1,15 @@
+[Unit]
+Description=Aphrody independent Google US Mullvad namespace
+After=network-online.target
+Wants=network-online.target
+Before=aphrody-google-us-socks.service aphrody-google-us-loopback.socket
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=APHRODY_MULLVAD_ADDRESS=10.72.22.214/32
+ExecStart=/usr/local/libexec/aphrody-google-us-netns-setup
+TimeoutStartSec=45
+
+[Install]
+WantedBy=multi-user.target

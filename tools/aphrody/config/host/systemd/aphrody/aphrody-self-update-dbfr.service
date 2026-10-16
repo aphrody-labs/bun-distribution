@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Auto-update of the aphrody binary on dbfr: `aphrody self update` compares latest.json of
+# downloads.aphrody.com with the installed release, runs the checksum-verified installer of that release and
+# rolls back when the new binary does not start. Timer: aphrody-self-update-dbfr.timer.
+# Runbook: docs/operations/infra/AUTO-RELEASE.md.
+[Unit]
+Description=Aphrody self update (dbfr)
+After=network-online.target
+Wants=network-online.target
+ConditionFileIsExecutable=/home/ubuntu/.local/bin/aphrody
+
+[Service]
+Type=oneshot
+User=ubuntu
+Environment=HOME=/home/ubuntu
+ExecStart=/home/ubuntu/.local/bin/aphrody self update
+TimeoutStartSec=15min
+Nice=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-self-update

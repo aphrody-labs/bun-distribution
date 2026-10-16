@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-secrets"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tracing = "0.1.44"
+async-trait = "0.1.92"
+zeroize = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }
+
+[package.metadata.cargo-machete]
+# tracing is consumed only via macros; argon2 transitive features are referenced
+# from the file-store cipher path but `cargo machete` mis-detects them.
+ignored = ["tracing"]

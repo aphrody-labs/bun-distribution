@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-dev",
+  "asOf": "2026-10-14",
+  "dns": {
+    "state": "Cloudflare readback; audit expected state",
+    "recordOwner": "aphrody-infra",
+    "zone": "aphrody.app",
+    "zoneId": "f4dab237b9811435da6fee0b5b3438d4",
+    "accountId": "ca22c1a51a145f919b54afa18d936516",
+    "status": "active",
+    "nameServers": ["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"],
+    "records": [
+      { "type": "AAAA", "name": "aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-audio.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-cad.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-compositing.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-documents.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-generation.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-images.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-interface-layouts.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-layout.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-pdf.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-photo-processing.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-slides.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-tables.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-vectors.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "app-video.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "apt.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "artcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "cadcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "deckcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "deploy.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "designcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "desktop.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "effectcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "figcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "filmcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "git.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "gridcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "lightcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "pdfcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "photocraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "soundcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "A", "name": "source.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "vectorcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "wordcraft.aphrody.app", "proxied": true, "ttl": 1 },
+      { "type": "AAAA", "name": "www.aphrody.app", "proxied": true, "ttl": 1 }
+    ]
+  },
+  "applications": [
+    { "id": "video", "hostname": "app-video.aphrody.app", "alias": "filmcraft.aphrody.app" },
+    {
+      "id": "generation",
+      "hostname": "app-generation.aphrody.app",
+      "alias": "artcraft.aphrody.app"
+    },
+    { "id": "images", "hostname": "app-images.aphrody.app", "alias": "photocraft.aphrody.app" },
+    { "id": "vectors", "hostname": "app-vectors.aphrody.app", "alias": "vectorcraft.aphrody.app" },
+    {
+      "id": "compositing",
+      "hostname": "app-compositing.aphrody.app",
+      "alias": "effectcraft.aphrody.app"
+    },
+    {
+      "id": "photo-processing",
+      "hostname": "app-photo-processing.aphrody.app",
+      "alias": "lightcraft.aphrody.app"
+    },
+    { "id": "pdf", "hostname": "app-pdf.aphrody.app", "alias": "pdfcraft.aphrody.app" },
+    {
+      "id": "documents",
+      "hostname": "app-documents.aphrody.app",
+      "alias": "wordcraft.aphrody.app"
+    },
+    { "id": "audio", "hostname": "app-audio.aphrody.app", "alias": "soundcraft.aphrody.app" },
+    { "id": "layout", "hostname": "app-layout.aphrody.app", "alias": "designcraft.aphrody.app" },
+    { "id": "cad", "hostname": "app-cad.aphrody.app", "alias": "cadcraft.aphrody.app" },
+    { "id": "slides", "hostname": "app-slides.aphrody.app", "alias": "deckcraft.aphrody.app" },
+    { "id": "tables", "hostname": "app-tables.aphrody.app", "alias": "gridcraft.aphrody.app" },
+    {
+      "id": "interface-layouts",
+      "hostname": "app-interface-layouts.aphrody.app",
+      "alias": "figcraft.aphrody.app"
+    }
+  ],
+  "productDomains": [
+    { "id": "apt", "hostname": "apt.aphrody.app", "owner": "bun-os" },
+    { "id": "desktop", "hostname": "desktop.aphrody.app", "owner": "bun-os" },
+    { "id": "source", "hostname": "source.aphrody.app", "owner": "aphrody-infra" },
+    { "id": "git", "hostname": "git.aphrody.app", "owner": "aphrody-infra" },
+    { "id": "deploy", "hostname": "deploy.aphrody.app", "owner": "aphrody-infra" }
+  ],
+  "worker": {
+    "owner": "aphrody-labs/bun",
+    "name": "aphrody-app",
+    "routes": [
+      "app-audio.aphrody.app/*",
+      "app-cad.aphrody.app/*",
+      "app-compositing.aphrody.app/*",
+      "app-documents.aphrody.app/*",
+      "app-generation.aphrody.app/*",
+      "app-images.aphrody.app/*",
+      "app-interface-layouts.aphrody.app/*",
+      "app-layout.aphrody.app/*",
+      "app-pdf.aphrody.app/*",
+      "app-photo-processing.aphrody.app/*",
+      "app-slides.aphrody.app/*",
+      "app-tables.aphrody.app/*",
+      "app-vectors.aphrody.app/*",
+      "app-video.aphrody.app/*"
+    ],
+    "customDomains": [
+      "aphrody.app",
+      "www.aphrody.app",
+      "filmcraft.aphrody.app",
+      "artcraft.aphrody.app",
+      "photocraft.aphrody.app",
+      "vectorcraft.aphrody.app",
+      "effectcraft.aphrody.app",
+      "lightcraft.aphrody.app",
+      "pdfcraft.aphrody.app",
+      "wordcraft.aphrody.app",
+      "soundcraft.aphrody.app",
+      "designcraft.aphrody.app",
+      "cadcraft.aphrody.app",
+      "deckcraft.aphrody.app",
+      "gridcraft.aphrody.app",
+      "figcraft.aphrody.app",
+      "apt.aphrody.app",
+      "desktop.aphrody.app"
+    ]
+  },
+  "sourceOwners": {
+    "dnsAndProductHostIntent": "aphrody/tools/config/cloudflare/aphrody.app.json",
+    "appCapabilities": "bun-os/packages/bun-workspace/src/capabilities.ts",
+    "aptAndDesktop": "bun-os/infra/apps.json",
+    "workerRuntimeAndZoneProvisioning": "bun/packages/web/cloudflare/"
+  }
+}

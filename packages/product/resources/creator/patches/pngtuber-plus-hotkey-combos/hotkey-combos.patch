@@ -1,0 +1,162 @@
+diff --git a/main_scenes/main.gd b/main_scenes/main.gd
+index c098fde..2e571e0 100644
+--- a/main_scenes/main.gd
++++ b/main_scenes/main.gd
+@@ -52,6 +52,11 @@ var fileSystemOpen = false
+ signal emptiedCapture
+ signal pressedKey
+ var costumeKeys = ["1","2","3","4","5","6","7","8","9","0"]
++#Modifier keys sent by the background capture (Godot key codes), in display order.
++#On Windows the capture reports the Windows key as KEY_MASK_META.
++const MODIFIER_KEYS = {KEY_CTRL:"Ctrl",KEY_SHIFT:"Shift",KEY_ALT:"Alt",KEY_META:"Meta",KEY_MASK_META:"Meta"}
++#True once a hotkey was captured, until every key is released again
++var hotkeyTaken = false
+ signal spriteVisToggles(keysPressed:Array)
+ signal fatfuckingballs
+ 
+@@ -584,31 +589,67 @@ func _on_settings_buttons_pressed():
+ 	settingsMenu.visible = !settingsMenu.visible
+ 
+ 
+-func _on_background_input_capture_bg_key_pressed(node, keys_pressed):
+-	var keyStrings = []
+-	
++#Name of a key as shown in hotkeys
++func keyName(code):
++	var text = OS.get_keycode_string(code)
++	if text.strip_edges().is_empty():
++		return "Keycode" + str(code)
++	return text
++
++#Hotkeys for the keys held in keys_pressed (Dictionary key code -> bool).
++#A regular key gives "Ctrl+Shift+P" with exactly the held modifiers (order Ctrl, Shift, Alt, Meta),
++#so "P", "Ctrl+P" and "Ctrl+Shift+P" are three different hotkeys.
++#Modifiers alone give nothing, unless withModifierOnly (hotkeys saved as "Shift" still work).
++func keyCombos(keys_pressed, withModifierOnly = false):
++	var prefix = ""
++	var held = []
++	for modifier in MODIFIER_KEYS:
++		if keys_pressed.get(modifier, false) and !held.has(MODIFIER_KEYS[modifier]):
++			prefix += MODIFIER_KEYS[modifier] + "+"
++			held.append(MODIFIER_KEYS[modifier])
++	
++	var combos = []
+ 	for i in keys_pressed:
+-		if keys_pressed[i]:
+-			keyStrings.append(OS.get_keycode_string(i) if !OS.get_keycode_string(i).strip_edges().is_empty() else "Keycode" + str(i))
++		if keys_pressed[i] and !MODIFIER_KEYS.has(i):
++			combos.append(prefix + keyName(i))
++	
++	if combos.is_empty() and withModifierOnly:
++		return held
++	return combos
++
++#First hotkey of the list that is not a modifier alone ("" if none)
++func firstHotkey(keys):
++	for key in keys:
++		if !MODIFIER_KEYS.values().has(key):
++			return key
++	return ""
++
++func _on_background_input_capture_bg_key_pressed(node, keys_pressed):
++	var keyStrings = keyCombos(keys_pressed, true)
+ 	
+ 	if fileSystemOpen:
+ 		return
+ 	
+ 	if keyStrings.size() <= 0:
++		hotkeyTaken = false
+ 		emit_signal("emptiedCapture")
+ 		return
+ 	
+-	if settingsMenu.awaitingCostumeInput >= 0:
++	#Waits for a regular key: pressing Ctrl or Shift first does not set the hotkey
++	var newKeys = keyCombos(keys_pressed)
++	
++	if settingsMenu.awaitingCostumeInput >= 0 and newKeys.size() > 0 and !hotkeyTaken:
+ 		
+-		if keyStrings[0] == "Keycode1":
++		if newKeys[0].ends_with("Keycode1"):
+ 			if !settingsMenu.hasMouse:
+ 				emit_signal("pressedKey")
+ 				return
+ 		
++		hotkeyTaken = true
+ 		var currentButton = costumeKeys[settingsMenu.awaitingCostumeInput]
+-		costumeKeys[settingsMenu.awaitingCostumeInput] = keyStrings[0]
++		costumeKeys[settingsMenu.awaitingCostumeInput] = newKeys[0]
+ 		Saving.settings["costumeKeys"] = costumeKeys
+-		Global.pushUpdate("Changed costume " + str(settingsMenu.awaitingCostumeInput+1) + " hotkey from \"" + currentButton + "\" to \"" + keyStrings[0] + "\"")
++		Global.pushUpdate("Changed costume " + str(settingsMenu.awaitingCostumeInput+1) + " hotkey from \"" + currentButton + "\" to \"" + newKeys[0] + "\"")
+ 		emit_signal("pressedKey")
+ 	
+ 	for key in keyStrings:
+@@ -621,11 +662,7 @@ func _on_background_input_capture_bg_key_pressed(node, keys_pressed):
+ func bgInputSprite(node, keys_pressed):
+ 	if fileSystemOpen:
+ 		return
+-	var keyStrings = []
+-	
+-	for i in keys_pressed:
+-		if keys_pressed[i]:
+-			keyStrings.append(OS.get_keycode_string(i) if !OS.get_keycode_string(i).strip_edges().is_empty() else "Keycode" + str(i))
++	var keyStrings = keyCombos(keys_pressed, true)
+ 	
+ 	if keyStrings.size() <= 0:
+ 		emit_signal("fatfuckingballs")
+diff --git a/ui_scenes/settings/settings_menu.gd b/ui_scenes/settings/settings_menu.gd
+index b237072..b41d3e5 100644
+--- a/ui_scenes/settings/settings_menu.gd
++++ b/ui_scenes/settings/settings_menu.gd
+@@ -35,9 +35,16 @@ func setvalues():
+ 	var costumeLabels = [$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton1/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton2/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton3/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton4/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton5/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton6/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton7/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton8/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton9/Label,$CostumeInputs/ScrollContainer/VBoxContainer/costumeButton10/Label,]
+ 	var tag = 1
+ 	for label in costumeLabels:
+-		label.text = "costume " + str(tag) + " key: \"" + Global.main.costumeKeys[tag-1] + "\""
++		label.text = costumeLabel(tag)
+ 		tag += 1
+ 	
++#Text of a costume hotkey button; long combos drop the word "key" to stay inside the button
++func costumeLabel(id):
++	var key = Global.main.costumeKeys[id-1]
++	if key.length() > 10:
++		return "costume " + str(id) + ": \"" + key + "\""
++	return "costume " + str(id) + " key: \"" + key + "\""
++
+ func _on_color_picker_button_color_changed(color):
+ 	get_viewport().transparent_bg = false
+ 	RenderingServer.set_default_clear_color(color)
+@@ -133,7 +140,7 @@ func costumeButtonsPressed(label,id):
+ 	
+ 	
+ 	await Global.main.pressedKey
+-	label.text = "costume " + str(id) + " key: \"" + Global.main.costumeKeys[id - 1] + "\""
++	label.text = costumeLabel(id)
+ 	await Global.main.emptiedCapture
+ 	awaitingCostumeInput = -1
+ 
+@@ -200,7 +207,7 @@ func _process(delta):
+ 
+ func deleteKey(label,id):
+ 	Global.main.costumeKeys[id-1] = "null"
+-	label.text = "costume " + str(id) + " key: \"" + Global.main.costumeKeys[id-1] + "\""
++	label.text = costumeLabel(id)
+ 	Global.pushUpdate("Deleted costume hotkey " + str(id) + ".")
+ 	
+ func _on_delete_1_pressed():
+diff --git a/ui_scenes/spriteEditMenu/sprite_viewer.gd b/ui_scenes/spriteEditMenu/sprite_viewer.gd
+index dd9d1e1..cde4572 100644
+--- a/ui_scenes/spriteEditMenu/sprite_viewer.gd
++++ b/ui_scenes/spriteEditMenu/sprite_viewer.gd
+@@ -351,6 +351,10 @@ func _on_set_toggle_pressed():
+ 	await Global.main.fatfuckingballs
+ 	
+ 	var keys = await Global.main.spriteVisToggles
+-	var key = keys[0]
++	var key = Global.main.firstHotkey(keys)
++	#A modifier alone is not a toggle: wait for the key pressed with it (Ctrl+Shift+P)
++	while key == "":
++		keys = await Global.main.spriteVisToggles
++		key = Global.main.firstHotkey(keys)
+ 	Global.heldSprite.toggle = key
+ 	$VisToggle/setToggle/Label.text = "toggle: \"" + Global.heldSprite.toggle +  "\""

@@ -1,0 +1,47 @@
+{
+  "name": "@aphrody/doc-ai",
+  "version": "1.4.4",
+  "description": "AI-first documentation and automatic translation system",
+  "homepage": "https://github.com/aphrody-labs/aphrody/tree/main/packages/ai/doc-ai#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/aphrody/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody.git",
+    "directory": "packages/doc-ai"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun check -p tsconfig.build.json",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "typecheck:fast": "bun check -p tsconfig.json --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ai-sdk/google-vertex": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "ai": "catalog:",
+    "zod": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@aphrody/shell-web",
+  "version": "1.4.4",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "pkg"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts",
+    "./wasm": "./pkg/aphrody_shell_web_bg.wasm",
+    "./wasm-glue": "./pkg/aphrody_shell_web.js",
+    "./pkg/*": "./pkg/*"
+  },
+  "dependencies": {
+    "@aphrody/web-source": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

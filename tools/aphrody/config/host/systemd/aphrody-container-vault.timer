@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Daily encrypted Aphrody container vault backup
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "enabled": true,
+  "target": "vps",
+  "windowsFactory": {
+    "host": "omar-pc",
+    "target": "windows-x64",
+    "enabled": true,
+    "nativeArchitectures": ["x64"],
+    "crossArchitectures": ["arm64"],
+    "maxJobs": 1,
+    "reserveMemoryGiB": 6,
+    "reserveDiskGiB": 20,
+    "scope": ["windows-native-builds", "windows-packaging", "windows-smoke-tests"],
+    "execution": "local-windows"
+  },
+  "executionOnlyTargets": [],
+  "workspaceRoot": "/home/ubuntu/src/aphrody",
+  "cacheRoot": "/home/ubuntu/build/storage/cache",
+  "artifactRoot": "/home/ubuntu/build/storage/artifacts",
+  "lockPath": "/home/ubuntu/build/locks/heavy.lock",
+  "hostEnvironment": {
+    "name": "APHRODY_BUILD_HOST",
+    "value": "vps"
+  },
+  "rust": {
+    "maxJobs": 12,
+    "serialized": true,
+    "wrapper": "scripts/build/rust/cargo-serial.sh",
+    "incremental": false,
+    "cache": "sccache"
+  },
+  "bun": {
+    "heavyJobs": 1,
+    "frozenLockfile": true
+  },
+  "ui": {
+    "enabled": true,
+    "classes": ["shenron-ui-reuse"],
+    "lockPath": "/home/ubuntu/build/locks/ui.lock",
+    "workRoot": "/home/ubuntu/build/storage/artifacts/ui/jobs",
+    "maxJobs": 1,
+    "memoryGiB": 12,
+    "cpus": 4,
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 20,
+    "scratchGiB": 12,
+    "timeoutSeconds": 5400
+  },
+  "local": {
+    "allowed": ["help", "plan", "inventory", "source-edit", "scoped-static-check"],
+    "heavyExecution": "remote"
+  },
+  "transport": {
+    "owner": "aphrody-infra ssh",
+    "sync": "sync",
+    "exec": "exec",
+    "sourcePolicy": "clean-pinned-first-party-source",
+    "secrets": "host-local-private-files-only"
+  },
+  "runtimeTargets": {
+    "shenron": "dbfr",
+    "rg": "stopped"
+  },
+  "retention": {
+    "preserve": [
+      "active-releases",
+      "rollback-releases",
+      "primary-data",
+      "source-patches",
+      "cargo-cache",
+      "sccache",
+      "bun-cache"
+    ],
+    "cleanup": "existing-infra-allowlist-only"
+  },
+  "repositories": {
+    "bun-os": "/home/ubuntu/src/bun",
+    "aphrody": "/home/ubuntu/src/aphrody",
+    "yolo": "/home/ubuntu/src/yolo",
+    "iecode": "/home/ubuntu/src/iecode"
+  },
+  "next": {
+    "image": "node:22-bookworm-slim",
+    "pull": "never",
+    "cpus": 6,
+    "memoryMiB": 16384,
+    "maxOldSpaceSizeMiB": 8192
+  },
+  "cleanup": {
+    "transientRoot": "/home/ubuntu/build/storage/transient",
+    "privilegeBinary": "/usr/bin/sudo-rs",
+    "retiredOutputs": []
+  },
+  "resources": {
+    "reserveMemoryGiB": 8,
+    "reserveDiskGiB": 32,
+    "memoryPerJobGiB": 1
+  }
+}

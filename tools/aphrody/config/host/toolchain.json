@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "generatedAt": "2026-10-04",
+  "hosts": [
+    "wsl",
+    "windows",
+    "vps",
+    "dbfr"
+  ],
+  "policy": {
+    "canonicalSource": "one source per tool and host; shadowed duplicates removed",
+    "path": "per-user bin dirs only (~/.cargo/bin, ~/.bun/bin, ~/.local/bin); PATH and profiles are owned by aphrody-claude user/shell, never edited here",
+    "cargo": "no Cargo build: toolchains via rustup, tools via cargo-binstall with compile strategy disabled",
+    "untouched": [
+      "services",
+      "nginx",
+      "systemd units",
+      "databases",
+      "models",
+      "persistent stores"
+    ]
+  },
+  "versions": {
+    "rust": "1.98.1",
+    "rustNightly": "nightly-2026-05-17",
+    "bun": "1.4.4",
+    "nu": "0.116.0",
+    "python": "3.12",
+    "typescript": "7.0.2",
+    "ovhcloud": "0.15.0",
+    "pwsh": "7.6.6",
+    "yq": "4.54.1",
+    "carapace": "1.8.0",
+    "wasmPack": "0.15.0",
+    "gh": "2.102.0",
+    "jq": "1.8.2",
+    "tauriCli": "3.0.0-alpha.4",
+    "rsync": "3.5.1",
+    "pigz": "2.8",
+    "zellij": "0.45.1",
+    "opensshPreview": "10.0.0.0p2-Preview",
+    "rtk": "0.51.0",
+    "python313": "3.13"
+  },
+  "rustToolchain": {
+    "components": [
+      "rustfmt",
+      "clippy",
+      "rust-src",
+      "rust-analyzer"
+    ],
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "wasm32-unknown-unknown",
+      "wasm32-wasip1"
+    ]
+  },
+  "binstall": [
+    "nu@0.116.0",
+    "fd-find",
+    "bat",
+    "git-delta",
+    "du-dust",
+    "hyperfine",
+    "just",
+    "sccache",
+    "zellij",
+    "atuin",
+    "starship",
+    "zoxide",
+    "cargo-nextest"
+  ],
+  "apt": [
+    "git",
+    "curl",
+    "openssh-client",
+    "rsync",
+    "zstd",
+    "pigz",
+    "mosh",
+    "ripgrep",
+    "eza",
+    "nodejs"
+  ],
+  "aptRemovedAsShadowed": [
+    "bat",
+    "fd-find",
+    "just",
+    "sccache",
+    "rclone",
+    "gh"
+  ],
+  "bunGlobal": [
+    "typescript@7.0.2",
+    "@typescript/native-preview",
+    "oxlint",
+    "oxfmt",
+    "@types/bun",
+    "@types/node",
+    "bun-types",
+    "drizzle-kit",
+    "prisma",
+    "jscodeshift",
+    "@ast-grep/cli",
+    "wrangler",
+    "serve",
+    "nodemon",
+    "nx",
+    "shadcn",
+    "json-schema-to-typescript",
+    "@tailwindcss/cli",
+    "vite",
+    "@mikro-orm/cli",
+    "sharp-cli",
+    "@tauri-apps/cli@3.0.0-alpha.4",
+    "@material-design-icons/scripts",
+    "wasm-pack@0.15.0",
+    "context-mode",
+    "repomix"
+  ],
+  "bunxScanSources": [
+    "aphrody",
+    "yolo"
+  ],
+  "releaseBinaries": {
+    "ovhcloud": "https://github.com/ovh/ovhcloud-cli/releases/download/v{version}/ovhcloud-cli_{Linux_x86_64|Windows_x86_64}",
+    "rclone": "https://downloads.rclone.org/rclone-current-linux-amd64.zip",
+    "yq": "https://github.com/mikefarah/yq/releases/download/v{version}/yq_linux_amd64",
+    "carapace": "https://github.com/carapace-sh/carapace-bin/releases/download/v{version}/carapace-bin_{version}_linux_amd64.tar.gz",
+    "pwsh": "https://github.com/PowerShell/PowerShell/releases/download/v{version}/powershell-{version}-linux-x64.tar.gz",
+    "gh": "https://github.com/cli/cli/releases/download/v{version}/gh_{version}_linux_amd64.tar.gz",
+    "jq": "https://github.com/jqlang/jq/releases/download/jq-{version}/jq-linux-amd64 (WSL only)",
+    "rtk": "https://github.com/rtk-ai/rtk/releases/download/v{version}/rtk-x86_64-unknown-linux-musl.tar.gz (Windows: rtk-x86_64-pc-windows-msvc.zip)"
+  },
+  "aphrodyArtifacts": {
+    "linuxPrebuilt": [
+      "aphrody",
+      "aphrody-infra",
+      "aphrody-kernel"
+    ],
+    "note": "aphrody-ovh is a library compiled into aphrody-infra; the Bun package commands (yolo ops|workspace|optimize|update|ovh|google|doc-ai|browser) load their owner modules from a source checkout",
+    "windowsBuild": "APHRODY_LOCAL_CARGO=1 scripts/build/rust/cargo-serial.sh xwin build --release --target x86_64-pc-windows-msvc -p aphrody (the multi-call binary; aphrody-infra and aphrody-kernel are links to it) (integrator; factory route otherwise), installed to %USERPROFILE%\\.local\\bin",
+    "windowsPrebuilt": [
+      "aphrody-infra.exe",
+      "aphrody-kernel.exe"
+    ],
+    "linuxBunCompiled": {
+      "aphrody-cdn-optimize": {
+        "source": "scripts/release/cdn-optimize.ts",
+        "hosts": [
+          "vps"
+        ],
+        "build": "bun build --compile --target=bun-linux-x64 scripts/release/cdn-optimize.ts --outfile ~/.local/bin/aphrody-cdn-optimize"
+      }
+    }
+  },
+  "perHostExceptions": {
+    "wsl": "Ubuntu 24.04 apt is stale: ripgrep and eza via cargo-binstall, apt copies removed; jq/gh release binaries, apt jq removed",
+    "windows": "winget user scope for jq, yq, carapace, zstd, wezterm nightly, gh, uv, zellij (Zellij.Zellij); binstall for the Rust set plus eza and ripgrep; rsync from MSYS2 (C:\\msys64\\usr\\bin, shim ~/.local/bin/rsync.cmd puts msys usr/bin first so rsync uses msys ssh; C:\\msys64\\home\\<user>\\.ssh is a junction to the Windows ~/.ssh); pigz 2.8 compiled statically with MSYS2 ucrt64 gcc to ~/.local/bin/pigz.exe; OpenSSH Preview via elevated winget plus sftp.exe and ssh-keyscan.exe from the Win32-OpenSSH release zip into C:\\Program Files\\OpenSSH; ssh-agent service Automatic and running (elevated); claude via native installer (~/.local/bin/claude.exe); ovhcloud release binary plus ~/.ovh.conf copied from WSL; rclone via winget with remotes vps and dbfr (sftp over `ssh <host>`) in %APPDATA%\\rclone\\rclone.conf; user PATH gets ~/.local/bin, ~/.cargo/bin, ~/.bun/bin",
+    "vps": "jq stays apt (system scripts, minimal PATH)",
+    "dbfr": "jq stays apt; no extra rust targets (12G free on /)"
+  },
+  "bunGlobalNote": "wasm-pack is a bun global (prebuilt release binary downloaded by its npm package); cargo copy removed",
+  "bunHygiene": {
+    "policy": "newest stable Bun release at least 3 days old (bunfig minimumReleaseAge); every host applies the same rule",
+    "linux": {
+      "script": "scripts/tools/bun-hygiene.sh",
+      "installedAs": "~/.local/bin/aphrody-bun-hygiene",
+      "units": [
+        "yolo:units/aphrody-bun-hygiene.service",
+        "yolo:units/aphrody-bun-hygiene.timer"
+      ],
+      "schedule": "daily 05:30 +-30m, user timer, linger enabled on vps and dbfr",
+      "log": "~/.local/state/aphrody/log/bun-hygiene.log"
+    },
+    "windows": {
+      "script": "scripts/tools/bun-hygiene.ts",
+      "task": "AphrodyBunHygiene (daily 05:30, hidden S4U task, boot catalog entry; aphrody infra boot apply --host local --entry AphrodyBunHygiene)",
+      "log": "%LOCALAPPDATA%\\aphrody\\log\\bun-hygiene.log"
+    },
+    "steps": [
+      "bun upgrade to eligible release",
+      "bun pm ls -g",
+      "bun outdated (global)",
+      "bun pm -g untrusted",
+      "cache report, prune entries unused 30 days above 5 GB",
+      "frozen-lockfile dry-run in a temp copy (checkout hosts only)"
+    ]
+  },
+  "windowsTools": {
+    "winget": [
+      "Rclone.Rclone",
+      "Zellij.Zellij",
+      "MSYS2.MSYS2",
+      "gerardog.gsudo"
+    ],
+    "elevated": [
+      "Microsoft.OpenSSH.Preview"
+    ],
+    "msys2Packages": [
+      "rsync"
+    ],
+    "sourceBuilds": {
+      "pigz": "https://github.com/madler/pigz (tag v2.8) with MSYS2 ucrt64 gcc -static"
+    },
+    "knownGap": "ssh key github_aphrody_code is not registered on GitHub account aphrody-code (Permission denied); needs `gh auth refresh -h github.com -s admin:public_key` as aphrody-code then `gh ssh-key add`"
+  },
+  "sourceCheckoutHosts": {
+    "vps": "~/src/aphrody",
+    "dbfr": "~/src/aphrody",
+    "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
+    "links": [
+      "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"
+    ]
+  },
+  "uvTools": [],
+  "codeIntel": {
+    "lsp": {
+      "rust": {
+        "server": "rust-analyzer",
+        "install": "rustup component (rustToolchain.components)",
+        "start": [
+          "rust-analyzer"
+        ]
+      },
+      "typescript": {
+        "server": "TypeScript 7 native language server",
+        "install": "bun global typescript@7 (tsc); @typescript/native-preview (tsgo) kept for m3 typecheck",
+        "start": [
+          "tsc",
+          "--lsp",
+          "--stdio"
+        ],
+        "note": "typescript-language-server 6.x requires tsserver.js and exits on TypeScript 7 workspaces; not installed"
+      }
+    },
+    "contextTools": {
+      "rtk": "shell output compressor (rtk-ai/rtk, Claude PreToolUse hook, Codex hooks, agy plugin)",
+      "context-mode": "sandbox + FTS5 MCP (mksglu/context-mode)",
+      "ast-grep": "structural search/rewrite CLI (@ast-grep/cli)",
+      "repomix": "repository packer for bounded external review (yamadashy/repomix)"
+    },
+    "wiring": {
+      "claude": "plugin aphrody-code-intel@aphrody-user (lspServers + MCP) and rtk hook in aphrody-claude user/settings.json",
+      "codex": "codex mcp add context-mode; rtk init -g --codex",
+      "agy": "agy mcp add context-mode; rtk init -g --agent antigravity",
+      "script": "scripts/tools/toolchain-sync.sh (agent-code-intel step), toolchain-sync.ps1"
+    },
+    "evidence": "2026-10-04 GitHub stars: rtk 82k, headroom 74k (proxy, not adopted: separate runtime), context-mode 25k, repomix 29k, ast-grep 16k"
+  },
+  "hostTools": {
+    "vps": {
+      "purpose": "lossless CDN optimizer scripts/release/cdn-optimize.ts (shenron-cdn-sync.service)",
+      "apt": [
+        "libjpeg-turbo-progs",
+        "gifsicle",
+        "webp",
+        "ffmpeg",
+        "zopfli",
+        "imagemagick"
+      ],
+      "binstall": [
+        "oxipng"
+      ]
+    }
+  }
+}

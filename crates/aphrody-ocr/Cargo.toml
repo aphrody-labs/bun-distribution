@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ocr"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+license = "Apache-2.0"
+description            = "Image-to-text pipeline for aphrody: drives a local vision-language model over one image or a whole directory, parses its DocTags output into markdown, and reports which pages carry no text at all."
+
+[lib]
+crate-type = ["rlib"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+# Durable SQLite deposit of results, forwarded to the contract crate.
+sqlite = ["aphrody-ocr-core/sqlite"]
+
+[dependencies]
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.4", features = [] }
+aphrody-ocr-onnx = { path = "../aphrody-ocr-onnx", version = "1.4.4", features = [] }
+aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", version = "1.4.4", features = [] }

@@ -1,0 +1,27 @@
+[package]
+name = "aphrody-nu"
+description = "Nushell embedded in Aphrody OS: structured evaluation for agents (the shell subsystem)."
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+authors = ["aphrody-code"]
+repository = "https://github.com/aphrody-labs/aphrody"
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = [] }
+aphrody-subsystem = { path = "../aphrody-subsystem", version = "1.4.4" }
+async-trait = "0.1.92"
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }

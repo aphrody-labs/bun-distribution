@@ -1,0 +1,22 @@
+[package]
+name = "aphrody-llama-sys"
+version = "1.4.4"
+edition = "2024"
+description = "Low-level dynamically loaded FFI bindings for llama.cpp."
+license = "MIT OR Apache-2.0"
+authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
+repository = "https://github.com/aphrody-labs/aphrody"
+keywords = ["llama", "llm", "ffi", "bindings", "machine-learning"]
+categories = ["external-ffi-bindings", "science"]
+publish = true
+build = "build.rs"
+
+[dependencies]
+libloading = "0.9.0"
+
+[build-dependencies]
+anyhow = "1.0.104"
+aphrody-bindgen = { path = "../aphrody-bindgen", version = "1.4.4" }
+
+[package.metadata.cargo-machete]
+ignored = ["anyhow", "aphrody-bindgen", "libc", "libloading"]

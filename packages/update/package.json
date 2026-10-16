@@ -1,0 +1,39 @@
+{
+  "name": "@aphrody/update",
+  "version": "1.4.4",
+  "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
+  "license": "Apache-2.0",
+  "author": "Aphrody",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/cli.ts",
+    "./pins": "./src/pins.ts",
+    "./tools": "./src/tools.ts",
+    "./systemd": "./src/systemd.ts",
+    "./deps": "./src/deps/sync.ts",
+    "./inventory": "./src/deps/inventory.ts",
+    "./bun": "./src/ecosystems/bun.ts",
+    "./process": "./src/process.ts",
+    "./manifests": "./src/manifests.ts",
+    "./src/*": "./src/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --target bun --packages external --outdir dist",
+    "lint": "bun lint src test",
+    "status": "bun ../yolo-cli/src/index.ts update check",
+    "test": "bun test test",
+    "typecheck": "bun check --noEmit -p ."
+  },
+  "dependencies": {
+    "@aphrody/paths": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

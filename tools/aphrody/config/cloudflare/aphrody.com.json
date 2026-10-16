@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-dev",
+  "asOf": "2026-10-14",
+  "registrar": {
+    "provider": "ovh",
+    "profile": "aphrody.com",
+    "nameServers": ["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"],
+    "originalNameServers": ["dns200.anycast.me", "ns200.anycast.me"],
+    "dnssec": {
+      "status": "disabled",
+      "previousDs": "62047 8 2 2bdcd28e3fe3dfad3115587801c8b09b7e1fa987674e20298e65fa6da18ad594"
+    },
+    "backup": "~/.aphrody/backup/dns/2026-10-09/aphrody.com.zone"
+  },
+  "dns": {
+    "provider": "cloudflare",
+    "zone": "aphrody.com",
+    "zoneId": "963461271f885bc3f3c2bfd586f2b7ba",
+    "accountId": "ca22c1a51a145f919b54afa18d936516",
+    "plan": "Free Website",
+    "nameServers": ["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"],
+    "status": "active",
+    "dnssec": {
+      "status": "pending",
+      "ds": "aphrody.com. 3600 IN DS 2371 13 2 7E73A5E0016202714CC58E56D2A4310062910D65BED2931CD9D7709453D3C871"
+    },
+    "records": [
+      {
+        "name": "aphrody.com",
+        "type": "MX",
+        "ttl": 3600,
+        "priority": 5,
+        "content": "mx1.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "aphrody.com",
+        "type": "MX",
+        "ttl": 3600,
+        "priority": 100,
+        "content": "mx3.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "aphrody.com",
+        "type": "MX",
+        "ttl": 3600,
+        "priority": 50,
+        "content": "mx2.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "aphrody.com",
+        "type": "MX",
+        "ttl": 3600,
+        "priority": 1,
+        "content": "mx0.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "aphrody.com",
+        "type": "A",
+        "ttl": 1,
+        "content": "51.77.147.152",
+        "proxied": true
+      },
+      {
+        "name": "aphrody.com",
+        "type": "TXT",
+        "ttl": 3600,
+        "content": "v=spf1 include:mx.ovh.com ~all",
+        "proxied": false
+      },
+      {
+        "name": "_autodiscover._tcp.aphrody.com",
+        "type": "SRV",
+        "ttl": 3600,
+        "data": {
+          "service": "_autodiscover",
+          "proto": "_tcp",
+          "name": "aphrody.com",
+          "priority": 0,
+          "weight": 0,
+          "port": 443,
+          "target": "zimbra1.mail.ovh.net"
+        },
+        "proxied": false
+      },
+      {
+        "name": "_dmarc.aphrody.com",
+        "type": "TXT",
+        "ttl": 300,
+        "content": "v=DMARC1; p=none; adkim=s; aspf=s",
+        "proxied": false
+      },
+      {
+        "name": "admin.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "bot.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "cdn.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "creator.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "downloads.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "mcp.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "os.aphrody.com",
+        "type": "A",
+        "ttl": 1,
+        "content": "51.77.147.152",
+        "proxied": true
+      },
+      {
+        "name": "bun.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "nie.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "name": "ovhmo-selector-1._domainkey.aphrody.com",
+        "type": "CNAME",
+        "ttl": 3600,
+        "content": "ovhmo-selector-1._domainkey.4861041.dp.dkim.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "ovhmo-selector-2._domainkey.aphrody.com",
+        "type": "CNAME",
+        "ttl": 3600,
+        "content": "ovhmo-selector-2._domainkey.4861042.dp.dkim.mail.ovh.net",
+        "proxied": false
+      },
+      {
+        "name": "resend._domainkey.aphrody.com",
+        "type": "TXT",
+        "ttl": 3600,
+        "content": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDYpYTrAwdzYxp+RA8jFQnaKCh86RLtMsIcRA3/ePi7aG+JXmSMjhmzmNeuG095IAPx5qbp9aiNE6HQRl9QdcT3H0iTXITCNAFoNNI3lCtKAbPpbPU2lhkPLla2lKQBugY7nbpVeaXmsN2Nyy7+eOfrufwr3IJ7rLH6tchJ47uAFwIDAQAB",
+        "proxied": false
+      },
+      {
+        "name": "rsend.aphrody.com",
+        "type": "CNAME",
+        "ttl": 3600,
+        "content": "rsend-euw1.forge.rmta.net",
+        "proxied": false
+      },
+      {
+        "name": "send.aphrody.com",
+        "type": "CNAME",
+        "ttl": 3600,
+        "content": "send.forge.rmta.net",
+        "proxied": false
+      },
+      {
+        "name": "vps.aphrody.com",
+        "type": "A",
+        "ttl": 300,
+        "content": "51.77.147.152",
+        "proxied": false
+      },
+      {
+        "name": "www.aphrody.com",
+        "type": "CNAME",
+        "ttl": 1,
+        "content": "aphrody.com",
+        "proxied": true
+      },
+      {
+        "type": "A",
+        "content": "51.255.162.6",
+        "ttl": 3600,
+        "name": "dbfr.aphrody.com",
+        "proxied": false
+      },
+      {
+        "type": "AAAA",
+        "content": "2001:41d0:305:2100::a461",
+        "ttl": 3600,
+        "name": "dbfr.aphrody.com",
+        "proxied": false
+      },
+      {
+        "type": "A",
+        "content": "10.200.77.10",
+        "ttl": 300,
+        "name": "omar.aphrody.com",
+        "proxied": false
+      },
+      {
+        "type": "CNAME",
+        "content": "public.r2.dev",
+        "ttl": 1,
+        "name": "video.aphrody.com",
+        "proxied": true
+      },
+      {
+        "type": "CNAME",
+        "content": "aphrody.com",
+        "ttl": 1,
+        "name": "yohan.aphrody.com",
+        "proxied": true
+      },
+      {
+        "type": "AAAA",
+        "content": "2001:41d0:404:200::4d8e",
+        "ttl": 3600,
+        "name": "vps.aphrody.com",
+        "proxied": false
+      }
+    ]
+  },
+  "r2": {
+    "accountId": "ca22c1a51a145f919b54afa18d936516",
+    "location": "WEUR",
+    "buckets": [
+      {
+        "name": "aphrody-m3-assets",
+        "publicAccess": false,
+        "managedRDevDomain": "disabled",
+        "customDomains": [],
+        "cors": null
+      },
+      {
+        "name": "aphrody-pet-assets",
+        "publicAccess": false,
+        "managedRDevDomain": "disabled",
+        "customDomains": [],
+        "cors": null
+      },
+      {
+        "name": "aphrody-vital-artifacts",
+        "publicAccess": false,
+        "managedRDevDomain": "disabled",
+        "customDomains": [],
+        "cors": null
+      }
+    ]
+  },
+  "cutover": {
+    "state": "dnssec-pending",
+    "blocker": "Nameserver delegation now points to Cloudflare and the zone is active. Cloudflare reports DNSSEC pending, while the .com parent currently publishes no DS record.",
+    "steps": [
+      "Confirm Cloudflare publishes the configured DS and enable the matching DS at the registrar.",
+      "Verify the .com parent DS and Cloudflare DNSSEC status both become active.",
+      "Keep rollback disabled until the parent DS is removed and the matching DNSSEC state is verified."
+    ]
+  }
+}

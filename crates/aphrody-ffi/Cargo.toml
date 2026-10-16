@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-ffi"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+description            = "Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host."
+
+[lib]
+name       = "aphrody_ffi"
+# cdylib -> .so / .dll / .dylib for Bun `bun:ffi` dlopen and any C/Zig host.
+# rlib   -> lets `cargo test` / nextest build + unit-test the crate in-process.
+# (staticlib is intentionally omitted: it is rejected on wasm32-unknown-unknown
+#  and Bun only needs the dynamic library; add it per-need for static C linking.)
+crate-type = ["cdylib", "rlib"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+# `tooling` keeps the historical N2B/Oxc/yolo_tooling ABI in the default build; `inference`
+# adds the in-process llama boundary (aphrody_infer*) and is opt-in because it is heavy.
+default = ["tooling"]
+tooling = ["dep:aphrody-n2b-core", "dep:memchr", "dep:aphrody-oxc-bridge"]
+inference = ["dep:aphrody-llama-server", "dep:aphrody-model-client", "dep:aphrody-models", "dep:futures"]
+# Keep the native CLI and the in-process CLI on the same command feature surface.
+# The binary facade in crates/infra/aphrody forwards these exact capabilities.
+native = ["aphrody-command/native"]
+rag = ["aphrody-command/rag"]
+train = ["aphrody-command/train"]
+mcp-toolbox = ["aphrody-command/mcp-toolbox"]
+gpu = ["aphrody-bun/gpu", "yolo-runtime/gpu"]
+# NVIDIA CUDA (official driver, loaded at run time) on top of the shared GPU hub.
+cuda = ["gpu", "yolo-runtime/cuda"]
+native-stealth = ["obscura-net/stealth"]
+# Forward aphrody-command's opt-in command features so a feature-rich cdylib can be
+# built (e.g. `cargo build -p aphrody-ffi --features forensics`). Inactive by
+# default, so the wasm `cargo check` never tries to pull these host-only deps.
+magika    = ["aphrody-command/magika"]
+forensics = ["aphrody-command/forensics"]
+index     = ["aphrody-command/index"]
+yara      = ["aphrody-command/yara"]
+ocr       = ["aphrody-command/ocr"]
+infer     = ["aphrody-command/infer"]
+jobs      = ["aphrody-command/jobs"]
+# Forwards the pinned Obscura/V8 browser exports of the yolo_* ABI.
+browser   = ["yolo-runtime/browser"]
+
+# The crate wraps the native `aphrody-command` surface (tokio + reqwest +
+# rustls), which does not link on wasm32. On wasm the crate compiles to an
+# empty module so `cargo check --target wasm32-unknown-unknown` stays green.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# `aphrody-command` (crates/infra/aphrody-command) is the library that owns the
+# full command dispatch; crates/infra/aphrody is only its binary facade. It defines no
+# `#[global_allocator]`, so this crate installs its own mimalloc below without
+# a conflict.
+aphrody-command = { workspace = true }
+aphrody-proc = { workspace = true }
+aphrody-agent-home = { workspace = true }
+aphrody-bun = { workspace = true }
+aphrody-n2b-core = { workspace = true, optional = true }
+memchr = { workspace = true, optional = true }
+aphrody-oxc-bridge = { workspace = true, optional = true }
+aphrody-llama-server = { workspace = true, features = ["in-process"], optional = true }
+aphrody-model-client = { workspace = true, optional = true }
+aphrody-models = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+# World/VFS/formats are qualified independently of absent authentic Wiki data.
+aphrody-rag-core = { workspace = true }
+# C ABI of the RAG call surface (aphrody_rag_*), re-exported by this cdylib.
+libc = { workspace = true }
+anyhow = { workspace = true }
+rookie-cookies = { workspace = true }
+aphrody-toolcall-repair = { workspace = true }
+aphrody-web-extract = { workspace = true }
+async-trait = { workspace = true }
+aphrody-web-index = { workspace = true }
+aphrody-gemini-web = { workspace = true }
+aphrody-x = { workspace = true }
+# Versioned yolo_* C ABI (docs/architecture/runtime-native/RUNTIME-ABI.md), re-exported by this cdylib.
+yolo-runtime = { workspace = true }
+bun-python-host = { workspace = true }
+base64     = { workspace = true }
+# A dlopened library must not reserve mimalloc's initial-exec static TLS.
+mimalloc   = { workspace = true, features = ["local_dynamic_tls"] }
+obscura-dom = { workspace = true }
+obscura-net = { workspace = true }
+reqwest    = { workspace = true }
+rustls     = { workspace = true }
+serde_json = { workspace = true }
+serde      = { workspace = true }
+# Shared cross-platform stdout/stderr capture (dup2 on unix / SetStdHandle on
+# Windows); pulls tempfile/libc/windows-sys transitively, host-only.
+aphrody-backend = { workspace = true }
+# Persistent multi-thread runtime that drives `aphrody_command::run_async`, so repeated
+# FFI calls amortise the worker-thread spawn cost instead of paying it per call.
+tokio      = { workspace = true }
+url        = { workspace = true }
+
+# glibc 2.43 re-versioned libm float functions: src/glibc_compat.rs defines them from libm so a cdylib built
+# on the factory (glibc 2.43) still loads on glibc 2.39 hosts (Ubuntu 24.04 user machines).
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
+libm = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tempfile = { workspace = true }
+# The loopback HTTP server the X job API tests point the client at (no real host, no real cookie).
+aphrody-x = { workspace = true, features = ["test-support"] }
+
+[dependencies]
+aphrody-web-source = { path = "../../toolchains/bun/packages/web/rust", version = "1.4.4" }

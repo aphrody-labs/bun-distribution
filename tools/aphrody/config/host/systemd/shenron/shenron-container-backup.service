@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Verified backups of Shenron container-owned PostgreSQL, Redis and SQLite
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/libexec/aphrody-infra/backup-shenron-container.py
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=30min
+# Snapshot retention requires a qualified off-host acknowledgement from the backup owner.
+StandardOutput=journal
+StandardError=journal

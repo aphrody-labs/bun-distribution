@@ -1,0 +1,168 @@
+{
+  "schema": "aphrody.system-packages.v1",
+  "policy": "minimum-host-surface",
+  "note": "Aphrody fournit les binaires applicatifs et les facades Rust/Bun/uv; ces paquets restent des prerequis OS.",
+  "toolchains": {
+    "bun": {
+      "version": "1.4.4",
+      "owner": "aphrody-os",
+      "install": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.{sh,ps1} <version>",
+      "rootEnv": "BUN_INSTALL"
+    },
+    "uv": {
+      "version": "0.12.24",
+      "owner": "aphrody-os",
+      "install": "official-installer",
+      "rootEnv": "UV_INSTALL_DIR"
+    },
+    "rust": {
+      "channel": "1.98.1",
+      "owner": "rustup",
+      "source": "rust-toolchain.toml"
+    },
+    "nushell": {
+      "owner": "cargo-binstall",
+      "install": "cargo binstall nu",
+      "reason": "not packaged by Ubuntu apt"
+    }
+  },
+  "common": [
+    "ca-certificates",
+    "curl",
+    "git",
+    "openssh-client",
+    "pkg-config",
+    "build-essential",
+    "clang",
+    "cmake",
+    "ninja-build",
+    "libssl-dev",
+    "libsqlite3-dev",
+    "zlib1g-dev",
+    "liblzma-dev",
+    "libbz2-dev",
+    "libzstd-dev",
+    "protobuf-compiler",
+    "ffmpeg",
+    "ripgrep",
+    "fd-find",
+    "eza",
+    "bat",
+    "btop",
+    "jq",
+    "unzip",
+    "xz-utils"
+  ],
+  "cargoTools": [
+    "cargo-nextest",
+    "cargo-deny",
+    "cargo-audit",
+    "cargo-machete",
+    "cargo-expand",
+    "cargo-hack",
+    "cargo-zigbuild",
+    "cargo-xwin",
+    "cargo-update"
+  ],
+  "workstation": {
+    "note": "Windows/WSL only (iecode native and .NET builds); never installed on vps or dbfr.",
+    "dotnet-sdk": {
+      "version": "10.0.102",
+      "source": "../../../iecode/global.json",
+      "rollForward": "latestMinor"
+    },
+    "vcpkg": {
+      "rootEnv": "VCPKG_ROOT",
+      "baseline": "../../../iecode/vcpkg.json"
+    },
+    "msvc": {
+      "required": "x64 developer environment for the iecode CMake unified preset"
+    },
+    "gh": {
+      "purpose": "scripts/iecode/github-history-audit.sh"
+    }
+  },
+  "vps": ["nginx", "systemd", "rsync", "postgresql-client", "redis-tools"],
+  "dbfr": [
+    "docker.io",
+    "docker-compose-v2",
+    "nginx",
+    "systemd",
+    "rsync",
+    "postgresql",
+    "postgresql-client",
+    "redis-server",
+    "redis-tools"
+  ],
+  "wsl": ["systemd", "rsync", "postgresql-client", "redis-tools"],
+  "excluded": {
+    "desktop": ["libgtk-4-dev", "qtbase5-dev", "qt6-base-dev"],
+    "runtime": ["rustup", "bun", "uv", "nodejs", "npm", "chromium"],
+    "reason": "Installes par les toolchain managers ou fournis par Aphrody; ne pas dupliquer via APT."
+  },
+  "workstationLinux": {
+    "note": "Bibliothèques natives de compilation de l'app Linux desktop (runtime unique CEF + tauri-winit + GTK 4; plus aucune bibliothèque GTK 3 ni WebKitGTK); installées par scripts/dev/bootstrap.sh, absentes des hôtes serveur.",
+    "packages": [
+      "libgtk-4-dev",
+      "libnss3-dev",
+      "libnspr4-dev",
+      "libatk1.0-dev",
+      "libatk-bridge2.0-dev",
+      "libcups2-dev",
+      "libdrm-dev",
+      "libgbm-dev",
+      "libxcomposite-dev",
+      "libxdamage-dev",
+      "libxfixes-dev",
+      "libxrandr-dev",
+      "libpango1.0-dev",
+      "cmake",
+      "librsvg2-dev",
+      "libasound2-dev",
+      "libudev-dev",
+      "libclang-dev",
+      "libvulkan-dev",
+      "libxkbcommon-dev"
+    ]
+  },
+  "windows": {
+    "note": "Windows 11 host prerequisites applied through winget (yolo ops system-packages --host windows). MSVC from Visual Studio Build Tools 2026 (v18) is the supported Windows target; ids and workload per Microsoft Learn (use-command-line-parameters-to-install-visual-studio, workload-component-id-vs-build-tools).",
+    "winget": [
+      {
+        "id": "Git.Git"
+      },
+      {
+        "id": "astral-sh.uv"
+      },
+      {
+        "id": "Microsoft.DotNet.SDK.10"
+      },
+      {
+        "id": "Microsoft.VisualStudio.BuildTools",
+        "override": "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+      }
+    ],
+    "installers": [
+      {
+        "name": "bun",
+        "check": "bun",
+        "url": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1",
+        "args": ["-Version", "1.4.4"]
+      },
+      {
+        "name": "rustup",
+        "check": "rustup",
+        "url": "https://win.rustup.rs/x86_64",
+        "args": [
+          "-y",
+          "--default-toolchain",
+          "stable",
+          "--profile",
+          "minimal",
+          "--default-host",
+          "x86_64-pc-windows-msvc"
+        ]
+      }
+    ]
+  }
+}

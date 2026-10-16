@@ -1,0 +1,52 @@
+[package]
+name = "aphrody"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+description           = "Aphrody — cross-platform Rust CLI (Linux / Windows / macOS / WebAssembly)."
+
+# The general CLI lives under crates/infra/aphrody; package and binary identities
+# remain `aphrody` for consumer compatibility.
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+native = ["aphrody-command/native"]
+rag = ["aphrody-command/rag"]
+train = ["aphrody-command/train"]
+magika = ["aphrody-command/magika"]
+mcp-toolbox = ["aphrody-command/mcp-toolbox"]
+forensics = ["aphrody-command/forensics"]
+index = ["aphrody-command/index"]
+infer = ["aphrody-command/infer"]
+ocr = ["aphrody-command/ocr"]
+jobs = ["aphrody-command/jobs"]
+yara = ["aphrody-command/yara"]
+
+[dependencies]
+aphrody-command = { path = "../aphrody-command", version = "1.4.4", features = [] }
+
+[dev-dependencies]
+serde_json = "1.0.151"
+
+[[bench]]
+name    = "cold_start"
+harness = false
+
+[package.metadata.cargo-machete]
+ignored = ["ort"]

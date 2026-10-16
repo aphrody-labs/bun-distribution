@@ -1,0 +1,56 @@
+[package]
+name = "aphrody-agent-home"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+license = "Apache-2.0"
+homepage = "https://github.com/aphrody-labs/aphrody"
+repository = "https://github.com/aphrody-labs/aphrody"
+description            = "aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup."
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+non_ascii_idents = "deny"
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+correctness = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+
+[features]
+default = []
+# Git-backed workspace backup/restore via pure-Rust `gix` (no shell-out, no
+# libgit2 C). Host-only: gix does not build on wasm32. Opt-in because it adds
+# a non-trivial dependency tree.
+#   cargo build -p aphrody-agent-home --features git
+git = ["dep:gix"]
+
+[dependencies]
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+blake3 = { version = "1", default-features = false }
+sha2 = "0.11.0"
+unicode-segmentation = { version = "1", features = [] }
+arc-swap = "1.9.2"
+tracing = "0.1.44"
+
+[dev-dependencies]
+tempfile = "3.27.0"
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name    = "agent_home_bench"
+harness = false
+
+[package.metadata.cargo-machete]
+# `gix` is cfg-gated behind the `git` feature + host-only target; machete
+# flags it as unused when the feature is off. `tracing` is used via macros
+# that machete's import scan misses on some passes.
+ignored = ["gix"]

@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+# Google Fonts edge proxy behind nginx on cdn.aphrody.com (nginx/aphrody/cdn.aphrody.com.conf).
+# Bun source of @aphrody/google pinned in /home/ubuntu/apps/cdn/src (packages/google/google/src and packages/engine/core/src/server
+# only, no dependency to install), a `git archive` of the revision in /home/ubuntu/apps/cdn/src/REVISION. Upgrade with:
+#   git -C /home/ubuntu/src/aphrody archive <sha> packages/google/google/src packages/engine/core/src/server | tar -x -C /home/ubuntu/apps/cdn/src
+# The cache lives in /home/ubuntu/apps/cdn/google. `--static` serves the asset CDN release tree
+# (`scripts/tools/infra/cdn.ts publish`, /home/ubuntu/apps/cdn/current) under /h/ and /s/<scope>/, then the
+# Material Symbols release (`bun run cdn publish` of aphrody-labs/material-design-icons, branch aphrody,
+# /home/ubuntu/apps/cdn/symbols/current, asset-catalog.json `releases`).
+[Unit]
+Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/apps/cdn/src
+ExecStart=/home/ubuntu/.local/bin/bun /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts --port 8796 --cache /home/ubuntu/apps/cdn/google --origin https://cdn.aphrody.com --static /home/ubuntu/apps/cdn/current --static /home/ubuntu/apps/cdn/symbols/current
+Restart=always
+MemoryHigh=128M
+MemoryMax=256M
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadWritePaths=/home/ubuntu/apps/cdn/google
+StandardOutput=journal
+StandardError=journal
+CacheDirectory=aphrody-fonts-proxy
+Environment=BUN_INSTALL_CACHE_DIR=/var/cache/aphrody-fonts-proxy
+SyslogIdentifier=aphrody-fonts-proxy
+
+[Install]
+WantedBy=multi-user.target

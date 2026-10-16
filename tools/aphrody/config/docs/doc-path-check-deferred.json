@@ -1,0 +1,70 @@
+{
+  "$comment": "First-party documents whose dead backtick paths cannot be edited in this pass because the file is under an active concurrent edit (see git status). docs-links skips only the backtick-path check for them; links are still checked. Remove an entry once its owner applies them.",
+  "schemaVersion": 1,
+  "deferred": [
+    {
+      "file": "PLAN.md",
+      "reason": "dated plan entries name removed or moved paths as historical records; rewriting them would alter migration evidence"
+    },
+    {
+      "file": "docs/plans/fusion/drive/PROMPT-ONESHOT-1.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (1 de 3).md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (3 de 3).md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/AUDIT-fork-bun-mecanismes.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/Plan de fusion Obscura × Bun.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/GOAL-FUSION.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (2 de 3).md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/AUDIT-obscura-inventaire.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/AUDIT-tauri-et-renommage.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/RECHERCHE-depots-externes.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/RECHERCHE-obscura.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/RECHERCHE-tauri-v3.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/fusion/bench/FACTS.md",
+      "reason": "owner copy of the fusion plan (Drive) and its audits: backtick paths name the Bun/Obscura fork layouts, not this checkout"
+    },
+    {
+      "file": "docs/plans/agent-home-pipeline/PLAN.md",
+      "reason": "under the active agent-home-pipeline claim; it names its own .coord claim file, untracked by design"
+    }
+  ]
+}

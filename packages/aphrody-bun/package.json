@@ -1,0 +1,50 @@
+{
+  "name": "@aphrody/bun",
+  "version": "1.4.4",
+  "description": "bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "files": [
+    "src",
+    "bindings",
+    "native"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./src/*.js": "./src/*.ts",
+    "./src/*": "./src/*",
+    "./cli": "./src/cli.ts",
+    "./web": "./src/web.ts",
+    "./web/pipeline": "./src/pipeline.ts",
+    "./x": "./src/x.ts",
+    "./n2b": "./src/n2b.ts",
+    "./oxc": "./src/oxc.ts",
+    "./zerocopy": "./src/zerocopy.ts",
+    "./agent": "./src/agent.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bash ../../scripts/aphrody/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu",
+    "test": "bash ../../scripts/aphrody/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu && APHRODY_FFI_DEV=1 APHRODY_FFI_REQUIRE_NATIVE=1 bun test test-library.test.ts test-native.test.ts test-native-artifact.test.ts test-pipeline.test.ts && APHRODY_FFI_DEV=1 bun run test-ffi.ts && APHRODY_FFI_DEV=1 bun run test-cli-only.ts",
+    "typecheck": "bun check --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/bun-runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4",
+    "@aphrody/update": "workspace:*",
+    "@aphrody/web-source": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

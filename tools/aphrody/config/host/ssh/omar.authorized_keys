@@ -1,0 +1,15 @@
+# Installed as /etc/ssh/authorized_keys.d/omar (root:root, 0644) on vps, dbfr and WSL, read through the
+# `AuthorizedKeysFile` of the `Match User omar` block of ssh/omar-sshd.conf. Root-owned on purpose.
+#
+# Public key supplied and confirmed by the owner on 2026-10-06 (SHA256:8G22L1q/zD3aUYPRqYNIuIQg7c0NWfofpXsaqZHuM/s).
+# It is the same key pair as ~/.ssh/id_ed25519.pub of the owner's PC (comment "windows-aphro"): a shared pair. Logs
+# (sshd, sudo) therefore tell the two people apart by the Unix login only, and on dbfr the same key is also a line of
+# the ubuntu account (full sudo): see `findings` of the omar account in catalog.json.
+# To give omar his own key, replace the single key line below (nothing else changes).
+#
+# from= lists his public address and the authenticated private VPN subnet. Omar uses 10.200.77.10;
+# the owner can qualify the shared authorized key from the WSL peer 10.200.77.2. Drop the subnet entry to force the public
+# path only. `restrict` removes forwarding, agent, X11 and the pty; `pty` gives the pty back, `port-forwarding` +
+# `permitlisten` give back only the reverse (-R) loopback ports of omar-sshd.conf (Windows SSH 22010, remote desktop
+# 28795, MCP 28793, WSL Ubuntu SSH 22011, VNC 25900) used while wg1 is down.
+from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793",permitlisten="127.0.0.1:25900",permitlisten="127.0.0.1:28788",permitlisten="127.0.0.1:28080" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)
