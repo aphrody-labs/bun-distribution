@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "material-published-consumer"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+publish = false
+description = "Native consumer of the published Material token and component owner"
+
+# This application has its own dependency graph, as downstream consumers do.
+[workspace]
+resolver = "3"
+
+[dependencies]
+libm3 = { git = "https://github.com/aphrody-labs/material", rev = "1e65a503420e4a8962b8ceaa18819eedbc280454", default-features = false, features = ["std"] }
+aphrody-m3 = { git = "https://github.com/aphrody-labs/material", rev = "1e65a503420e4a8962b8ceaa18819eedbc280454", default-features = false }
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "1e65a503420e4a8962b8ceaa18819eedbc280454", default-features = false, features = ["std", "serde"] }
+
+# The application's root patch unifies transitive registry token dependencies.
+[patch.crates-io]
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "1e65a503420e4a8962b8ceaa18819eedbc280454" }
