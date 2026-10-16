@@ -20,18 +20,16 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "allowJs": false,
-    "rootDir": "../../..",
+    "rootDir": "../..",
     "paths": {
-      "@rosegriffon/db": ["../db/src/index.ts"],
-      "@rosegriffon/db/*": ["../db/src/*"],
-      "@rosegriffon/types": ["../types/src/index.ts"],
-      "@rosegriffon/types/*": ["../types/src/*"],
-      "@rosegriffon/auth": ["../auth/src/index.ts"],
-      "@rosegriffon/auth/*": ["../auth/src/*"],
-      "@rosegriffon/ui": ["../ui/src/index.ts"],
-      "@rosegriffon/ui/*": ["../ui/src/*"],
-      "@rosegriffon/assets": ["../assets/src/index.ts"],
-      "@rosegriffon/assets/*": ["../assets/src/*"]
+      "@rosegriffon/db": ["../rg-db/src/index.ts"],
+      "@rosegriffon/db/*": ["../rg-db/src/*"],
+      "@rosegriffon/types": ["../rg-types/src/index.ts"],
+      "@rosegriffon/types/*": ["../rg-types/src/*"],
+      "@rosegriffon/auth": ["../rg-auth/src/index.ts"],
+      "@rosegriffon/auth/*": ["../rg-auth/src/*"],
+      "@rosegriffon/assets": ["../rg-assets/src/index.ts"],
+      "@rosegriffon/assets/*": ["../rg-assets/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "build", ".turbo", "coverage"]
