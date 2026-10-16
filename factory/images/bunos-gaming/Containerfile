@@ -28,6 +28,8 @@ ENV XDG_SESSION_TYPE=wayland
 CMD ["/bin/bash"]
 
 FROM gaming AS bootable
+# pacman's sandboxed mkinitcpio hook cannot run in a build container: regenerate initramfs explicitly.
 RUN set -e; bunos-install-packages /usr/share/bun-os/bootable.packages \
-  && systemctl enable sddm NetworkManager supergfxd power-profiles-daemon 2>/dev/null || true \
+  && mkinitcpio -P \
+  && for unit in sddm NetworkManager supergfxd power-profiles-daemon; do systemctl enable "$unit" 2>/dev/null || true; done \
   && rm -rf /var/cache/pacman/pkg/*

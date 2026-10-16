@@ -89,6 +89,66 @@
   "images": {
     "bunos-gaming": {
       "usrComposition": "gaming",
+      "agentTooling": {
+        "note": "Claude Code and Codex skills and MCP servers for Omarchy/Arch; installed into /etc/skel/.claude and /etc/skel/.codex.",
+        "packages": ["arch-wiki-docs", "namcap", "expac", "pacman-contrib", "devtools"],
+        "skills": [
+          { "name": "arch-linux", "source": "packages/bun-arch-mcp/skills/arch-linux" },
+          {
+            "name": "omarchy",
+            "repo": "https://github.com/robzolkos/omarchy-skill",
+            "commit": "b093719381635d185716dd2b53ac9a684fe440ec",
+            "path": "."
+          },
+          {
+            "name": "hypruse",
+            "repo": "https://github.com/IlyasKhallouki/hypruse",
+            "commit": "0035d86db6679aca6a341331b8e60033a07d2670",
+            "path": "skills/hypruse"
+          }
+        ],
+        "mcpServers": [
+          {
+            "name": "bun-arch",
+            "command": ["bun", "/usr/share/bun-os/bun-arch-mcp/src/mcp.ts"],
+            "source": "packages/bun-arch-mcp",
+            "env": { "ARCH_WIKI_HTML": "/usr/share/doc/arch-wiki/html" }
+          },
+          {
+            "name": "arch-wiki",
+            "command": [
+              "uv",
+              "tool",
+              "run",
+              "--from",
+              "git+https://github.com/egarcia74/arch-wiki-mcp@5fe91d959ddfa375904f584a5b9264cd15e76720",
+              "arch-wiki-mcp"
+            ]
+          },
+          {
+            "name": "hyprland",
+            "command": [
+              "uv",
+              "tool",
+              "run",
+              "--from",
+              "git+https://github.com/alderban107/hyprland-mcp@2ed3b2103e8852da4fd50d0e4066ec3c63a66572",
+              "hyprland-mcp"
+            ]
+          },
+          {
+            "name": "hypruse",
+            "command": [
+              "uv",
+              "tool",
+              "run",
+              "--from",
+              "git+https://github.com/IlyasKhallouki/hypruse@0035d86db6679aca6a341331b8e60033a07d2670",
+              "hypruse"
+            ]
+          }
+        ]
+      },
       "platforms": ["linux/amd64"],
       "targets": {
         "gaming": "image",

@@ -33,6 +33,9 @@ RUN set -e; ln -s bun /usr/local/bin/bunx; apt-get update \
   && apt-get install -y --no-install-recommends gnupg \
   && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x${COSMIC_APT_KEY}" | gpg --dearmor >/usr/share/keyrings/pop-os.gpg \
   && gpg --show-keys --with-colons /usr/share/keyrings/pop-os.gpg | grep -q "^fpr:::::::::${COSMIC_APT_KEY}:" \
+  && install -d /etc/crypto-policies/back-ends \
+  && sed 's/^sha1.second_preimage_resistance = .*/sha1.second_preimage_resistance = 2027-02-01  # Pop!_OS key binding is SHA-1/' \
+       /usr/share/apt/default-sequoia.config >/etc/crypto-policies/back-ends/apt-sequoia.config \
   && echo "deb [signed-by=/usr/share/keyrings/pop-os.gpg] ${COSMIC_APT_SERVER} ${COSMIC_APT_SUITE} main" >/etc/apt/sources.list.d/pop-os.list \
   && printf 'Package: *\nPin: origin apt.pop-os.org\nPin-Priority: 100\n' >/etc/apt/preferences.d/pop-os \
   && apt-get update \
