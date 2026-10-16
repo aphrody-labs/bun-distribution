@@ -58,13 +58,7 @@
 
   // The curve with influences in 0.1–100 % and speeds within ±100; null when a number is missing.
   function sanitized(c) {
-    if (
-      !c ||
-      !finite(c.outInfluence) ||
-      !finite(c.outSpeed) ||
-      !finite(c.inInfluence) ||
-      !finite(c.inSpeed)
-    )
+    if (!c || !finite(c.outInfluence) || !finite(c.outSpeed) || !finite(c.inInfluence) || !finite(c.inSpeed))
       return null;
     var inf = function (v) {
       return Math.min(100, Math.max(MIN_INFLUENCE, v));
@@ -72,19 +66,11 @@
     var speed = function (v) {
       return Math.min(MAX_SPEED, Math.max(-MAX_SPEED, v));
     };
-    return curve(
-      inf(c.outInfluence),
-      speed(c.outSpeed),
-      inf(c.inInfluence),
-      speed(c.inSpeed),
-    );
+    return curve(inf(c.outInfluence), speed(c.outSpeed), inf(c.inInfluence), speed(c.inSpeed));
   }
 
   function cleanName(name) {
-    var n = String(name === undefined || name === null ? "" : name).replace(
-      /^\s+|\s+$/g,
-      "",
-    );
+    var n = String(name === undefined || name === null ? "" : name).replace(/^\s+|\s+$/g, "");
     return n.length > 0 && n.length <= MAX_NAME ? n : null;
   }
 
@@ -93,8 +79,7 @@
   }
 
   function find(list, name) {
-    for (var i = 0; i < list.length; i++)
-      if (same(list[i].name, name)) return i;
+    for (var i = 0; i < list.length; i++) if (same(list[i].name, name)) return i;
     return -1;
   }
 
@@ -105,25 +90,22 @@
     var doc;
     try {
       doc = JSON.parse(app.settings.getSetting(SECTION, KEY));
-    } catch (e) {
+    } catch (error) {
+      // ExtendScript requires a catch binding; malformed user settings are ignored.
+      void error;
       return out;
     }
     var list = doc && doc.presets instanceof Array ? doc.presets : [];
     for (var i = 0; i < list.length; i++) {
       var name = cleanName(list[i] && list[i].name);
       var c = sanitized(list[i] && list[i].curve);
-      if (name && c && find(BUILT_IN, name) < 0 && find(out, name) < 0)
-        out.push({ name: name, curve: c });
+      if (name && c && find(BUILT_IN, name) < 0 && find(out, name) < 0) out.push({ name: name, curve: c });
     }
     return out;
   }
 
   function saveUser(list) {
-    app.settings.saveSetting(
-      SECTION,
-      KEY,
-      JSON.stringify({ version: 1, presets: list }),
-    );
+    app.settings.saveSetting(SECTION, KEY, JSON.stringify({ version: 1, presets: list }));
   }
 
   // ------------------------------------------------------------------ keyframes
@@ -137,15 +119,9 @@
     var props = comp.selectedProperties;
     for (var i = 0; i < props.length; i++) {
       var p = props[i];
-      if (
-        p.propertyType !== PropertyType.PROPERTY ||
-        p.numKeys < 2 ||
-        !p.isInterpolationTypeValid(BEZIER)
-      )
-        continue;
+      if (p.propertyType !== PropertyType.PROPERTY || p.numKeys < 2 || !p.isInterpolationTypeValid(BEZIER)) continue;
       var keys = p.selectedKeys;
-      for (var k = 0; k + 1 < keys.length; k++)
-        if (keys[k + 1] === keys[k] + 1) out.push({ prop: p, key: keys[k] });
+      for (var k = 0; k + 1 < keys.length; k++) if (keys[k + 1] === keys[k] + 1) out.push({ prop: p, key: keys[k] });
     }
     return out;
   }
@@ -157,23 +133,13 @@
       len = 0,
       prev = null;
     for (var d = 0; d < n; d++)
-      p.push([
-        a[d] || 0,
-        (a[d] || 0) + (outTangent[d] || 0),
-        (b[d] || 0) + (inTangent[d] || 0),
-        b[d] || 0,
-      ]);
+      p.push([a[d] || 0, (a[d] || 0) + (outTangent[d] || 0), (b[d] || 0) + (inTangent[d] || 0), b[d] || 0]);
     for (var s = 0; s <= 128; s++) {
       var t = s / 128,
         u = 1 - t,
         pt = [];
       for (var e = 0; e < n; e++)
-        pt.push(
-          u * u * u * p[e][0] +
-            3 * u * u * t * p[e][1] +
-            3 * u * t * t * p[e][2] +
-            t * t * t * p[e][3],
-        );
+        pt.push(u * u * u * p[e][0] + 3 * u * u * t * p[e][1] + 3 * u * t * t * p[e][2] + t * t * t * p[e][3]);
       if (prev) {
         var sq = 0;
         for (var f = 0; f < n; f++) sq += (pt[f] - prev[f]) * (pt[f] - prev[f]);
@@ -201,25 +167,12 @@
       v1 = p.keyValue(a + 1),
       out = [];
     var vt = p.propertyValueType;
-    if (
-      vt === PropertyValueType.TwoD_SPATIAL ||
-      vt === PropertyValueType.ThreeD_SPATIAL
-    ) {
-      var speed =
-        pathLength(
-          v0,
-          p.keyOutSpatialTangent(a),
-          p.keyInSpatialTangent(a + 1),
-          v1,
-        ) / dur;
+    if (vt === PropertyValueType.TwoD_SPATIAL || vt === PropertyValueType.ThreeD_SPATIAL) {
+      var speed = pathLength(v0, p.keyOutSpatialTangent(a), p.keyInSpatialTangent(a + 1), v1) / dur;
       for (var i = 0; i < n; i++) out.push(speed);
     } else if (typeof v0 === "number" && typeof v1 === "number") {
       out.push((v1 - v0) / dur);
-    } else if (
-      v0 instanceof Array &&
-      v1 instanceof Array &&
-      v0.length === v1.length
-    ) {
+    } else if (v0 instanceof Array && v1 instanceof Array && v0.length === v1.length) {
       for (var d = 0; d < n; d++) out.push(((v1[d] || 0) - (v0[d] || 0)) / dur);
     } else {
       // Shapes and other values ease their overall progress.
@@ -285,25 +238,19 @@
     var s = slopes(p, a);
     if (!s) return null;
     var d = 0;
-    for (var i = 1; i < s.length; i++)
-      if (Math.abs(s[i]) > Math.abs(s[d])) d = i;
+    for (var i = 1; i < s.length; i++) if (Math.abs(s[i]) > Math.abs(s[d])) d = i;
     if (Math.abs(s[d]) < 1e-12) return null;
     var o = p.keyOutTemporalEase(a),
       n = p.keyInTemporalEase(a + 1);
     var oe = o[d] || o[0],
       ne = n[d] || n[0];
     if (!oe || !ne) return null;
-    return sanitized(
-      curve(oe.influence, oe.speed / s[d], ne.influence, ne.speed / s[d]),
-    );
+    return sanitized(curve(oe.influence, oe.speed / s[d], ne.influence, ne.speed / s[d]));
   }
 
   // ------------------------------------------------------------------ panel
 
-  var ui =
-    thisObj instanceof Panel
-      ? thisObj
-      : new Window("palette", "Ease Presets", undefined, { resizeable: true });
+  var ui = thisObj instanceof Panel ? thisObj : new Window("palette", "Ease Presets", undefined, { resizeable: true });
   ui.orientation = "column";
   ui.alignChildren = ["fill", "top"];
   ui.spacing = 6;
@@ -327,10 +274,7 @@
       hi = 1.35,
       m = 10;
     var at = function (x, v) {
-      return [
-        m + (w - 2 * m) * x,
-        h - m - ((h - 2 * m) * (v - lo)) / (hi - lo),
-      ];
+      return [m + (w - 2 * m) * x, h - m - ((h - 2 * m) * (v - lo)) / (hi - lo)];
     };
     var frame = g.newPen(g.PenType.SOLID_COLOR, [0.5, 0.5, 0.5, 0.6], 1);
     g.newPath();
@@ -484,11 +428,7 @@
     var c = typedCurve();
     if (c) working = c;
   };
-  outInfluence.onChange =
-    outSpeed.onChange =
-    inInfluence.onChange =
-    inSpeed.onChange =
-      onTyped;
+  outInfluence.onChange = outSpeed.onChange = inInfluence.onChange = inSpeed.onChange = onTyped;
 
   applyButton.onClick = function () {
     var c = typedCurve();

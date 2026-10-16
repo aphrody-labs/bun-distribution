@@ -1,9 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { allowedWorkspace } from "../../src/automation/workspace-layout.ts";
+import { allowedWorkspace, runWorkspaceLayout } from "../../src/automation/workspace-layout.ts";
 
 const root = join(import.meta.dir, "../../../..");
+
+test("physical applications and packages absent from admission are both reported", async () => {
+  const fixture = await mkdtemp(join(tmpdir(), "bunos-workspace-layout-"));
+  const errors: string[] = [];
+  const logger = spyOn(console, "error").mockImplementation(message => errors.push(String(message)));
+  try {
+    await Bun.write(join(fixture, "package.json"), JSON.stringify({ workspaces: ["packages/admitted"] }));
+    for (const path of ["packages/admitted", "packages/unregistered", "apps/unregistered"]) {
+      await mkdir(join(fixture, path), { recursive: true });
+      await Bun.write(join(fixture, path, "package.json"), JSON.stringify({ name: path.replace("/", "-") }));
+    }
+    expect(await runWorkspaceLayout(["--root", fixture])).toBe(1);
+    const report = errors.join("\n");
+    expect(report).toContain("package manifest is not declared as a workspace: packages/unregistered");
+    expect(report).toContain("package manifest is not declared as a workspace: apps/unregistered");
+    expect(report).not.toContain("package manifest is not declared as a workspace: packages/admitted");
+    expect(errors.join("\n").split("\n")).toHaveLength(2);
+  } finally {
+    logger.mockRestore();
+    await rm(fixture, { recursive: true, force: true });
+  }
+});
 
 test("product members are flat and pinned runtime packages keep their source boundary", () => {
   for (const path of [

@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { appendFile, chmod, mkdir, open, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const repositoryRoot = path.resolve(import.meta.dir, "../..");
+const repositoryRoot = path.resolve(import.meta.dir, "../../../..");
 const DEFAULT_SOURCE_PROJECT_REF = "yftdclwvehxxffwqvhmc";
 const EXPECTED_TARGET_ORIGIN = "http://127.0.0.1:8823";
 const EXPECTED_TARGET_ROOT = "/var/www/achillea-storage";
@@ -129,17 +129,24 @@ export function resolveStorageMigrationConfig(
     throw new Error("La cible Storage doit rester la passerelle Achillea loopback 127.0.0.1:8823");
   }
   const targetRoot = environment.ACHILLEA_STORAGE_TARGET_ROOT?.trim() || EXPECTED_TARGET_ROOT;
-  if (path.resolve(targetRoot) !== EXPECTED_TARGET_ROOT) {
+  if (path.posix.resolve(targetRoot) !== EXPECTED_TARGET_ROOT) {
     throw new Error("La racine cible doit rester /var/www/achillea-storage");
   }
 
-  const stateDirectory = path.resolve(environment.ACHILLEA_STORAGE_MIGRATION_DIR?.trim() || DEFAULT_STATE_DIRECTORY);
-  const forbiddenStatePaths = ["/", "/home", homedir(), "/var", "/var/www"];
-  const forbiddenStateTrees = [repositoryRoot, "/var/www/rg-storage", "/var/www/azalee-storage", EXPECTED_TARGET_ROOT];
+  const configuredStateDirectory = environment.ACHILLEA_STORAGE_MIGRATION_DIR?.trim() || DEFAULT_STATE_DIRECTORY;
+  const stateDirectory = path.resolve(configuredStateDirectory);
+  const forbiddenStatePaths = ["/", "/home", homedir(), "/var", "/var/www"].map(value => path.resolve(value));
+  const forbiddenStateTrees = [
+    repositoryRoot,
+    "/var/www/rg-storage",
+    "/var/www/azalee-storage",
+    EXPECTED_TARGET_ROOT,
+  ].map(value => path.resolve(value));
   if (
     forbiddenStatePaths.includes(stateDirectory) ||
     forbiddenStateTrees.some(root => stateDirectory === root || stateDirectory.startsWith(`${root}${path.sep}`)) ||
-    /(?:^|\/)(?:rg|azalee)(?:\/|$)/i.test(stateDirectory)
+    /(?:^|[\\/])(?:rg|azalee)(?:[\\/]|$)/i.test(stateDirectory) ||
+    /^\/home\/[^/]+\/?$/.test(configuredStateDirectory)
   ) {
     throw new Error(
       "L'etat de migration doit rester dans un dossier Achillea prive hors repo et hors racines partagees",
@@ -193,7 +200,10 @@ export function validateObjectName(name: string): void {
   if (!name || name.startsWith("/") || name.endsWith("/") || name.includes("\\")) {
     throw new Error("Nom d'objet Storage dangereux ou vide");
   }
-  if (/[\u0000-\u001f\u007f]/.test(name)) throw new Error("Nom d'objet Storage avec caractere de controle");
+  for (let index = 0; index < name.length; index++) {
+    const code = name.charCodeAt(index);
+    if (code <= 0x1f || code === 0x7f) throw new Error("Nom d'objet Storage avec caractere de controle");
+  }
   if (name.split("/").some(part => !part || part === "." || part === "..")) {
     throw new Error("Nom d'objet Storage avec segment dangereux");
   }
@@ -440,7 +450,8 @@ export async function runBounded<T, R>(
   concurrency: number,
   operation: (value: T, index: number) => Promise<R>,
 ): Promise<R[]> {
-  const results = new Array<R>(values.length);
+  const results: R[] = [];
+  results.length = values.length;
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(concurrency, values.length) }, async () => {

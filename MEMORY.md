@@ -1,3 +1,24 @@
+## Unified product stabilization — 2026-10-16
+
+Root type checking passes on 327 files. The imported Cargo adapter now shares
+canonical native admission; its 11 tests and 72 assertions pass. Physical Bun
+layout discovery checks both apps/ and packages/, with two regression tests and
+31 assertions, without weakening declaration errors. The pre-admission snapshot
+reports 382 physical gaps: 375 generated Windows packages and seven other owners.
+
+Nine first-party lint diagnostics are corrected. Full native lint still fails
+the warning-denying gate: 4,293 warnings, zero errors, 7,967 files. Storage path
+guards now distinguish the remote POSIX destination from local host state paths
+and resolve this checkout correctly. Its tests improve from 14/6 to 19/1 on
+Windows; the remaining POSIX permission check stays fail-closed. No production
+Storage operation or permission workaround occurred.
+
+The prior Android ninja/sccache process tree remains live despite a free
+canonical mutex. Preserve it and serialize native qualification against actual
+running owners, not mutex state alone. No checkout-built bunos-infra artifact
+was established by this stabilization batch. Earlier cleanup refusals remain
+in force; generated installation remnants are not qualified away by source work.
+
 ## Arch factory ownership — 2026-10-16
 
 The expanded owner request selects CachyOS, ChimeraOS and Omarchy references,

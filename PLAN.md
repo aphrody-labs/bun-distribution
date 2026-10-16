@@ -1,5 +1,25 @@
 # Integration plan
 
+## Unified product stabilization — 2026-10-16
+
+- [x] Qualify the shared native Cargo admission adapter: 11 tests and 72
+      assertions pass; root native type checking covers 327 files.
+- [x] Report undeclared physical applications as well as packages. Two layout
+      tests pass with 31 assertions; declaration gaps remain fatal.
+- [x] Correct nine lint diagnostics in six first-party files, preserving worker
+      startup, sparse arrays, host-script compatibility and Storage validation.
+      Full native lint reports 4,293 warnings and zero errors across 7,967 files;
+      the warning-denying product gate remains incomplete.
+- [ ] Complete physical Bun member admission. The pre-admission inventory has
+      382 gaps, including 375 generated Windows packages with complete entries,
+      unique identities and retained licenses. Source presence is not admission.
+- [ ] Qualify Storage private-directory permissions on an admitted host. The
+      existing suite passes 19 tests on Windows; one POSIX-mode privacy check
+      fails closed. No real Storage migration was performed.
+- [ ] Qualify native Infra and full product builds after the existing Android
+      build releases its native processes. A free canonical mutex alone does
+      not make overlapping compilation safe.
+
 ## Bun OS Infra and Workspace absorption — 2026-10-16
 
 - Owner update: absorb and update Aphrody Infra and Workspace as Bun OS

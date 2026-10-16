@@ -75,7 +75,8 @@ async function touch(selector: string): Promise<void> {
         if (message.id !== requestId) return;
         clearTimeout(timeout);
         socket.removeEventListener("message", receive);
-        message.error ? fail(new Error(JSON.stringify(message.error))) : done();
+        if (message.error) fail(new Error(JSON.stringify(message.error)));
+        else done();
       };
       socket.addEventListener("message", receive);
       socket.send(JSON.stringify({ id: requestId, method: "Input.dispatchTouchEvent", params }));

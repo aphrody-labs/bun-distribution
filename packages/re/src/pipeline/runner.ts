@@ -88,7 +88,8 @@ export async function runBatch(
   opts: PipelineOptions,
   concurrency = Math.max(1, Math.min(4, navigator.hardwareConcurrency ?? 2)),
 ): Promise<PipelineReport[]> {
-  const results: PipelineReport[] = new Array(inputs.length);
+  const results: PipelineReport[] = [];
+  results.length = inputs.length;
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(concurrency, inputs.length) }, async () => {

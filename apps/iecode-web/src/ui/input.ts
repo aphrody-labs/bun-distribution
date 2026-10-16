@@ -197,7 +197,7 @@ export class Input {
     }
   }
 
-  mouseUp(e: MouseEvent) {
+  mouseUp(_event: MouseEvent) {
     this.touches.delete(-1);
   }
 

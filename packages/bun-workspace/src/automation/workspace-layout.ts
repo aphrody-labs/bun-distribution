@@ -40,7 +40,6 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
   }
   if (!root) throw new Error("--root requires a repository path");
   root = resolve(root);
-  const packagesRoot = join(root, "packages");
   const manifestPath = join(root, "package.json");
   const rootManifest = (await Bun.file(manifestPath).json()) as RootManifest;
   const declaredWorkspaces = Array.isArray(rootManifest.workspaces)
@@ -98,15 +97,17 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     }
   }
 
-  if (existsSync(packagesRoot)) {
-    for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
+  for (const category of ["packages", "apps"]) {
+    const categoryRoot = join(root, category);
+    if (!existsSync(categoryRoot)) continue;
+    for (const entry of readdirSync(categoryRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const workspacePath = `packages/${entry.name}`;
-      const packageManifest = join(packagesRoot, entry.name, "package.json");
+      const workspacePath = `${category}/${entry.name}`;
+      const packageManifest = join(categoryRoot, entry.name, "package.json");
       if (existsSync(packageManifest) && !workspacePaths.includes(workspacePath)) {
         errors.push(`package manifest is not declared as a workspace: ${workspacePath}`);
       }
-      if (existsSync(join(packagesRoot, entry.name, ".git")) && !declaredSubmodules.has(workspacePath)) {
+      if (existsSync(join(categoryRoot, entry.name, ".git")) && !declaredSubmodules.has(workspacePath)) {
         errors.push(`nested Git metadata is not allowed: ${workspacePath}/.git`);
       }
     }
