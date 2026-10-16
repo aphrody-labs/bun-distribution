@@ -7,10 +7,7 @@ import { EMBLEMS, type EmblemDefinition } from "../toriyama-svg";
 
 export type EmblemName = keyof typeof EMBLEMS;
 
-export interface ToriyamaEmblemProps extends Omit<
-  SVGProps<SVGSVGElement>,
-  "size"
-> {
+export interface ToriyamaEmblemProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   name: EmblemName;
   size?: number | string;
   /** Display variant: "badge" adds an outer shaded badge border, "flat" is clean print */
@@ -28,7 +25,8 @@ export function ToriyamaEmblem({
   decorative = false,
   ...props
 }: ToriyamaEmblemProps) {
-  const def: EmblemDefinition = EMBLEMS[name] ?? EMBLEMS.kame;
+  const def: EmblemDefinition | undefined = EMBLEMS[name] ?? EMBLEMS.kame;
+  if (!def) throw new RangeError("Missing fallback emblem");
   const a11y = decorative
     ? { "aria-hidden": true as const }
     : { role: "img" as const, "aria-label": title ?? def.title };
@@ -42,28 +40,17 @@ export function ToriyamaEmblem({
       height={size}
       className={`inline-block shrink-0 transition-transform duration-150 ${className}`}
       style={{
-        filter:
-          variant === "badge" ? "drop-shadow(2px 3px 0px #121417)" : undefined,
+        filter: variant === "badge" ? "drop-shadow(2px 3px 0px #121417)" : undefined,
       }}
       {...a11y}
       {...props}
     >
       {/* Optional colored outer ring if badge */}
-      {variant === "badge" && def.bgCircleColor && (
-        <circle cx="50" cy="50" r="48" fill={def.bgCircleColor} />
-      )}
+      {variant === "badge" && def.bgCircleColor && <circle cx="50" cy="50" r="48" fill={def.bgCircleColor} />}
 
       {def.paths.map((p, idx) => {
-        const fill = isMono
-          ? p.fill
-            ? "currentColor"
-            : "none"
-          : (p.fill ?? "none");
-        const stroke = isMono
-          ? p.stroke
-            ? "currentColor"
-            : undefined
-          : p.stroke;
+        const fill = isMono ? (p.fill ? "currentColor" : "none") : (p.fill ?? "none");
+        const stroke = isMono ? (p.stroke ? "currentColor" : undefined) : p.stroke;
 
         return (
           <path
@@ -81,27 +68,17 @@ export function ToriyamaEmblem({
   );
 }
 
-export const EmblemKame = (props: Omit<ToriyamaEmblemProps, "name">) => (
-  <ToriyamaEmblem name="kame" {...props} />
-);
-export const EmblemGo = (props: Omit<ToriyamaEmblemProps, "name">) => (
-  <ToriyamaEmblem name="go" {...props} />
-);
-export const EmblemKai = (props: Omit<ToriyamaEmblemProps, "name">) => (
-  <ToriyamaEmblem name="kai" {...props} />
-);
-export const EmblemDemon = (props: Omit<ToriyamaEmblemProps, "name">) => (
-  <ToriyamaEmblem name="demon" {...props} />
-);
+export const EmblemKame = (props: Omit<ToriyamaEmblemProps, "name">) => <ToriyamaEmblem name="kame" {...props} />;
+export const EmblemGo = (props: Omit<ToriyamaEmblemProps, "name">) => <ToriyamaEmblem name="go" {...props} />;
+export const EmblemKai = (props: Omit<ToriyamaEmblemProps, "name">) => <ToriyamaEmblem name="kai" {...props} />;
+export const EmblemDemon = (props: Omit<ToriyamaEmblemProps, "name">) => <ToriyamaEmblem name="demon" {...props} />;
 export const EmblemCapsuleCorp = (props: Omit<ToriyamaEmblemProps, "name">) => (
   <ToriyamaEmblem name="capsuleCorp" {...props} />
 );
 export const EmblemRedRibbon = (props: Omit<ToriyamaEmblemProps, "name">) => (
   <ToriyamaEmblem name="redRibbon" {...props} />
 );
-export const EmblemMajin = (props: Omit<ToriyamaEmblemProps, "name">) => (
-  <ToriyamaEmblem name="majin" {...props} />
-);
+export const EmblemMajin = (props: Omit<ToriyamaEmblemProps, "name">) => <ToriyamaEmblem name="majin" {...props} />;
 export const EmblemTenkaichi = (props: Omit<ToriyamaEmblemProps, "name">) => (
   <ToriyamaEmblem name="tenkaichi" {...props} />
 );

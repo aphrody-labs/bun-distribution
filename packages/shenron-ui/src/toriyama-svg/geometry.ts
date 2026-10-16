@@ -11,6 +11,8 @@
  * - starPoints: 5-pointed star with measured 0.45 inner/outer ratio.
  */
 
+import { requiredIndex } from "./required-index";
+
 export type Point = readonly [number, number];
 
 export const roundTo = (val: number, decimals = 1): number => {
@@ -25,23 +27,20 @@ export const roundTo = (val: number, decimals = 1): number => {
  * - Negative value indents inward.
  * - Sagitta greater than half chord length yields the pinched lobe characteristic of Toriyama art.
  */
-export function arcs(
-  pts: readonly Point[],
-  sagittas: readonly number[],
-  closed = true,
-): string {
+export function arcs(pts: readonly Point[], sagittas: readonly number[], closed = true): string {
   const n = pts.length;
   if (n === 0) return "";
   const end = closed ? n : n - 1;
-  let path = `M${roundTo(pts[0][0])} ${roundTo(pts[0][1])}`;
+  const first = requiredIndex(pts, 0);
+  let path = `M${roundTo(first[0])} ${roundTo(first[1])}`;
 
   for (let i = 0; i < end; i++) {
-    const [x1, y1] = pts[i];
-    const [x2, y2] = pts[(i + 1) % n];
+    const [x1, y1] = requiredIndex(pts, i);
+    const [x2, y2] = requiredIndex(pts, (i + 1) % n);
     const chord = Math.hypot(x2 - x1, y2 - y1);
     if (chord === 0) continue;
 
-    const h = sagittas[i % sagittas.length];
+    const h = requiredIndex(sagittas, i % sagittas.length);
     const absH = Math.max(0.5, Math.abs(h));
     const radius = (chord * chord) / (8 * absH) + absH / 2;
     const largeArcFlag = absH > chord / 2 ? 1 : 0;
@@ -57,13 +56,7 @@ export function arcs(
  * Toriyama Inward Spiral Volute:
  * Terminal flourish for Kinto-Un lobes, dust clouds, and Ki vortexes.
  */
-export function volute(
-  start: Point,
-  centerDir: Point,
-  r: number,
-  turns = 1.2,
-  direction: 1 | -1 = 1,
-): string {
+export function volute(start: Point, centerDir: Point, r: number, turns = 1.2, direction: 1 | -1 = 1): string {
   const dx = centerDir[0] - start[0];
   const dy = centerDir[1] - start[1];
   const len = Math.hypot(dx, dy) || 1;
@@ -86,12 +79,7 @@ export function volute(
  * Tapered Manga Hair Lock (Meche de cheveux):
  * Solid polygon originating from a wide base and terminating in a sharp point.
  */
-export function meche(
-  base: Point,
-  tip: Point,
-  baseWidth: number,
-  curvature = 0.25,
-): string {
+export function meche(base: Point, tip: Point, baseWidth: number, curvature = 0.25): string {
   const [bx, by] = base;
   const [px, py] = tip;
   const dx = px - bx;
@@ -131,27 +119,19 @@ export function planDombre(
 /**
  * Horizontal axis reflection.
  */
-export const mirrorX = (pts: readonly Point[], axisX: number): Point[] =>
-  pts.map(([x, y]) => [2 * axisX - x, y]);
+export const mirrorX = (pts: readonly Point[], axisX: number): Point[] => pts.map(([x, y]) => [2 * axisX - x, y]);
 
 /**
  * Generates points for a Toriyama-proportioned 5-pointed star.
  * Inner radius is measured at 0.45 of outer radius.
  */
-export function starPoints(
-  cx: number,
-  cy: number,
-  outerR: number,
-  innerRatio = 0.45,
-): string {
+export function starPoints(cx: number, cy: number, outerR: number, innerRatio = 0.45): string {
   const innerR = outerR * innerRatio;
   const pts: string[] = [];
   for (let i = 0; i < 10; i++) {
     const rad = i % 2 === 0 ? outerR : innerR;
     const angle = -Math.PI / 2 + (i * Math.PI) / 5;
-    pts.push(
-      `${roundTo(cx + rad * Math.cos(angle))},${roundTo(cy + rad * Math.sin(angle))}`,
-    );
+    pts.push(`${roundTo(cx + rad * Math.cos(angle))},${roundTo(cy + rad * Math.sin(angle))}`);
   }
   return pts.join(" ");
 }
@@ -160,13 +140,7 @@ export function starPoints(
  * Scouter HUD corner targeting brackets.
  * Returns path string for 4 reticle corners inside a bounding box.
  */
-export function scouterBrackets(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  cornerLen = 8,
-): string {
+export function scouterBrackets(x: number, y: number, width: number, height: number, cornerLen = 8): string {
   const r = x + width;
   const b = y + height;
   const c = Math.min(cornerLen, width / 3, height / 3);

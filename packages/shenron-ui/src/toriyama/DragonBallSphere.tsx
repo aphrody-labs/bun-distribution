@@ -8,10 +8,7 @@ import { starPoints } from "../toriyama-svg";
 
 export type DragonBallStarsCount = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-export interface DragonBallSphereProps extends Omit<
-  SVGProps<SVGSVGElement>,
-  "size"
-> {
+export interface DragonBallSphereProps extends Omit<SVGProps<SVGSVGElement>, "size"> {
   stars?: DragonBallStarsCount;
   size?: number | string;
   glow?: boolean;
@@ -42,7 +39,9 @@ const DEGRADE: ReadonlyArray<readonly [number, string]> = [
 
 const ROUGE_ETOILE = "#e81f23";
 
-const STAR_LAYOUT: Record<number, ReadonlyArray<readonly [number, number]>> = {
+const STAR_LAYOUT: Readonly<
+  Record<number, ReadonlyArray<readonly [number, number]>> & { 4: ReadonlyArray<readonly [number, number]> }
+> = {
   1: [[0, 0]],
   2: [
     [-0.22, 0],
@@ -128,9 +127,7 @@ export function DragonBallSphere({
         interactive ? "hover:scale-105 active:scale-95 cursor-pointer" : ""
       } ${className}`}
       style={{
-        filter: glow
-          ? `url(#${glowFilterId}) drop-shadow(0 0 12px rgba(255,183,3,0.6))`
-          : undefined,
+        filter: glow ? `url(#${glowFilterId}) drop-shadow(0 0 12px rgba(255,183,3,0.6))` : undefined,
       }}
       {...a11y}
       {...props}
@@ -150,13 +147,7 @@ export function DragonBallSphere({
           ))}
         </radialGradient>
         {glow && (
-          <filter
-            id={glowFilterId}
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
-          >
+          <filter id={glowFilterId} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="10" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
@@ -170,11 +161,7 @@ export function DragonBallSphere({
 
       {/* Crimson sharp stars */}
       {layout.map(([nx, ny], i) => (
-        <polygon
-          key={i}
-          points={starPoints(R_EXT + nx * 512, R_EXT + ny * 512, starR)}
-          fill={ROUGE_ETOILE}
-        />
+        <polygon key={i} points={starPoints(R_EXT + nx * 512, R_EXT + ny * 512, starR)} fill={ROUGE_ETOILE} />
       ))}
     </svg>
   );

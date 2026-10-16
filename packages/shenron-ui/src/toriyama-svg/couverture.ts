@@ -24,6 +24,7 @@
  * divergent au premier ajustement.
  */
 import { arcs, volute, type Point } from "./kinto-un";
+import { requiredIndex } from "./required-index";
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
@@ -177,27 +178,27 @@ export function bancNuage({
   // donc l'arc qui le suit est le PREMIER arc décalé d'une tuile. Sans lui, la
   // tuile s'arrête net sur son bord droit — vu au rendu comme une falaise à
   // chaque raccord, alors que la couture, elle, était bonne.
-  const xs = [...creuxX, creuxX[1] + largeur];
-  const f = [...fleches, fleches[0]];
-  const sommets: Point[] = xs.map((x) => [x, creux]);
+  const second = requiredIndex(creuxX, 1);
+  const xs = [...creuxX, second + largeur];
+  const f = [...fleches, requiredIndex(fleches, 0)];
+  const sommets: Point[] = xs.map(x => [x, creux]);
   const contour = arcs(sommets, f, false);
-  const premier = xs[0];
-  const dernier = xs[xs.length - 1];
+  const premier = requiredIndex(xs, 0);
+  const dernier = requiredIndex(xs, xs.length - 1);
   const silhouette = `${contour}L${r1(dernier)} ${base}L${r1(premier)} ${base}Z`;
 
   const volutes: string[] = [];
   for (let i = 0; i < sommets.length; i++) {
-    const p = sommets[i];
+    const p = requiredIndex(sommets, i);
     // Rayon : 0,45 × la corde moyenne des deux lobes voisins — le facteur
     // mesuré, le même que les volutes du Kinto-Un.
-    const g = i > 0 ? xs[i] - xs[i - 1] : xs[1] - xs[0];
-    const d = i < xs.length - 1 ? xs[i + 1] - xs[i] : g;
+    const x = requiredIndex(xs, i);
+    const g = i > 0 ? x - requiredIndex(xs, i - 1) : second - premier;
+    const d = i < xs.length - 1 ? requiredIndex(xs, i + 1) - x : g;
     const r = (((g + d) / 2) * NUAGE_MESURES.spiraleSurCorde) / 2;
     // Le creux s'enroule vers l'intérieur de la masse (vers le bas), sens
     // alterné : deux spirales voisines qui tournent pareil font un ressort.
-    volutes.push(
-      volute(p, [p[0], base], r, NUAGE_MESURES.tours, i % 2 === 0 ? 1 : -1),
-    );
+    volutes.push(volute(p, [p[0], base], r, NUAGE_MESURES.tours, i % 2 === 0 ? 1 : -1));
   }
   const trait = r1(NUAGE_MESURES.corde * NUAGE_MESURES.traitSurCorde);
   for (let i = 0; i < f.length; i++) {
@@ -205,14 +206,14 @@ export function bancNuage({
     // profondeur du banc sans redoubler le contour. Sous 2,5 fois l'épaisseur
     // du trait, la spirale se referme sur elle-même et rend un point d'encre —
     // vu au rendu sur les lobes courts : on la supprime plutôt que la tasser.
-    const corde = xs[i + 1] - xs[i];
+    const start = requiredIndex(xs, i);
+    const end = requiredIndex(xs, i + 1);
+    const corde = end - start;
     const r = (corde * NUAGE_MESURES.spiraleSurCorde * 0.62) / 2;
     if (r < trait * 2.5) continue;
-    const cx = (xs[i] + xs[i + 1]) / 2;
+    const cx = (start + end) / 2;
     const cy = creux + (base - creux) * 0.34;
-    volutes.push(
-      volute([cx, cy], [cx, base], r, NUAGE_MESURES.tours, i % 2 ? 1 : -1),
-    );
+    volutes.push(volute([cx, cy], [cx, base], r, NUAGE_MESURES.tours, i % 2 ? 1 : -1));
   }
   return { largeur, hauteur: base, silhouette, contour, volutes, trait };
 }
@@ -233,7 +234,7 @@ export function corpsBancNuage(
   return `<path d="${n.silhouette}" fill="${fond}"/>
 <g fill="none" stroke="${trait}" stroke-width="${n.trait}" stroke-linecap="round" stroke-linejoin="round">
 <path d="${n.contour}"/>
-${n.volutes.map((d) => `<path d="${d}"/>`).join("\n")}
+${n.volutes.map(d => `<path d="${d}"/>`).join("\n")}
 </g>`;
 }
 
@@ -313,13 +314,7 @@ export function anneauPastille(diametre: number = PASTILLE.diametre) {
 export const ETOILE_INTERIEUR = 0.45;
 
 /** Tracé d'une étoile à `branches` pointes, centrée en (cx, cy). */
-export function etoilePath(
-  cx: number,
-  cy: number,
-  R: number,
-  interieur = ETOILE_INTERIEUR,
-  branches = 5,
-): string {
+export function etoilePath(cx: number, cy: number, R: number, interieur = ETOILE_INTERIEUR, branches = 5): string {
   const pts: string[] = [];
   for (let i = 0; i < branches * 2; i++) {
     const rayon = i % 2 === 0 ? R : R * interieur;

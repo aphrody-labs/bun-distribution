@@ -56,10 +56,7 @@ export function CadreCase({
 }) {
   const a = anneauxCadre(largeur);
   return (
-    <div
-      className={`relative ${className}`}
-      style={{ boxShadow: ombreCadre(a), borderRadius: a.rayon, ...style }}
-    >
+    <div className={`relative ${className}`} style={{ boxShadow: ombreCadre(a), borderRadius: a.rayon, ...style }}>
       {children}
     </div>
   );
@@ -132,9 +129,7 @@ export function PastilleTome({
   decorative?: boolean;
 }) {
   const a = anneauPastille(taille);
-  const arrets = PASTILLE.degradeJetons
-    .map(([r, c]) => `${c} ${Math.round(r * 100)}%`)
-    .join(", ");
+  const arrets = PASTILLE.degradeJetons.map(([r, c]) => `${c} ${Math.round(r * 100)}%`).join(", ");
   const texte = String(numero);
   // Le chiffre mesure la moitié du diamètre ; au-delà d'un chiffre, il faut
   // bien le réduire, sinon « 42 » déborde du cerne.
@@ -153,9 +148,7 @@ export function PastilleTome({
         color: "var(--color-encre)",
         fontSize: Math.round(taille * facteur),
       }}
-      {...(decorative
-        ? { "aria-hidden": true }
-        : { role: "img" as const, "aria-label": `Tome ${texte}` })}
+      {...(decorative ? { "aria-hidden": true } : { role: "img" as const, "aria-label": `Tome ${texte}` })}
     >
       <span aria-hidden>{texte}</span>
     </span>
@@ -190,6 +183,9 @@ export function Etoile({
 }) {
   const e = etoileViewBox(50);
   const [, , w, h] = e.viewBox.split(" ").map(Number);
+  if (w === undefined || h === undefined || !Number.isFinite(w) || !Number.isFinite(h) || h <= 0) {
+    throw new RangeError("Invalid star viewBox dimensions");
+  }
   return (
     <svg
       viewBox={e.viewBox}
@@ -197,9 +193,7 @@ export function Etoile({
       height={taille}
       className={`inline-block shrink-0 ${className}`}
       fill="currentColor"
-      {...(decorative
-        ? { "aria-hidden": true as const }
-        : { role: "img" as const, "aria-label": title ?? "Étoile" })}
+      {...(decorative ? { "aria-hidden": true as const } : { role: "img" as const, "aria-label": title ?? "Étoile" })}
     >
       <path d={etoilePath(e.cx, e.cy, 50)} />
     </svg>

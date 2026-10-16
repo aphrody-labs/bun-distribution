@@ -89,7 +89,9 @@ const DEGRADE: ReadonlyArray<readonly [number, string]> = [
 const ROUGE_ETOILE = "#e81f23";
 
 // Positions normalisées des étoiles (0 = centre ; unité = fraction du viewBox 512).
-const STAR_LAYOUT: Record<number, ReadonlyArray<readonly [number, number]>> = {
+const STAR_LAYOUT: Readonly<
+  Record<number, ReadonlyArray<readonly [number, number]>> & { 4: ReadonlyArray<readonly [number, number]> }
+> = {
   1: [[0, 0]],
   2: [
     [-0.22, 0],
@@ -164,9 +166,7 @@ function starPoints(cx: number, cy: number, outer: number): string {
   for (let i = 0; i < 10; i++) {
     const rad = i % 2 === 0 ? outer : inner;
     const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-    pts.push(
-      `${(cx + rad * Math.cos(ang)).toFixed(1)},${(cy + rad * Math.sin(ang)).toFixed(1)}`,
-    );
+    pts.push(`${(cx + rad * Math.cos(ang)).toFixed(1)},${(cy + rad * Math.sin(ang)).toFixed(1)}`);
   }
   return pts.join(" ");
 }
@@ -210,13 +210,7 @@ export function DragonBall({
   const gid = `db-sphere-${n}`;
 
   return (
-    <svg
-      viewBox="0 0 512 512"
-      width={size}
-      height={size}
-      className={className}
-      {...a11y}
-    >
+    <svg viewBox="0 0 512 512" width={size} height={size} className={className} {...a11y}>
       <defs>
         {/* `userSpaceOnUse` et non `objectBoundingBox` : le dégradé appartient
 				    au disque INTÉRIEUR (r = 233), pas à la boîte englobante, qui
@@ -242,11 +236,7 @@ export function DragonBall({
       {/* Étoiles rouges (1 à 7), aplat franc sans contour — la couverture n'en
 			    pose aucun autour d'elles. */}
       {layout.map(([nx, ny], i) => (
-        <polygon
-          key={i}
-          points={starPoints(R_EXT + nx * 512, R_EXT + ny * 512, starR)}
-          fill={ROUGE_ETOILE}
-        />
+        <polygon key={i} points={starPoints(R_EXT + nx * 512, R_EXT + ny * 512, starR)} fill={ROUGE_ETOILE} />
       ))}
     </svg>
   );
@@ -279,9 +269,7 @@ export function DragonBallLoader({
         height: size,
         animation: "db-spin 1.1s linear infinite",
       }}
-      {...(decorative
-        ? { "aria-hidden": true }
-        : { "aria-label": "Chargement", role: "status" })}
+      {...(decorative ? { "aria-hidden": true } : { "aria-label": "Chargement", role: "status" })}
     >
       {/* `decorative` : l'enveloppe porte déjà « Chargement » (ou est masquée) —
 			    sans cela, le lecteur d'écran enchaînait avec le nom de l'illustration.

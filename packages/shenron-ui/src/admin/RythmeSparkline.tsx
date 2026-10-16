@@ -13,24 +13,19 @@
 const LARGEUR = 720;
 const HAUTEUR = 56;
 
-export function RythmeSparkline({
-  points,
-}: {
-  points: { jour: string; revisions: number }[];
-}) {
+export function RythmeSparkline({ points }: { points: { jour: string; revisions: number }[] }) {
   if (points.length < 2) return null;
 
-  const max = Math.max(...points.map((p) => p.revisions), 1);
+  const max = Math.max(...points.map(p => p.revisions), 1);
   const pas = LARGEUR / (points.length - 1);
   const y = (v: number) => HAUTEUR - (v / max) * (HAUTEUR - 6) - 3;
-  const ligne = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${i * pas},${y(p.revisions)}`)
-    .join(" ");
+  const ligne = points.map((p, i) => `${i === 0 ? "M" : "L"}${i * pas},${y(p.revisions)}`).join(" ");
   const aire = `${ligne} L${LARGEUR},${HAUTEUR} L0,${HAUTEUR} Z`;
 
   const totalRevisions = points.reduce((n, p) => n + p.revisions, 0);
   const premier = points[0];
   const dernier = points[points.length - 1];
+  if (!premier || !dernier) return null;
   const jourLisible = (iso: string) =>
     new Date(`${iso}T00:00:00Z`).toLocaleDateString("fr-FR", {
       day: "2-digit",

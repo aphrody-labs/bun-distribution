@@ -17,6 +17,8 @@
  * Deux dessins : l'ILLUSTRATION (1200 × 676, queue courte finie en volute) et
  * l'ICÔNE (512 × 512, cinq gros lobes sur pastille sombre, lisible à 16 px).
  */
+import { requiredIndex } from "./required-index";
+
 export type Point = readonly [number, number];
 
 /** Couleurs mesurées sur le manga couleur (t901 pl. 81) ; pastille = fond du site. */
@@ -34,19 +36,17 @@ const r1 = (v: number) => Math.round(v * 10) / 10;
  * de l'arc i : positive elle bombe vers l'extérieur (lobe), négative elle creuse.
  * Une flèche supérieure à la moitié de la corde donne le lobe « pincé ».
  */
-export function arcs(
-  pts: readonly Point[],
-  fleches: readonly number[],
-  ferme = true,
-): string {
+export function arcs(pts: readonly Point[], fleches: readonly number[], ferme = true): string {
   const n = pts.length;
+  if (n === 0) return "";
   const fin = ferme ? n : n - 1;
-  let d = `M${r1(pts[0][0])} ${r1(pts[0][1])}`;
+  const first = requiredIndex(pts, 0);
+  let d = `M${r1(first[0])} ${r1(first[1])}`;
   for (let i = 0; i < fin; i++) {
-    const [x1, y1] = pts[i];
-    const [x2, y2] = pts[(i + 1) % n];
+    const [x1, y1] = requiredIndex(pts, i);
+    const [x2, y2] = requiredIndex(pts, (i + 1) % n);
     const corde = Math.hypot(x2 - x1, y2 - y1);
-    const h = fleches[i % fleches.length];
+    const h = requiredIndex(fleches, i % fleches.length);
     const a = Math.max(1, Math.abs(h));
     const r = (corde * corde) / 4 / (2 * a) + a / 2;
     d += `A${r1(r)} ${r1(r)} 0 ${a > corde / 2 ? 1 : 0} ${h < 0 ? 0 : 1} ${r1(x2)} ${r1(y2)}`;
@@ -59,13 +59,7 @@ export function arcs(
  * nuage (`vers`), rayon extérieur `r`, `tours` tours, rayon final à 15 %.
  * Tracée en segments courts — 12 par tour suffisent à l'œil, même à 1200 px.
  */
-export function volute(
-  depart: Point,
-  vers: Point,
-  r: number,
-  tours = 1.2,
-  sens: 1 | -1 = 1,
-): string {
+export function volute(depart: Point, vers: Point, r: number, tours = 1.2, sens: 1 | -1 = 1): string {
   const dx = vers[0] - depart[0];
   const dy = vers[1] - depart[1];
   const l = Math.hypot(dx, dy) || 1;
@@ -84,8 +78,7 @@ export function volute(
 }
 
 /** Rayon du lobe (arc) tendu sur la corde `corde` avec la flèche `h`. */
-const rayonLobe = (corde: number, h: number) =>
-  (corde * corde) / (8 * h) + h / 2;
+const rayonLobe = (corde: number, h: number) => (corde * corde) / (8 * h) + h / 2;
 
 /**
  * Une volute par creux du contour : rayon = 0,45 × le rayon moyen des deux
@@ -99,22 +92,13 @@ function volutes(
   facteur = 0.45,
 ): string[] {
   const n = contour.length;
-  const cg: Point = [
-    contour.reduce((s, p) => s + p[0], 0) / n,
-    contour.reduce((s, p) => s + p[1], 0) / n,
-  ];
+  const cg: Point = [contour.reduce((s, p) => s + p[0], 0) / n, contour.reduce((s, p) => s + p[1], 0) / n];
   return creux.map((i, k) => {
-    const p = contour[i];
-    const prev = contour[(i - 1 + n) % n];
-    const next = contour[(i + 1) % n];
-    const rA = rayonLobe(
-      Math.hypot(p[0] - prev[0], p[1] - prev[1]),
-      fleches[(i - 1 + n) % n],
-    );
-    const rB = rayonLobe(
-      Math.hypot(next[0] - p[0], next[1] - p[1]),
-      fleches[i],
-    );
+    const p = requiredIndex(contour, i);
+    const prev = requiredIndex(contour, (i - 1 + n) % n);
+    const next = requiredIndex(contour, (i + 1) % n);
+    const rA = rayonLobe(Math.hypot(p[0] - prev[0], p[1] - prev[1]), requiredIndex(fleches, (i - 1 + n) % n));
+    const rB = rayonLobe(Math.hypot(next[0] - p[0], next[1] - p[1]), requiredIndex(fleches, i));
     return volute(p, cg, ((rA + rB) / 2) * facteur, 1.2, k % 2 === 0 ? 1 : -1);
   });
 }
@@ -164,15 +148,10 @@ const CONTOUR: Point[] = (
     [216, 464],
   ] as Point[]
 ).map(([x, y]) => [x, Y(y)]);
-const FLECHES = [
-  54, 66, 74, 66, 56, 50, 40, 30, 22, 20, 24, 30, 46, 52, 52, 52, 50, 52,
-];
+const FLECHES = [54, 66, 74, 66, 56, 50, 40, 30, 22, 20, 24, 30, 46, 52, 52, 52, 50, 52];
 
 /** Le décalage se réduit vers la queue pour qu'elle garde sa lumière. */
-const ECLAIRE: Point[] = CONTOUR.map(([x, y]) => [
-  x - 12 + x * 0.006,
-  y - 168 + 96 * (x / 1200),
-]);
+const ECLAIRE: Point[] = CONTOUR.map(([x, y]) => [x - 12 + x * 0.006, y - 168 + 96 * (x / 1200)]);
 
 /** Lobes de premier plan : un arc bombé vers le haut, fini en volute à droite. */
 const INTERIEURS: [Point, Point, number][] = [
@@ -182,10 +161,7 @@ const INTERIEURS: [Point, Point, number][] = [
   [[556, Y(272)], [704, Y(262)], 44],
 ];
 const interieurs = (lobes: [Point, Point, number][], rayon: number) =>
-  lobes.flatMap(([a, b, h], k) => [
-    arcs([a, b], [h], false),
-    volute(b, a, rayon, 1.1, k % 2 ? 1 : -1),
-  ]);
+  lobes.flatMap(([a, b, h], k) => [arcs([a, b], [h], false), volute(b, a, rayon, 1.1, k % 2 ? 1 : -1)]);
 
 export const KINTO_UN_ILLUSTRATION: Nuage = {
   largeur: 1200,
@@ -195,7 +171,7 @@ export const KINTO_UN_ILLUSTRATION: Nuage = {
   volutes: [
     ...volutes(CONTOUR, FLECHES, [1, 2, 3, 4, 5, 6, 7, 13, 15, 17], 0.55),
     // La queue se referme en crochet, pas en bourrelet plein.
-    volute(CONTOUR[9], [980, Y(380)], 26, 1.1, -1),
+    volute(requiredIndex(CONTOUR, 9), [980, Y(380)], 26, 1.1, -1),
   ],
   interieurs: interieurs(INTERIEURS, 30),
   traits: { encre: 9, volute: 7 },
@@ -239,15 +215,11 @@ export const KINTO_UN_ICONE: Nuage = {
  * et les fichiers SVG l'enveloppent chacun à leur façon. `prefixe` isole
  * l'identifiant du `clipPath` quand plusieurs nuages cohabitent dans une page.
  */
-export function corpsNuage(
-  n: Nuage,
-  prefixe = "kt",
-  avecVolutes = true,
-): string {
+export function corpsNuage(n: Nuage, prefixe = "kt", avecVolutes = true): string {
   const c = KINTO_UN_COULEURS;
   const volutesSvg = avecVolutes
     ? `<g fill="none" stroke="${c.encre}" stroke-width="${n.traits.volute}" stroke-linecap="round" stroke-linejoin="round">
-${[...n.interieurs, ...n.volutes].map((d) => `<path d="${d}"/>`).join("\n")}
+${[...n.interieurs, ...n.volutes].map(d => `<path d="${d}"/>`).join("\n")}
 </g>
 `
     : "";
@@ -297,10 +269,7 @@ export function corpsIcone({
     pastille === null
       ? ""
       : `<rect width="${n.largeur}" height="${n.hauteur}" rx="${r1(n.largeur * coins)}" fill="${pastille}"/>\n`;
-  const transform =
-    echelle === 1
-      ? ""
-      : ` transform="translate(${c} ${c}) scale(${echelle}) translate(${-c} ${-c})"`;
+  const transform = echelle === 1 ? "" : ` transform="translate(${c} ${c}) scale(${echelle}) translate(${-c} ${-c})"`;
   return `${fond}<g${transform}>\n${corpsNuage(n, "kti", avecVolutes)}\n</g>`;
 }
 
