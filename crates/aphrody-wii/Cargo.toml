@@ -1,0 +1,10 @@
+[package]
+name = "aphrody-wii"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+description = "Portable Wii executable loading and Broadway branch execution"
+
+[lints]
+workspace = true

@@ -1,0 +1,21 @@
+[package]
+name = "bun-engine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Unified Rust game-engine kernel with Bevy, wgpu and winit"
+repository = "https://github.com/aphrody-labs/bun-engine"
+
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+bevy_app.workspace = true
+bevy_ecs.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+ghidra-decompiler.workspace = true
+
+[[bin]]
+name = "bun-engine-editor"
+path = "src/bin/editor.rs"

@@ -1,0 +1,7 @@
+{
+  "name": "@aphrody/replica",
+  "version": "1.4.4",
+  "private": true,
+  "license": "MIT",
+  "description": "Replica skill pack consumed by @aphrody/bun-engine"
+}

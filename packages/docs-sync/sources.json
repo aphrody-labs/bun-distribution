@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "concurrency": 6,
+  "requestTimeoutMs": 30000,
+  "retries": 2,
+  "maxFileBytes": 536870912,
+  "maxCatalogEntries": 0,
+  "freshnessHours": 36,
+  "allowedHosts": [
+    "static.rust-lang.org",
+    "doc.rust-lang.org",
+    "bun.com",
+    "api.github.com",
+    "raw.githubusercontent.com",
+    "developer.android.com",
+    "m3.material.io",
+    "www.oracle.com",
+    "download.oracle.com",
+    "docs.oracle.com",
+    "dev.java",
+    "api.adoptium.net"
+  ],
+  "topics": [
+    {
+      "id": "rust",
+      "title": "Rust nightly : documentation distribuée complète",
+      "sources": [
+        {
+          "id": "rust-nightly",
+          "kind": "rust-dist",
+          "channel": "nightly",
+          "platform": "x86_64-pc-windows-msvc",
+          "archivePathMarker": "/share/doc/rust/html/"
+        }
+      ]
+    },
+    {
+      "id": "bun",
+      "title": "Bun Aphrody : tous les documents du checkout propriétaire et documentation officielle Bun",
+      "sources": [
+        { "id": "aphrody-bun", "kind": "local-bun", "directory": "docs" },
+        {
+          "id": "bun-official",
+          "kind": "llms",
+          "url": "https://bun.com/llms.txt",
+          "fullTextUrl": "https://bun.com/llms-full.txt",
+          "include": "^https://bun\\.com/docs/"
+        }
+      ]
+    },
+    {
+      "id": "java",
+      "title": "Java SE latest : archive officielle complète Javadoc et guides",
+      "sources": [
+        {
+          "id": "java-se",
+          "kind": "java-docs",
+          "releaseInfoUrl": "https://api.adoptium.net/v3/info/available_releases",
+          "pageTemplate": "https://www.oracle.com/java/technologies/javase-jdk{version}-doc-downloads.html",
+          "licenseTemplate": "https://www.oracle.com/java/javase/terms/license/java{version}speclicense.html"
+        },
+        {
+          "id": "oracle-guides",
+          "kind": "oracle-guides",
+          "releaseInfoUrl": "https://api.adoptium.net/v3/info/available_releases",
+          "urlTemplate": "https://docs.oracle.com/en/java/javase/{version}/",
+          "exclude": "/docs/api/"
+        },
+        { "id": "dev-java-learn", "kind": "html-crawl", "url": "https://dev.java/learn/" }
+      ]
+    },
+    {
+      "id": "jetpack",
+      "title": "Jetpack : guides et références API Java/Kotlin AndroidX exhaustifs du sitemap officiel",
+      "sources": [
+        {
+          "id": "android-jetpack",
+          "kind": "sitemap",
+          "url": "https://developer.android.com/sitemap.xml",
+          "include": "^https://developer\\.android\\.com/(jetpack(?:/|$)|topic/libraries(?:/|$)|reference/(?:kotlin/)?androidx(?:/|$)|develop/ui/compose(?:/|$))",
+          "query": "hl=en"
+        }
+      ]
+    },
+    {
+      "id": "emu",
+      "title": "Émulateur Android : guides, ligne de commande, images système et virtualisation",
+      "sources": [
+        {
+          "id": "android-emulator",
+          "kind": "sitemap",
+          "url": "https://developer.android.com/sitemap.xml",
+          "include": "^https://developer\\.android\\.com/(studio/run(?:/|$)|studio/command-line/(?:adb|avdmanager|emulator)(?:/|$)|studio/releases/emulator(?:/|$))",
+          "query": "hl=en"
+        }
+      ]
+    },
+    {
+      "id": "ui",
+      "title": "Android UI : tous les guides UI officiels, Compose inclus",
+      "sources": [
+        {
+          "id": "android-ui",
+          "kind": "sitemap",
+          "url": "https://developer.android.com/sitemap.xml",
+          "include": "^https://developer\\.android\\.com/(develop/ui(?:/|$)|guide/topics/ui(?:/|$)|design/ui(?:/|$))",
+          "query": "hl=en"
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "title": "Material Design 3 : toutes les routes du sitemap et source/KDoc officielle Material 3 Compose",
+      "sources": [
+        { "id": "material-spec", "kind": "material-carbon" },
+        {
+          "id": "compose-material3-source",
+          "kind": "github-tree",
+          "repository": "androidx/androidx",
+          "ref": "androidx-main",
+          "directory": "compose/material3",
+          "include": "^compose/material3(?:/|$)",
+          "extensions": [".md", ".txt", ".kt", ".kts"]
+        }
+      ]
+    }
+  ]
+}

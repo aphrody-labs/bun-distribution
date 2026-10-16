@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <SelfContained>true</SelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>bun_engine_nds_tinke</AssemblyName>
+    <DisableUnsupportedError Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))">true</DisableUnsupportedError>
+  </PropertyGroup>
+</Project>

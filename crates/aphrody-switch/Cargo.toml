@@ -1,0 +1,10 @@
+[package]
+name = "aphrody-switch"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-2.0-or-later"
+description = "Portable Switch CPU and Tegra texture primitives"
+
+[lints]
+workspace = true

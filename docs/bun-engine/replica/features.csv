@@ -1,0 +1,9 @@
+id,feature,route,state,evidence
+F01,Identify and validate the external NDS input,replica:nds,qualified,"bounded header parser plus streaming SHA-256; ROM is never copied"
+F02,Expose Tinke INAZUMA11 transforms through Bun FFI,NativeAOT DLL,qualified,".NET 10 NativeAOT build and encrypt/decrypt/PAC tests pass"
+F03,Analyze ARM9 ARM7 overlays and filesystem,Ghidra plus NTRGhidra,blocked,"source present; JDK 25 missing and NTR version not aligned"
+F04,Build clean-room NDS fixtures,libnds,blocked,"source present; devkitPro arm-none-eabi-gcc and ndstool missing"
+F05,Execute the original title for behavioral observation,Dust CLI,in-progress,"modern IECODE Dust core is integrated and its CLI validates the ROM; frame execution is not yet wired"
+F06,Recognize screens and flows,Replica recon,pending,"one reference image exists; no captured interactive trace yet"
+F07,Playable replica on Windows,Bun compiled executable,pending,"shared engine and UI not implemented"
+F08,Playable replica on Web,WASM WebGPU,pending,"modern Dust web source identified but not migrated"

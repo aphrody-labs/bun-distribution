@@ -1,0 +1,20 @@
+[package]
+description = "Wii disc and executable image inspection."
+name = "aphrody-wii-image"
+version = "0.1.1"
+edition.workspace = true
+publish = true
+license = "GPL-3.0-only"
+
+[lib]
+name = "image"
+path = "src/lib.rs"
+
+[features]
+default = []
+banner = []
+
+[dependencies]
+zerocopy = { workspace = true, features = ["derive"] }
+zip = { workspace = true, features = ["deflate"] }
+tracing.workspace = true

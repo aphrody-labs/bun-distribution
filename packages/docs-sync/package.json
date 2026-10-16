@@ -1,0 +1,15 @@
+{
+  "name": "@aphrody/docs-sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "bun run src/cli.ts sync",
+    "check": "bun run src/cli.ts check",
+    "watch": "bun run src/cli.ts watch",
+    "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

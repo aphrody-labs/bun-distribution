@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bun Engine</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui; background: #090b10; color: #edf2ff; }
+      body { max-width: 72rem; margin: 0 auto; padding: 4rem 2rem; }
+      h1 { font-size: clamp(3rem, 9vw, 7rem); margin: 0; letter-spacing: -.07em; }
+      p { color: #aeb9d4; max-width: 48rem; font-size: 1.1rem; }
+      pre { background: #121722; border: 1px solid #283149; border-radius: 1rem; padding: 1.25rem; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>Bun Engine</h1>
+    <p>One Rust/Bun workspace for runtime, emulation, graphics, tooling and portable builds.</p>
+    <pre id="workspace">Loading workspace…</pre>
+    <script type="module">
+      document.querySelector("#workspace").textContent = JSON.stringify(await fetch("/api/workspace").then(r => r.json()), null, 2);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "references": [
+    {
+      "id": "3dbrew",
+      "name": "3DBrew",
+      "category": "documentation",
+      "url": "https://www.3dbrew.org/wiki/Main_Page",
+      "role": "3DS hardware, kernel, services and formats"
+    },
+    {
+      "id": "gbatek",
+      "name": "GBATek",
+      "category": "documentation",
+      "url": "https://www.problemkaputt.de/gbatek.htm#3dsreference",
+      "role": "GBA, DS and 3DS hardware and file formats"
+    },
+    {
+      "id": "libctru",
+      "name": "libctru",
+      "category": "sdk",
+      "url": "https://github.com/devkitPro/libctru",
+      "role": "3DS homebrew SDK and test-ROM foundation",
+      "localPath": "vendor/libctru"
+    },
+    {
+      "id": "ctru-rs",
+      "name": "ctru-rs",
+      "category": "sdk",
+      "url": "https://github.com/rust3ds/ctru-rs",
+      "role": "Rust bindings and safe 3DS homebrew API",
+      "localPath": "vendor/ctru-rs"
+    },
+    {
+      "id": "azahar",
+      "name": "Azahar",
+      "category": "3ds-reference",
+      "url": "https://github.com/azahar-emu/azahar",
+      "role": "Active Citra-derived 3DS HLE reference",
+      "localPath": "vendor/azahar"
+    },
+    {
+      "id": "3dmoo",
+      "name": "3dmoo",
+      "category": "3ds-reference",
+      "url": "https://github.com/plutooo/3dmoo",
+      "role": "Historical 3DS HLE reference"
+    },
+    {
+      "id": "corgi3ds",
+      "name": "Corgi3DS",
+      "category": "3ds-reference",
+      "url": "https://github.com/PSI-Rockin/Corgi3DS",
+      "role": "3DS LLE and PICA200 reference"
+    },
+    {
+      "id": "dynarmic",
+      "name": "Dynarmic",
+      "category": "sister-project",
+      "url": "https://github.com/azahar-emu/dynarmic",
+      "role": "ARM32 and ARM64 dynamic recompiler"
+    },
+    {
+      "id": "pcsx-redux",
+      "name": "PCSX-Redux",
+      "category": "sister-project",
+      "url": "https://github.com/grumpycoders/pcsx-redux",
+      "role": "Developer-focused PlayStation emulator"
+    },
+    {
+      "id": "skyemu",
+      "name": "SkyEmu",
+      "category": "sister-project",
+      "url": "https://github.com/skylersaleh/SkyEmu",
+      "role": "Cross-platform GB, GBC, GBA and DS emulator"
+    },
+    {
+      "id": "nanoboyadvance",
+      "name": "NanoBoyAdvance",
+      "category": "sister-project",
+      "url": "https://github.com/nba-emu/NanoBoyAdvance",
+      "role": "Cycle-accurate GBA research emulator"
+    },
+    {
+      "id": "dust",
+      "name": "Dust",
+      "category": "sister-project",
+      "url": "https://github.com/kelpsyberry/dust",
+      "role": "Nintendo DS desktop and web emulator",
+      "localPath": "vendor/dust"
+    },
+    {
+      "id": "felix86",
+      "name": "felix86",
+      "category": "sister-project",
+      "url": "https://github.com/OFFTKP/felix86",
+      "role": "x86-64 to RISC-V Linux userspace emulator"
+    },
+    {
+      "id": "chonkystation",
+      "name": "ChonkyStation",
+      "category": "sister-project",
+      "url": "https://github.com/liuk7071/ChonkyStation",
+      "role": "Experimental PlayStation emulator"
+    },
+    {
+      "id": "chonkystation3",
+      "name": "ChonkyStation 3",
+      "category": "sister-project",
+      "url": "https://github.com/liuk7071/ChonkyStation3",
+      "role": "Experimental PlayStation 3 HLE emulator"
+    },
+    {
+      "id": "melonds",
+      "name": "melonDS",
+      "category": "sister-project",
+      "url": "https://github.com/melonDS-emu/melonDS",
+      "role": "Nintendo DS and DSi emulator",
+      "localPath": "vendor/melonds"
+    },
+    {
+      "id": "kaizen",
+      "name": "Kaizen",
+      "category": "sister-project",
+      "url": "https://github.com/mehmetpeker1/Kaizen",
+      "role": "Experimental low-level Nintendo 64 emulator"
+    },
+    {
+      "id": "shadps4",
+      "name": "shadPS4",
+      "category": "sister-project",
+      "url": "https://github.com/shadps4-emu/shadPS4",
+      "role": "Experimental PlayStation 4 emulator"
+    },
+    {
+      "id": "tanuki3ds",
+      "name": "Tanuki3DS",
+      "category": "sister-project",
+      "url": "https://github.com/burhanr13/Tanuki3DS",
+      "role": "Experimental 3DS emulator"
+    }
+  ]
+}

@@ -28,6 +28,8 @@
     "apps/desktop/**/*.ts",
     "packages/bun-app-host/src/**/*.ts",
     "packages/bun-artifacts/src/**/*.ts",
+    "packages/bun-engine/src/**/*.ts",
+    "packages/docs-sync/src/**/*.ts",
     "packages/bun-video-project/src/**/*.ts",
     "packages/bun-workspace/src/**/*.ts",
     "packages/kernel-client/src/**/*.ts",
@@ -44,6 +46,7 @@
     "apps/desktop/src-tauri",
     "scripts/aphrody",
     "scripts/iecode",
-    "scripts/m3"
+    "scripts/m3",
+    "packages/replica"
   ]
 }

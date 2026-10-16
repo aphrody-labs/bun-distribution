@@ -322,3 +322,111 @@
 	path = vendor/uutils-findutils
 	url = https://github.com/aphrody-labs/uutils-findutils.git
 	branch = main
+[submodule "vendor/ares"]
+	path = vendor/ares
+	url = https://github.com/ares-emulator/ares.git
+[submodule "vendor/azahar"]
+	path = vendor/azahar
+	url = https://github.com/azahar-emu/azahar.git
+[submodule "vendor/calico"]
+	path = vendor/calico
+	url = https://github.com/aphrody-labs/calico.git
+[submodule "vendor/citro2d"]
+	path = vendor/citro2d
+	url = https://github.com/aphrody-labs/citro2d.git
+[submodule "vendor/citro3d"]
+	path = vendor/citro3d
+	url = https://github.com/aphrody-labs/citro3d.git
+[submodule "vendor/cuda-cccl"]
+	path = vendor/cuda-cccl
+	url = https://github.com/NVIDIA/cccl.git
+[submodule "vendor/cuda-samples"]
+	path = vendor/cuda-samples
+	url = https://github.com/NVIDIA/cuda-samples.git
+[submodule "vendor/directx-compiler"]
+	path = vendor/directx-compiler
+	url = https://github.com/microsoft/DirectXShaderCompiler.git
+[submodule "vendor/directx-headers"]
+	path = vendor/directx-headers
+	url = https://github.com/microsoft/DirectX-Headers.git
+[submodule "vendor/directx-samples"]
+	path = vendor/directx-samples
+	url = https://github.com/microsoft/DirectX-Graphics-Samples.git
+[submodule "vendor/dolphin"]
+	path = vendor/dolphin
+	url = https://github.com/dolphin-emu/dolphin.git
+[submodule "vendor/ghidra"]
+	path = vendor/ghidra
+	url = https://github.com/aphrody-labs/ghidra.git
+[submodule "vendor/ghidra-decompiler"]
+	path = vendor/ghidra-decompiler
+	url = https://github.com/aphrody-labs/ghidra-decompiler.git
+[submodule "vendor/gopher64"]
+	path = vendor/gopher64
+	url = https://github.com/aphrody-labs/gopher64.git
+[submodule "vendor/jgenesis"]
+	path = vendor/jgenesis
+	url = https://github.com/aphrody-labs/jgenesis.git
+[submodule "vendor/libnds"]
+	path = vendor/libnds
+	url = https://github.com/devkitPro/libnds.git
+[submodule "vendor/libogc"]
+	path = vendor/libogc
+	url = https://github.com/devkitPro/libogc.git
+[submodule "vendor/magika"]
+	path = vendor/magika
+	url = https://github.com/aphrody-labs/magika.git
+[submodule "vendor/mame"]
+	path = vendor/mame
+	url = https://github.com/mamedev/mame.git
+[submodule "vendor/ntr-ghidra"]
+	path = vendor/ntr-ghidra
+	url = https://github.com/aphrody-labs/NTRGhidra.git
+[submodule "vendor/omarchy-windows"]
+	path = vendor/omarchy-windows
+	url = https://github.com/aphrody-labs/try-omarchy-windows.git
+[submodule "vendor/open-agb-firm"]
+	path = vendor/open-agb-firm
+	url = https://github.com/profi200/open_agb_firm.git
+[submodule "vendor/retroarch"]
+	path = vendor/retroarch
+	url = https://github.com/libretro/RetroArch.git
+[submodule "vendor/retroboy"]
+	path = vendor/retroboy
+	url = https://github.com/aphrody-labs/retroboy.git
+[submodule "vendor/rustboyadvance-ng"]
+	path = vendor/rustboyadvance-ng
+	url = https://github.com/aphrody-labs/rustboyadvance-ng.git
+[submodule "vendor/starpsx"]
+	path = vendor/starpsx
+	url = https://github.com/aphrody-labs/starpsx.git
+[submodule "vendor/steamcmd"]
+	path = vendor/steamcmd
+	url = https://github.com/aphrody-labs/steamcmd.git
+[submodule "vendor/steamcmd-api"]
+	path = vendor/steamcmd-api
+	url = https://github.com/aphrody-labs/steamcmd-api.git
+[submodule "vendor/steamos-nvidia-installer"]
+	path = vendor/steamos-nvidia-installer
+	url = https://github.com/aphrody-labs/steamos-nvidia-installer.git
+[submodule "vendor/tetanes"]
+	path = vendor/tetanes
+	url = https://github.com/aphrody-labs/tetanes.git
+[submodule "vendor/zakuro"]
+	path = vendor/zakuro
+	url = https://github.com/aphrody-labs/zakuro.git
+[submodule "vendor/cmake"]
+	path = vendor/cmake
+	url = https://github.com/Kitware/CMake.git
+[submodule "vendor/llvm"]
+	path = vendor/llvm
+	url = https://github.com/llvm/llvm-project.git
+[submodule "vendor/make"]
+	path = vendor/make
+	url = https://github.com/mirror/make.git
+[submodule "vendor/qemu"]
+	path = vendor/qemu
+	url = https://gitlab.com/qemu-project/qemu.git
+[submodule "vendor/vcpkg"]
+	path = vendor/vcpkg
+	url = https://github.com/microsoft/vcpkg.git

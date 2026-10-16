@@ -80,6 +80,7 @@
     "packages/package-converter",
     "packages/paths",
     "packages/product",
+    "packages/replica",
     "packages/rag-core",
     "packages/rg-app-shell",
     "packages/rg-assets",
