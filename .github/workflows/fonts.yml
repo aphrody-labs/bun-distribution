@@ -1,0 +1,29 @@
+name: Font sources and assets
+
+on:
+  push:
+    branches: [os]
+    paths: ['crates/craft-fonts/**', 'crates/craft-fonts-tests/**', 'fonts/**', 'Cargo.toml', 'Cargo.lock', '.github/workflows/fonts.yml']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          components: rustfmt, clippy
+      - name: fmt
+        run: cargo fmt --package craft-fonts --package craft-fonts-tests --check
+      - name: clippy
+        run: cargo clippy --package craft-fonts --package craft-fonts-tests --all-targets --all-features --locked -- -D warnings
+      - name: test
+        run: cargo test --package craft-fonts --package craft-fonts-tests --locked
+      - name: test (embed)
+        run: cargo test -p craft-fonts --features embed --locked
