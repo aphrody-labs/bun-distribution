@@ -4,8 +4,9 @@ Deliver one Bun OS product workspace from `C:\\src`, unifying Bun OS and Bun
 Libraries package/setup/build/install ownership while preserving source
 histories, active concurrent work, and all applicable license notices.
 
-The owner's selected integration scope is Bun Libraries and Aphrody. Shenron,
-IECODE and Android remain outside this absorption. Existing Bun runtime,
+The owner's selected integration scope includes Bun Libraries, Aphrody, Android
+and IECODE, following the 2026-10-16 overrides recorded in PLAN.md. Shenron
+remains outside absorption. Existing Bun runtime,
 Material and compatibility distribution dependencies retain their pinned contracts.
 The root catalog and source graph own discovery/export; physical relocation
 and nested workspace migration remain separate gates.

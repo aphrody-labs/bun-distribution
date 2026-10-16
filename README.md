@@ -6,8 +6,8 @@ library/runtime sources under one root Bun workspace. Source repositories are
 kept as revision-locked submodules so their histories and license notices stay
 available.
 
-Bun Libraries and Aphrody are the selected integration scope. Aphrody retains
-AI and infrastructure; Shenron and IECODE stay outside this absorption.
+Bun Libraries, Aphrody, Android and IECODE are the selected integration scope.
+Aphrody retains AI and infrastructure; Shenron stays outside this absorption.
 `bun src/cli.ts workspace` reports scoped source coverage and local state.
 See [source workspace integration](docs/SOURCE-WORKSPACE.md) for migration
 and protected-state boundaries.

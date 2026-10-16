@@ -30,8 +30,24 @@
       "owner": "Bun OS shared library workspace",
       "integration": "merged-history",
       "integratedRevision": "ec9539815a8a38ab306bc2cec3fc55adb8046b5b"
+    },
+    {
+      "id": "android",
+      "checkout": "../android",
+      "repository": "aphrody-labs/bun-engine-android",
+      "owner": "Android runtime, SDK, application and pipeline integration",
+      "integration": "absorbed-source",
+      "integratedRevision": "e5469ee722f3a6225cd62754274591e7c280ec8d"
+    },
+    {
+      "id": "iecode",
+      "checkout": "../iecode",
+      "repository": "aphrody-labs/iecode",
+      "owner": "Imported Rust crates, Bun packages, applications and reverse engineering",
+      "integration": "absorbed-source",
+      "integratedRevision": "630e6a4beef50a068612b5f68c824cf2a3ec8915"
     }
   ],
-  "integrationScope": ["bun-libraries", "aphrody"],
-  "excludedRepositories": ["android", "apt", "material", "iecode", "shenron"]
+  "integrationScope": ["bun-libraries", "aphrody", "android", "iecode"],
+  "excludedRepositories": ["apt", "material", "shenron"]
 }

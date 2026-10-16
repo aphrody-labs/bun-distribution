@@ -5,7 +5,19 @@
 - Owner override of the earlier "IECODE stays outside" direction: all IECODE Rust crates (93 packages), Bun packages, apps and scripts are absorbed into the flat root `crates/`, `apps/` and `packages/` layout, one direct child per member, under the root nightly toolchain and Bun 1.4.4 native quality commands. `C:srciecode` is kept untouched until the owner retires it.
 - Reverse engineering is merged into one capability: `packages/re` (Bun-native fork of morluto/rea, `aphrody-labs/rea`) and `crates/re` (Rust core `bun-re` folding `aphrody re`, `shenron-re`, `aphrody-nie-re`, `aphrody-nie-dump` and `aphrody-nie-steam`; features `nie`, `steam-emulator`, `steam-download`, CLI `bunre-steam`). Ghidra bumped to upstream, JDK and Android SDK/cmdline-tools installed and on the user PATH.
 - `packages/kernel-client`, `packages/ovh` and `packages/paths` are inlined; the retired `bun-forge` Gitea (empty data, container stopped on vps) is no longer a source owner. Remaining `bun-forge` submodule URLs must move to GitHub or be inlined.
-- Open: root `bun install` reports "Duplicate package path" and times out after absorption; `bun lint` walks intentionally broken fixtures in `toolchains/bun` and needs an ignore; `bun check` needs `@aphrody/bun-types` installed; `setup.ts` PATH/shell setup follows a clean install; `toolchains/bun` stash holds an unrelated `bun.lock.rs` change.
+- [x] Repair the shared Bun lock for the existing `bun-arch-mcp`, `bun-blender`
+      and `bun-loaders` members. Frozen offline installation with lifecycle
+      scripts enabled passes on native Bun 1.4.4 revision `032dd109c`;
+      `@aphrody/bun-types` 1.4.4 is installed. The previous duplicate-path error
+      is not reproduced. This does not qualify complete setup or application builds.
+- Open: `bun lint` walks intentionally broken fixtures in `toolchains/bun`
+  and needs an ignore; root quality and `setup.ts` PATH/shell setup remain
+  to qualify; `toolchains/bun` stash holds an unrelated `bun.lock.rs` change.
+- [x] Align source inventory with Android/IECODE absorption and the canonical
+      `sources/` and `vendor/` mounts. Scoped native check (16 files), lint,
+      formatting and eight invalid-mount rejection probes pass. Setup now
+      qualifies the retired forge transport only when declared sources need it;
+      complete setup and physical consolidation remain unqualified.
 
 ## MSYS2 vendor and Desktop integration — 2026-10-16
 

@@ -1,7 +1,8 @@
 # Source workspace integration
 
-Bun OS consolidates Bun Libraries and Aphrody through the existing root
-workspace. Shenron, IECODE and Android are outside this absorption. Existing
+Bun OS consolidates Bun Libraries, Aphrody, Android and IECODE through the
+existing root workspace, following the 2026-10-16 overrides in PLAN.md.
+Shenron remains outside absorption. Existing
 Bun runtime, Material and APT distribution inputs keep their pinned contracts.
 
 Aphrody retains AI (models, agents, memory, A2A and MCP) and infrastructure
@@ -33,9 +34,13 @@ supplies checkout overrides. It identifies excluded repositories, linked
 worktrees and unclassified siblings. Inventory coverage does not imply physical
 consolidation, native qualification or application behavior.
 
-`sources.lock.json` has 86 source mounts and 77 repository/revision identities,
-including 76 gitlinks. The original 85 inputs are unchanged; Aphrody is the
-additional selected source pin. Bun Libraries history through
+Android and IECODE use `absorbed-source` entries whose revisions identify root
+import commits. These entries prove the import is in root history, rather than
+claiming the complete upstream history was merged or sibling checkouts retired.
+
+`sources.lock.json` records the current source mounts and revision identities;
+the workspace inventory reports their live coverage separately from migration
+and qualification. Bun Libraries history through
 `ec9539815a8a38ab306bc2cec3fc55adb8046b5b` is integrated into the distribution
 ancestry without replacing the distribution tree.
 

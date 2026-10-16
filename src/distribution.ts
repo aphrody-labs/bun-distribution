@@ -163,7 +163,11 @@ export async function readLock(): Promise<SourceLock> {
     if (!/^[\w.-]+\/[\w.-]+$/.test(source.repository) || !/^[a-f0-9]{40}$/.test(source.revision) || seen.has(source.id))
       throw new Error(`Invalid source identity: ${source.id}`);
     contained(packageRoot, source.mount);
-    if (!source.mount.startsWith("sources/") || mounts.has(source.mount))
+    if (
+      !/^(?:sources|vendor)\/[A-Za-z0-9._/-]+$/.test(source.mount) ||
+      source.mount.split("/").some(part => !part || part.startsWith(".")) ||
+      mounts.has(source.mount)
+    )
       throw new Error(`Invalid source mount: ${source.mount}`);
     if (source.parent && !seen.has(source.parent)) throw new Error(`Parent must precede source: ${source.id}`);
     seen.add(source.id);

@@ -726,6 +726,14 @@
         "@aphrody/bun-workspace": "workspace:*",
       },
     },
+    "packages/bun-arch-mcp": {
+      "name": "@aphrody/bun-arch-mcp",
+      "version": "1.4.4",
+      "bin": {
+        "bun-arch-mcp": "./src/mcp.ts",
+        "bun-arch-docs": "./src/docs.ts",
+      },
+    },
     "packages/bun-artifacts": {
       "name": "@aphrody/bun-artifacts",
       "version": "1.4.4",
@@ -734,6 +742,14 @@
       },
       "dependencies": {
         "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/bun-blender": {
+      "name": "@aphrody/bun-blender",
+      "version": "1.4.4",
+      "bin": {
+        "bun-blender": "./src/cli.ts",
+        "bun-blender-mcp": "./src/mcp.ts",
       },
     },
     "packages/bun-engine": {
@@ -746,6 +762,10 @@
       "dependencies": {
         "@aphrody/typesafe-sdk": "0.6.2",
       },
+    },
+    "packages/bun-loaders": {
+      "name": "@aphrody/bun-loaders",
+      "version": "1.4.4",
     },
     "packages/bun-video-project": {
       "name": "@aphrody/bun-video-project",
@@ -2681,7 +2701,11 @@
 
     "@aphrody/bun-app-host": ["@aphrody/bun-app-host@workspace:packages/bun-app-host"],
 
+    "@aphrody/bun-arch-mcp": ["@aphrody/bun-arch-mcp@workspace:packages/bun-arch-mcp"],
+
     "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/bun-artifacts"],
+
+    "@aphrody/bun-blender": ["@aphrody/bun-blender@workspace:packages/bun-blender"],
 
     "@aphrody/bun-cloudflare": ["@aphrody/bun-cloudflare@1.4.4", "", { "dependencies": { "@cloudflare/actors": "0.0.1-beta.6", "@cloudflare/ai-chat": "^0.12.1", "@cloudflare/ai-gateway": "^0.0.6", "@cloudflare/autoconfig": "^0.7.7", "@cloudflare/blindrsa-ts": "^0.4.6", "@cloudflare/build-output-utils": "^0.9.0", "@cloudflare/cabidela": "^0.2.4", "@cloudflare/codemode": "^0.5.3", "@cloudflare/codemods": "^0.4.2", "@cloudflare/computer": "^0.5.0", "@cloudflare/config": "^0.24.1", "@cloudflare/containers": "^0.3.7", "@cloudflare/dynamic-workflows": "^0.1.1", "@cloudflare/flagship": "^0.6.0", "@cloudflare/kv-asset-handler": "^0.5.0", "@cloudflare/pages-functions": "^0.1.1", "@cloudflare/playwright": "^1.3.6", "@cloudflare/privacypass-ts": "^0.9.0", "@cloudflare/puppeteer": "^1.4.0", "@cloudflare/realtimekit": "^2.0.2", "@cloudflare/runtime-types": "^0.1.9", "@cloudflare/sandbox": "^1.0.0", "@cloudflare/shell": "^0.4.3", "@cloudflare/speedtest": "^1.14.1", "@cloudflare/streamline": "^0.1.1", "@cloudflare/tanstack-ai": "^0.2.1", "@cloudflare/think": "^0.20.2", "@cloudflare/types": "^7.0.1", "@cloudflare/unenv-preset": "^2.16.2", "@cloudflare/vite-plugin": "^1.63.1", "@cloudflare/vitest-plugin": "^1.4.0", "@cloudflare/voprf-ts": "^1.0.0", "@cloudflare/worker-bundler": "^0.2.6", "@cloudflare/workers-oauth-provider": "^1.2.3", "@cloudflare/workers-response-store": "^1.1.0", "@cloudflare/workers-types": "^5.20261011.1", "@opennextjs/cloudflare": "^1.20.10", "agents": "^0.28.0", "chanfana": "^3.4.0", "cloudflare": "^7.3.0", "create-cloudflare": "^2.73.4", "miniflare": "5.20261006.1-alpha", "partyserver": "^0.5.10", "partysocket": "^1.3.0", "vinext": "^1.1.0", "workerd": "1.20261006.1", "workers-ai-provider": "^4.0.0", "wrangler": "^4.149.0" }, "bin": { "bun-cloudflare": "src/cli.ts" } }, "sha512-7oU4EtvHNEbjY2AWhrF+vwTTHpOPY1IlRuxfQIvP3u/aUPb4omQrT4P3TRzfzpZHIUVtJxVKRu3wbVGmwkV9gw=="],
 
@@ -2696,6 +2720,8 @@
     "@aphrody/bun-google": ["@aphrody/bun-google@workspace:toolchains/bun/packages/bun-google"],
 
     "@aphrody/bun-inspector-protocol": ["@aphrody/bun-inspector-protocol@0.0.2-aphrody.1", "", { "dependencies": { "ws": "^8.18.3" } }, "sha512-YYOLqdmIMlOBo5RRuMyvCsHkxOjJuhVzBTJqa3RocBdKPgst7uOOn25V9uEHE42CGlODDA4Swk2+40fScrq7aA=="],
+
+    "@aphrody/bun-loaders": ["@aphrody/bun-loaders@workspace:packages/bun-loaders"],
 
     "@aphrody/bun-m3": ["@aphrody/bun-m3@workspace:toolchains/bun/packages/bun-m3"],
 

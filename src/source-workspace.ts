@@ -9,7 +9,7 @@ type Component = {
   checkout: string;
   repository: string;
   owner: string;
-  integration: "root" | "pinned-source" | "merged-history";
+  integration: "root" | "pinned-source" | "merged-history" | "absorbed-source";
   integratedRevision?: string;
 };
 
@@ -50,8 +50,9 @@ async function inventory() {
       !/^[\w.-]+\/[\w.-]+$/.test(component.repository) ||
       !component.checkout ||
       isAbsolute(component.checkout) ||
-      !["root", "pinned-source", "merged-history"].includes(component.integration) ||
-      (component.integration === "merged-history" && !/^[a-f0-9]{40}$/.test(component.integratedRevision ?? ""))
+      !["root", "pinned-source", "merged-history", "absorbed-source"].includes(component.integration) ||
+      (["merged-history", "absorbed-source"].includes(component.integration) &&
+        !/^[a-f0-9]{40}$/.test(component.integratedRevision ?? ""))
     )
       throw new Error("Invalid source workspace component");
     ids.add(component.id);
@@ -98,10 +99,10 @@ export async function inspectSourceWorkspace(config: Config = {}) {
     const inspected = head?.code === 0 && status?.code === 0;
     const revision = inspected ? head.stdout.trim() : null;
     const clean = inspected ? status.stdout.length === 0 : null;
-    const inherited =
-      component.integration === "merged-history"
-        ? (await git(packageRoot, ["merge-base", "--is-ancestor", component.integratedRevision!, "HEAD"])).code === 0
-        : null;
+    const imported = component.integration === "merged-history" || component.integration === "absorbed-source";
+    const inherited = imported
+      ? (await git(packageRoot, ["merge-base", "--is-ancestor", component.integratedRevision!, "HEAD"])).code === 0
+      : null;
     const pinned = source?.repository === component.repository;
     components.push({
       ...component,
@@ -116,13 +117,12 @@ export async function inspectSourceWorkspace(config: Config = {}) {
       sourceMount: source?.mount ?? null,
       submodule: false,
       upstream: null,
-      sourceCovered:
-        component.integration === "root" || (component.integration === "merged-history" ? inherited : pinned),
+      sourceCovered: component.integration === "root" || (imported ? inherited : pinned),
       matchesSourcePin: source ? revision === source.revision : null,
-      cargoOwner: component.integration === "root" || component.integration === "merged-history" ? "." : component.id,
-      bunOwner: component.integration === "root" || component.integration === "merged-history" ? "." : component.id,
-      buildOwner: component.integration === "merged-history" ? "bun-os" : component.id,
-      releaseOwner: component.id === "bun-libraries" ? "bun-os" : component.id,
+      cargoOwner: component.integration === "root" || imported ? "." : component.id,
+      bunOwner: component.integration === "root" || imported ? "." : component.id,
+      buildOwner: imported ? "bun-os" : component.id,
+      releaseOwner: imported ? "bun-os" : component.id,
       targets: "owner-defined",
       qualification: "source-inventory-only",
       migrationState: component.integration,
@@ -178,7 +178,7 @@ export async function inspectSourceWorkspace(config: Config = {}) {
     additional,
     pinnedMounts: lock.repositories.length,
     physicalConsolidationComplete: components.every(component => {
-      if (component.integration === "merged-history") return false;
+      if (component.integration === "merged-history" || component.integration === "absorbed-source") return false;
       if (!component.physicalPath) return false;
       const local = relative(packageRoot, component.physicalPath);
       return !isAbsolute(local) && local !== ".." && !local.startsWith(`..${sep}`);

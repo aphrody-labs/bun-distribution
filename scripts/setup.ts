@@ -10,10 +10,7 @@ const env = {
   CARGO_INSTALL_ROOT: resolve(root, "install"),
 };
 
-async function run(
-  argv: string[],
-  processEnv: Record<string, string | undefined> = env,
-): Promise<void> {
+async function run(argv: string[], processEnv: Record<string, string | undefined> = env): Promise<void> {
   const result = await runProcess(argv, root, {
     timeoutMs: 1_800_000,
     maxOutputBytes: 128 * 1024 * 1024,
@@ -26,54 +23,48 @@ async function run(
 }
 
 let submoduleEnv: Record<string, string | undefined> = env;
-if (process.platform === "win32") {
+// The retired forge is only a dependency while a declared source still uses it.
+// HTTPS/GitHub sources must not require the former workstation SSH tunnel.
+const submoduleURLs = await runProcess(
+  ["git", "config", "--file", ".gitmodules", "--get-regexp", "^submodule\\..*\\.url$"],
+  root,
+  { timeoutMs: 15_000, maxOutputBytes: 1024 * 1024 },
+);
+if (submoduleURLs.code !== 0 && submoduleURLs.code !== 1)
+  throw new Error("Cannot inspect declared submodule transports.");
+const requiresForge = submoduleURLs.stdout.split(/\r?\n/).some(line => {
+  const url = line.slice(line.indexOf(" ") + 1).trim();
+  return /^(?:ssh:\/\/(?:[^/@]+@)?|(?:[^@\s]+@)?)bun-forge(?=[:/]|$)/i.test(url);
+});
+if (process.platform === "win32" && requiresForge) {
   const qualificationEnv = {
     ...env,
     GIT_SSH: undefined,
     GIT_SSH_COMMAND: undefined,
   };
-  const configured = await runProcess(
-    [process.execPath, "scripts/forge-transport.ts", "configure"],
-    root,
-    {
-      timeoutMs: 30000,
-      maxOutputBytes: 1048576,
-      env: qualificationEnv,
-    },
-  );
-  if (configured.code !== 0)
-    throw new Error("Windows forge transport qualification failed.");
+  const configured = await runProcess([process.execPath, "scripts/forge-transport.ts", "configure"], root, {
+    timeoutMs: 30000,
+    maxOutputBytes: 1048576,
+    env: qualificationEnv,
+  });
+  if (configured.code !== 0) throw new Error("Windows forge transport qualification failed.");
   const proof = JSON.parse(configured.stdout.trim()) as {
     action?: string;
     configured?: boolean;
   };
   if (proof.action !== "configure" || proof.configured !== true)
-    throw new Error(
-      "Windows forge transport did not report successful qualification.",
-    );
-  const transport = await runProcess(
-    ["git", "config", "--local", "--get", "core.sshCommand"],
-    root,
-    {
-      timeoutMs: 15000,
-      maxOutputBytes: 1048576,
-      env: qualificationEnv,
-    },
-  );
+    throw new Error("Windows forge transport did not report successful qualification.");
+  const transport = await runProcess(["git", "config", "--local", "--get", "core.sshCommand"], root, {
+    timeoutMs: 15000,
+    maxOutputBytes: 1048576,
+    env: qualificationEnv,
+  });
   const sshCommand = transport.stdout.trim();
-  if (
-    transport.code !== 0 ||
-    !sshCommand ||
-    sshCommand.includes("\n") ||
-    sshCommand.includes("\r")
-  )
+  if (transport.code !== 0 || !sshCommand || sshCommand.includes("\n") || sshCommand.includes("\r"))
     throw new Error("Qualified repository-local SSH transport is unavailable.");
   submoduleEnv = { ...qualificationEnv, GIT_SSH_COMMAND: sshCommand };
 }
-await run(
-  ["git", "submodule", "update", "--init", "--depth", "1"],
-  submoduleEnv,
-);
+await run(["git", "submodule", "update", "--init", "--depth", "1"], submoduleEnv);
 await run([process.execPath, "install", "--frozen-lockfile"]);
 await run([process.execPath, "scripts/node-modules.ts"]);
 const cargo = await inspectCargoWorkspace(await loadConfig(root), {
@@ -81,6 +72,4 @@ const cargo = await inspectCargoWorkspace(await loadConfig(root), {
   timeoutMs: 60_000,
   runtimePolicy: "development",
 });
-console.log(
-  `Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`,
-);
+console.log(`Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`);
