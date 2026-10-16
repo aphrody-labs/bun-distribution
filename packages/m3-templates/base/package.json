@@ -1,0 +1,26 @@
+{
+  "name": "__NAME__",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run scripts/supervise.ts",
+    "start": "bun run src/server.ts",
+    "test": "bun test",
+    "typecheck": "bun check --noEmit",
+    "lint": "bun lint src scripts test",
+    "fmt": "bun fmt src scripts test",
+    "fmt:check": "bun fmt --check src scripts test",
+    "build:bin": "bun run scripts/build-bin.ts",
+    "pack:deploy": "bun run scripts/pack-deploy.ts"
+  },
+  "dependencies": {
+    "@aphrody/runtime-sdk": "npm:@aphrody/bun-runtime-sdk@1.4.4"
+  },
+  "devDependencies": {
+    "@types/bun": "npm:@aphrody/bun-types@1.4.4"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

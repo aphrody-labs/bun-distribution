@@ -1,0 +1,4 @@
+[
+  { "shellIndex": 3, "label": "dossier fermé", "material": "folder" },
+  { "shellIndex": 4, "label": "dossier ouvert", "material": "folder_open" }
+]

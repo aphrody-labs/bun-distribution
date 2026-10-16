@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* One-time password field: outlined character boxes, 48x56dp. */
+@layer components {
+  .m3-bui-otp {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .m3-bui-otp__input {
+    box-sizing: border-box;
+    inline-size: 48px;
+    block-size: 56px;
+    padding: 0;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    caret-color: var(--md-sys-color-primary);
+    font: var(--m3-bui-font-headline-small);
+    text-align: center;
+    outline: none;
+    transition: border-color var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-otp__input:hover {
+    border-color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-otp__input:focus {
+    border-color: var(--md-sys-color-primary);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  }
+  .m3-bui-otp__input[data-invalid] {
+    border-color: var(--md-sys-color-error);
+  }
+  .m3-bui-otp__input:is(:disabled, [data-disabled]) {
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-otp__separator {
+    inline-size: 8px;
+    block-size: 2px;
+    background: var(--md-sys-color-outline);
+  }
+}

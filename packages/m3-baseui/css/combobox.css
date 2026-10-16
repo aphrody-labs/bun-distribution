@@ -1,0 +1,139 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Combobox and autocomplete: an outlined input group (with chips for multiple values) and a menu-like popup. */
+@layer components {
+  .m3-bui-combobox__label {
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-body-small);
+    letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  }
+  .m3-bui-combobox__input-group,
+  .m3-bui-combobox__chips {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 56px;
+    padding: 0 8px 0 16px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    color: var(--md-sys-color-on-surface);
+    transition: border-color var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-combobox__input-group:hover,
+  .m3-bui-combobox__chips:hover {
+    border-color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-combobox__input-group:focus-within,
+  .m3-bui-combobox__chips:focus-within {
+    border-color: var(--md-sys-color-primary);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  }
+  .m3-bui-combobox__input {
+    box-sizing: border-box;
+    flex: 1;
+    min-inline-size: 4ch;
+    min-block-size: 48px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    caret-color: var(--md-sys-color-primary);
+    font: var(--m3-bui-font-body-large);
+    letter-spacing: var(--md-sys-typescale-body-large-tracking);
+    outline: none;
+  }
+  .m3-bui-combobox__input::placeholder {
+    color: var(--md-sys-color-on-surface-variant);
+  }
+  .m3-bui-combobox__input:is(:disabled, [data-disabled]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-combobox__trigger,
+  .m3-bui-combobox__clear,
+  .m3-bui-combobox__chip-remove {
+    --m3-state: var(--md-sys-color-on-surface-variant);
+    box-sizing: border-box;
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 40px;
+    block-size: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: pointer;
+  }
+  .m3-bui-combobox__icon {
+    display: inline-grid;
+    place-items: center;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  .m3-bui-combobox__chip {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    block-size: 32px;
+    padding: 0 4px 0 12px;
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-small);
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  }
+  .m3-bui-combobox__chip[data-highlighted] {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .m3-bui-combobox__chip-remove {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+
+  .m3-bui-combobox__popup {
+    min-inline-size: var(--anchor-width);
+    max-block-size: var(--available-height);
+    overflow: hidden;
+  }
+  .m3-bui-combobox__list {
+    box-sizing: border-box;
+    max-block-size: min(23rem, var(--available-height));
+    padding: 8px 0;
+    overflow-y: auto;
+  }
+  .m3-bui-combobox__item {
+    padding-inline: 12px 16px;
+  }
+  .m3-bui-combobox__item-indicator {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 24px;
+    block-size: 24px;
+  }
+  .m3-bui-combobox__group-label {
+    padding: 8px 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-small);
+    letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  }
+  .m3-bui-combobox__separator {
+    block-size: 1px;
+    margin: 8px 0;
+    background: var(--md-sys-color-outline-variant);
+  }
+  .m3-bui-combobox__empty,
+  .m3-bui-combobox__status {
+    padding: 12px 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-body-medium);
+    letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  }
+  .m3-bui-combobox__empty:empty {
+    display: none;
+  }
+}

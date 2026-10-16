@@ -1,0 +1,10 @@
+{
+  "name": "@aphrody/libm3",
+  "version": "1.4.4",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": { ".": "./src/wasm.ts", "./wasm": "./src/wasm.ts" },
+  "files": ["src"],
+  "repository": { "type": "git", "url": "https://github.com/aphrody-labs/material", "directory": "packages/libm3" }
+}

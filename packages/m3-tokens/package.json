@@ -1,0 +1,56 @@
+{
+  "name": "@aphrody/m3-tokens",
+  "version": "1.4.5",
+  "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
+  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-tokens#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-code/material-web/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-code/material-web.git",
+    "directory": "packages/m3-tokens"
+  },
+  "files": [
+    "src/",
+    "dist/"
+  ],
+  "type": "module",
+  "main": "./src/theme-to-tokens.ts",
+  "types": "./src/theme-to-tokens.ts",
+  "exports": {
+    ".": "./src/theme-to-tokens.ts",
+    "./theme-to-tokens": "./src/theme-to-tokens.ts",
+    "./dynamic-color": "./src/dynamic-color.ts",
+    "./native-theme": "./src/native-theme.ts",
+    "./android": "./src/android.ts",
+    "./breakpoints": "./src/breakpoints.ts",
+    "./platform-contract": "./src/platform-contract.ts",
+    "./breakpoints.css": "./src/breakpoints.css",
+    "./m3-tokens.css": "./src/m3-tokens.css",
+    "./expressive": "./src/expressive.ts",
+    "./expressive.css": "./src/expressive.css"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build.ts && bun check -p tsconfig.build.json",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test",
+    "test": "bun test test/",
+    "demo": "bun run src/cli.ts",
+    "generate:expressive": "bun scripts/generate-expressive.ts"
+  },
+  "dependencies": {
+    "@material/material-color-utilities": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

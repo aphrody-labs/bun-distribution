@@ -1,0 +1,354 @@
+{
+  "schema": "aphrody-web-to-tauri.policy-cases/1",
+  "description": "Navigation decisions shared by packages/web-to-tauri (bun test) and crates/ui/tauri-wrap (cargo test).",
+  "suites": [
+    {
+      "name": "system browser for other sites",
+      "origins": {
+        "app": ["https://example.com", "https://*.example.com", "http://127.0.0.1:*"],
+        "auth": ["https://accounts.google.com", "https://github.com/login/*"],
+        "external": "system",
+        "embeds": []
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://example.com/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://example.com:443/a?b=1#c",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://EXAMPLE.com/x",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://app.example.com/x",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://a.b.example.com/x",
+          "kind": "new-window",
+          "expect": "allow"
+        },
+        {
+          "url": "http://example.com/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://example.com:8443/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://notexample.com/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://example.com.evil.test/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://evilexample.com/",
+          "kind": "new-window",
+          "expect": "external"
+        },
+        {
+          "url": "http://127.0.0.1:5173/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://accounts.google.com/o/oauth2/v2/auth?x=1",
+          "kind": "new-window",
+          "expect": "allow"
+        },
+        {
+          "url": "https://accounts.google.com.evil.test/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://github.com/login/oauth/authorize",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://github.com/someone/repo",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "about:blank",
+          "kind": "new-window",
+          "expect": "allow"
+        },
+        {
+          "url": "about:srcdoc",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "about:config",
+          "kind": "navigation",
+          "expect": "deny"
+        },
+        {
+          "url": "blob:https://example.com/0f1e",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "data:text/html,hello",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "javascript:void(0)",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "file:///etc/passwd",
+          "kind": "navigation",
+          "expect": "deny"
+        },
+        {
+          "url": "mailto:someone@example.com",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "tel:+33123456789",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "zoommtg://zoom.us/join?confno=1",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "not a url",
+          "kind": "navigation",
+          "expect": "deny"
+        }
+      ]
+    },
+    {
+      "name": "third-party frames",
+      "origins": {
+        "app": ["https://example.com"],
+        "auth": [],
+        "embeds": [
+          "https://www.youtube.com",
+          "https://www.google.com/maps/*",
+          "https://*.typeform.com"
+        ],
+        "external": "system"
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://www.youtube.com/embed/abc",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://www.google.com/maps/embed?pb=1",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://www.google.com/search?q=x",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://form.typeform.com/to/x",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://youtube.com.evil.test/",
+          "kind": "navigation",
+          "expect": "external"
+        }
+      ]
+    },
+    {
+      "name": "path-scoped app origin",
+      "origins": {
+        "app": ["https://portal.test/app/*"],
+        "auth": [],
+        "external": "system",
+        "embeds": []
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://portal.test/app/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://portal.test/app/deep/link",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://portal.test/application",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://portal.test/",
+          "kind": "navigation",
+          "expect": "external"
+        }
+      ]
+    },
+    {
+      "name": "blocking other sites",
+      "origins": {
+        "app": ["https://example.com"],
+        "auth": [],
+        "external": "deny",
+        "embeds": []
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://example.com/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://other.test/",
+          "kind": "navigation",
+          "expect": "deny"
+        },
+        {
+          "url": "mailto:a@b.test",
+          "kind": "navigation",
+          "expect": "deny"
+        }
+      ]
+    },
+    {
+      "name": "browser-like in-app navigation",
+      "origins": {
+        "app": ["https://example.com"],
+        "auth": [],
+        "external": "inapp",
+        "embeds": []
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://other.test/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "mailto:a@b.test",
+          "kind": "navigation",
+          "expect": "deny"
+        },
+        {
+          "url": "file:///tmp/x",
+          "kind": "navigation",
+          "expect": "deny"
+        }
+      ]
+    },
+    {
+      "name": "loopback origin known at run time",
+      "origins": {
+        "app": [],
+        "auth": ["https://accounts.google.com"],
+        "external": "system",
+        "embeds": []
+      },
+      "extraAllowed": ["http://127.0.0.1:43111"],
+      "cases": [
+        {
+          "url": "http://127.0.0.1:43111/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "http://127.0.0.1:43111/api/me",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "http://127.0.0.1:43112/",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://accounts.google.com/",
+          "kind": "new-window",
+          "expect": "allow"
+        }
+      ]
+    },
+    {
+      "name": "star segment in a path pattern",
+      "origins": {
+        "app": [],
+        "auth": ["https://www.facebook.com/*/dialog/*", "https://*.slack.com/openid/*"],
+        "embeds": [],
+        "external": "system"
+      },
+      "extraAllowed": [],
+      "cases": [
+        {
+          "url": "https://www.facebook.com/v19.0/dialog/oauth?client_id=1",
+          "kind": "new-window",
+          "expect": "allow"
+        },
+        {
+          "url": "https://www.facebook.com/v2.0/dialog/",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://www.facebook.com/v19.0/dialog",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://www.facebook.com/someone",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://www.facebook.com//dialog/x",
+          "kind": "navigation",
+          "expect": "external"
+        },
+        {
+          "url": "https://team.slack.com/openid/connect/authorize",
+          "kind": "navigation",
+          "expect": "allow"
+        },
+        {
+          "url": "https://team.slack.com/messages",
+          "kind": "navigation",
+          "expect": "external"
+        }
+      ]
+    }
+  ]
+}

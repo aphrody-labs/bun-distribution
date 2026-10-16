@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-m3"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/material"
+repository = "https://github.com/aphrody-labs/material"
+license = "Apache-2.0"
+description = "Rust Material 3 component and layout contracts for native and web hosts."
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"
+
+[features]
+default = ["native-render"]
+native-render = ["dep:aphrody-render", "aphrody-render/cpu"]
+wasm = []
+
+[dependencies]
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.4", features = ["serde"] }
+aphrody-identity = { version = "=1.0.0-canary.1", default-features = false }
+taffy = { package = "aphrody-taffy", version = "=0.12.1" }
+aphrody-render = { version = "=1.0.0-canary", optional = true }
+serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }

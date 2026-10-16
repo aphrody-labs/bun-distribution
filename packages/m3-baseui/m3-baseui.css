@@ -1,0 +1,36 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Material 3 appearance for every Base UI part of @aphrody/m3-baseui: core.css plus one sheet per component.
+ * Needs m3-tokens.css (and expressive.css) and a colour sheet (--md-sys-color-*) on the page. To ship less CSS,
+ * import "@aphrody/m3-baseui/css/core.css" and only the sheets of the components you render, e.g.
+ * "@aphrody/m3-baseui/css/button.css". Alert dialog shares dialog.css; autocomplete shares combobox.css;
+ * context menu and menubar share menu.css; meter shares progress.css; preview card shares popover.css;
+ * input and form share field.css; toggle group shares toggle.css; radio and checkbox groups are in core.css.
+ */
+@import "./css/core.css";
+@import "./css/accordion.css";
+@import "./css/avatar.css";
+@import "./css/button.css";
+@import "./css/checkbox.css";
+@import "./css/collapsible.css";
+@import "./css/combobox.css";
+@import "./css/dialog.css";
+@import "./css/drawer.css";
+@import "./css/field.css";
+@import "./css/menu.css";
+@import "./css/navigation-menu.css";
+@import "./css/number-field.css";
+@import "./css/otp-field.css";
+@import "./css/popover.css";
+@import "./css/progress.css";
+@import "./css/radio.css";
+@import "./css/scroll-area.css";
+@import "./css/select.css";
+@import "./css/separator.css";
+@import "./css/slider.css";
+@import "./css/switch.css";
+@import "./css/tabs.css";
+@import "./css/toast.css";
+@import "./css/toggle.css";
+@import "./css/toolbar.css";
+@import "./css/tooltip.css";

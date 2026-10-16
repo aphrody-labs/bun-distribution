@@ -1,0 +1,13 @@
+[package]
+name = "libm3-wasm"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+description = "Bounded scalar WASM API for portable Bun OS Material contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libm3 = { path = "../libm3", default-features = false, features = ["std"] }

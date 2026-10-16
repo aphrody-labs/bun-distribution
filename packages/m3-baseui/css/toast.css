@@ -1,0 +1,73 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Toast: the M3 snackbar, inverse-surface, 4dp corners, level 3, with an inverse-primary action. */
+@layer components {
+  .m3-bui-toast__viewport {
+    position: fixed;
+    inset-block-end: 16px;
+    inset-inline: 16px;
+    z-index: var(--m3-bui-z-toast, 1100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .m3-bui-toast {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    inline-size: min(560px, 100%);
+    min-inline-size: min(344px, 100%);
+    min-block-size: 48px;
+    padding: 8px 8px 8px 16px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    box-shadow: var(--md-sys-elevation-level3);
+    pointer-events: auto;
+    transition:
+      opacity var(--md-sys-motion-duration-medium1)
+        var(--md-sys-motion-easing-emphasized-decelerate),
+      transform var(--md-sys-motion-duration-medium1)
+        var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+  .m3-bui-toast[data-starting-style],
+  .m3-bui-toast[data-ending-style] {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  .m3-bui-toast__content {
+    flex: 1;
+    min-inline-size: 0;
+  }
+  .m3-bui-toast__title {
+    margin: 0;
+    font: var(--m3-bui-font-title-small);
+    letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  }
+  .m3-bui-toast__description {
+    margin: 0;
+    font: var(--m3-bui-font-body-medium);
+    letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  }
+  .m3-bui-toast__action,
+  .m3-bui-toast__close {
+    box-sizing: border-box;
+    flex: none;
+    min-block-size: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: transparent;
+    cursor: pointer;
+  }
+  .m3-bui-toast__action {
+    color: var(--md-sys-color-inverse-primary);
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  }
+  .m3-bui-toast__close {
+    color: var(--md-sys-color-inverse-on-surface);
+  }
+}

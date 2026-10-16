@@ -1,0 +1,7 @@
+{
+  "name": "base-ui",
+  "upstream": "https://github.com/mui/base-ui.git",
+  "forkOrigin": "git@github-dev:aphrody-labs/base-ui.git",
+  "internalizedFrom": "3a53aa71c12774e19e6523b6bda91fc13e8d80aa",
+  "mode": "in-tree"
+}

@@ -1,0 +1,1072 @@
+{
+  "schema": "m3-bench/1",
+  "repeat": 3,
+  "env": {
+    "date": "2026-10-04T06:51:54.941Z",
+    "bun": "1.4.2",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "wsl": true,
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13700F",
+    "cores": 16,
+    "memMiB": 20000,
+    "loadStart": [
+      6.48,
+      5.54,
+      4.46
+    ],
+    "loadEnd": [
+      8.58,
+      8.68,
+      6.37
+    ],
+    "repos": {
+      "aphrody-m3": "a4c76cb",
+      "yolo": "dfd3853"
+    },
+    "remeasured": {
+      "groups": [
+        "mcp",
+        "themes",
+        "yolo.status (added after the first run; measured with the previous status.ts swapped in)"
+      ],
+      "reason": "m3-mcp and m3-os-themes gained commits (81ee8d7, 31347ad, f39fb9f) after the first baseline; re-measured on aphrody-m3 f39fb9f",
+      "repos": {
+        "aphrody-m3": "f39fb9f",
+        "yolo": "e05c82e"
+      }
+    }
+  },
+  "metrics": {
+    "yolo.version": {
+      "value": 19.903,
+      "unit": "ms",
+      "n": 20,
+      "min": 19.211,
+      "p95": 20.469,
+      "max": 20.594
+    },
+    "yolo.version_json": {
+      "value": 19.76,
+      "unit": "ms",
+      "n": 20,
+      "min": 18.996,
+      "p95": 20.697,
+      "max": 21.48
+    },
+    "mcp.cold": {
+      "value": 65.405,
+      "unit": "ms",
+      "n": 10,
+      "min": 63.304,
+      "p95": 67.628,
+      "max": 67.628
+    },
+    "themes.cli": {
+      "value": 42.413,
+      "unit": "ms",
+      "n": 20,
+      "min": 40.893,
+      "p95": 46.764,
+      "max": 48.588
+    },
+    "themes.import": {
+      "value": 12.074,
+      "unit": "ms",
+      "n": 10,
+      "min": 11.882,
+      "p95": 12.729,
+      "max": 12.729
+    },
+    "themes.first": {
+      "value": 26.274,
+      "unit": "ms",
+      "n": 10,
+      "min": 25.046,
+      "p95": 28.839,
+      "max": 28.839
+    },
+    "themes.warm": {
+      "value": 10.252,
+      "unit": "ms",
+      "n": 10,
+      "min": 10.063,
+      "p95": 10.918,
+      "max": 10.918
+    },
+    "install.cold_nm": {
+      "value": 143.023,
+      "unit": "ms",
+      "n": 3,
+      "min": 123.149,
+      "p95": 146.549,
+      "max": 146.549
+    },
+    "install.nm_bytes": {
+      "value": 815047382,
+      "unit": "B"
+    },
+    "install.warm": {
+      "value": 9.63,
+      "unit": "ms",
+      "n": 5,
+      "min": 8.387,
+      "p95": 11.614,
+      "max": 11.614
+    },
+    "install.repo_nm_bytes": {
+      "value": 845490442,
+      "unit": "B"
+    },
+    "install.cold_nm_hoisted": {
+      "value": 379.598,
+      "unit": "ms",
+      "n": 3,
+      "min": 377.997,
+      "p95": 869.257,
+      "max": 869.257
+    },
+    "install.nm_bytes_hoisted": {
+      "value": 814969220,
+      "unit": "B"
+    },
+    "install.cold_cache": {
+      "value": 24373.738,
+      "unit": "ms",
+      "n": 1,
+      "min": 24373.738,
+      "p95": 24373.738,
+      "max": 24373.738
+    },
+    "install.cache_bytes": {
+      "value": 814991437,
+      "unit": "B"
+    },
+    "test.pkg.ag-ui": {
+      "value": 60.056,
+      "unit": "ms",
+      "n": 3,
+      "min": 59.786,
+      "p95": 69.254,
+      "max": 69.254
+    },
+    "test.pkg.assets": {
+      "value": 12.445,
+      "unit": "ms",
+      "n": 3,
+      "min": 12.255,
+      "p95": 15.901,
+      "max": 15.901
+    },
+    "test.pkg.canvas": {
+      "value": 53.722,
+      "unit": "ms",
+      "n": 3,
+      "min": 51.209,
+      "p95": 55.964,
+      "max": 55.964
+    },
+    "test.pkg.eslint-plugin-m3": {
+      "value": 187.358,
+      "unit": "ms",
+      "n": 3,
+      "min": 180.807,
+      "p95": 200.99,
+      "max": 200.99
+    },
+    "test.pkg.identity": {
+      "value": 7.109,
+      "unit": "ms",
+      "n": 3,
+      "min": 6.77,
+      "p95": 7.276,
+      "max": 7.276
+    },
+    "test.pkg.m3": {
+      "value": 360.877,
+      "unit": "ms",
+      "n": 3,
+      "min": 356.344,
+      "p95": 484.748,
+      "max": 484.748
+    },
+    "test.pkg.m3-ai": {
+      "value": 2660.362,
+      "unit": "ms",
+      "n": 3,
+      "min": 2659.816,
+      "p95": 2676.76,
+      "max": 2676.76
+    },
+    "test.pkg.m3-baseui": {
+      "value": 23.436,
+      "unit": "ms",
+      "n": 3,
+      "min": 22.811,
+      "p95": 25.36,
+      "max": 25.36
+    },
+    "test.pkg.m3-codemods": {
+      "value": 2025.563,
+      "unit": "ms",
+      "n": 3,
+      "min": 2006.319,
+      "p95": 2025.727,
+      "max": 2025.727
+    },
+    "test.pkg.m3-config": {
+      "value": 25.22,
+      "unit": "ms",
+      "n": 3,
+      "min": 24.629,
+      "p95": 131.525,
+      "max": 131.525
+    },
+    "test.pkg.m3-design": {
+      "value": 23.689,
+      "unit": "ms",
+      "n": 3,
+      "min": 23.66,
+      "p95": 24.37,
+      "max": 24.37
+    },
+    "test.pkg.m3-explorer": {
+      "value": 213.14,
+      "unit": "ms",
+      "n": 3,
+      "min": 211.292,
+      "p95": 215.044,
+      "max": 215.044
+    },
+    "test.pkg.m3-fonts": {
+      "value": 8.352,
+      "unit": "ms",
+      "n": 3,
+      "min": 8.243,
+      "p95": 8.817,
+      "max": 8.817
+    },
+    "test.pkg.m3-forms": {
+      "value": 210.962,
+      "unit": "ms",
+      "n": 3,
+      "min": 207.214,
+      "p95": 212.155,
+      "max": 212.155
+    },
+    "test.pkg.m3-front": {
+      "value": 107.002,
+      "unit": "ms",
+      "n": 3,
+      "min": 106.821,
+      "p95": 109.55,
+      "max": 109.55
+    },
+    "test.pkg.m3-icons": {
+      "value": 98.769,
+      "unit": "ms",
+      "n": 3,
+      "min": 97.825,
+      "p95": 114.648,
+      "max": 114.648
+    },
+    "test.pkg.m3-mcp": {
+      "value": 9.38,
+      "unit": "ms",
+      "n": 3,
+      "min": 9.378,
+      "p95": 9.695,
+      "max": 9.695
+    },
+    "test.pkg.m3-motion": {
+      "value": 39.171,
+      "unit": "ms",
+      "n": 3,
+      "min": 38.312,
+      "p95": 41.305,
+      "max": 41.305
+    },
+    "test.pkg.m3-next": {
+      "value": 102.533,
+      "unit": "ms",
+      "n": 3,
+      "min": 102.32,
+      "p95": 126.499,
+      "max": 126.499
+    },
+    "test.pkg.m3-next-migrate": {
+      "value": 39.755,
+      "unit": "ms",
+      "n": 3,
+      "min": 39.49,
+      "p95": 40.678,
+      "max": 40.678
+    },
+    "test.pkg.m3-os-themes": {
+      "value": 205.531,
+      "unit": "ms",
+      "n": 3,
+      "min": 204.177,
+      "p95": 210.021,
+      "max": 210.021
+    },
+    "test.pkg.m3-primitives": {
+      "value": 2450.221,
+      "unit": "ms",
+      "n": 3,
+      "min": 2425.285,
+      "p95": 2472.622,
+      "max": 2472.622
+    },
+    "test.pkg.m3-react": {
+      "value": 185.755,
+      "unit": "ms",
+      "n": 3,
+      "min": 182.115,
+      "p95": 221.955,
+      "max": 221.955
+    },
+    "test.pkg.m3-reader": {
+      "value": 436.58,
+      "unit": "ms",
+      "n": 3,
+      "min": 429.889,
+      "p95": 466.514,
+      "max": 466.514
+    },
+    "test.pkg.m3-tailwind": {
+      "value": 142.047,
+      "unit": "ms",
+      "n": 3,
+      "min": 139.35,
+      "p95": 149.023,
+      "max": 149.023
+    },
+    "test.pkg.m3-theme": {
+      "value": 14.873,
+      "unit": "ms",
+      "n": 3,
+      "min": 14.708,
+      "p95": 15.848,
+      "max": 15.848
+    },
+    "test.pkg.m3-tokens": {
+      "value": 146.13,
+      "unit": "ms",
+      "n": 3,
+      "min": 144.699,
+      "p95": 148.466,
+      "max": 148.466
+    },
+    "test.pkg.scaffold": {
+      "value": 54.636,
+      "unit": "ms",
+      "n": 3,
+      "min": 53.145,
+      "p95": 54.724,
+      "max": 54.724
+    },
+    "test.sum": {
+      "value": 9974.319,
+      "unit": "ms"
+    },
+    "typecheck.pkg.ag-ui": {
+      "value": 85.334,
+      "unit": "ms",
+      "n": 3,
+      "min": 85.313,
+      "p95": 88.513,
+      "max": 88.513
+    },
+    "typecheck.pkg.assets": {
+      "value": 59.719,
+      "unit": "ms",
+      "n": 3,
+      "min": 59.037,
+      "p95": 62.339,
+      "max": 62.339
+    },
+    "typecheck.pkg.canvas": {
+      "value": 208.367,
+      "unit": "ms",
+      "n": 3,
+      "min": 206.385,
+      "p95": 211.465,
+      "max": 211.465
+    },
+    "typecheck.pkg.identity": {
+      "value": 58.187,
+      "unit": "ms",
+      "n": 3,
+      "min": 57.352,
+      "p95": 58.462,
+      "max": 58.462
+    },
+    "typecheck.pkg.m3": {
+      "value": 213.641,
+      "unit": "ms",
+      "n": 3,
+      "min": 209.782,
+      "p95": 221.107,
+      "max": 221.107
+    },
+    "typecheck.pkg.m3-ai": {
+      "value": 542.87,
+      "unit": "ms",
+      "n": 3,
+      "min": 537.169,
+      "p95": 565.399,
+      "max": 565.399
+    },
+    "typecheck.pkg.m3-baseui": {
+      "value": 303.849,
+      "unit": "ms",
+      "n": 3,
+      "min": 295.58,
+      "p95": 307.733,
+      "max": 307.733
+    },
+    "typecheck.pkg.m3-config": {
+      "value": 101.015,
+      "unit": "ms",
+      "n": 3,
+      "min": 93.847,
+      "p95": 101.877,
+      "max": 101.877
+    },
+    "typecheck.pkg.m3-design": {
+      "value": 101.934,
+      "unit": "ms",
+      "n": 3,
+      "min": 90.834,
+      "p95": 103.99,
+      "max": 103.99
+    },
+    "typecheck.pkg.m3-explorer": {
+      "value": 517.262,
+      "unit": "ms",
+      "n": 3,
+      "min": 475.476,
+      "p95": 533.464,
+      "max": 533.464
+    },
+    "typecheck.pkg.m3-fonts": {
+      "value": 78.216,
+      "unit": "ms",
+      "n": 3,
+      "min": 76.187,
+      "p95": 85.038,
+      "max": 85.038
+    },
+    "typecheck.pkg.m3-forms": {
+      "value": 517.67,
+      "unit": "ms",
+      "n": 3,
+      "min": 509.472,
+      "p95": 523.202,
+      "max": 523.202
+    },
+    "typecheck.pkg.m3-front": {
+      "value": 206.535,
+      "unit": "ms",
+      "n": 3,
+      "min": 204.346,
+      "p95": 208.877,
+      "max": 208.877
+    },
+    "typecheck.pkg.m3-icons": {
+      "value": 93.193,
+      "unit": "ms",
+      "n": 3,
+      "min": 83.083,
+      "p95": 97.011,
+      "max": 97.011
+    },
+    "typecheck.pkg.m3-mcp": {
+      "value": 121.565,
+      "unit": "ms",
+      "n": 3,
+      "min": 119.327,
+      "p95": 121.721,
+      "max": 121.721
+    },
+    "typecheck.pkg.m3-motion": {
+      "value": 140.79,
+      "unit": "ms",
+      "n": 3,
+      "min": 139.875,
+      "p95": 144.181,
+      "max": 144.181
+    },
+    "typecheck.pkg.m3-next": {
+      "value": 120.632,
+      "unit": "ms",
+      "n": 3,
+      "min": 119.401,
+      "p95": 128.539,
+      "max": 128.539
+    },
+    "typecheck.pkg.m3-next-migrate": {
+      "value": 157.836,
+      "unit": "ms",
+      "n": 3,
+      "min": 156.614,
+      "p95": 159.504,
+      "max": 159.504
+    },
+    "typecheck.pkg.m3-os-themes": {
+      "value": 96.535,
+      "unit": "ms",
+      "n": 3,
+      "min": 88.513,
+      "p95": 108.945,
+      "max": 108.945
+    },
+    "typecheck.pkg.m3-primitives": {
+      "value": 571.452,
+      "unit": "ms",
+      "n": 3,
+      "min": 563.121,
+      "p95": 580.128,
+      "max": 580.128
+    },
+    "typecheck.pkg.m3-react": {
+      "value": 215.226,
+      "unit": "ms",
+      "n": 3,
+      "min": 208.864,
+      "p95": 215.673,
+      "max": 215.673
+    },
+    "typecheck.pkg.m3-reader": {
+      "value": 135.425,
+      "unit": "ms",
+      "n": 3,
+      "min": 134.344,
+      "p95": 139.904,
+      "max": 139.904
+    },
+    "typecheck.pkg.m3-tailwind": {
+      "value": 78.248,
+      "unit": "ms",
+      "n": 3,
+      "min": 77.544,
+      "p95": 91.021,
+      "max": 91.021
+    },
+    "typecheck.pkg.m3-theme": {
+      "value": 123.492,
+      "unit": "ms",
+      "n": 3,
+      "min": 122.055,
+      "p95": 123.858,
+      "max": 123.858
+    },
+    "typecheck.pkg.m3-tokens": {
+      "value": 80.838,
+      "unit": "ms",
+      "n": 3,
+      "min": 77.14,
+      "p95": 89.803,
+      "max": 89.803
+    },
+    "typecheck.pkg.nie-ui": {
+      "value": 76.217,
+      "unit": "ms",
+      "n": 3,
+      "min": 72.329,
+      "p95": 79.437,
+      "max": 79.437
+    },
+    "typecheck.pkg.scaffold": {
+      "value": 81.271,
+      "unit": "ms",
+      "n": 3,
+      "min": 79.576,
+      "p95": 85.852,
+      "max": 85.852
+    },
+    "typecheck.pkg.web": {
+      "value": 111.205,
+      "unit": "ms",
+      "n": 3,
+      "min": 109.336,
+      "p95": 112.537,
+      "max": 112.537
+    },
+    "typecheck.sum": {
+      "value": 5273.167,
+      "unit": "ms"
+    },
+    "lint.oxlint": {
+      "value": 180.066,
+      "unit": "ms",
+      "n": 5,
+      "min": 159.339,
+      "p95": 1145.35,
+      "max": 1145.35
+    },
+    "task.lint": {
+      "value": 191.753,
+      "unit": "ms",
+      "n": 3,
+      "min": 181.843,
+      "p95": 242.013,
+      "max": 242.013
+    },
+    "task.typecheck": {
+      "value": 208.023,
+      "unit": "ms",
+      "n": 3,
+      "min": 206.214,
+      "p95": 212.505,
+      "max": 212.505
+    },
+    "task.test": {
+      "value": 5329.303,
+      "unit": "ms",
+      "n": 3,
+      "min": 5307.333,
+      "p95": 40024.056,
+      "max": 40024.056
+    },
+    "bundle.pkg.ag-ui.min": {
+      "value": 284,
+      "unit": "B"
+    },
+    "bundle.pkg.ag-ui.gzip": {
+      "value": 170,
+      "unit": "B"
+    },
+    "bundle.pkg.assets.min": {
+      "value": 218961,
+      "unit": "B"
+    },
+    "bundle.pkg.assets.gzip": {
+      "value": 80610,
+      "unit": "B"
+    },
+    "bundle.pkg.canvas.min": {
+      "value": 28600,
+      "unit": "B"
+    },
+    "bundle.pkg.canvas.gzip": {
+      "value": 9302,
+      "unit": "B"
+    },
+    "bundle.pkg.eslint-plugin-m3.min": {
+      "value": 74357,
+      "unit": "B"
+    },
+    "bundle.pkg.eslint-plugin-m3.gzip": {
+      "value": 23278,
+      "unit": "B"
+    },
+    "bundle.pkg.identity.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.identity.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3.min": {
+      "value": 32636,
+      "unit": "B"
+    },
+    "bundle.pkg.m3.gzip": {
+      "value": 15073,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-ai.min": {
+      "value": 83309,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-ai.gzip": {
+      "value": 22367,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.css": {
+      "value": 4676,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-codemods.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-codemods.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-config.min": {
+      "value": 4779,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-config.gzip": {
+      "value": 2483,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-design.min": {
+      "value": 54112,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-design.gzip": {
+      "value": 14230,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-explorer.min": {
+      "value": 12123,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-explorer.gzip": {
+      "value": 3886,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.min": {
+      "value": 86580,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.gzip": {
+      "value": 32525,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.css": {
+      "value": 832406,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-forms.min": {
+      "value": 7174,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-forms.gzip": {
+      "value": 2267,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-front.min": {
+      "value": 3285,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-front.gzip": {
+      "value": 1912,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-icons.min": {
+      "value": 5331,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-icons.gzip": {
+      "value": 2945,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-mcp.min": {
+      "value": 5534,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-mcp.gzip": {
+      "value": 2546,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-motion.min": {
+      "value": 11313,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-motion.gzip": {
+      "value": 3343,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.min": {
+      "value": 19340,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.gzip": {
+      "value": 8544,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.css": {
+      "value": 169,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next-migrate.min": {
+      "value": 72184,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next-migrate.gzip": {
+      "value": 26922,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-os-themes.min": {
+      "value": 30410,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-os-themes.gzip": {
+      "value": 10675,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-primitives.min": {
+      "value": 110732,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-primitives.gzip": {
+      "value": 28525,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-react.min": {
+      "value": 42337,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-react.gzip": {
+      "value": 24079,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.min": {
+      "value": 64257,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.gzip": {
+      "value": 17570,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.css": {
+      "value": 4675,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.min": {
+      "value": 8421,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.gzip": {
+      "value": 3268,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.css": {
+      "value": 37719,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.min": {
+      "value": 8198,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.gzip": {
+      "value": 3735,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.css": {
+      "value": 38445,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.min": {
+      "value": 12812,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.gzip": {
+      "value": 5342,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.css": {
+      "value": 15832,
+      "unit": "B"
+    },
+    "bundle.pkg.material-design-icons.min": {
+      "value": 599,
+      "unit": "B"
+    },
+    "bundle.pkg.material-design-icons.gzip": {
+      "value": 364,
+      "unit": "B"
+    },
+    "bundle.pkg.nie-ui.min": {
+      "value": 25608,
+      "unit": "B"
+    },
+    "bundle.pkg.nie-ui.gzip": {
+      "value": 8906,
+      "unit": "B"
+    },
+    "bundle.pkg.scaffold.min": {
+      "value": 16172,
+      "unit": "B"
+    },
+    "bundle.pkg.scaffold.gzip": {
+      "value": 7489,
+      "unit": "B"
+    },
+    "bundle.pkg.web.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.web.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.total.min": {
+      "value": 1039448,
+      "unit": "B"
+    },
+    "bundle.total.gzip": {
+      "value": 362356,
+      "unit": "B"
+    },
+    "bundle.total.css": {
+      "value": 933922,
+      "unit": "B"
+    },
+    "bundle.time": {
+      "value": 114,
+      "unit": "ms"
+    },
+    "compile.server_default.build": {
+      "value": 120.673,
+      "unit": "ms",
+      "n": 3,
+      "min": 112.639,
+      "p95": 6151.522,
+      "max": 6151.522
+    },
+    "compile.server_default.size": {
+      "value": 82093536,
+      "unit": "B"
+    },
+    "compile.server_default.start": {
+      "value": 14.235,
+      "unit": "ms",
+      "n": 20,
+      "min": 14.022,
+      "p95": 14.838,
+      "max": 14.923
+    },
+    "compile.server_tuned.build": {
+      "value": 703.87,
+      "unit": "ms",
+      "n": 3,
+      "min": 449.82,
+      "p95": 810.36,
+      "max": 810.36
+    },
+    "compile.server_tuned.size": {
+      "value": 84395488,
+      "unit": "B"
+    },
+    "compile.server_tuned.start": {
+      "value": 3.926,
+      "unit": "ms",
+      "n": 20,
+      "min": 3.55,
+      "p95": 4.172,
+      "max": 4.231
+    },
+    "compile.yolo.build": {
+      "value": 505.737,
+      "unit": "ms",
+      "n": 3,
+      "min": 108.263,
+      "p95": 2724.126,
+      "max": 2724.126
+    },
+    "compile.yolo.size": {
+      "value": 81647072,
+      "unit": "B"
+    },
+    "compile.yolo.start": {
+      "value": 17.096,
+      "unit": "ms",
+      "n": 20,
+      "min": 16.599,
+      "p95": 18.093,
+      "max": 20.242
+    },
+    "yolo.status": {
+      "value": 159.156,
+      "unit": "ms",
+      "n": 12,
+      "min": 155.493,
+      "p95": 195.646,
+      "max": 195.646
+    }
+  },
+  "gates": {
+    "yolo.version": "yolo 0.1.0 (x86_64-unknown-linux-gnu, Bun 1.4.2)",
+    "yolo.help": "0 cd6b759d8898216f",
+    "yolo.unknown": "1 2a128818bf9f7ace",
+    "yolo.runtime_info": "0 1a589456687a4af5",
+    "yolo.plugin_check": "0 ee7e09822299aaa7",
+    "mcp.tools": "11 5f6c2c059e21323c",
+    "themes.output": "48 files 38479 B 64aeceb12c0ee82c",
+    "install.packages": "Checked 493 installs across 640 packages",
+    "test.pkg.ag-ui": "exit 1, 0 pass 1 fail",
+    "test.pkg.assets": "exit 0, 3 pass 0 fail",
+    "test.pkg.canvas": "exit 0, 11 pass 0 fail",
+    "test.pkg.eslint-plugin-m3": "exit 0, ? pass ? fail",
+    "test.pkg.identity": "exit 0, 7 pass 0 fail",
+    "test.pkg.m3": "exit 0, 48 pass 0 fail",
+    "test.pkg.m3-ai": "exit 0, 50 pass 0 fail",
+    "test.pkg.m3-baseui": "exit 1, 0 pass 1 fail",
+    "test.pkg.m3-codemods": "exit 0, ? pass ? fail",
+    "test.pkg.m3-config": "exit 0, 13 pass 0 fail",
+    "test.pkg.m3-design": "exit 0, 25 pass 0 fail",
+    "test.pkg.m3-explorer": "exit 0, 13 pass 0 fail",
+    "test.pkg.m3-fonts": "exit 1, 4 pass 1 fail",
+    "test.pkg.m3-forms": "exit 0, 12 pass 0 fail",
+    "test.pkg.m3-front": "exit 0, 5 pass 0 fail",
+    "test.pkg.m3-icons": "exit 0, 4 pass 0 fail",
+    "test.pkg.m3-mcp": "exit 0, 3 pass 0 fail",
+    "test.pkg.m3-motion": "exit 0, 77 pass 0 fail",
+    "test.pkg.m3-next": "exit 0, 20 pass 0 fail",
+    "test.pkg.m3-next-migrate": "exit 0, 28 pass 0 fail",
+    "test.pkg.m3-os-themes": "exit 0, 12 pass 0 fail",
+    "test.pkg.m3-primitives": "exit 0, 108 pass 0 fail",
+    "test.pkg.m3-react": "exit 0, 52 pass 0 fail",
+    "test.pkg.m3-reader": "exit 0, 10 pass 0 fail",
+    "test.pkg.m3-tailwind": "exit 0, 23 pass 0 fail",
+    "test.pkg.m3-theme": "exit 0, 4 pass 0 fail",
+    "test.pkg.m3-tokens": "exit 0, 126 pass 0 fail",
+    "test.pkg.scaffold": "exit 0, 21 pass 0 fail",
+    "typecheck.pkg.ag-ui": "exit 1",
+    "typecheck.pkg.assets": "exit 1",
+    "typecheck.pkg.canvas": "exit 1",
+    "typecheck.pkg.identity": "exit 1",
+    "typecheck.pkg.m3": "exit 0",
+    "typecheck.pkg.m3-ai": "exit 0",
+    "typecheck.pkg.m3-baseui": "exit 1",
+    "typecheck.pkg.m3-config": "exit 1",
+    "typecheck.pkg.m3-design": "exit 0",
+    "typecheck.pkg.m3-explorer": "exit 0",
+    "typecheck.pkg.m3-fonts": "exit 0",
+    "typecheck.pkg.m3-forms": "exit 0",
+    "typecheck.pkg.m3-front": "exit 0",
+    "typecheck.pkg.m3-icons": "exit 0",
+    "typecheck.pkg.m3-mcp": "exit 0",
+    "typecheck.pkg.m3-motion": "exit 0",
+    "typecheck.pkg.m3-next": "exit 0",
+    "typecheck.pkg.m3-next-migrate": "exit 0",
+    "typecheck.pkg.m3-os-themes": "exit 0",
+    "typecheck.pkg.m3-primitives": "exit 0",
+    "typecheck.pkg.m3-react": "exit 0",
+    "typecheck.pkg.m3-reader": "exit 0",
+    "typecheck.pkg.m3-tailwind": "exit 0",
+    "typecheck.pkg.m3-theme": "exit 1",
+    "typecheck.pkg.m3-tokens": "exit 0",
+    "typecheck.pkg.nie-ui": "exit 1",
+    "typecheck.pkg.scaffold": "exit 0",
+    "typecheck.pkg.web": "exit 0",
+    "lint.oxlint": "exit 1, 96 warnings, 9 errors",
+    "task.lint": "exit 1",
+    "task.typecheck": "exit 1",
+    "task.test": "exit 1",
+    "compile.server_default.http": "200 text/html title=true",
+    "compile.server_tuned.http": "200 text/html title=true",
+    "compile.yolo.flags": "(none)",
+    "compile.yolo.version": "0 yolo 0.1.0 (x86_64-unknown-linux-gnu, Bun 1.4.2)",
+    "compile.yolo.help": "0 cd6b759d8898216f",
+    "yolo.status": "a418638ca59de1d1"
+  },
+  "errors": {
+    "bundle.pkg.identity": "ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/aphrody/sprites/spritesheet.webp?url\" | ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/brand/icon-64.png?url\""
+  }
+}

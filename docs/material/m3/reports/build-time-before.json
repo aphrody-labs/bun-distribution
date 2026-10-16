@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-04",
+  "bun": "1.4.2",
+  "command": "bun run build (yolo web build + tsup && tsc per @aphrody/m3* package)",
+  "cache": "none (tsup clean:true)",
+  "runs": [
+    {
+      "wallS": 3.12,
+      "userS": 17.82,
+      "sysS": 3.66,
+      "maxRssKb": 444380
+    },
+    {
+      "wallS": 3.27,
+      "userS": 18.16,
+      "sysS": 4.55,
+      "maxRssKb": 462556
+    },
+    {
+      "wallS": 3.64,
+      "userS": 21.62,
+      "sysS": 4.15,
+      "maxRssKb": 427492
+    },
+    {
+      "wallS": 4.02,
+      "userS": 22.9,
+      "sysS": 5,
+      "maxRssKb": 466084
+    },
+    {
+      "wallS": 4,
+      "userS": 22.47,
+      "sysS": 5.06,
+      "maxRssKb": 462944
+    }
+  ],
+  "median": {
+    "wallS": 3.64,
+    "userS": 21.62,
+    "sysS": 4.55,
+    "maxRssKb": 462556
+  }
+}

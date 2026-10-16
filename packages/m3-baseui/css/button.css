@@ -1,0 +1,105 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Button: five types (`--filled`, `--tonal`, `--outlined`, `--text`, `--elevated`) and five Expressive sizes (`--xs` to `--xl`). */
+@layer components {
+  .m3-bui-button {
+    --_bg: transparent;
+    --_fg: var(--md-sys-color-primary);
+    --_h: 40px;
+    --_px: 24px;
+    --_gap: 8px;
+    --_font: var(--m3-bui-font-label-large);
+    --_track: var(--md-sys-typescale-label-large-tracking);
+    --_pressed: var(--md-sys-shape-corner-small);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--_gap);
+    min-block-size: var(--_h);
+    padding: 0 var(--_px);
+    border: 1px solid transparent;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--_bg);
+    color: var(--_fg);
+    font: var(--_font);
+    letter-spacing: var(--_track);
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+      border-radius var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-button > svg {
+    flex: none;
+  }
+  /* Expressive: the corners tighten while the button is pressed. */
+  .m3-bui-button:active {
+    border-radius: var(--_pressed);
+  }
+
+  .m3-bui-button--filled {
+    --_bg: var(--md-sys-color-primary);
+    --_fg: var(--md-sys-color-on-primary);
+  }
+  .m3-bui-button--tonal {
+    --_bg: var(--md-sys-color-secondary-container);
+    --_fg: var(--md-sys-color-on-secondary-container);
+  }
+  .m3-bui-button--elevated {
+    --_bg: var(--md-sys-color-surface-container-low);
+    box-shadow: var(--md-sys-elevation-level1);
+  }
+  .m3-bui-button--elevated:hover {
+    box-shadow: var(--md-sys-elevation-level2);
+  }
+  .m3-bui-button--outlined {
+    border-color: var(--md-sys-color-outline);
+  }
+  .m3-bui-button--text {
+    --_px: 12px;
+  }
+
+  .m3-bui-button--xs {
+    --_h: 32px;
+    --_px: 12px;
+    --_gap: 4px;
+  }
+  .m3-bui-button--md {
+    --_h: 56px;
+    --_font: var(--m3-bui-font-title-medium);
+    --_track: var(--md-sys-typescale-title-medium-tracking);
+    --_pressed: var(--md-sys-shape-corner-medium);
+  }
+  .m3-bui-button--lg {
+    --_h: 96px;
+    --_px: 48px;
+    --_gap: 12px;
+    --_font: var(--m3-bui-font-headline-small);
+    --_track: var(--md-sys-typescale-headline-small-tracking);
+    --_pressed: var(--md-sys-shape-corner-large);
+  }
+  .m3-bui-button--xl {
+    --_h: 136px;
+    --_px: 64px;
+    --_gap: 16px;
+    --_font: var(--m3-bui-font-headline-large);
+    --_track: var(--md-sys-typescale-headline-large-tracking);
+    --_pressed: var(--md-sys-shape-corner-extra-large);
+  }
+
+  .m3-bui-button:is(:disabled, [data-disabled]) {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    box-shadow: none;
+    cursor: default;
+  }
+  .m3-bui-button--outlined:is(:disabled, [data-disabled]) {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  }
+  .m3-bui-button--text:is(:disabled, [data-disabled]) {
+    background: transparent;
+  }
+}

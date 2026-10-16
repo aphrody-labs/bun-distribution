@@ -1,0 +1,449 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "collectedAt": "2026-10-05T00:01:32+02:00",
+  "overallStatus": "partially_qualified",
+  "releaseReady": false,
+  "scope": "Current private Aphrody M3 source tree, local showcase web artifact, declared package gates and native-owner receipts. Native host installation is not qualified.",
+  "sourceSnapshot": {
+    "m3": {
+      "branch": "main",
+      "initialBaseHead": "8f4b3a5177a5919c590066bc338be3d2e2fefd79",
+      "integrationBaseHead": "7fc818974191e0dac6e6a195eaeb1ee0a2006674",
+      "head": "01615d40e6f1862c8f22f44784bcbd2da766bff0",
+      "dirty": true
+    },
+    "factoryCapabilitiesCommit": "ead4a13b1d3556ed0370254016274a0cd8dd28ce",
+    "preparedAphrodyVpsRevision": "d06d00738a8f26857d8c057609a182a1e81e9994",
+    "note": "The initial and integration bases are distinct from the observed source HEAD. Artifact build IDs identify measured outputs separately. These reports are final source/web receipts, not native release qualification.",
+    "materialWebFork": {
+      "commit": "b3b566d821b738fef19e487b3bb6860944bd01ed",
+      "completedOwnedPaths": 18,
+      "ownerIdentity": "aphrody-dev",
+      "pushedExistingPrivateRemote": true,
+      "provenance": "Integrating owner verified fetch, ancestor relationship, clean index/diff and normal push to existing origin main."
+    },
+    "durableFactoryJobsCommit": "2c541bbd25e9bd3b19673a96a2b93e4f423f4548",
+    "sourceDelivery": {
+      "m3Commit": "30434065426c6c23e2ceb13e308bea8b023958ee",
+      "currentCanonicalCheckout": "/home/aphro/aphrody/m3",
+      "currentObservedHead": "3d8d4bf1ea3fa60a9119d46888791ef71ebbd164",
+      "note": "Later source commits do not retarget earlier measured build IDs or browser receipts."
+    }
+  },
+  "tools": {
+    "aphrodyCli": "1.0.0-canary",
+    "yoloCli": "0.1.0",
+    "bun": "1.4.2",
+    "chromium": "153.0.8010.12",
+    "installedBunSdk": "3.3.0",
+    "installedBunSdkScope": "Historical installed SDK observation for the measured receipt; not the current canonical consumer source version.",
+    "currentCanonicalBunSdkSource": {
+      "version": "3.3.3",
+      "entry": "/home/aphro/aphrody/packages/interop/native/src/index.ts",
+      "scope": "Read-only package resolution from the relocated M3 consumer; no new library opened or installed."
+    }
+  },
+  "stages": {
+    "source": {
+      "status": "implemented_scoped",
+      "evidence": [
+        "components",
+        "front",
+        "materialIntegration",
+        "controlledHarness",
+        "runtime",
+        "factorySource"
+      ],
+      "limits": [
+        "Rust native host entry is registered source only; no Rust compilation or native device result follows from it."
+      ]
+    },
+    "tests": {
+      "status": "failed_native_provenance_only",
+      "lastRecordedAggregate": {
+        "status": "failed",
+        "passed": 1412,
+        "failed": 3,
+        "skipped": 6,
+        "failures": [
+          {
+            "package": "@aphrody/m3-theme",
+            "failed": 3,
+            "cause": "Installed 2026-10-01 FFI stylesheet source-path provenance differs from current source."
+          }
+        ],
+        "supersededFailures": [
+          "AI controlled-input harness, next-migrate and Design generated-behavior failures are absent in the latest declared-script aggregate."
+        ],
+        "summaryAccounting": {
+          "rawPassSummaries": 1417,
+          "rawFailSummaries": 4,
+          "excludedExpectedChildPasses": 5,
+          "excludedExpectedChildFailures": 1,
+          "parentPackage": "@aphrody/m3",
+          "parentPassed": 61,
+          "parentFailed": 0,
+          "note": "Counts represent outer declared-script outcomes; five child passes and one deliberate child failure inside the m3 negative-test fixture are excluded."
+        },
+        "evidence": "aggregateTests",
+        "provenance": "Final integrating-owner declared-script receipt.",
+        "receiptName": "release-workspace-test.log"
+      },
+      "latestScoped": {
+        "ai": {
+          "passed": 57
+        },
+        "primitives": {
+          "passed": 110
+        },
+        "tokens": {
+          "passed": 129
+        },
+        "react": {
+          "passed": 56
+        },
+        "reader": {
+          "passed": 10
+        },
+        "front": {
+          "passed": 12
+        },
+        "forms": {
+          "passed": 13
+        },
+        "explorer": {
+          "passed": 16
+        },
+        "motion": {
+          "passed": 80
+        },
+        "themeBrandAndContract": {
+          "passed": 6,
+          "nativeSheetsIncluded": false
+        },
+        "materialWebBrowser": {
+          "passed": 27,
+          "standaloneBootstrap": {
+            "passed": 3
+          },
+          "totalPassed": 30,
+          "typescriptCompiler": "7.0.2",
+          "typecheck": "passed",
+          "strictLint": {
+            "sources": 13,
+            "errors": 0,
+            "warnings": 0
+          },
+          "provenance": "Framework worker gates and integrator delivery receipt for b3b566d821b738fef19e487b3bb6860944bd01ed"
+        },
+        "showcase": {
+          "passed": 24,
+          "nativeBunUnitPassed": 21,
+          "domPassed": 3,
+          "hostContractPassed": 9,
+          "hostContractIncludedInNativeUnitCount": true,
+          "provenance": "Final integrating-owner receipt after icon/description correction; native Bun units and DOM tests run in isolated preload scopes."
+        },
+        "design": {
+          "passed": 158,
+          "failed": 0
+        },
+        "scripts": {
+          "passed": 73,
+          "failed": 0,
+          "includedInOuterTotal": true
+        }
+      },
+      "typecheck": {
+        "lastM3Targets": 27,
+        "lastM3Result": "passed",
+        "finalAggregate": "passed",
+        "installedSdkConsumer": {
+          "failed": 3,
+          "scope": "Yolo runtime-sdk/desktop TypeScript, outside the M3 package target result",
+          "provenance": "integrator receipt"
+        },
+        "evidence": "typecheck"
+      },
+      "lint": {
+        "latestComponentScope": {
+          "files": 221,
+          "errors": 0,
+          "warnings": 0
+        },
+        "finalGlobalDenyWarnings": {
+          "status": "passed",
+          "files": 603,
+          "errors": 0,
+          "warnings": 0,
+          "evidence": "lint",
+          "provenance": "Final integrating-owner receipt after Design source-owner corrections."
+        }
+      },
+      "factory": {
+        "passed": 21,
+        "assertions": 170,
+        "strictLintAndFormatting": "passed",
+        "provenance": "Integrating-owner receipt for ead4a13b1d3556ed0370254016274a0cd8dd28ce"
+      },
+      "integrity": {
+        "packages": 43,
+        "errors": 0,
+        "warnings": 3,
+        "scope": "Three existing nie-ui relative WASM fixture imports do not resolve.",
+        "assetsErrors": 0,
+        "assetsWarnings": 0,
+        "linksErrors": 0,
+        "linksWarnings": 0,
+        "evidence": "integrity"
+      },
+      "existingCheckoutQualification": {
+        "passed": 7,
+        "failed": 0,
+        "provenance": "Integrating-owner qualification gate on the existing checkout."
+      }
+    },
+    "bundles": {
+      "status": "verified_current_web_artifact_and_browser_fixture",
+      "showcase": {
+        "name": "m3-showcase",
+        "version": "3.3.3",
+        "buildId": "8f185d9c3c427bfa",
+        "bun": "1.4.2",
+        "minify": "full",
+        "declaredFiles": 629,
+        "directoryFilesIncludingManifest": 630,
+        "totalBytesIncludingManifest": 16727744,
+        "manifestSha256": "12dbac69edbf27236c0b4160ab5ed98c1dd3194b30764deb03dfeff9176ee19d",
+        "evidence": ["manifest"],
+        "verification": "All 629 declared file sizes and SHA-256 values verified via native Bun file APIs.",
+        "browserContractsForThisBuild": "28/28 passed after owner server restart",
+        "verificationProvenance": "Fresh worker file-size and SHA-256 comparison of the final local artifact via native Bun APIs."
+      },
+      "visualCapture": {
+        "buildId": "8f185d9c3c427bfa",
+        "count": 90,
+        "destinations": 15,
+        "profiles": [
+          "mobile-light",
+          "mobile-dark",
+          "desktop-light",
+          "desktop-dark",
+          "tv-light",
+          "tv-dark"
+        ],
+        "consoleErrors": 0,
+        "receiptName": "shots-delivery/capture.json",
+        "ownerServerRestartedAfterBuild": true,
+        "provenance": "Final owner capture metadata independently sampled by the component worker: 90 unique route/profile names, each with an empty consoleErrors array.",
+        "limit": "Responsive viewport capture only; not physical device installation or exhaustive visual/assistive-technology qualification."
+      },
+      "browserContracts": {
+        "buildId": "8f185d9c3c427bfa",
+        "passed": 28,
+        "total": 28,
+        "timestamp": "2026-10-04T21:56:14.852Z",
+        "chromium": "153.0.8010.12",
+        "consoleErrors": 0,
+        "httpFailures": 0,
+        "externalRequests": 0,
+        "receiptName": "browser-contract-delivery.json",
+        "ownerServerRestartedAfterBuild": true,
+        "ownerServerPid": 525521,
+        "provenance": "Final owner receipt independently sampled by the component worker: all 28 checks passed and all error/request arrays are empty.",
+        "limit": "Local Chromium fixture with external requests blocked; no Obscura or installed native-host parity."
+      },
+      "historicalBenchmarks": {
+        "evidence": ["nextBundle", "historicalFramework"],
+        "limit": "Historical scopes and baselines only; no current performance or final aggregate pass inferred."
+      },
+      "pipeline": {
+        "built": 14,
+        "failed": 0,
+        "provenance": "Final integrating-owner build pipeline receipt."
+      },
+      "earlierBrowserQualifiedShowcase": {
+        "name": "m3-showcase",
+        "version": "3.3.3",
+        "buildId": "ad124607012eb510",
+        "bun": "1.4.2",
+        "minify": "full",
+        "declaredFiles": 629,
+        "directoryFilesIncludingManifest": 630,
+        "totalBytesIncludingManifest": 16727616,
+        "manifestSha256": "044f9b04f9274ed47b512831094ae16f4486239250dc12c7e9600aa4f79af2c3",
+        "evidence": ["manifest"]
+      },
+      "earlierBrowserContracts": {
+        "buildId": "ad124607012eb510",
+        "passed": 28,
+        "total": 28,
+        "timestamp": "2026-10-04T21:29:53.107Z",
+        "consoleErrors": 0,
+        "httpFailures": 0,
+        "externalRequests": 0,
+        "limit": "Local Chromium fixture with external requests blocked, not Obscura or installed native-host parity.",
+        "provenance": "Earlier Chromium owner receipt; retained at its original artifact."
+      },
+      "initialVisualCapture": {
+        "buildIdPrefix": "541de3",
+        "count": 90,
+        "destinations": 15,
+        "profiles": [
+          "mobile-light",
+          "mobile-dark",
+          "desktop-light",
+          "desktop-dark",
+          "tv-light",
+          "tv-dark"
+        ],
+        "consoleErrors": 0,
+        "limit": "Initial build only; captures are not relabelled as final-build evidence.",
+        "provenance": "Initial capture metadata remains scoped to build prefix 541de3."
+      }
+    },
+    "installation": {
+      "status": "verified_dependencies_only",
+      "command": "bun install --frozen-lockfile",
+      "provenance": "integrator receipt for normal root install with lifecycle scripts enabled",
+      "materialWeb": {
+        "catalog": "file:vendor/material-web",
+        "rootPostinstall": "bun vendor/material-web/scripts/bootstrap-types.ts --consumer packages/m3-front",
+        "sourceDeclarations": 493,
+        "installedDeclarations": 493,
+        "outputsIgnored": true,
+        "sourceOwnerWorksWithoutCompilerDependencies": true,
+        "evidence": ["bootstrapSource", "rootManifest"],
+        "finalCommittedForkInstall": "passed normal frozen install after final framework build"
+      },
+      "nativeHosts": {
+        "status": "not_qualified",
+        "desktopArtifact": false,
+        "desktopInstallation": false,
+        "androidDevice": false,
+        "iosDevice": false
+      },
+      "durationMs": 257
+    },
+    "activation": {
+      "status": "local_web_fixture_only",
+      "showcaseLoopback": "http://127.0.0.1:3312",
+      "nativeDesktop": "not_qualified",
+      "android": "refused_missing_prerequisites",
+      "ios": "refused_missing_prerequisites",
+      "liveProviderOrModel": "not_qualified",
+      "enginesReplaced": false,
+      "showcaseBuildId": "8f185d9c3c427bfa",
+      "ownerServerPid": 525521
+    },
+    "nativeFactory": {
+      "status": "durable_dispatch_alive_waiting_no_artifact",
+      "preparedRevision": "d06d00738a8f26857d8c057609a182a1e81e9994",
+      "lastOwnerReportedJob": "m3-ffi-release-d06d007-20261005",
+      "lastOwnerReportedHeavyLockHolder": "Yolo source preparation supervisor3303970; Git fetch child3304542",
+      "serialized": true,
+      "evidence": ["factoryPlan", "factorySource", "factoryJobsSource", "factoryJobsContract"],
+      "limit": "Source preparation and a queued command are not a completed FFI or showcase build.",
+      "hostMetadata": {
+        "status": "workspace_inventory_passed_no_compilation",
+        "workspaceEntryRegistered": true,
+        "command": "cargo metadata --locked --offline --no-deps",
+        "result": "passed",
+        "lockfileNewEntryLines": 10,
+        "fullOfflineResolutionEarlier": "stopped on uncached actix-codec dependency",
+        "provenance": "Final integrating-owner receipt through the serialized owner wrapper; lock addition generated by owner.",
+        "compiled": false,
+        "sourceIdentifiers": {
+          "hostSource": "crates/ui/m3-showcase/src/lib.rs",
+          "hostRegistry": "config/tauri-apps.json",
+          "sourceState": "Native host source is uncommitted inventory at this audit, not a versioned release artifact."
+        }
+      },
+      "queueTiming": "active dispatch includes lease wait; no ETA established",
+      "durability": {
+        "sourceCommit": "2c541bbd25e9bd3b19673a96a2b93e4f423f4548",
+        "tests": 36,
+        "assertions": 363,
+        "failures": 0,
+        "typescriptExit": 0,
+        "strictLintExit": 0,
+        "formatExit": 0,
+        "jobId": "m3-ffi-release-d06d007-20261005",
+        "fingerprint": "3131268cf10536d62fbb06a55de03db8125b072c6c7139ffbc1bd685d3e6c5d5",
+        "requestedAt": "2026-10-04T22:30:28.512Z",
+        "supervisor": 3309655,
+        "observedStatus": "active",
+        "processAlive": true,
+        "matchingResubmission": "existing",
+        "directories": "0700",
+        "files": "0600",
+        "ownerCommand": [
+          "bun",
+          "packages/infra/workspace/src/ops.ts",
+          "bun-native",
+          "--root=/srv/aphrody-build/workspaces/aphrody",
+          "--gpu"
+        ],
+        "expectedFeatures": ["gpu"],
+        "terminalReceipt": false
+      },
+      "reconciledLegacy": {
+        "clientExit": 255,
+        "ownedWaiter": 3305254,
+        "identityVerified": [
+          "bootId",
+          "processStartTicks",
+          "exactCommandHash",
+          "isolatedProcessGroup",
+          "waitingWithoutChildren"
+        ],
+        "signal": "SIGTERM",
+        "remainingActiveOwnedGroup": [],
+        "otherJobsSignalled": false
+      }
+    }
+  },
+  "remaining": [
+    "Build, install and re-run current-source FFI stylesheet parity without changing or removing source provenance comments.",
+    "Produce and qualify a pinned native showcase artifact, then installed startup/offline behavior, permissions, cancellation, process cleanup and platform accessibility.",
+    "Provide Android SDK/NDK/device or macOS/Xcode/device plus the canonical mobile API adapter before mobile activation.",
+    "Resolve the three independently reported installed SDK desktop-consumer TypeScript errors in their Yolo owner scope."
+  ],
+  "nonClaims": [
+    "Responsive mobile and TV viewports do not establish mobile or TV device installation.",
+    "Local labelled AI/MCP samples do not establish authenticated provider APIs, model installation or access to private conversations.",
+    "No engine replacement, external publication, native host activation or protected-store inspection was performed by this documentation batch.",
+    "Existing canonical app-ui and uncommitted native-showcase source inventory are not installed-product qualification."
+  ],
+  "evidence": {
+    "components": "../../packages/m3-primitives/test/production-contract.test.tsx",
+    "front": "../../packages/m3-front/test/production-contract.test.ts",
+    "materialIntegration": "../../vendor/material-web/test/production-exports.test.ts",
+    "controlledHarness": "../../packages/m3-ai/test/production-contract.test.tsx",
+    "runtime": "../../apps/m3-showcase/test/runtime-api.test.ts",
+    "factorySource": "../../../packages/infra/workspace/src/build-factory.ts",
+    "aggregateTests": "../../package.json",
+    "manifest": "../../scripts/build.ts",
+    "bootstrapSource": "../../vendor/material-web/scripts/bootstrap-types.ts",
+    "rootManifest": "../../package.json",
+    "factoryPlan": "../../../packages/infra/workspace/src/build-factory.ts",
+    "historicalFramework": "FRAMEWORK-FINALIZATION.md",
+    "nextBundle": "M3-NEXT-BUNDLE.md",
+    "sourcePlan": "../plans/design/M3-PLAN.md",
+    "hostPlan": "../plans/design/M3-MULTI-HOST-PLAN.md",
+    "typecheck": "../../scripts/build.ts",
+    "lint": "../../scripts/yolo.ts",
+    "integrity": "../../scripts/check-exports.ts",
+    "factoryJobsSource": "../../../packages/infra/workspace/src/build-factory-jobs.ts",
+    "factoryJobsContract": "../../../docs/operations/infra/BUILD-FACTORY-JOBS.md"
+  },
+  "evidencePolicy": "This versioned receipt contains curated non-secret measurement facts and attributed owner results. Relative evidence links point to source/tests or versioned reports, so no ignored .coord file is needed to read it. Source links identify reproduction owners, not independent proofs that their commands ran. Raw command logs and generated artifacts remain in existing ignored stores and are not staged.",
+  "finalIntegrationUpdateRequired": false,
+  "measurementDates": {
+    "finalDeliveryLocal": "2026-10-05",
+    "browserReceiptUtc": "2026-10-04",
+    "initialCaptureScope": "2026-10-04"
+  },
+  "updatedAt": "2026-10-05T00:34:44+02:00"
+}

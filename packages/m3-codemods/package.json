@@ -1,0 +1,39 @@
+{
+  "name": "@aphrody/m3-codemods",
+  "version": "1.4.5",
+  "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "data",
+    "lib",
+    "mui-m3-map.json",
+    "rules",
+    "scripts",
+    "sgconfig.yml",
+    "src",
+    "transforms"
+  ],
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./transforms/*": "./transforms/*",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "codemod": "bun scripts/codemod.ts",
+    "test": "bun test ./test",
+    "typecheck": "bun check -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

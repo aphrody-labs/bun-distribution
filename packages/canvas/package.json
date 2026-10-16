@@ -1,0 +1,95 @@
+{
+  "name": "@aphrody/canvas",
+  "version": "1.4.5",
+  "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
+  "keywords": [
+    "aphrody",
+    "bun",
+    "canvas",
+    "material-design-3",
+    "skia"
+  ],
+  "license": "MIT",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/canvas"
+  },
+  "files": [
+    "index.ts",
+    "index.d.ts",
+    "site.ts",
+    "site.d.ts",
+    "scene-types.d.ts",
+    "vendor/index.js",
+    "vendor/js-binding.js",
+    "vendor/geometry.js",
+    "vendor/load-image.js",
+    "vendor/index.d.ts",
+    "vendor/package.json",
+    "vendor/LICENSE",
+    "vendor/UPSTREAM.md"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./index.ts",
+    "./vendor/*.js"
+  ],
+  "main": "./index.ts",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.ts"
+    },
+    "./site": {
+      "types": "./site.d.ts",
+      "default": "./site.ts"
+    },
+    "./browser": {
+      "types": "./site.d.ts",
+      "default": "./site.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "bun check --noEmit && bun check --noEmit -p tsconfig.types.json",
+    "test": "bun test",
+    "lint": "bun lint --deny-warnings index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+    "format:check": "bun fmt --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+    "vendor": "bun scripts/vendor-upstream.ts",
+    "vendor:check": "bun scripts/vendor-upstream.ts --check",
+    "prepack": "bun scripts/vendor-upstream.ts --check"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "@aphrody/bun": "^3.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@aphrody/bun": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "@napi-rs/canvas-android-arm64": "catalog:",
+    "@napi-rs/canvas-darwin-arm64": "catalog:",
+    "@napi-rs/canvas-darwin-x64": "catalog:",
+    "@napi-rs/canvas-linux-arm-gnueabihf": "catalog:",
+    "@napi-rs/canvas-linux-arm64-gnu": "catalog:",
+    "@napi-rs/canvas-linux-arm64-musl": "catalog:",
+    "@napi-rs/canvas-linux-riscv64-gnu": "catalog:",
+    "@napi-rs/canvas-linux-x64-gnu": "catalog:",
+    "@napi-rs/canvas-linux-x64-musl": "catalog:",
+    "@napi-rs/canvas-win32-arm64-msvc": "catalog:",
+    "@napi-rs/canvas-win32-x64-msvc": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

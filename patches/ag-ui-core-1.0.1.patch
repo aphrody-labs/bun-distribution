@@ -1,0 +1,32 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1042,0 +1043,5 @@
++
++// Preserve the existing Aphrody test hook without copying the SDK source.
++export function _resetWarnedCountKeys() {
++	warnedCountKeys.clear();
++}
+diff --git a/dist/index.js b/dist/index.js
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1053,0 +1054,5 @@
++
++// Preserve the existing Aphrody test hook without copying the SDK source.
++exports._resetWarnedCountKeys = function _resetWarnedCountKeys() {
++	warnedCountKeys.clear();
++};
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -250,0 +251,3 @@
++
++/** Reset token-usage warning state (existing Aphrody testing API). */
++export declare function _resetWarnedCountKeys(): void;
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -250,0 +251,3 @@
++
++/** Reset token-usage warning state (existing Aphrody testing API). */
++export declare function _resetWarnedCountKeys(): void;

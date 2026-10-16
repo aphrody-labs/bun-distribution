@@ -1,0 +1,74 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Dialog and alert dialog: a 28dp-corner container on a 32% scrim; scale and fade in, fade out. */
+@layer components {
+  .m3-bui-dialog__backdrop {
+    position: fixed;
+    inset: 0;
+    background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+    transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-dialog__backdrop[data-starting-style],
+  .m3-bui-dialog__backdrop[data-ending-style] {
+    opacity: 0;
+  }
+
+  .m3-bui-dialog__popup {
+    position: fixed;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    box-sizing: border-box;
+    inline-size: min(560px, calc(100vw - 48px));
+    min-inline-size: min(280px, 100vw);
+    max-block-size: calc(100dvh - 48px);
+    padding: 24px;
+    overflow: auto;
+    border-radius: var(--md-sys-shape-corner-extra-large);
+    background: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-on-surface);
+    box-shadow: var(--md-sys-elevation-level3);
+    translate: -50% -50%;
+    outline: none;
+    transition:
+      opacity var(--md-sys-motion-duration-medium2)
+        var(--md-sys-motion-easing-emphasized-decelerate),
+      scale var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+  .m3-bui-dialog__popup[data-starting-style],
+  .m3-bui-dialog__popup[data-ending-style] {
+    opacity: 0;
+    scale: 0.9;
+  }
+  .m3-bui-dialog__popup[data-ending-style] {
+    transition-duration: var(--md-sys-motion-duration-short4);
+    transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+  }
+
+  /* Tall content: with a Viewport the popup scrolls with the page instead of being centred in the window. */
+  .m3-bui-dialog__viewport {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    overflow: auto;
+  }
+  .m3-bui-dialog__viewport .m3-bui-dialog__popup {
+    position: relative;
+    inset: auto;
+    max-block-size: none;
+    translate: none;
+  }
+
+  .m3-bui-dialog__title {
+    margin: 0 0 16px;
+    color: var(--md-sys-color-on-surface);
+    font: var(--m3-bui-font-headline-small);
+    letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+  }
+  .m3-bui-dialog__description {
+    margin: 0 0 24px;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-body-medium);
+    letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  }
+}

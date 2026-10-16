@@ -1,0 +1,27 @@
+[package]
+name = "__NAME__-desktop"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
+[lib]
+name = "__IDENT___desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# Tauri comes from the Aphrody forks of the yolo checkout (package aphrody-*, upstream dependency keys).
+[build-dependencies]
+tauri-build = { package = "aphrody-tauri-build", path = "__YOLO__/crates/aphrody-tauri-build", version = "3.0.0-alpha" }
+
+[dependencies]
+tauri = { package = "aphrody-tauri", path = "__YOLO__/crates/aphrody-tauri", version = "3.0.0-alpha" }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", path = "__YOLO__/crates/aphrody-tauri-plugin-opener", version = "3.0.0-alpha" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

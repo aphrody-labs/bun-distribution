@@ -1,0 +1,62 @@
+{
+  "name": "@aphrody/identity",
+  "version": "1.4.5",
+  "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/identity.",
+  "keywords": [
+    "aphrody",
+    "avatar",
+    "brand",
+    "codex",
+    "custom-element",
+    "material-3",
+    "sprite"
+  ],
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "files": [
+    "README.md",
+    "scripts",
+    "src",
+    "assets",
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./brand": "./src/brand.ts",
+    "./atlas": "./src/atlas.ts",
+    "./pet": "./src/pet.ts",
+    "./runtime": "./src/runtime.ts",
+    "./element": "./src/element.ts",
+    "./load": "./src/load.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "sprite": "bun scripts/sprite.ts",
+    "prepack": "bun run sprite",
+    "gen": "bun scripts/generate.ts",
+    "typecheck": "bun run sprite && bun check -p tsconfig.json --noEmit",
+    "test": "bun run sprite && bun test src",
+    "demo": "bun demo/serve.ts",
+    "measure": "bun scripts/measure.ts"
+  },
+  "dependencies": {
+    "@aphrody/web-source": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@aphrody/paths": "workspace:*",
+    "@aphrody/m3": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

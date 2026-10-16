@@ -1,0 +1,94 @@
+{
+  "name": "@aphrody/m3-next",
+  "version": "1.4.5",
+  "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node; from @aphrody/next-bun).",
+  "keywords": [
+    "material-3",
+    "md3",
+    "next",
+    "nextjs",
+    "react-server-components",
+    "tailwind"
+  ],
+  "homepage": "https://github.com/aphrody-labs/aphrody-m3/tree/main/packages/m3-next#readme",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-next"
+  },
+  "bin": {
+    "m3-next": "./bin/m3-next.ts"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "m3.css"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./proxy": {
+      "types": "./dist/theme-proxy.d.ts",
+      "default": "./dist/theme-proxy.js"
+    },
+    "./m3.css": "./m3.css",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
+  },
+  "dependencies": {
+    "@aphrody/bun": "^3.3.0",
+    "@aphrody/m3-tailwind": "workspace:*",
+    "@aphrody/m3-theme": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/next-bun": "0.2.0-aphrody.1"
+  },
+  "devDependencies": {
+    "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
+    "@aphrody/m3-config": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "peerDependencies": {
+    "next": ">=16.0.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0",
+    "tailwindcss": ">=4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

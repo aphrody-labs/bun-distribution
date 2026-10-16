@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-m3-tokens"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/material"
+repository = "https://github.com/aphrody-labs/material"
+license = "Apache-2.0"
+description = "Canonical Material Design 3 tokens and dynamic color for web, native and COSMIC adapters"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"
+
+[features]
+# `std` enables String-returning helpers (CSS export).  Without this feature
+# the crate is fully `no_std` + `no_alloc` — safe on wasm32-unknown-unknown,
+# embedded, and every other target.
+default = ["std"]
+std     = ["dep:base64"]
+embedded-fonts = []
+# PNG/JPEG decode for `image::decode_image` / `image::source_color_from_image_bytes`.
+image   = ["std", "dep:image"]
+# Serde derives for the token types shared with serialized snapshots (`ColorRoles`, `ThemeMode`).
+serde   = ["dep:serde"]
+
+[dependencies]
+base64 = { version = "=0.23.1", optional = true }
+image = { version = "=0.25.10", optional = true, features = ["png", "jpeg"] }
+serde = { version = "=1.0.229", optional = true, default-features = false, features = ["derive"] }
+
+[dev-dependencies]
+read-fonts = { version = "=0.44.0", default-features = false, features = ["std"] }
+serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }

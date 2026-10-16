@@ -1,0 +1,72 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Navigation menu: pill triggers and links; the current page and the open trigger take secondary-container. */
+@layer components {
+  .m3-bui-nav {
+    position: relative;
+    display: inline-block;
+    color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-nav__item {
+    position: relative;
+  }
+  .m3-bui-nav__list {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+  }
+  .m3-bui-nav__trigger,
+  .m3-bui-nav__link {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-block-size: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .m3-bui-nav__trigger[data-popup-open],
+  .m3-bui-nav__link[aria-current="page"],
+  .m3-bui-nav__link[data-active] {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .m3-bui-nav__icon {
+    display: inline-grid;
+    place-items: center;
+    transition: rotate var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-nav__trigger[data-popup-open] .m3-bui-nav__icon {
+    rotate: 180deg;
+  }
+  .m3-bui-nav__popup {
+    inline-size: var(--popup-width, auto);
+    block-size: var(--popup-height, auto);
+    padding: 8px;
+    border-radius: var(--md-sys-shape-corner-medium);
+  }
+  .m3-bui-nav__viewport {
+    position: relative;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+  }
+  .m3-bui-nav__content {
+    padding: 8px 16px;
+    transition:
+      opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+      transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-nav__content[data-starting-style],
+  .m3-bui-nav__content[data-ending-style] {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Material 3 showcase</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --primary: #65558f; --on-primary: #fff; --primary-container: #e9ddff;
+        --on-primary-container: #201047; --surface: #fdf7ff; --surface-low: #f8f2fa;
+        --surface-container: #f2ecf4; --surface-high: #ece6ee; --on-surface: #1d1b20;
+        --on-surface-variant: #49454e; --outline: #7a757f; --outline-variant: #cac4cf;
+        --tertiary-container: #ffd9e3; --on-tertiary-container: #31101d;
+      }
+      :root.dark { color-scheme: dark; --primary: #cfbdfe; --on-primary: #36275d;
+        --primary-container: #4d3d75; --on-primary-container: #e9ddff; --surface: #141218;
+        --surface-low: #1d1b20; --surface-container: #211f24; --surface-high: #2b292f;
+        --on-surface: #e6e0e9; --on-surface-variant: #cac4cf; --outline: #948f99;
+        --outline-variant: #49454e; --tertiary-container: #633b48; --on-tertiary-container: #ffd9e3; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--surface); color: var(--on-surface); font: 400 16px/1.5 Inter, system-ui, sans-serif; }
+      .shell { max-width: 1180px; margin: auto; padding: 24px; }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 8px 0 40px; }
+      .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .01em; }
+      .mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 14px; background: var(--primary); color: var(--on-primary); }
+      button { border: 0; cursor: pointer; font: inherit; }
+      .icon { width: 44px; height: 44px; border-radius: 50%; background: transparent; color: var(--on-surface); }
+      .icon:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+      main { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); gap: 24px; align-items: stretch; }
+      .hero, .card { border-radius: 28px; padding: clamp(24px, 5vw, 48px); }
+      .hero { background: var(--primary-container); color: var(--on-primary-container); min-height: 380px; display: flex; flex-direction: column; justify-content: end; }
+      .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; opacity: .8; }
+      h1 { max-width: 650px; margin: 12px 0; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.045em; }
+      .hero p { max-width: 560px; font-size: 18px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+      .filled, .tonal, .outlined { min-height: 48px; border-radius: 999px; padding: 0 22px; font-weight: 700; white-space: nowrap; }
+      .filled { background: var(--primary); color: var(--on-primary); }
+      .tonal { background: var(--surface-high); color: var(--on-surface); }
+      .outlined { border: 1px solid var(--outline); background: transparent; color: var(--on-surface); }
+      .filled, .tonal, .outlined { position: relative; overflow: hidden; }
+      .filled::after, .tonal::after, .outlined::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 160ms ease; pointer-events: none; }
+      .filled:hover::after, .tonal:hover::after, .outlined:hover::after { opacity: .08; }
+      .filled:focus-visible, .tonal:focus-visible, .outlined:focus-visible, .icon:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+      .card { transition: transform 180ms ease, box-shadow 180ms ease; }
+      .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px color-mix(in srgb, var(--on-surface) 12%, transparent); }
+      .card { background: var(--surface-container); padding: 28px; }
+      .card h2 { margin: 0 0 8px; font-size: 24px; }
+      .card p { color: var(--on-surface-variant); }
+      .metric { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid var(--outline-variant); }
+      .metric:last-child { border-bottom: 0; }
+      .metric strong { font-size: 26px; }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+      .chip { padding: 8px 14px; border: 1px solid var(--outline); border-radius: 10px; color: var(--on-surface-variant); }
+      .chip.active { border-color: transparent; background: var(--tertiary-container); color: var(--on-tertiary-container); }
+      footer { margin-top: 24px; padding: 20px 4px; color: var(--on-surface-variant); }
+      @media (max-width: 760px) { .shell { padding: 16px; } header { padding-bottom: 24px; } main { grid-template-columns: 1fr; } .hero { min-height: 470px; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header><div class="brand"><span class="mark">M3</span><span>Material 3</span></div><button class="icon" id="theme" aria-label="Toggle dark theme">☼</button></header>
+      <main>
+        <section class="hero"><span class="eyebrow">Design system foundation</span><h1>Build with expressive, adaptive surfaces.</h1><p>A compact reference surface for color roles, typography, shape, state layers, and responsive layout.</p><div class="actions"><button class="filled">Get started</button><button class="outlined">View tokens</button></div></section>
+        <aside class="card"><h2>System status</h2><p>Core roles are mapped to the Material 3 contract.</p><div class="metric"><span>Color roles</span><strong>49</strong></div><div class="metric"><span>Typography styles</span><strong>15</strong></div><div class="metric"><span>Adaptive modes</span><strong>2</strong></div><div class="chips"><span class="chip active">Dynamic color</span><span class="chip">Accessible</span><span class="chip">Responsive</span></div></aside>
+      </main>
+      <footer>Material Design 3 reference showcase · semantic roles over component-local colors</footer>
+    </div>
+    <script>document.getElementById('theme').onclick = () => document.documentElement.classList.toggle('dark');</script>
+  </body>
+</html>

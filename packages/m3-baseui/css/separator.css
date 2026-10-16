@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Divider: 1dp, outline-variant. */
+@layer components {
+  .m3-bui-separator {
+    flex-shrink: 0;
+    margin: 0;
+    border: 0;
+    background: var(--md-sys-color-outline-variant);
+  }
+  .m3-bui-separator[data-orientation="horizontal"] {
+    inline-size: 100%;
+    block-size: 1px;
+  }
+  .m3-bui-separator[data-orientation="vertical"] {
+    inline-size: 1px;
+    align-self: stretch;
+  }
+}

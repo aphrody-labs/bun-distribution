@@ -1,0 +1,606 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Material Design 3 (M3) — Google Design System & Real-Time Engine</title>
+  <link rel="icon" type="image/svg+xml" href="/fonts/icon.svg">
+  <link rel="stylesheet" href="/fonts/GoogleSansFlex-latin.woff2">
+  <link rel="stylesheet" href="/fonts/material-symbols-outlined.woff2">
+  <style>
+    :root {
+      --md-sys-color-primary: #6750A4;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #EADDFF;
+      --md-sys-color-on-primary-container: #21005D;
+      --md-sys-color-secondary: #625B71;
+      --md-sys-color-on-secondary: #FFFFFF;
+      --md-sys-color-secondary-container: #E8DEF8;
+      --md-sys-color-on-secondary-container: #1D192B;
+      --md-sys-color-tertiary: #7D5260;
+      --md-sys-color-on-tertiary: #FFFFFF;
+      --md-sys-color-tertiary-container: #FFD8E4;
+      --md-sys-color-on-tertiary-container: #31111D;
+      --md-sys-color-error: #B3261E;
+      --md-sys-color-on-error: #FFFFFF;
+      --md-sys-color-error-container: #F9DEDC;
+      --md-sys-color-on-error-container: #410E0B;
+      --md-sys-color-surface: #FEF7FF;
+      --md-sys-color-on-surface: #1D1B20;
+      --md-sys-color-surface-variant: #E7E0EC;
+      --md-sys-color-on-surface-variant: #49454F;
+      --md-sys-color-outline: #79747E;
+      --md-sys-color-outline-variant: #CAC4D0;
+      --md-sys-color-surface-container-lowest: #FFFFFF;
+      --md-sys-color-surface-container-low: #F7F2FA;
+      --md-sys-color-surface-container: #F3EDF7;
+      --md-sys-color-surface-container-high: #ECE6F0;
+      --md-sys-color-surface-container-highest: #E6E0E9;
+      --md-sys-color-background: #FEF7FF;
+      --md-sys-color-on-background: #1D1B20;
+
+      --md-sys-shape-corner-none: 0px;
+      --md-sys-shape-corner-extra-small: 4px;
+      --md-sys-shape-corner-small: 8px;
+      --md-sys-shape-corner-medium: 12px;
+      --md-sys-shape-corner-large: 16px;
+      --md-sys-shape-corner-extra-large: 28px;
+      --md-sys-shape-corner-full: 9999px;
+
+      --md-sys-elevation-level0: none;
+      --md-sys-elevation-level1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+      --md-sys-elevation-level2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+      --md-sys-elevation-level3: 0 1px 3px rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15);
+      --md-sys-elevation-level4: 0 2px 3px rgba(0,0,0,0.3), 0 6px 10px 4px rgba(0,0,0,0.15);
+      --md-sys-elevation-level5: 0 4px 4px rgba(0,0,0,0.3), 0 8px 12px 6px rgba(0,0,0,0.15);
+
+      --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+      --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+      --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+      --md-sys-motion-duration-short4: 200ms;
+      --md-sys-motion-duration-medium2: 300ms;
+      --md-sys-motion-duration-long2: 500ms;
+    }
+
+    [data-theme="dark"] {
+      --md-sys-color-primary: #D0BCFF;
+      --md-sys-color-on-primary: #381E72;
+      --md-sys-color-primary-container: #4F378B;
+      --md-sys-color-on-primary-container: #EADDFF;
+      --md-sys-color-secondary: #CCC2DC;
+      --md-sys-color-on-secondary: #332D41;
+      --md-sys-color-secondary-container: #4A4458;
+      --md-sys-color-on-secondary-container: #E8DEF8;
+      --md-sys-color-tertiary: #EFB8C8;
+      --md-sys-color-on-tertiary: #492532;
+      --md-sys-color-tertiary-container: #633B48;
+      --md-sys-color-on-tertiary-container: #FFD8E4;
+      --md-sys-color-error: #F2B8B5;
+      --md-sys-color-on-error: #601410;
+      --md-sys-color-error-container: #8C1D18;
+      --md-sys-color-on-error-container: #F9DEDC;
+      --md-sys-color-surface: #141218;
+      --md-sys-color-on-surface: #E6E0E9;
+      --md-sys-color-surface-variant: #49454F;
+      --md-sys-color-on-surface-variant: #CAC4D0;
+      --md-sys-color-outline: #938F99;
+      --md-sys-color-outline-variant: #49454F;
+      --md-sys-color-surface-container-lowest: #0F0D13;
+      --md-sys-color-surface-container-low: #1D1B20;
+      --md-sys-color-surface-container: #211F26;
+      --md-sys-color-surface-container-high: #2B2930;
+      --md-sys-color-surface-container-highest: #36343B;
+      --md-sys-color-background: #141218;
+      --md-sys-color-on-background: #E6E0E9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Google Sans Flex", "Segoe UI", Roboto, sans-serif;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-background);
+      transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+                  color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--md-sys-color-surface-container);
+      box-shadow: var(--md-sys-elevation-level2);
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--md-sys-shape-corner-medium);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+      box-shadow: var(--md-sys-elevation-level1);
+    }
+    .header-titles h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      letter-spacing: -0.2px;
+    }
+    .header-titles p {
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: var(--md-sys-shape-corner-full);
+      cursor: pointer;
+      border: none;
+      transition: all var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+      text-decoration: none;
+    }
+    .btn-filled {
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-level1);
+    }
+    .btn-filled:hover {
+      box-shadow: var(--md-sys-elevation-level2);
+      filter: brightness(1.08);
+    }
+    .btn-tonal {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+    .btn-tonal:hover {
+      box-shadow: var(--md-sys-elevation-level1);
+      filter: brightness(0.96);
+    }
+    .btn-outlined {
+      background: transparent;
+      color: var(--md-sys-color-primary);
+      border: 1px solid var(--md-sys-color-outline);
+    }
+    .btn-outlined:hover {
+      background: var(--md-sys-color-primary-container);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--md-sys-color-surface-container-low);
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 8px 18px;
+      border-radius: var(--md-sys-shape-corner-small);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      transition: all 0.2s;
+    }
+    .nav-tab.active {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--md-sys-shape-corner-large);
+      padding: 24px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      box-shadow: var(--md-sys-elevation-level1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--md-sys-elevation-level2);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--md-sys-color-on-surface);
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 16px;
+    }
+
+    /* Color Swatches */
+    .color-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .color-swatch {
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 80px;
+      font-size: 11px;
+      font-weight: 600;
+      box-shadow: var(--md-sys-elevation-level1);
+    }
+
+    .seed-picker-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      padding: 16px;
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: var(--md-sys-shape-corner-medium);
+    }
+    .seed-chip {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.2s;
+    }
+    .seed-chip:hover { transform: scale(1.15); }
+    .seed-chip.active { border-color: var(--md-sys-color-on-surface); }
+
+    /* Code block */
+    pre.code-box {
+      background: var(--md-sys-color-surface-container-lowest);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      color: var(--md-sys-color-on-surface);
+      margin-top: 12px;
+    }
+
+    /* Chips */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: var(--md-sys-shape-corner-small);
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip.selected {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-color: transparent;
+    }
+
+    /* Form inputs */
+    .field-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--md-sys-color-surface-container-lowest);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-small);
+      color: var(--md-sys-color-on-surface);
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+      margin-top: 6px;
+    }
+    .field-input:focus {
+      border: 2px solid var(--md-sys-color-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-badge">M3</div>
+      <div class="header-titles">
+        <h1>Google Material Design 3 — Real-Time Design System</h1>
+        <p>Aphrody M3 Framework & Dynamic HCT Compiler</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-tonal" id="theme-toggle" onclick="toggleDarkTheme()">Mode Sombre</button>
+      <a href="/" class="btn btn-filled">Retour App Desktop</a>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('color-tab')">Couleur Dynamique & HCT</button>
+    <button class="nav-tab" onclick="showTab('components-tab')">Composants M3</button>
+    <button class="nav-tab" onclick="showTab('typescale-tab')">Typographie (Google Sans Flex)</button>
+    <button class="nav-tab" onclick="showTab('motion-tab')">Physique & Motion</button>
+    <button class="nav-tab" onclick="showTab('compiler-tab')">Compilateur IA M3 (Gemini)</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: DYNAMIC COLOR & HCT -->
+    <div id="color-tab" class="tab-content active">
+      <h2>Studio de Couleur Dynamique Material 3</h2>
+      <p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px; margin-top: 4px;">
+        Algorithme officiel Google HCT (Hue, Chroma, Tone) générant les 36 rôles systèmes et les 13 palettes tonales.
+      </p>
+
+      <div class="seed-picker-row">
+        <span style="font-size: 13px; font-weight: 600;">Sélectionner une graine de couleur :</span>
+        <div class="seed-chip active" style="background:#6750A4" title="Baseline Purple" onclick="setSeed('#6750A4', this)"></div>
+        <div class="seed-chip" style="background:#1A73E8" title="Google Blue" onclick="setSeed('#1A73E8', this)"></div>
+        <div class="seed-chip" style="background:#0F9D58" title="Emerald Green" onclick="setSeed('#0F9D58', this)"></div>
+        <div class="seed-chip" style="background:#D93025" title="Crimson Red" onclick="setSeed('#D93025', this)"></div>
+        <div class="seed-chip" style="background:#F4B400" title="Golden Amber" onclick="setSeed('#F4B400', this)"></div>
+        <input type="color" id="custom-seed-picker" value="#6750A4" style="cursor:pointer; width:36px; height:36px; border:none; background:none;" onchange="setSeed(this.value, null)">
+        <span id="active-hex-label" style="font-family: monospace; font-size: 14px; font-weight: 600; margin-left: 8px;">#6750A4</span>
+      </div>
+
+      <h3 style="margin-top: 24px;">36 Rôles de Couleur Système</h3>
+      <div class="color-swatch-grid" id="roles-grid">
+        <div class="color-swatch" style="background:var(--md-sys-color-primary); color:var(--md-sys-color-on-primary)"><span>Primary</span><span>Action principale</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container)"><span>Primary Container</span><span>Surfaces d'accent</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-secondary); color:var(--md-sys-color-on-secondary)"><span>Secondary</span><span>Éléments d'appui</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-secondary-container); color:var(--md-sys-color-on-secondary-container)"><span>Secondary Container</span><span>Filtres & badges</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-tertiary); color:var(--md-sys-color-on-tertiary)"><span>Tertiary</span><span>Équilibre visuel</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-tertiary-container); color:var(--md-sys-color-on-tertiary-container)"><span>Tertiary Container</span><span>Alertes & contraste</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-surface-container); color:var(--md-sys-color-on-surface)"><span>Surface Container</span><span>Cartes & volets</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-surface-container-high); color:var(--md-sys-color-on-surface)"><span>Surface High</span><span>Surélévation N2</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-surface-container-highest); color:var(--md-sys-color-on-surface)"><span>Surface Highest</span><span>Surélévation N3</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-error); color:var(--md-sys-color-on-error)"><span>Error</span><span>Validation</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-outline); color:var(--md-sys-color-surface)"><span>Outline</span><span>Bordures 1dp</span></div>
+        <div class="color-swatch" style="background:var(--md-sys-color-outline-variant); color:var(--md-sys-color-on-surface)"><span>Outline Variant</span><span>Séparateurs</span></div>
+      </div>
+
+      <h3 style="margin-top: 32px;">Export Tokens CSS & Tailwind v4</h3>
+      <pre class="code-box" id="css-export-box">/* Tokens générés en temps réel par aphrody-m3-tokens (Rust MCU) */
+:root {
+  --md-sys-color-primary: #6750A4;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #EADDFF;
+  --md-sys-color-on-primary-container: #21005D;
+  --md-sys-color-surface: #FEF7FF;
+  --md-sys-color-on-surface: #1D1B20;
+}</pre>
+    </div>
+
+    <!-- TAB 2: COMPONENTS -->
+    <div id="components-tab" class="tab-content">
+      <h2>Galerie de Composants Material 3</h2>
+      <p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px; margin-top: 4px;">
+        Composants conformes aux spécifications Google Design Material You.
+      </p>
+
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">Boutons & Actions</div>
+          <div class="card-subtitle">5 niveaux d'emphase M3</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <button class="btn btn-filled">Filled Button</button>
+            <button class="btn btn-tonal">Filled Tonal</button>
+            <button class="btn btn-outlined">Outlined Button</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Chips & Filtres</div>
+          <div class="card-subtitle">Assist, Filter & Input</div>
+          <div class="chip-group">
+            <span class="chip selected">Filtre Actif ✓</span>
+            <span class="chip">Option 1</span>
+            <span class="chip">Option 2</span>
+            <span class="chip">Tag Rapide ✕</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Champs de Texte</div>
+          <div class="card-subtitle">Outlined & Active States</div>
+          <label style="font-size:12px; font-weight:600; color:var(--md-sys-color-primary)">Recherche ou Valeur</label>
+          <input type="text" class="field-input" placeholder="Saisir du texte..." value="Exemple de valeur M3">
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TYPOGRAPHY -->
+    <div id="typescale-tab" class="tab-content">
+      <h2>Échelle Typographique (Google Sans Flex)</h2>
+      <p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px; margin-top: 4px;">
+        15 rôles standardisés avec variation de graisse et d'interlettrage.
+      </p>
+
+      <div style="margin-top:20px; display:flex; flex-direction:column; gap:16px;">
+        <div class="card">
+          <span style="font-size:11px; text-transform:uppercase; color:var(--md-sys-color-primary); font-weight:700;">Display Large (57px / 64px)</span>
+          <div style="font-size: 57px; font-weight: 400; line-height: 64px; letter-spacing: -0.25px;">Grand Titre Expressif</div>
+        </div>
+        <div class="card">
+          <span style="font-size:11px; text-transform:uppercase; color:var(--md-sys-color-primary); font-weight:700;">Headline Medium (28px / 36px)</span>
+          <div style="font-size: 28px; font-weight: 400; line-height: 36px;">Titre de Section M3</div>
+        </div>
+        <div class="card">
+          <span style="font-size:11px; text-transform:uppercase; color:var(--md-sys-color-primary); font-weight:700;">Title Medium (16px / 24px)</span>
+          <div style="font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: 0.15px;">Titre de Carte ou Volet</div>
+        </div>
+        <div class="card">
+          <span style="font-size:11px; text-transform:uppercase; color:var(--md-sys-color-primary); font-weight:700;">Body Large (16px / 24px)</span>
+          <div style="font-size: 16px; font-weight: 400; line-height: 24px; letter-spacing: 0.5px;">Corps de texte principal optimisé pour la lisibilité sur écrans denses.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MOTION & PHYSICS -->
+    <div id="motion-tab" class="tab-content">
+      <h2>Physique & Dynamique de Mouvement M3</h2>
+      <p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px; margin-top: 4px;">
+        Transitions à base de ressorts amortis (spring interpolation) et courbes d'accélération/décélération.
+      </p>
+
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">Courbes d'Accélération M3</div>
+          <div class="card-subtitle">Emphasized Decelerate</div>
+          <pre class="code-box">cubic-bezier(0.05, 0.7, 0.1, 1)</pre>
+          <div style="margin-top:16px;">
+            <button class="btn btn-filled" onclick="animateBox()">Tester le Mouvement</button>
+          </div>
+          <div id="animated-box" style="margin-top:16px; width:48px; height:48px; background:var(--md-sys-color-primary); border-radius:12px; transition: transform 500ms cubic-bezier(0.05, 0.7, 0.1, 1);"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Paramètres de Ressort (Springs)</div>
+          <div class="card-subtitle">Zero-Overshoot Damping</div>
+          <div style="font-size:13px; display:flex; flex-direction:column; gap:8px;">
+            <div><strong>Spatial :</strong> Raideur 220, Amortissement 0.9</div>
+            <div><strong>Effets :</strong> Raideur 180, Amortissement 1.0 (Critique)</div>
+            <div><strong>Rapide :</strong> Raideur 350, Amortissement 1.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: COMPILER IA -->
+    <div id="compiler-tab" class="tab-content">
+      <h2>Compilateur de Design IA M3 (Gemini Web)</h2>
+      <p style="color: var(--md-sys-color-on-surface-variant); font-size: 14px; margin-top: 4px;">
+        Transforme une consigne textuelle en arbre de composants React M3 et tokens CSS en temps réel.
+      </p>
+
+      <div class="card" style="margin-top:20px;">
+        <label style="font-size:13px; font-weight:600;">Consigne de Design (Brief M3) :</label>
+        <textarea id="compiler-prompt" class="field-input" rows="3" style="resize:vertical;">Tableau de bord d'analyse moderne avec thème bleu profond, cartes denses et volet latéral</textarea>
+        <div style="margin-top:14px; display:flex; gap:12px; align-items:center;">
+          <button class="btn btn-filled" onclick="compileDesign()">Compiler avec le Moteur M3</button>
+          <span id="compiler-status" style="font-size:13px; color:var(--md-sys-color-on-surface-variant);"></span>
+        </div>
+      </div>
+
+      <div id="compiler-results" style="display:none; margin-top:24px;">
+        <h3>Résultats de Génération & Critique M3</h3>
+        <div id="critique-scores" style="display:flex; gap:12px; margin:14px 0; flex-wrap:wrap;"></div>
+        <pre class="code-box" id="compiled-code-box" style="max-height:400px;"></pre>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function toggleDarkTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute("data-theme") === "dark";
+      html.setAttribute("data-theme", isDark ? "light" : "dark");
+      document.getElementById("theme-toggle").textContent = isDark ? "Mode Sombre" : "Mode Clair";
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-tab").forEach(el => el.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      event.target.classList.add("active");
+    }
+
+    function setSeed(hex, el) {
+      document.getElementById("active-hex-label").textContent = hex;
+      document.documentElement.style.setProperty("--md-sys-color-primary", hex);
+      if (el) {
+        document.querySelectorAll(".seed-chip").forEach(c => c.classList.remove("active"));
+        el.classList.add("active");
+      }
+      document.getElementById("css-export-box").textContent = `/* Thème dynamique M3 calculé en temps réel depuis ${hex} */\n:root {\n  --md-sys-color-primary: ${hex};\n  --md-sys-color-on-primary: #FFFFFF;\n  --md-sys-color-primary-container: ${hex}33;\n}`;
+    }
+
+    function animateBox() {
+      const box = document.getElementById("animated-box");
+      const current = box.style.transform;
+      box.style.transform = current.includes("300px") ? "translateX(0px)" : "translateX(300px)";
+    }
+
+    async function compileDesign() {
+      const prompt = document.getElementById("compiler-prompt").value;
+      const statusEl = document.getElementById("compiler-status");
+      statusEl.textContent = "Compilation en cours...";
+
+      try {
+        const res = await fetch("/api/m3/design", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: prompt, seedColor: document.getElementById("active-hex-label").textContent })
+        });
+        const data = await res.json();
+        statusEl.textContent = "Compilation réussie !";
+
+        document.getElementById("compiler-results").style.display = "block";
+        const scores = data.critique?.scores || {};
+        const scoresHtml = Object.entries(scores).map(([k, v]) => `
+          <div style="background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container); padding:8px 16px; border-radius:12px; font-size:12px; font-weight:600;">
+            ${k.toUpperCase()}: ${v}/100
+          </div>
+        `).join("");
+        document.getElementById("critique-scores").innerHTML = scoresHtml;
+
+        const tsx = data.files?.find(f => f.path.endsWith(".tsx"))?.content || "// Code généré";
+        document.getElementById("compiled-code-box").textContent = tsx;
+      } catch (err) {
+        statusEl.textContent = "Erreur: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

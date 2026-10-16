@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Primary tabs: 48dp, a 3dp indicator that slides under the active tab. Add `m3-bui-tabs--secondary` to Root for secondary tabs. */
+@layer components {
+  .m3-bui-tabs {
+    color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-tabs__list {
+    position: relative;
+    display: flex;
+    border-block-end: 1px solid var(--md-sys-color-surface-variant);
+  }
+  .m3-bui-tabs__tab {
+    box-sizing: border-box;
+    flex: 1;
+    min-block-size: 48px;
+    padding: 0 16px;
+    border: 0;
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-title-small);
+    letter-spacing: var(--md-sys-typescale-title-small-tracking);
+    cursor: pointer;
+  }
+  .m3-bui-tabs__tab[data-selected],
+  .m3-bui-tabs__tab[data-active] {
+    --m3-state: var(--md-sys-color-primary);
+    color: var(--md-sys-color-primary);
+  }
+  .m3-bui-tabs__tab:is(:disabled, [data-disabled]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+  .m3-bui-tabs__indicator {
+    position: absolute;
+    inset-inline-start: var(--active-tab-left);
+    inset-block-end: 0;
+    inline-size: var(--active-tab-width);
+    block-size: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--md-sys-color-primary);
+    transition:
+      inset-inline-start var(--md-sys-motion-duration-medium2)
+        var(--md-sys-motion-easing-emphasized),
+      inline-size var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
+  }
+  .m3-bui-tabs__panel {
+    padding: 16px;
+    outline: none;
+  }
+
+  .m3-bui-tabs--secondary .m3-bui-tabs__tab[data-selected],
+  .m3-bui-tabs--secondary .m3-bui-tabs__tab[data-active] {
+    --m3-state: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-tabs--secondary .m3-bui-tabs__indicator {
+    block-size: 2px;
+    border-radius: 0;
+  }
+}

@@ -1,0 +1,105 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Material 3 Expressive tokens: emphasized typescale, Expressive spatial springs, directional shapes.
+ * GENERATED from src/expressive.ts - do not hand-edit: bun run generate:expressive.
+ * Requires m3-tokens.css (corner scale and typefaces).
+ */
+
+:root {
+  /* Typescale: emphasized styles. */
+  --md-sys-typescale-display-large-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-large-emphasized-weight: 500;
+  --md-sys-typescale-display-large-emphasized-size: 3.5625rem;
+  --md-sys-typescale-display-large-emphasized-line-height: 4rem;
+  --md-sys-typescale-display-large-emphasized-tracking: 0rem;
+  --md-sys-typescale-display-medium-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-medium-emphasized-weight: 500;
+  --md-sys-typescale-display-medium-emphasized-size: 2.8125rem;
+  --md-sys-typescale-display-medium-emphasized-line-height: 3.25rem;
+  --md-sys-typescale-display-medium-emphasized-tracking: 0rem;
+  --md-sys-typescale-display-small-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-small-emphasized-weight: 500;
+  --md-sys-typescale-display-small-emphasized-size: 2.25rem;
+  --md-sys-typescale-display-small-emphasized-line-height: 2.75rem;
+  --md-sys-typescale-display-small-emphasized-tracking: 0rem;
+  --md-sys-typescale-headline-large-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-large-emphasized-weight: 500;
+  --md-sys-typescale-headline-large-emphasized-size: 2rem;
+  --md-sys-typescale-headline-large-emphasized-line-height: 2.5rem;
+  --md-sys-typescale-headline-large-emphasized-tracking: 0rem;
+  --md-sys-typescale-headline-medium-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-medium-emphasized-weight: 500;
+  --md-sys-typescale-headline-medium-emphasized-size: 1.75rem;
+  --md-sys-typescale-headline-medium-emphasized-line-height: 2.25rem;
+  --md-sys-typescale-headline-medium-emphasized-tracking: 0rem;
+  --md-sys-typescale-headline-small-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-small-emphasized-weight: 500;
+  --md-sys-typescale-headline-small-emphasized-size: 1.5rem;
+  --md-sys-typescale-headline-small-emphasized-line-height: 2rem;
+  --md-sys-typescale-headline-small-emphasized-tracking: 0rem;
+  --md-sys-typescale-title-large-emphasized-font: var(--md-ref-typeface-brand);
+  --md-sys-typescale-title-large-emphasized-weight: 500;
+  --md-sys-typescale-title-large-emphasized-size: 1.375rem;
+  --md-sys-typescale-title-large-emphasized-line-height: 1.75rem;
+  --md-sys-typescale-title-large-emphasized-tracking: 0rem;
+  --md-sys-typescale-title-medium-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-medium-emphasized-weight: 700;
+  --md-sys-typescale-title-medium-emphasized-size: 1rem;
+  --md-sys-typescale-title-medium-emphasized-line-height: 1.5rem;
+  --md-sys-typescale-title-medium-emphasized-tracking: 0.009375rem;
+  --md-sys-typescale-title-small-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-small-emphasized-weight: 700;
+  --md-sys-typescale-title-small-emphasized-size: 0.875rem;
+  --md-sys-typescale-title-small-emphasized-line-height: 1.25rem;
+  --md-sys-typescale-title-small-emphasized-tracking: 0.00625rem;
+  --md-sys-typescale-body-large-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-large-emphasized-weight: 500;
+  --md-sys-typescale-body-large-emphasized-size: 1rem;
+  --md-sys-typescale-body-large-emphasized-line-height: 1.5rem;
+  --md-sys-typescale-body-large-emphasized-tracking: 0.009375rem;
+  --md-sys-typescale-body-medium-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-medium-emphasized-weight: 500;
+  --md-sys-typescale-body-medium-emphasized-size: 0.875rem;
+  --md-sys-typescale-body-medium-emphasized-line-height: 1.25rem;
+  --md-sys-typescale-body-medium-emphasized-tracking: 0.015625rem;
+  --md-sys-typescale-body-small-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-small-emphasized-weight: 500;
+  --md-sys-typescale-body-small-emphasized-size: 0.75rem;
+  --md-sys-typescale-body-small-emphasized-line-height: 1rem;
+  --md-sys-typescale-body-small-emphasized-tracking: 0.025rem;
+  --md-sys-typescale-label-large-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-large-emphasized-weight: 700;
+  --md-sys-typescale-label-large-emphasized-size: 0.875rem;
+  --md-sys-typescale-label-large-emphasized-line-height: 1.25rem;
+  --md-sys-typescale-label-large-emphasized-tracking: 0.00625rem;
+  --md-sys-typescale-label-medium-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-medium-emphasized-weight: 700;
+  --md-sys-typescale-label-medium-emphasized-size: 0.75rem;
+  --md-sys-typescale-label-medium-emphasized-line-height: 1rem;
+  --md-sys-typescale-label-medium-emphasized-tracking: 0.03125rem;
+  --md-sys-typescale-label-small-emphasized-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-small-emphasized-weight: 700;
+  --md-sys-typescale-label-small-emphasized-size: 0.6875rem;
+  --md-sys-typescale-label-small-emphasized-line-height: 1rem;
+  --md-sys-typescale-label-small-emphasized-tracking: 0.03125rem;
+
+  /* Motion: Expressive spatial springs (damping ratio, stiffness). */
+  --md-sys-motion-spring-expressive-fast-spatial-damping: 0.6;
+  --md-sys-motion-spring-expressive-fast-spatial-stiffness: 800;
+  --md-sys-motion-spring-expressive-default-spatial-damping: 0.8;
+  --md-sys-motion-spring-expressive-default-spatial-stiffness: 380;
+  --md-sys-motion-spring-expressive-slow-spatial-damping: 0.8;
+  --md-sys-motion-spring-expressive-slow-spatial-stiffness: 200;
+
+  /* Shape: directional corners (LTR; start/end swap under RTL). */
+  --md-sys-shape-corner-extra-small-top: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-top: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large);
+  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-extra-large-top: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none);
+}
+
+:root:dir(rtl) {
+  --md-sys-shape-corner-large-start: var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none);
+  --md-sys-shape-corner-large-end: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-none) var(--md-sys-shape-corner-large);
+}

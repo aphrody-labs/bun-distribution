@@ -430,3 +430,19 @@
 [submodule "vendor/winit"]
 	path = vendor/winit
 	url = https://github.com/aphrody-labs/winit.git
+[submodule "vendor/material-web"]
+	path = vendor/material-web
+	url = https://github.com/aphrody-labs/material-web.git
+	shallow = true
+[submodule "vendor/material-color-utilities"]
+	path = vendor/material-color-utilities
+	url = https://github.com/aphrody-labs/material-color-utilities.git
+	shallow = true
+[submodule "vendor/material-design-icons"]
+	path = vendor/material-design-icons
+	url = https://github.com/aphrody-labs/material-design-icons.git
+	shallow = true
+[submodule "vendor/fonts"]
+	path = vendor/fonts
+	url = https://github.com/aphrody-labs/fonts.git
+	shallow = true

@@ -1,0 +1,63 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Toolbar: a 64dp pill of surface-container holding buttons, links, inputs and separators. */
+@layer components {
+  .m3-bui-toolbar {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 64px;
+    padding: 0 16px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface);
+  }
+  .m3-bui-toolbar__group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .m3-bui-toolbar__button {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-block-size: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .m3-bui-toolbar__button[data-pressed] {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .m3-bui-toolbar__button:is(:disabled, [data-disabled]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+  .m3-bui-toolbar__input {
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 40px;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    caret-color: var(--md-sys-color-primary);
+    font: var(--m3-bui-font-body-large);
+    outline: none;
+  }
+  .m3-bui-toolbar__separator {
+    inline-size: 1px;
+    align-self: stretch;
+    margin: 12px 0;
+    background: var(--md-sys-color-outline-variant);
+  }
+}

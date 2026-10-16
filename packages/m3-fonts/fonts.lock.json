@@ -1,0 +1,174 @@
+{
+  "$comment": "Upstream font sources of @aphrody/m3-fonts, fetched by scripts/fonts-sync.ts into fonts/upstream/ (git-ignored, no LFS). Every file is pinned by sha256 and size. Google fonts come from the aphrody-labs fork of google/fonts (submodule vendor/fonts, sparse) at `commit`; Material Symbols from the material-symbols npm package, the same 0.44.8 build the Rust icons module (aphrody crates/ui/bun/icons/material-symbols) renders. `tracked` records the provenance of the variable sources kept in git: the same bytes as the fork at `commit`.",
+  "version": 1,
+  "sources": {
+    "google-fonts": {
+      "repository": "aphrody-labs/fonts",
+      "upstream": "google/fonts",
+      "commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "submodule": "vendor/fonts",
+      "raw": "https://raw.githubusercontent.com/aphrody-labs/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/"
+    },
+    "material-symbols": {
+      "package": "material-symbols@0.44.8",
+      "tarball": "https://registry.npmjs.org/material-symbols/-/material-symbols-0.44.8.tgz",
+      "integrity": "sha512-drWG88gPlJXmvQrpSc3zKxjzysuvD7ayoGDJecUTr5tt0l4URh3XhDqKjKjCC773oYfTi39ljEzk+CZ6ereikg=="
+    }
+  },
+  "files": [
+    {
+      "dest": "google-sans-flex/GoogleSansFlex-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/googlesansflex/GoogleSansFlex[GRAD,ROND,opsz,slnt,wdth,wght].ttf",
+      "sha256": "c31a482fbecbf2e07e6890134d20078723aadf732c9b9c6c9a44f86f8265b6fe",
+      "bytes": 4153392,
+      "license": "OFL-1.1"
+    },
+    {
+      "dest": "google-sans-flex/OFL.txt",
+      "source": "google-fonts",
+      "path": "ofl/googlesansflex/OFL.txt",
+      "sha256": "fc13d69f63e36d284b6e383d4d1463d8ad404f0aa065e57cf961252d51063137",
+      "bytes": 4488,
+      "license": "OFL-1.1"
+    },
+    {
+      "dest": "google-sans-code/GoogleSansCode-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/googlesanscode/GoogleSansCode[wght].ttf",
+      "sha256": "c9649573afcd966f61096b1e9c3c3115e7b54315ca2adf9839c6f8b17d5f8e1f",
+      "bytes": 126224,
+      "license": "OFL-1.1"
+    },
+    {
+      "dest": "google-sans-code/GoogleSansCode-Italic-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/googlesanscode/GoogleSansCode-Italic[wght].ttf",
+      "sha256": "bdf116292f27aca16e2aefb5534042a25f244d3a9187a521ce97fc2117a4a844",
+      "bytes": 132968,
+      "license": "OFL-1.1"
+    },
+    {
+      "dest": "google-sans-code/OFL.txt",
+      "source": "google-fonts",
+      "path": "ofl/googlesanscode/OFL.txt",
+      "sha256": "ff8f4fbc4f1a71c7d4c6481c48dc2b21c43f8dc15872536667fee45c15d20928",
+      "bytes": 4396,
+      "license": "OFL-1.1"
+    },
+    {
+      "dest": "material-symbols/material-symbols-outlined.woff2",
+      "source": "material-symbols",
+      "path": "package/material-symbols-outlined.woff2",
+      "sha256": "6831c4a7f2204c8c645b372258256c6c1dfd9d49fc7ccaefbd46a0689d97ed14",
+      "bytes": 3932292,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/material-symbols-rounded.woff2",
+      "source": "material-symbols",
+      "path": "package/material-symbols-rounded.woff2",
+      "sha256": "8f8b99353957c139cde0d39bf68b4a2247395fe7f81587eb1e8c28fb21cf6f3b",
+      "bytes": 5311000,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/material-symbols-sharp.woff2",
+      "source": "material-symbols",
+      "path": "package/material-symbols-sharp.woff2",
+      "sha256": "db21407f2432bf8727c6fa4025d1d6eca7ef3cdf361f74184280270ce76cfcb0",
+      "bytes": 3483152,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/index.css",
+      "source": "material-symbols",
+      "path": "package/index.css",
+      "sha256": "fe4a1d4c396f7e34f7079165319287d1e8b37cebfe11a9c5aa34f12e34136d63",
+      "bytes": 1891,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/outlined.css",
+      "source": "material-symbols",
+      "path": "package/outlined.css",
+      "sha256": "58e662e3fa2abfeba94f17cb0ac169a839f535e7fe5c6a93fb32935b739c2dff",
+      "bytes": 635,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/rounded.css",
+      "source": "material-symbols",
+      "path": "package/rounded.css",
+      "sha256": "717649f90831db7a1447191f0d46c15a5b9bf2bb93d65bd4cd069a785600b53b",
+      "bytes": 631,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/sharp.css",
+      "source": "material-symbols",
+      "path": "package/sharp.css",
+      "sha256": "3a5d08698c001437c9f726b84ddc10d6e673564763da55dbced46b101305a4fe",
+      "bytes": 623,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/LICENSE",
+      "source": "material-symbols",
+      "path": "package/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "license": "Apache-2.0"
+    },
+    {
+      "dest": "material-symbols/index.d.ts",
+      "source": "material-symbols",
+      "path": "package/index.d.ts",
+      "sha256": "73690fc209470dcf01e35ec1fcc850a9d3fe2c4f621b92bae17bfdcec1d00b37",
+      "bytes": 71134,
+      "license": "Apache-2.0"
+    }
+  ],
+  "tracked": [
+    {
+      "file": "fonts/RobotoFlex-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf",
+      "sha256": "9b523f7d82593df0107173849ebb8c817471a1df4b4fb2c3cbf40cfd810c8281",
+      "bytes": 1787292,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/RobotoMono-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotomono/RobotoMono[wght].ttf",
+      "sha256": "66a80e79d17e4c7cabd162e2916578a4cc08fd19eef6e2a643305eae9c567b2b",
+      "bytes": 183700,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/RobotoMono-Italic-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/robotomono/RobotoMono-Italic[wght].ttf",
+      "sha256": "49ac343bb7b070071e53f0a8a501d68d140ed98ebd0a43b6b8fb96cf22f09ff7",
+      "bytes": 196792,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/NotoSansJP-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/notosansjp/NotoSansJP[wght].ttf",
+      "sha256": "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f",
+      "bytes": 9589900,
+      "license": "OFL-1.1"
+    },
+    {
+      "file": "fonts/MPLUS1Code-Variable.ttf",
+      "source": "google-fonts",
+      "path": "ofl/mplus1code/MPLUS1Code[wght].ttf",
+      "sha256": "ff68678c5bd7e9d9d6ab6d57e4355aabe30f6b8f8bff9bd59baf6a7807dcfd36",
+      "bytes": 3933000,
+      "license": "OFL-1.1"
+    }
+  ]
+}

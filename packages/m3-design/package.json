@@ -1,0 +1,41 @@
+{
+  "name": "@aphrody/m3-design",
+  "version": "1.4.5",
+  "description": "Automated design engine for Material Design 3 and Google Design",
+  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-design#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-code/material-web/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-code/material-web.git",
+    "directory": "packages/m3-design"
+  },
+  "files": [
+    "README.md",
+    "design-systems",
+    "src"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/bun": "^3.3.0",
+    "@material/material-color-utilities": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

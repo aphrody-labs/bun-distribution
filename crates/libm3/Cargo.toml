@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "libm3"
+description = "Material 3 tokens, components and application patterns for Bun OS and COSMIC"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/material"
+
+[features]
+default = ["std"]
+std = ["m3-tokens/std", "dep:m3-engine"]
+cosmic = ["std", "dep:cosmic"]
+cosmic-wgpu = ["cosmic", "cosmic/wgpu"]
+cosmic-x11 = ["cosmic", "cosmic/x11"]
+cosmic-wayland = ["cosmic", "cosmic/wayland"]
+cosmic-a11y = ["cosmic", "cosmic/a11y"]
+
+[dependencies]
+m3-engine = { package = "aphrody-m3", path = "../aphrody-m3", version = "1.4.4", default-features = false, optional = true }
+m3-tokens = { package = "aphrody-m3-tokens", path = "../aphrody-m3-tokens", version = "1.4.4", default-features = false }
+cosmic = { package = "libcosmic", git = "https://github.com/aphrody-labs/libcosmic", rev = "7f715bc5d2d383a070fd8c760aa52c5627df96b6", default-features = false, features = ["winit", "tokio"], optional = true }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

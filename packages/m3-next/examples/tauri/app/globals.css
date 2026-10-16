@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@aphrody/m3-next/m3.css";
+@import "@aphrody/m3-baseui/css/core.css";
+@import "@aphrody/m3-baseui/css/button.css";
+@import "@aphrody/m3-baseui/css/switch.css";
+
+body {
+  margin: 0;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}

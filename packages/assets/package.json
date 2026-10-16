@@ -1,0 +1,63 @@
+{
+  "name": "@aphrody/assets",
+  "version": "1.4.5",
+  "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
+  "keywords": [
+    "assets",
+    "file-types",
+    "icons",
+    "material-3",
+    "spacedrive",
+    "spaceui"
+  ],
+  "license": "FSL-1.1-ALv2 AND MIT",
+  "author": "aphrody-code",
+  "files": [
+    "icons",
+    "images",
+    "lottie",
+    "sounds",
+    "svgs",
+    "videos",
+    "util",
+    "types.d.ts",
+    "LICENSE.spacedrive",
+    "LICENSE.spaceui"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./types.d.ts",
+  "exports": {
+    "./icons": "./icons/index.ts",
+    "./icons/*": "./icons/*",
+    "./images": "./images/index.ts",
+    "./images/*": "./images/*",
+    "./svgs/*": "./svgs/*",
+    "./svgs/ext/icons.json": "./svgs/ext/icons.json",
+    "./sounds": "./sounds/index.ts",
+    "./sounds/*": "./sounds/*",
+    "./videos/*": "./videos/*",
+    "./lottie/*": "./lottie/*",
+    "./util": "./util/index.ts",
+    "./util/mobile": "./util/mobile.ts",
+    "./types": "./types.d.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "gen": "bun scripts/generate.ts",
+    "typecheck": "bun check --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

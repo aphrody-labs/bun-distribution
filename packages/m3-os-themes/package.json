@@ -1,0 +1,46 @@
+{
+  "name": "@aphrody/m3-os-themes",
+  "version": "1.4.5",
+  "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-os-themes"
+  },
+  "bin": {
+    "m3-os-themes": "./src/cli.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts",
+    "./chromium": "./src/chromium.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "bun src/cli.ts generate --target all",
+    "test": "bun test test/",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test"
+  },
+  "dependencies": {
+    "@aphrody/m3-tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "@aphrody/bun": "^3.3.0",
+    "@aphrody/m3-config": "workspace:*"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

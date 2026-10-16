@@ -1,0 +1,475 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-13T11:45:44.395Z",
+  "owner": "aphrody-labs/material",
+  "sourceBase": "ce47e50324ce4053c4fcd08be59db55254e231f7",
+  "sourceFiles": [
+    {
+      "path": "Cargo.lock",
+      "bytes": 184445,
+      "sha256": "bd9d442cf11b447b0d6f06ff5b872225a4e7b243ed92a0b5c65a89d780493986"
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 983,
+      "sha256": "15c4f5d8685edc35cc8e0725922bc6edf27944d8d10140f7f2bd6a9735ac2c30"
+    },
+    {
+      "path": "crates/libm3-wasm/Cargo.toml",
+      "bytes": 337,
+      "sha256": "4e07c30b8480d512aeffda5db1c2ac878e8527bbe9deb48722621c6c6922c119"
+    },
+    {
+      "path": "crates/libm3-wasm/src/lib.rs",
+      "bytes": 2828,
+      "sha256": "87a51e273fda3f18eee8597d2185ea307c241ee25f0dbbb18e5d33f2ca459bec"
+    },
+    {
+      "path": "crates/libm3/Cargo.toml",
+      "bytes": 1038,
+      "sha256": "41f3f3b0ed712d945faf23dc5f0b44b2529147de7f5283dbe27ff9bc503e58e6"
+    },
+    {
+      "path": "crates/libm3/src/color.rs",
+      "bytes": 3251,
+      "sha256": "9cc26dc8f29a1f7631686df7b58455a6340b73272de812cf1e37e223ec9c49e5"
+    },
+    {
+      "path": "crates/libm3/src/component.rs",
+      "bytes": 7076,
+      "sha256": "d1676a42317cfcac846f262d5c93c704556fe53587b9a52696acc961ab7c72e0"
+    },
+    {
+      "path": "crates/libm3/src/cosmic.rs",
+      "bytes": 14003,
+      "sha256": "c2be956ffbe67df89824fe48ff853c486a08b5680f1cee0d4b8c532ac1494bbb"
+    },
+    {
+      "path": "crates/libm3/src/layout.rs",
+      "bytes": 2780,
+      "sha256": "4b372df5b77dce78fd7718f72a8f4dbda737fc3c83a2dc78bd64493d51ac6ea0"
+    },
+    {
+      "path": "crates/libm3/src/lib.rs",
+      "bytes": 1107,
+      "sha256": "f63d29b4ca098efd8f4144e674934955262e1ff4dbb51fe9dd6df3cc9039591d"
+    },
+    {
+      "path": "crates/libm3/src/theme.rs",
+      "bytes": 2454,
+      "sha256": "291d1437c9123c52320aeb15320cf9380d1ddfd0280eae8cfeaa7afc53042574"
+    },
+    {
+      "path": "crates/libm3/src/tokens.rs",
+      "bytes": 3508,
+      "sha256": "763635ae92762e33a343278de64937d9629b85d0a4dc64ae7823f1b2e6fae844"
+    },
+    {
+      "path": "crates/m3-tokens/Cargo.toml",
+      "bytes": 1434,
+      "sha256": "ca9c0f4d6287aac710f40b20ad4bc9e625d867d933001140dfe5d40d1d333e94"
+    },
+    {
+      "path": "crates/m3-tokens/examples/fusion.rs",
+      "bytes": 519,
+      "sha256": "a5c09bc5961513003c14a4b4b282442703cdfe80a5a0ceda250124bb31d52b46"
+    },
+    {
+      "path": "crates/m3-tokens/examples/sheets.rs",
+      "bytes": 2653,
+      "sha256": "4295feafe14453845e7201d3772afe2d30c3342116dd78efbb2562684482b329"
+    },
+    {
+      "path": "crates/m3-tokens/src/adaptive.rs",
+      "bytes": 13553,
+      "sha256": "d7bb211d970b550ffdafeb05c6ad9bb520061ee53eaafbe834c2365cad59d81e"
+    },
+    {
+      "path": "crates/m3-tokens/src/blend.rs",
+      "bytes": 3351,
+      "sha256": "064e6d5603ba339d3e45ea74d652c78a74fc0b0083386dd1c94e68551894ed5d"
+    },
+    {
+      "path": "crates/m3-tokens/src/cam16.rs",
+      "bytes": 12007,
+      "sha256": "46fdccb6e6ef7138a582d50be2d00817868645dfb80361c56d53aeb2ee2e6303"
+    },
+    {
+      "path": "crates/m3-tokens/src/color_math.rs",
+      "bytes": 9395,
+      "sha256": "f76f354b9f57561a85b6e9ad84032e2944e60e5ed0e76bd0e8feb08efeef5abe"
+    },
+    {
+      "path": "crates/m3-tokens/src/color.rs",
+      "bytes": 25148,
+      "sha256": "42da03cb1b8363fc8f8487c7f8b79c3eec507008ef7c334f487fc4c35f3c27ae"
+    },
+    {
+      "path": "crates/m3-tokens/src/component.rs",
+      "bytes": 44956,
+      "sha256": "0cf7fd6538bcca6eabf385d95956db9273d0097bfa3bc3a093317da5173152b2"
+    },
+    {
+      "path": "crates/m3-tokens/src/contrast.rs",
+      "bytes": 3055,
+      "sha256": "0a92a3e6e0e493317eb6bacb484dcda5cdadd1e86437e7cd34700d6a8e6e6278"
+    },
+    {
+      "path": "crates/m3-tokens/src/dynamic.rs",
+      "bytes": 2669,
+      "sha256": "8254e351cac34bc81e1e46d4328f45ab47e260dfcf5f794e03b3ce266043b1e9"
+    },
+    {
+      "path": "crates/m3-tokens/src/elevation.rs",
+      "bytes": 5704,
+      "sha256": "5de83bce9c0ca1c276e9d212a1e5fa97a285a88a479537e47909a8f331cd1bb4"
+    },
+    {
+      "path": "crates/m3-tokens/src/facade.rs",
+      "bytes": 7938,
+      "sha256": "618441fb072631ba8bc814ebf77b9197328ce349934ec927c5547fd50a3e19c1"
+    },
+    {
+      "path": "crates/m3-tokens/src/gemini_brand.rs",
+      "bytes": 24767,
+      "sha256": "aa6bd30a087501d62f036d7909f874b95ae861cd7d72928f6258ecc1c4c2d0b1"
+    },
+    {
+      "path": "crates/m3-tokens/src/google_sans_code.rs",
+      "bytes": 7375,
+      "sha256": "a38e5ce52dda2b89e7c03a39aa1117d147ecb6eb004b4cbcf4005eb9936bb903"
+    },
+    {
+      "path": "crates/m3-tokens/src/google_sans_flex.rs",
+      "bytes": 10211,
+      "sha256": "a965575e117edfccbf621b7b0fcb332ab0f5689fb42183b7057bbdd51a1969f8"
+    },
+    {
+      "path": "crates/m3-tokens/src/hct.rs",
+      "bytes": 18267,
+      "sha256": "9270272b42a100b772d1c469285e8c3fe713a273ffce918febc50f094511e05c"
+    },
+    {
+      "path": "crates/m3-tokens/src/image.rs",
+      "bytes": 4407,
+      "sha256": "eea93fd79be0171961cb41f64b8ae7129aaef58a891b50028c8997152c9edd32"
+    },
+    {
+      "path": "crates/m3-tokens/src/lib.rs",
+      "bytes": 4712,
+      "sha256": "63cda18333647c42ef1a502415b4f6a8873cc7021d2ad65c0768624aba61dcc1"
+    },
+    {
+      "path": "crates/m3-tokens/src/motion.rs",
+      "bytes": 31232,
+      "sha256": "39f3825ddd673a6c643e3125a0d6ec206d6a0ddc503d802e7b9e0b30f1dd7183"
+    },
+    {
+      "path": "crates/m3-tokens/src/palette.rs",
+      "bytes": 5856,
+      "sha256": "76ec9f2b5f3d6394b23690c738979f68574d8035c62fd0d23786259203125866"
+    },
+    {
+      "path": "crates/m3-tokens/src/quantize_map.rs",
+      "bytes": 1254,
+      "sha256": "0278137f63f026aa0879239a7b9367e1df61eea99985f729c8f8a9804e5c3b81"
+    },
+    {
+      "path": "crates/m3-tokens/src/quantize_wsmeans.rs",
+      "bytes": 9605,
+      "sha256": "4e1cafe5a251a0cf5cc77c7674d0d423833785a6106025960cdf77de7dbc5a5b"
+    },
+    {
+      "path": "crates/m3-tokens/src/quantize_wu.rs",
+      "bytes": 15131,
+      "sha256": "82e768d1603f1dc62eeeb8e3635e32a4c9ccde9904266e5a5bdc45746893d27e"
+    },
+    {
+      "path": "crates/m3-tokens/src/quantize.rs",
+      "bytes": 1718,
+      "sha256": "c105b634d19a601968becd7292e508a3500598a879b6fceb3bf84377af8bf4ae"
+    },
+    {
+      "path": "crates/m3-tokens/src/role.rs",
+      "bytes": 6447,
+      "sha256": "a1bc4a4522ef3297393371f3a9189be8421d425aa0d1345e3ca198fc78dc6b9b"
+    },
+    {
+      "path": "crates/m3-tokens/src/scheme.rs",
+      "bytes": 37298,
+      "sha256": "ee3aaa21bf20b93849f62763296d691014dac4ee37c3914cccfeeba03359eadc"
+    },
+    {
+      "path": "crates/m3-tokens/src/scheme/temperature.rs",
+      "bytes": 7252,
+      "sha256": "41cf449c7b1548f58903634bd95efcd46b1a531515a2067027991ffbec11c2ee"
+    },
+    {
+      "path": "crates/m3-tokens/src/score.rs",
+      "bytes": 5768,
+      "sha256": "3005865fce242cad0d39dbb2caeb6e1a0bd3ab3663b424df08f5601a87fccb94"
+    },
+    {
+      "path": "crates/m3-tokens/src/shape.rs",
+      "bytes": 9114,
+      "sha256": "3746821b644fb9637f684357256e0e00b5de3c1a969ed258c6a7624d1b8914b6"
+    },
+    {
+      "path": "crates/m3-tokens/src/sheets.rs",
+      "bytes": 28960,
+      "sha256": "a09dff11eafdde52e4d60f09eb38eaf8ba8b653e333afe0f34b1dec105d15f6f"
+    },
+    {
+      "path": "crates/m3-tokens/src/spaceui.rs",
+      "bytes": 12354,
+      "sha256": "210847fc4c3b562b4f6ebbf5e337e63e53a874ecba2daffb3ae230aee11df971"
+    },
+    {
+      "path": "crates/m3-tokens/src/state.rs",
+      "bytes": 6362,
+      "sha256": "e4edfff2b24f287eeb26314ea8e1e1786353a00e915568745b037b49780eb41e"
+    },
+    {
+      "path": "crates/m3-tokens/src/theme.rs",
+      "bytes": 11808,
+      "sha256": "fc53745134efc23d1935bcb8e60b7bc4cb01fe632ef3a493a7caebb8918cc443"
+    },
+    {
+      "path": "crates/m3-tokens/src/tonal.rs",
+      "bytes": 14246,
+      "sha256": "03f7bc828034d269fc7743e2ecbeb0366d97d0f435ee1e61da5c322cf9831a68"
+    },
+    {
+      "path": "crates/m3-tokens/src/typography.rs",
+      "bytes": 13675,
+      "sha256": "4460e4ea223efabcd570c23b212d6357ada62c9652317cdd98984d82788e330b"
+    },
+    {
+      "path": "crates/m3-tokens/tests/brand_theme_golden.rs",
+      "bytes": 2252,
+      "sha256": "db72fccf39b375a7ff1c9691bbe60cf73d32f50c31095713160c225a2698d8fb"
+    },
+    {
+      "path": "crates/m3-tokens/tests/creator_theme_golden.rs",
+      "bytes": 1878,
+      "sha256": "e37b6d9e11da8751ee7feb74806d07c344a96a5f513a446f4f5bdf709e71dab4"
+    },
+    {
+      "path": "crates/m3-tokens/tests/mcu_fidelity.rs",
+      "bytes": 1686,
+      "sha256": "ae153532e647f85e6e098910f07a942ec559dad6e4d44c2fdefc7fe0cba6d0fa"
+    },
+    {
+      "path": "crates/m3-tokens/tests/mcu_image_parity.rs",
+      "bytes": 3736,
+      "sha256": "d4aba2361f112a8c5e90ba2ff713f98502b6c26969e40fb4694a2602005fa7b3"
+    },
+    {
+      "path": "crates/m3-tokens/tests/mcu_parity.rs",
+      "bytes": 6163,
+      "sha256": "1860fe21faec2ab8caa28a6e2ea865055b43e5d5438c4068428ca11a011db4aa"
+    },
+    {
+      "path": "crates/m3-tokens/tests/sheets_golden.rs",
+      "bytes": 1650,
+      "sha256": "7a4950c046974823171798c7d19143e7a11264541cc092f3d233ff87d8b5521f"
+    },
+    {
+      "path": "crates/m3-tokens/tests/theme_export.rs",
+      "bytes": 9357,
+      "sha256": "00f80c5785cf078c45c96299f3d32cfeeb767e04f154006a61243ae8ef453d9e"
+    },
+    {
+      "path": "crates/m3/Cargo.toml",
+      "bytes": 787,
+      "sha256": "1bbb9425b1e82d0e122cb6e1c98f8dc0cd37c84615b5b07e798582f1de763676"
+    },
+    {
+      "path": "crates/m3/src/a11y.rs",
+      "bytes": 9212,
+      "sha256": "5eb197f8665addd0a08242dbcafbbf2626a9777e6c652a12c808e70562a4640c"
+    },
+    {
+      "path": "crates/m3/src/components.rs",
+      "bytes": 3346,
+      "sha256": "97de5971ea87a3206b57c866b61769b8c8151f443ba0f237eafda04506a16267"
+    },
+    {
+      "path": "crates/m3/src/controls/buttons.rs",
+      "bytes": 32365,
+      "sha256": "b0fe3e644d5ee7fd65056959c5225296362745a499f379ebcbcee4eaf0c724fe"
+    },
+    {
+      "path": "crates/m3/src/controls/card.rs",
+      "bytes": 5334,
+      "sha256": "6248fe7b53c3957b6fca2231c29bc7c3c7d9b8b1eebd21e5a86d4b6b64afdcb3"
+    },
+    {
+      "path": "crates/m3/src/controls/chip.rs",
+      "bytes": 12503,
+      "sha256": "b85ada13a382929529efb9e28d9b5049f1bca31b8a3046c4733b939607ebf9f3"
+    },
+    {
+      "path": "crates/m3/src/controls/mod.rs",
+      "bytes": 2737,
+      "sha256": "a3ac986ccb6dd74aaef6a740284e769599d1717fef29a522af710444e7592f56"
+    },
+    {
+      "path": "crates/m3/src/controls/navigation.rs",
+      "bytes": 15201,
+      "sha256": "a09f3ab904fa24bb68e4f4698245d9b82671609d3c36dd863954975ea4de05d6"
+    },
+    {
+      "path": "crates/m3/src/controls/overlay.rs",
+      "bytes": 18236,
+      "sha256": "e7b91758a231038ac03176dff74deb7e082c2aded96f002f22ec5859933436d9"
+    },
+    {
+      "path": "crates/m3/src/controls/progress.rs",
+      "bytes": 2926,
+      "sha256": "f4413851f10d72101105903294227ef4af436e3e27fa8b6d61338354db1d4564"
+    },
+    {
+      "path": "crates/m3/src/controls/selection.rs",
+      "bytes": 18886,
+      "sha256": "630a1f0a3b642d2f7d444379028cb0b54664811d85c4edf330d158ca9313e249"
+    },
+    {
+      "path": "crates/m3/src/controls/slider.rs",
+      "bytes": 7751,
+      "sha256": "34376771eaf765093c00e2221513ed9cc5533f2036ba6b1d770f647c72b0b342"
+    },
+    {
+      "path": "crates/m3/src/controls/tests.rs",
+      "bytes": 18152,
+      "sha256": "16ab9de383f55c062218193a78e7622eb282839509f04560402509194534189e"
+    },
+    {
+      "path": "crates/m3/src/focus.rs",
+      "bytes": 5002,
+      "sha256": "328131bca882b238b0ef71b8481b86924846d738febd0d9afaa3bba4588834e3"
+    },
+    {
+      "path": "crates/m3/src/forms.rs",
+      "bytes": 613,
+      "sha256": "117b7e2200ea3b2dffbc6b404c91afcd9b28844749576ba1813ab683a17823e6"
+    },
+    {
+      "path": "crates/m3/src/icons.rs",
+      "bytes": 667,
+      "sha256": "a691c16edcbb157db7f61cb0c996a866d4b3d0c247e88199e8fc70d93e64bfcc"
+    },
+    {
+      "path": "crates/m3/src/interaction.rs",
+      "bytes": 4745,
+      "sha256": "4c9327fb131d69dcf3f4dd4a3c7d5704f841987bf2a14b1c08752ae8faac36a8"
+    },
+    {
+      "path": "crates/m3/src/keyboard.rs",
+      "bytes": 6588,
+      "sha256": "bd394d9bb2ef1f9c59204a7367703976f02db8d90a80e76b2af7da242689a9bc"
+    },
+    {
+      "path": "crates/m3/src/layout.rs",
+      "bytes": 11483,
+      "sha256": "785e3566b1861e618b64d7d5eaebecd0b4b63c7eef92151603eb4b9a741be8ef"
+    },
+    {
+      "path": "crates/m3/src/lib.rs",
+      "bytes": 2920,
+      "sha256": "19dba3faabde49191bd80c48530fb27636d97ec1ef06ea1a9a011cb2f2f65b05"
+    },
+    {
+      "path": "crates/m3/src/motion.rs",
+      "bytes": 742,
+      "sha256": "691aa4e782dbefc3b24e004813aa493f0c5cdbca2e4362623e0448e9f70455be"
+    },
+    {
+      "path": "crates/m3/src/paint.rs",
+      "bytes": 10176,
+      "sha256": "457e70cdea6f653d0f509615021ed5c65ca1a84db4621fcb62ba355f2dd7940a"
+    },
+    {
+      "path": "crates/m3/src/theme.rs",
+      "bytes": 4084,
+      "sha256": "0e63bf2f4392dc7bb615f5a98885c8f4ba0246cd3dce4e680fca3441d986c020"
+    },
+    {
+      "path": "crates/m3/src/visual.rs",
+      "bytes": 10550,
+      "sha256": "1031bc776a595396b1ffeeeceed55804bf4588ba94fdea6b60f8eaf140e80ab6"
+    }
+  ],
+  "graph": {
+    "packages": 217,
+    "tokens": [
+      {
+        "name": "aphrody-m3-tokens",
+        "version": "1.4.4",
+        "source": "crates/m3-tokens"
+      }
+    ]
+  },
+  "gates": [
+    {
+      "command": "check --locked --offline -p aphrody-m3 -p libm3 --lib --target x86_64-pc-windows-msvc",
+      "exitCode": 0,
+      "seconds": 4.68,
+      "normalizedSource": true
+    },
+    {
+      "command": "check --locked --offline -p libm3 --lib --no-default-features --target x86_64-pc-windows-msvc",
+      "exitCode": 0,
+      "seconds": 0.47
+    },
+    {
+      "command": "check --locked --offline -p aphrody-m3 --lib --no-default-features --target x86_64-pc-windows-msvc",
+      "exitCode": 0,
+      "seconds": 1.74,
+      "normalizedSource": true
+    },
+    {
+      "command": "check --locked --offline -p libm3 --lib --features cosmic --target x86_64-pc-windows-msvc",
+      "exitCode": 0,
+      "seconds": 0.88,
+      "normalizedSource": true
+    },
+    {
+      "command": "check --locked --offline -p aphrody-m3 --lib --no-default-features --features wasm --target wasm32-unknown-unknown",
+      "exitCode": 0,
+      "seconds": 4.62,
+      "normalizedSource": true
+    },
+    {
+      "command": "bun check --noEmit --lib ESNext,DOM packages/libm3/src/wasm.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "bun lint --deny-warnings packages/libm3/src",
+      "exitCode": 0
+    },
+    {
+      "command": "bun fmt --check packages/libm3/src",
+      "exitCode": 0
+    }
+  ],
+  "qualification": {
+    "compiled": true,
+    "testsRun": false,
+    "guiDisplay": false,
+    "consumerRootMigration": false
+  },
+  "publishedWasm": {
+    "sourceRevision": "ce47e50324ce4053c4fcd08be59db55254e231f7",
+    "abi": 2,
+    "bytes": 113528,
+    "sha256": "c1abee38ea03c33b8150c14ef987906759182a6fd693c636b960922962c69ed8",
+    "url": "https://assets.aphrody.app/objects/sha256/c1abee38ea03c33b8150c14ef987906759182a6fd693c636b960922962c69ed8",
+    "publicChecksumVerified": true
+  },
+  "limits": [
+    "Published WASM predates the component-facade consolidation; it remains an exact ce47e503 artifact.",
+    "Original Aphrody consumer sources remain until consumer-root acquisition, lock and build qualification.",
+    "No crates.io publication or complete desktop/display qualification."
+  ]
+}

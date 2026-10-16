@@ -1,0 +1,103 @@
+# Aphrody stack manifest: every layer of the unified native runtime plan (aphrody/PLAN.md), what
+# provides it today, and which curated ecosystem choices (templates/AWESOME.md, filtered for the
+# Rust-based Bun) can replace the built-in one. `yolo create` and test/stack.test.ts read it.
+
+[meta]
+name = "aphrody-stack"
+bun = "1.4.2"            # the Rust-based Bun (vendor/bun, rewrite merged 2026-05-14)
+typescript = "7.0.2"
+oxlint = "1.86.0"
+oxfmt = "0.71.0"
+types_bun = "1.4.2"
+tauri = "3.0.0-alpha"    # aphrody-tauri* crates (crates/, vendored from the forks)
+runtime_abi = "1.3"
+
+# --- layers ------------------------------------------------------------------------------------
+
+[layer.host]
+plan = "R1"
+provider = "Bun fork (vendor/bun)"
+status = "implemented via the SDK preload; no Bun fork change"
+paths = ["vendor/bun", "packages/runtime/src/preload.ts"]
+
+[layer.runtime]
+plan = "R0"
+provider = "crates/yolo-runtime (C ABI, precompiled)"
+status = "implemented, one target built locally"
+paths = ["crates/yolo-runtime", "docs/RUNTIME-ABI.md"]
+
+[layer.sdk]
+plan = "R0"
+provider = "packages/runtime (@aphrody/runtime-sdk, bun:ffi)"
+status = "implemented"
+paths = ["packages/runtime/src/index.ts", "packages/runtime/src/modules.ts"]
+
+[layer.server]
+plan = "-"
+provider = "Bun.serve routes + bun:sqlite + SSE (built-in)"
+status = "template"
+template = "base"
+bun_apis = ["Bun.serve", "Database"]
+alternatives = ["elysia", "hono"]
+
+[layer.web]
+plan = "-"
+provider = "Bun HTML bundles (Bun.serve routes)"
+status = "template"
+template = "web"
+bun_apis = ["HTMLBundle"]
+alternatives = ["react"]
+
+[layer.desktop]
+plan = "R3"
+provider = "Tauri 3 alpha through crates/aphrody-tauri*"
+status = "template (checked by cargo check); runtime:desktop still reserved"
+template = "desktop"
+paths = ["crates/aphrody-tauri", "crates/yolo-desktop"]
+
+[layer.headless]
+plan = "R4"
+provider = "Obscura (vendor/obscura) in a headless runtime variant"
+status = "decided, not started; runtime:browser reserved"
+
+[layer.tooling]
+plan = "-"
+provider = "oxlint, oxfmt, TypeScript 7, bun test"
+status = "template"
+
+# --- templates ---------------------------------------------------------------------------------
+
+[template.base]
+path = "templates/base"
+description = "Bun server, runtime SDK, SQLite, SSE, supervised dev loop, tests"
+required = true
+
+[template.web]
+path = "templates/web"
+description = "Bun HTML-bundle frontend served by the same server"
+exclusive = "frontend"
+
+[template.react]
+path = "templates/react"
+description = "React 19 + Material 3 web components on Bun's HTML bundler (replaces web)"
+exclusive = "frontend"
+dependencies = { "@aphrody/material-web" = "3.3.3", "@lit/react" = "1.0.8", lit = "3.3.3", react = "19.3.0", react-dom = "19.3.0" }
+dev_dependencies = { "@types/react" = "19.3.0", "@types/react-dom" = "19.3.0" }
+
+[template.desktop]
+path = "templates/desktop"
+description = "Tauri 3 shell on the aphrody-tauri crates"
+
+[template.hono]
+path = "templates/hono"
+description = "Hono variant of the HTTP surface"
+exclusive = "framework"
+dependencies = { hono = "4.13.12" }
+curated = "honojs/hono"
+
+[template.elysia]
+path = "templates/elysia"
+description = "Elysia variant of the HTTP surface"
+exclusive = "framework"
+dependencies = { elysia = "1.4.30" }
+curated = "elysiajs/elysia"

@@ -1,0 +1,57 @@
+{
+  "name": "@aphrody/m3-baseui",
+  "version": "1.4.5",
+  "description": "Base UI (aphrody-labs fork, packages/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-baseui"
+  },
+  "files": [
+    "src",
+    "css",
+    "m3-baseui.css"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./m3-baseui.css": "./m3-baseui.css",
+    "./css/*.css": "./css/*.css",
+    "./*": "./src/*.tsx",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "bun test ./test/",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "lint": "bun lint src test"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "peerDependencies": {
+    "@aphrody/m3-tokens": "workspace:*",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "name": "@aphrody/m3-icons",
+  "version": "1.4.5",
+  "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-icons"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "bun": "./src/browser.tsx",
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    },
+    "./browser/lit": {
+      "bun": "./src/browser-lit.ts",
+      "types": "./dist/browser-lit.d.ts",
+      "default": "./dist/browser-lit.js"
+    },
+    "./plugin": {
+      "bun": "./src/plugin.ts",
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./codegen": {
+      "bun": "./src/codegen.ts",
+      "types": "./dist/codegen.d.ts",
+      "default": "./dist/codegen.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "test": "APHRODY_FFI_DEV=1 bun test"
+  },
+  "dependencies": {
+    "@aphrody/bun": "^3.3.0"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
+    "lit": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "peerDependencies": {
+    "lit": ">=3.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "lit": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

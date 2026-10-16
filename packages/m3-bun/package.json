@@ -1,0 +1,174 @@
+{
+  "name": "@aphrody/m3-bun",
+  "version": "1.4.5",
+  "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
+  "keywords": [
+    "bun",
+    "compile",
+    "deploy",
+    "material-3"
+  ],
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "directory": "packages/m3-bun"
+  },
+  "bin": {
+    "m3-bun": "./bin/m3-bun.ts"
+  },
+  "files": [
+    "src",
+    "bin",
+    "client.d.ts"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./plugin": "./src/plugin.ts",
+    "./server": "./src/server.ts",
+    "./api": "./src/api.ts",
+    "./config": "./src/config.ts",
+    "./targets": "./src/targets/index.ts",
+    "./graph": "./src/graph.ts",
+    "./runtime": "./src/runtime.ts",
+    "./plugins": "./src/plugins.ts",
+    "./plugins-m3": "./src/plugins-m3.ts",
+    "./db": "./src/server-db.ts",
+    "./auth": "./src/server-auth.ts",
+    "./secrets": "./src/server-secrets.ts",
+    "./cache": "./src/server-cache.ts",
+    "./mcp": "./src/server-mcp.ts",
+    "./realtime": "./src/server-realtime.ts",
+    "./markdown": "./src/server-markdown.ts",
+    "./ag-ui": "./src/server-agui.ts",
+    "./next": "./src/server-next.ts",
+    "./m3-routes": "./src/server-m3.ts",
+    "./dev-inspect": "./src/dev-inspect.ts",
+    "./dev-error": "./src/dev-error.ts",
+    "./theme-css": "./src/theme-css.ts",
+    "./tools": "./src/tools-load.ts",
+    "./package.json": "./package.json",
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "bun check -p tsconfig.json --noEmit --customConditions bun",
+    "test": "bun test",
+    "m3-bun": "bun bin/m3-bun.ts"
+  },
+  "dependencies": {
+    "@aphrody/assets": "workspace:*",
+    "@aphrody/eslint-plugin-m3": "workspace:*",
+    "@aphrody/identity": "workspace:*",
+    "@aphrody/m3": "workspace:*",
+    "@aphrody/m3-codemods": "workspace:*",
+    "@aphrody/m3-config": "workspace:*",
+    "@aphrody/m3-design": "workspace:*",
+    "@aphrody/m3-fonts": "workspace:*",
+    "@aphrody/m3-icons": "workspace:*",
+    "@aphrody/m3-os-themes": "workspace:*",
+    "@aphrody/m3-theme": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/material-design-icons": "workspace:*",
+    "@aphrody/scaffold": "workspace:*",
+    "@aphrody/web-source": "workspace:*",
+    "@aphrody/web-to-tauri": "workspace:*"
+  },
+  "devDependencies": {
+    "@aphrody/bun-debug-adapter-protocol": "0.0.1-aphrody.1",
+    "@aphrody/bun-inspector-protocol": "0.0.2-aphrody.1",
+    "@aphrody/bun-mdx-rs": "1.4.3-aphrody.1",
+    "@aphrody/bun-plugin-n2b": "0.7.0",
+    "@aphrody/bun-plugin-oxc": "0.2.0",
+    "@aphrody/bun-plugin-svelte": "0.0.6-aphrody.3",
+    "@aphrody/bun-plugin-yaml": "0.0.1-aphrody.3",
+    "@aphrody/bun-webview-page": "0.1.1-aphrody.3",
+    "@aphrody/canvas": "workspace:*",
+    "@aphrody/m3-ai": "workspace:*",
+    "@aphrody/m3-mcp": "workspace:*",
+    "@aphrody/m3-next": "workspace:*",
+    "@aphrody/m3-next-migrate": "workspace:*",
+    "@aphrody/next-bun": "0.2.0-aphrody.2",
+    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1",
+    "oxlint": "1.87.0"
+  },
+  "peerDependencies": {
+    "@aphrody/bun-debug-adapter-protocol": "0.0.1-aphrody.1",
+    "@aphrody/bun-inspector-protocol": "0.0.2-aphrody.1",
+    "@aphrody/bun-mdx-rs": "1.4.3-aphrody.1",
+    "@aphrody/bun-plugin-n2b": "0.7.0",
+    "@aphrody/bun-plugin-oxc": "0.2.0",
+    "@aphrody/bun-plugin-svelte": "0.0.6-aphrody.3",
+    "@aphrody/bun-plugin-yaml": "0.0.1-aphrody.3",
+    "@aphrody/bun-webview-page": "0.1.1-aphrody.3",
+    "@aphrody/canvas": "*",
+    "@aphrody/m3-ai": "*",
+    "@aphrody/m3-mcp": "*",
+    "@aphrody/m3-next": "*",
+    "@aphrody/m3-next-migrate": "*",
+    "@aphrody/next-bun": "0.2.0-aphrody.2",
+    "@aphrody/web-inspector-bun": "1.4.3-aphrody.1",
+    "oxlint": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@aphrody/bun-debug-adapter-protocol": {
+      "optional": true
+    },
+    "@aphrody/bun-inspector-protocol": {
+      "optional": true
+    },
+    "@aphrody/bun-mdx-rs": {
+      "optional": true
+    },
+    "@aphrody/bun-plugin-n2b": {
+      "optional": true
+    },
+    "@aphrody/bun-plugin-oxc": {
+      "optional": true
+    },
+    "@aphrody/bun-plugin-svelte": {
+      "optional": true
+    },
+    "@aphrody/bun-plugin-yaml": {
+      "optional": true
+    },
+    "@aphrody/bun-webview-page": {
+      "optional": true
+    },
+    "@aphrody/canvas": {
+      "optional": true
+    },
+    "@aphrody/m3-ai": {
+      "optional": true
+    },
+    "@aphrody/m3-mcp": {
+      "optional": true
+    },
+    "@aphrody/m3-next": {
+      "optional": true
+    },
+    "@aphrody/m3-next-migrate": {
+      "optional": true
+    },
+    "@aphrody/next-bun": {
+      "optional": true
+    },
+    "@aphrody/web-inspector-bun": {
+      "optional": true
+    },
+    "oxlint": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

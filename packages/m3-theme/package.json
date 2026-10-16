@@ -1,0 +1,87 @@
+{
+  "name": "@aphrody/m3-theme",
+  "version": "1.4.5",
+  "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
+  "keywords": [
+    "design-tokens",
+    "material-3",
+    "md3",
+    "shadcn",
+    "spaceui",
+    "tailwind"
+  ],
+  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-theme#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-code/material-web/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-code/material-web.git",
+    "directory": "packages/m3-theme"
+  },
+  "files": [
+    "dist",
+    "tokens.css",
+    "tailwind.css",
+    "spaceui.css",
+    "src"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "import": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "bun": "./src/react.tsx",
+      "import": "./src/react.tsx",
+      "types": "./src/react.tsx",
+      "default": "./dist/react.js"
+    },
+    "./tauri": {
+      "bun": "./src/tauri.tsx",
+      "import": "./src/tauri.tsx",
+      "types": "./src/tauri.tsx",
+      "default": "./dist/tauri.js"
+    },
+    "./tokens.css": "./tokens.css",
+    "./tailwind.css": "./tailwind.css",
+    "./spaceui.css": "./spaceui.css"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate": "bun run generate.ts && bun fmt tokens.css tailwind.css spaceui.css",
+    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "lint": "bun lint",
+    "fmt": "bun fmt .",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
+    "generate:fusion": "bun run generate",
+    "test": "APHRODY_FFI_DEV=1 bun test",
+    "fixture:mcu": "bun run scripts/mcu-fixture.ts",
+    "fixture:mcu-fidelity": "bun run scripts/mcu-fidelity-fixture.ts"
+  },
+  "dependencies": {
+    "@aphrody/m3-tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "@aphrody/bun": "^3.3.0",
+    "@aphrody/m3-config": "workspace:*",
+    "@material/material-color-utilities": "catalog:"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}
