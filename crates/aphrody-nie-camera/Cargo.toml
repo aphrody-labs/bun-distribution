@@ -29,8 +29,8 @@ aphrody-nie-data = { workspace = true, features = ["std"] }
 aphrody-nie-trace = { workspace = true, optional = true, default-features = true }
 aphrody-nie-index = { workspace = true, optional = true, default-features = true }
 sha2 = { version = "0.10", optional = true }
-thiserror = { version = "2" }
-anyhow = { version = "1", optional = true }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+thiserror = { workspace = true }
+anyhow = { workspace = true, optional = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }

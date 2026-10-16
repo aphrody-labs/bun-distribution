@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# Bun OS multicall utilities (crates/bunos-utils). The /usr factory stages the crate as a
+# standalone Cargo package in ./src-tree with its vendored uutils path dependencies.
+pkgname=bunos-utils
+pkgver=1.4.4
+pkgrel=1
+pkgdesc="Bun OS multicall coreutils, findutils, diffutils, procps and binutils applets"
+arch=(x86_64)
+url="https://github.com/aphrody-labs/bun-distribution"
+license=(MIT)
+depends=(glibc gcc-libs)
+makedepends=(rust)
+options=(!lto !debug)
+
+build() {
+  cd "$startdir/src-tree/$(cat "$startdir/src-tree/crate")"
+  CARGO_TARGET_DIR="$srcdir/target" cargo build --release --target x86_64-unknown-linux-gnu \
+    --features "$(cat "$startdir/src-tree/features")"
+}
+
+package() {
+  install -Dm755 "$srcdir/target/x86_64-unknown-linux-gnu/release/bunos-utils" "$pkgdir/usr/bin/bunos-utils"
+}

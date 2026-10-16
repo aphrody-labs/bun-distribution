@@ -14,10 +14,10 @@ workspace = true
 [dependencies]
 aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
 aphrody-nie-formats = { workspace = true, default-features = false, features = ["std", "textures"] }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
-thiserror = { version = "2" }
-image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+image = { workspace = true, features = ["png", "jpeg", "webp"] }
 clap = { workspace = true, features = ["derive"], optional = true }
 
 [dev-dependencies]

@@ -24,9 +24,9 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-similar   = { workspace = true, features = ["default"] }
-thiserror = { workspace = true, features = ["default"] }
+similar   = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-pretty_assertions = { workspace = true, features = ["default"] }
+pretty_assertions = { workspace = true }
 tempfile          = { workspace = true }

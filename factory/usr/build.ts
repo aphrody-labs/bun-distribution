@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
-// `bun factory usr plan|build|fetch [--composition server|cosmic|gaming] [--verity] [--host HOST] [--job ID]`
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+// `bun factory usr plan|build|fetch [--composition server|cosmic|gaming] [--snapshot YYYY-MM-DD | --lock FILE]
+//   [--verity] [--no-boot] [--host HOST] [--job ID]`
+import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { Glob } from "bun";
 
 const here = import.meta.dir;
 const workspace = resolve(here, "../..");
@@ -32,16 +34,94 @@ interface UsrManifest {
     required: string[];
   };
   overlay: string;
+  localRepository: { name: string; packages: string; sourceDateEpoch: number };
+  bunos: {
+    manifest: string;
+    pkgbuilds: string;
+    unpublished?: Record<string, string>;
+  };
+  multicall: { crate: string; features: string[] };
+  archive: { server: string; repositories: string[] };
+  lockDirectory: string;
+  boot: { definitions: string; timeoutSeconds: number };
   images: { erofsCompression: string; squashfsCompression: string };
 }
 
 const sshOptions = ["-o", "ConnectTimeout=15", "-o", "BatchMode=yes"];
 
-export async function planUsr(composition: UsrComposition) {
+export interface UsrLockPackage {
+  repository: string;
+  name: string;
+  version: string;
+  file: string;
+  url: string;
+  sha256: string;
+  bytes: number;
+}
+export interface UsrLock {
+  schemaVersion: 1;
+  kind: "bun-os-usr-lock";
+  composition: UsrComposition;
+  snapshot: string | null;
+  builderImage: string;
+  job: string;
+  packages: UsrLockPackage[];
+}
+
+/** Standalone copy of the multicall crate: workspace-inherited keys resolved from the root Cargo.toml. */
+export async function stageMulticall(manifest: UsrManifest, dir: string) {
+  const crate = join(workspace, manifest.multicall.crate);
+  const root = Bun.TOML.parse(await Bun.file(join(workspace, "Cargo.toml")).text()) as {
+    workspace: {
+      package: Record<string, unknown>;
+      dependencies: Record<string, unknown>;
+    };
+  };
+  const toml = (await Bun.file(join(crate, "Cargo.toml")).text())
+    .replace(
+      /^([\w-]+)\.workspace = true$/gm,
+      (_, key: string) => `${key} = ${JSON.stringify(root.workspace.package[key])}`,
+    )
+    .replace(/^([\w-]+) = \{ workspace = true(.*)\}$/gm, (_, name: string, rest: string) => {
+      const dep = root.workspace.dependencies[name];
+      const base = typeof dep === "string" ? { version: dep } : (dep as Record<string, unknown>);
+      const fields = Object.entries(base)
+        .filter(([key]) => key !== "features")
+        .map(([key, value]) => `${JSON.stringify(key)} = ${JSON.stringify(value)}`);
+      const features = [
+        ...((base.features as string[] | undefined) ?? []),
+        ...[...rest.matchAll(/"([^"]+)"/g)].map(m => m[1]!),
+      ];
+      const optional = rest.includes("optional = true") ? ", optional = true" : "";
+      return `${name} = { ${fields.join(", ")}, features = ${JSON.stringify(features)}${optional} }`;
+    })
+    .replace(/^rust-version = .*\n/m, "")
+    .replace(/\n\[lints\]\nworkspace = true\n?/, "\n");
+  // Same relative layout as the checkout so `path = "../../vendor/..."` dependencies resolve.
+  const out = join(dir, manifest.multicall.crate);
+  await cp(join(crate, "src"), join(out, "src"), { recursive: true });
+  await Bun.write(join(out, "Cargo.toml"), `${toml}\n[workspace]\n`);
+  await Bun.write(join(out, "Cargo.lock"), Bun.file(join(workspace, "Cargo.lock")));
+  await Bun.write(join(dir, "features"), manifest.multicall.features.join(","));
+  await Bun.write(join(dir, "crate"), manifest.multicall.crate);
+  const vendored = new Set([...toml.matchAll(/path = "\.\.\/\.\.\/(vendor\/[^/"]+\/[^/"]+)/g)].map(m => m[1]!));
+  for (const tree of vendored)
+    await cp(join(workspace, tree), join(dir, tree), {
+      recursive: true,
+      filter: source => !/[/\\](\.git|target)$/.test(source),
+    });
+}
+
+export async function planUsr(composition: UsrComposition, snapshot?: string) {
+  if (snapshot && !/^\d{4}-\d{2}-\d{2}$/.test(snapshot)) throw new Error("Expected --snapshot YYYY-MM-DD");
   const manifest: UsrManifest = await Bun.file(join(here, "manifest.json")).json();
   const profile = await Bun.file(join(workspace, "factory/profile.json")).json();
   const selected = manifest.compositions[composition];
   if (!selected) throw new Error(`Unknown usr composition: ${composition}`);
+  const components = await Bun.file(join(workspace, manifest.bunos.manifest)).json();
+  const bunosComposition: string[] = (components.compositionPackages?.[composition] ?? []).filter(
+    (name: string) => !manifest.bunos.unpublished?.[name],
+  );
   const chain: string[] = [];
   for (let id: string | undefined = selected.profile; id; id = profile.compositions[id]?.extends) chain.unshift(id);
   const packages = [
@@ -49,8 +129,13 @@ export async function planUsr(composition: UsrComposition) {
       ...manifest.basePackages,
       ...chain.flatMap(id => profile.compositions[id].packages as string[]),
       ...selected.packages,
+      ...bunosComposition,
     ]),
   ];
+  const ownPackages = [...new Glob("*/PKGBUILD").scanSync(join(workspace, manifest.localRepository.packages))].map(
+    path => path.split(/[/\\]/)[0]!,
+  );
+  const localPackages = [...new Set([...ownPackages, ...bunosComposition])];
   const pacmanConf = [
     "[options]",
     "HoldPkg = pacman glibc",
@@ -59,9 +144,17 @@ export async function planUsr(composition: UsrComposition) {
     "SigLevel = Required DatabaseOptional",
     "LocalFileSigLevel = Optional",
     "",
-    ...manifest.repositories.flatMap(repo => [`[${repo.name}]`, `Server = ${repo.server}`, ""]),
+    `[${manifest.localRepository.name}]`,
+    "SigLevel = Optional TrustAll",
+    `Server = file:///job/repo`,
+    "",
+    ...manifest.repositories.flatMap(repo => {
+      const archived = snapshot && manifest.archive.repositories.includes(repo.name);
+      const server = archived ? manifest.archive.server.replace("{date}", snapshot.replaceAll("-", "/")) : repo.server;
+      return [`[${repo.name}]`, `Server = ${server}`, ""];
+    }),
   ].join("\n");
-  return { manifest, composition, packages, pacmanConf };
+  return { manifest, composition, packages, localPackages, pacmanConf };
 }
 
 function pairs(map: Record<string, string>) {
@@ -70,8 +163,12 @@ function pairs(map: Record<string, string>) {
     .join(" ");
 }
 
-async function run(argv: string[], timeoutMs: number) {
-  const proc = Bun.spawn(argv, { stdio: ["ignore", "inherit", "inherit"], timeout: timeoutMs });
+async function run(argv: string[], timeoutMs: number, _quiet = false, cwd?: string) {
+  const proc = Bun.spawn(argv, {
+    cwd,
+    stdio: ["ignore", "inherit", "inherit"],
+    timeout: timeoutMs,
+  });
   const code = await proc.exited;
   if (code !== 0) throw new Error(`${argv[0]} exited with ${code}`);
 }
@@ -109,8 +206,54 @@ async function fetchArtifacts(manifest: UsrManifest, host: string, composition: 
   return local;
 }
 
-async function build(composition: UsrComposition, host: string, verity: boolean) {
-  const { manifest, packages, pacmanConf } = await planUsr(composition);
+interface BuildOptions {
+  verity: boolean;
+  boot: boolean;
+  snapshot?: string;
+  lock?: UsrLock;
+}
+
+async function writeLock(
+  manifest: UsrManifest,
+  composition: UsrComposition,
+  job: string,
+  local: string,
+  snapshot?: string,
+) {
+  const rows = (await Bun.file(join(local, "lock.tsv")).text()).trim().split("\n");
+  const packages = rows.map(row => {
+    const [repository, name, version, file, url, sha256, bytes] = row.split("\t") as string[];
+    return {
+      repository,
+      name,
+      version,
+      file,
+      url,
+      sha256,
+      bytes: Number(bytes),
+    } as UsrLockPackage;
+  });
+  const lock: UsrLock = {
+    schemaVersion: 1,
+    kind: "bun-os-usr-lock",
+    composition,
+    snapshot: snapshot ?? null,
+    builderImage: manifest.builderImage,
+    job,
+    packages,
+  };
+  const path = join(workspace, manifest.lockDirectory, `${composition}.json`);
+  await Bun.write(
+    path,
+    `${JSON.stringify(lock, null, 2)}
+`,
+  );
+  return path;
+}
+
+async function build(composition: UsrComposition, host: string, options: BuildOptions) {
+  const snapshot = options.lock ? (options.lock.snapshot ?? undefined) : options.snapshot;
+  const { manifest, packages, localPackages, pacmanConf } = await planUsr(composition, snapshot);
   const job = `${composition}-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
   const remote = `${manifest.remoteRoot}/${job}`;
   const stage = await mkdtemp(join(tmpdir(), "bun-os-usr-"));
@@ -128,7 +271,12 @@ async function build(composition: UsrComposition, host: string, verity: boolean)
       REQUIRED: manifest.hierarchy.required.join(" "),
       EROFS_COMPRESSION: manifest.images.erofsCompression,
       SQUASHFS_COMPRESSION: manifest.images.squashfsCompression,
-      VERITY: verity ? "1" : "0",
+      VERITY: options.verity ? "1" : "0",
+      BOOT: options.boot ? "1" : "0",
+      BOOT_TIMEOUT: String(manifest.boot.timeoutSeconds),
+      SOURCE_DATE_EPOCH: String(manifest.localRepository.sourceDateEpoch),
+      JOB: job,
+      BUNOS_PACKAGES: localPackages.join(" "),
     };
     await Bun.write(
       join(stage, "env"),
@@ -139,28 +287,58 @@ async function build(composition: UsrComposition, host: string, verity: boolean)
     await Bun.write(join(stage, "pacman.conf"), pacmanConf);
     await Bun.write(join(stage, "packages.txt"), packages.join("\n") + "\n");
     await Bun.write(join(stage, "builder.sh"), Bun.file(join(here, "builder.sh")));
+    const uploads = ["env", "pacman.conf", "packages.txt", "builder.sh"];
+    if (localPackages.includes("bunos-utils")) {
+      await stageMulticall(manifest, join(stage, "bunos-utils-src"));
+      uploads.push("bunos-utils-src");
+    }
+    if (options.lock) {
+      if (options.lock.composition !== composition) throw new Error("Lock composition differs");
+      const rows = options.lock.packages.map(p =>
+        [p.repository, p.name, p.version, p.file, p.url, p.sha256, p.bytes].join("\t"),
+      );
+      await Bun.write(join(stage, "lock.tsv"), rows.join("\n") + "\n");
+      uploads.push("lock.tsv");
+    }
     await run(["ssh", ...sshOptions, host, `mkdir -p ${remote}`], 30_000);
-    await run(
-      [
-        "scp",
-        ...sshOptions,
-        "-r",
-        ...["env", "pacman.conf", "packages.txt", "builder.sh"].map(f => join(stage, f)),
-        resolve(workspace, manifest.overlay),
-        `${host}:${remote}/`,
-      ],
-      120_000,
-    );
+    // One tarball: thousands of vendored files make a recursive scp crawl.
+    for (const dir of [
+      manifest.overlay,
+      manifest.localRepository.packages,
+      manifest.boot.definitions,
+      manifest.bunos.pkgbuilds,
+    ])
+      await cp(resolve(workspace, dir), join(stage, dir.split("/").pop()!), {
+        recursive: true,
+      });
+    await run(["tar", "-czf", "../job.tgz", "."], 300_000, false, stage);
+    await run(["scp", ...sshOptions, join(stage, "../job.tgz"), `${host}:${remote}/job.tgz`], 900_000);
+    await rm(join(stage, "../job.tgz"), { force: true });
+    await run(["ssh", ...sshOptions, host, `cd ${remote} && tar -xzf job.tgz && rm job.tgz`], 120_000);
     const seconds = manifest.remoteTimeoutSeconds;
     const script = [
-      `set -e; cd ${remote}`,
-      `timeout ${seconds} docker run --rm --privileged --name bun-os-usr-${job} -v ${remote}:/job ${manifest.builderImage} bash /job/builder.sh > build.log 2>&1 || { tail -40 build.log; exit 1; }`,
-      "rm -rf overlay",
+      `set -e; mkdir -p ${manifest.remoteRoot}/pkgcache; cd ${remote}`,
+      "mv pkgbuilds bunos-pkgs",
+      `timeout ${seconds} docker run --rm --privileged --name bun-os-usr-${job} -v ${remote}:/job -v ${manifest.remoteRoot}/pkgcache:/pkgcache ${manifest.builderImage} bash /job/builder.sh > build.log 2>&1 || { tail -40 build.log; exit 1; }`,
+      "rm -rf overlay pkgs boot bunos-pkgs",
       "tail -12 build.log",
     ].join("; ");
     await run(["ssh", ...sshOptions, host, script], (seconds + 120) * 1000);
     const local = await fetchArtifacts(manifest, host, composition, job);
-    return { job, host, remote, local, packages };
+    const lock = await writeLock(manifest, composition, job, local, snapshot);
+    await run(
+      [
+        "ssh",
+        ...sshOptions,
+        host,
+        `timeout 120 docker run --rm -v ${manifest.remoteRoot}:/w ${manifest.builderImage} rm -rf /w/${job}`,
+      ],
+      150_000,
+    );
+    const boot = (await Bun.file(join(local, "boot-result.txt")).exists())
+      ? (await Bun.file(join(local, "boot-result.txt")).text()).trim()
+      : "skipped";
+    return { job, host, local, lock, boot, packages };
   } finally {
     await rm(stage, { recursive: true, force: true });
   }
@@ -175,19 +353,36 @@ export async function main(args: string[]) {
       host: { type: "string" },
       job: { type: "string" },
       verity: { type: "boolean", default: false },
+      "no-boot": { type: "boolean", default: false },
+      snapshot: { type: "string" },
+      lock: { type: "string" },
     },
   });
   const composition = values.composition as UsrComposition;
   if (!["server", "cosmic", "gaming"].includes(composition))
     throw new Error("Expected --composition server|cosmic|gaming");
   const action = positionals[0] ?? "plan";
-  const plan = await planUsr(composition);
+  const plan = await planUsr(composition, values.snapshot);
   const host = values.host ?? plan.manifest.host;
-  if (action === "plan") return { composition, host, packages: plan.packages, pacmanConf: plan.pacmanConf };
-  if (action === "build") return build(composition, host, values.verity!);
+  if (action === "plan")
+    return {
+      composition,
+      host,
+      packages: plan.packages,
+      pacmanConf: plan.pacmanConf,
+    };
+  if (action === "build")
+    return build(composition, host, {
+      verity: values.verity!,
+      boot: !values["no-boot"],
+      snapshot: values.snapshot,
+      lock: values.lock ? await Bun.file(resolve(values.lock)).json() : undefined,
+    });
   if (action === "fetch") {
     if (!values.job) throw new Error("Missing --job");
-    return { local: await fetchArtifacts(plan.manifest, host, composition, values.job) };
+    return {
+      local: await fetchArtifacts(plan.manifest, host, composition, values.job),
+    };
   }
   throw new Error("Expected usr plan|build|fetch");
 }

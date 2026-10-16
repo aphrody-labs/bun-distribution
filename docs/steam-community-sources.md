@@ -5,25 +5,30 @@ licenses intact). They are reference and porting sources for `crates/re/src/stea
 `packages/re/src/steam` (Bun). They are not built by the workspace and not linked into any binary,
 so copyleft licenses stay confined to the checkout of the submodule itself.
 
-| Path | Upstream | License | Role in Bun OS |
-| --- | --- | --- | --- |
-| `vendor/steam/steamkit` | SteamRE/SteamKit | LGPL-2.1 | Reference Steam network protocol (CM, auth, CDN, depot) behind `steamroom` |
-| `vendor/steam/depotdownloader` | SteamRE/DepotDownloader | GPL-2.0 | Reference depot downloader; behavior parity for `bunre-steam` |
-| `vendor/steam/protobufs` | SteamTracking/Protobufs | Unlicense | Canonical Steam protobuf definitions, field numbers for `manifest.ts` and appinfo |
-| `vendor/steam/valvekeyvalue` | ValveResourceFormat/ValveKeyValue | MIT | Reference text/binary KeyValues semantics for `kv.ts` |
-| `vendor/steam/steamappinfo` | xPaw/SteamAppInfo | MIT | Reference `appinfo.vdf` / `packageinfo.vdf` parser for `appinfo.ts` |
-| `vendor/steam/steamwebapidocumentation` | xPaw/SteamWebAPIDocumentation | MIT | Generated Web API interface list, cross-check for `webapi.ts` |
-| `vendor/steam/internalsteamwebapi` | Revadike/InternalSteamWebAPI | MIT | Unofficial and internal Web API endpoints for `api_endpoint` |
-| `vendor/steam/python-steam` | ValvePython/steam | MIT | Reference client, CM, WebAuth and VDF |
-| `vendor/steam/steamctl` | ValvePython/steamctl | MIT | Reference CLI: depot, workshop, cloud, authenticator |
-| `vendor/steam/node-steam-user` | DoctorMcKay/node-steam-user | MIT | Reference Steam client protocol for JavaScript |
-| `vendor/steam/steamworks-js` | ceifa/steamworks.js | MIT | Reference Steamworks bindings from JavaScript |
-| `vendor/steam/facepunch-steamworks` | Facepunch/Facepunch.Steamworks | MIT | Reference Steamworks API surface (C#) |
-| `vendor/steam/steamworks-net` | rlabrecque/Steamworks.NET | MIT | Reference Steamworks API surface (C#) |
-| `vendor/steam/steamlocate-rs` | CosmicHorrorDev/steamlocate-rs | MIT | Reference Steam install and library discovery in Rust |
-| `vendor/steam/archisteamfarm` | JustArchiNET/ArchiSteamFarm | Apache-2.0 | Reference account, inventory, trading and plugin model |
-| `vendor/steam/steamachievementmanager` | gibbed/SteamAchievementManager | Zlib | Reference achievements and stats schema handling |
-| `vendor/steam/steamtools` | BeyondDimension/SteamTools | GPL-3.0 | Reference toolbox features; read for behavior only |
+| Path                                    | Upstream                          | License    | Role in Bun OS                                                                    |
+| --------------------------------------- | --------------------------------- | ---------- | --------------------------------------------------------------------------------- |
+| `vendor/steam/steamkit`                 | SteamRE/SteamKit                  | LGPL-2.1   | Reference Steam network protocol (CM, auth, CDN, depot) behind `steamroom`        |
+| `vendor/steam/depotdownloader`          | SteamRE/DepotDownloader           | GPL-2.0    | Reference depot downloader; behavior parity for `bunre-steam`                     |
+| `vendor/steam/protobufs`                | SteamTracking/Protobufs           | Unlicense  | Canonical Steam protobuf definitions, field numbers for `manifest.ts` and appinfo |
+| `vendor/steam/valvekeyvalue`            | ValveResourceFormat/ValveKeyValue | MIT        | Reference text/binary KeyValues semantics for `kv.ts`                             |
+| `vendor/steam/steamappinfo`             | xPaw/SteamAppInfo                 | MIT        | Reference `appinfo.vdf` / `packageinfo.vdf` parser for `appinfo.ts`               |
+| `vendor/steam/steamwebapidocumentation` | xPaw/SteamWebAPIDocumentation     | MIT        | Generated Web API interface list, cross-check for `webapi.ts`                     |
+| `vendor/steam/internalsteamwebapi`      | Revadike/InternalSteamWebAPI      | MIT        | Unofficial and internal Web API endpoints for `api_endpoint`                      |
+| `vendor/steam/python-steam`             | ValvePython/steam                 | MIT        | Reference client, CM, WebAuth and VDF                                             |
+| `vendor/steam/steamctl`                 | ValvePython/steamctl              | MIT        | Reference CLI: depot, workshop, cloud, authenticator                              |
+| `vendor/steam/node-steam-user`          | DoctorMcKay/node-steam-user       | MIT        | Reference Steam client protocol for JavaScript                                    |
+| `vendor/steam/steamworks-js`            | ceifa/steamworks.js               | MIT        | Reference Steamworks bindings from JavaScript                                     |
+| `vendor/steam/facepunch-steamworks`     | Facepunch/Facepunch.Steamworks    | MIT        | Reference Steamworks API surface (C#)                                             |
+| `vendor/steam/steamworks-net`           | rlabrecque/Steamworks.NET         | MIT        | Reference Steamworks API surface (C#)                                             |
+| `vendor/steam/steamlocate-rs`           | CosmicHorrorDev/steamlocate-rs    | MIT        | Reference Steam install and library discovery in Rust                             |
+| `vendor/steam/archisteamfarm`           | JustArchiNET/ArchiSteamFarm       | Apache-2.0 | Reference account, inventory, trading and plugin model                            |
+| `vendor/steam/steamachievementmanager`  | gibbed/SteamAchievementManager    | Zlib       | Reference achievements and stats schema handling                                  |
+| `vendor/steam/steamtools`               | BeyondDimension/SteamTools        | GPL-3.0    | Reference toolbox features; read for behavior only                                |
+| `vendor/steam/steam-mcp-server` | sharkusmanch/steam-mcp-server | MIT | Reference MCP server for the Steam Web API; tool surface cross-check for `mcp-server.ts` |
+| `vendor/steam/steam-claude-skills` | tugteam/steam-claude-skills | MIT | Upstream Steamworks and SteamCMD skills; `steamcmd` is installed by `install-claude.ts` |
+| `vendor/steam/steamos-claude-skill` | 28allday/steamos-claude-skill | MIT | Upstream SteamOS maintenance skill, installed by `install-claude.ts` |
+| `vendor/re/ghidramcp` | LaurieWired/GhidraMCP | Apache-2.0 | Reference Ghidra MCP bridge for the RE pipeline |
+| `vendor/re/ida-pro-mcp` | mrexodia/ida-pro-mcp | MIT | Reference IDA MCP server; its `idapython` skill is installed by `install-claude.ts` |
 
 ## Rules
 

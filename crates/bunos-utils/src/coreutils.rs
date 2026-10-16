@@ -1,29 +1,24 @@
-//! coreutils: uutils coreutils (MIT) applets, `uumain` per crate.
+//! coreutils: uutils coreutils (MIT) from `vendor/uutils/coreutils`, `uumain` per crate.
 
-use std::ffi::OsString;
-
-macro_rules! applets {
-    (all: [$($name:literal => $krate:ident,)*] unix: [$($uname:literal => $ukrate:ident,)*]) => {
-        pub const APPLETS: &[(&str, super::Main)] = &[
-            $(($name, |args: Vec<OsString>| $krate::uumain(args.into_iter())),)*
-            $(#[cfg(unix)] ($uname, |args: Vec<OsString>| $ukrate::uumain(args.into_iter())),)*
-        ];
-    };
-}
-
-applets! {
+crate::uu_applets! {
 all: [
+    "arch" => uu_arch,
+    "b2sum" => uu_b2sum,
     "base32" => uu_base32,
     "base64" => uu_base64,
     "basename" => uu_basename,
+    "basenc" => uu_basenc,
     "cat" => uu_cat,
     "cksum" => uu_cksum,
     "comm" => uu_comm,
     "cp" => uu_cp,
+    "csplit" => uu_csplit,
     "cut" => uu_cut,
     "date" => uu_date,
     "dd" => uu_dd,
     "df" => uu_df,
+    "dir" => uu_dir,
+    "dircolors" => uu_dircolors,
     "dirname" => uu_dirname,
     "du" => uu_du,
     "echo" => uu_echo,
@@ -35,12 +30,15 @@ all: [
     "fmt" => uu_fmt,
     "fold" => uu_fold,
     "head" => uu_head,
+    "hostname" => uu_hostname,
     "join" => uu_join,
     "link" => uu_link,
     "ln" => uu_ln,
     "ls" => uu_ls,
+    "md5sum" => uu_md5sum,
     "mkdir" => uu_mkdir,
     "mktemp" => uu_mktemp,
+    "more" => uu_more,
     "mv" => uu_mv,
     "nl" => uu_nl,
     "nproc" => uu_nproc,
@@ -50,12 +48,18 @@ all: [
     "pr" => uu_pr,
     "printenv" => uu_printenv,
     "printf" => uu_printf,
+    "ptx" => uu_ptx,
     "pwd" => uu_pwd,
     "readlink" => uu_readlink,
     "realpath" => uu_realpath,
     "rm" => uu_rm,
     "rmdir" => uu_rmdir,
     "seq" => uu_seq,
+    "sha1sum" => uu_sha1sum,
+    "sha224sum" => uu_sha224sum,
+    "sha256sum" => uu_sha256sum,
+    "sha384sum" => uu_sha384sum,
+    "sha512sum" => uu_sha512sum,
     "shred" => uu_shred,
     "shuf" => uu_shuf,
     "sleep" => uu_sleep,
@@ -75,23 +79,35 @@ all: [
     "unexpand" => uu_unexpand,
     "uniq" => uu_uniq,
     "unlink" => uu_unlink,
+    "vdir" => uu_vdir,
     "wc" => uu_wc,
     "whoami" => uu_whoami,
     "yes" => uu_yes,
 ]
-unix: [
+cfg(unix): [
+    "chgrp" => uu_chgrp,
     "chmod" => uu_chmod,
     "chown" => uu_chown,
-    "chgrp" => uu_chgrp,
+    "chroot" => uu_chroot,
+    "groups" => uu_groups,
+    "hostid" => uu_hostid,
     "id" => uu_id,
     "install" => uu_install,
     "kill" => uu_kill,
+    "logname" => uu_logname,
     "mkfifo" => uu_mkfifo,
+    "mknod" => uu_mknod,
+    "nice" => uu_nice,
     "nohup" => uu_nohup,
+    "pathchk" => uu_pathchk,
+    "pinky" => uu_pinky,
     "stat" => uu_stat,
+    "stty" => uu_stty,
     "sync" => uu_sync,
     "timeout" => uu_timeout,
     "tty" => uu_tty,
     "uptime" => uu_uptime,
+    "users" => uu_users,
+    "who" => uu_who,
 ]
 }

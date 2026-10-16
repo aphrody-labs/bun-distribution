@@ -1,6 +1,5 @@
 import { authentication } from "~/signals";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
-import { JobsApi } from "~/Classes/ApiManager/JobsApi";
 import { UserInfo } from "~/models";
 import { EngineApi } from "~/Classes/ApiManager/EngineApi";
 
@@ -23,17 +22,14 @@ describe("EngineApi", () => {
         mediaFileToken: "mft1",
         uuidIdempotencyToken: "uuid",
       });
-      expect(api.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf",
-        {
-          method: "POST",
-          body: {
-            media_file_token: "mft1",
-            uuid_idempotency_token: "uuid",
-          },
-          query: undefined,
+      expect(api.fetch).toHaveBeenCalledWith("http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf", {
+        method: "POST",
+        body: {
+          media_file_token: "mft1",
+          uuid_idempotency_token: "uuid",
         },
-      );
+        query: undefined,
+      });
       expect(response).toEqual({
         success: true,
         data: "ijt1",
@@ -47,17 +43,14 @@ describe("EngineApi", () => {
         mediaFileToken: "mft1",
         uuidIdempotencyToken: "uuid",
       });
-      expect(api.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf",
-        {
-          method: "POST",
-          body: {
-            media_file_token: "mft1",
-            uuid_idempotency_token: "uuid",
-          },
-          query: undefined,
+      expect(api.fetch).toHaveBeenCalledWith("http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf", {
+        method: "POST",
+        body: {
+          media_file_token: "mft1",
+          uuid_idempotency_token: "uuid",
         },
-      );
+        query: undefined,
+      });
       expect(response).toEqual({
         success: false,
         errorMessage: "bad input",
@@ -71,17 +64,14 @@ describe("EngineApi", () => {
         mediaFileToken: "mft1",
         uuidIdempotencyToken: "uuid",
       });
-      expect(api.fetch).toHaveBeenCalledWith(
-        "http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf",
-        {
-          method: "POST",
-          body: {
-            media_file_token: "mft1",
-            uuid_idempotency_token: "uuid",
-          },
-          query: undefined,
+      expect(api.fetch).toHaveBeenCalledWith("http://localhost:3000/v1/conversion/enqueue_fbx_to_gltf", {
+        method: "POST",
+        body: {
+          media_file_token: "mft1",
+          uuid_idempotency_token: "uuid",
         },
-      );
+        query: undefined,
+      });
       expect(response).toEqual({
         success: false,
         errorMessage: "server error",

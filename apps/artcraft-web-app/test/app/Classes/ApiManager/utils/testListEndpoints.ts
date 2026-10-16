@@ -17,22 +17,17 @@ interface Test {
   data: any;
 }
 
-export default function testListEndpoints(
-  api: ApiManager,
-  testMethod: TestConfig,
-) {
+export default function testListEndpoints(api: ApiManager, testMethod: TestConfig) {
   describe(testMethod.name, () => {
     afterEach(() => {
       jest.clearAllMocks();
     });
 
-    testMethod.tests.forEach((test) => {
+    testMethod.tests.forEach(test => {
       it(test.name, async () => {
         jest.spyOn(api, "fetch").mockResolvedValue({
-          ...(test.response ?? {}),
-          ...(testMethod.pagination
-            ? { pagination: testMethod.pagination }
-            : {}),
+          ...test.response,
+          ...(testMethod.pagination ? { pagination: testMethod.pagination } : {}),
         });
         const response = await testMethod.function(test.query as any);
         expect(api.fetch).toHaveBeenCalledWith(test.endpoint, {
@@ -41,9 +36,7 @@ export default function testListEndpoints(
         });
         expect(response).toEqual({
           data: test.data,
-          ...(testMethod.pagination
-            ? { pagination: testMethod.pagination }
-            : {}),
+          ...(testMethod.pagination ? { pagination: testMethod.pagination } : {}),
           success: true,
           ...(testMethod.hasFailure ? { errorMessage: undefined } : {}),
         });
@@ -53,9 +46,7 @@ export default function testListEndpoints(
     if (testMethod.hasFailure) {
       it("failure", async () => {
         jest.spyOn(api, "fetch").mockResolvedValue({ BadInput: "Bad Input" });
-        const response = await testMethod.function(
-          testMethod.tests[0].query as any,
-        );
+        const response = await testMethod.function(testMethod.tests[0].query as any);
         expect(api.fetch).toHaveBeenCalledWith(testMethod.tests[0].endpoint, {
           method: "GET",
           query: testMethod.tests[0].fetchQuery,
@@ -69,9 +60,7 @@ export default function testListEndpoints(
 
     it("exception", async () => {
       jest.spyOn(api, "fetch").mockRejectedValue(new Error("server error"));
-      const response = await testMethod.function(
-        testMethod.tests[0].query as any,
-      );
+      const response = await testMethod.function(testMethod.tests[0].query as any);
       expect(api.fetch).toHaveBeenCalledWith(testMethod.tests[0].endpoint, {
         method: "GET",
         query: testMethod.tests[0].fetchQuery,

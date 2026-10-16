@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { GLTFLoader, GLTF } from "three/addons/loaders/GLTFLoader.js";
-import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
+import { MMDLoader, MMDAnimationHelper } from "three-stdlib";
 
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { LoadingPlaceHolderManager } from "./placeholder_manager";
-import { MMDAnimationHelper, Water } from "three/examples/jsm/Addons.js";
+import { Water } from "three/addons/objects/Water.js";
 import { MediaFileType } from "../enums";
 import { ChromaKeyMaterial } from "./chromakey";
 import { InfiniteGridHelper } from "./InfiniteGridHelper";
@@ -13,10 +13,7 @@ import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
-import {
-  collectObjectTextures,
-  disposeObject3D,
-} from "@storyteller/ui-viewer-3d";
+import { collectObjectTextures, disposeObject3D } from "@storyteller/ui-viewer-3d";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -30,10 +27,7 @@ export type SceneDeps = {
   // Adapter-supplied binary fetch. Optional `init.signal` lets the
   // scene loader cancel in-flight downloads when its load is
   // superseded.
-  fetchAsset: (
-    url: string,
-    init?: { signal?: AbortSignal },
-  ) => Promise<Response>;
+  fetchAsset: (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
   getMediaUrlByToken: (token: string) => Promise<string>;
   // Optional batch resolver — when provided, the proxy scene loader
   // warms a URL cache with one roundtrip instead of N. When absent,
@@ -160,10 +154,8 @@ class Scene {
   // shaders ticked every frame, video elements, MMD animation).
   disposeObject(root: THREE.Object3D) {
     const inTree = new Set<THREE.Object3D>();
-    root.traverse((child) => inTree.add(child));
-    this.shader_objects = this.shader_objects.filter(
-      (water) => !inTree.has(water),
-    );
+    root.traverse(child => inTree.add(child));
+    this.shader_objects = this.shader_objects.filter(water => !inTree.has(water));
     // Removing an animation mutates the owner's collection; traverse a snapshot.
     for (const mesh of this.helper?.meshes.slice() ?? []) {
       if (inTree.has(mesh)) this.helper?.remove(mesh);
@@ -174,7 +166,7 @@ class Scene {
       if (texture instanceof THREE.VideoTexture) videos.add(texture.image);
     }
     for (const video of videos) stopVideo(video);
-    this.video_planes = this.video_planes.filter((video) => !videos.has(video));
+    this.video_planes = this.video_planes.filter(video => !videos.has(video));
 
     disposeObject3D(root);
   }
@@ -194,10 +186,7 @@ class Scene {
     }
   }
 
-  async instantiate(
-    name: string,
-    pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
-  ) {
+  async instantiate(name: string, pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0)) {
     const material = new THREE.MeshPhongMaterial({ color: 0xdacbce });
     material.shininess = 0.0;
     let geometry;
@@ -264,15 +253,7 @@ class Scene {
         texture = new THREE.VideoTexture(videoElement);
 
         texture.colorSpace = THREE.SRGBColorSpace;
-        const image_material = new ChromaKeyMaterial(
-          texture,
-          0x00ff00,
-          1920,
-          1080,
-          0.159,
-          0.082,
-          0.0,
-        );
+        const image_material = new ChromaKeyMaterial(texture, 0x00ff00, 1920, 1080, 0.159, 0.082, 0.0);
         obj = new THREE.Mesh(geometry, image_material);
         obj.userData["media_id"] = name;
         obj.userData["media_file_type"] = MediaFileType.Video;
@@ -377,12 +358,7 @@ class Scene {
     return this.scene.getObjectByName(name);
   }
 
-  createPoint(
-    pos: THREE.Vector3,
-    rot: THREE.Vector3,
-    scale: THREE.Vector3,
-    keyframe_uuid: string,
-  ): THREE.Object3D {
+  createPoint(pos: THREE.Vector3, rot: THREE.Vector3, scale: THREE.Vector3, keyframe_uuid: string): THREE.Object3D {
     const geometry = new THREE.SphereGeometry(0.1, 18, 12);
     const material = new THREE.MeshBasicMaterial({ color: 0x05c3dd });
     const obj = new THREE.Mesh(geometry, material);
@@ -406,12 +382,9 @@ class Scene {
   }
 
   deletePoint(keyframe_uuid: string) {
-    this.scene.children.forEach((object) => {
+    this.scene.children.forEach(object => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace(
-          "Point::",
-          "",
-        );
+        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
         if (obj_keyframe_uuid === keyframe_uuid) {
           this.scene.remove(object);
           return;
@@ -422,12 +395,9 @@ class Scene {
 
   getPoint(keyframe_uuid: string): THREE.Object3D | undefined {
     let keyframe_point = undefined;
-    this.scene.children.forEach((object) => {
+    this.scene.children.forEach(object => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace(
-          "Point::",
-          "",
-        );
+        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
         if (obj_keyframe_uuid === keyframe_uuid) {
           keyframe_point = object;
           return;
@@ -443,12 +413,9 @@ class Scene {
     keyframe_rot: THREE.Vector3,
     // keyframe_scl: THREE.Vector3,
   ) {
-    this.scene.traverse((object) => {
+    this.scene.traverse(object => {
       if (object.userData.media_id) {
-        const obj_keyframe_uuid = object.userData.media_id.replace(
-          "Point::",
-          "",
-        );
+        const obj_keyframe_uuid = object.userData.media_id.replace("Point::", "");
         if (obj_keyframe_uuid === keyframe_uuid) {
           const first_quat = new THREE.Euler(
             THREE.MathUtils.degToRad(keyframe_rot.x),
@@ -477,7 +444,7 @@ class Scene {
   // userData.media_id, so the save path skips it. Single camera for now.
   _create_camera_obj() {
     const cameras = this.deps.getCameras();
-    const renderCam = cameras.find((c) => c.id !== "main") ?? cameras[0];
+    const renderCam = cameras.find(c => c.id !== "main") ?? cameras[0];
     if (!renderCam) return;
 
     // Idempotent: drop any existing frustum so callers (initialize, clear,
@@ -488,18 +455,10 @@ class Scene {
     const group = this._buildCameraFrustum();
     group.name = "::CAM::";
     group.userData["name"] = "Camera";
-    group.position.set(
-      renderCam.position.x,
-      renderCam.position.y,
-      renderCam.position.z,
-    );
-    group.rotation.set(
-      renderCam.rotation.x,
-      renderCam.rotation.y,
-      renderCam.rotation.z,
-    );
+    group.position.set(renderCam.position.x, renderCam.position.y, renderCam.position.z);
+    group.rotation.set(renderCam.rotation.x, renderCam.rotation.y, renderCam.rotation.z);
     group.layers.set(1);
-    group.children.forEach((child) => child.layers.set(1));
+    group.children.forEach(child => child.layers.set(1));
     this.scene.add(group);
   }
 
@@ -600,10 +559,10 @@ class Scene {
       return;
     }
     const results = await Promise.all(
-      unique.map((token) =>
+      unique.map(token =>
         this.deps
           .getMediaUrlByToken(token)
-          .then((url) => [token, url] as const)
+          .then(url => [token, url] as const)
           .catch(() => [token, ""] as const),
       ),
     );
@@ -664,7 +623,7 @@ class Scene {
     const url = await this.getMediaURL(media_id);
     const key = media_id + name + generateUUID();
     await this.placeholder_manager.add(key, `Loading: ${name}`, position);
-    const mmd = await this.load_mmd_wrapped(url, async (progress) => {
+    const mmd = await this.load_mmd_wrapped(url, async progress => {
       const total_loaded = progress.loaded / progress.total;
       if (total_loaded == 1.0) {
         if (this.placeholder_manager === undefined) {
@@ -711,12 +670,7 @@ class Scene {
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
   ): Promise<THREE.Object3D | undefined> {
     console.log("loadObjectFromUrl!!!!!!!!", url);
-    if (
-      url.includes(".png") ||
-      url.includes(".jpg") ||
-      url.includes(".jpeg") ||
-      url.includes(".mp4")
-    ) {
+    if (url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg") || url.includes(".mp4")) {
       const obj = await this.instantiate("Image::" + url);
       obj.position.copy(position);
       if (url.includes(".mp4")) {
@@ -740,18 +694,8 @@ class Scene {
     const url = await this.getMediaURL(media_id);
 
     if (url.includes(".pmd") || url.includes(".pmx")) {
-      return await this.loadMMDWithPlaceholder(
-        media_id,
-        name,
-        auto_add,
-        position,
-      );
-    } else if (
-      url.includes(".png") ||
-      url.includes(".jpg") ||
-      url.includes(".jpeg") ||
-      url.includes(".mp4")
-    ) {
+      return await this.loadMMDWithPlaceholder(media_id, name, auto_add, position);
+    } else if (url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg") || url.includes(".mp4")) {
       const obj = await this.instantiate("Image::" + url);
       obj.position.copy(position);
       // Preserve original token to enable copy/paste and timeline mapping
@@ -763,23 +707,10 @@ class Scene {
       }
       return obj;
     } else if (url.includes(".spz")) {
-      return await this.loadSplatWithPlaceholder(
-        media_id,
-        name,
-        auto_add,
-        position,
-        signal,
-      );
+      return await this.loadSplatWithPlaceholder(media_id, name, auto_add, position, signal);
     }
 
-    return await this.loadGlbWithPlaceholder(
-      media_id,
-      name,
-      auto_add,
-      position,
-      version,
-      signal,
-    );
+    return await this.loadGlbWithPlaceholder(media_id, name, auto_add, position, version, signal);
   }
 
   addChildrenToScene(parent: THREE.Object3D, scene: THREE.Scene): void {
@@ -828,7 +759,7 @@ class Scene {
         await this.placeholder_manager.remove(key);
       },
       signal,
-    ).catch(async (error) => {
+    ).catch(async error => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
@@ -908,7 +839,7 @@ class Scene {
         await this.placeholder_manager.remove(key);
       },
       signal,
-    ).catch(async (error) => {
+    ).catch(async error => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
@@ -921,7 +852,7 @@ class Scene {
 
     let child_result = undefined;
     // Loads the first child
-    glb.scene.children.forEach((child) => {
+    glb.scene.children.forEach(child => {
       child.traverse((c: THREE.Object3D) => {
         if (c instanceof THREE.Mesh) {
           c.material.metalness = 0.0;
@@ -1006,10 +937,7 @@ class Scene {
   // WITHOUT adding it to the scene or attaching a loading placeholder. Used to
   // source skeletal animation clips (their `animations[0]`) for retargeting
   // onto characters — the clip's own mesh/armature is never rendered.
-  async loadRawGlb(
-    media_id: string,
-    signal?: AbortSignal,
-  ): Promise<GLTF | null> {
+  async loadRawGlb(media_id: string, signal?: AbortSignal): Promise<GLTF | null> {
     try {
       const url = await this.getMediaURL(media_id);
       return await this.load_glb_wrapped_no_cors(url, () => {}, signal);
@@ -1028,9 +956,7 @@ class Scene {
   ): Promise<GLTF> {
     let buffer: ArrayBuffer;
     try {
-      buffer = await (
-        await this.deps.fetchAsset(media_url, { signal })
-      ).arrayBuffer();
+      buffer = await (await this.deps.fetchAsset(media_url, { signal })).arrayBuffer();
     } catch (error) {
       if ((error as { name?: string })?.name !== "AbortError") {
         console.error("load GLB from Tauri error:", error);
@@ -1042,11 +968,11 @@ class Scene {
       glbLoader.parse(
         buffer,
         "", // NB: No relative path to load additional assets!
-        (gltf) => {
+        gltf => {
           resolve(gltf);
           onComplete();
         },
-        (error) => {
+        error => {
           console.error("GLTF loader error:", error);
           reject(error);
         },
@@ -1067,19 +993,17 @@ class Scene {
   ): Promise<SplatMesh> {
     let buffer: ArrayBuffer;
     try {
-      buffer = await (
-        await this.deps.fetchAsset(media_url, { signal })
-      ).arrayBuffer();
+      buffer = await (await this.deps.fetchAsset(media_url, { signal })).arrayBuffer();
     } catch (error) {
       if ((error as { name?: string })?.name !== "AbortError") {
         console.error("load Splat from Tauri error:", error);
       }
       throw error;
     }
-    return new Promise<SplatMesh>((resolve) => {
+    return new Promise<SplatMesh>(resolve => {
       new SplatMesh({
         fileBytes: buffer,
-        onLoad: (mesh) => {
+        onLoad: mesh => {
           resolve(mesh);
           onComplete();
         },
@@ -1089,7 +1013,7 @@ class Scene {
 
   // This allows to wait for Ammo to fully load.
   delay_mmd(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private async load_mmd_wrapped(
@@ -1118,7 +1042,7 @@ class Scene {
       mmdLoader.loadWithAnimation(
         media_url,
         ["/resources/pose/Lumine Idle cycle.vmd"],
-        (mmd) => {
+        mmd => {
           if (!this.helper) {
             reject(new Error("The scene animation owner is unavailable."));
             return;
@@ -1132,7 +1056,7 @@ class Scene {
           resolve(mmd.mesh);
         },
         progress,
-        (error) => {
+        error => {
           reject(error);
         },
       );
@@ -1148,10 +1072,7 @@ class Scene {
 
     // Theme-aware: in light mode, use a near-white background for better contrast with UI
     try {
-      if (
-        typeof document !== "undefined" &&
-        document.documentElement.classList.contains("theme-light")
-      ) {
+      if (typeof document !== "undefined" && document.documentElement.classList.contains("theme-light")) {
         this.scene.background = new THREE.Color("#f5f6f8");
         if (this.ambientLight) this.scene.add(this.ambientLight);
         if (this.directional_light) this.scene.remove(this.directional_light);

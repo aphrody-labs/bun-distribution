@@ -19,7 +19,7 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-craft-print = { path = "../craft-print" }
+craft-print = { workspace = true }
 pdfcraft-cos = { path = "../pdfcraft-cos" }
 pdfcraft-content = { path = "../pdfcraft-content" }
 pdfcraft-model = { path = "../pdfcraft-model" }

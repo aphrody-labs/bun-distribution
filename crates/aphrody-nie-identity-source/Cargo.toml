@@ -18,8 +18,8 @@ workspace = true
 aphrody-identity.workspace = true
 # Le dossier du jeu (`gisement`) parse chara_param, skill_config et aura_skill_config.
 aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 
 [[bin]]
 name = "export_aphrody"

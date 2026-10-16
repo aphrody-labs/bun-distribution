@@ -13,7 +13,7 @@ workspace = true
 
 [dependencies]
 aphrody-dust-core.workspace = true
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde = { workspace = true, features = ["std", "derive"] }
 
 [dev-dependencies]
-serde_json = { version = "1" }
+serde_json = { workspace = true }

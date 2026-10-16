@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+# Arch `filesystem` re-owned by Bun OS: identical merged-usr layout, Bun OS os-release.
+pkgname=bunos-filesystem
+_upstream=2025.10.12-1
+pkgver=${_upstream%-*}
+pkgrel=1
+pkgdesc="Bun OS base filesystem layout and os-release (derived from Arch filesystem ${_upstream})"
+arch=(any)
+url="https://gitlab.archlinux.org/archlinux/packaging/packages/filesystem"
+license=(GPL-3.0-or-later)
+depends=(iana-etc)
+provides=("filesystem=${_upstream%-*}")
+conflicts=(filesystem)
+replaces=(filesystem)
+backup=(etc/crypttab etc/fstab etc/group etc/gshadow etc/host.conf etc/hosts etc/issue etc/ld.so.conf
+  etc/nsswitch.conf etc/passwd etc/profile etc/resolv.conf etc/securetty etc/shadow etc/shells etc/subuid etc/subgid)
+noextract=("filesystem-${_upstream}-any.pkg.tar.zst")
+source=("filesystem-${_upstream}-any.pkg.tar.zst::https://archive.archlinux.org/packages/f/filesystem/filesystem-${_upstream}-any.pkg.tar.zst"
+  os-release)
+sha256sums=('6b6c3fee7432204840d3b6afc9bc1a68c28f591a47fb220071715c40cca956df'
+  '24f31cd127793dd642b6a2cb507357dd4e99f5b296f02a17a9d93786a44956da')
+
+package() {
+  # Extract under fakeroot so numeric owners and modes match the upstream archive.
+  bsdtar -xpf "filesystem-${_upstream}-any.pkg.tar.zst" -C "${pkgdir}"
+  rm -f "${pkgdir}"/.PKGINFO "${pkgdir}"/.BUILDINFO "${pkgdir}"/.MTREE
+  install -Dm644 os-release "${pkgdir}/usr/lib/os-release"
+  install -d "${pkgdir}/usr/lib32" "${pkgdir}/usr/libexec"
+}

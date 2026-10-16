@@ -17,11 +17,11 @@ real-fixtures = ["aphrody-nie-formats/real-fixtures"]
 [dependencies]
 aphrody-nie-formats = { workspace = true, features = ["std"] }
 tokio-postgres = { workspace = true }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 futures-util = { workspace = true }
 sha2 = { version = "0.10" }
-thiserror = { version = "2" }
-anyhow = { version = "1" }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 
 [[bin]]

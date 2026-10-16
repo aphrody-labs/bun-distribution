@@ -10,9 +10,9 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-thiserror = { version = "2" }
+thiserror = { workspace = true }
 sha2 = { version = "0.10" }
-serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+serde = { workspace = true, features = ["std", "derive"], optional = true }
 
 [features]
 default = ["serde"]

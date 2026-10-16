@@ -19,7 +19,7 @@ required-features = ["bevy"]
 # `textures` porte `g4tx_decode` (BC7/BGRA8 → RGBA8) ; sans elle le module n'existe pas et le
 # convertisseur d'images ne compile pas. `lua`, dans les features par défaut, n'a rien à faire ici.
 aphrody-nie-formats = { workspace = true, default-features = false, features = ["std", "textures"] }
-thiserror = { version = "2" }
+thiserror = { workspace = true }
 
 # Bevy par SOUS-CRATES, pas par le méta-crate `bevy`.
 #

@@ -16,11 +16,11 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 aphrody-nie-cli.workspace = true
 
 [dev-dependencies]
 # Le test RE réel corrobore les réponses du serveur contre la table `.pdata` du binaire de
 # référence, lue indépendamment : c'est `aphrody-nie-pe` qui la décode.
 aphrody-nie-pe.workspace = true
-serde_json = { version = "1" }
+serde_json = { workspace = true }

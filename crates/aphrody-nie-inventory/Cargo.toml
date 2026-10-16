@@ -24,10 +24,10 @@ integration = [] # Legacy feature selector; aphrody-re has no integration featur
 workspace = true
 
 [dependencies]
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 aphrody-re.workspace = true
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 clap = { workspace = true, features = ["derive", "color", "env"] }
 byteorder.workspace = true
 hex.workspace = true

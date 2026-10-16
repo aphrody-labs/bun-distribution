@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 common.workspace = true
-log = { version = "0.4.28", default-features = false }
+log = { workspace = true }
 zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 
 # Upstream's `frontend_common/content_manager.h` includes
@@ -14,4 +14,4 @@ zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 ruzu_core = { package = "core", path = "../ruzu-core" }
 
 [dev-dependencies]
-tempfile = { version = "3" }
+tempfile = { workspace = true }

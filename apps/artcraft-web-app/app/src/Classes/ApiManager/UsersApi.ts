@@ -23,14 +23,14 @@ export class UsersApi extends ApiManager {
       user?: UserInfo;
       error_message?: string;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           loggedIn: response.logged_in,
           user: response.user,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.mesasge,
@@ -49,13 +49,13 @@ export class UsersApi extends ApiManager {
       user?: UserInfo;
       error_message?: string;
     }>({ endpoint: endpoint })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: {
           user: response.user,
         },
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           error_message: err.message,
@@ -87,12 +87,12 @@ export class UsersApi extends ApiManager {
       endpoint: endpoint,
       body: body,
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
         data: { signedSession: response.signed_session },
         errorMessage: response.error_message,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           error_message: err.message,
@@ -105,10 +105,10 @@ export class UsersApi extends ApiManager {
     return this.post<null, { success: boolean; error_message?: string }>({
       endpoint: endpoint,
     })
-      .then((response) => ({
+      .then(response => ({
         success: response.success,
       }))
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           errorMessage: err.message,
@@ -136,7 +136,7 @@ export class UsersApi extends ApiManager {
       password_confirmation: passwordConfirmation,
       username,
     };
-    if (!!signupSource) {
+    if (signupSource) {
       body.signup_source = signupSource;
     }
     return await this.post<
@@ -152,14 +152,14 @@ export class UsersApi extends ApiManager {
       endpoint: endpoint,
       body: body,
     })
-      .then((response) => {
+      .then(response => {
         return {
           success: response.success,
           data: { signedSession: response.signed_session },
           errorMessage: Object.values(response.error_fields ?? {}).join(","),
         };
       })
-      .catch((err) => {
+      .catch(err => {
         return {
           success: false,
           error_message: err.message,

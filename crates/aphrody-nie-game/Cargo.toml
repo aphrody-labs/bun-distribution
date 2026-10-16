@@ -34,24 +34,24 @@ aphrody-nie-core = { workspace = true, features = ["data"] }
 aphrody-nie-runtime.workspace = true
 # Le type `Model` traverse l'API de `aphrody_nie_app::match3d` (vue 3D du match) : nommable ici.
 aphrody-nie-render3d.workspace = true
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "color", "env"] }
-tracing = { version = "0.1" }
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"] }
 aphrody-gpu-backend.workspace = true
 aphrody-bevy.workspace = true
 pollster.workspace = true
 bytemuck = { workspace = true, features = ["derive"] }
 # Encodage PNG des captures/exports (le décodage DDS/BCn est passé dans aphrody-nie-formats).
-png = { version = "0.18" }
+png = { workspace = true }
 # Export du layout de menu (JSON contrat `@rose-griffon/menu-render` pour azalee).
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 # Dump exhaustif des packs (example dump_packs) : parallélisme CPU par-CPK (rayon),
 # accès mmap RAM-borné (memmap2), garde-fou disque via statvfs (libc, Linux/WSL).
-rayon = { version = "1.5.3" }
+rayon = { workspace = true }
 memmap2.workspace = true
-libc = { version = "0.2.185", default-features = false }
+libc = { workspace = true }
 
 [dev-dependencies]
 # Example `dump_g4tx` + test `menu_render_gate` réfèrent les variantes `ImageFormat` en direct

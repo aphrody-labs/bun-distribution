@@ -34,3 +34,4 @@ moxcms = "0.8"
 png = "0.18"
 crc32fast = "1"
 log = "0.4"
+rayon = { workspace = true }

@@ -3,13 +3,13 @@
 use std::ffi::OsString;
 use sysinfo::{ProcessesToUpdate, System};
 
-pub const APPLETS: &[(&str, super::Main)] = &[
-    ("ps", ps),
-    ("free", free),
-    ("pidof", pidof),
-    ("pgrep", pgrep),
-    ("pkill", pkill),
-];
+crate::applets! {
+    "ps" => ps,
+    "free" => free,
+    "pidof" => pidof,
+    "pgrep" => pgrep,
+    "pkill" => pkill,
+}
 
 fn processes() -> System {
     let mut sys = System::new();

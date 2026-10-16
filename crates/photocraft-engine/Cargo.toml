@@ -38,7 +38,7 @@ photocraft-plugins = { path = "../photocraft-plugins" }
 blake3 = { version = "1.8", default-features = false, features = ["pure"] }
 photocraft-codecs = { path = "../photocraft-codecs" }
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
-craft-print = { path = "../craft-print" }
+craft-print = { workspace = true }
 roxmltree = "0.20"
 
 [dev-dependencies]

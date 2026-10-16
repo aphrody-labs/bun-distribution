@@ -1,7 +1,7 @@
 // This is used to do things such as disable job polling in the dev console.
 
 export const SetDevFlag = (flagName: string, value: any) => {
-  if (!!!(window as any)._dev_flags) {
+  if (!(window as any)._dev_flags) {
     (window as any)._dev_flags = {};
   }
   (window as any)._dev_flags[flagName] = value;

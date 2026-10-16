@@ -2,7 +2,10 @@
 
 use std::ffi::OsString;
 
-pub const APPLETS: &[(&str, super::Main)] = &[("find", find), ("xargs", xargs)];
+crate::applets! {
+    "find" => find,
+    "xargs" => xargs,
+}
 
 fn strings(args: &[OsString]) -> Vec<String> {
     args.iter().map(|a| a.to_string_lossy().into_owned()).collect()

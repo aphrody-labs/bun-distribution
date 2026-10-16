@@ -13,8 +13,8 @@ workspace = true
 
 [dependencies]
 aphrody-nie-formats = { workspace = true, default-features = true }
-thiserror = { version = "2" }
-serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"], optional = true }
 
 [features]
 default = []
@@ -24,4 +24,4 @@ serde = ["dep:serde", "aphrody-nie-formats/serde"]
 real-saves = []
 
 [dev-dependencies]
-tempfile = { version = "3" }
+tempfile = { workspace = true }

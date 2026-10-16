@@ -29,7 +29,7 @@ host = [
 
 [dependencies]
 aphrody-nie-sql = { workspace = true, optional = true }
-anyhow = { version = "1", optional = true }
+anyhow = { workspace = true, optional = true }
 base64 = { version = "0.22.1", optional = true }
 globset = { workspace = true, optional = true }
 grep-regex = { workspace = true, optional = true }
@@ -46,5 +46,5 @@ aphrody-nie-lua = { workspace = true, default-features = false }
 aphrody-nie-data = { workspace = true, features = ["serde", "std"] }
 # Le catalogue des cinématiques (`cinema`) est un DTO partagé par la CLI, le serveur HTTP et
 # la page /videos d'azalée : il doit se sérialiser à l'identique des trois côtés.
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1", default-features = false, features = ["std"] }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true, features = ["std"] }

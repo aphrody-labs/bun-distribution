@@ -28,14 +28,14 @@ path = "src/main.rs"
 gtk = { version = "0.11", package = "gtk4", features = ["v4_6"] }
 # Same cairo as gtk4 re-exports, with `png` so the controller drawings can be
 # rendered to a file in tests and compared against upstream by eye.
-cairo-rs = { version = "0.21", features = ["png"] }
-log = { version = "0.4.28", default-features = false }
+cairo-rs = { workspace = true, features = ["png"] }
+log = { workspace = true }
 sdl3-sys = { workspace = true }
-serde_json = { version = "1", default-features = false }
+serde_json = { workspace = true }
 ash = { workspace = true }
-libc = "0.2"
+libc = { workspace = true }
 getrandom = "0.2"
-tempfile = { version = "3" }
+tempfile = { workspace = true }
 zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 
 # ruzu's data-directory resolver, for "Open ruzu Folder" (upstream uses
@@ -72,10 +72,10 @@ web_service.workspace = true
 # `GRenderWindow` embeds a render surface into the Qt window. `objc` matches
 # the version already used by `ruzu_cmd`.
 [target.'cfg(target_os = "macos")'.dependencies]
-objc = "0.2"
-cocoa = "0.25"
-core-graphics = "0.23"
-core-foundation = "0.9"
+objc = { workspace = true }
+cocoa = { workspace = true }
+core-graphics = { workspace = true }
+core-foundation = { workspace = true }
 
 # Linux: the render surface is a native X11 child window embedded in the GTK
 # window, mirroring upstream's `RenderWidget` (a `WA_NativeWindow` child of
@@ -83,18 +83,18 @@ core-foundation = "0.9"
 [target.'cfg(target_os = "linux")'.dependencies]
 # The `xlib` feature exposes `X11Display::xdisplay()`, the `Display*` that
 # `WindowSystemInfo::display_connection` needs for `VkXlibSurfaceCreateInfoKHR`.
-gdk4-x11 = { version = "0.9", features = ["xlib"] }
-gdk4-wayland = { version = "0.9", features = ["wayland_crate", "egl", "v4_4"] }
-wayland-client = "0.31"
-wayland-egl = "0.32"
-khronos-egl = { version = "6", features = ["dynamic"] }
-x11 = { version = "2", features = ["glx", "xlib"] }
+gdk4-x11 = { workspace = true, features = ["xlib"] }
+gdk4-wayland = { workspace = true, features = ["wayland_crate", "egl", "v4_4"] }
+wayland-client = { workspace = true }
+wayland-egl = { workspace = true }
+khronos-egl = { workspace = true, features = ["dynamic"] }
+x11 = { workspace = true, features = ["glx", "xlib"] }
 
 # Windows: create the same native child render window that upstream gets from
 # `RenderWidget::setAttribute(Qt::WA_NativeWindow)`, then hand its HWND to
 # `VkWin32SurfaceCreateInfoKHR`.
 [target.'cfg(target_os = "windows")'.dependencies]
-junction = "2.0"
+junction = { workspace = true }
 windows-sys = { version = "0.59", features = [
     "Win32_Foundation",
     "Win32_Graphics_Dwm",
@@ -110,4 +110,4 @@ windows-sys = { version = "0.59", features = [
 ] }
 
 [build-dependencies]
-embed-resource = "3.0.6"
+embed-resource = { workspace = true }

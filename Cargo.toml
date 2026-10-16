@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
+exclude = ["vendor/uutils", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
 resolver = "3"
 members = [
   "crates/android-native",
@@ -615,7 +615,31 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
-tracing-subscriber = { version = "0.3.22", features = ["env-filter","fmt","json","regex","registry"] }
+slog = { version = "2.7" }
+arm-decoder = { git = "https://github.com/kelpsyberry/arm-decoder" }
+cocoa = { version = "0.25" }
+objc = { version = "0.2" }
+magika = { version = "1.1.0" }
+rusty-leveldb = { version = "4", default-features = false }
+yara-x = { version = "1.7.0", default-features = false }
+cairo-rs = { version = "0.21" }
+core-graphics = { version = "0.23" }
+core-foundation = { version = "0.9" }
+gdk4-x11 = { version = "0.9" }
+gdk4-wayland = { version = "0.9" }
+wayland-client = { version = "0.31" }
+wayland-egl = { version = "0.32" }
+x11 = { version = "2" }
+junction = { version = "2.0" }
+embed-resource = { version = "3.0.6" }
+pkg-config = { version = "0.3" }
+winapi = { version = "0.3" }
+env_filter = { version = "1.0" }
+rusty_enet = { version = "0.4" }
+jsonwebtoken = { version = "9.3.1" }
+rxbyak = { git = "https://github.com/vricosti/rxbyak", rev = "3aac8e24bfe559e7b076d6fa6783ed4b1bb160f3" }
+rhazel = { git = "https://github.com/vricosti/rhazel", rev = "5d2e49e0ac5f24da800b7ca54b4bd7d520816118" }
+tracing-subscriber ={ version = "0.3.22", features = ["env-filter","fmt","json","regex","registry"] }
 aphrody-command = { path = "crates/aphrody-command", version = "1.4.4", features = [] }
 aphrody-agent-home = { path = "crates/aphrody-agent-home", version = "1.4.4", features = [] }
 aphrody-bun = { path = "crates/aphrody-bun", version = "1.4.4" }

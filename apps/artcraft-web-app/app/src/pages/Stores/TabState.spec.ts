@@ -1,7 +1,6 @@
 import { beforeEach, expect, it } from "bun:test";
 import { useTabStore } from "./TabState";
-import { useSceneStore } from "../../../../../../libs/components/pagedraw/src/lib/stores/SceneState";
-import { Node } from "../../../../../../libs/components/pagedraw/src/lib/Node";
+import { Node, useSceneStore } from "@storyteller/ui-pagedraw";
 
 const initialScene = useSceneStore.getInitialState();
 const initialTabs = useTabStore.getInitialState();

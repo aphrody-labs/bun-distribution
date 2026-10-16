@@ -12,9 +12,9 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-anyhow = { version = "1" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+anyhow = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 aphrody-nie-formats = { workspace = true, features = ["serde"], default-features = true }
 aphrody-nie-render3d.workspace = true
 aphrody-nie-core.workspace = true
@@ -42,4 +42,4 @@ aphrody-nie-explore = { workspace = true, default-features = true }
 
 [dev-dependencies]
 # Encodage PNG des exemples (rendu 3D de match) — pas une dependance de la bibliotheque.
-png = { version = "0.18" }
+png = { workspace = true }

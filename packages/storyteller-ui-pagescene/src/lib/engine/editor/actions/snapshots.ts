@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type Editor from "..";
+import type Editor from "../../editor";
 
 // Shared snapshot types + helpers used by every UndoableAction that
 // captures a piece of scene state. Lives outside HistoryManager so
@@ -47,11 +47,7 @@ export const transformsEqual = (a: TransformSnap, b: TransformSnap): boolean =>
   a.scale.y === b.scale.y &&
   a.scale.z === b.scale.z;
 
-export const writeTransform = (
-  editor: Editor,
-  uuid: string,
-  t: TransformSnap,
-): void => {
+export const writeTransform = (editor: Editor, uuid: string, t: TransformSnap): void => {
   const obj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
   if (!obj) return;
   obj.position.set(t.position.x, t.position.y, t.position.z);
@@ -62,41 +58,21 @@ export const writeTransform = (
 // Re-create an object from a snapshot. Used by Create/Delete actions
 // to undo deletions and redo creations. Preserves the original uuid
 // so subsequent history entries that reference it still resolve.
-export const recreateFromSnapshot = async (
-  editor: Editor,
-  snap: ObjectSnap,
-): Promise<THREE.Object3D | undefined> => {
-  const pos = new THREE.Vector3(
-    snap.transform.position.x,
-    snap.transform.position.y,
-    snap.transform.position.z,
-  );
+export const recreateFromSnapshot = async (editor: Editor, snap: ObjectSnap): Promise<THREE.Object3D | undefined> => {
+  const pos = new THREE.Vector3(snap.transform.position.x, snap.transform.position.y, snap.transform.position.z);
   // Shapes route through scene.instantiate's geometry switch, which
   // matches on the geometry key ("Box", "Sphere", "PointLight"), not
   // the display name ("Cube", "Point Light"). addShape stashes the
   // original key in userData.shapeKey so we can recover it here.
-  const nameForCreate =
-    (snap.userData.shapeKey as string | undefined) ?? snap.name;
-  const obj = await editor.sceneManager?.create(
-    snap.media_id,
-    nameForCreate,
-    pos,
-  );
+  const nameForCreate = (snap.userData.shapeKey as string | undefined) ?? snap.name;
+  const obj = await editor.sceneManager?.create(snap.media_id, nameForCreate, pos);
   if (!obj) return undefined;
   obj.uuid = snap.uuid;
   // Restore the display name (instantiate/loadObject set obj.name to
   // nameForCreate; for shapes that's the geometry key, not the label).
   obj.name = snap.name;
-  obj.rotation.set(
-    snap.transform.rotation.x,
-    snap.transform.rotation.y,
-    snap.transform.rotation.z,
-  );
-  obj.scale.set(
-    snap.transform.scale.x,
-    snap.transform.scale.y,
-    snap.transform.scale.z,
-  );
+  obj.rotation.set(snap.transform.rotation.x, snap.transform.rotation.y, snap.transform.rotation.z);
+  obj.scale.set(snap.transform.scale.x, snap.transform.scale.y, snap.transform.scale.z);
   obj.userData = { ...snap.userData };
   if (typeof snap.userData.color === "string") {
     editor.activeScene.setColor(obj.uuid, snap.userData.color);

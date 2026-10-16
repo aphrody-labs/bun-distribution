@@ -1,0 +1,1 @@
+root=tmpfs mount.usr=/dev/mapper/usr mount.usrfstype=erofs mount.usrflags=ro systemd.verity_usr_data=PARTLABEL=usr systemd.verity_usr_hash=PARTLABEL=usr-verity console=ttyS0 systemd.run=/usr/lib/bun-os/boot-check systemd.run_success_action=poweroff systemd.run_failure_action=poweroff

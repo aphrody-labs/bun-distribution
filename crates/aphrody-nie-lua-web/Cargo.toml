@@ -20,5 +20,5 @@ workspace = true
 aphrody-nie-lua = { workspace = true, default-features = false, features = ["vm"] }
 aphrody-nie-formats = { workspace = true, features = ["serde"], default-features = true }
 aphrody-nie-data = { workspace = true, features = ["serde"] }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1", default-features = false, features = ["std"] }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true, features = ["std"] }

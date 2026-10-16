@@ -13,7 +13,7 @@ workspace = true
 
 [dependencies]
 # Le pont ICÔNES (`icons.rs`) : les atlas `.g4tx` d'interface sont déjà transposés en CSS/SVG
-# dans `nie_formats::sprite_sheet` (rectangles RECOPIÉS du jeu, jamais recalculés). nie-ui
+# dans `aphrody_nie_formats::sprite_sheet` (rectangles RECOPIÉS du jeu, jamais recalculés). nie-ui
 # APPELLE ce module pour composer le CSS des régions avec ses propres jetons ; il ne réimplémente
 # ni le découpage d'atlas ni le calcul de `background-position`.
 # Cargo refuse `default-features = false` sur une dépendance héritée du workspace tant que la
@@ -22,7 +22,7 @@ workspace = true
 # ici — c'est `nie_lua::bytecode` pur Rust, sans mlua ni tree-sitter (cf. le Cargo.toml de
 # nie-formats) — et c'est déjà la base commune de nie-core/nie-render3d/nie-game : nie-formats
 # reste le seul poids ajouté, pas un poids nouveau pour l'écosystème.
-nie-formats = { workspace = true, default-features = true }
+aphrody-nie-formats = { workspace = true, default-features = true }
 
 [dev-dependencies]
 # Cross-check UNIQUEMENT (pas de dépendance de la bibliothèque publiée) : `aphrody_identity::design`
@@ -36,7 +36,7 @@ nie-formats = { workspace = true, default-features = true }
 aphrody-identity.workspace = true
 # Lecture de `data/menu/manifest.json` dans les tests de `screens` UNIQUEMENT : la bibliothèque
 # publiée n'a pas besoin de parser du JSON, elle porte l'inventaire en constantes.
-serde_json = { version = "1" }
+serde_json = { workspace = true }
 
 [[bin]]
 name = "game_screens_css"

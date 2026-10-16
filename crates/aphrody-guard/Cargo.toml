@@ -26,7 +26,7 @@ perf = { level = "warn", priority = -1 }
 [dependencies]
 
 [target.'cfg(unix)'.dependencies]
-libc = { workspace = true, features = ["default"] }
+libc = { workspace = true }
 
 [dev-dependencies]
-pretty_assertions = { workspace = true, features = ["default"] }
+pretty_assertions = { workspace = true }

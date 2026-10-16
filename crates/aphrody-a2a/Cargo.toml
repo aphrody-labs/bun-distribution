@@ -29,15 +29,15 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-serde = { workspace = true, features = ["default"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true, features = ["default", "serde"] }
-base64 = { workspace = true, features = ["default"] }
-thiserror = { workspace = true, features = ["default"] }
-uuid = { workspace = true, features = ["default", "v7", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+base64 = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true, features = ["v7", "serde"] }
 
 # On wasm32 targets (browser or WASI), uuid v4/v7 require a JS entropy source.
 # The `js` feature delegates to `getrandom/js` which uses `Math.random` / CSPRNG
 # available in all browser environments and Node-on-wasm runtimes.
 [target.'cfg(target_family = "wasm")'.dependencies]
-uuid = { workspace = true, features = ["default", "v7", "serde", "js"] }
+uuid = { workspace = true, features = ["v7", "serde", "js"] }

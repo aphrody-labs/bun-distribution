@@ -5,8 +5,8 @@ edition.workspace = true
 
 [dependencies]
 common.workspace = true
-log = { version = "0.4.28", default-features = false }
-thiserror = { version = "2" }
+log = { workspace = true }
+thiserror = { workspace = true }
 bitflags.workspace = true
 rspirv.workspace = true
 spirv.workspace = true

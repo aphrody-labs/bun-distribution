@@ -9,30 +9,95 @@ use std::process::ExitCode;
 
 #[cfg(feature = "binutils")]
 mod binutils;
+#[cfg(feature = "binutils")]
+mod binutils_write;
 #[cfg(feature = "coreutils")]
 mod coreutils;
 #[cfg(feature = "diffutils")]
 mod diffutils;
 #[cfg(feature = "findutils")]
 mod findutils;
-#[cfg(feature = "procps")]
+#[cfg(all(feature = "procps", not(target_os = "linux")))]
 mod procps;
+#[cfg(all(feature = "procps", target_os = "linux"))]
+mod procps_linux;
+#[cfg(all(feature = "util-linux", target_os = "linux"))]
+mod util_linux;
 
-type Main = fn(Vec<OsString>) -> i32;
+/// An applet entry point: full argv (`args[0]` is the applet name) to exit status.
+pub type Main = fn(Vec<OsString>) -> ExitCode;
+
+/// Exit status from a numeric code, clamped to 0..=255.
+pub fn code(value: i32) -> ExitCode {
+    ExitCode::from(value.clamp(0, 255) as u8)
+}
+
+/// Table of applets whose function returns an `i32` status.
+#[macro_export]
+macro_rules! applets {
+    ($($name:literal => $f:path),* $(,)?) => {
+        pub const APPLETS: &[(&str, $crate::Main)] = &[$(($name, |args| $crate::code($f(args)))),*];
+    };
+}
+
+/// Table of uutils coreutils applets (`uumain` returns `i32`).
+#[macro_export]
+macro_rules! uu_applets {
+    (all: [$($name:literal => $krate:ident,)*] cfg(unix): [$($uname:literal => $ukrate:ident,)*]) => {
+        pub const APPLETS: &[(&str, $crate::Main)] = &[
+            $(($name, |args| $crate::code($krate::uumain(args.into_iter()))),)*
+            $(#[cfg(unix)] ($uname, |args| $crate::code($ukrate::uumain(args.into_iter()))),)*
+        ];
+    };
+}
+
+/// Table of uutils applets whose `uumain` returns `UResult<()>` from the given `uucore`.
+#[macro_export]
+macro_rules! uu_result_applets {
+    ($uucore:ident: [$($name:literal => $krate:ident,)*]) => {
+        pub const APPLETS: &[(&str, $crate::Main)] = &[
+            $(($name, |args| {
+                use $uucore::error::UError as _;
+                match $krate::uumain(args.into_iter()) {
+                    Ok(()) => $crate::code($uucore::error::get_exit_code()),
+                    Err(err) => {
+                        let status = err.code();
+                        let message = err.to_string();
+                        if !message.is_empty() {
+                            eprintln!("{}: {message}", $name);
+                        }
+                        $crate::code(status)
+                    }
+                }
+            }),)*
+        ];
+    };
+}
 
 /// Every applet with its owner suite; one implementation per name.
 fn applets() -> Vec<(&'static str, &'static str, Main)> {
     let mut all: Vec<(&'static str, &'static str, Main)> = Vec::new();
+    let mut add = |suite: &'static str, table: &[(&'static str, Main)]| {
+        all.extend(table.iter().map(|(n, m)| (*n, suite, *m)));
+    };
     #[cfg(feature = "coreutils")]
-    all.extend(coreutils::APPLETS.iter().map(|(n, m)| (*n, "coreutils", *m)));
+    add("coreutils", coreutils::APPLETS);
     #[cfg(feature = "findutils")]
-    all.extend(findutils::APPLETS.iter().map(|(n, m)| (*n, "findutils", *m)));
+    add("findutils", findutils::APPLETS);
     #[cfg(feature = "diffutils")]
-    all.extend(diffutils::APPLETS.iter().map(|(n, m)| (*n, "diffutils", *m)));
-    #[cfg(feature = "procps")]
-    all.extend(procps::APPLETS.iter().map(|(n, m)| (*n, "procps", *m)));
+    add("diffutils", diffutils::APPLETS);
+    #[cfg(all(feature = "procps", not(target_os = "linux")))]
+    add("procps", procps::APPLETS);
+    #[cfg(all(feature = "procps", target_os = "linux"))]
+    add("procps", procps_linux::APPLETS);
+    #[cfg(all(feature = "util-linux", target_os = "linux"))]
+    add("util-linux", util_linux::APPLETS);
     #[cfg(feature = "binutils")]
-    all.extend(binutils::APPLETS.iter().map(|(n, m)| (*n, "binutils", *m)));
+    {
+        add("binutils", binutils::APPLETS);
+        add("binutils", binutils_write::APPLETS);
+    }
+    let _ = &mut add;
     all
 }
 
@@ -47,16 +112,16 @@ fn applet_of(argv0: &OsString) -> String {
     }
 }
 
-fn install(dir: &Path) -> i32 {
+fn install(dir: &Path) -> ExitCode {
     let Ok(exe) = std::env::current_exe() else {
         eprintln!("bunos-utils: cannot resolve its own path");
-        return 1;
+        return ExitCode::FAILURE;
     };
     if let Err(err) = std::fs::create_dir_all(dir) {
         eprintln!("bunos-utils: {}: {err}", dir.display());
-        return 1;
+        return ExitCode::FAILURE;
     }
-    let mut code = 0;
+    let mut status = ExitCode::SUCCESS;
     for (name, _, _) in applets() {
         let link = dir.join(name);
         let _ = std::fs::remove_file(&link);
@@ -66,10 +131,10 @@ fn install(dir: &Path) -> i32 {
         let made = std::fs::hard_link(&exe, link.with_extension("exe"));
         if let Err(err) = made {
             eprintln!("bunos-utils: {}: {err}", link.display());
-            code = 1;
+            status = ExitCode::FAILURE;
         }
     }
-    code
+    status
 }
 
 fn main() -> ExitCode {
@@ -93,7 +158,7 @@ fn main() -> ExitCode {
                     eprintln!("bunos-utils: --install needs a directory");
                     return ExitCode::from(2);
                 };
-                return ExitCode::from(install(Path::new(dir)) as u8);
+                return install(Path::new(dir));
             }
             Some(_) => name = applet_of(&args[0]),
         }
@@ -102,5 +167,5 @@ fn main() -> ExitCode {
         eprintln!("bunos-utils: {name}: applet not found");
         return ExitCode::from(127);
     };
-    ExitCode::from(run(args).clamp(0, 255) as u8)
+    run(args)
 }

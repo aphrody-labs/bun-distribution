@@ -13,6 +13,6 @@ name = "dbglib"
 gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", default-features = false, features = ["hooks"] }
 disasm = { package = "aphrody-wii-disasm", path = "../aphrody-wii-disasm" }
 image = { package = "aphrody-wii-image", path = "../aphrody-wii-image", default-features = false }
-egui = { version = "0.36.2" }
+egui = { workspace = true }
 glam.workspace = true
 egui-phosphor = { workspace = true, features = ["fill"] }

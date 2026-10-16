@@ -26,18 +26,18 @@ sha2 = { version = "0.10" }
 # Hexadecimal fingerprints in JSON reports.
 hex.workspace = true
 # Serialization for the public triage report.
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 # Structured public API errors.
-thiserror = { version = "2" }
+thiserror = { workspace = true }
 # Pure Rust x86/x64 disassembler.
 iced-x86.workspace = true
 # Zero-copy typed views over ELF and DOS/PE headers (`headers` module).
 zerocopy = { workspace = true, features = ["derive"] }
 # Structured context for the bounded PE-inspection compatibility contract.
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 
 [dev-dependencies]
-serde_json = { version = "1" }
+serde_json = { workspace = true }
 # Rich matchers with readable test failure messages.
 googletest.workspace = true

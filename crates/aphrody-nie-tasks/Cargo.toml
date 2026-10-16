@@ -16,13 +16,13 @@ default = ["host"]
 host = ["dep:async-trait", "dep:tokio", "dep:tracing", "dep:uuid"]
 
 [dependencies]
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net"], optional = true }
-async-trait = { version = "0.1", optional = true }
-uuid = { version = "1", features = ["v4", "serde"], optional = true }
-thiserror = { version = "2" }
-tracing = { version = "0.1", optional = true }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net"], optional = true }
+async-trait = { workspace = true, optional = true }
+uuid = { workspace = true, features = ["v4", "serde"], optional = true }
+thiserror = { workspace = true }
+tracing = { workspace = true, optional = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net", "test-util"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time", "net", "test-util"] }

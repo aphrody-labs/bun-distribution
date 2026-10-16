@@ -13,9 +13,9 @@ const mocks = (() => ({
 // Exercise the real multipart API client, replacing only the network boundary.
 vi.mock("@storyteller/tauri-utils", () => ({ FetchProxy: mocks.fetch }));
 vi.mock("@storyteller/api", async () => ({
-  ...(await import("../../../../../../libs/api/src/lib/MediaUploadApi")),
-  ...(await import("../../../../../../libs/api/src/lib/MediaFilesApi")),
-  ...(await import("../../../../../../libs/api/src/lib/enums/EIntermediateFile")),
+  ...(await import("../../../../../../packages/storyteller-api/src/lib/MediaUploadApi")),
+  ...(await import("../../../../../../packages/storyteller-api/src/lib/MediaFilesApi")),
+  ...(await import("../../../../../../packages/storyteller-api/src/lib/enums/EIntermediateFile")),
 }));
 vi.mock("@storyteller/ui-gallery-modal", () => ({
   galleryModalLightboxImage: mocks.image,

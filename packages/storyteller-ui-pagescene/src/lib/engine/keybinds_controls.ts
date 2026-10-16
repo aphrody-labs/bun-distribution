@@ -1,8 +1,6 @@
 import * as THREE from "three";
-import {
-  OrbitControls,
-  PointerLockControls,
-} from "three/examples/jsm/Addons.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { TransformControls } from "./TransformControls";
 import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import { SceneManager, SceneObject } from "./scene_manager_api";
@@ -156,11 +154,11 @@ export class MouseControls {
   focus() {
     if (this.deps.isViewportLocked()) return;
     if (this.lockControls && this.selected) {
-      this.lockControls.camera.lookAt(this.selected[0].position);
-      this.lockControls.camera.position.copy(this.selected[0].position);
+      this.lockControls.object.lookAt(this.selected[0].position);
+      this.lockControls.object.position.copy(this.selected[0].position);
       this.lockControls.moveForward(-5);
-      this.lockControls.camera.position.add(new THREE.Vector3(0, 5, 0));
-      this.lockControls.camera.lookAt(this.selected[0].position);
+      this.lockControls.object.position.add(new THREE.Vector3(0, 5, 0));
+      this.lockControls.object.lookAt(this.selected[0].position);
     }
   }
 
@@ -228,11 +226,7 @@ export class MouseControls {
   }
 
   onMouseDown(event: any) {
-    if (
-      (event.button === 0 || event.button === 1) &&
-      this.isMovable() &&
-      !this.isBoneDragged
-    ) {
+    if ((event.button === 0 || event.button === 1) && this.isMovable() && !this.isBoneDragged) {
       this.isMouseClicked = true;
       // Pointer lock is requested from `handleMousePointerLock()` once
       // we see a real mousemove with the button held — locking eagerly
@@ -265,7 +259,7 @@ export class MouseControls {
   }
 
   sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   toggleFKMode() {
@@ -334,13 +328,13 @@ export class MouseControls {
         this.lockControls.isLocked = true;
 
         // Change the cursor to a dragging cursor
-        this.lockControls.domElement.style.cursor = "move";
+        if (this.lockControls.domElement) this.lockControls.domElement.style.cursor = "move";
         console.log("Mouse locked manually");
         return;
       }
 
       // If the mouse is clicked but controls also locked, move the camera with the mouse
-      const camera = this.lockControls.getObject();
+      const camera = this.lockControls.object;
       const _euler = new Euler(0, 0, 0, "YXZ");
       const _MOUSE_SENSITIVITY = 0.002;
       const pointerSpeed = 1.0;
@@ -353,10 +347,7 @@ export class MouseControls {
       _euler.y -= event.movementX * _MOUSE_SENSITIVITY * pointerSpeed;
       _euler.x -= event.movementY * _MOUSE_SENSITIVITY * pointerSpeed;
 
-      _euler.x = Math.max(
-        _PI_2 - maxPolarAngle,
-        Math.min(_PI_2 - minPolarAngle, _euler.x),
-      );
+      _euler.x = Math.max(_PI_2 - maxPolarAngle, Math.min(_PI_2 - minPolarAngle, _euler.x));
 
       camera.quaternion.setFromEuler(_euler);
     } else if (this.lockControls) {
@@ -365,7 +356,7 @@ export class MouseControls {
         this.lockControls.isLocked = false;
 
         // Change the cursor back to default
-        this.lockControls.domElement.style.cursor = "default";
+        if (this.lockControls.domElement) this.lockControls.domElement.style.cursor = "default";
         console.log("Mouse unlocked manually");
       }
     }
@@ -434,12 +425,7 @@ export class MouseControls {
     const interactable: any[] = [];
     this.scene.children.forEach((child: THREE.Object3D) => {
       if (child.name != "") {
-        if (
-          child.type == "Mesh" ||
-          child.type == "Object3D" ||
-          child.type == "Group" ||
-          child.type == "SkinnedMesh"
-        ) {
+        if (child.type == "Mesh" || child.type == "Object3D" || child.type == "Group" || child.type == "SkinnedMesh") {
           interactable.push(child);
         }
       }

@@ -12,9 +12,9 @@ common.workspace = true
 ruzu_core = { package = "core", path = "../ruzu-core" }
 shader_recompiler.workspace = true
 gl.workspace = true
-log = { version = "0.4.28", default-features = false }
-thiserror = { version = "2" }
-anyhow = { version = "1" }
+log = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
 ash.workspace = true
 vk-mem.workspace = true
 raw-window-handle.workspace = true
@@ -23,13 +23,13 @@ rspirv.workspace = true
 spirv.workspace = true
 bitflags.workspace = true
 bytemuck.workspace = true
-libc = "0.2"
-smallvec = { version = "1", features = ["const_generics"] }
-# rxbyak = { path = "../../externals/rxbyak" }  # externals/ not present in the iecode source tree
+libc = { workspace = true }
+smallvec = { workspace = true, features = ["const_generics"] }
+rxbyak = { workspace = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-block2 = "0.6.2"
-objc2 = { version = "0.6.3" }
+block2 = { workspace = true }
+objc2 = { workspace = true }
 objc2-metal.workspace = true
 objc2-quartz-core.workspace = true
 objc2-foundation.workspace = true
@@ -39,5 +39,5 @@ spirv-cross2 = { workspace = true, optional = true }
 spirv-cross2.workspace = true
 
 [build-dependencies]
-cc = "1"
-pkg-config = "0.3"
+cc = { workspace = true }
+pkg-config = { workspace = true }

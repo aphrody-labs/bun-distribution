@@ -35,11 +35,11 @@ default = ["host"]
 host = ["dep:libc", "dep:windows-sys"]
 
 [dependencies]
-thiserror = { version = "2" }
+thiserror = { workspace = true }
 
 # Backend Linux/Wine : process_vm_readv/writev via libc.
 [target.'cfg(target_os = "linux")'.dependencies]
-libc = { version = "0.2.185", default-features = false, optional = true }
+libc = { workspace = true, optional = true }
 
 # Backend Windows natif : OpenProcess/ReadProcessMemory/Toolhelp32/VirtualQueryEx.
 [target.'cfg(windows)'.dependencies]

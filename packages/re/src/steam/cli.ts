@@ -43,20 +43,12 @@ const { values, positionals } = parseArgs({
 const common = {
   db: values.db,
   root: values.root,
-  hashMax: values["no-hash"]
-    ? 0
-    : values["hash-max"]
-      ? Number(values["hash-max"])
-      : undefined,
+  hashMax: values["no-hash"] ? 0 : values["hash-max"] ? Number(values["hash-max"]) : undefined,
 };
 const print = (v: unknown) =>
   console.log(
     values.json || typeof v !== "string"
-      ? JSON.stringify(
-          v,
-          (_, x) => (typeof x === "bigint" ? x.toString() : x),
-          2,
-        )
+      ? JSON.stringify(v, (_, x) => (typeof x === "bigint" ? x.toString() : x), 2)
       : v,
   );
 const [cmd, ...rest] = positionals;
@@ -64,7 +56,7 @@ const [cmd, ...rest] = positionals;
 try {
   switch (cmd) {
     case "scan":
-      print(await opScan(common, (m) => console.error(m)));
+      print(await opScan(common, m => console.error(m)));
       break;
     case "stats":
       print(opStats(common));

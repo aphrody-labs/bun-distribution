@@ -24,8 +24,8 @@ chapa.workspace = true
 wesl.workspace = true
 glam = { workspace = true, features = ["bytemuck", "i32", "u32"] }
 crossbeam-channel.workspace = true
-tracing = { version = "0.1" }
+tracing = { workspace = true }
 rustc-hash.workspace = true
-png = { version = "0.18" }
+png = { workspace = true }
 renderdoc = { workspace = true, optional = true }
 hotpath = { workspace = true, optional = true }

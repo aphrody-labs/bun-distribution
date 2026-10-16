@@ -6,7 +6,6 @@ version.workspace      = true
 edition.workspace      = true
 rust-version.workspace = true
 authors = ["aphrody-code"]
-homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-translate-core"
 repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-translate-core"
 license = "Apache-2.0"
 description            = "Pure stages of the aphrody comment rewriter: comment extraction, AI-marker scrubbing, Aphrody style, language detection. No network, no runtime; wasm32-safe."
@@ -24,4 +23,4 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-regex = { workspace = true, features = ["default"] }
+regex = { workspace = true }

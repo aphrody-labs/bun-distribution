@@ -17,18 +17,18 @@ profile_opcodes = []
 no_execute_support = []
 
 [dependencies]
-bitflags = "2"
-log = "0.4"
-thiserror = "2"
-libc = "0.2"
+bitflags = { workspace = true }
+log = { workspace = true }
+thiserror = { workspace = true }
+libc = { workspace = true }
 hashbrown = "0.16"
 
 # Match dynarmic's architecture-specific xbyak/oaknut linkage and backend modules.
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-# rxbyak = { path = "../../externals/rxbyak" }  # externals/ not present in the iecode source tree
+rxbyak = { workspace = true }
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-# rhazel = { path = "../../externals/rhazel" }  # externals/ not present in the iecode source tree
+rhazel = { workspace = true }
 
 [[bin]]
 name = "a32_diff"

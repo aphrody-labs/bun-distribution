@@ -2,7 +2,7 @@ import { vi, describe, it, expect, afterEach } from "bun:test";
 import {
   stubGlobal,
   restoreGlobals,
-} from "../../../../../../../tools/testing/globals";
+} from "../../../../../artcraft-frontend/tools/testing/globals";
 import { ViewportController } from "./ViewportController";
 
 describe("ViewportController", () => {

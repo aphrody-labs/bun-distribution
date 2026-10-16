@@ -10,8 +10,8 @@ ctr.workspace = true
 cipher.workspace = true
 sha2 = { version = "0.10" }
 hex.workspace = true
-log = { version = "0.4.28", default-features = false }
-thiserror = { version = "2" }
+log = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-tempfile = { version = "3" }
+tempfile = { workspace = true }

@@ -8,17 +8,8 @@ import {
   pickDownloadDirectory,
   promptDownloadLocationIfNeeded,
 } from "@storyteller/tauri-api";
-import {
-  RefImage,
-  RefVideo,
-  RefAudio,
-  usePromptImageStore,
-  usePromptVideoStore,
-} from "@storyteller/ui-promptbox";
-import {
-  useClassyModelSelectorStore,
-  ModelPage,
-} from "@storyteller/ui-model-selector";
+import { RefImage, RefVideo, RefAudio, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { useClassyModelSelectorStore, ModelPage } from "@storyteller/ui-model-selector";
 import {
   IMAGE_MODELS_BY_ID,
   VIDEO_MODELS_BY_ID,
@@ -31,10 +22,7 @@ import {
   galleryModalVisibleDuringDrag,
   galleryModalVisibleViewMode,
 } from "@storyteller/ui-gallery-modal";
-import {
-  getCachedPrompt,
-  type GalleryItem,
-} from "@storyteller/ui-generation-list";
+import { getCachedPrompt, type GalleryItem } from "@storyteller/ui-generation-list";
 import { useTabStore } from "~/pages/Stores/TabState";
 
 // Media item actions shared by the TopBar gallery modal / lightbox wiring and
@@ -44,11 +32,7 @@ import { useTabStore } from "~/pages/Stores/TabState";
 export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
 /** Download a media file, prompting for a location when configured to. */
-export async function downloadMediaFileToDisk(
-  url: string,
-  mediaClass?: string,
-  model?: string,
-) {
+export async function downloadMediaFileToDisk(url: string, mediaClass?: string, model?: string) {
   try {
     const chosenPath = await promptDownloadLocationIfNeeded(url, model);
     if (chosenPath === null) {
@@ -78,12 +62,8 @@ export async function downloadMediaFileToDisk(
  * a single updating toast. Returns true when at least one file was saved
  * (false on dismiss / nothing downloadable).
  */
-export async function downloadMediaFilesToFolder(
-  items: GalleryItem[],
-): Promise<boolean> {
-  const downloadable = items.filter(
-    (it): it is GalleryItem & { fullImage: string } => !!it.fullImage,
-  );
+export async function downloadMediaFilesToFolder(items: GalleryItem[]): Promise<boolean> {
+  const downloadable = items.filter((it): it is GalleryItem & { fullImage: string } => !!it.fullImage);
   if (downloadable.length === 0) return false;
 
   const dir = await pickDownloadDirectory();
@@ -117,10 +97,7 @@ export async function downloadMediaFilesToFolder(
       id: toastId,
     });
   } else if (saved > 0) {
-    toast.error(
-      `${failedCount} of ${downloadable.length} files failed to save`,
-      { id: toastId },
-    );
+    toast.error(`${failedCount} of ${downloadable.length} files failed to save`, { id: toastId });
   } else {
     toast.error("Could not save the selected files.", { id: toastId });
   }
@@ -128,10 +105,7 @@ export async function downloadMediaFilesToFolder(
 }
 
 /** Seed the video page with `url` as the starting image and switch to it. */
-export async function applyMakeVideoFromImage(
-  url: string,
-  mediaToken?: string,
-) {
+export async function applyMakeVideoFromImage(url: string, mediaToken?: string) {
   try {
     const referenceImage: RefImage = {
       id: Math.random().toString(36).substring(7),
@@ -145,7 +119,7 @@ export async function applyMakeVideoFromImage(
     galleryModalVisibleViewMode.value = false;
     galleryModalVisibleDuringDrag.value = false;
     galleryModalLightboxVisible.value = false;
-  } catch (e) {
+  } catch {
     // no-op
   }
 }
@@ -166,10 +140,7 @@ export async function copyShareLink(mediaToken: string): Promise<boolean> {
  * Re-seed the image or video create page from a generation's prompt record
  * (prompt text, reference media, settings, model) and switch to that page.
  */
-export function applyRecreateFromPromptData(data: {
-  promptData: Prompts;
-  mediaClass: string | undefined;
-}) {
+export function applyRecreateFromPromptData(data: { promptData: Prompts; mediaClass: string | undefined }) {
   try {
     const { promptData, mediaClass: recreateMediaClass } = data;
     const contextImages = promptData.maybe_context_images || [];
@@ -214,8 +185,7 @@ export function applyRecreateFromPromptData(data: {
 
     // Determine input mode from generation_mode or context image semantics
     const hasKeyframeSemantics = contextImages.some(
-      (ci) =>
-        ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
+      ci => ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
     );
     const inputMode: "keyframe" | "reference" =
       promptData.maybe_generation_mode === "keyframe" || hasKeyframeSemantics
@@ -236,9 +206,7 @@ export function applyRecreateFromPromptData(data: {
         ? (useModelsStore
             .getState()
             .videoModels.find(
-              (model) =>
-                model.tauriId === promptData.maybe_model_type ||
-                model.id === promptData.maybe_model_type,
+              model => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type,
             ) ?? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type))
         : undefined;
       if (videoModel) {
@@ -261,9 +229,7 @@ export function applyRecreateFromPromptData(data: {
 
       // Map API aspect ratio (tauriValue like "wide_sixteen_by_nine") → textLabel (like "16:9")
       if (promptData.maybe_aspect_ratio && videoModel?.sizeOptions) {
-        const match = videoModel.sizeOptions.find(
-          (opt) => opt.tauriValue === promptData.maybe_aspect_ratio,
-        );
+        const match = videoModel.sizeOptions.find(opt => opt.tauriValue === promptData.maybe_aspect_ratio);
         if (match) {
           videoStore.setAspectRatio(match.textLabel);
         }
@@ -272,9 +238,7 @@ export function applyRecreateFromPromptData(data: {
       // Map API resolution (like "one_k") → video store format (like "1080p")
       if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
         const value = videoResolutionValue(promptData.maybe_resolution);
-        const option = videoModel.resolutionOptions.find(
-          (option) => videoResolutionValue(option) === value,
-        );
+        const option = videoModel.resolutionOptions.find(option => videoResolutionValue(option) === value);
         videoStore.setResolution(option ?? value);
       }
 
@@ -289,14 +253,10 @@ export function applyRecreateFromPromptData(data: {
       }
       if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
       if (promptData.maybe_aspect_ratio) {
-        imageStore.setCommonAspectRatio(
-          promptData.maybe_aspect_ratio as CommonAspectRatio,
-        );
+        imageStore.setCommonAspectRatio(promptData.maybe_aspect_ratio as CommonAspectRatio);
       }
       if (promptData.maybe_resolution) {
-        imageStore.setCommonResolution(
-          promptData.maybe_resolution as CommonResolution,
-        );
+        imageStore.setCommonResolution(promptData.maybe_resolution as CommonResolution);
       }
 
       if (promptData.maybe_model_type) {
@@ -304,9 +264,7 @@ export function applyRecreateFromPromptData(data: {
           useModelsStore
             .getState()
             .imageModels.find(
-              (model) =>
-                model.tauriId === promptData.maybe_model_type ||
-                model.id === promptData.maybe_model_type,
+              model => model.tauriId === promptData.maybe_model_type || model.id === promptData.maybe_model_type,
             ) ?? IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
         if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
       }
@@ -316,7 +274,7 @@ export function applyRecreateFromPromptData(data: {
     galleryModalVisibleViewMode.value = false;
     galleryModalVisibleDuringDrag.value = false;
     galleryModalLightboxVisible.value = false;
-  } catch (e) {
+  } catch {
     // no-op
   }
 }
@@ -325,10 +283,7 @@ export function applyRecreateFromPromptData(data: {
  * Recreate from a prompt token: resolve the prompt record (shared cache
  * first, then the API), then seed the create page from it.
  */
-export async function applyRecreateFromPromptToken(
-  promptToken: string,
-  mediaClass: "image" | "video",
-) {
+export async function applyRecreateFromPromptToken(promptToken: string, mediaClass: "image" | "video") {
   let promptData: Prompts | undefined = getCachedPrompt(promptToken);
   if (!promptData) {
     try {

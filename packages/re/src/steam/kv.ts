@@ -21,8 +21,7 @@ export function parseTextKv(text: string): KvObject {
   const skipWs = () => {
     while (i < n) {
       const c = text.charCodeAt(i);
-      if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0xfeff)
-        i++;
+      if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0xfeff) i++;
       else if (c === 0x2f && text.charCodeAt(i + 1) === 0x2f) {
         while (i < n && text.charCodeAt(i) !== 0x0a) i++;
       } else break;
@@ -43,14 +42,7 @@ export function parseTextKv(text: string): KvObject {
         const ch = text[i];
         if (ch === "\\") {
           const nx = text[i + 1];
-          out +=
-            nx === "n"
-              ? "\n"
-              : nx === "t"
-                ? "\t"
-                : nx === "r"
-                  ? "\r"
-                  : (nx ?? "");
+          out += nx === "n" ? "\n" : nx === "t" ? "\t" : nx === "r" ? "\r" : (nx ?? "");
           i += 2;
         } else if (ch === '"') {
           i++;
@@ -92,10 +84,7 @@ export function parseTextKv(text: string): KvObject {
   return root;
 }
 
-export const kvGet = (
-  obj: KvValue | null | undefined,
-  ...path: string[]
-): KvValue | undefined => {
+export const kvGet = (obj: KvValue | null | undefined, ...path: string[]): KvValue | undefined => {
   let cur: KvValue | undefined = obj ?? undefined;
   for (const p of path) {
     if (cur === undefined || typeof cur === "string") return undefined;
@@ -103,26 +92,17 @@ export const kvGet = (
   }
   return cur;
 };
-export const kvStr = (
-  obj: KvValue | null | undefined,
-  ...path: string[]
-): string | null => {
+export const kvStr = (obj: KvValue | null | undefined, ...path: string[]): string | null => {
   const v = kvGet(obj, ...path);
   return typeof v === "string" ? v : null;
 };
-export const kvInt = (
-  obj: KvValue | null | undefined,
-  ...path: string[]
-): number | null => {
+export const kvInt = (obj: KvValue | null | undefined, ...path: string[]): number | null => {
   const s = kvStr(obj, ...path);
   if (s === null) return null;
   const v = Number(s);
   return Number.isFinite(v) ? v : null;
 };
-export const kvObj = (
-  obj: KvValue | null | undefined,
-  ...path: string[]
-): KvObject | null => {
+export const kvObj = (obj: KvValue | null | undefined, ...path: string[]): KvObject | null => {
   const v = kvGet(obj, ...path);
   return v !== undefined && typeof v !== "string" ? v : null;
 };
@@ -172,18 +152,14 @@ export class Cursor {
   }
   cstr(): string {
     const start = this.pos;
-    while (this.pos < this.bytes.length && this.bytes[this.pos] !== 0)
-      this.pos++;
+    while (this.pos < this.bytes.length && this.bytes[this.pos] !== 0) this.pos++;
     const s = utf8.decode(this.bytes.subarray(start, this.pos));
     this.pos++;
     return s;
   }
   wstr(): string {
     const start = this.pos;
-    while (
-      this.pos + 1 < this.bytes.length &&
-      !(this.bytes[this.pos] === 0 && this.bytes[this.pos + 1] === 0)
-    )
+    while (this.pos + 1 < this.bytes.length && !(this.bytes[this.pos] === 0 && this.bytes[this.pos + 1] === 0))
       this.pos += 2;
     const s = utf16.decode(this.bytes.subarray(start, this.pos));
     this.pos += 2;
@@ -212,10 +188,7 @@ export const BIN_KV = {
  * a `u32` index into the table instead of an inline C string. Values are normalized to strings so
  * the result shares the text-KV shape.
  */
-export function parseBinaryKv(
-  cur: Cursor,
-  stringTable: string[] | null,
-): KvObject {
+export function parseBinaryKv(cur: Cursor, stringTable: string[] | null): KvObject {
   const readKey = (): string => {
     if (stringTable) {
       const idx = cur.u32();
@@ -255,9 +228,7 @@ export function parseBinaryKv(
           obj[key] = cur.i64().toString();
           break;
         default:
-          throw new Error(
-            `binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`,
-          );
+          throw new Error(`binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`);
       }
     }
   };
@@ -265,11 +236,7 @@ export function parseBinaryKv(
 }
 
 /** Flattens nested KV into `a/b/c` → string pairs. */
-export function flattenKv(
-  obj: KvObject,
-  prefix = "",
-  out: Record<string, string> = {},
-): Record<string, string> {
+export function flattenKv(obj: KvObject, prefix = "", out: Record<string, string> = {}): Record<string, string> {
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}/${k}` : k;
     if (typeof v === "string") out[key] = v;

@@ -310,18 +310,6 @@
 	path = vendor/sudo-rs
 	url = https://github.com/aphrody-labs/sudo-rs.git
 	branch = main
-[submodule "vendor/uutils-coreutils"]
-	path = vendor/uutils-coreutils
-	url = https://github.com/aphrody-labs/uutils-coreutils.git
-	branch = main
-[submodule "vendor/uutils-diffutils"]
-	path = vendor/uutils-diffutils
-	url = https://github.com/aphrody-labs/uutils-diffutils.git
-	branch = main
-[submodule "vendor/uutils-findutils"]
-	path = vendor/uutils-findutils
-	url = https://github.com/aphrody-labs/uutils-findutils.git
-	branch = main
 [submodule "vendor/ares"]
 	path = vendor/ares
 	url = https://github.com/ares-emulator/ares.git
@@ -435,10 +423,22 @@
 [submodule "vendor/uutils/diffutils"]
 	path = vendor/uutils/diffutils
 	url = https://github.com/aphrody-labs/uutils-diffutils.git
-	branch = main
+	branch = aphrody
 	shallow = true
 [submodule "vendor/uutils/util-linux"]
 	path = vendor/uutils/util-linux
+	url = https://github.com/aphrody-labs/uutils-util-linux.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/procps"]
+	path = vendor/uutils/procps
+	url = https://github.com/aphrody-labs/uutils-procps.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/coreutils"]
+	path = vendor/uutils/coreutils
+	url = https://github.com/aphrody-labs/uutils-coreutils.git
+	branch = aphrody
 [submodule "vendor/steam/steamkit"]
 	path = vendor/steam/steamkit
 	url = https://github.com/SteamRE/SteamKit.git
@@ -507,15 +507,18 @@
 	path = vendor/steam/steamlocate-rs
 	url = https://github.com/CosmicHorrorDev/steamlocate-rs.git
 	branch = master
-	url = https://github.com/aphrody-labs/uutils-util-linux.git
-	branch = main
-	shallow = true
-[submodule "vendor/uutils/procps"]
-	path = vendor/uutils/procps
-	url = https://github.com/aphrody-labs/uutils-procps.git
-	branch = main
-	shallow = true
-[submodule "vendor/uutils/coreutils"]
-	path = vendor/uutils/coreutils
-	url = https://github.com/aphrody-labs/uutils-coreutils.git
-	branch = aphrody
+[submodule "vendor/steam/steam-mcp-server"]
+	path = vendor/steam/steam-mcp-server
+	url = https://github.com/sharkusmanch/steam-mcp-server.git
+[submodule "vendor/steam/steamos-claude-skill"]
+	path = vendor/steam/steamos-claude-skill
+	url = https://github.com/28allday/steamos-claude-skill.git
+[submodule "vendor/steam/steam-claude-skills"]
+	path = vendor/steam/steam-claude-skills
+	url = https://github.com/tugteam/steam-claude-skills.git
+[submodule "vendor/re/ghidramcp"]
+	path = vendor/re/ghidramcp
+	url = https://github.com/LaurieWired/GhidraMCP.git
+[submodule "vendor/re/ida-pro-mcp"]
+	path = vendor/re/ida-pro-mcp
+	url = https://github.com/mrexodia/ida-pro-mcp.git

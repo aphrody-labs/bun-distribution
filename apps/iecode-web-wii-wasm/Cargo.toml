@@ -22,8 +22,8 @@ aphrody-wii.workspace = true
 dbglib = { package = "aphrody-wii-debug", path = "../../crates/aphrody-wii-debug", optional = true }
 egui-phosphor = { workspace = true, optional = true, features = ["fill"] }
 wgpu.workspace = true
-winit = { version = "0.30.8", default-features = false, features = ["rwh_06", "android-native-activity"] }
-egui = { version = "0.36.2" }
+winit = { workspace = true, features = ["rwh_06", "android-native-activity"] }
+egui = { workspace = true }
 egui-wgpu = { version = "0.36.2", default-features = false }
 egui-winit = { workspace = true, features = ["links"] }
 wasm-bindgen.workspace = true

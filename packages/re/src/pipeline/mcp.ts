@@ -53,7 +53,7 @@ export const pipelineTools: PipelineTool[] = [
       },
       required: ["input", "outdir"],
     },
-    handler: async (a) => {
+    handler: async a => {
       try {
         return text(
           await runPipeline(String(a.input), {
@@ -73,7 +73,7 @@ export const pipelineTools: PipelineTool[] = [
     description:
       "List registered pipeline stage adapters with live availability (ready, registered, unavailable) and owners.",
     inputSchema: { type: "object", properties: { stage: { type: "string" } } },
-    handler: async (a) => {
+    handler: async a => {
       try {
         return text(await listAdapters(a.stage as Stage | undefined));
       } catch (e) {
@@ -83,8 +83,6 @@ export const pipelineTools: PipelineTool[] = [
   },
 ];
 
-export function registerPipelineTools(
-  register: (tool: PipelineTool) => void,
-): void {
+export function registerPipelineTools(register: (tool: PipelineTool) => void): void {
   for (const t of pipelineTools) register(t);
 }

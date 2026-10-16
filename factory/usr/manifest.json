@@ -7,7 +7,22 @@
   "host": "vps",
   "builderImage": "archlinux:base-devel",
   "builderImageObservedId": "061679925e5d",
-  "builderPackages": ["arch-install-scripts", "squashfs-tools", "erofs-utils", "cryptsetup", "zstd"],
+  "builderPackages": [
+    "arch-install-scripts",
+    "squashfs-tools",
+    "erofs-utils",
+    "cryptsetup",
+    "zstd",
+    "jq",
+    "curl",
+    "openssl",
+    "systemd-ukify",
+    "sbsigntools",
+    "mtools",
+    "dosfstools",
+    "qemu-system-x86",
+    "edk2-ovmf"
+  ],
   "remoteRoot": "/home/ubuntu/bun-os-usr",
   "remoteTimeoutSeconds": 3000,
   "localArtifacts": "~/.local/share/bun-os/usr",
@@ -36,6 +51,7 @@
     "reason": "Prebuilt AUR binaries are not required by any composition; enable only with an explicit package need."
   },
   "basePackages": [
+    "bunos-filesystem",
     "base",
     "base-devel",
     "linux-cachyos",
@@ -45,7 +61,8 @@
     "archlinux-keyring",
     "cachyos-keyring",
     "cachyos-mirrorlist",
-    "bun",
+    "bun-aphrody",
+    "bunos-utils",
     "ca-certificates",
     "man-db",
     "man-pages"
@@ -116,6 +133,27 @@
     "repository": "bunos",
     "pkgbuilds": "factory/bunos/pkgbuilds",
     "validate": "bun factory/bunos/validate.ts",
-    "reason": "Extra packages of the local bunos repository (aphrody, bun-video-native, fonts, icons) and the heavy-component inventory; compositions select them through compositionPackages once the builder consumes factory/bunos/pkgbuilds next to localRepository.packages."
+    "reason": "Extra packages of the local bunos repository (aphrody, bun-video-native, fonts, icons) and the heavy-component inventory; compositions select them through compositionPackages once the builder consumes factory/bunos/pkgbuilds next to localRepository.packages.",
+    "unpublished": {
+      "aphrody": "PKGBUILD needs toolchains/bun 46709d69939f; that commit is not on any aphrody-labs/bun branch",
+      "bun-video-native": "pins aphrody-labs/bun 46709d69939f, not published on any branch"
+    }
+  },
+  "localRepository": {
+    "name": "bunos",
+    "packages": "factory/usr/pkgs",
+    "sourceDateEpoch": 1760572800
+  },
+  "archive": {
+    "server": "https://archive.archlinux.org/repos/{date}/$repo/os/$arch",
+    "repositories": ["core", "extra", "multilib"],
+    "note": "CachyOS publishes no dated archive; the lock pins its exact files and sha256."
+  },
+  "lockDirectory": "factory/usr/locks",
+  "boot": {
+    "definitions": "factory/usr/boot",
+    "timeoutSeconds": 420,
+    "firmware": "edk2-ovmf",
+    "secureBootSigning": "ephemeral test key per job"
   }
 }

@@ -22,32 +22,16 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  GetTaskQueue,
-  MarkTaskAsDismissed,
-  TasksNukeAll,
-} from "@storyteller/tauri-api";
+import { GetTaskQueue, MarkTaskAsDismissed, TasksNukeAll } from "@storyteller/tauri-api";
 import type { TaskQueueItem } from "@storyteller/tauri-api";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import {
-  useSelectedImageModel,
-  useSelectedVideoModel,
-  ModelPage,
-} from "@storyteller/ui-model-selector";
+import { useSelectedImageModel, useSelectedVideoModel, ModelPage } from "@storyteller/ui-model-selector";
 import { Button } from "@storyteller/ui-button";
-import {
-  getProviderDisplayName,
-  ALL_MODELS_LIST,
-  getModelDisplayName,
-} from "@storyteller/model-list";
+import { getProviderDisplayName, ALL_MODELS_LIST, getModelDisplayName } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { TaskMediaFileClass } from "@storyteller/api-enums";
-import {
-  getThumbnailUrl,
-  THUMBNAIL_SIZES,
-  getPlaceholderForMediaClass,
-} from "@storyteller/common";
+import { getThumbnailUrl, THUMBNAIL_SIZES, getPlaceholderForMediaClass } from "@storyteller/common";
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
@@ -105,13 +89,7 @@ const formatTimeLeft = (ms: number): string => {
   return `~ ${seconds}s left`;
 };
 
-const PromptLine = ({
-  prompt,
-  className,
-}: {
-  prompt: string;
-  className?: string;
-}) => {
+const PromptLine = ({ prompt, className }: { prompt: string; className?: string }) => {
   const [marqueePlaying, setMarqueePlaying] = useState(false);
   const [promptOverflows, setPromptOverflows] = useState(false);
   const promptRef = useRef<HTMLDivElement>(null);
@@ -131,12 +109,8 @@ const PromptLine = ({
     >
       <div
         className={twMerge("mt-1 overflow-hidden", className)}
-        onMouseEnter={
-          promptOverflows ? () => setMarqueePlaying(true) : undefined
-        }
-        onMouseLeave={
-          promptOverflows ? () => setMarqueePlaying(false) : undefined
-        }
+        onMouseEnter={promptOverflows ? () => setMarqueePlaying(true) : undefined}
+        onMouseLeave={promptOverflows ? () => setMarqueePlaying(false) : undefined}
       >
         <div
           ref={promptRef}
@@ -173,29 +147,20 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
       <button
         className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
         aria-label="Copy prompt"
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation();
           navigator.clipboard.writeText(prompt);
           setCopied(true);
           setTimeout(() => setCopied(false), 3000);
         }}
       >
-        <DynamicIcon
-          icon={copied ? CheckIcon : CopyIcon}
-          className={copied ? "text-green-400" : ""}
-        />
+        <DynamicIcon icon={copied ? CheckIcon : CopyIcon} className={copied ? "text-green-400" : ""} />
       </button>
     </Tooltip>
   );
 };
 
-const InProgressCard = ({
-  task,
-  onDismiss,
-}: {
-  task: InProgressTask;
-  onDismiss?: () => void;
-}) => {
+const InProgressCard = ({ task, onDismiss }: { task: InProgressTask; onDismiss?: () => void }) => {
   const progressPercent = Math.max(0, Math.min(100, Math.round(task.progress)));
   const isAlmostDone = task.progress >= 95;
   const timeLabel = isAlmostDone
@@ -212,7 +177,7 @@ const InProgressCard = ({
         src={task.refImageUrls![0]}
         alt="Reference"
         className="h-full w-full object-cover opacity-50"
-        onError={(e) => {
+        onError={e => {
           e.currentTarget.style.display = "none";
         }}
       />
@@ -253,15 +218,9 @@ const InProgressCard = ({
                 </Tooltip>
               )}
             </div>
-            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
-              {progressPercent}%
-            </div>
+            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">{progressPercent}%</div>
           </div>
-          {task.subtitle && (
-            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
-              {task.subtitle}
-            </div>
-          )}
+          {task.subtitle && <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">{task.subtitle}</div>}
           <div className="mt-1.5 flex items-center gap-2">
             <div className="h-1.5 min-w-0 flex-1 bg-ui-controls">
               <div
@@ -272,9 +231,7 @@ const InProgressCard = ({
               />
             </div>
           </div>
-          {timeLabel && (
-            <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
-          )}
+          {timeLabel && <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>}
           {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -283,7 +240,7 @@ const InProgressCard = ({
             <button
               className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onDismiss();
               }}
@@ -318,36 +275,23 @@ const CompletedCard = ({
           <img
             src={task.thumbnailUrl}
             alt={task.title}
-            onError={(e) => {
-              e.currentTarget.src = getPlaceholderForMediaClass(
-                task.mediaFileClass,
-              );
+            onError={e => {
+              e.currentTarget.src = getPlaceholderForMediaClass(task.mediaFileClass);
               e.currentTarget.style.opacity = "0.3";
               // Set the `data-brokenurl` property for debugging the broken images:
-              (e.currentTarget as HTMLImageElement).dataset.brokenurl =
-                task.thumbnailUrl;
+              (e.currentTarget as HTMLImageElement).dataset.brokenurl = task.thumbnailUrl;
             }}
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
-            Done
-          </div>
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">Done</div>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-base-fg/90">
-          {task.title}
-        </div>
-        {task.subtitle && (
-          <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
-            {task.subtitle}
-          </div>
-        )}
+        <div className="truncate text-sm font-medium text-base-fg/90">{task.title}</div>
+        {task.subtitle && <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">{task.subtitle}</div>}
         {task.completedAt && (
-          <div className="text-xs text-base-fg opacity-60">
-            {dayjs(task.completedAt).format("MMM D, h:mm A")}
-          </div>
+          <div className="text-xs text-base-fg opacity-60">{dayjs(task.completedAt).format("MMM D, h:mm A")}</div>
         )}
         {task.prompt && <PromptLine prompt={task.prompt} />}
       </div>
@@ -357,7 +301,7 @@ const CompletedCard = ({
           <button
             className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
             aria-label="Dismiss"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onDismiss();
             }}
@@ -391,13 +335,7 @@ const FAILURE_REASON_LABEL: Record<string, string> = {
   unknown: "An unknown error occurred",
 };
 
-const FailedCard = ({
-  task,
-  onDismiss,
-}: {
-  task: FailedTask;
-  onDismiss?: () => void;
-}) => {
+const FailedCard = ({ task, onDismiss }: { task: FailedTask; onDismiss?: () => void }) => {
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
   const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
@@ -407,7 +345,7 @@ const FailedCard = ({
         src={task.refImageUrls![0]}
         alt="Reference"
         className="h-full w-full object-cover opacity-50"
-        onError={(e) => {
+        onError={e => {
           e.currentTarget.style.display = "none";
         }}
       />
@@ -433,15 +371,9 @@ const FailedCard = ({
         {thumbnailContent}
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
-            <div className="truncate font-medium text-base-fg/90">
-              {task.title}
-            </div>
+            <div className="truncate font-medium text-base-fg/90">{task.title}</div>
           </div>
-          {task.subtitle && (
-            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
-              {task.subtitle}
-            </div>
-          )}
+          {task.subtitle && <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">{task.subtitle}</div>}
           <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
             <span className="shrink-0 bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
               {statusLabel}
@@ -452,12 +384,8 @@ const FailedCard = ({
                   content={
                     task.failureMessage ? (
                       <div>
-                        <div className="font-semibold">
-                          {task.failureReason}
-                        </div>
-                        <div className="mt-0.5 font-normal opacity-80">
-                          {task.failureMessage}
-                        </div>
+                        <div className="font-semibold">{task.failureReason}</div>
+                        <div className="mt-0.5 font-normal opacity-80">{task.failureMessage}</div>
                       </div>
                     ) : (
                       task.failureReason
@@ -477,9 +405,7 @@ const FailedCard = ({
             )}
           </div>
           {task.failedAt && (
-            <div className="mt-0.5 text-[11px] text-base-fg/40">
-              {dayjs(task.failedAt).format("MMM D, h:mm A")}
-            </div>
+            <div className="mt-0.5 text-[11px] text-base-fg/40">{dayjs(task.failedAt).format("MMM D, h:mm A")}</div>
           )}
           {task.prompt && <PromptLine prompt={task.prompt} />}
         </div>
@@ -489,7 +415,7 @@ const FailedCard = ({
             <button
               className="flex h-6 w-6 items-center justify-center text-base-fg/60 hover:bg-ui-controls"
               aria-label="Dismiss"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onDismiss();
               }}
@@ -544,15 +470,10 @@ export const TaskQueue = () => {
     setConfirmationConfig({
       isOpen: true,
       title: "Clear completed tasks?",
-      message: (
-        <span className="text-sm text-white/80">
-          This will remove all completed tasks from the task queue.
-        </span>
-      ),
+      message: <span className="text-sm text-white/80">This will remove all completed tasks from the task queue.</span>,
       primaryActionText: "Clear completed",
       primaryActionIcon: BrushIcon,
-      primaryActionBtnClassName:
-        "bg-green-500/10 hover:bg-green-500/20 text-green-500",
+      primaryActionBtnClassName: "bg-green-500/10 hover:bg-green-500/20 text-green-500",
       onConfirm: async () => {
         await dismissCompleted();
         if (onSuccess) onSuccess();
@@ -571,8 +492,7 @@ export const TaskQueue = () => {
       ),
       primaryActionText: "Clear stale",
       primaryActionIcon: Trash2Icon,
-      primaryActionBtnClassName:
-        "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
+      primaryActionBtnClassName: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
       onConfirm: async () => {
         await dismissStale();
       },
@@ -584,14 +504,11 @@ export const TaskQueue = () => {
       isOpen: true,
       title: "Clear failed tasks?",
       message: (
-        <span className="text-sm text-white/80">
-          This will remove all failed/cancelled tasks from the queue.
-        </span>
+        <span className="text-sm text-white/80">This will remove all failed/cancelled tasks from the queue.</span>
       ),
       primaryActionText: "Clear failed",
       primaryActionIcon: Trash2Icon,
-      primaryActionBtnClassName:
-        "bg-red-500/10 hover:bg-red-500/20 text-red-500",
+      primaryActionBtnClassName: "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
         await dismissFailed();
       },
@@ -604,14 +521,12 @@ export const TaskQueue = () => {
       title: "Remove all tasks?",
       message: (
         <span className="text-sm text-white/80">
-          This will remove ALL tasks (completed and in-progress) from the queue.
-          This cannot be undone.
+          This will remove ALL tasks (completed and in-progress) from the queue. This cannot be undone.
         </span>
       ),
       primaryActionText: "Nuke all",
       primaryActionIcon: BombIcon,
-      primaryActionBtnClassName:
-        "bg-red-500/10 hover:bg-red-500/20 text-red-500",
+      primaryActionBtnClassName: "bg-red-500/10 hover:bg-red-500/20 text-red-500",
       onConfirm: async () => {
         await dismissAll();
       },
@@ -628,17 +543,11 @@ export const TaskQueue = () => {
     let cancelled = false;
 
     const formatTitleParts = (t: TaskQueueItem) => {
-      const provider = t.provider
-        ? getProviderDisplayName(String(t.provider).toLowerCase())
-        : undefined;
+      const provider = t.provider ? getProviderDisplayName(String(t.provider).toLowerCase()) : undefined;
       const taskTypeStr = t.task_type ? String(t.task_type).toLowerCase() : "";
-      const modelTypeStr = t.model_type
-        ? String(t.model_type).toLowerCase()
-        : "";
+      const modelTypeStr = t.model_type ? String(t.model_type).toLowerCase() : "";
       const isSplatModel =
-        taskTypeStr.includes("gaussian") ||
-        modelTypeStr.includes("marble") ||
-        modelTypeStr.includes("worldlabs");
+        taskTypeStr.includes("gaussian") || modelTypeStr.includes("marble") || modelTypeStr.includes("worldlabs");
       const is3DModel =
         taskTypeStr.includes("3d") ||
         taskTypeStr.includes("object") ||
@@ -661,15 +570,12 @@ export const TaskQueue = () => {
       }
 
       const modelDisplay = t.model_type
-        ? (findDesktopModel(String(t.model_type))?.fullName ??
-          getModelDisplayName(String(t.model_type)))
+        ? (findDesktopModel(String(t.model_type))?.fullName ?? getModelDisplayName(String(t.model_type)))
         : undefined;
 
       const title = kind || "Task";
       const subtitle =
-        modelDisplay && provider
-          ? `${modelDisplay} — ${provider}`
-          : modelDisplay || provider || undefined;
+        modelDisplay && provider ? `${modelDisplay} — ${provider}` : modelDisplay || provider || undefined;
       return { title, subtitle, kind };
     };
 
@@ -684,28 +590,20 @@ export const TaskQueue = () => {
 
         const now = Date.now();
         const inProg = tasks
-          .filter(
-            (t) => t.task_status === "pending" || t.task_status === "started",
-          )
+          .filter(t => t.task_status === "pending" || t.task_status === "started")
           .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
           .map((t: TaskQueueItem) => {
             const createdMs = t.created_at.getTime();
-            const taskTypeStr = t.task_type
-              ? String(t.task_type).toLowerCase()
-              : "";
+            const taskTypeStr = t.task_type ? String(t.task_type).toLowerCase() : "";
             const isVideo = taskTypeStr.includes("video");
             let duration = taskDurationRef.current.get(t.id);
             if (!duration) {
               const actualModel = t.model_type
-                ? ALL_MODELS_LIST.find(
-                    (m) => m.tauriId === t.model_type || m.id === t.model_type,
-                  )
+                ? ALL_MODELS_LIST.find(m => m.tauriId === t.model_type || m.id === t.model_type)
                 : undefined;
               duration =
                 actualModel?.progressBarTime ??
-                (isVideo
-                  ? selectedVideoModel?.progressBarTime
-                  : selectedImageModel?.progressBarTime) ??
+                (isVideo ? selectedVideoModel?.progressBarTime : selectedImageModel?.progressBarTime) ??
                 20000;
               taskDurationRef.current.set(t.id, duration);
             }
@@ -715,11 +613,7 @@ export const TaskQueue = () => {
             const estimatedTimeLeftMs = Math.max(0, duration - elapsed);
             const parts = formatTitleParts(t);
             const canDismiss = now - createdMs > 5 * 60 * 1000; // 5 minutes
-            const meta = getMetaForTask(
-              t.id,
-              t.model_type ? String(t.model_type) : undefined,
-              createdMs,
-            );
+            const meta = getMetaForTask(t.id, t.model_type ? String(t.model_type) : undefined, createdMs);
             return {
               id: t.id,
               title: `Generating ${parts.kind || "Task"}...`,
@@ -735,7 +629,7 @@ export const TaskQueue = () => {
           });
 
         // prune durations for tasks no longer in progress
-        const inProgIds = new Set(inProg.map((x) => x.id));
+        const inProgIds = new Set(inProg.map(x => x.id));
         for (const id of Array.from(taskDurationRef.current.keys())) {
           if (!inProgIds.has(id)) {
             taskDurationRef.current.delete(id);
@@ -743,7 +637,7 @@ export const TaskQueue = () => {
         }
 
         const done = tasks
-          .filter((t) => t.task_status === "complete_success")
+          .filter(t => t.task_status === "complete_success")
           .sort(
             (a, b) =>
               (b.completed_at?.getTime() || b.updated_at.getTime()) -
@@ -753,19 +647,12 @@ export const TaskQueue = () => {
             const mediaToken = t.completed_item?.primary_media_file?.token;
             // Try server thumbnail first, then fall back to local cache
             const serverThumbnail = getThumbnailUrl(
-              t.completed_item?.primary_media_file
-                ?.maybe_thumbnail_url_template,
+              t.completed_item?.primary_media_file?.maybe_thumbnail_url_template,
               { width: THUMBNAIL_SIZES.MEDIUM },
             );
-            const cachedThumbnail = mediaToken
-              ? coverImageCache.get(mediaToken)
-              : undefined;
+            const cachedThumbnail = mediaToken ? coverImageCache.get(mediaToken) : undefined;
 
-            const meta = getMetaForTask(
-              t.id,
-              t.model_type ? String(t.model_type) : undefined,
-              t.created_at.getTime(),
-            );
+            const meta = getMetaForTask(t.id, t.model_type ? String(t.model_type) : undefined, t.created_at.getTime());
 
             return {
               id: t.id,
@@ -776,8 +663,7 @@ export const TaskQueue = () => {
                 ? [t.completed_item?.primary_media_file?.cdn_url]
                 : [],
               mediaTokens: (() => {
-                const primaryToken =
-                  t.completed_item?.primary_media_file?.token;
+                const primaryToken = t.completed_item?.primary_media_file?.token;
                 const tokens: string[] = primaryToken ? [primaryToken] : [];
                 return tokens;
               })(),
@@ -798,23 +684,15 @@ export const TaskQueue = () => {
         ]);
 
         const failedTasks = tasks
-          .filter((t) => FAILED_STATUSES.has(t.task_status))
+          .filter(t => FAILED_STATUSES.has(t.task_status))
           .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
           .map((t: TaskQueueItem) => {
             const parts = formatTitleParts(t);
             const fr = t.failure_reason;
-            const failureReason = fr
-              ? FAILURE_REASON_LABEL[fr.failure_type] || undefined
-              : undefined;
+            const failureReason = fr ? FAILURE_REASON_LABEL[fr.failure_type] || undefined : undefined;
             const failureMessage =
-              fr?.failure_message && fr.failure_type !== "unknown"
-                ? fr.failure_message
-                : undefined;
-            const meta = getMetaForTask(
-              t.id,
-              t.model_type ? String(t.model_type) : undefined,
-              t.created_at.getTime(),
-            );
+              fr?.failure_message && fr.failure_type !== "unknown" ? fr.failure_message : undefined;
+            const meta = getMetaForTask(t.id, t.model_type ? String(t.model_type) : undefined, t.created_at.getTime());
             return {
               id: t.id,
               title: parts.title || "Task",
@@ -834,12 +712,10 @@ export const TaskQueue = () => {
 
         // Refresh credits when a task newly enters a failed status via the
         // poll — the "generation-failed-event" push below can be missed.
-        const newFailedIdSet = new Set(failedTasks.map((t) => t.id));
+        const newFailedIdSet = new Set(failedTasks.map(t => t.id));
         if (!failedSeenInitializedRef.current) {
           failedSeenInitializedRef.current = true;
-        } else if (
-          failedTasks.some((t) => !prevFailedIdsRef.current.has(t.id))
-        ) {
+        } else if (failedTasks.some(t => !prevFailedIdsRef.current.has(t.id))) {
           // Refunded credits may take a moment to settle in the database
           setTimeout(() => {
             useCreditsState.getState().fetchFromServer();
@@ -848,20 +724,18 @@ export const TaskQueue = () => {
         prevFailedIdsRef.current = newFailedIdSet;
 
         // Track newly completed IDs when popover is closed
-        const newCompletedIdSet = new Set(done.map((d) => d.id));
+        const newCompletedIdSet = new Set(done.map(d => d.id));
         const newlyCompletedIds: string[] = [];
-        newCompletedIdSet.forEach((id) => {
+        newCompletedIdSet.forEach(id => {
           if (!prevCompletedIdsRef.current.has(id)) {
             newlyCompletedIds.push(id);
           }
         });
         prevCompletedIdsRef.current = newCompletedIdSet;
         if (!isPopoverOpen && newlyCompletedIds.length > 0) {
-          setUnreadCompletedIds((prev) =>
-            Array.from(new Set([...(prev ?? []), ...newlyCompletedIds])),
-          );
+          setUnreadCompletedIds(prev => Array.from(new Set([...(prev ?? []), ...newlyCompletedIds])));
         }
-      } catch (_) {
+      } catch {
         // ignore
       }
     };
@@ -904,22 +778,16 @@ export const TaskQueue = () => {
       clearInterval(id);
       window.removeEventListener("cover-image-uploaded", handleCoverUploaded);
       if (unlistenComplete) {
-        unlistenComplete.then((f) => f());
+        unlistenComplete.then(f => f());
       }
       if (unlistenFailed) {
-        unlistenFailed.then((f) => f());
+        unlistenFailed.then(f => f());
       }
     };
-  }, [
-    lastReadAt,
-    selectedImageModel?.progressBarTime,
-    selectedVideoModel?.progressBarTime,
-    isPopoverOpen,
-  ]);
+  }, [lastReadAt, selectedImageModel?.progressBarTime, selectedVideoModel?.progressBarTime, isPopoverOpen]);
 
   const hasNothing = useMemo(
-    () =>
-      inProgress.length === 0 && completed.length === 0 && failed.length === 0,
+    () => inProgress.length === 0 && completed.length === 0 && failed.length === 0,
     [inProgress.length, completed.length, failed.length],
   );
 
@@ -939,21 +807,21 @@ export const TaskQueue = () => {
   const dismissTask = async (id: string) => {
     try {
       await MarkTaskAsDismissed(id);
-      setInProgress((prev) => prev.filter((t) => t.id !== id));
-      setCompleted((prev) => prev.filter((t) => t.id !== id));
-      setFailed((prev) => prev.filter((t) => t.id !== id));
-      setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
+      setInProgress(prev => prev.filter(t => t.id !== id));
+      setCompleted(prev => prev.filter(t => t.id !== id));
+      setFailed(prev => prev.filter(t => t.id !== id));
+      setUnreadCompletedIds(prev => (prev ?? []).filter(x => x !== id));
       taskDurationRef.current.delete(id);
-    } catch (_) {
+    } catch {
       // ignore
     }
   };
 
   const dismissCompleted = async () => {
-    const ids = completed.map((t) => t.id);
+    const ids = completed.map(t => t.id);
     try {
-      await Promise.all(ids.map((id) => MarkTaskAsDismissed(id)));
-    } catch (_) {
+      await Promise.all(ids.map(id => MarkTaskAsDismissed(id)));
+    } catch {
       // ignore
     } finally {
       setCompleted([]);
@@ -962,10 +830,10 @@ export const TaskQueue = () => {
   };
 
   const dismissFailed = async () => {
-    const ids = failed.map((t) => t.id);
+    const ids = failed.map(t => t.id);
     try {
-      await Promise.all(ids.map((id) => MarkTaskAsDismissed(id)));
-    } catch (_) {
+      await Promise.all(ids.map(id => MarkTaskAsDismissed(id)));
+    } catch {
       // ignore
     } finally {
       setFailed([]);
@@ -973,16 +841,16 @@ export const TaskQueue = () => {
   };
 
   const dismissStale = async () => {
-    const staleIds = inProgress.filter((t) => t.canDismiss).map((t) => t.id);
+    const staleIds = inProgress.filter(t => t.canDismiss).map(t => t.id);
     try {
-      await Promise.all(staleIds.map((id) => MarkTaskAsDismissed(id)));
-      setInProgress((prev) => prev.filter((t) => !staleIds.includes(t.id)));
+      await Promise.all(staleIds.map(id => MarkTaskAsDismissed(id)));
+      setInProgress(prev => prev.filter(t => !staleIds.includes(t.id)));
       taskDurationRef.current.forEach((_, id) => {
         if (staleIds.includes(id)) {
           taskDurationRef.current.delete(id);
         }
       });
-    } catch (_) {
+    } catch {
       // ignore
     }
   };
@@ -990,7 +858,7 @@ export const TaskQueue = () => {
   const dismissAll = async () => {
     try {
       await TasksNukeAll();
-    } catch (_) {
+    } catch {
       // ignore
     } finally {
       setCompleted([]);
@@ -1025,7 +893,7 @@ export const TaskQueue = () => {
             }
             onOpenChange={handleOpenChange}
           >
-            {(close) => (
+            {close => (
               <>
                 <div className="flex max-h-[80vh] flex-col">
                   <div className="max-h-[80vh] overflow-y-auto p-1">
@@ -1042,15 +910,11 @@ export const TaskQueue = () => {
                             <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                               In Progress
                             </div>
-                            {inProgress.map((t) => (
+                            {inProgress.map(t => (
                               <InProgressCard
                                 key={t.id}
                                 task={t}
-                                onDismiss={
-                                  t.canDismiss
-                                    ? () => dismissTask(t.id)
-                                    : undefined
-                                }
+                                onDismiss={t.canDismiss ? () => dismissTask(t.id) : undefined}
                               />
                             ))}
                           </div>
@@ -1069,12 +933,8 @@ export const TaskQueue = () => {
                                 Clear failed
                               </button>
                             </div>
-                            {failed.map((t) => (
-                              <FailedCard
-                                key={t.id}
-                                task={t}
-                                onDismiss={() => dismissTask(t.id)}
-                              />
+                            {failed.map(t => (
+                              <FailedCard key={t.id} task={t} onDismiss={() => dismissTask(t.id)} />
                             ))}
                           </div>
                         )}
@@ -1092,21 +952,18 @@ export const TaskQueue = () => {
                                 Clear completed
                               </button>
                             </div>
-                            {completed.map((t) => (
+                            {completed.map(t => (
                               <CompletedCard
                                 key={t.id}
                                 task={t}
                                 onClick={() => {
-                                  const firstMediaToken =
-                                    t.mediaTokens?.[0] || t.id;
+                                  const firstMediaToken = t.mediaTokens?.[0] || t.id;
                                   const item: GalleryItem = {
                                     id: firstMediaToken,
                                     label: t.title,
                                     thumbnail: t.thumbnailUrl || null,
                                     fullImage: t.imageUrls?.[0] || null,
-                                    createdAt: (
-                                      t.completedAt || new Date()
-                                    ).toISOString(),
+                                    createdAt: (t.completedAt || new Date()).toISOString(),
                                     mediaClass: t.mediaFileClass,
                                     batchImageToken: t.batchImageToken,
                                     mediaTokens: t.mediaTokens,
@@ -1150,12 +1007,7 @@ export const TaskQueue = () => {
           </PopoverMenu>
         </div>
       </Tooltip>
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        className="h-[520px] max-w-3xl"
-        showClose={false}
-      >
+      <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} className="h-[520px] max-w-3xl" showClose={false}>
         <div className="flex h-full flex-col">
           <div className="border-b border-ui-panel-border bg-ui-panel">
             <div className="flex items-center justify-between p-3">
@@ -1208,13 +1060,11 @@ export const TaskQueue = () => {
                     <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                       In Progress
                     </div>
-                    {inProgress.map((t) => (
+                    {inProgress.map(t => (
                       <InProgressCard
                         key={t.id}
                         task={t}
-                        onDismiss={
-                          t.canDismiss ? () => dismissTask(t.id) : undefined
-                        }
+                        onDismiss={t.canDismiss ? () => dismissTask(t.id) : undefined}
                       />
                     ))}
                   </div>
@@ -1224,12 +1074,8 @@ export const TaskQueue = () => {
                     <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-red-400/70">
                       Failed
                     </div>
-                    {failed.map((t) => (
-                      <FailedCard
-                        key={t.id}
-                        task={t}
-                        onDismiss={() => dismissTask(t.id)}
-                      />
+                    {failed.map(t => (
+                      <FailedCard key={t.id} task={t} onDismiss={() => dismissTask(t.id)} />
                     ))}
                   </div>
                 )}
@@ -1238,7 +1084,7 @@ export const TaskQueue = () => {
                     <div className="mb-1 px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
                       Completed
                     </div>
-                    {completed.map((t) => (
+                    {completed.map(t => (
                       <CompletedCard
                         key={t.id}
                         task={t}
@@ -1248,9 +1094,7 @@ export const TaskQueue = () => {
                             label: t.title,
                             thumbnail: t.thumbnailUrl || null,
                             fullImage: t.imageUrls?.[0] || null,
-                            createdAt: (
-                              t.completedAt || new Date()
-                            ).toISOString(),
+                            createdAt: (t.completedAt || new Date()).toISOString(),
                             mediaClass: t.mediaFileClass,
                             batchImageToken: t.batchImageToken,
                             mediaTokens: t.mediaTokens,
@@ -1274,14 +1118,12 @@ export const TaskQueue = () => {
       {/* Confirm clear completed modal */}
       <ActionReminderModal
         isOpen={confirmationConfig.isOpen}
-        onClose={() =>
-          setConfirmationConfig((prev) => ({ ...prev, isOpen: false }))
-        }
+        onClose={() => setConfirmationConfig(prev => ({ ...prev, isOpen: false }))}
         title={confirmationConfig.title}
         message={confirmationConfig.message}
         onPrimaryAction={async () => {
           await confirmationConfig.onConfirm();
-          setConfirmationConfig((prev) => ({ ...prev, isOpen: false }));
+          setConfirmationConfig(prev => ({ ...prev, isOpen: false }));
         }}
         primaryActionText={confirmationConfig.primaryActionText}
         secondaryActionText="Cancel"

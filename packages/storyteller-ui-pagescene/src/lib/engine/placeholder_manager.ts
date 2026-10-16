@@ -18,28 +18,16 @@ export class LoadingPlaceHolder3DModel {
     this.message_mesh.geometry.dispose();
   }
 
-  public async initialize(
-    message: string,
-    position: THREE.Vector3,
-    font: Font,
-  ): Promise<THREE.Mesh> {
-    return (this.message_mesh = await this.createTextGeometry(
-      message,
-      position,
-      font,
-    ));
+  public async initialize(message: string, position: THREE.Vector3, font: Font): Promise<THREE.Mesh> {
+    return (this.message_mesh = await this.createTextGeometry(message, position, font));
   }
 
-  private async createTextGeometry(
-    text: string,
-    position: THREE.Vector3,
-    font: Font,
-  ): Promise<THREE.Mesh> {
+  private async createTextGeometry(text: string, position: THREE.Vector3, font: Font): Promise<THREE.Mesh> {
     if (font) {
       const textGeometry = new TextGeometry(text, {
         font: font,
         size: 0.25,
-        height: 0.1,
+        depth: 0.1,
         curveSegments: 1,
         bevelEnabled: false,
         bevelThickness: 1,
@@ -87,11 +75,7 @@ export class LoadingPlaceHolderManager {
       console.log("Forgot to Initialize LoadingPlaceHolderManager");
       return;
     }
-    const placeholder3DObj = await placeholder.initialize(
-      message,
-      position,
-      this.font,
-    );
+    const placeholder3DObj = await placeholder.initialize(message, position, this.font);
     this.scene.add(placeholder3DObj);
     this.messages.set(id, placeholder);
   }
@@ -102,13 +86,13 @@ export class LoadingPlaceHolderManager {
       const loader = new FontLoader();
       loader.load(
         "/resources/fonts/CarterOneRegular.json",
-        (font) => {
+        font => {
           resolve(font);
         },
-        (progress) => {
+        progress => {
           console.log(`Font Loaded: ${progress.loaded / progress.total}`);
         },
-        (error) => {
+        error => {
           reject(error);
         },
       );

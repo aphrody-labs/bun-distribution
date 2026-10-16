@@ -19,4 +19,4 @@ std = []
 serde = ["dep:serde"]
 
 [dependencies]
-serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+serde = { workspace = true, features = ["std", "derive"], optional = true }

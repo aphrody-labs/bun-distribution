@@ -4,29 +4,29 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-log = { version = "0.4.28", default-features = false }
-thiserror = { version = "2" }
+log = { workspace = true }
+thiserror = { workspace = true }
 bitflags.workspace = true
 bytemuck.workspace = true
 lz4_flex.workspace = true
-zstd = "0.13"
-libc = "0.2"
+zstd = { workspace = true }
+libc = { workspace = true }
 parking_lot.workspace = true
 context.workspace = true
 toml = { version = "0.9.8" }
 fastrand.workspace = true
-env_filter = "1.0"
+env_filter = { workspace = true }
 
 [build-dependencies]
-cc = "1"
-libc = "0.2"
+cc = { workspace = true }
+libc = { workspace = true }
 
 [dev-dependencies]
 # tests/build_script.rs compiles build.rs to exercise version detection.
-cc = "1"
+cc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["libloaderapi"] }
+winapi = { workspace = true, features = ["libloaderapi"] }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Security",

@@ -30,5 +30,5 @@ aphrody-nie-video.workspace = true
 # de aphrody-nie-runtime portée dans le CODE (le type reste axis-agnostique ; cf. landmine #4).
 aphrody-nie-geom.workspace = true
 clap = { workspace = true, features = ["derive", "color", "env"] }
-anyhow = { version = "1" }
-png = { version = "0.18" }
+anyhow = { workspace = true }
+png = { workspace = true }

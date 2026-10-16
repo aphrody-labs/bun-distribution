@@ -43,18 +43,18 @@ nds-complete = ["nds-rom", "nds-decomp"]
 [dependencies]
 aphrody-emu-utils = { workspace = true }
 proc-bitfield = { workspace = true }
-bitflags = "2.6"
-cfg-if = "1.0"
-slog = { version = "2.7", optional = true }
-serde = { version = "1", default-features = false, features = ["std", "derive"], optional = true }
+bitflags = { workspace = true }
+cfg-if = { workspace = true }
+slog = { workspace = true, optional = true }
+serde = { workspace = true, features = ["std", "derive"], optional = true }
 bitfield-struct = { workspace = true, optional = true }
 bitreader = { workspace = true, optional = true }
 bytemuck = { workspace = true, optional = true }
 crc = { workspace = true, optional = true }
 derive_more = { workspace = true, optional = true }
-encoding_rs = { version = "0.8", optional = true }
-image = { version = "0.25", default-features = false, features = ["png"], optional = true }
-log = { version = "0.4.28", default-features = false, optional = true }
+encoding_rs = { workspace = true, optional = true }
+image = { workspace = true, features = ["png"], optional = true }
+log = { workspace = true, optional = true }
 rust-bitwriter = { workspace = true, optional = true }
 serde-saphyr = { workspace = true, optional = true }
 sha1 = { workspace = true, optional = true }
@@ -64,10 +64,10 @@ strum_macros = { workspace = true, optional = true }
 unarm = { workspace = true, optional = true }
 
 [build-dependencies]
-arm-decoder = { git = "https://github.com/kelpsyberry/arm-decoder" }
+arm-decoder = { workspace = true }
 
 [dev-dependencies]
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 env_logger = { workspace = true }
 
 [[test]]

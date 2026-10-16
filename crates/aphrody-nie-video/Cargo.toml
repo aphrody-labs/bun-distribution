@@ -12,4 +12,4 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-thiserror = { version = "2" }
+thiserror = { workspace = true }

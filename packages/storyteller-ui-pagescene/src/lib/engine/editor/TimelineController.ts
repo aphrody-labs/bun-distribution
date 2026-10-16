@@ -7,7 +7,7 @@
 // object transforms, so manual editing in build mode is unaffected.
 
 import * as THREE from "three";
-import type Editor from "./";
+import type Editor from "../editor";
 import { snapshotTransform, writeTransform } from "./actions/snapshots";
 import { TimelineEditAction } from "./actions/TimelineEditAction";
 import { sampleTrackAt } from "../timeline/interpolation";
@@ -24,10 +24,7 @@ import {
   type TimelineData,
   type TimelineTrack,
 } from "../timeline/types";
-import {
-  TimelineChangedEvent,
-  TimelinePlayheadEvent,
-} from "../events/EngineEvent";
+import { TimelineChangedEvent, TimelinePlayheadEvent } from "../events/EngineEvent";
 
 // Whole-timeline state pair for undo/redo: the live timeline plus the
 // last-saved baseline (which Cancel reverts to). TimelineEditAction restores
@@ -82,9 +79,7 @@ export class TimelineController {
   recordEditSince(label: string, before: TimelineUndoSnapshot): void {
     const after = this.snapshotForUndo();
     if (JSON.stringify(before) === JSON.stringify(after)) return;
-    this.editor.history.record(
-      new TimelineEditAction(this, label, before, after),
-    );
+    this.editor.history.record(new TimelineEditAction(this, label, before, after));
   }
 
   // ─── queries ──────────────────────────────────────────────────────────
@@ -205,9 +200,7 @@ export class TimelineController {
     // Ascending order so earlier strips claim room first; a strip longer
     // than the whole timeline shrinks to fit, and resolveFreeStart re-snaps
     // anything now out of range into the nearest free slot.
-    const lanes = [...this.timeline.clipLanes].sort(
-      (a, b) => a.strip.startTime - b.strip.startTime,
-    );
+    const lanes = [...this.timeline.clipLanes].sort((a, b) => a.strip.startTime - b.strip.startTime);
     let lanesChanged = false;
     for (const lane of lanes) {
       const strip = lane.strip;
@@ -217,12 +210,7 @@ export class TimelineController {
         strip.duration = duration;
         strip.autoDuration = false;
       }
-      const freeStart = this.resolveFreeStart(
-        lane.objectUuid,
-        lane.id,
-        strip.startTime,
-        strip.duration,
-      );
+      const freeStart = this.resolveFreeStart(lane.objectUuid, lane.id, strip.startTime, strip.duration);
       // No free slot in the shrunken timeline: park the strip flush with the
       // end; overlaps (if any) resolve on the next add/move like restore's.
       strip.startTime = freeStart ?? Math.max(0, duration - strip.duration);
@@ -253,37 +241,29 @@ export class TimelineController {
   // (the first keyframe is always added explicitly).
   autoKeyIfTracked(objectUuid: string): void {
     if (!this.timeline) return;
-    const track = this.timeline.tracks.find((t) => t.objectUuid === objectUuid);
+    const track = this.timeline.tracks.find(t => t.objectUuid === objectUuid);
     if (!track || track.keyframes.length === 0) return;
     this.addKeyframe(objectUuid, this.playhead);
   }
 
   addKeyframe(objectUuid: string, atTime?: number): void {
     if (!this.timeline) return;
-    const obj = this.editor.activeScene.scene.getObjectByProperty(
-      "uuid",
-      objectUuid,
-    );
+    const obj = this.editor.activeScene.scene.getObjectByProperty("uuid", objectUuid);
     if (!obj) return;
-    const time = Math.max(
-      0,
-      Math.min(atTime ?? this.playhead, this.timeline.duration),
-    );
+    const time = Math.max(0, Math.min(atTime ?? this.playhead, this.timeline.duration));
     const keyframe: Keyframe = {
       id: THREE.MathUtils.generateUUID(),
       time,
       transform: snapshotTransform(obj),
       easing: { ...DEFAULT_EASING },
     };
-    let track = this.timeline.tracks.find((t) => t.objectUuid === objectUuid);
+    let track = this.timeline.tracks.find(t => t.objectUuid === objectUuid);
     if (!track) {
       track = { objectUuid, keyframes: [] };
       this.timeline.tracks.push(track);
     }
     // Replace an existing keyframe at (nearly) the same time, else insert.
-    const existingIdx = track.keyframes.findIndex(
-      (k) => Math.abs(k.time - time) < 1e-3,
-    );
+    const existingIdx = track.keyframes.findIndex(k => Math.abs(k.time - time) < 1e-3);
     if (existingIdx >= 0) track.keyframes[existingIdx] = keyframe;
     else track.keyframes.push(keyframe);
     this.sortTrack(track);
@@ -293,16 +273,14 @@ export class TimelineController {
   deleteKeyframe(keyframeId: string): void {
     if (!this.timeline) return;
     for (const track of this.timeline.tracks) {
-      const idx = track.keyframes.findIndex((k) => k.id === keyframeId);
+      const idx = track.keyframes.findIndex(k => k.id === keyframeId);
       if (idx >= 0) {
         track.keyframes.splice(idx, 1);
         break;
       }
     }
     // Drop now-empty tracks so the row disappears.
-    this.timeline.tracks = this.timeline.tracks.filter(
-      (t) => t.keyframes.length > 0,
-    );
+    this.timeline.tracks = this.timeline.tracks.filter(t => t.keyframes.length > 0);
     this.emitChanged();
   }
 
@@ -310,7 +288,7 @@ export class TimelineController {
     if (!this.timeline) return;
     const clamped = Math.max(0, Math.min(time, this.timeline.duration));
     for (const track of this.timeline.tracks) {
-      const kf = track.keyframes.find((k) => k.id === keyframeId);
+      const kf = track.keyframes.find(k => k.id === keyframeId);
       if (kf) {
         kf.time = clamped;
         this.sortTrack(track);
@@ -324,7 +302,7 @@ export class TimelineController {
   setEasing(keyframeId: string, easing: EasingSpec): void {
     if (!this.timeline) return;
     for (const track of this.timeline.tracks) {
-      const kf = track.keyframes.find((k) => k.id === keyframeId);
+      const kf = track.keyframes.find(k => k.id === keyframeId);
       if (kf) {
         kf.easing = { ...easing };
         break;
@@ -344,12 +322,7 @@ export class TimelineController {
     if (!this.timeline) return null;
     // Characters hold clips on a single row: snap the drop to the nearest free
     // slot so strips never overlap (see resolveFreeStart).
-    const startTime = this.resolveFreeStart(
-      objectUuid,
-      null,
-      strip.startTime,
-      strip.duration,
-    );
+    const startTime = this.resolveFreeStart(objectUuid, null, strip.startTime, strip.duration);
     if (startTime === null) return null;
     const lane: ClipLane = {
       id: THREE.MathUtils.generateUUID(),
@@ -367,14 +340,9 @@ export class TimelineController {
   // it never runs into a neighbour, and stays within the timeline.
   moveClipLane(laneId: string, startTime: number): void {
     if (!this.timeline) return;
-    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lane = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lane) return;
-    const freeStart = this.resolveFreeStart(
-      lane.objectUuid,
-      laneId,
-      startTime,
-      lane.strip.duration,
-    );
+    const freeStart = this.resolveFreeStart(lane.objectUuid, laneId, startTime, lane.strip.duration);
     // No free slot for the drag target — keep the strip where it was (its
     // current position is always valid since it's excluded from the search).
     if (freeStart === null) return;
@@ -389,14 +357,10 @@ export class TimelineController {
   // end. Marks the duration as hand-set so a later clip (re)load won't overwrite it.
   resizeClipLane(laneId: string, duration: number): void {
     if (!this.timeline) return;
-    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lane = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lane) return;
     const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
-    const nextStart = this.nextStartAfter(
-      lane.objectUuid,
-      laneId,
-      lane.strip.startTime,
-    );
+    const nextStart = this.nextStartAfter(lane.objectUuid, laneId, lane.strip.startTime);
     const maxDur = nextStart - lane.strip.startTime;
     lane.strip.duration = Math.max(minDur, Math.min(duration, maxDur));
     lane.strip.autoDuration = false;
@@ -410,7 +374,7 @@ export class TimelineController {
   // like every other clip edit.
   setClipTransitionEasing(laneId: string, easing: EasingSpec | null): void {
     if (!this.timeline) return;
-    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lane = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lane) return;
     if (easing) lane.strip.transitionEasing = { ...easing };
     else delete lane.strip.transitionEasing;
@@ -430,32 +394,20 @@ export class TimelineController {
   // Rides the Save/Cancel session like every other clip edit.
   ensureTransitionGap(laneId: string, gap = DEFAULT_TRANSITION_GAP): boolean {
     if (!this.timeline) return false;
-    const lead = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lead = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lead) return false;
     const leadEnd = lead.strip.startTime + lead.strip.duration;
     // Epsilon: a strip trimmed flush against its neighbour can put leadEnd a
     // float-rounding hair PAST the neighbour's start; `>= leadEnd` alone
     // would then miss it and misreport "no next strip".
     const next = this.timeline.clipLanes
-      .filter(
-        (l) =>
-          l.objectUuid === lead.objectUuid &&
-          l.id !== lead.id &&
-          l.strip.startTime >= leadEnd - 1e-6,
-      )
+      .filter(l => l.objectUuid === lead.objectUuid && l.id !== lead.id && l.strip.startTime >= leadEnd - 1e-6)
       .sort((a, b) => a.strip.startTime - b.strip.startTime)[0];
     if (!next) return false;
     const needed = gap - (next.strip.startTime - leadEnd);
     if (needed <= 0) return true;
-    const followBound = this.nextStartAfter(
-      lead.objectUuid,
-      next.id,
-      next.strip.startTime,
-    );
-    const shiftAvail = Math.max(
-      0,
-      followBound - (next.strip.startTime + next.strip.duration),
-    );
+    const followBound = this.nextStartAfter(lead.objectUuid, next.id, next.strip.startTime);
+    const shiftAvail = Math.max(0, followBound - (next.strip.startTime + next.strip.duration));
     const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
     const trimAvail = Math.max(0, lead.strip.duration - minDur);
     if (shiftAvail + trimAvail < needed) return false;
@@ -475,7 +427,7 @@ export class TimelineController {
   // Toggle whether a clip loops for the remainder of its strip.
   setClipLoop(laneId: string, loop: boolean): void {
     if (!this.timeline) return;
-    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lane = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lane) return;
     lane.strip.loop = loop;
     this.syncClipLanes();
@@ -491,7 +443,7 @@ export class TimelineController {
   // width until the user trims it out. User-trimmed strips are untouched.
   resolveClipDuration(laneId: string, naturalDuration: number): void {
     if (!this.timeline || !(naturalDuration > 0)) return;
-    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    const lane = this.timeline.clipLanes.find(l => l.id === laneId);
     if (!lane || lane.strip.autoDuration === false) return;
     lane.strip.duration = Math.min(lane.strip.duration, naturalDuration);
     lane.strip.autoDuration = false;
@@ -506,13 +458,9 @@ export class TimelineController {
   // undo snapshot captures both worlds, so undo restores them exactly.
   removeClipLane(laneId: string): void {
     if (!this.timeline) return;
-    this.timeline.clipLanes = this.timeline.clipLanes.filter(
-      (l) => l.id !== laneId,
-    );
+    this.timeline.clipLanes = this.timeline.clipLanes.filter(l => l.id !== laneId);
     if (this.saved) {
-      this.saved.clipLanes = this.saved.clipLanes.filter(
-        (l) => l.id !== laneId,
-      );
+      this.saved.clipLanes = this.saved.clipLanes.filter(l => l.id !== laneId);
     }
     this.syncClipLanes();
     this.evaluate();
@@ -520,13 +468,13 @@ export class TimelineController {
   }
 
   getClipLane(laneId: string): ClipLane | null {
-    return this.timeline?.clipLanes.find((l) => l.id === laneId) ?? null;
+    return this.timeline?.clipLanes.find(l => l.id === laneId) ?? null;
   }
 
   // All clip lanes for one character (stacked lanes, drop order).
   clipLanesFor(objectUuid: string): ClipLane[] {
     if (!this.timeline) return [];
-    return this.timeline.clipLanes.filter((l) => l.objectUuid === objectUuid);
+    return this.timeline.clipLanes.filter(l => l.objectUuid === objectUuid);
   }
 
   // ─── save / cancel ──────────────────────────────────────────────────────
@@ -576,12 +524,8 @@ export class TimelineController {
         cameraController.cam_obj?.uuid === track.objectUuid &&
         cameraController.camera
       ) {
-        cameraController.camera.position.copy(
-          cameraController.cam_obj.position,
-        );
-        cameraController.camera.rotation.copy(
-          cameraController.cam_obj.rotation,
-        );
+        cameraController.camera.position.copy(cameraController.cam_obj.position);
+        cameraController.camera.rotation.copy(cameraController.cam_obj.rotation);
       }
     }
     // Pose characters from their skeletal clip lanes at the same playhead.
@@ -612,9 +556,7 @@ export class TimelineController {
       candidates.push(iv.end);
       candidates.push(iv.start - duration);
     }
-    const valid = candidates
-      .map(clamp)
-      .filter((s) => !this.overlapsAny(s, duration, others));
+    const valid = candidates.map(clamp).filter(s => !this.overlapsAny(s, duration, others));
     if (valid.length === 0) return null; // row is full — reject the drop
     valid.sort((a, b) => Math.abs(a - desired) - Math.abs(b - desired));
     return valid[0];
@@ -622,11 +564,7 @@ export class TimelineController {
 
   // Start of the nearest clip that begins at/after `start` (excluding
   // `exceptLaneId`), or the timeline end if there is none. Bounds trim/length.
-  private nextStartAfter(
-    characterUuid: string,
-    exceptLaneId: string | null,
-    start: number,
-  ): number {
+  private nextStartAfter(characterUuid: string, exceptLaneId: string | null, start: number): number {
     if (!this.timeline) return start;
     let next = this.timeline.duration;
     for (const iv of this.otherStripIntervals(characterUuid, exceptLaneId)) {
@@ -642,21 +580,17 @@ export class TimelineController {
   ): Array<{ start: number; end: number }> {
     if (!this.timeline) return [];
     return this.timeline.clipLanes
-      .filter((l) => l.objectUuid === characterUuid && l.id !== exceptLaneId)
-      .map((l) => ({
+      .filter(l => l.objectUuid === characterUuid && l.id !== exceptLaneId)
+      .map(l => ({
         start: l.strip.startTime,
         end: l.strip.startTime + l.strip.duration,
       }))
       .sort((a, b) => a.start - b.start);
   }
 
-  private overlapsAny(
-    start: number,
-    duration: number,
-    intervals: Array<{ start: number; end: number }>,
-  ): boolean {
+  private overlapsAny(start: number, duration: number, intervals: Array<{ start: number; end: number }>): boolean {
     const end = start + duration;
-    return intervals.some((iv) => start < iv.end && end > iv.start);
+    return intervals.some(iv => start < iv.end && end > iv.start);
   }
 
   // Reconcile the skeletal-animation runtime whenever the clip-lane set changes.
@@ -680,8 +614,6 @@ export class TimelineController {
   }
 
   private emitPlayhead(): void {
-    this.editor.bus.emit(
-      new TimelinePlayheadEvent(this.playhead, this.isPlaying),
-    );
+    this.editor.bus.emit(new TimelinePlayheadEvent(this.playhead, this.isPlaying));
   }
 }

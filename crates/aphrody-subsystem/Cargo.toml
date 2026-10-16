@@ -29,9 +29,9 @@ perf = { level = "warn", priority = -1 }
 
 [dependencies]
 async-trait = { workspace = true }
-serde = { workspace = true, features = ["default"] }
-serde_json = { workspace = true, features = ["default"] }
-thiserror = { workspace = true, features = ["default"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["full"] }

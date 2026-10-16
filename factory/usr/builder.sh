@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 # Runs inside a privileged archlinux container with the job directory at /job.
-# Inputs: /job/pacman.conf, /job/packages.txt, /job/overlay/, /job/env (KEYS, KEYSERVER, FALLBACK_KERNEL, VERITY, ...).
+# Inputs: /job/pacman.conf, /job/packages.txt, /job/overlay/, /job/pkgs/, /job/boot/, /job/env and optional /job/lock.tsv.
 set -euo pipefail
 source /job/env
-out=/job/out root=/job/root
-mkdir -p "$out" "$root"
+out=/job/out root=/job/root cache=/job/cache repo=/job/repo
+mkdir -p "$out" "$root" "$cache" "$repo"
 log() { printf '[bun-os-usr] %s\n' "$*"; }
 
 log "builder tools"
@@ -17,19 +17,70 @@ for key in ${KEYS}; do
   pacman-key --lsign-key "$key"
 done
 
+log "Bun OS packages: ${BUNOS_PACKAGES}"
+id builder >/dev/null 2>&1 || useradd -r -m builder
+mkdir -p /tmp/pkgs /pkgcache && chown builder "$repo"
+[ ! -d /job/bunos-utils-src ] || cp -r /job/bunos-utils-src /job/pkgs/bunos-utils/src-tree
+for name in ${BUNOS_PACKAGES}; do
+  src=/job/pkgs/$name
+  [ -d "$src" ] || src=/job/bunos-pkgs/$name
+  [ -f "$src/PKGBUILD" ] || { log "no PKGBUILD for $name"; exit 3; }
+  # Built packages are reused across jobs while their PKGBUILD directory is byte-identical.
+  key=$(cd "$src" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)
+  cached=/pkgcache/$name-$key
+  if ! ls "$cached"/*.pkg.tar.zst >/dev/null 2>&1; then
+    log "makepkg $name ($key)"
+    cp -r "$src" "/tmp/pkgs/$name" && chown -R builder "/tmp/pkgs/$name"
+    deps=$(bash -c "source /tmp/pkgs/$name/PKGBUILD; echo \${depends[@]} \${makedepends[@]} \${checkdepends[@]}")
+    [ -z "$deps" ] || pacman -S --noconfirm --needed $deps >/dev/null
+    mkdir -p "$cached.tmp" && chown builder "$cached.tmp"
+    (cd "/tmp/pkgs/$name" && su builder -c "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} PKGDEST=$cached.tmp makepkg --clean --noconfirm --nosign" \
+      >"$out/makepkg-$name.log" 2>&1) || { tail -40 "$out/makepkg-$name.log"; exit 3; }
+    rm -rf "$cached" && mv "$cached.tmp" "$cached"
+  fi
+  cp "$cached"/*.pkg.tar.zst "$repo/"
+done
+repo-add -q "$repo/bunos.db.tar.zst" "$repo"/*.pkg.tar.zst
+mkdir -p "$out/repo" && cp "$repo"/*.pkg.tar.zst "$out/repo/"
+
+log "resolve"
 mapfile -t packages </job/packages.txt
-pacman --config /job/pacman.conf -Sy >/dev/null
+mkdir -p /tmp/rdb /tmp/rroot
+rp() { pacman --config /job/pacman.conf -r /tmp/rroot -b /tmp/rdb "$@"; }
+rp -Sy >/dev/null
 for i in "${!packages[@]}"; do
-  if ! pacman --config /job/pacman.conf -Si "${packages[$i]}" >/dev/null 2>&1 \
-    && ! pacman --config /job/pacman.conf -Sg "${packages[$i]}" >/dev/null 2>&1; then
+  if ! rp -Si "${packages[$i]}" >/dev/null 2>&1 && ! rp -Sg "${packages[$i]}" >/dev/null 2>&1; then
     if [ "${packages[$i]}" = linux-cachyos ]; then packages[$i]="${FALLBACK_KERNEL}"; else
       log "missing package: ${packages[$i]}"; exit 3; fi
   fi
 done
+if [ -f /job/lock.tsv ]; then
+  cp /job/lock.tsv /tmp/resolved.tsv
+else
+  rp -Sp --print-format '%r %n %v %l' "${packages[@]}" | awk '{n=split($4,a,"/"); print $1"\t"$2"\t"$3"\t"a[n]"\t"$4}' >/tmp/resolved.tsv
+fi
 
-log "pacstrap ${#packages[@]} targets"
-pacstrap -C /job/pacman.conf -c -G -M "$root" "${packages[@]}"
-install -Dm644 /job/pacman.conf "$root/etc/pacman.conf"
+log "download and verify $(wc -l </tmp/resolved.tsv) packages"
+: >"$out/lock.tsv"
+mismatch=0
+while IFS=$'\t' read -r r name version file url sha bytes; do
+  curl -fsSL --retry 3 -o "$cache/$file" "$url"
+  [ "$r" = bunos ] || curl -fsSL --retry 3 -o "$cache/$file.sig" "$url.sig"
+  actual=$(sha256sum "$cache/$file" | cut -d' ' -f1)
+  if [ -n "${sha:-}" ] && [ "$sha" != "$actual" ]; then
+    if [ "$r" = bunos ]; then log "local rebuild differs: $file"; else log "sha256 mismatch: $file"; mismatch=1; fi
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$r" "$name" "$version" "$file" "$url" "$actual" "$(stat -c %s "$cache/$file")" >>"$out/lock.tsv"
+done </tmp/resolved.tsv
+[ "$mismatch" = 0 ] || exit 6
+for f in "$cache"/*.sig; do
+  pacman-key --verify "$f" "${f%.sig}" >/dev/null 2>&1 || { log "bad signature: ${f##*/}"; exit 7; }
+done
+
+log "pacstrap $(wc -l <"$out/lock.tsv") locked packages"
+pacstrap -C /job/pacman.conf -G -M -U "$root" "$cache"/*.pkg.tar.zst
+sed '/^\[bunos\]/,/^$/d' /job/pacman.conf >/tmp/target-pacman.conf
+install -Dm644 /tmp/target-pacman.conf "$root/etc/pacman.conf"
 
 log "merged-usr hierarchy"
 for d in ${USR_DIRS}; do install -d "$root/usr/$d"; done
@@ -44,9 +95,13 @@ done
 
 log "Bun OS overlay"
 cp -a --no-preserve=ownership /job/overlay/. "$root/"
-chmod 0755 "$root/usr/bin/bunsh" "$root/usr/bin/bun-python"
+chmod 0755 "$root/usr/bin/bunsh" "$root/usr/bin/bun-python" "$root/usr/lib/bun-os/boot-check" "$root/usr/lib/bun-os/install-bunos-utils"
+"$root/usr/lib/bun-os/install-bunos-utils" "$root"
+[ -x "$root/usr/lib/bunos-utils/bin/ls" ] || { log "bunos-utils applet links missing"; exit 5; }
+install -Dm644 "$root/usr/share/factory/etc/profile.d/bunos-utils.sh" "$root/etc/profile.d/bunos-utils.sh"
 ln -sf ../usr/lib/os-release "$root/etc/os-release"
 for p in ${REQUIRED}; do [ -e "$root/$p" ] || { log "missing $p"; exit 5; }; done
+pacman -r "$root" -Ql bunos-filesystem | grep -q "usr/lib/os-release$" || { log "os-release not owned by bunos-filesystem"; exit 5; }
 "$root/usr/bin/bun" --version >"$out/bun-version.txt"
 
 log "inventory"
@@ -64,8 +119,59 @@ if [ "${VERITY}" = 1 ]; then
 fi
 log "rootfs tarball"
 tar --zstd --xattrs --acls --numeric-owner -C "$root" -cf "$out/rootfs.tar.zst" .
-(cd "$out" && sha256sum usr.erofs usr.squashfs rootfs.tar.zst $( [ "${VERITY}" = 1 ] && echo usr.erofs.verity ) >SHA256SUMS)
-rm -rf "$root"
+sums="usr.erofs usr.squashfs rootfs.tar.zst"
+[ "${VERITY}" = 1 ] && sums="$sums usr.erofs.verity"
+
+if [ "${BOOT}" = 1 ]; then
+  log "boot: signed /usr partitions (systemd-repart)"
+  b=/tmp/boot && mkdir -p "$b"
+  openssl req -new -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=Bun OS test signing ${JOB}/" \
+    -keyout "$b/signing.key" -out "$out/signing.crt" 2>/dev/null
+  rm -f /job/disk.raw
+  systemd-repart --empty=create --size=auto --dry-run=no --offline=yes --definitions=/job/boot/repart.d \
+    --copy-source="$root" --defer-partitions=esp --private-key="$b/signing.key" --certificate="$out/signing.crt" \
+    --json=pretty /job/disk.raw >"$out/repart.json"
+  usrhash=$(jq -r '.[] | select(.type | startswith("usr-")) | .roothash // empty' "$out/repart.json" | grep -m1 .)
+  printf '%s\n' "$usrhash" >"$out/usrhash"
+
+  log "boot: initrd and signed UKI"
+  kver=$(ls "$root/usr/lib/modules" | head -1)
+  kernel=$(ls "$root"/boot/vmlinuz-* | head -1)
+  cp /job/boot/mkinitcpio.conf "$root/tmp/bunos-mkinitcpio.conf"
+  arch-chroot "$root" mkinitcpio -c /tmp/bunos-mkinitcpio.conf -k "$kver" -g /tmp/bunos-initrd.img >/tmp/mkinitcpio.log 2>&1 \
+    || { tail -30 /tmp/mkinitcpio.log; exit 8; }
+  cmdline="$(cat /job/boot/cmdline) usrhash=$usrhash"
+  ukify build --linux="$kernel" --initrd="$root/tmp/bunos-initrd.img" --cmdline="$cmdline" \
+    --os-release=@"$root/usr/lib/os-release" --uname="$kver" \
+    --secureboot-private-key="$b/signing.key" --secureboot-certificate="$out/signing.crt" \
+    --output="$out/bunos.efi" >/dev/null
+  sbverify --cert "$out/signing.crt" "$out/bunos.efi" >"$out/sbverify.txt" 2>&1
+  rm -f "$b/signing.key"
+
+  log "boot: ESP"
+  esp_offset=$(jq -r '.[] | select(.type=="esp") | .offset' "$out/repart.json")
+  esp_size=$(jq -r '.[] | select(.type=="esp") | .raw_size' "$out/repart.json")
+  mkfs.vfat -n ESP -C "$b/esp.img" $((esp_size / 1024)) >/dev/null
+  mmd -i "$b/esp.img" ::EFI ::EFI/BOOT
+  mcopy -i "$b/esp.img" "$out/bunos.efi" ::EFI/BOOT/BOOTX64.EFI
+  dd if="$b/esp.img" of=/job/disk.raw bs=1M seek=$((esp_offset / 1048576)) conv=notrunc status=none
+
+  log "boot: QEMU"
+  cp /usr/share/edk2/x64/OVMF_VARS.4m.fd "$b/vars.fd"
+  set +e
+  timeout "${BOOT_TIMEOUT}" qemu-system-x86_64 -machine q35,accel=kvm -cpu host -smp 2 -m 2048 -nographic -no-reboot -nic none \
+    -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/x64/OVMF_CODE.4m.fd \
+    -drive if=pflash,format=raw,file="$b/vars.fd" \
+    -drive file=/job/disk.raw,format=raw,if=virtio </dev/null >"$out/boot.log" 2>&1
+  set -e
+  if grep -q 'BUNOS-BOOT-OK' "$out/boot.log"; then echo qualified >"$out/boot-result.txt"; else
+    echo failed >"$out/boot-result.txt"; tail -40 "$out/boot.log"; fi
+  zstd -q -T0 --rm /job/disk.raw -o "$out/disk.raw.zst"
+  sums="$sums bunos.efi disk.raw.zst"
+fi
+
+(cd "$out" && sha256sum $sums >SHA256SUMS)
+rm -rf "$root" "$cache" /tmp/rdb
 chmod -R a+rX "$out"
 ls -l "$out"
 log done

@@ -41,3 +41,6 @@ twitch_secrets.toml
 /vendor/msys2-source-metadata/graph.json
 /.coord/
 /vendor/msys2-source-metadata/
+
+# Workstation diagnostic output
+/.claude-cargo-check.log

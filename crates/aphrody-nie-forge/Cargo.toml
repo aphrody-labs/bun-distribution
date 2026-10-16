@@ -25,10 +25,10 @@ required-features = ["redb"]
 aphrody-nie-pe = { workspace = true, default-features = true }
 aphrody-nie-asm = { workspace = true, default-features = true }
 iced-x86.workspace = true
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 # Base de connaissance RE (var/nie.sqlite) : noms de fonctions et bornes .pdata.
 # OPTIONNELLE : `rusqlite` porte `links = "sqlite3"`, que Cargo interdit de dupliquer. Sans
 # cela, `nie-explorer` (qui lie `sqlx-sqlite` via tauri-plugin-sql) ne peut pas lier ce crate
@@ -42,7 +42,7 @@ default = ["redb"]
 redb = ["dep:clap", "dep:rusqlite"]
 
 [dev-dependencies]
-tempfile = { version = "3" }
+tempfile = { workspace = true }
 
 [lints]
 workspace = true

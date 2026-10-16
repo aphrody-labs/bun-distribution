@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Boot qualification probe: proves the verity-backed /usr, os-release and Bun runtime after switch-root.
+{
+  . /usr/lib/os-release
+  usr=$(findmnt -no SOURCE,FSTYPE,OPTIONS /usr)
+  verity=$(veritysetup status usr 2>/dev/null | awk '/status:/{print $2}')
+  bun=$(/usr/bin/bun --version 2>&1)
+  echo "BUNOS-BOOT id=$ID like=$ID_LIKE usr=[$usr] verity=$verity bun=$bun kernel=$(uname -r)"
+  [ "$ID" = bunos ] && [ "$verity" = verified ] && [ -n "$bun" ] && case "$usr" in *erofs*) echo BUNOS-BOOT-OK ;; esac
+} >/dev/console 2>&1

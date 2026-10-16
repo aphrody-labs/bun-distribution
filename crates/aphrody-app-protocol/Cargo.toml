@@ -28,8 +28,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-serde      = { workspace = true, features = ["default", "derive"] }
+serde      = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 [dev-dependencies]
-pretty_assertions = { workspace = true, features = ["default"] }
+pretty_assertions = { workspace = true }

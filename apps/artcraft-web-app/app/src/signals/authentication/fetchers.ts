@@ -3,23 +3,14 @@ import { UsersApi } from "~/Classes/ApiManager/UsersApi";
 import { BillingApi } from "~/Classes/ApiManager/BillingApi";
 import { gtagLogin, gtagLogout } from "@storyteller/google-analytics";
 
-import {
-  updateActiveSubscriptions,
-  updateAuthStatus,
-  updateUserInfo,
-  setLogoutStates,
-} from "./utilities";
+import { updateActiveSubscriptions, updateAuthStatus, updateUserInfo, setLogoutStates } from "./utilities";
 import { AUTH_STATUS } from "~/enums";
 
-export const logout = async (
-  failureCallback?: (errorMessage: string) => void,
-) => {
+export const logout = async (failureCallback?: (errorMessage: string) => void) => {
   const usersApi = new UsersApi();
   const logoutResponse = await usersApi.Logout();
   if (!logoutResponse.success && failureCallback) {
-    failureCallback(
-      logoutResponse.errorMessage || "Unknown Error during Destroy Session",
-    );
+    failureCallback(logoutResponse.errorMessage || "Unknown Error during Destroy Session");
   }
   // if success, nothing
   // regarldess of success/fail, clear the state and localstorage
@@ -108,11 +99,7 @@ async function getUserInfoAndSubcriptions() {
   updateAuthStatus(AUTH_STATUS.GET_USER_INFO);
   const usersApi = new UsersApi();
   const sessionResponse = await usersApi.GetSession();
-  if (
-    !sessionResponse.success ||
-    !sessionResponse.data ||
-    !sessionResponse.data.user
-  ) {
+  if (!sessionResponse.success || !sessionResponse.data || !sessionResponse.data.user) {
     setLogoutStates();
     return;
   }
@@ -123,7 +110,7 @@ async function getUserInfoAndSubcriptions() {
   }
 
   const userToken = sessionResponse.data.user.user_token;
-  if (!!userToken) {
+  if (userToken) {
     gtagLogin(userToken);
   }
 

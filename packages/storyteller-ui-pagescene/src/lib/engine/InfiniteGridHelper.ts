@@ -1,13 +1,7 @@
 import * as THREE from "three";
 
 export class InfiniteGridHelper extends THREE.Mesh {
-  constructor(
-    size1?: number,
-    size2?: number,
-    color?: THREE.Color,
-    distance?: number,
-    axes: string = "xzy",
-  ) {
+  constructor(size1?: number, size2?: number, color?: THREE.Color, distance?: number, axes: string = "xzy") {
     color = color || new THREE.Color("white");
     size1 = size1 || 10;
     size2 = size2 || 100;
@@ -85,9 +79,6 @@ export class InfiniteGridHelper extends THREE.Mesh {
                     if (gl_FragColor.a <= 0.0) discard;
                 }
             `,
-      extensions: {
-        derivatives: true,
-      },
       blending: THREE.AdditiveBlending,
       depthTest: true,
       depthWrite: false,

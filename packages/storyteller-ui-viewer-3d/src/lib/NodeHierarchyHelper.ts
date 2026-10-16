@@ -12,7 +12,7 @@ export class NodeHierarchyHelper extends THREE.LineSegments {
 
   constructor(root: THREE.Object3D) {
     const pairs: Array<[THREE.Object3D, THREE.Object3D]> = [];
-    root.traverse((node) => {
+    root.traverse(node => {
       // Skip segments hanging off the container root itself — those draw
       // spokes from the model origin; only intra-hierarchy links inform.
       if (node !== root && node.parent && node.parent !== root) {
@@ -21,10 +21,7 @@ export class NodeHierarchyHelper extends THREE.LineSegments {
     });
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(new Float32Array(pairs.length * 2 * 3), 3),
-    );
+    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pairs.length * 2 * 3), 3));
     const material = new THREE.LineBasicMaterial({
       color: 0x00ff88,
       depthTest: false,
@@ -43,9 +40,7 @@ export class NodeHierarchyHelper extends THREE.LineSegments {
   }
 
   override updateMatrixWorld(force?: boolean): void {
-    const position = this.geometry.getAttribute(
-      "position",
-    ) as THREE.BufferAttribute;
+    const position = this.geometry.getAttribute("position") as THREE.BufferAttribute;
     const vector = new THREE.Vector3();
     let index = 0;
     for (const [parent, child] of this.pairs) {
@@ -58,7 +53,7 @@ export class NodeHierarchyHelper extends THREE.LineSegments {
     super.updateMatrixWorld(force);
   }
 
-  dispose(): void {
+  override dispose(): void {
     this.geometry.dispose();
     (this.material as THREE.Material).dispose();
   }
@@ -68,7 +63,7 @@ export class NodeHierarchyHelper extends THREE.LineSegments {
 // prefer THREE.SkeletonHelper over the generic hierarchy overlay.
 export const objectHasBones = (root: THREE.Object3D): boolean => {
   let found = false;
-  root.traverse((node) => {
+  root.traverse(node => {
     if ((node as THREE.Bone).isBone) found = true;
   });
   return found;
@@ -76,9 +71,5 @@ export const objectHasBones = (root: THREE.Object3D): boolean => {
 
 // Pick the right rig overlay for a model: real bones → SkeletonHelper,
 // otherwise the generic node-hierarchy lines.
-export const createRigHelper = (
-  root: THREE.Object3D,
-): THREE.SkeletonHelper | NodeHierarchyHelper =>
-  objectHasBones(root)
-    ? new THREE.SkeletonHelper(root)
-    : new NodeHierarchyHelper(root);
+export const createRigHelper = (root: THREE.Object3D): THREE.SkeletonHelper | NodeHierarchyHelper =>
+  objectHasBones(root) ? new THREE.SkeletonHelper(root) : new NodeHierarchyHelper(root);

@@ -6,15 +6,14 @@ use std::ffi::OsString;
 use object::read::archive::ArchiveFile;
 use object::{Object, ObjectSection, ObjectSymbol, SymbolKind};
 
-pub const APPLETS: &[(&str, super::Main)] = &[
-    ("nm", nm),
-    ("size", size),
-    ("readelf", readelf),
-    ("objdump", objdump),
-    ("strings", strings),
-    ("addr2line", addr2line),
-    ("ar", ar),
-];
+crate::applets! {
+    "nm" => nm,
+    "size" => size,
+    "readelf" => readelf,
+    "objdump" => objdump,
+    "strings" => strings,
+    "addr2line" => addr2line,
+}
 
 fn split(args: &[OsString]) -> (Vec<String>, Vec<OsString>) {
     let mut flags = Vec::new();
@@ -246,9 +245,9 @@ fn addr2line(args: Vec<OsString>) -> i32 {
     0
 }
 
-fn ar(args: Vec<OsString>) -> i32 {
+pub fn ar_read(args: Vec<OsString>) -> i32 {
     let (Some(op), Some(path)) = (args.get(1).and_then(|a| a.to_str()), args.get(2)) else {
-        eprintln!("ar: usage: ar t|p ARCHIVE [MEMBER...]");
+        eprintln!("ar: usage: ar t|p|r|q|d ARCHIVE [MEMBER...]");
         return 2;
     };
     let data = match std::fs::read(path) {
@@ -280,7 +279,7 @@ fn ar(args: Vec<OsString>) -> i32 {
                 }
             }
             _ => {
-                eprintln!("ar: only t and p are supported (read-only)");
+                eprintln!("ar: supported operations: t, p, r, q, d");
                 return 2;
             }
         }

@@ -2,30 +2,10 @@
 // Mirrors crates/re/src/pipeline/contract.rs and the JSON Schemas in crates/re/schema/.
 
 export type TargetKind = "os" | "bios" | "firmware";
-export type Stage =
-  | "acquire"
-  | "identify"
-  | "unpack"
-  | "analyze"
-  | "lift"
-  | "decompile"
-  | "rebuild"
-  | "verify";
-export type StageStatus =
-  "ok" | "partial" | "unavailable" | "skipped" | "failed";
+export type Stage = "acquire" | "identify" | "unpack" | "analyze" | "lift" | "decompile" | "rebuild" | "verify";
+export type StageStatus = "ok" | "partial" | "unavailable" | "skipped" | "failed";
 export type InputKind =
-  | "pe"
-  | "elf"
-  | "macho"
-  | "apk"
-  | "zip"
-  | "iso"
-  | "uefi"
-  | "bios"
-  | "rom"
-  | "fdt"
-  | "compressed"
-  | "raw";
+  "pe" | "elf" | "macho" | "apk" | "zip" | "iso" | "uefi" | "bios" | "rom" | "fdt" | "compressed" | "raw";
 
 export const STAGES: readonly Stage[] = [
   "acquire",

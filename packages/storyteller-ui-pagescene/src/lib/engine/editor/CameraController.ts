@@ -1,15 +1,7 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import {
-  freeCamFrameTick,
-  lookAtFromCamera,
-  type FreeCamControlState,
-} from "../cameraMath";
-import {
-  CameraAspectRatio,
-  DEFAULT_CAMERA_ASPECT_RATIO,
-  EditorStates,
-} from "../../enums";
+import { freeCamFrameTick, lookAtFromCamera, type FreeCamControlState } from "../cameraMath";
+import { CameraAspectRatio, DEFAULT_CAMERA_ASPECT_RATIO, EditorStates } from "../../enums";
 import type { Camera } from "@storyteller/common";
 import type { EngineEventBus } from "../events/EngineEventBus";
 import { CameraUpdatedEvent } from "../events/EngineEvent";
@@ -104,7 +96,7 @@ export class CameraController {
   refreshCamObj(scene: THREE.Scene): void {
     this.cam_obj = scene.getObjectByName(this.camera_name);
     this.cam_obj?.layers.set(1);
-    this.cam_obj?.children.forEach((child) => {
+    this.cam_obj?.children.forEach(child => {
       child.layers.set(1);
     });
   }
@@ -135,7 +127,7 @@ export class CameraController {
     this.camera.rotation.copy(this.cam_obj.rotation);
 
     if (this.lockControls) {
-      this.deps.getThreeScene().add(this.lockControls.getObject());
+      this.deps.getThreeScene().add(this.lockControls.object);
     }
     this.cam_obj.scale.set(0, 0, 0);
 
@@ -147,11 +139,9 @@ export class CameraController {
     // open the browser context menu. Defer until the letterbox settles.
     setTimeout(
       () =>
-        document
-          .getElementById("letterbox")
-          ?.addEventListener("contextmenu", function (event) {
-            event.preventDefault();
-          }),
+        document.getElementById("letterbox")?.addEventListener("contextmenu", function (event) {
+          event.preventDefault();
+        }),
       250,
     );
   }
@@ -170,7 +160,7 @@ export class CameraController {
     // Drop the camera-view framing offset now that we're free-flying again.
     this.applyFrameProjection();
     if (this.lockControls) {
-      this.deps.getThreeScene().remove(this.lockControls.getObject());
+      this.deps.getThreeScene().remove(this.lockControls.object);
     }
     this.cam_obj.scale.set(1, 1, 1);
 
@@ -220,14 +210,7 @@ export class CameraController {
       cam.aspect = renderAspect;
       // Virtual "full view" = the framing rect; the canvas renders the
       // larger region around it, so the rect shows the exact render frame.
-      cam.setViewOffset(
-        rect.width,
-        rect.height,
-        -rect.x,
-        -rect.y,
-        rect.canvasWidth,
-        rect.canvasHeight,
-      );
+      cam.setViewOffset(rect.width, rect.height, -rect.x, -rect.y, rect.canvasWidth, rect.canvasHeight);
       cam.updateProjectionMatrix();
     } else if (cam.view?.enabled) {
       cam.clearViewOffset();
@@ -288,7 +271,7 @@ export class CameraController {
 
     if (selectedCameraId && this.camera) {
       const cameras = this.deps.getCameras();
-      const camData = cameras.find((c) => c.id === selectedCameraId);
+      const camData = cameras.find(c => c.id === selectedCameraId);
       if (camData) {
         const fov = this.focalLengthToFov(camData.focalLength);
         if (this.camera.fov !== fov) {
@@ -303,11 +286,7 @@ export class CameraController {
     this.applyFrameProjection();
 
     if (this.freeCamState && this.camera && !this.locked) {
-      const moved = freeCamFrameTick(
-        this.camera,
-        this.freeCamState,
-        5 * deltaSeconds,
-      );
+      const moved = freeCamFrameTick(this.camera, this.freeCamState, 5 * deltaSeconds);
       // Mirror the active camera's transform back into the store so
       // PromptBox3D and the camera-list UI stay in sync.
       if (moved && selectedCameraId) {

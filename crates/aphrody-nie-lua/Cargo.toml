@@ -15,11 +15,11 @@ workspace = true
 # VM Lua 5.2 = celle exacte du moteur Level-5 « Lives » (PUC-Rio 5.2.4 vendored).
 # Charge directement le bytecode .lua.bin du jeu (mlua, MIT).
 mlua = { workspace = true, optional = true, features = ["lua52", "vendored"] }
-thiserror = { version = "2" }
+thiserror = { workspace = true }
 
 # Sérialisation des types de `bytecode` : un chunk décodé doit pouvoir sortir en
 # JSON (`nie decode` sur un `.lua.bin`), pas seulement en désassemblage texte.
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
+serde = { workspace = true, features = ["std", "derive"] }
 
 # Analyse statique des sources Lua décompilées : AST concret, sans exécuter le code.
 # `tree-sitter-lua` 0.5 n'expose que `LanguageFn` (via `tree-sitter-language`) et se

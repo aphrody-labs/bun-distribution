@@ -5,18 +5,18 @@ edition.workspace = true
 license.workspace = true
 
 [build-dependencies]
-pkg-config = "0.3"
+pkg-config = { workspace = true }
 
 [dependencies]
 common = { path = "../ruzu-common" }
 ruzu_core = { package = "core", path = "../ruzu-core" }
 cubeb.workspace = true
-log = { version = "0.4.28", default-features = false }
+log = { workspace = true }
 parking_lot.workspace = true
 sdl3.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["combaseapi", "objbase"] }
+winapi = { workspace = true, features = ["combaseapi", "objbase"] }
 
 # cubeb-sys 0.34 asks Cargo to link the optional Rust PulseAudio archive on
 # FreeBSD and NetBSD, although its nested CMake build does not place that

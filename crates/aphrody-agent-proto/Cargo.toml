@@ -28,9 +28,9 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-serde      = { workspace = true, features = ["default"] }
+serde      = { workspace = true }
 serde_json = { workspace = true }
-thiserror  = { workspace = true, features = ["default"] }
+thiserror  = { workspace = true }
 
 # The workspace `uuid` is declared with the `v4` feature but no wasm randomness
 # source (`js` / `rng-getrandom`), which makes the crate fail to compile on
@@ -38,7 +38,7 @@ thiserror  = { workspace = true, features = ["default"] }
 # pulled on non-wasm targets; the wasm build synthesizes v4-shaped ids without
 # it (see `gen_uuid_v4` in src/lib.rs).
 [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown")))'.dependencies]
-uuid = { workspace = true, features = ["default", "v4", "serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
-pretty_assertions = { workspace = true, features = ["default"] }
+pretty_assertions = { workspace = true }

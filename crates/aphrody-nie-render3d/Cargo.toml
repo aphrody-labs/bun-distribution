@@ -24,11 +24,11 @@ aphrody-softraster.workspace = true
 # L'algèbre : une seule arithmétique matricielle, en `scalar-math` (SIMD désactivé) pour que
 # l'ordre des opérations flottantes reste figé sur le chemin de fidélité.
 glam.workspace = true
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }
-serde_json = { version = "1" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-png = { version = "0.18" }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+png = { workspace = true }
 bcdec_rs.workspace = true
 aphrody-gpu-backend = { workspace = true, optional = true }
 pollster = { workspace = true, optional = true }

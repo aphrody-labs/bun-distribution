@@ -19,16 +19,16 @@ transport = ["dep:tokio", "dep:futures-util", "dep:tokio-tungstenite", "dep:uuid
 aphrody-nie-runtime.workspace = true
 aphrody-nie-core.workspace = true
 aphrody-nie-geom.workspace = true
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1", default-features = false }
-thiserror = { version = "2" }
-tracing = { version = "0.1" }
-anyhow = { version = "1", optional = true }
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"], optional = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time", "net"], optional = true }
 futures-util = { workspace = true, optional = true }
 tokio-tungstenite = { workspace = true, optional = true }
-uuid = { version = "1", features = ["v4"], optional = true }
+uuid = { workspace = true, features = ["v4"], optional = true }
 
 [dev-dependencies]
-anyhow = { version = "1" }
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
+anyhow = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time", "net"] }

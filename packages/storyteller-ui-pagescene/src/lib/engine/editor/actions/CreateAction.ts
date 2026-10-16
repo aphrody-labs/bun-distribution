@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type Editor from "..";
+import type Editor from "../../editor";
 import type { UndoableAction } from "../HistoryManager";
 import { ObjectSnap, recreateFromSnapshot, snapshotObject } from "./snapshots";
 

@@ -10,22 +10,22 @@ name = "dust"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = { version = "1" }
+anyhow = { workspace = true }
 base64 = { version = "0.22.1" }
 clap = { workspace = true }
 cpp_demangle = { workspace = true }
 aphrody-dust-core = { path = "../aphrody-dust-core", features = ["nds-complete"] }
 env_logger = { workspace = true }
 fxhash = { workspace = true }
-log = { version = "0.4.28", default-features = false }
+log = { workspace = true }
 num-traits = { workspace = true }
 objdiff-core = { workspace = true }
 dsd-object = { workspace = true }
 path-clean = { workspace = true }
 path-slash = { workspace = true }
 pathdiff = { workspace = true }
-serde = { version = "1", default-features = false, features = ["std"] }
-serde_json = { version = "1", default-features = false }
+serde = { workspace = true, features = ["std"] }
+serde_json = { workspace = true }
 serde-saphyr = { workspace = true }
 snafu = { workspace = true }
 strum = { workspace = true }
@@ -34,4 +34,4 @@ typed-path = { workspace = true }
 unarm = { workspace = true }
 ratatui = { workspace = true }
 crossterm = { workspace = true }
-similar = { version = "3.1.1" }
+similar = { workspace = true }

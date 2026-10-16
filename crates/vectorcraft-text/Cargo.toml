@@ -34,6 +34,9 @@ icu_segmenter = "2.3"
 unicode-segmentation = "1.13"
 write-fonts = { version = "0.48", optional = true }
 
+[target.'cfg(windows)'.dependencies]
+windows-registry = "0.6"
+
 [features]
 # `vectorcraft_text::test_fonts` for other crates' tests (dev-dependencies only).
 test-fonts = ["dep:write-fonts"]

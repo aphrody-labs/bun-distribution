@@ -1,4 +1,4 @@
-import type Editor from "..";
+import type Editor from "../../editor";
 import type { UndoableAction } from "../HistoryManager";
 
 // Records a color change. apply() and revert() both call

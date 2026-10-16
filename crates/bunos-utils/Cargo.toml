@@ -1,6 +1,6 @@
 [package]
 name = "bunos-utils"
-description = "Bun OS multicall system utilities: uutils coreutils/findutils plus procps, diffutils and binutils applets."
+description = "Bun OS multicall system utilities: uutils coreutils, findutils, diffutils, procps and util-linux, plus binutils on object/gimli."
 version.workspace = true
 edition.workspace = true
 license = "MIT"
@@ -15,114 +15,177 @@ path = "src/main.rs"
 
 [features]
 default = ["binutils", "procps", "diffutils"]
-binutils = ["dep:object", "dep:addr2line", "dep:rustc-demangle"]
-procps = ["dep:sysinfo"]
-diffutils = ["dep:similar"]
-# uutils (MIT) from crates.io; same upstream as toolchains/bun/src/coreutils.
-coreutils = [
-  "dep:uucore", "dep:uu_base32", "dep:uu_base64", "dep:uu_basename", "dep:uu_cat", "dep:uu_cksum",
-  "dep:uu_comm", "dep:uu_cp", "dep:uu_cut", "dep:uu_date", "dep:uu_dd", "dep:uu_df", "dep:uu_dirname",
-  "dep:uu_du", "dep:uu_echo", "dep:uu_env", "dep:uu_expand", "dep:uu_expr", "dep:uu_factor", "dep:uu_false",
-  "dep:uu_fmt", "dep:uu_fold", "dep:uu_head", "dep:uu_join", "dep:uu_link", "dep:uu_ln", "dep:uu_ls",
-  "dep:uu_mkdir", "dep:uu_mktemp", "dep:uu_mv", "dep:uu_nl", "dep:uu_nproc", "dep:uu_numfmt", "dep:uu_od",
-  "dep:uu_paste", "dep:uu_pr", "dep:uu_printenv", "dep:uu_printf", "dep:uu_pwd", "dep:uu_readlink",
-  "dep:uu_realpath", "dep:uu_rm", "dep:uu_rmdir", "dep:uu_seq", "dep:uu_shred", "dep:uu_shuf", "dep:uu_sleep",
-  "dep:uu_sort", "dep:uu_split", "dep:uu_sum", "dep:uu_tac", "dep:uu_tail", "dep:uu_tee", "dep:uu_test",
-  "dep:uu_touch", "dep:uu_tr", "dep:uu_true", "dep:uu_truncate", "dep:uu_tsort", "dep:uu_uname",
-  "dep:uu_unexpand", "dep:uu_uniq", "dep:uu_unlink", "dep:uu_wc", "dep:uu_whoami", "dep:uu_yes",
-  "dep:uu_chmod", "dep:uu_chown", "dep:uu_chgrp", "dep:uu_id", "dep:uu_install", "dep:uu_kill",
-  "dep:uu_mkfifo", "dep:uu_nohup", "dep:uu_stat", "dep:uu_sync", "dep:uu_timeout", "dep:uu_tty", "dep:uu_uptime",
-]
+binutils = ["dep:object", "dep:addr2line", "dep:rustc-demangle", "dep:ar"]
+# uutils procps on Linux; `sysinfo` applets (ps, free, pidof, pgrep, pkill) elsewhere.
+procps = ["dep:sysinfo", "dep:uucore_procps", "dep:uu_free", "dep:uu_hugetop", "dep:uu_pgrep", "dep:uu_pidof", "dep:uu_pidwait", "dep:uu_pkill", "dep:uu_pmap", "dep:uu_ps", "dep:uu_pwdx", "dep:uu_skill", "dep:uu_slabtop", "dep:uu_snice", "dep:uu_sysctl", "dep:uu_tload", "dep:uu_top", "dep:uu_vmstat", "dep:uu_w", "dep:uu_watch"]
+util-linux = ["dep:uucore_util_linux", "dep:uu_blockdev", "dep:uu_cal", "dep:uu_chcpu", "dep:uu_ctrlaltdel", "dep:uu_dmesg", "dep:uu_fsfreeze", "dep:uu_hexdump", "dep:uu_lscpu", "dep:uu_lsipc", "dep:uu_lslocks", "dep:uu_lsmem", "dep:uu_lsns", "dep:uu_mcookie", "dep:uu_mesg", "dep:uu_mountpoint", "dep:uu_nologin", "dep:uu_rename", "dep:uu_renice", "dep:uu_rev", "dep:uu_setpgid", "dep:uu_setsid", "dep:uu_uuidgen"]
+diffutils = ["dep:diffutilslib"]
 findutils = ["dep:findutils"]
+# vendor/uutils/coreutils: aphrody-labs/uutils-coreutils branch `aphrody`, shared with toolchains/bun.
+coreutils = ["dep:uucore", "dep:uu_arch", "dep:uu_b2sum", "dep:uu_base32", "dep:uu_base64", "dep:uu_basename", "dep:uu_basenc", "dep:uu_cat", "dep:uu_cksum", "dep:uu_comm", "dep:uu_cp", "dep:uu_csplit", "dep:uu_cut", "dep:uu_date", "dep:uu_dd", "dep:uu_df", "dep:uu_dir", "dep:uu_dircolors", "dep:uu_dirname", "dep:uu_du", "dep:uu_echo", "dep:uu_env", "dep:uu_expand", "dep:uu_expr", "dep:uu_factor", "dep:uu_false", "dep:uu_fmt", "dep:uu_fold", "dep:uu_head", "dep:uu_hostname", "dep:uu_join", "dep:uu_link", "dep:uu_ln", "dep:uu_ls", "dep:uu_md5sum", "dep:uu_mkdir", "dep:uu_mktemp", "dep:uu_more", "dep:uu_mv", "dep:uu_nl", "dep:uu_nproc", "dep:uu_numfmt", "dep:uu_od", "dep:uu_paste", "dep:uu_pr", "dep:uu_printenv", "dep:uu_printf", "dep:uu_ptx", "dep:uu_pwd", "dep:uu_readlink", "dep:uu_realpath", "dep:uu_rm", "dep:uu_rmdir", "dep:uu_seq", "dep:uu_sha1sum", "dep:uu_sha224sum", "dep:uu_sha256sum", "dep:uu_sha384sum", "dep:uu_sha512sum", "dep:uu_shred", "dep:uu_shuf", "dep:uu_sleep", "dep:uu_sort", "dep:uu_split", "dep:uu_sum", "dep:uu_tac", "dep:uu_tail", "dep:uu_tee", "dep:uu_test", "dep:uu_touch", "dep:uu_tr", "dep:uu_true", "dep:uu_truncate", "dep:uu_tsort", "dep:uu_uname", "dep:uu_unexpand", "dep:uu_uniq", "dep:uu_unlink", "dep:uu_vdir", "dep:uu_wc", "dep:uu_whoami", "dep:uu_yes", "dep:uu_chgrp", "dep:uu_chmod", "dep:uu_chown", "dep:uu_chroot", "dep:uu_groups", "dep:uu_hostid", "dep:uu_id", "dep:uu_install", "dep:uu_kill", "dep:uu_logname", "dep:uu_mkfifo", "dep:uu_mknod", "dep:uu_nice", "dep:uu_nohup", "dep:uu_pathchk", "dep:uu_pinky", "dep:uu_stat", "dep:uu_stty", "dep:uu_sync", "dep:uu_timeout", "dep:uu_tty", "dep:uu_uptime", "dep:uu_users", "dep:uu_who"]
 
 [dependencies]
-object = { workspace = true, optional = true, features = ["read", "std", "archive"] }
+object = { workspace = true, optional = true, features = ["read", "std", "archive", "build"] }
 addr2line = { workspace = true, optional = true, features = ["loader", "std", "rustc-demangle"] }
 rustc-demangle = { version = "0.1", optional = true }
-sysinfo = { workspace = true, optional = true }
-similar = { workspace = true, optional = true, features = ["text"] }
-findutils = { version = "0.10", optional = true }
-uucore = { version = "0.12", optional = true }
-uu_base32 = { version = "0.12", optional = true }
-uu_base64 = { version = "0.12", optional = true }
-uu_basename = { version = "0.12", optional = true }
-uu_cat = { version = "0.12", optional = true }
-uu_cksum = { version = "0.12", optional = true }
-uu_comm = { version = "0.12", optional = true }
-uu_cp = { version = "0.12", optional = true }
-uu_cut = { version = "0.12", optional = true }
-uu_date = { version = "0.12", optional = true }
-uu_dd = { version = "0.12", optional = true }
-uu_df = { version = "0.12", optional = true }
-uu_dirname = { version = "0.12", optional = true }
-uu_du = { version = "0.12", optional = true }
-uu_echo = { version = "0.12", optional = true }
-uu_env = { version = "0.12", optional = true }
-uu_expand = { version = "0.12", optional = true }
-uu_expr = { version = "0.12", optional = true }
-uu_factor = { version = "0.12", optional = true }
-uu_false = { version = "0.12", optional = true }
-uu_fmt = { version = "0.12", optional = true }
-uu_fold = { version = "0.12", optional = true }
-uu_head = { version = "0.12", optional = true }
-uu_join = { version = "0.12", optional = true }
-uu_link = { version = "0.12", optional = true }
-uu_ln = { version = "0.12", optional = true }
-uu_ls = { version = "0.12", optional = true }
-uu_mkdir = { version = "0.12", optional = true }
-uu_mktemp = { version = "0.12", optional = true }
-uu_mv = { version = "0.12", optional = true }
-uu_nl = { version = "0.12", optional = true }
-uu_nproc = { version = "0.12", optional = true }
-uu_numfmt = { version = "0.12", optional = true }
-uu_od = { version = "0.12", optional = true }
-uu_paste = { version = "0.12", optional = true }
-uu_pr = { version = "0.12", optional = true }
-uu_printenv = { version = "0.12", optional = true }
-uu_printf = { version = "0.12", optional = true }
-uu_pwd = { version = "0.12", optional = true }
-uu_readlink = { version = "0.12", optional = true }
-uu_realpath = { version = "0.12", optional = true }
-uu_rm = { version = "0.12", optional = true }
-uu_rmdir = { version = "0.12", optional = true }
-uu_seq = { version = "0.12", optional = true }
-uu_shred = { version = "0.12", optional = true }
-uu_shuf = { version = "0.12", optional = true }
-uu_sleep = { version = "0.12", optional = true }
-uu_sort = { version = "0.12", optional = true }
-uu_split = { version = "0.12", optional = true }
-uu_sum = { version = "0.12", optional = true }
-uu_tac = { version = "0.12", optional = true }
-uu_tail = { version = "0.12", optional = true }
-uu_tee = { version = "0.12", optional = true }
-uu_test = { version = "0.12", optional = true }
-uu_touch = { version = "0.12", optional = true }
-uu_tr = { version = "0.12", optional = true }
-uu_true = { version = "0.12", optional = true }
-uu_truncate = { version = "0.12", optional = true }
-uu_tsort = { version = "0.12", optional = true }
-uu_uname = { version = "0.12", optional = true }
-uu_unexpand = { version = "0.12", optional = true }
-uu_uniq = { version = "0.12", optional = true }
-uu_unlink = { version = "0.12", optional = true }
-uu_wc = { version = "0.12", optional = true }
-uu_whoami = { version = "0.12", optional = true }
-uu_yes = { version = "0.12", optional = true }
+ar = { version = "0.9", optional = true }
+diffutilslib = { package = "diffutils", path = "../../vendor/uutils/diffutils", optional = true }
+findutils = { path = "../../vendor/uutils/findutils", optional = true }
+uucore = { path = "../../vendor/uutils/coreutils/src/uucore", optional = true }
+uu_arch = { path = "../../vendor/uutils/coreutils/src/uu/arch", optional = true }
+uu_b2sum = { path = "../../vendor/uutils/coreutils/src/uu/b2sum", optional = true }
+uu_base32 = { path = "../../vendor/uutils/coreutils/src/uu/base32", optional = true }
+uu_base64 = { path = "../../vendor/uutils/coreutils/src/uu/base64", optional = true }
+uu_basename = { path = "../../vendor/uutils/coreutils/src/uu/basename", optional = true }
+uu_basenc = { path = "../../vendor/uutils/coreutils/src/uu/basenc", optional = true }
+uu_cat = { path = "../../vendor/uutils/coreutils/src/uu/cat", optional = true }
+uu_cksum = { path = "../../vendor/uutils/coreutils/src/uu/cksum", optional = true }
+uu_comm = { path = "../../vendor/uutils/coreutils/src/uu/comm", optional = true }
+uu_cp = { path = "../../vendor/uutils/coreutils/src/uu/cp", optional = true }
+uu_csplit = { path = "../../vendor/uutils/coreutils/src/uu/csplit", optional = true }
+uu_cut = { path = "../../vendor/uutils/coreutils/src/uu/cut", optional = true }
+uu_date = { path = "../../vendor/uutils/coreutils/src/uu/date", optional = true }
+uu_dd = { path = "../../vendor/uutils/coreutils/src/uu/dd", optional = true }
+uu_df = { path = "../../vendor/uutils/coreutils/src/uu/df", optional = true }
+uu_dir = { path = "../../vendor/uutils/coreutils/src/uu/dir", optional = true }
+uu_dircolors = { path = "../../vendor/uutils/coreutils/src/uu/dircolors", optional = true }
+uu_dirname = { path = "../../vendor/uutils/coreutils/src/uu/dirname", optional = true }
+uu_du = { path = "../../vendor/uutils/coreutils/src/uu/du", optional = true }
+uu_echo = { path = "../../vendor/uutils/coreutils/src/uu/echo", optional = true }
+uu_env = { path = "../../vendor/uutils/coreutils/src/uu/env", optional = true }
+uu_expand = { path = "../../vendor/uutils/coreutils/src/uu/expand", optional = true }
+uu_expr = { path = "../../vendor/uutils/coreutils/src/uu/expr", optional = true }
+uu_factor = { path = "../../vendor/uutils/coreutils/src/uu/factor", optional = true }
+uu_false = { path = "../../vendor/uutils/coreutils/src/uu/false", optional = true }
+uu_fmt = { path = "../../vendor/uutils/coreutils/src/uu/fmt", optional = true }
+uu_fold = { path = "../../vendor/uutils/coreutils/src/uu/fold", optional = true }
+uu_head = { path = "../../vendor/uutils/coreutils/src/uu/head", optional = true }
+uu_hostname = { path = "../../vendor/uutils/coreutils/src/uu/hostname", optional = true }
+uu_join = { path = "../../vendor/uutils/coreutils/src/uu/join", optional = true }
+uu_link = { path = "../../vendor/uutils/coreutils/src/uu/link", optional = true }
+uu_ln = { path = "../../vendor/uutils/coreutils/src/uu/ln", optional = true }
+uu_ls = { path = "../../vendor/uutils/coreutils/src/uu/ls", optional = true }
+uu_md5sum = { path = "../../vendor/uutils/coreutils/src/uu/md5sum", optional = true }
+uu_mkdir = { path = "../../vendor/uutils/coreutils/src/uu/mkdir", optional = true }
+uu_mktemp = { path = "../../vendor/uutils/coreutils/src/uu/mktemp", optional = true }
+uu_more = { path = "../../vendor/uutils/coreutils/src/uu/more", optional = true }
+uu_mv = { path = "../../vendor/uutils/coreutils/src/uu/mv", optional = true }
+uu_nl = { path = "../../vendor/uutils/coreutils/src/uu/nl", optional = true }
+uu_nproc = { path = "../../vendor/uutils/coreutils/src/uu/nproc", optional = true }
+uu_numfmt = { path = "../../vendor/uutils/coreutils/src/uu/numfmt", optional = true }
+uu_od = { path = "../../vendor/uutils/coreutils/src/uu/od", optional = true }
+uu_paste = { path = "../../vendor/uutils/coreutils/src/uu/paste", optional = true }
+uu_pr = { path = "../../vendor/uutils/coreutils/src/uu/pr", optional = true }
+uu_printenv = { path = "../../vendor/uutils/coreutils/src/uu/printenv", optional = true }
+uu_printf = { path = "../../vendor/uutils/coreutils/src/uu/printf", optional = true }
+uu_ptx = { path = "../../vendor/uutils/coreutils/src/uu/ptx", optional = true }
+uu_pwd = { path = "../../vendor/uutils/coreutils/src/uu/pwd", optional = true }
+uu_readlink = { path = "../../vendor/uutils/coreutils/src/uu/readlink", optional = true }
+uu_realpath = { path = "../../vendor/uutils/coreutils/src/uu/realpath", optional = true }
+uu_rm = { path = "../../vendor/uutils/coreutils/src/uu/rm", optional = true }
+uu_rmdir = { path = "../../vendor/uutils/coreutils/src/uu/rmdir", optional = true }
+uu_seq = { path = "../../vendor/uutils/coreutils/src/uu/seq", optional = true }
+uu_sha1sum = { path = "../../vendor/uutils/coreutils/src/uu/sha1sum", optional = true }
+uu_sha224sum = { path = "../../vendor/uutils/coreutils/src/uu/sha224sum", optional = true }
+uu_sha256sum = { path = "../../vendor/uutils/coreutils/src/uu/sha256sum", optional = true }
+uu_sha384sum = { path = "../../vendor/uutils/coreutils/src/uu/sha384sum", optional = true }
+uu_sha512sum = { path = "../../vendor/uutils/coreutils/src/uu/sha512sum", optional = true }
+uu_shred = { path = "../../vendor/uutils/coreutils/src/uu/shred", optional = true }
+uu_shuf = { path = "../../vendor/uutils/coreutils/src/uu/shuf", optional = true }
+uu_sleep = { path = "../../vendor/uutils/coreutils/src/uu/sleep", optional = true }
+uu_sort = { path = "../../vendor/uutils/coreutils/src/uu/sort", optional = true }
+uu_split = { path = "../../vendor/uutils/coreutils/src/uu/split", optional = true }
+uu_sum = { path = "../../vendor/uutils/coreutils/src/uu/sum", optional = true }
+uu_tac = { path = "../../vendor/uutils/coreutils/src/uu/tac", optional = true }
+uu_tail = { path = "../../vendor/uutils/coreutils/src/uu/tail", optional = true }
+uu_tee = { path = "../../vendor/uutils/coreutils/src/uu/tee", optional = true }
+uu_test = { path = "../../vendor/uutils/coreutils/src/uu/test", optional = true }
+uu_touch = { path = "../../vendor/uutils/coreutils/src/uu/touch", optional = true }
+uu_tr = { path = "../../vendor/uutils/coreutils/src/uu/tr", optional = true }
+uu_true = { path = "../../vendor/uutils/coreutils/src/uu/true", optional = true }
+uu_truncate = { path = "../../vendor/uutils/coreutils/src/uu/truncate", optional = true }
+uu_tsort = { path = "../../vendor/uutils/coreutils/src/uu/tsort", optional = true }
+uu_uname = { path = "../../vendor/uutils/coreutils/src/uu/uname", optional = true }
+uu_unexpand = { path = "../../vendor/uutils/coreutils/src/uu/unexpand", optional = true }
+uu_uniq = { path = "../../vendor/uutils/coreutils/src/uu/uniq", optional = true }
+uu_unlink = { path = "../../vendor/uutils/coreutils/src/uu/unlink", optional = true }
+uu_vdir = { path = "../../vendor/uutils/coreutils/src/uu/vdir", optional = true }
+uu_wc = { path = "../../vendor/uutils/coreutils/src/uu/wc", optional = true }
+uu_whoami = { path = "../../vendor/uutils/coreutils/src/uu/whoami", optional = true }
+uu_yes = { path = "../../vendor/uutils/coreutils/src/uu/yes", optional = true }
 
 [target.'cfg(unix)'.dependencies]
-uu_chmod = { version = "0.12", optional = true }
-uu_chown = { version = "0.12", optional = true }
-uu_chgrp = { version = "0.12", optional = true }
-uu_id = { version = "0.12", optional = true }
-uu_install = { version = "0.12", optional = true }
-uu_kill = { version = "0.12", optional = true }
-uu_mkfifo = { version = "0.12", optional = true }
-uu_nohup = { version = "0.12", optional = true }
-uu_stat = { version = "0.12", optional = true }
-uu_sync = { version = "0.12", optional = true }
-uu_timeout = { version = "0.12", optional = true }
-uu_tty = { version = "0.12", optional = true }
-uu_uptime = { version = "0.12", optional = true }
+uu_chgrp = { path = "../../vendor/uutils/coreutils/src/uu/chgrp", optional = true }
+uu_chmod = { path = "../../vendor/uutils/coreutils/src/uu/chmod", optional = true }
+uu_chown = { path = "../../vendor/uutils/coreutils/src/uu/chown", optional = true }
+uu_chroot = { path = "../../vendor/uutils/coreutils/src/uu/chroot", optional = true }
+uu_groups = { path = "../../vendor/uutils/coreutils/src/uu/groups", optional = true }
+uu_hostid = { path = "../../vendor/uutils/coreutils/src/uu/hostid", optional = true }
+uu_id = { path = "../../vendor/uutils/coreutils/src/uu/id", optional = true }
+uu_install = { path = "../../vendor/uutils/coreutils/src/uu/install", optional = true }
+uu_kill = { path = "../../vendor/uutils/coreutils/src/uu/kill", optional = true }
+uu_logname = { path = "../../vendor/uutils/coreutils/src/uu/logname", optional = true }
+uu_mkfifo = { path = "../../vendor/uutils/coreutils/src/uu/mkfifo", optional = true }
+uu_mknod = { path = "../../vendor/uutils/coreutils/src/uu/mknod", optional = true }
+uu_nice = { path = "../../vendor/uutils/coreutils/src/uu/nice", optional = true }
+uu_nohup = { path = "../../vendor/uutils/coreutils/src/uu/nohup", optional = true }
+uu_pathchk = { path = "../../vendor/uutils/coreutils/src/uu/pathchk", optional = true }
+uu_pinky = { path = "../../vendor/uutils/coreutils/src/uu/pinky", optional = true }
+uu_stat = { path = "../../vendor/uutils/coreutils/src/uu/stat", optional = true }
+uu_stty = { path = "../../vendor/uutils/coreutils/src/uu/stty", optional = true }
+uu_sync = { path = "../../vendor/uutils/coreutils/src/uu/sync", optional = true }
+uu_timeout = { path = "../../vendor/uutils/coreutils/src/uu/timeout", optional = true }
+uu_tty = { path = "../../vendor/uutils/coreutils/src/uu/tty", optional = true }
+uu_uptime = { path = "../../vendor/uutils/coreutils/src/uu/uptime", optional = true }
+uu_users = { path = "../../vendor/uutils/coreutils/src/uu/users", optional = true }
+uu_who = { path = "../../vendor/uutils/coreutils/src/uu/who", optional = true }
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+sysinfo = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+uucore_procps = { package = "uucore", version = "0.12", optional = true }
+uucore_util_linux = { package = "uucore", version = "0.2.2", optional = true }
+uu_free = { path = "../../vendor/uutils/procps/src/uu/free", optional = true }
+uu_hugetop = { path = "../../vendor/uutils/procps/src/uu/hugetop", optional = true }
+uu_pgrep = { path = "../../vendor/uutils/procps/src/uu/pgrep", optional = true }
+uu_pidof = { path = "../../vendor/uutils/procps/src/uu/pidof", optional = true }
+uu_pidwait = { path = "../../vendor/uutils/procps/src/uu/pidwait", optional = true }
+uu_pkill = { path = "../../vendor/uutils/procps/src/uu/pkill", optional = true }
+uu_pmap = { path = "../../vendor/uutils/procps/src/uu/pmap", optional = true }
+uu_ps = { path = "../../vendor/uutils/procps/src/uu/ps", optional = true }
+uu_pwdx = { path = "../../vendor/uutils/procps/src/uu/pwdx", optional = true }
+uu_skill = { path = "../../vendor/uutils/procps/src/uu/skill", optional = true }
+uu_slabtop = { path = "../../vendor/uutils/procps/src/uu/slabtop", optional = true }
+uu_snice = { path = "../../vendor/uutils/procps/src/uu/snice", optional = true }
+uu_sysctl = { path = "../../vendor/uutils/procps/src/uu/sysctl", optional = true }
+uu_tload = { path = "../../vendor/uutils/procps/src/uu/tload", optional = true }
+uu_top = { path = "../../vendor/uutils/procps/src/uu/top", optional = true }
+uu_vmstat = { path = "../../vendor/uutils/procps/src/uu/vmstat", optional = true }
+uu_w = { path = "../../vendor/uutils/procps/src/uu/w", optional = true }
+uu_watch = { path = "../../vendor/uutils/procps/src/uu/watch", optional = true }
+uu_blockdev = { path = "../../vendor/uutils/util-linux/src/uu/blockdev", optional = true }
+uu_cal = { path = "../../vendor/uutils/util-linux/src/uu/cal", optional = true }
+uu_chcpu = { path = "../../vendor/uutils/util-linux/src/uu/chcpu", optional = true }
+uu_ctrlaltdel = { path = "../../vendor/uutils/util-linux/src/uu/ctrlaltdel", optional = true }
+uu_dmesg = { path = "../../vendor/uutils/util-linux/src/uu/dmesg", optional = true }
+uu_fsfreeze = { path = "../../vendor/uutils/util-linux/src/uu/fsfreeze", optional = true }
+uu_hexdump = { path = "../../vendor/uutils/util-linux/src/uu/hexdump", optional = true }
+uu_lscpu = { path = "../../vendor/uutils/util-linux/src/uu/lscpu", optional = true }
+uu_lsipc = { path = "../../vendor/uutils/util-linux/src/uu/lsipc", optional = true }
+uu_lslocks = { path = "../../vendor/uutils/util-linux/src/uu/lslocks", optional = true }
+uu_lsmem = { path = "../../vendor/uutils/util-linux/src/uu/lsmem", optional = true }
+uu_lsns = { path = "../../vendor/uutils/util-linux/src/uu/lsns", optional = true }
+uu_mcookie = { path = "../../vendor/uutils/util-linux/src/uu/mcookie", optional = true }
+uu_mesg = { path = "../../vendor/uutils/util-linux/src/uu/mesg", optional = true }
+uu_mountpoint = { path = "../../vendor/uutils/util-linux/src/uu/mountpoint", optional = true }
+uu_nologin = { path = "../../vendor/uutils/util-linux/src/uu/nologin", optional = true }
+uu_rename = { path = "../../vendor/uutils/util-linux/src/uu/rename", optional = true }
+uu_renice = { path = "../../vendor/uutils/util-linux/src/uu/renice", optional = true }
+uu_rev = { path = "../../vendor/uutils/util-linux/src/uu/rev", optional = true }
+uu_setpgid = { path = "../../vendor/uutils/util-linux/src/uu/setpgid", optional = true }
+uu_setsid = { path = "../../vendor/uutils/util-linux/src/uu/setsid", optional = true }
+uu_uuidgen = { path = "../../vendor/uutils/util-linux/src/uu/uuidgen", optional = true }
 
 [lints]
 workspace = true

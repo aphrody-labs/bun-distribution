@@ -107,8 +107,7 @@ export const STATIC_ENDPOINTS: {
   },
 ];
 
-export const webApiKey = (): string | undefined =>
-  process.env.STEAM_WEB_API_KEY || undefined;
+export const webApiKey = (): string | undefined => process.env.STEAM_WEB_API_KEY || undefined;
 
 const redact = (url: string) => url.replace(/key=[^&]+/, "key=***");
 
@@ -119,8 +118,7 @@ async function getJson(url: string): Promise<any> {
       await Bun.sleep(1000 * 2 ** attempt);
       continue;
     }
-    if (!res.ok)
-      throw new Error(`${res.status} ${res.statusText} ${redact(url)}`);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText} ${redact(url)}`);
     return res.json();
   }
   throw new Error(`rate limited: ${redact(url)}`);
@@ -142,18 +140,14 @@ export async function syncApiCatalog(db: Database): Promise<ApiSyncResult> {
   );
   const interfaces: any[] = data?.apilist?.interfaces ?? [];
   const source = key ? "GetSupportedAPIList(key)" : "GetSupportedAPIList(anon)";
-  const iface = db.prepare(
-    "INSERT OR REPLACE INTO api_interface(name,method_count,fetched_at,source) VALUES(?,?,?,?)",
-  );
+  const iface = db.prepare("INSERT OR REPLACE INTO api_interface(name,method_count,fetched_at,source) VALUES(?,?,?,?)");
   const meth = db.prepare(
     "INSERT OR REPLACE INTO api_method(interface,name,version,httpmethod,url,needs_key,param_count,description) VALUES(?,?,?,?,?,?,?,?)",
   );
   const param = db.prepare(
     "INSERT OR REPLACE INTO api_param(interface,method,version,name,type,optional,description) VALUES(?,?,?,?,?,?,?)",
   );
-  const ep = db.prepare(
-    "INSERT OR REPLACE INTO api_endpoint(id,kind,url,auth,description,params) VALUES(?,?,?,?,?,?)",
-  );
+  const ep = db.prepare("INSERT OR REPLACE INTO api_endpoint(id,kind,url,auth,description,params) VALUES(?,?,?,?,?,?)");
   let methods = 0;
   let params = 0;
   db.transaction(() => {
@@ -174,15 +168,7 @@ export async function syncApiCatalog(db: Database): Promise<ApiSyncResult> {
         );
         for (const p of m.parameters ?? []) {
           params++;
-          param.run(
-            i.name,
-            m.name,
-            m.version,
-            p.name,
-            p.type ?? null,
-            p.optional ? 1 : 0,
-            p.description ?? null,
-          );
+          param.run(i.name, m.name, m.version, p.name, p.type ?? null, p.optional ? 1 : 0, p.description ?? null);
         }
         ep.run(
           `webapi.${i.name}.${m.name}.v${m.version}`,
@@ -194,8 +180,7 @@ export async function syncApiCatalog(db: Database): Promise<ApiSyncResult> {
         );
       }
     }
-    for (const e of STATIC_ENDPOINTS)
-      ep.run(e.id, e.kind, e.url, e.auth, e.description, e.params ?? null);
+    for (const e of STATIC_ENDPOINTS) ep.run(e.id, e.kind, e.url, e.auth, e.description, e.params ?? null);
   })();
   return {
     interfaces: interfaces.length,
@@ -207,18 +192,10 @@ export async function syncApiCatalog(db: Database): Promise<ApiSyncResult> {
 }
 
 /** Pages IStoreService/GetAppList into `applist` (key required). */
-export async function syncAppList(
-  db: Database,
-  maxPages = 20,
-): Promise<number> {
+export async function syncAppList(db: Database, maxPages = 20): Promise<number> {
   const key = webApiKey();
-  if (!key)
-    throw new Error(
-      "STEAM_WEB_API_KEY is required for IStoreService/GetAppList",
-    );
-  const ins = db.prepare(
-    "INSERT OR REPLACE INTO applist(appid,name,fetched_at) VALUES(?,?,?)",
-  );
+  if (!key) throw new Error("STEAM_WEB_API_KEY is required for IStoreService/GetAppList");
+  const ins = db.prepare("INSERT OR REPLACE INTO applist(appid,name,fetched_at) VALUES(?,?,?)");
   let last = 0;
   let total = 0;
   for (let page = 0; page < maxPages; page++) {
@@ -237,21 +214,14 @@ export async function syncAppList(
 }
 
 /** Fetches store `appdetails` for ids (one request each, spaced to stay under the rate limit). */
-export async function syncStoreApps(
-  db: Database,
-  appids: number[],
-  cc = "fr",
-  lang = "french",
-): Promise<number> {
+export async function syncStoreApps(db: Database, appids: number[], cc = "fr", lang = "french"): Promise<number> {
   const ins = db.prepare(
     `INSERT OR REPLACE INTO store_app(appid,fetched_at,success,type,name,is_free,developers,publishers,release_date,coming_soon,metacritic,recommendations,price_initial,price_final,currency,dlc_count,categories,genres,platforms,website,json)
      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
   );
   let ok = 0;
   for (const id of appids) {
-    const r = await getJson(
-      `https://store.steampowered.com/api/appdetails?appids=${id}&cc=${cc}&l=${lang}`,
-    );
+    const r = await getJson(`https://store.steampowered.com/api/appdetails?appids=${id}&cc=${cc}&l=${lang}`);
     const e = r?.[String(id)];
     const d = e?.data;
     if (e?.success && d) {

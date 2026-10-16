@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type Editor from "./";
+import type Editor from "../editor";
 import { TransformAction } from "./actions/TransformAction";
 import { usePageSceneStore } from "../../PageSceneStore";
 
@@ -160,11 +160,7 @@ export class ModalTransformController {
     return new THREE.Vector3(0, 0, 1);
   }
 
-  private projectCursor(
-    clientX: number,
-    clientY: number,
-    camera: THREE.PerspectiveCamera,
-  ): THREE.Vector3 | null {
+  private projectCursor(clientX: number, clientY: number, camera: THREE.PerspectiveCamera): THREE.Vector3 | null {
     const dom = this.editor.renderer?.domElement;
     if (!dom) return null;
     const rect = dom.getBoundingClientRect();

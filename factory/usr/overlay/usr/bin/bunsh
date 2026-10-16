@@ -13,5 +13,7 @@ if (!first) {
   console.error("usage: bunsh -c COMMAND | bunsh SCRIPT [ARGS...]");
   process.exit(2);
 }
-const proc = Bun.spawn([process.execPath, "run", first, ...rest], { stdio: ["inherit", "inherit", "inherit"] });
+const proc = Bun.spawn([process.execPath, "run", first, ...rest], {
+  stdio: ["inherit", "inherit", "inherit"],
+});
 process.exit(await proc.exited);

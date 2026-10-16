@@ -21,11 +21,11 @@ host = [
 ]
 
 [dependencies]
-anyhow = { version = "1" }
-thiserror = { version = "2" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
-tracing = { version = "0.1" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
+tracing = { workspace = true }
 # Central pin narrows ^0.3 to =0.3.22; the existing unified lock already selects 0.3.22.
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"], optional = true }
 clap = { workspace = true, optional = true, features = ["derive", "color", "env"] }

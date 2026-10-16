@@ -15,14 +15,14 @@ workspace = true
 aphrody-nie-save = { workspace = true, features = ["serde"] }
 aphrody-nie-formats = { workspace = true }
 
-anyhow = { version = "1" }
-thiserror = { version = "2" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1", default-features = false }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-tracing = { version = "0.1" }
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"] }
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 base64 = { version = "0.22.1" }
 hex.workspace = true
 sha2 = { version = "0.10" }
@@ -35,4 +35,4 @@ rusqlite = { workspace = true }
 rand = { workspace = true }
 
 [dev-dependencies]
-tempfile = { version = "3" }
+tempfile = { workspace = true }

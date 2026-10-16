@@ -12,12 +12,12 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-anyhow = { version = "1" }
-thiserror = { version = "2" }
-serde = { version = "1", default-features = false, features = ["std", "derive"] }
-serde_json = { version = "1" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["std", "derive"] }
+serde_json = { workspace = true }
 rusqlite = { workspace = true, features = ["bundled"] }
-tracing = { version = "0.1" }
+tracing = { workspace = true }
 redis = { workspace = true, features = ["r2d2"] }
 rand.workspace = true
 # NB : interpolation de stats réimplémentée localement (StatBlock 2-segments f64, model.rs/query.rs) —

@@ -24,11 +24,7 @@ type TextToImageState = {
     subscriberId?: string,
     modelCreator?: ModelCreator,
   ) => string;
-  completeBatch: (
-    images: GeneratedImage[],
-    maybeSubscriberId?: string,
-    maybePrompt?: string,
-  ) => void;
+  completeBatch: (images: GeneratedImage[], maybeSubscriberId?: string, _maybePrompt?: string) => void;
   failBatch: (reason?: string) => void;
   dismissBatch: (id: string) => void;
   reset: () => void;
@@ -59,24 +55,18 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
       modelCreator,
       subscriberId: id,
     };
-    set((s) => ({ batches: [...s.batches, batch] }));
+    set(s => ({ batches: [...s.batches, batch] }));
     return id;
   },
-  completeBatch: (
-    images: GeneratedImage[],
-    maybeSubscriberId?: string,
-    maybePrompt?: string,
-  ) => {
+  completeBatch: (images: GeneratedImage[], maybeSubscriberId?: string, _maybePrompt?: string) => {
     const pending = maybeSubscriberId
-      ? get().batches.find((b) => b.subscriberId === maybeSubscriberId)
-      : get().batches.find((b) => b.status === "pending");
+      ? get().batches.find(b => b.subscriberId === maybeSubscriberId)
+      : get().batches.find(b => b.status === "pending");
     //const prompt = pending?.prompt ?? maybePrompt ?? "";
     //const modelLabel = pending?.modelLabel ?? "";
     // Mark the most recent pending batch complete, or create one if none exists
-    set((s) => {
-      const idx = pending
-        ? s.batches.findIndex((b) => b.id === pending.id)
-        : -1;
+    set(s => {
+      const idx = pending ? s.batches.findIndex(b => b.id === pending.id) : -1;
       if (idx === -1) {
         return { batches: s.batches };
       }
@@ -90,9 +80,9 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
     });
   },
   failBatch: (reason?: string) => {
-    set((s) => {
+    set(s => {
       // Mark the oldest pending batch as failed
-      const idx = s.batches.findIndex((b) => b.status === "pending");
+      const idx = s.batches.findIndex(b => b.status === "pending");
       if (idx === -1) return { batches: s.batches };
       const updated = [...s.batches];
       updated[idx] = {
@@ -104,8 +94,8 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
     });
   },
   dismissBatch: (id: string) => {
-    set((s) => ({
-      batches: s.batches.filter((b) => b.id !== id),
+    set(s => ({
+      batches: s.batches.filter(b => b.id !== id),
     }));
   },
   reset: () => set({ batches: [] }),
