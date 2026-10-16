@@ -214,7 +214,14 @@ async function fetchPage(
     const finalUrl = new URL(response.url || href);
     if (finalUrl.origin !== source.origin)
       return store.save(href, source.name, 301, null);
-    const page = await htmlToMarkdown(await response.text(), finalUrl.href);
+    let html: string;
+    try {
+      html = await response.text();
+    } catch {
+      await Bun.sleep(1000 * 2 ** attempt);
+      continue;
+    }
+    const page = await htmlToMarkdown(html, finalUrl.href);
     const body = page.markdown;
     const file = pagePath(store.home, new URL(href));
     mkdirSync(dirname(file), { recursive: true });

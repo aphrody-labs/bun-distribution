@@ -13,6 +13,7 @@ import {
   logcat,
   resolveToolchain,
 } from "./index.ts";
+import { docsCommand } from "./docs/index.ts";
 import { parseManifest } from "./plugin.ts";
 import type { AndroidAbi, BuildVariant } from "./types.ts";
 
@@ -25,6 +26,7 @@ const usage = `bun android <command> [options]
   logcat   [adb logcat args...]
   devices
   doctor
+  docs     <fetch|repos|search|stats>            local Android/AOSP documentation
   ndk      [version]                             install the NDK through sdkmanager
 
   --serial <id>  target device`;
@@ -39,6 +41,8 @@ function workspaceRoot(): string {
     directory = parent;
   }
 }
+
+if (Bun.argv[2] === "docs") process.exit(await docsCommand(Bun.argv.slice(3)));
 
 const { values, positionals } = parseArgs({
   args: Bun.argv.slice(2),
