@@ -23,8 +23,9 @@ The output is JSON; keep machine-specific receipts under `.local/`.
 `sources.lock.json` retains the existing Bun, Material, APT and distribution
 inputs. It adds the complete committed Android, Aphrody, IECODE and Shenron
 graphs, including IECODE's M3 forks and Shenron's configuration submodule.
-The integration contains 95 mounts, 82 repository/revision identities and
-82 gitlinks. Existing pins are unchanged. Bun Libraries' integrated report
+The integration contains 96 mounts, 85 repository/revision identities and
+83 gitlinks. The original 85 pins are unchanged; the four new source graphs
+record the committed revisions after synchronization. Bun Libraries' integrated report
 revision is checked against the distribution's Git ancestry.
 
 The factory exporter consumes these pins and the explicit catalog checkout
@@ -53,3 +54,16 @@ retain their workspace manifests, releases and license boundaries; the source
 inventory does not claim one Cargo workspace or native product qualification.
 Production DBFR authority remains with Omar. Provider authentication, sessions,
 cookies, databases, datasets and model weights are never imported by this flow.
+
+## Git synchronization
+
+The owner's subsequent request also covers pending source checkpoints and
+actual pulls with rebase. Nested source owners are synchronized before their
+parent Git pins. The distribution's existing font workflow and press assets
+are committed; macOS archive metadata remains excluded. The composition
+worktree is published on `codex/material-work` after rebasing onto `os`, with
+its unregistered source repositories retained for their separate migration.
+Live edits in an actively changing index are preserved rather than raced.
+These checkpoints preserve source work; they do not qualify application
+behavior, native artifacts, production activation or the unfinished physical
+consolidation.

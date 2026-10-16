@@ -2,7 +2,7 @@
 
 The root source catalog covers Bun, Android, Aphrody, APT, Material, IECODE and
 Shenron and verifies the already integrated Bun Libraries history. The existing
-source lock now has 95 mounts, 82 repository/revision identities and 82 gitlinks;
+source lock now has 96 mounts, 85 repository/revision identities and 83 gitlinks;
 all 85 preceding pins are preserved. `bun src/cli.ts workspace` reports source
 coverage independently from local cleanliness, revision parity and physical
 consolidation. Catalog checkout paths resolve relative to the distribution and
@@ -12,6 +12,16 @@ nested workspace migration remain incomplete; see docs/SOURCE-WORKSPACE.md.
 
 The installed native formatter uses `-c` for check-only. Root scripts and their
 manifest generator select bun-format.json with `--config` instead.
+
+Root native type checking (114 files), lint (104 files), format checks and the
+read-only distribution/source plans pass. The owner subsequently requested
+pending source commits and Git pulls. Source checkpoints are synchronized by
+repository and by nested owner; Shenron's pull required nine conflicts to be
+merged, retaining both remote and local functionality. Its generated Next
+preview remains excluded. The linked composition worktree is committed and
+published on `codex/material-work` after rebasing onto `os`; it is not merged
+into `os`. Active Bun edits and its incomplete pinned M3 checkout stay intact.
+No tests, native builds or deployment were performed in this Git batch.
 
 ## Native Bun quality commands — 2026-10-14
 

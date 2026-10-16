@@ -3,8 +3,8 @@
 ## Complete source-directory inventory — 2026-10-16
 
 - [x] Extend the existing pinned source graph with Android, Aphrody, IECODE/M3
-      and Shenron/config without changing the 85 existing pins: 95 mounts,
-      82 repository/revision identities and 82 gitlinks.
+      and Shenron/config without changing the 85 existing pins: 96 mounts,
+      85 repository/revision identities and 83 gitlinks after source sync.
 - [x] Add the relative checkout catalog and read-only `bun src/cli.ts workspace`
       inventory through the existing root CLI; connect catalog locations to
       the canonical source exporter and check Bun Libraries ancestry.
@@ -12,6 +12,12 @@
       ignored/protected inputs and existing nested workspace owners.
 - [x] Fix formatter configuration selection for the installed native CLI:
       use `--config`; its `-c` flag means check-only.
+- [x] Pass root native type checking (114 files), lint (104 files) and
+      formatting; commit the existing first-party font workflow/press assets
+      and the verified CADCraft/SDK source-owner updates.
+- [x] Commit pending source work and run actual pulls with rebase in the
+      available source owners; preserve generated/private inputs and live
+      concurrent Bun edits. Keep migration work on its published branch.
 - [ ] Complete physical source relocation after active consumers and protected
       local state have explicit migration paths. Source coverage alone does
       not qualify relocation, native builds or one Cargo/Bun workspace.
