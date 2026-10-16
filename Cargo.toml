@@ -34,7 +34,6 @@ aphrody-pkg-core = { path = "crates/pkg/core", version = "1.4.4" }
 aphrody-pkg-store = { path = "crates/pkg/store", version = "1.4.4" }
 aphrody-pkg-net = { path = "crates/pkg/net", version = "1.4.4" }
 aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.4.4" }
-taffy = { package = "aphrody-taffy", path = "crates/ui/taffy", version = "1.4.4" }
 aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.4.4" }
 crc32fast = { version = "1.5", default-features = false }
 image-compare = { version = "0.5" }
@@ -130,7 +129,6 @@ aphrody-shell-vfs = { path = "../bun/packages/web/rust/integrations/crates/shell
 aphrody-terminal-core = { path = "../bun/packages/web/rust/integrations/crates/shell/terminal-core", version = "1.4.4", features = [] }
 aphrody-term = { path = "crates/shell/aphrody-term", version = "1.4.4", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.4.4", features = [] }
-aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.4.4", default-features = false }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.4.4", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.4.4", features = [] }
 aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.4.4", features = [] }
