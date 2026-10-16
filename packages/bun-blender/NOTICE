@@ -1,0 +1,4 @@
+bun-blender drives an external Blender installation or build (https://www.blender.org).
+Blender is licensed under the GNU General Public License v3 or later; see the
+"license" directory and copyright.txt shipped with Blender. This package contains
+no Blender source code.
