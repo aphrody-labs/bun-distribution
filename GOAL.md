@@ -4,11 +4,17 @@ Deliver one Bun OS product workspace from `C:\\src`, unifying Bun OS and Bun
 Libraries package/setup/build/install ownership while preserving source
 histories, active concurrent work, and all applicable license notices.
 
-The source integration scope covers every repository in the selected source
-directory: Bun, Android, Aphrody, APT, Material, IECODE and Shenron, with Bun
-Libraries history already integrated. The root catalog and pinned source graph
-own discovery/export; physical relocation and nested workspace migration remain
-separate gates while active work and protected local inputs are present.
+The owner's selected integration scope is Bun Libraries and Aphrody. Shenron,
+IECODE and Android remain outside this absorption. Existing Bun runtime,
+Material and APT distribution dependencies retain their pinned contracts.
+The root catalog and source graph own discovery/export; physical relocation
+and nested workspace migration remain separate gates.
+
+Aphrody retains exactly two capability layers: AI (models, agents, memory,
+A2A and MCP) and infrastructure (hosts, deployment, services, pipelines and
+cloud). Other capabilities move to their Bun/Bun Libraries owners with their
+history, licenses, consumers and gates. Source still awaiting that migration
+must be reported as pending, not relabelled as already transferred.
 
 The root Bun workspace, setup command, dependency install, formatter, shared
 `node_modules`, Cargo `target`, build output, and install destination must have
@@ -16,6 +22,13 @@ one canonical owner. Move source ownership only when imports, manifests,
 consumers, and gates are updated together. A single Cargo workspace is complete
 only when all included Rust packages belong to it; nested workspace boundaries
 must be migrated deliberately rather than hidden by documentation.
+
+The owner requires exactly one product `crates/`, one `packages/` and one
+`apps/`, directly under this root. Each product crate/package/application is
+a direct child of its category. Merge the source and consumer graphs; nested
+first-party category roots or workspace patterns are migration violations.
+Independent upstream/toolchain sources keep their provenance boundaries and
+must not be presented as migrated product members.
 
 Keep the Bun runtime fork's active checkout and processes intact. Integrate it
 through the selected workspace without resetting or relocating concurrent

@@ -100,7 +100,13 @@ export interface ExecutionOptions {
   timeoutMs?: number;
 }
 
-export interface NativeExecutionOptions extends ExecutionOptions {
+export type RuntimePolicy = "release" | "development";
+
+export interface RuntimeExecutionOptions extends ExecutionOptions {
+  runtimePolicy?: RuntimePolicy;
+}
+
+export interface NativeExecutionOptions extends RuntimeExecutionOptions {
   cwd?: string;
   env?: Record<string, string | undefined>;
   serialize?: boolean;
@@ -335,7 +341,7 @@ export function assertRuntime(config: Config, allowRevisionDrift = false, target
 }
 
 /** Compiled sidecars must use a separate, verified Bun executable. */
-export async function resolveBunExecutable(config: Config, options: ExecutionOptions = {}): Promise<string> {
+export async function resolveBunExecutable(config: Config, options: RuntimeExecutionOptions = {}): Promise<string> {
   const root = options.root ?? repositoryRoot;
   const configured = Bun.env.APHRODY_BUN_BINARY;
   let candidate = Bun.which("bun");
@@ -372,12 +378,16 @@ export async function resolveBunExecutable(config: Config, options: ExecutionOpt
   ) {
     throw new Error("Native Bun returned invalid provenance metadata.");
   }
-  assertRuntimeFacts(runtimePinFor(config), {
-    version: facts.version,
-    revision: facts.revision,
-    sourceUrl: facts.sourceUrl as string | null,
-    executable: candidate,
-  });
+  assertRuntimeFacts(
+    runtimePinFor(config),
+    {
+      version: facts.version,
+      revision: facts.revision,
+      sourceUrl: facts.sourceUrl as string | null,
+      executable: candidate,
+    },
+    options.runtimePolicy === "development",
+  );
   return candidate;
 }
 
@@ -783,7 +793,7 @@ export async function runNativeResult(
   options: NativeExecutionOptions = {},
   captureStdout = false,
 ): Promise<CommandResult> {
-  assertRuntime(config);
+  assertRuntime(config, options.runtimePolicy === "development");
   if (!nativeArguments.length || nativeArguments.some(arg => typeof arg !== "string" || arg.includes("\0"))) {
     throw new Error("Invalid native arguments.");
   }
@@ -821,7 +831,7 @@ export async function runNativeResult(
     // JSON travels in the environment, avoiding PowerShell's native argv re-quoting.
     env.APHRODY_NATIVE_ARGUMENTS = JSON.stringify(nativeArguments.slice(1));
     env.APHRODY_NATIVE_EXECUTABLE = Bun.which(nativeArguments[0]!) ?? nativeArguments[0];
-    env.APHRODY_NATIVE_BUN = await resolveBunExecutable(config, { root });
+    env.APHRODY_NATIVE_BUN = await resolveBunExecutable(config, { root, runtimePolicy: options.runtimePolicy });
     env.APHRODY_NATIVE_WORKER = join(root, "scripts", "native-worker.ts");
     const wrapperSeconds = Math.max(1, Math.ceil(Math.min(timeoutMs, runDeadline - 5_000) / 1000));
     argv = [
@@ -866,12 +876,13 @@ async function serializedCargo(
   root: string,
   timeoutMs: number,
   captureStdout = false,
+  runtimePolicy: RuntimePolicy = "release",
 ): Promise<CommandResult> {
   const cargo = Bun.which("cargo");
   if (!cargo) throw new Error("Native Cargo missing on this host.");
   let argv = [cargo, ...args];
   if (process.platform === "win32") {
-    const bun = await resolveBunExecutable(config, { root });
+    const bun = await resolveBunExecutable(config, { root, runtimePolicy });
     argv = [bun, "msvc", "exec", "--", cargo, ...args];
     if (Bun.env.APHRODY_BUN_CHECKOUT) {
       const owner = join(resolve(Bun.env.APHRODY_BUN_CHECKOUT), "scripts", "build", "rust", "cargo-serial.ts");
@@ -880,7 +891,7 @@ async function serializedCargo(
       argv = [bun, owner, "--msvc", ...args];
     }
   }
-  return runNativeResult(config, argv, { root, cwd, timeoutMs }, captureStdout);
+  return runNativeResult(config, argv, { root, cwd, timeoutMs, runtimePolicy }, captureStdout);
 }
 
 export interface CargoWorkspaceReport {
@@ -894,7 +905,7 @@ export interface CargoWorkspaceReport {
 /** Verify the actual Cargo owner and output path through the native admission wrapper. */
 export async function inspectCargoWorkspace(
   config: Config,
-  options: ExecutionOptions = {},
+  options: RuntimeExecutionOptions = {},
 ): Promise<CargoWorkspaceReport> {
   const root = resolve(options.root ?? repositoryRoot);
   const product = (await Bun.file(join(root, "package.json")).json()) as {
@@ -941,6 +952,7 @@ export async function inspectCargoWorkspace(
     root,
     options.timeoutMs ?? shortDeadline,
     true,
+    options.runtimePolicy,
   );
   if (result.code !== 0) throw new Error("Root Cargo workspace metadata failed.");
   const value: unknown = JSON.parse(result.stdout);

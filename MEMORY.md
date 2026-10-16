@@ -1,8 +1,41 @@
-## Source-directory integration — 2026-10-16
+## Flat member migration — 2026-10-16
 
-The root source catalog covers Bun, Android, Aphrody, APT, Material, IECODE and
-Shenron and verifies the already integrated Bun Libraries history. The existing
-source lock now has 96 mounts, 85 repository/revision identities and 83 gitlinks;
+The selected product members are being merged into direct children of the root
+crates/, packages/ and apps/ directories. The JavaScript relocation contains
+62 ArtCraft members and 17 new Aphrody members; paths, OVH and kernel-client
+reuse their existing flat owners. Root history includes the exact ArtCraft
+c59fbda7 and Aphrody 4b50cb3e source ancestors. Parsing and source-import
+resolution are qualified separately from the pending common frozen install.
+
+The six duplicated Craft leaves (83 files) and their empty source Cargo
+workspace were retired in craft-libs e50b8a2f, preserving licenses and notices.
+The root native Cargo graph has 38 members. Eleven Aphrody contract packages
+pass serialized locked offline cargo check; Proc passed its all-feature check.
+Native Cargo formatting and scoped root Bun check/lint pass. No tests ran.
+
+Development Cargo execution explicitly accepts a recognized local runtime;
+release and artifact callers retain strict runtime pins. The shared Cargo
+entry point also forwards explicit exec arguments while preserving package
+cwd and the root serialized toolchain/target owner.
+
+Aphrody workspace literal transformations now run in process without sd;
+source commit 62cdce2e was pushed and its remote revision verified. The Bun
+Tauri workspace is explicitly excluded from the parent runtime workspace;
+this fixes Aphrody/Tauri metadata inheritance without duplicating 28 aliases.
+Native metadata passes for Aphrody and its separate Tauri owner. A frozen
+file-provider catalog replay defect has a scoped Bun source fix; checkout
+binary qualification is pending its native build. The runtime owner Cargo.lock
+was repaired offline without changing registry versions. Preserve concurrent
+source work.
+
+## Selected source integration — 2026-10-16
+
+The owner's current integration scope is Bun Libraries and Aphrody only;
+Shenron, IECODE and Android stay outside absorption. Existing Bun/Material/APT
+distribution inputs remain external pinned dependencies. Aphrody retains only
+AI and infrastructure. The product layout must have one flat root `crates/`,
+`packages/` and `apps/`; source still nested is pending migration, not complete.
+The source lock has 86 mounts, 77 repository/revision identities and 76 gitlinks;
 all 85 preceding pins are preserved. `bun src/cli.ts workspace` reports source
 coverage independently from local cleanliness, revision parity and physical
 consolidation. Catalog checkout paths resolve relative to the distribution and
@@ -16,12 +49,17 @@ manifest generator select bun-format.json with `--config` instead.
 Root native type checking (114 files), lint (104 files), format checks and the
 read-only distribution/source plans pass. The owner subsequently requested
 pending source commits and Git pulls. Source checkpoints are synchronized by
-repository and by nested owner; Shenron's pull required nine conflicts to be
-merged, retaining both remote and local functionality. Its generated Next
-preview remains excluded. The linked composition worktree is committed and
+repository and by nested owner. Earlier commits/pulls outside the subsequently
+narrowed scope remain in their source repositories; no history was rewritten.
+The linked composition worktree is committed and
 published on `codex/material-work` after rebasing onto `os`; it is not merged
 into `os`. Active Bun edits and its incomplete pinned M3 checkout stay intact.
 No tests, native builds or deployment were performed in this Git batch.
+The complete Bun Libraries history now reaches `ec9539815` in the root
+ancestry. Its remaining changes cover native quality policy and the canonical
+documentation redirect, already represented by root owners. The history merge
+was verified to preserve the exact root tree; the source catalog checks the
+new complete history boundary.
 
 ## Native Bun quality commands — 2026-10-14
 

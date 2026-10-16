@@ -296,18 +296,20 @@
     },
     {
       "id": "craft-libs",
-      "path": "libraries/craft-libs",
+      "path": "crates/craft-atomic",
       "upstream": "storytold/craft-libs",
       "fork": "aphrody-labs/craft-libs",
-      "branch": "main",
-      "revision": "e9546e191dd62f2bc1d61eca45dbdc2f1b3c1d8e",
+      "branch": "os",
+      "revision": "7ddc04be8f88a21fc132dbbe1671a319f04999b2",
       "upstreamRevision": "e9546e191dd62f2bc1d61eca45dbdc2f1b3c1d8e",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
-      "description": "Shared Rust libraries",
+      "description": "Shared Rust libraries in the root Cargo workspace",
       "manifestPath": "Cargo.toml",
       "stars": 188,
-      "role": "shared"
+      "role": "shared",
+      "sourceKind": "workspace",
+      "cargoPackages": ["craft-atomic", "craft-settings", "craft-cms", "craft-print", "craft-quit", "craft-ui"]
     },
     {
       "id": "craft-fonts",

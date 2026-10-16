@@ -3,6 +3,12 @@
 One implementation owns each concept. Surfaces bind that implementation and
 retain its errors, limits and qualification.
 
+Owner directive, 2026-10-16: Aphrody retains only AI (models, agents, memory,
+A2A, MCP) and infrastructure (hosts, deployment, services, pipelines, cloud).
+Other capabilities belong to Bun/Bun Libraries. Existing source still awaiting
+transfer is migration work, not an additional permanent owner. Shenron and
+IECODE stay outside this absorption.
+
 The unified Bun Libraries session report records the source inventory,
 per-library owners, native Bun quality commands, app artifact contract and
 qualification boundaries at commit
@@ -35,7 +41,9 @@ and each pinned source repository govern subsequent changes.
 | Public app IDs, domain aliases and artifact routing                                                | Aphrody Infra product configuration; Bun OS `docs/APP-DOMAINS.md` is the consumer map                            | Existing Worker routes and standalone app owners                                      |
 | M3 tokens, shared components and `libm3`                                                           | Material workspace and its pinned crates                                                                         | Aphrody product surfaces and Bun OS desktop/app-ui consumers                          |
 | Native quality commands and formatter policy                                                       | Bun OS `package.json` / `bun-format.json`; runtime quality stays in Bun                                          | Bun OS owned source only; no duplicate formatter/config in Aphrody                    |
-| Product routes, sites and app activation policy                                                    | Aphrody product integration + Aphrody Infra                                                                      | Bun OS app capability manifest                                                        |
+| Product routes and sites                                                                           | Bun/Bun Libraries product owners                                                                                 | Bun OS app capability manifest                                                        |
+| App activation, hosts, deployment, services, pipelines and cloud policy                            | Aphrody Infra                                                                                                    | Bun/Bun Libraries and independent applications                                        |
+| Models, agents, memory, A2A and MCP                                                                | Aphrody AI                                                                                                       | Bun/Bun Libraries and independent applications                                        |
 
 The video process module translates workspace errors into its public video
 errors. It has no child management implementation. Captured and discarded
@@ -89,7 +97,7 @@ manifests and artifact verification consumed by the Infra adapter.
 Repository boundaries are capability boundaries: Bun owns runtime and native
 SDK source, Material owns shared UI/framework source, APT owns Debian's package
 manager implementation, Bun OS owns distribution assembly and package adapters,
-and Aphrody owns product integration plus host control. Consumers pin or import
+and Aphrody retains AI and infrastructure. Consumers pin or import
 the owner's interface; they do not copy its implementation. Keep each quality
 gate scoped to its owner and record source, build, artifact and deployment
 qualification independently.

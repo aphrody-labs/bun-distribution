@@ -14,6 +14,14 @@ This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
 work, repository history, first-party attribution, and every imported license
 and notice. Keep product documentation and collaboration in English.
 
+Owner direction (2026-10-16): integrate Bun Libraries and Aphrody only;
+Shenron, IECODE and Android stay outside absorption. Aphrody retains AI
+(models, agents, memory, A2A, MCP) and infrastructure (hosts, deployment,
+services, pipelines, cloud). Merge product members into one root `crates/`,
+`packages/` and `apps/`, one direct child per member. Nested source imports
+are not completed flattening. Reuse canonical implementations and preserve
+history, licenses and consumers before retiring source duplicates.
+
 Use Bun 1.4.4 and native Bun APIs for JavaScript and TypeScript. Use the native
 quality commands directly: `bun check`, `bun lint`, `bun fmt` and `bun n2b`.
 Do not route these commands through subprocess backends, `bunx`, standalone

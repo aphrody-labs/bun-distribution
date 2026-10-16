@@ -30,9 +30,18 @@ async function inventory() {
   const catalog = (await Bun.file(join(packageRoot, "infra/source-workspace.json")).json()) as {
     schemaVersion: number;
     sourceRoot: string;
+    integrationScope: string[];
+    excludedRepositories: string[];
     components: Component[];
   };
-  if (catalog.schemaVersion !== 1 || !Array.isArray(catalog.components)) throw new Error("Invalid source workspace");
+  if (
+    catalog.schemaVersion !== 1 ||
+    !Array.isArray(catalog.components) ||
+    !Array.isArray(catalog.integrationScope) ||
+    !Array.isArray(catalog.excludedRepositories) ||
+    [...catalog.integrationScope, ...catalog.excludedRepositories].some(id => !/^[\w.-]+$/.test(id))
+  )
+    throw new Error("Invalid source workspace");
   const ids = new Set<string>();
   for (const component of catalog.components) {
     if (
@@ -67,6 +76,12 @@ export async function sourceWorkspaceLocations(config: Config = {}) {
 export async function inspectSourceWorkspace(config: Config = {}) {
   const catalog = await inventory();
   const lock = await readLock();
+  const bun = (await Bun.file(join(packageRoot, "package.json")).json()) as { workspaces: string[] };
+  const cargo = Bun.TOML.parse(await Bun.file(join(packageRoot, "Cargo.toml")).text()) as {
+    workspace: { members: string[] };
+  };
+  const nestedBunMembers = bun.workspaces.filter(member => !/^(?:packages|apps)\/[^/*]+$/.test(member));
+  const nestedCargoMembers = cargo.workspace.members.filter(member => !/^crates\/[^/*]+$/.test(member));
   const common = await git(packageRoot, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
   if (common.code !== 0) throw new Error("Cannot inspect the distribution Git owner");
   const components = [];
@@ -115,11 +130,16 @@ export async function inspectSourceWorkspace(config: Config = {}) {
   }
   const sourceRoot = resolve(packageRoot, catalog.sourceRoot);
   const knownPaths = new Set(components.map(component => component.path.toLowerCase()));
+  const excludedPaths = new Set(catalog.excludedRepositories.map(name => resolve(sourceRoot, name).toLowerCase()));
   const additional = [];
   for (const entry of await readdir(sourceRoot, { withFileTypes: true })) {
     if ((!entry.isDirectory() && !entry.isSymbolicLink()) || entry.name.startsWith(".")) continue;
     const path = join(sourceRoot, entry.name);
     if (knownPaths.has(path.toLowerCase())) continue;
+    if (excludedPaths.has(path.toLowerCase())) {
+      additional.push({ path, type: "external-repository", state: "outside-integration" });
+      continue;
+    }
     if (!existsSync(join(path, ".git"))) {
       additional.push({ path, type: "non-repository", state: "retained" });
       continue;
@@ -132,14 +152,28 @@ export async function inspectSourceWorkspace(config: Config = {}) {
       state: "retained",
     });
   }
-  const allSourceOwnersCovered =
+  const allSelectedSourceOwnersCovered =
     components.every(component => component.sourceCovered === true) &&
     additional.every(entry => entry.type !== "unclassified-repository");
   return {
     schemaVersion: 1,
     root: packageRoot,
     sourceRoot,
-    allSourceOwnersCovered,
+    integrationScope: catalog.integrationScope,
+    aphrodyLayers: {
+      ai: ["models", "agents", "memory", "A2A", "MCP"],
+      infrastructure: ["hosts", "deployment", "services", "pipelines", "cloud"],
+    },
+    productLayout: {
+      roots: ["crates", "packages", "apps"],
+      bunMembers: bun.workspaces.length,
+      cargoMembers: cargo.workspace.members.length,
+      nestedBunMembers,
+      nestedCargoMembers,
+      declaredMembersAreFlat: nestedBunMembers.length === 0 && nestedCargoMembers.length === 0,
+      integrationState: "migration-in-progress",
+    },
+    allSelectedSourceOwnersCovered,
     components,
     additional,
     pinnedMounts: lock.repositories.length,

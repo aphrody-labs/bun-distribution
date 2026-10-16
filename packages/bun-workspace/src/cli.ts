@@ -71,7 +71,7 @@ async function main(): Promise<number> {
       // The installed runtime is a development tool; release receipts remain
       // pinned to the target-specific distribution revision below.
       const runtime = inspectRuntime(config, undefined, true);
-      const externalBun = await resolveBunExecutable(config).then(
+      const externalBun = await resolveBunExecutable(config, { runtimePolicy: "development" }).then(
         executable => ({ executable, error: null }),
         (error: unknown) => ({
           executable: null,

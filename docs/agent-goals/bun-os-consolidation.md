@@ -97,9 +97,16 @@ Complete the migration already in progress instead of creating parallel owners.
 
 ### aphrody-labs/aphrody
 
-Aphrody remains the product/application integration owner according to its own
-current instructions. Do not move application/product capabilities into Bun OS
-unless an explicit current owner directive says to do so.
+The owner's 2026-10-16 directive restricts Aphrody to AI (models, agents, memory,
+A2A and MCP) and infrastructure (hosts, deployment, services, pipelines and
+cloud). Bun owns the runtime, platform and general capabilities; Bun Libraries
+and this distribution own their library/product assembly. Move other Aphrody
+capabilities through their existing canonical owners, preserving history,
+licenses and consumers. Do not duplicate transfers already active in Bun.
+
+The selected absorption covers Bun Libraries and Aphrody. Shenron, IECODE and
+Android stay outside it; pre-existing external distribution dependencies keep
+their existing pinned contracts.
 
 ## Distribution product direction
 

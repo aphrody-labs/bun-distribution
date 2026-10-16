@@ -1,69 +1,56 @@
 # Source workspace integration
 
-Bun OS owns the source inventory for the selected source directory through
-`infra/source-workspace.json`. Checkout locations resolve from the distribution
-checkout, and `--config` supplies explicit `checkouts` overrides. No fixed drive
-or workstation directory is required.
+Bun OS consolidates Bun Libraries and Aphrody through the existing root
+workspace. Shenron, IECODE and Android are outside this absorption. Existing
+Bun runtime, Material and APT distribution inputs keep their pinned contracts.
 
-```sh
-bun src/cli.ts workspace
-bun src/cli.ts workspace --config factory.local.json
-```
+Aphrody retains AI (models, agents, memory, A2A and MCP) and infrastructure
+(hosts, deployment, services, pipelines and cloud). Other capabilities belong
+to Bun or Bun Libraries. Moving source requires moving its consumers,
+dependencies, history and notices together.
 
-The existing factory CLI reports every catalogued source owner, committed HEAD,
-locked revision, local changes, physical checkout location, build/workspace
-ownership and migration state. It also identifies additional sibling
-repositories and linked distribution worktrees. An unclassified repository or
-missing source pin makes the command fail. An absent checkout or a local
-revision mismatch remains visible separately from committed source coverage.
-The output is JSON; keep machine-specific receipts under `.local/`.
+## Flat product layout
 
-## Source graph
+The product has one root `crates/`, one `packages/` and one `apps/`. Each
+product member is a direct child. The root Cargo and Bun manifests own
+membership, dependency resolution and orchestration. A nested source checkout
+is provenance, not evidence that its members have been flattened.
 
-`sources.lock.json` retains the existing Bun, Material, APT and distribution
-inputs. It adds the complete committed Android, Aphrody, IECODE and Shenron
-graphs, including IECODE's M3 forks and Shenron's configuration submodule.
-The integration contains 96 mounts, 85 repository/revision identities and
-83 gitlinks. The original 85 pins are unchanged; the four new source graphs
-record the committed revisions after synchronization. Bun Libraries' integrated report
-revision is checked against the distribution's Git ancestry.
+Rust owners use `crates/<package-name>` Git submodules with the shared root
+Cargo workspace and nightly toolchain. JavaScript/TypeScript packages and
+applications use `packages/<name>` and `apps/<name>` in the root Bun workspace.
+Do not retire source duplicates before the canonical implementation and its
+consumers qualify. Active Bun capability transfers retain their existing owner.
 
-The factory exporter consumes these pins and the explicit catalog checkout
-locations. Its existing capacity, cleanliness, Git-object, LFS and license
-boundaries still apply. A dirty checkout cannot qualify an export or a build.
-An explicit `sourceExport.repositories` entry can supply an existing read-only
-Git object store through the export owner's documented contract. The inventory
-does not materialize sources, import uncommitted work or change branch state.
+## Source graph and inventory
 
-## Physical migration boundary
+`infra/source-workspace.json` resolves source locations relative to this
+checkout; explicit `checkouts` configuration can override them.
 
-Source coverage is complete for the selected source directory. Physical
-consolidation is incomplete: active source checkouts, their ignored state and
-the distribution's linked worktree remain at their existing locations. Bun
-still resolves through its existing junction. The old Bun Libraries checkout
-retains local residue even though its source history is already integrated.
+`bun src/cli.ts workspace` reports source revisions, local changes, physical
+locations, workspace owners and migration state; `--config factory.local.json`
+supplies checkout overrides. It identifies excluded repositories, linked
+worktrees and unclassified siblings. Inventory coverage does not imply physical
+consolidation, native qualification or application behavior.
 
-Relocation requires consumer updates together: Aphrody has sibling Bun path
-dependencies, the factory resolves sibling Bun/Material owners, and the parent
-workspace discovery marker is still consumed by runtime tooling. A clean Git
-status alone does not qualify moving IECODE's ignored private inputs. No
-checkout, protected store or local artifact was moved or removed in this batch.
+`sources.lock.json` has 86 source mounts and 77 repository/revision identities,
+including 76 gitlinks. The original 85 inputs are unchanged; Aphrody is the
+additional selected source pin. Bun Libraries history through
+`ec9539815a8a38ab306bc2cec3fc55adb8046b5b` is integrated into the distribution
+ancestry without replacing the distribution tree.
 
-The root Cargo/Bun migration remains separate. Catalogued independent owners
-retain their workspace manifests, releases and license boundaries; the source
-inventory does not claim one Cargo workspace or native product qualification.
-Production DBFR authority remains with Omar. Provider authentication, sessions,
-cookies, databases, datasets and model weights are never imported by this flow.
+The factory exporter consumes these pins and explicit checkout locations. Its
+capacity, cleanliness, Git-object, LFS and license checks still apply. Local
+receipts belong under `.local/`; a source inventory never imports dirty work.
 
-## Git synchronization
+## Preserved state
 
-The owner's subsequent request also covers pending source checkpoints and
-actual pulls with rebase. Nested source owners are synchronized before their
-parent Git pins. The distribution's existing font workflow and press assets
-are committed; macOS archive metadata remains excluded. The composition
-worktree is published on `codex/material-work` after rebasing onto `os`, with
-its unregistered source repositories retained for their separate migration.
-Live edits in an actively changing index are preserved rather than raced.
-These checkpoints preserve source work; they do not qualify application
-behavior, native artifacts, production activation or the unfinished physical
-consolidation.
+Active checkouts and the composition worktree remain available during the
+migration. Earlier source checkpoints and pulls are retained in history;
+they do not expand the selected absorption scope. The composition branch is
+published as `codex/material-work` and has not been merged into `os`.
+
+Provider authentication, raw sessions, cookies, protected local stores,
+databases, datasets and model weights stay outside source migration. Production
+DBFR authority remains with Omar. No inventory result qualifies deployment or
+production activation.

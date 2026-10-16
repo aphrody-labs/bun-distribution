@@ -80,7 +80,7 @@ try {
     switch (positionals[0]) {
       case "workspace": {
         const workspace = await inspectSourceWorkspace(config);
-        if (!workspace.allSourceOwnersCovered) process.exitCode = 1;
+        if (!workspace.allSelectedSourceOwnersCovered) process.exitCode = 1;
         result = workspace;
         break;
       }

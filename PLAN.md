@@ -1,10 +1,11 @@
 # Integration plan
 
-## Complete source-directory inventory — 2026-10-16
+## Selected source integration and flat layout — 2026-10-16
 
-- [x] Extend the existing pinned source graph with Android, Aphrody, IECODE/M3
-      and Shenron/config without changing the 85 existing pins: 96 mounts,
-      85 repository/revision identities and 83 gitlinks after source sync.
+- [x] Apply the owner's narrowed scope: Bun Libraries and Aphrody only.
+      Shenron, IECODE and Android are outside absorption. Preserve the 85
+      existing distribution pins and add the Aphrody source: 86 mounts,
+      77 repository/revision identities and 76 gitlinks.
 - [x] Add the relative checkout catalog and read-only `bun src/cli.ts workspace`
       inventory through the existing root CLI; connect catalog locations to
       the canonical source exporter and check Bun Libraries ancestry.
@@ -18,9 +19,30 @@
 - [x] Commit pending source work and run actual pulls with rebase in the
       available source owners; preserve generated/private inputs and live
       concurrent Bun edits. Keep migration work on its published branch.
+- [x] Preserve the remaining Bun Libraries history through `ec9539815` after
+      checking that its native quality/redirect changes already have root
+      implementations; verify the history import leaves the root tree unchanged.
+- [ ] Finish one flat product `crates/`, `packages/` and `apps/`, with consumers,
+      inheritance and one root build graph migrated together. Current nested
+      library/workspace imports remain migration work.
+- [ ] Restrict Aphrody's capability ownership to AI and infrastructure;
+      split mixed adapters and reuse Bun/Bun Libraries owners for other layers.
 - [ ] Complete physical source relocation after active consumers and protected
       local state have explicit migration paths. Source coverage alone does
       not qualify relocation, native builds or one Cargo/Bun workspace.
+
+## Flat source batches — 2026-10-16
+
+- [x] Preserve ArtCraft and Aphrody source ancestry before relocating packages.
+- [x] Prepare 62 flat ArtCraft members and 17 Aphrody members, reusing three
+      existing canonical packages and preserving imported notices.
+- [x] Retire the six duplicated Craft leaves and their empty source workspace.
+- [x] Qualify eleven root Aphrody contract packages and Proc with native Cargo.
+- [x] Fix native workspace literal rewriting without an sd subprocess.
+- [x] Restore Tauri's declared workspace boundary and qualify native metadata.
+- [ ] Qualify the native Bun frozen catalog replay fix with a checkout build.
+- [ ] Finish shared frozen installation, root quality and moved frontend gates.
+- [ ] Retire remaining source copies after consumers and canonical owners pass.
 
 ## Delivered in this batch
 
