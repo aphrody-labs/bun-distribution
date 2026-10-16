@@ -1,7 +1,6 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 "use client";
 
-import { basesDepuisChemin, joindreWiki } from "@rosegriffon/app-shell";
+import { BASE_WIKI, estRouteActive, wiki } from "@rosegriffon/app-shell";
 import type { BaseCharacter } from "@rosegriffon/inagle";
 import { CircleDot, Sparkles } from "lucide-react";
 import Image from "next/image";
@@ -66,14 +65,14 @@ interface BaseCharacterTableProps {
  * les 200 fiches de la page pointaient toutes sur `/chara/<slug>` et repassaient
  * donc par une redirection 308 évitable (200 des 204 sauts relevés sur le wiki).
  *
- * `basesDepuisChemin` déduit le montage du chemin courant au lieu de le coder en
+ * Le montage est déduit le montage du chemin courant au lieu de le coder en
  * dur : le fichier reste identique octet à octet dans les deux arbres, ce
  * qu'exige `packages/app-shell/test/synchronisation-chrome.test.ts`.
  */
 function useLienWiki(): (chemin: string) => string {
   const pathname = usePathname();
-  const bases = basesDepuisChemin(pathname ?? "/");
-  return (chemin: string) => joindreWiki(bases.wiki, chemin);
+  const sousWiki = estRouteActive(pathname ?? "/", BASE_WIKI);
+  return (chemin: string) => (sousWiki ? wiki(chemin) : chemin);
 }
 
 /**

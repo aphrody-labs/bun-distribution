@@ -670,9 +670,9 @@ describe("dérivation de u dans l'intervalle OUVERT (0, 1)", () => {
     // 64 bits / 2^64 : atteint 1 EXACTEMENT en haut…
     expect(Number(2n ** 64n - 1n) / 2 ** 64).toBe(1);
     // …et 0 en bas.
-    expect(0 / 2 ** 64).toBe(0);
+    expect(Number(0n) / 2 ** 64).toBe(0);
     // 53 bits / 2^53 : atteint 0.
-    expect(0 / 2 ** 53).toBe(0);
+    expect(Number(0n) / 2 ** 53).toBe(0);
     // (53 bits + 0,5) / 2^53 : `2^53 − 0,5` n'est pas représentable, il arrondit
     // à 2^53, donc u = 1, donc clé de tri −0, donc gagnant automatique.
     expect((2 ** 53 - 0.5) / 2 ** 53).toBe(1);

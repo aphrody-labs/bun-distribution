@@ -100,9 +100,11 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
               )}
             >
               {/* Card Header */}
-              <div
+              <button
+                type="button"
                 onClick={() => toggleExpand(c.variantId)}
-                className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 cursor-pointer select-none"
+                aria-expanded={isExpanded}
+                className="w-full text-left flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 cursor-pointer select-none"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
@@ -131,7 +133,7 @@ export function CharaVariantsComparison({ comparisons, baseName }: CharaVariants
                     <ChevronDown className="size-4 text-on-surface-variant" />
                   )}
                 </div>
-              </div>
+              </button>
 
               {/* Summary Explanation */}
               <div className="px-3 pb-3 sm:px-4 sm:pb-4 border-b border-outline-variant/10">

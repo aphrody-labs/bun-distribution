@@ -11,8 +11,6 @@ export function GaijiGlyph({ glyph, size = 28, className }: { glyph: GaijiKey; s
   const scale = size / g.h;
   return (
     <span
-      role="img"
-      aria-label={g.label}
       title={g.label}
       className={className}
       style={{
@@ -24,7 +22,9 @@ export function GaijiGlyph({ glyph, size = 28, className }: { glyph: GaijiKey; s
         height: `${size}px`,
         width: `${(g.w * scale).toFixed(1)}px`,
       }}
-    />
+    >
+      <span className="sr-only">{g.label}</span>
+    </span>
   );
 }
 

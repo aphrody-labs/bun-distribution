@@ -41,7 +41,10 @@ export function PatreonWebhooksCard() {
   };
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -91,8 +90,8 @@ export async function hasMedailleAzaleeRole(discordId: string | null | undefined
   if (!discordId) {
     return false;
   }
-  const { createSupabaseServiceClient } = await import("@rosegriffon/db/service");
-  const supabase = createSupabaseServiceClient();
+  const { createPostgresClient } = await import("@rosegriffon/db/service");
+  const supabase = createPostgresClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = (await (supabase as any)
     .from("discord_members")

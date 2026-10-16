@@ -192,6 +192,7 @@ export function ChronicleMeta({
         <div className="space-y-2">
           <Label>Image à la une</Label>
           <div
+            role="presentation"
             onClick={onImageUpload}
             className={`
               relative w-full h-48 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden group transition-all

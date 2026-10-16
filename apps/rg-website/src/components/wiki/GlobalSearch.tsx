@@ -111,12 +111,21 @@ export function GlobalSearch({
     }
 
     if (query.length < 2) {
-      setResults([]);
-      setIsSearching(false);
-      return;
+
+      const reset = setTimeout(() => {
+
+        setResults([]);
+
+        setIsSearching(false);
+
+      }, 0);
+
+      return () => clearTimeout(reset);
+
     }
 
-    setIsSearching(true);
+
+    const pending = setTimeout(() => setIsSearching(true), 0);
 
     const timer = setTimeout(async () => {
       try {
@@ -134,6 +143,7 @@ export function GlobalSearch({
     }, 300);
 
     return () => {
+      clearTimeout(pending);
       clearTimeout(timer);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -143,11 +153,13 @@ export function GlobalSearch({
 
   // Reset query when dialog closes
   React.useEffect(() => {
-    if (!open) {
+    if (open) return;
+    const reset = setTimeout(() => {
       setQuery("");
       setResults([]);
       setIsSearching(false);
-    }
+    }, 0);
+    return () => clearTimeout(reset);
   }, [open]);
 
   const runCommand = React.useCallback((command: () => unknown) => {

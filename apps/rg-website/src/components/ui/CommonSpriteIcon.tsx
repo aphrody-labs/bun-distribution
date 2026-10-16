@@ -41,11 +41,11 @@ export const CommonSpriteIcon = ({
         width: displayW,
         ...style,
       }}
-      role="img"
-      aria-label={name}
       {...props}
     >
+      <span className="sr-only">{name}</span>
       <div
+        aria-hidden="true"
         className={cn(styles.sprite, styles[variant])}
         style={{
           backgroundImage: `url(${SPRITE_SHEET_COMMON_SRC})`,

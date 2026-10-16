@@ -76,9 +76,11 @@ export function ChronicleEditor({ initialData, onSave, onCancel }: ChronicleEdit
 
   useEffect(() => {
     const draft = localStorage.getItem(draftKey);
-    if (draft && draft !== (initialData?.content || "")) {
+    if (!draft || draft === (initialData?.content || "")) return;
+    const timer = setTimeout(() => {
       setHasDraft(true);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [draftKey, initialData]);
 
   useEffect(() => {

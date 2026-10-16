@@ -180,7 +180,7 @@ describe("levelFromExp", () => {
   });
 
   test("entrées aberrantes traitées comme zéro", () => {
-    for (const bad of [-100, Number.NaN, Number.POSITIVE_INFINITY * 0]) {
+    for (const bad of [-100, Number.NaN, Number.POSITIVE_INFINITY - Number.POSITIVE_INFINITY]) {
       const r = levelFromExp(table, bad);
       expect(r.level).toBe(1);
       expect(r.expIntoLevel).toBe(0);

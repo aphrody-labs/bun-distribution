@@ -71,13 +71,18 @@ export function TranslatorClient() {
   }, []);
 
   useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      setHasSearched(false);
-      setSelectedResult(null);
-      return;
-    }
-    const timer = setTimeout(() => doSearch(query, entityType), 300);
+    const timer = setTimeout(
+      () => {
+        if (query.length < 2) {
+          setResults([]);
+          setHasSearched(false);
+          setSelectedResult(null);
+          return;
+        }
+        void doSearch(query, entityType);
+      },
+      query.length < 2 ? 0 : 300,
+    );
     return () => clearTimeout(timer);
   }, [query, entityType, doSearch]);
 

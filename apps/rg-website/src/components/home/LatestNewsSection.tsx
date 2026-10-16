@@ -312,8 +312,6 @@ export function LatestNewsSection({ articles, tweets = [] }: LatestNewsSectionPr
                   href={`/news/${item.slug}`}
                   data-slide={i}
                   className="group relative min-w-[82vw] max-w-[82vw] snap-start shrink-0 rounded-2xl overflow-hidden"
-                  role="group"
-                  aria-roledescription="slide"
                   aria-label={`${i + 1} sur ${articles.length}`}
                 >
                   <div className="relative aspect-[16/10]">

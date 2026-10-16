@@ -87,12 +87,21 @@ export function CharacterSearchDialog({ open, onOpenChange, onSelect }: Characte
     }
 
     if (!canSearch) {
-      setResults([]);
-      setIsSearching(false);
-      return;
+
+      const reset = setTimeout(() => {
+
+        setResults([]);
+
+        setIsSearching(false);
+
+      }, 0);
+
+      return () => clearTimeout(reset);
+
     }
 
-    setIsSearching(true);
+
+    const pending = setTimeout(() => setIsSearching(true), 0);
     const timer = setTimeout(
       async () => {
         try {
@@ -112,6 +121,7 @@ export function CharacterSearchDialog({ open, onOpenChange, onSelect }: Characte
     );
 
     return () => {
+      clearTimeout(pending);
       clearTimeout(timer);
       abortRef.current?.abort();
     };
@@ -119,11 +129,13 @@ export function CharacterSearchDialog({ open, onOpenChange, onSelect }: Characte
 
   // Reset on close
   React.useEffect(() => {
-    if (!open) {
+    if (open) return;
+    const reset = setTimeout(() => {
       setQuery("");
       setResults([]);
       setIsSearching(false);
-    }
+    }, 0);
+    return () => clearTimeout(reset);
   }, [open]);
 
   const toggleFilter = (setter: React.Dispatch<React.SetStateAction<string | undefined>>, value: string) => {

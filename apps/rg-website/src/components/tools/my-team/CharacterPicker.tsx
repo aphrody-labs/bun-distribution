@@ -123,12 +123,13 @@ function DraggableCharaCard({
   const roleLabel = PICKER_ROLE_LABELS[char.position] || char.position;
 
   return (
-    <li
+    <li className="relative w-full">
+      <button
+      type="button"
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
-
       aria-label={`${char.name} — ${PICKER_ROLE_LABELS[char.position] || char.position}, ${char.element}, ${char.rarity}${isPlaced ? " (déjà placé)" : ""}`}
       onClick={e => {
         if (!isPlaced && onTap) {
@@ -138,7 +139,7 @@ function DraggableCharaCard({
         }
       }}
       className={cn(
-        "relative w-full rounded-xl overflow-hidden bg-surface-container-highest transition-all",
+        "relative block w-full rounded-xl overflow-hidden bg-surface-container-highest transition-all",
         isPlaced
           ? "cursor-not-allowed grayscale"
           : "cursor-pointer sm:cursor-grab sm:active:cursor-grabbing hover:ring-1 hover:ring-primary/50",
@@ -193,6 +194,7 @@ function DraggableCharaCard({
           </div>
         )}
       </div>
+      </button>
     </li>
   );
 }

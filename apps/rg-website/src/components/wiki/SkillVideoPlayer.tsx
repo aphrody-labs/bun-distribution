@@ -99,6 +99,7 @@ export function SkillVideoPlayer({
             }
             onError={() => setFailed(f => ({ ...f, [activeIndex]: true }))}
           >
+            <track kind="captions" />
             Votre navigateur ne prend pas en charge la lecture de vidéos.
           </video>
         )}

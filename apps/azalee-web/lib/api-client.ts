@@ -1,18 +1,17 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import type { BaseCharacter, CharacterVariant, MultiLevelStats, Skill } from "@rosegriffon/inagle";
-import type {
-  InagleCharacter,
-  InagleDrop,
-  InagleItem,
-  InagleKizunaItem,
-  InagleTactic,
-} from "@rosegriffon/inagle/types/database";
+import type { Tables } from "@rosegriffon/db/types";
+
+type InagleCharacter = Tables<"inagle_characters">;
+type InagleDrop = Tables<"inagle_drops">;
+type InagleItem = Tables<"inagle_items">;
+type InagleKizunaItem = Tables<"inagle_kizuna_items">;
+type InagleTactic = Tables<"inagle_tactics">;
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { getPgPool } from "@/lib/db/pg";
 import { getMiximaxImageUrl, resolveAssetUrl, resolveAuraTelopUrl } from "@rosegriffon/azalee/images";
 
-import { createSqliteClient } from "@rosegriffon/azalee/db";
+import { createPostgresClient } from "@rosegriffon/azalee/db";
 
 // Lazy getter for Supabase to prevent top-level execution during build
 let _supabase: ReturnType<typeof createClient> | null = null;
@@ -40,7 +39,7 @@ function getSupabase(): ReturnType<typeof createClient> {
       : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzYmthZWx0dWJxaXR0eXdpYmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwNjk0MzAsImV4cCI6MjA2MTY0NTQzMH0.N4l07k3V_X5I8iW0n_D6K9-O4v5l7l6s6MYGpJIXRW_rB8zc45k7chqi8Ljl_CLiLc=";
 
   const baseClient = createClient(url, key);
-  const sqliteClient = createSqliteClient();
+  const sqliteClient = createPostgresClient();
 
   _supabase = new Proxy(baseClient, {
     get(target, prop, receiver) {
@@ -510,12 +509,13 @@ export const apiClient = {
           type: "character",
         }));
       const itemResults = items
-        .filter(i => i.name.toLowerCase().includes(q))
+        .map(i => ({ item: i, name: i.name_fr ?? i.name_en ?? "" }))
+        .filter(({ name }) => name.toLowerCase().includes(q))
         .slice(0, limit)
-        .map(i => ({
-          id: i.name,
+        .map(({ item, name }) => ({
+          id: item.id,
           image: undefined,
-          name: i.name,
+          name,
           type: "item",
         }));
       return [...charResults, ...itemResults].slice(0, limit);

@@ -146,8 +146,8 @@ export function useRankedMatch(idSalle?: string | null): EtatMatch {
 
     const cible = idSalle ?? (typeof window === "undefined" ? null : window.localStorage.getItem(CLE_SALLE));
     if (!cible) {
-      setConnexion("inactive");
-      return;
+      const timer = setTimeout(() => setConnexion("inactive"), 0);
+      return () => clearTimeout(timer);
     }
 
     void (async () => {

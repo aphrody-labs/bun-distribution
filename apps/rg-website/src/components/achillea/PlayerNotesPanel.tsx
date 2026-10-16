@@ -115,7 +115,10 @@ export function PlayerNotesPanel({
   };
 
   useEffect(() => {
-    loadNotes();
+    const timer = setTimeout(() => {
+      void loadNotes();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [tournamentId]);
 
   const handleCreate = async (e: React.FormEvent) => {

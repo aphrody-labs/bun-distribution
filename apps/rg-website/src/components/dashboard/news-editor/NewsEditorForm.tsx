@@ -147,7 +147,8 @@ export function NewsEditorForm({ initialData }: NewsEditorFormProps) {
       return;
     }
     const saved = localStorage.getItem(draftKey);
-    if (saved) {
+    if (!saved) return;
+    const timer = setTimeout(() => {
       try {
         const data = JSON.parse(saved);
         if (data.title && data.title !== title) {
@@ -171,7 +172,8 @@ export function NewsEditorForm({ initialData }: NewsEditorFormProps) {
       } catch {
         // Invalid draft data
       }
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [draftKey, title, initialData?.id]);
 
   // Mark unsaved any time a tracked field changes — DOIT dépendre des champs

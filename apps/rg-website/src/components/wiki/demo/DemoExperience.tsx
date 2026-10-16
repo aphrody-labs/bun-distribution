@@ -127,9 +127,11 @@ export function DemoExperience({ data }: { data: DemoData }): React.JSX.Element 
     if (!mounted) return;
     const skill = data.skills.find(s => s.eventIdName === skillEvent) ?? null;
     if (!skill) {
-      setStoryboard(defaultCutinShots());
-      setActiveTelop(null);
-      return;
+      const timer = setTimeout(() => {
+        setStoryboard(defaultCutinShots());
+        setActiveTelop(null);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const ac = new AbortController();
     (async () => {

@@ -1,7 +1,6 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
-import { createSupabaseServiceClient } from "@rosegriffon/db/service";
+import { createPostgresClient } from "@rosegriffon/db/service";
 
-const supabaseAdmin = createSupabaseServiceClient();
+const supabaseAdmin = createPostgresClient();
 
 export async function logAudit(
   userId: string,

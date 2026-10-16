@@ -83,9 +83,11 @@ export function AchilleaAuthProvider({ children }: { children: ReactNode }) {
     let annule = false;
     if (accountLoading) return;
     if (!account) {
-      setUser(null);
-      setStatus("anonymous");
-      return;
+      const timer = setTimeout(() => {
+        setUser(null);
+        setStatus("anonymous");
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     const synchroniser = async () => {

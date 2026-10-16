@@ -2,7 +2,7 @@
 
 /**
  * Section "Assets du jeu" d'une fiche perso : affiche le **modèle 3D** assemblé
- * (corps+visage+uniforme, `/model-full/<code>.glb`) et la **voix** (`/audio/.../​<code>.acb`
+ * (corps+visage+uniforme, `/model-full/<code>.glb`) et la **voix** (`/audio/.../<code>.acb`
  * → WAV) — déjà servis live par niers mais absents des colonnes du miroir azalee.
  * Reçoit le code interne (`internalCode`, ex. `c01001900`).
  */

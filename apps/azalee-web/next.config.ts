@@ -1,7 +1,6 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import type { NextConfig } from "next";
 import path from "node:path";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // CDN externe — décharge .next/static/ + assets public/ vers cdn.rosegriffon.fr.
 const CDN_URL = process.env.NEXT_PUBLIC_CDN_URL?.trim() || "";
@@ -295,7 +294,6 @@ const nextConfig: NextConfig = {
     },
     serverSourceMaps: true,
     turbopackFileSystemCacheForBuild: true,
-    viewTransition: false,
   },
 };
 

@@ -79,14 +79,14 @@ function rendreNoeud(noeud: NoeudInline, cle: string): React.ReactNode {
     }
     case "spoiler": {
       return (
-        <span
+        <button
+          type="button"
           key={cle}
           title="Contenu masqué — survolez pour révéler"
           className="rounded-sm bg-on-surface/90 px-1 text-transparent transition-colors hover:bg-on-surface/10 hover:text-on-surface focus-visible:bg-on-surface/10 focus-visible:text-on-surface"
-          tabIndex={0}
         >
           {rendreNoeuds(noeud.enfants, cle)}
-        </span>
+        </button>
       );
     }
     case "code": {

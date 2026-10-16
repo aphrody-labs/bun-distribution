@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import { resolveAccountTab, type AccountSession, type AccountTabId } from "@rosegriffon/ui";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -47,12 +46,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   const { data: accountRows } = await admin
     .from("account")
-    .select("provider_id, created_at, password")
+    .select("id, provider_id, created_at, password")
     .eq("user_id", user.id);
 
   const accounts = (accountRows ?? []).map(row => {
-    const r = row as { provider_id: string; created_at: string };
-    return { createdAt: r.created_at, provider: r.provider_id };
+    const r = row as { id: string; provider_id: string; created_at: string };
+    return { id: r.id, createdAt: r.created_at, provider: r.provider_id };
   });
 
   // Un compte purement OAuth n'a pas de ligne `credential` : proposer le
@@ -62,17 +61,16 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     return r.provider_id === "credential" && Boolean(r.password);
   });
 
-  // `listSessions` renvoie le `token` de chaque session, seule clé acceptée par
-  // `revokeSession`.
+  // Seuls les identifiants partent au client : les jetons de session restent côté serveur.
   let sessions: AccountSession[] = [];
   try {
     const list = await auth.api.listSessions({ headers: await headers() });
     sessions = (list ?? []).map(s => ({
       createdAt: new Date(s.createdAt).toISOString(),
-      current: s.token === session.session.token,
+      current: s.id === session.session.id,
       expiresAt: s.expiresAt ? new Date(s.expiresAt).toISOString() : null,
       ipAddress: s.ipAddress ?? null,
-      token: s.token,
+      id: s.id,
       userAgent: s.userAgent ?? null,
     }));
   } catch (error) {

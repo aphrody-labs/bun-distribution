@@ -18,12 +18,14 @@ export function ReadingMode({ children }: ReadingModeProps) {
 
   // Initialiser depuis localStorage
   useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(LS_KEY);
-    if (stored === "true") {
-      setIsOpen(true);
-      setVisible(true);
-    }
+    const raf = requestAnimationFrame(() => {
+      setMounted(true);
+      if (localStorage.getItem(LS_KEY) === "true") {
+        setIsOpen(true);
+        setVisible(true);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   // Gérer la transition fade-in/out
@@ -33,7 +35,7 @@ export function ReadingMode({ children }: ReadingModeProps) {
       const raf = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(raf);
     }
-    setVisible(false);
+    // La fermeture remet déjà `visible` à false (voir `close`).
   }, [isOpen]);
 
   const open = () => {

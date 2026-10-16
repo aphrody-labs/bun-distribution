@@ -65,7 +65,10 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   // Charger le profil au montage et quand l'utilisateur change
   useEffect(() => {
-    fetchProfile();
+    const timer = setTimeout(() => {
+      void fetchProfile();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchProfile]);
 
   // Écouter les changements broadcast du profil

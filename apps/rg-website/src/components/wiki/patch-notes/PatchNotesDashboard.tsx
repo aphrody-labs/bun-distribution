@@ -139,13 +139,18 @@ export default function PatchNotesPageClient({ initialNotes }: PatchNotesDashboa
   }, []);
 
   useEffect(() => {
-    fetchList(platform);
+    const timer = setTimeout(() => {
+      void fetchList(platform);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [platform, fetchList]);
 
   useEffect(() => {
-    if (selectedId && list.length > 0) {
-      fetchDetail(selectedId);
-    }
+    if (!selectedId || list.length === 0) return;
+    const timer = setTimeout(() => {
+      void fetchDetail(selectedId);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [selectedId, list, fetchDetail]);
 
   const detailRef = useRef<HTMLDivElement>(null);

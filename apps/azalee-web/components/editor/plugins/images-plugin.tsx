@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 "use client";
 
 /**
@@ -225,7 +224,11 @@ export function ImagesPlugin({ captionsEnabled: _captionsEnabled }: { captionsEn
       editor.registerCommand<DragEvent>(DRAGSTART_COMMAND, event => $onDragStart(event), COMMAND_PRIORITY_HIGH),
       editor.registerCommand<DragEvent>(DRAGOVER_COMMAND, event => $onDragover(event), COMMAND_PRIORITY_LOW),
       editor.registerCommand<DragEvent>(DROP_COMMAND, event => $onDrop(event, editor), COMMAND_PRIORITY_HIGH),
-      editor.registerCommand<ClipboardEvent>(PASTE_COMMAND, event => $onPaste(event, editor), COMMAND_PRIORITY_HIGH),
+      editor.registerCommand(
+        PASTE_COMMAND,
+        event => event instanceof ClipboardEvent && $onPaste(event, editor),
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
   }, [editor]);
 

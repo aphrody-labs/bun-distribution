@@ -264,23 +264,17 @@ export function TournamentBracket({
                     const score2 = m.opponent2?.score ?? "-";
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={m.id}
-                        onClick={() => onSelectMatch?.(m.id)}
-                        onKeyDown={event => {
-                          if (onSelectMatch && (event.key === "Enter" || event.key === " ")) {
-                            event.preventDefault();
-                            onSelectMatch(m.id);
-                          }
-                        }}
-                        role={onSelectMatch ? "button" : undefined}
-                        tabIndex={onSelectMatch ? 0 : undefined}
+                        onClick={onSelectMatch ? () => onSelectMatch(m.id) : undefined}
+                        tabIndex={onSelectMatch ? undefined : -1}
                         aria-label={
                           onSelectMatch
                             ? `Voir le match ${m.number ?? m.id} : ${opp1Info?.username ?? "participant en attente"} contre ${opp2Info?.username ?? "participant en attente"}`
                             : undefined
                         }
-                        className={`p-3.5 min-h-11 rounded-2xl border transition-all duration-200 shadow-xs relative group focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                        className={`block w-full text-left p-3.5 min-h-11 rounded-2xl border transition-all duration-200 shadow-xs relative group focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                           onSelectMatch ? "hover:border-primary/60 hover:shadow-md" : ""
                         } bg-card border-border/80`}
                       >
@@ -337,7 +331,7 @@ export function TournamentBracket({
                             <ChevronRight className="w-5 h-5 text-primary" />
                           </div>
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

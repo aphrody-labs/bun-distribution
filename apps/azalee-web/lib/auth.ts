@@ -1,6 +1,5 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import crypto from "node:crypto";
-import { createSupabaseServiceClient } from "@rosegriffon/db/service";
+import { createPostgresClient } from "@rosegriffon/db/service";
 import bcrypt from "bcryptjs";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
@@ -25,7 +24,7 @@ export { ensureUserProfile } from "@rosegriffon/auth";
 const pool = getPgPool();
 
 // Service-role Supabase client for hooks
-const supabaseAdmin = createSupabaseServiceClient();
+const supabaseAdmin = createPostgresClient();
 
 const getBetterAuthURL = () => {
   const url = process.env.BETTER_AUTH_URL;
@@ -304,7 +303,7 @@ function createAuth() {
           },
         ],
         async onExecute({ capability, arguments: args }) {
-          const supabase = createSupabaseServiceClient();
+          const supabase = createPostgresClient();
 
           switch (capability) {
             case "list_articles": {

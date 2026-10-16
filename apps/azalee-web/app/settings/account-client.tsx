@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 "use client";
 
 import {
@@ -24,6 +23,7 @@ import { authClient } from "@/lib/auth-client";
 import { createClient } from "@/lib/supabase/client";
 
 import { updateAvatarUrl, updateProfile } from "./actions";
+import { revokeAccountSession } from "./session-actions";
 
 interface AccountClientProps {
   userId: string;
@@ -35,7 +35,7 @@ interface AccountClientProps {
   twoFactorEnabled: boolean;
   hasPassword: boolean;
   profile: AccountProfileValues;
-  accounts: AccountLinkedAccount[];
+  accounts: (AccountLinkedAccount & { id: string })[];
   sessions: AccountSession[];
 }
 
@@ -98,7 +98,11 @@ export function AccountClient({
   };
 
   const unlink = async (providerId: string) => {
-    const { error } = await authClient.unlinkAccount({ providerId });
+    const account = accounts.find(linked => linked.provider === providerId);
+    if (!account) {
+      throw new Error("Compte lié introuvable.");
+    }
+    const { error } = await authClient.unlinkAccount({ accountId: account.id });
     if (error) {
       throw new Error(error.message ?? "Impossible de dissocier ce compte.");
     }
@@ -132,7 +136,7 @@ export function AccountClient({
           const { data, error } = await authClient.twoFactor.enable({
             password: motDePasse ?? "",
           });
-          if (error || !data) {
+          if (error || !data || data.method !== "totp") {
             throw new Error(error?.message ?? "Activation impossible.");
           }
           return { backupCodes: data.backupCodes, totpURI: data.totpURI };
@@ -237,13 +241,10 @@ export function AccountClient({
 
               <AccountSessions
                 sessions={sessions}
-                onRevoke={async token => {
-                  // `revokeSession` NE LÈVE PAS : il rend `{ data, error }`. Sans
-                  // cette vérification, un refus du serveur ressortait en
-                  // « Session révoquée » et la session restait ouverte.
-                  const { error } = await authClient.revokeSession({ token });
+                onRevoke={async id => {
+                  const { error } = await revokeAccountSession(id);
                   if (error) {
-                    throw new Error(error.message ?? "Révocation refusée.");
+                    throw new Error(error);
                   }
                   reload();
                 }}

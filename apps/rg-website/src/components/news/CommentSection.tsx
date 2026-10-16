@@ -58,7 +58,10 @@ export function CommentSection({ articleId, initialCommentCount }: CommentSectio
   }, [articleId, sortOrder]);
 
   useEffect(() => {
-    fetchComments();
+    const timer = setTimeout(() => {
+      void fetchComments();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchComments]);
 
   const handleCommentCreated = (comment: Comment) => {

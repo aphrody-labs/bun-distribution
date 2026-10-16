@@ -133,11 +133,10 @@ export function MediaDialog({ open, onOpenChange, onInsert }: MediaDialogProps) 
 
           <div className="flex-1 overflow-hidden bg-slate-50">
             <TabsContent value="upload" className="h-full m-0 p-6 flex flex-col items-center justify-center">
-              <div
+              <label
                 className={`w-full max-w-md aspect-video border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center bg-white transition-colors relative ${
                   isUploading ? "cursor-not-allowed opacity-50" : "hover:bg-slate-50 cursor-pointer"
                 }`}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
               >
                 <input
                   ref={fileInputRef}
@@ -161,7 +160,7 @@ export function MediaDialog({ open, onOpenChange, onInsert }: MediaDialogProps) 
                     <p className="text-sm text-slate-500">PNG, JPG, WEBP jusqu&apos;à 5Mo</p>
                   </div>
                 )}
-              </div>
+              </label>
             </TabsContent>
 
             <TabsContent value="emotes" className="h-full m-0 flex flex-col">

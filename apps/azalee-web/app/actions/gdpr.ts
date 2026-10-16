@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 "use server";
 
 import { logAudit } from "@/lib/audit";
@@ -143,8 +142,8 @@ export async function deleteUserData(userId: string): Promise<{
 
   // Supprimer l'utilisateur auth.users en dernier via l'API admin
   try {
-    const { createSupabaseServiceClient } = await import("@rosegriffon/db/service");
-    const adminClient = createSupabaseServiceClient();
+    const { createPostgresClient } = await import("@rosegriffon/db/service");
+    const adminClient = createPostgresClient();
     const { error: authError } = await adminClient.auth.admin.deleteUser(userId);
 
     if (authError) {

@@ -48,8 +48,6 @@ export const GameSpriteIcon = ({ name, size, scale = 1, className, style, ...pro
   return (
     <span
       className={cn("inline-block shrink-0 bg-current", className)}
-      role="img"
-      aria-label={icon.nameFr}
       style={{
         height: `${displayH}px`,
         maskImage,
@@ -64,6 +62,8 @@ export const GameSpriteIcon = ({ name, size, scale = 1, className, style, ...pro
         ...style,
       }}
       {...props}
-    />
+    >
+      <span className="sr-only">{icon.nameFr}</span>
+    </span>
   );
 };

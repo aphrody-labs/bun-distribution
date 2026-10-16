@@ -250,7 +250,6 @@ export function EventParticipantsTable({
       ) : (
         <section
           aria-label="Liste des participants, défilement horizontal sur petit écran"
-          tabIndex={0}
           className="border border-border/60 rounded-2xl bg-card/40 overflow-x-auto focus-visible:outline-4 focus-visible:outline-primary"
         >
           <table className="w-full text-left text-lg">

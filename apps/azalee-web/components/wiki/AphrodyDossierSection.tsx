@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 "use client";
 
 /**
@@ -11,7 +10,6 @@
  */
 import dossier from "@/data/aphrody-dossier.json";
 import { cpkAssetUrl } from "@rosegriffon/azalee/cpk/shared";
-import { getSkillCutin } from "@rosegriffon/azalee/game/skills-cutin";
 import { Icon } from "@/components/ui/Icon";
 
 const ELEMENT: Record<number, string> = {
@@ -114,7 +112,7 @@ export function AphrodyDossierSection({ internalCode }: { internalCode?: string 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {primary.techniques.map(t => {
             const code = t.info.skill_id_str;
-            const meta = getSkillCutin(code);
+            const elementName = ELEMENT[t.info.element];
             const telopPath =
               t.cutin?.telop_by_lang.find(([l]) => l === "fr")?.[1] ??
               t.cutin?.telop_by_lang.find(([l]) => l === "en")?.[1] ??
@@ -137,11 +135,7 @@ export function AphrodyDossierSection({ internalCode }: { internalCode?: string 
                     Puiss. {t.info.power_min}–{t.info.power_max}
                   </span>
                   <span>TP {t.info.consume_tp}</span>
-                  {meta && (
-                    <span>
-                      {meta.element_name.fr} / {meta.category_name.fr}
-                    </span>
-                  )}
+                  {elementName && <span>{elementName}</span>}
                 </div>
               </div>
             );

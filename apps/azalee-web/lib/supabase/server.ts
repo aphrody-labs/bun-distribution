@@ -1,10 +1,9 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { mintSupabaseJwt } from "@/lib/supabase/jwt";
 import type { Database } from "@rosegriffon/db";
-import { createSqliteClient } from "@rosegriffon/azalee/db";
+import { createPostgresClient } from "@rosegriffon/azalee/db";
 
 const PLACEHOLDER_URL = typeof window === "undefined" ? "http://127.0.0.1:8811" : window.location.origin;
 const PLACEHOLDER_ANON_JWT =
@@ -87,7 +86,7 @@ export const createClient = async (): Promise<SupabaseClient> => {
     pgClient = createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey) as unknown as SupabaseClient;
   }
 
-  const sqliteClient = createSqliteClient();
+  const sqliteClient = createPostgresClient();
 
   return new Proxy(pgClient, {
     get(target, prop, receiver) {

@@ -188,8 +188,7 @@ export function GalleryLightbox({ items, index, onClose, onNavigate }: GalleryLi
         className="relative flex flex-1 cursor-zoom-out items-center justify-center overflow-hidden p-4 sm:p-8"
       >
         {item.full ? (
-          /* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation pour ne pas fermer au clic sur l'image */
-          <div className="relative flex size-full items-center justify-center" onClick={e => e.stopPropagation()}>
+          <div role="presentation" className="relative flex size-full items-center justify-center" onClick={e => e.stopPropagation()}>
             <Image
               key={item.id}
               src={item.full}

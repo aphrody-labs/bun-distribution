@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 export const dynamic = "force-dynamic";
 
 import { getSupabaseClient } from "@/lib/api/supabase";
@@ -270,10 +269,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       chemin: "/passive",
       priorite: 0.5,
       ids: async () =>
-        wikiService
-          .getPassivesList({ limit: 5000, page: 1 })
-          .data.map(p => p.passive_id)
-          .filter(Boolean),
+        (await wikiService.getPassivesList({ limit: 5000, page: 1 })).data.map(p => p.passive_id).filter(Boolean),
     },
   ];
 

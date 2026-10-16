@@ -471,6 +471,7 @@ export default async function TweetPage({ params }: { params: Promise<{ id: stri
                               className="absolute inset-0 size-full object-cover"
                             >
                               <source src={videoSrc} type="video/mp4" />
+                              <track kind="captions" />
                             </video>
                           ) : (
                             <>

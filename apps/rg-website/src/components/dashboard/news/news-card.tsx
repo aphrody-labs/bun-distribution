@@ -75,6 +75,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
             {/* Quick Actions (Visible on Hover) - Prevent Link Propagation */}
             <div
               className="absolute bottom-4 right-4 translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-[cubic-bezier(0.05,0.7,0.1,1)]"
+              role="presentation"
               onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();

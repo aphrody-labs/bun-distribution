@@ -211,7 +211,8 @@ export default function PfpGenerator() {
                   <img src={previewUrl} alt="Aperçu" className="size-64 object-cover" />
                 </div>
               ) : (
-                <div
+                <button
+                  type="button"
                   onClick={triggerFileInput}
                   className="size-64 rounded-full bg-muted/30 border-4 border-dashed border-primary/20 flex flex-col items-center justify-center text-muted-foreground gap-3 transition-all hover:bg-primary/5 hover:border-primary/50 relative overflow-hidden cursor-pointer group-hover:scale-105 duration-300"
                 >
@@ -225,7 +226,7 @@ export default function PfpGenerator() {
                     <ImageIcon className="size-8 text-primary" />
                     <span className="text-sm font-bold text-primary">Cliquez pour ajouter</span>
                   </div>
-                </div>
+                </button>
               )}
             </div>
           </div>

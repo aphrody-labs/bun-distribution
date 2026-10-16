@@ -1,4 +1,3 @@
-// @ts-nocheck -- drifted from the shared package APIs (app-shell, db, azalee); pending port
 import { SearchX, SlidersHorizontal, User, Users, Wand2 } from "lucide-react";
 import type { Metadata } from "next";
 import type React from "react";
@@ -21,16 +20,14 @@ import type {
   CustomPassiveData,
   NierPassiveFamily,
   NierPassiveInstance,
-  NierTeamPassive,
   PlayerPassiveData,
 } from "@/components/wiki/PassiveCard";
 import { WikiSearchToolbar } from "@/components/wiki/WikiSearchToolbar";
 import type { SpriteCommonKey } from "@/config/sprites-common";
 import passiveData from "@/data/passive-sheets.json";
-import passivesFullData from "@rosegriffon/azalee/data/passives-full.json";
 import { normalizeText } from "@rosegriffon/azalee/search/utils";
 import { parseSearchParams } from "@/lib/validations";
-import { passiveCategory } from "@/lib/wiki-service";
+import { passiveCategory, wikiService } from "@/lib/wiki-service";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/passive" },
@@ -189,9 +186,11 @@ export default async function PassivesPage({
   const allCustomPassives = passiveData.customPassives as CustomPassiveData[];
   const allCoordinatorPassives = passiveData.coordinatorPassives as CoordinatorPassiveData[];
 
-  // ── Load nie-data passives (passives-full.json) ──
-  const nierAllPlayer = passivesFullData.player as NierPassiveInstance[];
-  const nierTeamPassives = passivesFullData.team as NierTeamPassive[];
+  // ── Load player/team passives from the canonical SQL projection ──
+  const [{ data: nierAllPlayer }, nierTeamPassives] = await Promise.all([
+    wikiService.getPassivesList({ limit: 5000 }),
+    wikiService.getTeamPassives(),
+  ]);
   const nierFamiliesAll = buildNierFamilies(nierAllPlayer);
 
   // ── Filter nie-data families (recherche + élément + rareté + catégorie) ──

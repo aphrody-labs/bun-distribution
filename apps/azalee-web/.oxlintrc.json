@@ -10,17 +10,17 @@
   "rules": {
     "no-unused-vars": "error",
     "typescript/no-explicit-any": "off",
-    "react/set-state-in-effect": "warn",
-    "jsx-a11y/no-static-element-interactions": "warn",
-    "jsx-a11y/click-events-have-key-events": "warn",
-    "jsx-a11y/prefer-tag-over-role": "warn",
-    "jsx-a11y/no-noninteractive-tabindex": "warn",
-    "jsx-a11y/media-has-caption": "warn",
-    "jsx-a11y/no-noninteractive-element-interactions": "warn",
-    "oxc/erasing-op": "warn",
-    "unicorn/no-empty-file": "warn",
-    "import/namespace": "warn",
-    "no-irregular-whitespace": "warn"
+    "react/set-state-in-effect": "error",
+    "jsx-a11y/no-static-element-interactions": "error",
+    "jsx-a11y/click-events-have-key-events": "error",
+    "jsx-a11y/prefer-tag-over-role": "error",
+    "jsx-a11y/no-noninteractive-tabindex": "error",
+    "jsx-a11y/media-has-caption": "error",
+    "jsx-a11y/no-noninteractive-element-interactions": "error",
+    "oxc/erasing-op": "error",
+    "unicorn/no-empty-file": "error",
+    "import/namespace": "error",
+    "no-irregular-whitespace": "error"
   },
   "overrides": [
     {

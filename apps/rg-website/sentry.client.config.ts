@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { replayIntegration } from "@sentry/nextjs";
 
 // Configuration Sentry seulement si DSN est défini
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -51,7 +52,7 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
 
     // Intégrations
     integrations: [
-      Sentry.replayIntegration({
+      replayIntegration({
         blockAllMedia: true,
         maskAllText: true,
       }),

@@ -167,6 +167,7 @@ function DroppableSlot({
             "absolute inset-0 rounded-xl overflow-hidden",
             isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-transparent",
           )}
+          role="presentation"
           onClick={e => {
             e.stopPropagation();
             onMemberClick?.(slotId);
@@ -256,6 +257,7 @@ function StaffSlot({
       {member ? (
         <div
           className="w-full aspect-square rounded-xl overflow-hidden cursor-pointer"
+          role="presentation"
           onClick={e => {
             e.stopPropagation();
             onMemberClick?.(slotId);
@@ -356,6 +358,7 @@ function BenchSlot({
       {member ? (
         <div
           className={cn("w-full h-full", isSelected && "ring-2 ring-primary rounded-xl")}
+          role="presentation"
           onClick={e => {
             e.stopPropagation();
             onMemberClick?.(slotId);

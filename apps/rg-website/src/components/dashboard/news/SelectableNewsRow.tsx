@@ -151,7 +151,10 @@ export function SelectableNewsRow({ item, selected, onToggle }: SelectableNewsRo
       </Badge>
 
       {/* Actions menu */}
-      <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+      <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+        role="presentation"
+        onClick={e => e.stopPropagation()}
+      >
         <NewsActions newsId={item.id} slug={item.slug || ""} pinned={item.pinned} currentStatus={item.status} />
       </div>
     </div>
