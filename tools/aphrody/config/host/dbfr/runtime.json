@@ -11,8 +11,8 @@
       "aphrody-site-1": "shenron-server 5011 + shenron-mcp",
       "aphrody-bot-1": "shenron-bot 5006",
       "aphrody-chat-1": "llama-server 8799 (shenron-chat-v2)",
-      "aphrody-postgres-1": "PostgreSQL 18, 127.0.0.1:5432, data ~/apps/shenron/shared/state/postgres",
-      "aphrody-redis-1": "Redis, 127.0.0.1:6379, data ~/apps/shenron/shared/state/redis",
+      "shenron-postgres": "PostgreSQL 18, 127.0.0.1:5432, data ~/apps/shenron/shared/state/postgres",
+      "shenron-redis": "Redis, 127.0.0.1:6379, data ~/apps/shenron/shared/state/redis",
       "aphrody-bun-prod-1": "Bun fork probe 47660 (ghcr.io/aphrody-labs/bun), the only Bun probe outside k8s",
       "aphrody-prod": "aphrody:runtime, aphrody-mcp http 127.0.0.1:8999 (compose profile prod)",
       "aphrody-control-plane": "kind (Kubernetes)",
@@ -99,7 +99,6 @@
     "$comment": "state 2026-10-09 17:40 UTC, session stopped (quota)",
     "items": [
       "vps aphrody-deploy: user timer stopped since 16:03 (last cycle 12fd6f9 activate-failed/rollback-failed). bun-prod on dbfr runs with stale env APP_ROOT=/srv/app, APP_BIN empty: recreate it (sudo docker compose --project-directory ~/apps up -d --force-recreate bun-prod) then on vps: systemctl --user start aphrody-deploy.timer; aphrody-deploy --status. Moving the queue into bun-build needs openssh-client + rsync in the image (absent from ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3) and ~/src/bun mounted rw; not done.",
-      "vps shenron-offsite-backup.service: run once by systemd when ~/src/aphrody is at the current source revision (sudo systemctl start shenron-offsite-backup.service; tail /mnt/aphrody-storage/disk500/archive/dbfr/backups/shenron/pull-status.log).",
       "dbfr duplicate ~/.local/bin/rclone (same v1.75.1 as /usr/local/bin/rclone): rm.",
       "final evidence: systemctl --failed on both hosts; from C:\bun bun scripts/aphrody/docker-doctor.ts (7/7 x 3 hosts)."
     ]

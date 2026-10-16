@@ -415,11 +415,11 @@
       "application": "shenron",
       "kind": "cache",
       "runtime": "redis",
-      "container": "aphrody-redis-1",
+      "container": "shenron-redis",
       "host": "dbfr",
       "health": "tcp://127.0.0.1:6379",
       "target": "dbfr:127.0.0.1:6379",
-      "note": "Shenron Redis 8 on DBFR, Compose service redis (container aphrody-redis-1, maxmemory 1gb noeviction, mem_limit 1536m). The host redis-server package was purged on 2026-10-09: its unattended restart collided with the container on 6379. The VPS reaches it through shenron-pg-tunnel's forward",
+      "note": "Shenron Redis 8 on DBFR, Compose service redis (container shenron-redis, maxmemory 1gb noeviction, mem_limit 1536m). The host redis-server package was purged on 2026-10-09: its unattended restart collided with the container on 6379. The VPS reaches it through shenron-pg-tunnel's forward",
       "public": false
     },
     {
@@ -428,11 +428,11 @@
       "kind": "database",
       "runtime": "postgres",
       "host": "dbfr",
-      "container": "aphrody-postgres-1",
+      "container": "shenron-postgres",
       "health": "tcp://127.0.0.1:5432",
       "port": 5432,
       "sourceRepo": "aphrody",
-      "note": "PostgreSQL 18 of Shenron on DBFR, Compose service postgres (container aphrody-postgres-1, data /home/ubuntu/apps/shenron/shared/state/postgres, mem_limit 2560m, shared_buffers 768MB, max_connections 40). Production database: never deleted",
+      "note": "PostgreSQL 18 of Shenron on DBFR, Compose service postgres (container shenron-postgres, data /home/ubuntu/apps/shenron/shared/state/postgres, mem_limit 2560m, shared_buffers 768MB, max_connections 40). Production database: never deleted",
       "public": false
     },
     {
@@ -484,7 +484,7 @@
       "unit": "shenron-offsite-backup.timer",
       "host": "vps",
       "public": false,
-      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); rotation 1 (older snapshots deleted only after the newest is verified and restored); fails when the newest DBFR snapshot is older than 36 h."
+      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (aphrody-labs/shenron scripts/ops/shenron-offsite-backup.ts in ~/src/shenron): SHA-256 verified against VERIFIED.json under /home/ubuntu/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); rotation 1 (older snapshots deleted only after the newest is verified and restored); fails when the newest DBFR snapshot is older than 36 h."
     },
     {
       "id": "aphrody-mcp-http-dbfr",
