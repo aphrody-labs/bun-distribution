@@ -136,9 +136,8 @@ ALPM and library owners. An imported package requiring Node/npm/pnpm or another
 language toolchain is a recipe compatibility issue to qualify; its presence
 does not silently replace the native Bun runtime policy.
 
-Aphrody retains AI (models, agents, memory, A2A, MCP) and Infra (hosts, services,
-deployment, pipelines, cloud). General runtime/system libraries remain Bun/Bun
-Libraries capabilities; the root owns their product assembly. Protected provider
+Bun OS integrates AI, Infra, Workspace and the runtime/system libraries through
+their canonical implementation owners and one root product assembly. Protected provider
 sessions, credentials, cookies, databases, models and datasets never become
 distribution defaults or source synchronization inputs.
 

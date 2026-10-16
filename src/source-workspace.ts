@@ -160,9 +160,10 @@ export async function inspectSourceWorkspace(config: Config = {}) {
     root: packageRoot,
     sourceRoot,
     integrationScope: catalog.integrationScope,
-    aphrodyLayers: {
+    productLayers: {
       ai: ["models", "agents", "memory", "A2A", "MCP"],
       infrastructure: ["hosts", "deployment", "services", "pipelines", "cloud"],
+      workspace: ["assembly", "operations", "quality", "source inventory"],
     },
     productLayout: {
       roots: ["crates", "packages", "apps"],

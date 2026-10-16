@@ -4,9 +4,8 @@ Deliver one Bun OS product workspace from `C:\\src`, unifying Bun OS and Bun
 Libraries package/setup/build/install ownership while preserving source
 histories, active concurrent work, and all applicable license notices.
 
-The owner's selected integration scope includes Bun Libraries, Aphrody, Android
-and IECODE, following the 2026-10-16 overrides recorded in PLAN.md. Shenron
-remains outside absorption. Existing Bun runtime,
+Unify the product capabilities in Bun OS, following the current owner direction
+recorded in PLAN.md. Existing Bun runtime,
 Material and compatibility distribution dependencies retain their pinned contracts.
 The root catalog and source graph own discovery/export; physical relocation
 and nested workspace migration remain separate gates.
@@ -20,9 +19,11 @@ Fork upstream kernels and Rust source projects with their history, pins,
 licenses and locks; imported projects are not automatically root Cargo members.
 APT remains an explicitly separate portability qualification target.
 
-Aphrody retains exactly two capability layers: AI (models, agents, memory,
-A2A and MCP) and infrastructure (hosts, deployment, services, pipelines and
-cloud). Other capabilities move to their Bun/Bun Libraries owners with their
+Owner update (2026-10-16): absorb Aphrody Infra and Workspace into Bun OS Infra
+and Workspace, including their implementations, catalogs, commands and consumers.
+Bun OS integrates AI (models, agents, memory, A2A and MCP), infrastructure
+(hosts, deployment, services, pipelines and cloud) and workspace orchestration.
+Capabilities converge on their canonical implementations with their
 history, licenses, consumers and gates. Source still awaiting that migration
 must be reported as pending, not relabelled as already transferred.
 
@@ -51,7 +52,7 @@ owned paths on branch `os`, and pushing after verifying remote ancestry.
 Every product Rust crate is a pinned Git submodule directly under
 `crates/<package-name>`, sharing the root Cargo workspace, version, dependency
 table and nightly toolchain. The root owns `build`, `target`, `node_modules`
-and `install`. Aphrody Infra provisions declared forge repositories and
+and `install`. Bun OS Infra provisions declared forge repositories and
 machine identities idempotently; credentials remain in protected secret stores.
 
 Self-host every Aphrody Labs source repository through the existing Infra and

@@ -118,10 +118,9 @@ source work.
 
 ## Selected source integration — 2026-10-16
 
-The owner's current integration scope is Bun Libraries and Aphrody only;
-Shenron, IECODE and Android stay outside absorption. Existing Bun/Material/APT
-distribution inputs remain external pinned dependencies. Aphrody retains only
-AI and infrastructure. The product layout must have one flat root `crates/`,
+The product converges on one unified Bun OS workspace. Existing Bun/Material/APT
+distribution inputs retain their pinned source contracts. AI, infrastructure
+and workspace orchestration use canonical product owners. The product layout must have one flat root `crates/`,
 `packages/` and `apps/`; source still nested is pending migration, not complete.
 The source lock has 86 mounts, 77 repository/revision identities and 76 gitlinks;
 all 85 preceding pins are preserved. `bun src/cli.ts workspace` reports source

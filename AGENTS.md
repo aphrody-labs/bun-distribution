@@ -14,13 +14,12 @@ This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
 work, repository history, first-party attribution, and every imported license
 and notice. Keep product documentation and collaboration in English.
 
-Owner direction (2026-10-16): integrate Bun Libraries and Aphrody only;
-Shenron and IECODE stay outside absorption. Android is absorbed (owner
-reversal, 2026-10-16): `apps/bun-android`, `apps/java-ffi`,
+Owner direction (2026-10-16): deliver one unified Bun OS product. Absorb
+Infra and Workspace into the existing Bun OS owners; integrate capabilities
+and consumers rather than reserving separate product layers. Android owners:
+`apps/bun-android`, `apps/java-ffi`,
 `crates/android-native`, `packages/bun-android`, `packages/android-pipeline`
-and `packages/android-web` are its single owners. Aphrody retains AI
-(models, agents, memory, A2A, MCP) and infrastructure (hosts, deployment,
-services, pipelines, cloud). Merge product members into one root `crates/`,
+and `packages/android-web`. Merge product members into one root `crates/`,
 `packages/` and `apps/`, one direct child per member. Nested source imports
 are not completed flattening. Reuse canonical implementations and preserve
 history, licenses and consumers before retiring source duplicates.
@@ -51,7 +50,7 @@ boundaries. Keep upstream license notices intact.
 The owner's current contract is flat Git submodules for every product Rust
 crate in `crates/<package-name>`, inherited from one root Cargo workspace and
 nightly toolchain. Provision declared forge repositories and access through
-the Aphrody Infra owner, with credentials in protected secret stores. The
+the Bun OS Infra owner, with credentials in protected secret stores. The
 font crates implement this contract; remaining owners require real migration.
 
 Preserve protected `.local` stores, credentials, sessions, databases, model

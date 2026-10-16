@@ -3,11 +3,10 @@
 One implementation owns each concept. Surfaces bind that implementation and
 retain its errors, limits and qualification.
 
-Owner directive, 2026-10-16: Aphrody retains only AI (models, agents, memory,
-A2A, MCP) and infrastructure (hosts, deployment, services, pipelines, cloud).
-Other capabilities belong to Bun/Bun Libraries. Existing source still awaiting
-transfer is migration work, not an additional permanent owner. Shenron and
-IECODE stay outside this absorption.
+Owner directive, 2026-10-16: deliver one unified Bun OS product. AI,
+infrastructure, workspace orchestration, libraries and applications converge on
+canonical implementations. Source still awaiting transfer is migration work,
+not an additional permanent product owner.
 
 The unified Bun Libraries session report records the source inventory,
 per-library owners, native Bun quality commands, app artifact contract and
@@ -16,34 +15,34 @@ qualification boundaries at commit
 Treat it as integration history; current owner declarations in this workspace
 and each pinned source repository govern subsequent changes.
 
-| Concept                                                                                            | Owner                                                                                                            | Consumers                                                                             |
-| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Source pins and library roles                                                                      | Bun OS `aphrody.config.json` / `sources.lock.json`                                                               | Workspace, desktop, app packaging                                                     |
-| App IDs, capability labels and presentation                                                        | Bun OS `packages/bun-workspace/src/capabilities.ts`                                                              | Desktop, artifacts, deployment                                                        |
-| Checkout discovery and native artifact discovery                                                   | Bun OS `packages/bun-workspace/src/runtime.ts`                                                                   | Checkout tools and source adapters                                                    |
-| Bun provenance and selected compiler                                                               | Bun OS `packages/bun-workspace/src/runtime.ts`; runtime source is Bun                                            | Tools and compiled app manifests                                                      |
-| Content digests and shared asset identity                                                          | Bun OS `packages/bun-workspace/src/hash.ts` / `assets.ts`                                                        | App payloads and shared R2 assets                                                     |
-| Child lifetime, cancellation, signals and captured output                                          | Bun OS `packages/bun-workspace/src/process.ts`                                                                   | Cargo tools, native video transport, factories and standalone launchers               |
-| Video project, timeline and commands                                                               | Bun OS pinned FilmCraft Rust source                                                                              | Typed Bun Video adapter; media codecs remain Bun runtime capabilities                 |
-| JavaScript runtime, native APIs and Bun.Video                                                      | Bun fork `aphrody-labs/bun`                                                                                      | Bun OS factories and Aphrody product consumers                                        |
-| Shared Rust primitives and native libraries                                                        | Their pinned Craft source owners                                                                                 | Bun OS library engines                                                                |
-| Licensed font sources                                                                              | Pinned Craft font owner                                                                                          | Bun OS shared asset manifest and native engines                                       |
-| App payload extraction and manifest verification                                                   | Bun OS `packages/bun-artifacts`                                                                                  | Standalone Bun apps                                                                   |
-| Distribution and app-build admission                                                               | Bun OS distribution and factory owners; lock admission in `infra/app-build.ts`                                   | Runtime, APT and product artifacts; shared lock in `infra/apps.json`                  |
-| Package and source conversion                                                                      | Bun OS `packages/package-converter` / `src/apt.ts`                                                               | Winget and Bun package outputs; source package identity and license metadata          |
-| Debian APT implementation                                                                          | Official APT fork, pinned by Bun OS                                                                              | Bun OS distro build and conversion adapter; no second APT implementation in consumers |
-| Hosts, services, boot and deployment authority                                                     | Aphrody Infra in `aphrody`                                                                                       | Bun OS deployment adapter and controller                                              |
-| Git forge and workflow execution                                                                   | Aphrody `tools/config/host/apps/vps/gitea-runner/` and deployed forge/runner                                     | Bun OS and Bun source workflows                                                       |
-| Bun runtime SDK artifacts and `bun-lib` R2 domain                                                  | Bun fork `scripts/aphrody/media-sdk-publish.ts` and `packages/web/cloudflare/scripts/provision.ts`               | Bun OS and Aphrody consumers use verified published URLs                              |
-| Cloudflare zone defaults, CDN cache rules, site CAA/mail policy, Worker rules and R2 configuration | Bun fork `packages/web/cloudflare/scripts/provision.ts`                                                          | Aphrody Infra host-record catalog; Bun OS domain and asset contracts                  |
-| Registrar state, app-host DNS intent and OVH host-record profiles                                  | Aphrody Infra `tools/config/cloudflare/` and `tools/config/host/`; Bun `scripts/ovh.ts` is the execution adapter | Bun OS and Bun site host consumers                                                    |
-| Live DNS, proxy, Worker and object-storage state                                                   | Cloudflare                                                                                                       | Bun site provisioning and Aphrody Infra reconciliation                                |
-| Public app IDs, domain aliases and artifact routing                                                | Aphrody Infra product configuration; Bun OS `docs/APP-DOMAINS.md` is the consumer map                            | Existing Worker routes and standalone app owners                                      |
-| M3 tokens, shared components and `libm3`                                                           | Material workspace and its pinned crates                                                                         | Aphrody product surfaces and Bun OS desktop/app-ui consumers                          |
-| Native quality commands and formatter policy                                                       | Bun OS `package.json` / `bun-format.json`; runtime quality stays in Bun                                          | Bun OS owned source only; no duplicate formatter/config in Aphrody                    |
-| Product routes and sites                                                                           | Bun/Bun Libraries product owners                                                                                 | Bun OS app capability manifest                                                        |
-| App activation, hosts, deployment, services, pipelines and cloud policy                            | Aphrody Infra                                                                                                    | Bun/Bun Libraries and independent applications                                        |
-| Models, agents, memory, A2A and MCP                                                                | Aphrody AI                                                                                                       | Bun/Bun Libraries and independent applications                                        |
+| Concept                                                                                            | Owner                                                                                              | Consumers                                                                             |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Source pins and library roles                                                                      | Bun OS `aphrody.config.json` / `sources.lock.json`                                                 | Workspace, desktop, app packaging                                                     |
+| App IDs, capability labels and presentation                                                        | Bun OS `packages/bun-workspace/src/capabilities.ts`                                                | Desktop, artifacts, deployment                                                        |
+| Checkout discovery and native artifact discovery                                                   | Bun OS `packages/bun-workspace/src/runtime.ts`                                                     | Checkout tools and source adapters                                                    |
+| Bun provenance and selected compiler                                                               | Bun OS `packages/bun-workspace/src/runtime.ts`; runtime source is Bun                              | Tools and compiled app manifests                                                      |
+| Content digests and shared asset identity                                                          | Bun OS `packages/bun-workspace/src/hash.ts` / `assets.ts`                                          | App payloads and shared R2 assets                                                     |
+| Child lifetime, cancellation, signals and captured output                                          | Bun OS `packages/bun-workspace/src/process.ts`                                                     | Cargo tools, native video transport, factories and standalone launchers               |
+| Video project, timeline and commands                                                               | Bun OS pinned FilmCraft Rust source                                                                | Typed Bun Video adapter; media codecs remain Bun runtime capabilities                 |
+| JavaScript runtime, native APIs and Bun.Video                                                      | Bun fork `aphrody-labs/bun`                                                                        | Bun OS factories and Aphrody product consumers                                        |
+| Shared Rust primitives and native libraries                                                        | Their pinned Craft source owners                                                                   | Bun OS library engines                                                                |
+| Licensed font sources                                                                              | Pinned Craft font owner                                                                            | Bun OS shared asset manifest and native engines                                       |
+| App payload extraction and manifest verification                                                   | Bun OS `packages/bun-artifacts`                                                                    | Standalone Bun apps                                                                   |
+| Distribution and app-build admission                                                               | Bun OS distribution and factory owners; lock admission in `infra/app-build.ts`                     | Runtime, APT and product artifacts; shared lock in `infra/apps.json`                  |
+| Package and source conversion                                                                      | Bun OS `packages/package-converter` / `src/apt.ts`                                                 | Winget and Bun package outputs; source package identity and license metadata          |
+| Debian APT implementation                                                                          | Official APT fork, pinned by Bun OS                                                                | Bun OS distro build and conversion adapter; no second APT implementation in consumers |
+| Hosts, services, boot and deployment authority                                                     | Bun OS Infra `crates/aphrody-infra` and `infra/config/host/`                                       | Bun OS deployment adapter and controller                                              |
+| Git forge and workflow execution                                                                   | Bun OS `infra/config/host/apps/vps/gitea-runner/` and deployed forge/runner                        | Bun OS and Bun source workflows                                                       |
+| Bun runtime SDK artifacts and `bun-lib` R2 domain                                                  | Bun fork `scripts/aphrody/media-sdk-publish.ts` and `packages/web/cloudflare/scripts/provision.ts` | Bun OS and Aphrody consumers use verified published URLs                              |
+| Cloudflare zone defaults, CDN cache rules, site CAA/mail policy, Worker rules and R2 configuration | Bun fork `packages/web/cloudflare/scripts/provision.ts`                                            | Bun OS Infra host-record catalog and domain/asset contracts                           |
+| Registrar state, app-host DNS intent and OVH host-record profiles                                  | Bun OS Infra `tools/aphrody/config/cloudflare/` and `infra/config/host/`                           | Bun OS and Bun site host consumers                                                    |
+| Live DNS, proxy, Worker and object-storage state                                                   | Cloudflare                                                                                         | Bun site provisioning and Bun OS Infra reconciliation                                 |
+| Public app IDs, domain aliases and artifact routing                                                | Bun OS Infra product configuration and `docs/APP-DOMAINS.md`                                       | Existing Worker routes and standalone app owners                                      |
+| M3 tokens, shared components and `libm3`                                                           | Material workspace and its pinned crates                                                           | Aphrody product surfaces and Bun OS desktop/app-ui consumers                          |
+| Native quality commands and formatter policy                                                       | Bun OS `package.json` / `bun-format.json`; runtime quality stays in Bun                            | Bun OS owned source only; no duplicate formatter/config in Aphrody                    |
+| Product routes and sites                                                                           | Bun/Bun Libraries product owners                                                                   | Bun OS app capability manifest                                                        |
+| App activation, hosts, deployment, services, pipelines and cloud policy                            | Bun OS Infra                                                                                       | Product capabilities and applications                                                 |
+| Models, agents, memory, A2A and MCP                                                                | Canonical AI implementations integrated into Bun OS                                                | Product capabilities and applications                                                 |
 
 The video process module translates workspace errors into its public video
 errors. It has no child management implementation. Captured and discarded
@@ -88,16 +87,16 @@ The bundled `toolchains/bun` submodule remains at Bun revision
 That submodule has concurrent local M3 changes; keep its checkout intact until
 the Bun source owner can advance the submodule gitlink in a clean owner batch.
 
-Aphrody Infra declares and actuates desired DNS, host, route and app lifecycle
+Bun OS Infra declares and actuates desired DNS, host, route and app lifecycle
 state. Cloudflare's live records/R2 and application health require direct
 qualification; a checked-in hostname or successful source build is not live
 activation evidence. Bun OS owns app identity, host naming, shared asset
 manifests and artifact verification consumed by the Infra adapter.
 
-Repository boundaries are capability boundaries: Bun owns runtime and native
-SDK source, Material owns shared UI/framework source, APT owns Debian's package
-manager implementation, Bun OS owns distribution assembly and package adapters,
-and Aphrody retains AI and infrastructure. Consumers pin or import
+Source repositories preserve provenance: Bun supplies runtime and native SDK
+source, Material supplies shared UI/framework source and APT supplies Debian's
+package manager implementation. Bun OS integrates these with its product
+capabilities, distribution assembly and package adapters. Consumers pin or import
 the owner's interface; they do not copy its implementation. Keep each quality
 gate scoped to its owner and record source, build, artifact and deployment
 qualification independently.

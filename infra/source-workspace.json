@@ -6,7 +6,7 @@
       "id": "bun-os",
       "checkout": ".",
       "repository": "aphrody-labs/bun-distribution",
-      "owner": "distribution assembly",
+      "owner": "unified product assembly, AI, infrastructure and workspace orchestration",
       "integration": "root"
     },
     {
@@ -20,7 +20,7 @@
       "id": "aphrody",
       "checkout": "../aphrody",
       "repository": "aphrody-labs/aphrody",
-      "owner": "AI: models, agents, memory, A2A, MCP; Infra: hosts, deployment, services, pipelines, cloud",
+      "owner": "integrated product source: models, agents, memory, A2A, MCP, infrastructure and workspace",
       "integration": "pinned-source"
     },
     {
@@ -49,5 +49,5 @@
     }
   ],
   "integrationScope": ["bun-libraries", "aphrody", "android", "iecode"],
-  "excludedRepositories": ["apt", "material", "shenron"]
+  "excludedRepositories": ["apt", "material"]
 }

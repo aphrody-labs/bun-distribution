@@ -1,13 +1,11 @@
 # Source workspace integration
 
-Bun OS consolidates Bun Libraries, Aphrody, Android and IECODE through the
-existing root workspace, following the 2026-10-16 overrides in PLAN.md.
-Shenron remains outside absorption. Existing
+Bun OS consolidates product capabilities through the existing root workspace,
+following the current owner direction in PLAN.md. Existing
 Bun runtime, Material and APT distribution inputs keep their pinned contracts.
 
-Aphrody retains AI (models, agents, memory, A2A and MCP) and infrastructure
-(hosts, deployment, services, pipelines and cloud). Other capabilities belong
-to Bun or Bun Libraries. Moving source requires moving its consumers,
+Bun OS integrates AI, Infra and Workspace with the other product capabilities.
+Each capability has one implementation owner. Moving source requires moving its consumers,
 dependencies, history and notices together.
 
 ## Flat product layout

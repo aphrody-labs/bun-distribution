@@ -1,8 +1,20 @@
 # Integration plan
 
+## Bun OS Infra and Workspace absorption — 2026-10-16
+
+- Owner update: absorb and update Aphrody Infra and Workspace as Bun OS
+  capabilities, superseding their earlier separate Aphrody ownership.
+- Migrate clean tracked Infra catalogs into the root Infra owner without moving
+  protected state or changing host permissions, services or credentials.
+- Merge the imported Workspace automation implementation into the existing
+  `packages/bun-workspace` owner, then migrate commands, dependencies, tests and
+  source references together. Preserve histories and licenses.
+- Qualify source paths, installed dependency resolution and read-only commands;
+  native compilation and host activation remain separate gates.
+
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
 
-- Owner override of the earlier "IECODE stays outside" direction: all IECODE Rust crates (93 packages), Bun packages, apps and scripts are absorbed into the flat root `crates/`, `apps/` and `packages/` layout, one direct child per member, under the root nightly toolchain and Bun 1.4.4 native quality commands. `C:srciecode` is kept untouched until the owner retires it.
+- All IECODE Rust crates (93 packages), Bun packages, apps and scripts are absorbed into the flat root `crates/`, `apps/` and `packages/` layout, one direct child per member, under the root nightly toolchain and Bun 1.4.4 native quality commands. `C:srciecode` is kept untouched until the owner retires it.
 - Reverse engineering is merged into one capability: `packages/re` (Bun-native fork of morluto/rea, `aphrody-labs/rea`) and `crates/re` (Rust core `bun-re` folding `aphrody re`, `shenron-re`, `aphrody-nie-re`, `aphrody-nie-dump` and `aphrody-nie-steam`; features `nie`, `steam-emulator`, `steam-download`, CLI `bunre-steam`). Ghidra bumped to upstream, JDK and Android SDK/cmdline-tools installed and on the user PATH.
 - `packages/kernel-client`, `packages/ovh` and `packages/paths` are inlined; the retired `bun-forge` Gitea (empty data, container stopped on vps) is no longer a source owner. Remaining `bun-forge` submodule URLs must move to GitHub or be inlined.
 - [x] Repair the shared Bun lock for the existing `bun-arch-mcp`, `bun-blender`
@@ -74,8 +86,7 @@
 
 ## Selected source integration and flat layout — 2026-10-16
 
-- [x] Owner reversal (2026-10-16): Android is absorbed; the earlier
-      "Android outside absorption" rule is cancelled. Imported from
+- [x] Android is absorbed. Imported from
       `aphrody-labs/bun-engine-android` (MIT, sibling `android` checkout):
       `crates/android-native` (JNI + embedded Bun bridge), `apps/java-ffi`,
       `apps/bun-android` (former `apps/android` Compose app),
@@ -96,8 +107,7 @@
 - [ ] Repair the root Cargo resolution (serde_json pin conflict) so
       `bun android build` can build `android-native` inside the workspace.
 
-- [x] Apply the owner's narrowed scope: Bun Libraries and Aphrody only.
-      Shenron, IECODE and Android are outside absorption. Preserve the 85
+- [x] Preserve the initial source integration checkpoint and the 85
       existing distribution pins and add the Aphrody source: 86 mounts,
       77 repository/revision identities and 76 gitlinks.
 - [x] Add the relative checkout catalog and read-only `bun src/cli.ts workspace`
@@ -119,8 +129,8 @@
 - [ ] Finish one flat product `crates/`, `packages/` and `apps/`, with consumers,
       inheritance and one root build graph migrated together. Current nested
       library/workspace imports remain migration work.
-- [ ] Restrict Aphrody's capability ownership to AI and infrastructure;
-      split mixed adapters and reuse Bun/Bun Libraries owners for other layers.
+- [ ] Converge all product capabilities on canonical Bun OS owners;
+      migrate mixed adapters and consumers without duplicate implementations.
 - [ ] Complete physical source relocation after active consumers and protected
       local state have explicit migration paths. Source coverage alone does
       not qualify relocation, native builds or one Cargo/Bun workspace.

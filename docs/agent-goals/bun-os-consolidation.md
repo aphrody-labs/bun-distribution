@@ -97,17 +97,16 @@ Complete the migration already in progress instead of creating parallel owners.
 
 ### aphrody-labs/aphrody
 
-The owner's 2026-10-16 directive restricts Aphrody to AI (models, agents, memory,
-A2A and MCP) and infrastructure (hosts, deployment, services, pipelines and
-cloud). Bun owns the runtime, platform and general capabilities; Bun Libraries
+The owner's latest 2026-10-16 directive absorbs Aphrody Infra and Workspace into
+Bun OS Infra and Workspace. AI, infrastructure and workspace orchestration
+are capabilities of the same unified product. Bun owns the runtime, platform
+and general capabilities; Bun Libraries
 and this distribution own their library/product assembly. Move other Aphrody
 capabilities through their existing canonical owners, preserving history,
 licenses and consumers. Do not duplicate transfers already active in Bun.
 
-The selected absorption covers Bun Libraries, Aphrody, Android and IECODE,
-following the 2026-10-16 owner overrides recorded in PLAN.md. Shenron stays
-outside it; pre-existing external distribution dependencies keep their existing
-pinned contracts. Preserve active sibling checkouts until their consumers and
+Follow the current owner direction recorded in PLAN.md. External distribution
+dependencies keep their existing pinned contracts. Preserve active sibling checkouts until their consumers and
 canonical source owners qualify.
 
 ## Distribution product direction
