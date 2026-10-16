@@ -427,3 +427,27 @@
 [submodule "vendor/vcpkg"]
 	path = vendor/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "vendor/uutils/findutils"]
+	path = vendor/uutils/findutils
+	url = https://github.com/aphrody-labs/uutils-findutils.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/diffutils"]
+	path = vendor/uutils/diffutils
+	url = https://github.com/aphrody-labs/uutils-diffutils.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/util-linux"]
+	path = vendor/uutils/util-linux
+	url = https://github.com/aphrody-labs/uutils-util-linux.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/procps"]
+	path = vendor/uutils/procps
+	url = https://github.com/aphrody-labs/uutils-procps.git
+	branch = main
+	shallow = true
+[submodule "vendor/uutils/coreutils"]
+	path = vendor/uutils/coreutils
+	url = https://github.com/aphrody-labs/uutils-coreutils.git
+	branch = aphrody

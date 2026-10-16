@@ -31,5 +31,21 @@ public final class BunRuntime {
         return AVAILABLE ? nativeRun(script) : NOT_LOADED;
     }
 
+    /**
+     * Run {@code libbun.so} as a process from the extracted native library directory
+     * ({@code ApplicationInfo.nativeLibraryDir}); requires legacy JNI packaging.
+     */
+    public static int exec(String nativeLibraryDir, String... args)
+            throws java.io.IOException, InterruptedException {
+        java.io.File binary = new java.io.File(nativeLibraryDir, "libbun.so");
+        if (!binary.canExecute()) {
+            return NOT_LOADED;
+        }
+        String[] command = new String[args.length + 1];
+        command[0] = binary.getAbsolutePath();
+        System.arraycopy(args, 0, command, 1, args.length);
+        return new ProcessBuilder(command).inheritIO().start().waitFor();
+    }
+
     private static native int nativeRun(String script);
 }

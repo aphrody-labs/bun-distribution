@@ -27,6 +27,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    // Extract libbun.so to nativeLibraryDir so BunRuntime.exec can spawn it.
+    packaging { jniLibs { useLegacyPackaging = true } }
     buildFeatures { compose = true }
     lint { warningsAsErrors = true }
 }
