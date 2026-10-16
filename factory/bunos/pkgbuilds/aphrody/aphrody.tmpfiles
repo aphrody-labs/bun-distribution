@@ -1,0 +1,3 @@
+d /usr/share/aphrody/models 0755 root root -
+d /var/lib/aphrody 0755 root root -
+d /var/lib/aphrody/runtimes 0755 root root -

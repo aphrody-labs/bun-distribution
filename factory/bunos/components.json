@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-heavy-components",
+  "observedAt": "2026-10-16",
+  "measurement": "dust -b on the workstation checkout; 0 B submodules are declared but not initialized",
+  "repository": {
+    "name": "bunos",
+    "shared": "factory/usr/manifest.json localRepository (factory/usr/pkgs)",
+    "pkgbuilds": "factory/bunos/pkgbuilds",
+    "description": "Extra PKGBUILDs of the same local bunos pacman repository; package names must not collide with factory/usr/pkgs"
+  },
+  "prefixes": [
+    "/usr/bin",
+    "/usr/lib/bun",
+    "/usr/share/bun",
+    "/usr/lib/aphrody",
+    "/usr/share/aphrody",
+    "/usr/share/licenses",
+    "/usr/share/fonts",
+    "/usr/lib/tmpfiles.d",
+    "/usr/lib/environment.d",
+    "/usr/lib/systemd/user",
+    "/usr/share/icons"
+  ],
+  "compositionPackages": {
+    "server": ["aphrody"],
+    "cosmic": [
+      "aphrody",
+      "bun-video-native",
+      "bun-os-fonts",
+      "material-design-icons-bunos"
+    ],
+    "gaming": ["aphrody", "bun-video-native", "bun-os-fonts"]
+  },
+  "components": [
+    {
+      "id": "bun",
+      "path": "toolchains/bun",
+      "size": "4.0 GiB source, ~193 MiB release binary",
+      "origin": "aphrody-labs/bun @ 46709d69939f8f348d06967a371925ce0d8d4fa8",
+      "kind": "binary",
+      "integration": {
+        "mode": "pacman-bunos",
+        "package": "bun-aphrody",
+        "pkgbuilds": "factory/usr/pkgs",
+        "owner": "factory/usr basePackages"
+      },
+      "build": "aphrody-labs/bun release asset (native-candidate tag) repackaged; source build: bun scripts/build.ts --profile=release",
+      "license": "toolchains/bun/LICENSE.md"
+    },
+    {
+      "id": "webkit-jsc",
+      "path": "toolchains/bun/scripts/build/deps/webkit.ts",
+      "size": "~80 MiB prebuilt archive",
+      "origin": "aphrody-labs/WebKit autobuild prebuilt (fallback oven-sh/WebKit)",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "downloaded by the bun build; static",
+      "system": "bundled: Bun patches JSC; webkit2gtk is not ABI compatible"
+    },
+    {
+      "id": "icu",
+      "path": "toolchains/bun/scripts/build/deps/webkit.ts",
+      "size": "~35 MiB static",
+      "origin": "unicode-org/icu via WebKit prebuilt",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "bundled in the Linux WebKit prebuilt",
+      "system": "bundled: prebuilt mode links ICU statically; system icu applies only to local WebKit builds (-licu*)"
+    },
+    {
+      "id": "lol-html",
+      "path": "toolchains/bun/vendor/lolhtml",
+      "size": "small Rust crate",
+      "origin": "oven-sh/lol-html fork",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "cargo, linked into bun",
+      "system": "bundled: not packaged by Arch"
+    },
+    {
+      "id": "boringssl-mimalloc-libuv-tinycc-lsquic",
+      "path": "toolchains/bun/scripts/build/deps",
+      "size": "~60 MiB sources fetched at build",
+      "origin": "oven-sh forks, litespeedtech",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "DirectBuild/cmake in the bun build",
+      "system": "bundled: patched forks (BoringSSL memory hooks, mimalloc fork); system openssl/mimalloc would change behaviour"
+    },
+    {
+      "id": "zlib-zstd-brotli-libdeflate-cares-libarchive-sqlite-image-codecs",
+      "path": "toolchains/bun/scripts/build/deps",
+      "size": "~40 MiB sources fetched at build",
+      "origin": "zlib-ng, facebook/zstd, google/brotli, ebiggers/libdeflate, c-ares, libarchive, sqlite, libjpeg-turbo, libwebp, libspng, highway",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "bun build deps",
+      "system": "bundled: Arch provides them, but bun pins versions and links statically; system linking needs build-system support first"
+    },
+    {
+      "id": "brave-mullvad-uv-vendor",
+      "path": "toolchains/bun/vendor",
+      "size": "134 MiB (mullvad 89 MiB)",
+      "origin": "brave/*, mullvad, astral-sh/uv forks",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "bun-aphrody"
+      },
+      "build": "cargo path dependencies of bun",
+      "system": "bundled: Rust sources, no system equivalent"
+    },
+    {
+      "id": "windows-rs",
+      "path": "toolchains/bun/vendor/windows-rs",
+      "size": "Windows only",
+      "origin": "microsoft/windows-rs",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "excluded",
+        "reason": "Windows target only"
+      }
+    },
+    {
+      "id": "cef",
+      "path": "toolchains/bun/src/browser/cef-rs",
+      "size": "~250 MiB CEF distribution downloaded",
+      "origin": "chromiumembedded/cef via download-cef",
+      "kind": "native-sys",
+      "integration": {
+        "mode": "remaining",
+        "reason": "extra/cef exists, but cef-rs 154.5.0 pins its own CEF build (download-cef); optional tauri-runtime-cef only. Switch when extra/cef matches the pinned major"
+      }
+    },
+    {
+      "id": "bun-video-native",
+      "path": "toolchains/bun/packages/bun-video/native",
+      "size": "324 MiB package tree",
+      "origin": "aphrody-labs/bun",
+      "kind": "native-sys",
+      "integration": {
+        "mode": "pacman-bunos",
+        "package": "bun-video-native"
+      },
+      "build": "cargo-serial build --features libav",
+      "system": "ffmpeg-sys-next without build feature: links system ffmpeg (extra/ffmpeg) via pkg-config"
+    },
+    {
+      "id": "aphrody",
+      "path": "crates/aphrody",
+      "size": "296 MiB crates/ sources; aphrody-mcp ~284 MiB binary (Windows)",
+      "origin": "aphrody-labs/bun-distribution",
+      "kind": "binary",
+      "integration": {
+        "mode": "pacman-bunos",
+        "package": "aphrody"
+      },
+      "build": "cargo-serial build --release -p aphrody",
+      "license": "LICENSE"
+    },
+    {
+      "id": "aphrody-llama-sys",
+      "path": "crates/aphrody-llama-sys",
+      "size": "304 KiB bindings; libllama external",
+      "origin": "ggml-org/llama.cpp (dynamic)",
+      "kind": "native-sys",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "llama-cpp",
+        "dependent": "aphrody"
+      },
+      "system": "loaded dynamically; never vendored"
+    },
+    {
+      "id": "onnxruntime",
+      "path": "crates/aphrody-infer, crates/aphrody-ocr-onnx",
+      "size": "~60 MiB libonnxruntime",
+      "origin": "microsoft/onnxruntime via ort load-dynamic",
+      "kind": "native-sys",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "onnxruntime-cpu",
+        "dependent": "aphrody"
+      },
+      "system": "ORT_DYLIB_PATH=/usr/lib/libonnxruntime.so from environment.d"
+    },
+    {
+      "id": "whisper-cpp",
+      "path": "crates/aphrody-voice",
+      "size": "~5 MiB runtime",
+      "origin": "ggml-org/whisper.cpp",
+      "kind": "runtime",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "whisper-cpp",
+        "dependent": "aphrody"
+      },
+      "system": "extra/whisper-cpp optdepend; first-run fetch to $APHRODY_RUNTIMES_DIR stays the fallback"
+    },
+    {
+      "id": "wgpu",
+      "path": "vendor/wgpu + 25 crates",
+      "size": "66 MiB",
+      "origin": "aphrody-labs/wgpu",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "aphrody"
+      },
+      "system": "runtime uses system vulkan-icd-loader and mesa"
+    },
+    {
+      "id": "bevy",
+      "path": "vendor/bevy",
+      "size": "171 MiB",
+      "origin": "aphrody-labs/bevy",
+      "kind": "vendored-static",
+      "integration": {
+        "mode": "static-in",
+        "package": "aphrody"
+      }
+    },
+    {
+      "id": "models",
+      "path": "$APHRODY_MODELS_DIR (state)/models",
+      "size": "GGUF/ONNX/safetensors, multi-GiB, not versioned",
+      "origin": "aphrody-models catalog (Hugging Face)",
+      "kind": "model-weights",
+      "integration": {
+        "mode": "overlay",
+        "package": "aphrody",
+        "target": "/usr/share/aphrody/models"
+      },
+      "build": "never packaged: empty system directory, user pull on first launch (aphrody model pull)"
+    },
+    {
+      "id": "bunos-utils",
+      "path": "crates/bunos-utils",
+      "size": "multicall binary",
+      "origin": "aphrody-labs (uutils)",
+      "kind": "binary",
+      "integration": {
+        "mode": "overlay",
+        "target": "/usr/bin/bunos-utils",
+        "owner": "factory/usr manifest.multicall"
+      }
+    },
+    {
+      "id": "fonts",
+      "path": "vendor/fonts",
+      "size": "not initialized",
+      "origin": "aphrody-labs/fonts @ 9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "kind": "data",
+      "integration": {
+        "mode": "pacman-bunos",
+        "package": "bun-os-fonts"
+      },
+      "build": "copy font files"
+    },
+    {
+      "id": "material-design-icons",
+      "path": "vendor/material-design-icons",
+      "size": "not initialized",
+      "origin": "aphrody-labs/material-design-icons @ b45878038c54b89ec8405dce1da18aba6379f5df",
+      "kind": "data",
+      "integration": {
+        "mode": "pacman-bunos",
+        "package": "material-design-icons-bunos"
+      },
+      "build": "copy font/ and symbols svg"
+    },
+    {
+      "id": "proton",
+      "path": "vendor/proton",
+      "size": "8.6 GiB",
+      "origin": "aphrody-labs/Proton",
+      "kind": "vendor",
+      "integration": {
+        "mode": "image",
+        "package": "proton-cachyos",
+        "image": "bunos-gaming"
+      },
+      "system": "CachyOS binary package instead of rebuilding the fork"
+    },
+    {
+      "id": "gamescope",
+      "path": "vendor/gamescope",
+      "size": "1.4 GiB",
+      "origin": "aphrody-labs/gamescope",
+      "kind": "vendor",
+      "integration": {
+        "mode": "image",
+        "package": "gamescope",
+        "image": "bunos-gaming"
+      }
+    },
+    {
+      "id": "dxvk",
+      "path": "vendor/dxvk",
+      "size": "172 MiB",
+      "origin": "aphrody-labs/dxvk",
+      "kind": "vendor",
+      "integration": {
+        "mode": "image",
+        "package": "dxvk-bin",
+        "image": "bunos-gaming"
+      }
+    },
+    {
+      "id": "vkd3d-proton",
+      "path": "vendor/vkd3d-proton",
+      "size": "328 MiB",
+      "origin": "aphrody-labs/vkd3d-proton",
+      "kind": "vendor",
+      "integration": {
+        "mode": "image",
+        "package": "vkd3d-proton-bin",
+        "image": "bunos-gaming"
+      }
+    },
+    {
+      "id": "wine-cachyos",
+      "path": "vendor/wine-cachyos",
+      "size": "not initialized",
+      "origin": "aphrody-labs/wine-cachyos",
+      "kind": "vendor",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "wine-cachyos",
+        "composition": "gaming"
+      },
+      "system": "CachyOS repo binary; image currently ships wine-staging"
+    },
+    {
+      "id": "omarchy",
+      "path": "vendor/omarchy",
+      "size": "378 MiB",
+      "origin": "aphrody-labs/omarchy (basecamp v4.0.4)",
+      "kind": "vendor",
+      "integration": {
+        "mode": "image",
+        "package": "omarchy pacman repository pin",
+        "image": "factory/images manifest pins.omarchy"
+      }
+    },
+    {
+      "id": "linux-cachyos",
+      "path": "vendor/linux-cachyos",
+      "size": "not initialized",
+      "origin": "aphrody-labs/linux-cachyos",
+      "kind": "vendor",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "linux-cachyos"
+      }
+    },
+    {
+      "id": "pacman",
+      "path": "vendor/pacman",
+      "size": "not initialized",
+      "origin": "aphrody-labs/pacman (CachyOS/pacman)",
+      "kind": "vendor",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "pacman"
+      }
+    },
+    {
+      "id": "bash",
+      "path": "vendor/bash",
+      "size": "326 MiB",
+      "origin": "aphrody-labs/bash",
+      "kind": "vendor",
+      "integration": {
+        "mode": "pacman-system",
+        "package": "bash",
+        "dependent": "base"
+      },
+      "system": "base provides core/bash; fork stays source of patches"
+    },
+    {
+      "id": "vendor-cargo",
+      "path": "vendor/cargo",
+      "size": "651 MiB (aws-lc-sys 63 MiB, windows 109 MiB)",
+      "origin": "crates.io vendored registry",
+      "kind": "build-input",
+      "integration": {
+        "mode": "excluded",
+        "reason": "Build-time offline registry, not installed"
+      }
+    },
+    {
+      "id": "msys2-mingw-cygwin",
+      "path": "vendor/msys2-packages, vendor/msys2-runtime, vendor/newlib-cygwin, vendor/mingw-packages, vendor/msys2-source-metadata",
+      "size": "1.0 GiB",
+      "origin": "aphrody-labs MSYS2 forks",
+      "kind": "vendor",
+      "integration": {
+        "mode": "excluded",
+        "reason": "Windows MSYS2 factory (factory/msys2), not Linux /usr"
+      }
+    },
+    {
+      "id": "powershell",
+      "path": "vendor/powershell",
+      "size": "102 MiB",
+      "origin": "aphrody-labs/powershell",
+      "kind": "vendor",
+      "integration": {
+        "mode": "remaining",
+        "reason": "Only AUR powershell-bin exists; no composition requires it"
+      }
+    },
+    {
+      "id": "npm-m3",
+      "path": "toolchains/bun/packages/aphrody-migrated/m3",
+      "size": "2.9 GiB (node_modules and build output)",
+      "origin": "aphrody-labs/m3",
+      "kind": "npm",
+      "integration": {
+        "mode": "excluded",
+        "reason": "Development workspace; built into apps, not installed in /usr"
+      }
+    },
+    {
+      "id": "npm-apps",
+      "path": "apps, packages",
+      "size": "269 MiB apps, 267 MiB packages (artcraft-frontend node_modules 58 MiB)",
+      "origin": "aphrody-labs/bun-distribution",
+      "kind": "npm",
+      "integration": {
+        "mode": "remaining",
+        "reason": "Web apps without an OS install contract; package individually when each gets a launcher"
+      }
+    }
+  ]
+}

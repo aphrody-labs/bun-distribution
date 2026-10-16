@@ -1,0 +1,19 @@
+# Bun OS font collection from the aphrody-labs/fonts submodule.
+pkgname=bun-os-fonts
+pkgver=r1
+pkgrel=1
+_commit=9710da1eacb3be272583c3224dcb70f9da6eadbb
+pkgdesc='Bun OS fonts (aphrody-labs/fonts)'
+arch=('any')
+url='https://github.com/aphrody-labs/fonts'
+license=('OFL-1.1' 'Apache-2.0')
+source=("fonts::git+https://github.com/aphrody-labs/fonts.git#commit=${_commit}")
+sha256sums=('SKIP')
+
+package() {
+  cd fonts
+  find . -path ./.git -prune -o -type f \( -name '*.ttf' -o -name '*.otf' -o -name '*.ttc' \) -print |
+    while read -r f; do install -Dm644 "$f" "$pkgdir/usr/share/fonts/bun-os/${f#./}"; done
+  find . -path ./.git -prune -o -type f \( -iname 'LICENSE*' -o -iname 'OFL*' -o -iname 'NOTICE*' -o -iname 'COPYING*' \) -print |
+    while read -r f; do install -Dm644 "$f" "$pkgdir/usr/share/licenses/$pkgname/${f#./}"; done
+}

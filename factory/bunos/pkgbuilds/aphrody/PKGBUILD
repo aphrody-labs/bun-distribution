@@ -1,0 +1,39 @@
+# Aphrody CLI/MCP/infra multicall built from the Bun OS workspace.
+pkgname=aphrody
+pkgver=0.1.0
+pkgrel=1
+_commit=8229a6909216d3d38e7ada42dfc6c471b0237fbc
+pkgdesc='Aphrody AI and infrastructure CLI (models, agents, memory, A2A, MCP, hosts)'
+arch=('x86_64')
+url='https://github.com/aphrody-labs/bun-distribution'
+license=('Apache-2.0' 'MIT')
+depends=('glibc' 'gcc-libs' 'openssl' 'vulkan-icd-loader')
+optdepends=('llama-cpp: local GGUF inference (libllama loaded dynamically)'
+            'onnxruntime-cpu: ONNX inference and OCR (ort load-dynamic)'
+            'whisper-cpp: speech recognition runtime'
+            'ffmpeg: media pipelines')
+makedepends=('git' 'rustup' 'clang' 'pkgconf' 'cmake')
+options=('!lto' '!debug')
+source=("bun-os::git+https://github.com/aphrody-labs/bun-distribution.git#commit=${_commit}"
+        'aphrody.tmpfiles' 'aphrody.environment')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+build() {
+  cd bun-os
+  git submodule update --init --depth 1 toolchains/bun
+  bash scripts/aphrody/build/rust/cargo-serial.sh build --release --locked -p aphrody
+}
+
+package() {
+  cd bun-os
+  install -Dm755 target/release/aphrody "$pkgdir/usr/bin/aphrody"
+  install -dm755 "$pkgdir/usr/lib/aphrody" "$pkgdir/usr/share/aphrody/models"
+  # Weights are never packaged: the directory stays empty and `aphrody model pull` fills
+  # $APHRODY_MODELS_DIR on first launch; administrators may drop shared weights here.
+  install -Dm644 "$srcdir/aphrody.tmpfiles" "$pkgdir/usr/lib/tmpfiles.d/aphrody.conf"
+  install -Dm644 "$srcdir/aphrody.environment" "$pkgdir/usr/lib/environment.d/60-aphrody.conf"
+  install -Dm644 crates/aphrody/Cargo.toml "$pkgdir/usr/share/aphrody/Cargo.toml"
+  for f in LICENSE* NOTICE*; do
+    [[ -f $f ]] && install -Dm644 "$f" "$pkgdir/usr/share/licenses/$pkgname/$f"
+  done
+}

@@ -62,7 +62,7 @@
     },
     "gaming": {
       "profile": "gaming",
-      "packages": []
+      "packages": ["wine-cachyos"]
     }
   },
   "hierarchy": {
@@ -100,5 +100,12 @@
   "rootfs": {
     "compression": "zstd",
     "exclude": ["var/cache/pacman/pkg/*", "var/lib/pacman/sync/*"]
+  },
+  "bunos": {
+    "manifest": "factory/bunos/components.json",
+    "repository": "bunos",
+    "pkgbuilds": "factory/bunos/pkgbuilds",
+    "validate": "bun factory/bunos/validate.ts",
+    "reason": "Extra packages of the local bunos repository (aphrody, bun-video-native, fonts, icons) and the heavy-component inventory; compositions select them through compositionPackages once the builder consumes factory/bunos/pkgbuilds next to localRepository.packages."
   }
 }
