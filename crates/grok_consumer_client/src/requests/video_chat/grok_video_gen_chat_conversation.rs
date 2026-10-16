@@ -230,8 +230,8 @@ impl <'a> GrokVideoGenChatConversationBuilder<'a> {
 
     let media_url = match self.media_type {
       VideoMediaPostType::UserUploadedImage => user_and_file_id_to_image_url(self.user_id, self.file_id),
-      VideoMediaPostType::GrokGeneratedImage => unimplemented!("implement for generated images"),
-      VideoMediaPostType::Video => unimplemented!("implement for videos"),
+      VideoMediaPostType::GrokGeneratedImage => crate::utils::user_and_file_id_to_image_url::file_id_to_generated_image_url(self.file_id),
+      VideoMediaPostType::Video => crate::utils::user_and_file_id_to_image_url::user_and_file_id_to_generated_video_url(self.user_id, self.file_id),
     };
 
     let mode_string = self.mode

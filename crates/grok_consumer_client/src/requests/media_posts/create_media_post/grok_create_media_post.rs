@@ -84,8 +84,8 @@ impl <'a> GrokCreateMediaPost<'a> {
 
     let media_url = match self.media_type {
       MediaPostType::UserUploadedImage => user_and_file_id_to_image_url(self.user_id, self.file_id),
-      MediaPostType::GrokGeneratedImage => unimplemented!("implement for generated images"),
-      MediaPostType::Video => unimplemented!("implement for videos"),
+      MediaPostType::GrokGeneratedImage => crate::utils::user_and_file_id_to_image_url::file_id_to_generated_image_url(self.file_id),
+      MediaPostType::Video => crate::utils::user_and_file_id_to_image_url::user_and_file_id_to_generated_video_url(self.user_id, self.file_id),
     };
 
     let request_body = CreateMediaPostWireRequest {

@@ -47,7 +47,8 @@ impl <P> GrokUploadFile<P> where P: AsRef<Path> {
         self.upload_from_file(path.as_ref()).await
       }
       FileUploadSpec::Bytes { bytes, filename, mimetype } => {
-        unimplemented!("todo: implement bytes upload")
+        let base64_file = BASE64_STANDARD.encode(bytes);
+        self.do_upload(base64_file, filename, mimetype).await
       }
     }
   }

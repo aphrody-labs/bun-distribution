@@ -11,7 +11,7 @@ use wreq::Client;
 pub async fn unimplemented_sora_job_status(
   task_id: &str,
   credentials: &SoraCredentialSet,
-) -> Result<(), SoraError> {
+) -> Result<serde_json::Value, SoraError> {
   let url = format!("https://sora.com/backend/notif?limit=100&before={}", task_id);
 
   let cookie = credentials.cookies.to_string();
@@ -41,7 +41,8 @@ pub async fn unimplemented_sora_job_status(
         SoraGenericApiError::WreqError(err)
       })?;
 
-  unimplemented!("job status is not parsed")
+  serde_json::from_str(json_response)
+      .map_err(|err| SoraGenericApiError::SerdeResponseParseErrorWithBody(err, json_response.to_string()).into())
 }
 
 #[cfg(test)]

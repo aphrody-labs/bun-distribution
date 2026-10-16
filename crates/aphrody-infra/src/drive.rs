@@ -407,10 +407,17 @@ impl VirtualDriveEngine {
                 let sftp = session.sftp().await?;
                 SftpDriver::read_file(&sftp, &full_path).await
             },
-            MountKind::GitRepo { .. } => {
-                bail!(
-                    "direct blob reading from GitRepo mount not yet implemented; inspect via list_dir"
-                )
+            MountKind::GitRepo { repo_path } => {
+                let repo = gix::open(repo_path)
+                    .with_context(|| format!("failed to open git repository: {repo_path:?}"))?;
+                let tree = repo.head_commit()?.tree()?;
+                let entry = tree
+                    .lookup_entry_by_path(&rel_path)?
+                    .with_context(|| format!("path not found in HEAD tree: {rel_path}"))?;
+                if entry.mode().is_tree() {
+                    bail!("path is a directory in the git tree: {rel_path}");
+                }
+                Ok(entry.object()?.detach().data)
             },
         }
     }
