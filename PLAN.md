@@ -18,6 +18,11 @@
       formatting and eight invalid-mount rejection probes pass. Setup now
       qualifies the retired forge transport only when declared sources need it;
       complete setup and physical consolidation remain unqualified.
+- [x] Add a read-only setup preflight and retain initialized source owners at
+      different revisions before installation. A temporary-repository integration
+      test verifies that the live revision and uncommitted file remain intact.
+      The current runtime source differs from its pin, so full setup remains
+      pending without moving the active Android build's checkout.
 
 ## MSYS2 vendor and Desktop integration — 2026-10-16
 

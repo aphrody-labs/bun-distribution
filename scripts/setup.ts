@@ -2,8 +2,20 @@
 import { resolve } from "node:path";
 import { inspectCargoWorkspace, loadConfig } from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
+import { inspectSetupSources } from "./setup-submodules.ts";
 
 const root = resolve(import.meta.dir, "..");
+const args = Bun.argv.slice(2);
+if (args.length && (args.length !== 1 || args[0] !== "--plan")) throw new Error("Usage: bun scripts/setup.ts [--plan]");
+const sources = await inspectSetupSources(root);
+if (args[0] === "--plan") {
+  console.log(JSON.stringify({ root, sources, qualification: "source-preflight-only" }, null, 2));
+  process.exit(0);
+}
+if (!sources.ready)
+  throw new Error(
+    `Setup preserves source owners at different or conflicted revisions:\n${sources.retained.join("\n")}`,
+  );
 const env = {
   ...Bun.env,
   CARGO_TARGET_DIR: resolve(root, "target"),

@@ -18,6 +18,7 @@ Requires Bun 1.4.4, Git, and the native toolchains for the targets being built.
 
 ```sh
 bun run setup
+bun run setup --plan
 bun check -p tsconfig.json --threads=2 --no-pretty
 bun lint --deny-warnings src container factory infra packages apps/desktop scripts
 bun fmt --check --config bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts
@@ -33,6 +34,10 @@ workspace from `bun.lock`, and selects the shared Cargo `target` and `install`
 directories. Nested submodules remain pinned but are fetched only when their
 owning component requires them. Run `bun run workspace --help` for library
 inventory and capability commands.
+
+`setup --plan` inspects source revisions without installing or checking out
+sources. Setup refuses to move initialized sources at different or conflicted
+revisions, preserving active development before any installation begins.
 
 ArtCraft's physical frozen installation and frontend compilation pass on native
 Windows. Nested install retirement still requires dependency alignment; inspect
