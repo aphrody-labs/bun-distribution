@@ -1,5 +1,4 @@
 import { dirname, join } from "node:path";
-import { stat } from "node:fs/promises";
 import windows from "bun:windows";
 
 const root = join(import.meta.dir, "..", "..", "..", "..");
@@ -82,9 +81,12 @@ export async function buildGhidraWindows(): Promise<number> {
       });
       return await child.exited;
     };
-    const flatRepoReady = await stat(join(ghidraRoot, "dependencies", "flatRepo"))
-      .then(entry => entry.isDirectory())
-      .catch(() => false);
+    const flatRepoReady =
+      (
+        await Array.fromAsync(
+          new Bun.Glob("*").scan({ cwd: join(ghidraRoot, "dependencies", "flatRepo"), onlyFiles: false }),
+        )
+      ).length > 0;
     if (!flatRepoReady) {
       const fetched = await run(["-I", "gradle/support/fetchDependencies.gradle", "init"]);
       if (fetched !== 0) return fetched;

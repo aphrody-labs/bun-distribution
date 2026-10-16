@@ -1,5 +1,5 @@
 import { resolve, dirname } from "node:path";
-import { open, rm, mkdir } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import { type Config, SyncEngine, atomicWrite } from "./sync";
 
 const root = resolve(import.meta.dir, "../../..");
@@ -31,7 +31,7 @@ const engine = new SyncEngine(config, { output, checkout, signal: controller.sig
 
 async function lock() {
   const path = resolve(output, "autosync/run.lock");
-  await mkdir(dirname(path), { recursive: true });
+  await Bun.$`mkdir -p ${dirname(path)}`.quiet();
   try {
     const existing = (await Bun.file(path).json()) as { pid: number };
     let alive = false;
@@ -40,7 +40,9 @@ async function lock() {
       alive = true;
     } catch {}
     if (alive) throw new Error(`Documentation synchronization already running as PID ${existing.pid}`);
-    await rm(path, { force: true });
+    await Bun.file(path)
+      .delete()
+      .catch(() => {});
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
@@ -50,7 +52,9 @@ async function lock() {
   );
   await handle.close();
   return async () => {
-    await rm(path, { force: true });
+    await Bun.file(path)
+      .delete()
+      .catch(() => {});
   };
 }
 

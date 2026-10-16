@@ -1,4 +1,3 @@
-import { mkdir } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 
 const maxFirmwareBytes = 128 * 1024 * 1024;
@@ -54,7 +53,6 @@ export async function importFirmware(
       .toLowerCase() ?? ".bin";
   const directory = join(resolve(store), owner);
   const file = `${sha256}${extension}`;
-  await mkdir(directory, { recursive: true });
   await Bun.write(join(directory, file), source);
 
   const manifest: FirmwareManifest = {

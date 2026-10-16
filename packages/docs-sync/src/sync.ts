@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, rm, readdir, appendFile } from "node:fs/promises";
+import { rename, readdir, appendFile } from "node:fs/promises";
 import { resolve, relative, dirname, isAbsolute, sep, extname } from "node:path";
 
 export type Source = { id: string; kind: string; [key: string]: unknown };
@@ -72,7 +72,7 @@ export function inside(root: string, path: string): string {
 
 async function json<T>(path: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await readFile(path, "utf8"));
+    return JSON.parse(await Bun.file(path).text());
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return fallback;
     throw error;
@@ -80,13 +80,14 @@ async function json<T>(path: string, fallback: T): Promise<T> {
 }
 
 export async function atomicWrite(path: string, data: Uint8Array | string) {
-  await mkdir(dirname(path), { recursive: true });
   const temp = `${path}.partial-${process.pid}-${crypto.randomUUID()}`;
   try {
     await Bun.write(temp, data);
     await rename(temp, path);
   } finally {
-    await rm(temp, { force: true });
+    await Bun.file(temp)
+      .delete()
+      .catch(() => {});
   }
 }
 
@@ -801,12 +802,12 @@ export class SyncEngine {
 
   async syncTopic(topic: Topic): Promise<Manifest> {
     const directory = inside(this.output, safeId(topic.id));
-    await mkdir(directory, { recursive: true });
+    await Bun.$`mkdir -p ${directory}`.quiet();
     const previous = await json<Manifest | null>(inside(directory, "manifest.json"), null);
     const records = new Map((previous?.files ?? []).map(item => [item.id, item]));
     const progressPath = inside(directory, "progress.jsonl");
     try {
-      for (const line of (await readFile(progressPath, "utf8")).split("\n").filter(Boolean)) {
+      for (const line of (await Bun.file(progressPath).text()).split("\n").filter(Boolean)) {
         try {
           const record = JSON.parse(line) as RecordEntry;
           records.set(record.id, record);
@@ -899,12 +900,18 @@ export class SyncEngine {
     };
     if (status === "complete") {
       for (const old of previous?.files ?? [])
-        if (!paths.has(old.path)) await rm(inside(directory, `content/${old.path}`), { force: true });
+        if (!paths.has(old.path))
+          await Bun.file(inside(directory, `content/${old.path}`))
+            .delete()
+            .catch(() => {});
     } else
       for (const old of previous?.files ?? [])
         if (!completed.some(item => item.id === old.id)) manifest.files.push(old);
     await atomicWrite(inside(directory, "manifest.json"), stringify(manifest));
-    if (status === "complete") await rm(progressPath, { force: true });
+    if (status === "complete")
+      await Bun.file(progressPath)
+        .delete()
+        .catch(() => {});
     console.log(`Topic ${topic.id}: ${status} (${succeeded}/${items.length})`);
     return manifest;
   }
