@@ -1145,7 +1145,7 @@
     {
       "id": "aphrody",
       "repository": "aphrody-labs/aphrody",
-      "revision": "4b50cb3e2dcaf5e42878e51a3f88a600a6c2a9f6",
+      "revision": "2cacde0ff793863d6b947a960dd7ce2f6fa792f5",
       "mount": "sources/aphrody",
       "branch": "main",
       "gitlinks": []

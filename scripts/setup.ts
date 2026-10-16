@@ -47,5 +47,9 @@ if (process.platform === "win32") {
 await run(["git", "submodule", "update", "--init", "--depth", "1"], submoduleEnv);
 await run([process.execPath, "install", "--frozen-lockfile"]);
 await run([process.execPath, "scripts/node-modules.ts"]);
-const cargo = await inspectCargoWorkspace(await loadConfig(root), { root, timeoutMs: 60_000 });
+const cargo = await inspectCargoWorkspace(await loadConfig(root), {
+  root,
+  timeoutMs: 60_000,
+  runtimePolicy: "development",
+});
 console.log(`Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`);
