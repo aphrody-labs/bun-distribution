@@ -1,0 +1,32 @@
+{
+  "name": "@aphrody/bun-windows-suite",
+  "version": "1.4.4",
+  "description": "Optional activation facade for Bun Windows, WinRT, WinUI, .NET and Microsoft developer tooling",
+  "license": "MIT",
+  "type": "module",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "bun test ./test",
+    "check": "bun check --noEmit"
+  },
+  "peerDependencies": {
+    "@aphrody/bun-dotnet": ">=1.4.4"
+  },
+  "peerDependenciesMeta": {
+    "@aphrody/bun-dotnet": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "bun": ">=1.4.4"
+  }
+}

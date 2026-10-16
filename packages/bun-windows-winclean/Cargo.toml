@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "bun-windows-winclean"
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+authors = ["aphrody-dev <contact@aphrody.com>"]
+homepage = "https://aphrody.app"
+repository = "https://github.com/aphrody-labs/bun"
+license = "Apache-2.0"
+description = "Canonical Bun Windows SDK for WinClean-compatible automation and diagnostics."
+
+[lib]
+name = "bun_windows_winclean"
+
+[dependencies]
+aphrody-capture = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
+aphrody-proc = { git = "https://github.com/aphrody-labs/aphrody.git", rev = "631434e1aa92291f417a09ee19c41056527402b4" }
+aphrody-re = { package = "bun-re", path = "../bun-re", version = "1.0.0-canary" }
+base64 = "0.23.1"
+image = { version = "0.25.10", features = ["png", "bmp"] }
+serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+sysinfo = { version = "0.39.6", features = ["system", "disk", "network"], default-features = false }
+thiserror = "2.0.20"
+reqwest = { version = "0.13.5", features = ["rustls-no-provider", "blocking", "json"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+tempfile = "3.27.0"
+
+[target.'cfg(windows)'.dependencies]
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "ndarray", "tracing", "load-dynamic"] }
+pollster = "1.0.1"
+uiautomation = { version = "0.25.1", default-features = false, features = ["input"] }
+vigem-rust = { version = "0.2.0", default-features = false, features = ["x360"] }
+windows = { version = "0.62.2", features = ["Foundation", "Globalization", "Graphics_Imaging", "Media_Ocr", "Media_SpeechSynthesis", "Media_Core", "Storage_Streams", "Win32_Foundation", "Win32_Media_Audio", "Win32_NetworkManagement_IpHelper", "Win32_Security", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_System_DataExchange", "Win32_System_Diagnostics_Debug", "Win32_System_Diagnostics_ToolHelp", "Win32_System_EventLog", "Win32_System_Threading", "Win32_System_Memory", "Win32_System_LibraryLoader", "Win32_System_Ole", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Services", "Win32_System_Variant", "Win32_System_Wmi", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
+
+[workspace]

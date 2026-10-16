@@ -1,0 +1,7 @@
+{
+  "name": "@aphrody/bun-windows-winrt",
+  "version": "1.4.4",
+  "description": "Re-exports bun:winrt (Windows Runtime projection) for the bun:windows WinRT families",
+  "license": "MIT",
+  "main": "index.js"
+}

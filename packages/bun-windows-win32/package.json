@@ -1,0 +1,17 @@
+{
+  "name": "@aphrody/bun-windows-win32",
+  "version": "1.4.4",
+  "description": "Win32 metadata (structs, enums, constants, callbacks, COM interfaces) shared by the bun:windows families, generated from Microsoft.Windows.SDK.Win32Metadata 71.0.30-preview",
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "manifest.json",
+    "types.json",
+    "ns",
+    "families",
+    "LICENSE-Microsoft.txt"
+  ]
+}
