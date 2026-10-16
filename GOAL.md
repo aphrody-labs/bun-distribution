@@ -4,6 +4,12 @@ Deliver one Bun OS product workspace from `C:\\src`, unifying Bun OS and Bun
 Libraries package/setup/build/install ownership while preserving source
 histories, active concurrent work, and all applicable license notices.
 
+The source integration scope covers every repository in the selected source
+directory: Bun, Android, Aphrody, APT, Material, IECODE and Shenron, with Bun
+Libraries history already integrated. The root catalog and pinned source graph
+own discovery/export; physical relocation and nested workspace migration remain
+separate gates while active work and protected local inputs are present.
+
 The root Bun workspace, setup command, dependency install, formatter, shared
 `node_modules`, Cargo `target`, build output, and install destination must have
 one canonical owner. Move source ownership only when imports, manifests,

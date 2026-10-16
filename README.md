@@ -6,6 +6,11 @@ library/runtime sources under one root Bun workspace. Source repositories are
 kept as revision-locked submodules so their histories and license notices stay
 available.
 
+All selected source-directory repositories are catalogued by the same root
+factory. `bun src/cli.ts workspace` reports pinned coverage and local checkout
+state. See [source workspace integration](docs/SOURCE-WORKSPACE.md) for physical
+migration and protected-state boundaries.
+
 ## Setup and quality
 
 Requires Bun 1.4.4, Git, and the native toolchains for the targets being built.
@@ -14,7 +19,7 @@ Requires Bun 1.4.4, Git, and the native toolchains for the targets being built.
 bun run setup
 bun check -p tsconfig.json --threads=2 --no-pretty
 bun lint --deny-warnings src container factory infra packages apps/desktop scripts
-bun fmt --check -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts
+bun fmt --check --config bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts
 bun n2b
 ```
 

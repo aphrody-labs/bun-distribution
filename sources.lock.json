@@ -1141,6 +1141,125 @@
       "mount": "sources/apt",
       "branch": "main",
       "gitlinks": []
+    },
+    {
+      "id": "android",
+      "repository": "aphrody-labs/bun-engine-android",
+      "revision": "06ea7d25b0e42c15103791ce85fb2dc3ec4d8863",
+      "mount": "sources/android",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "aphrody",
+      "repository": "aphrody-labs/aphrody",
+      "revision": "315786052e928880cd1e1cfcf029c7968004b8ca",
+      "mount": "sources/aphrody",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "shenron",
+      "repository": "aphrody-labs/shenron",
+      "revision": "0251b29f14d66e50c44d4812e28e682d6dc344b3",
+      "mount": "sources/shenron",
+      "branch": "main",
+      "gitlinks": [
+        {
+          "path": "packages/config",
+          "revision": "5fcb492b32f473546576718e9a35d4a870951c73",
+          "repository": "aphrody-labs/shenron-config"
+        }
+      ]
+    },
+    {
+      "id": "shenron/packages/config",
+      "repository": "aphrody-labs/shenron-config",
+      "revision": "5fcb492b32f473546576718e9a35d4a870951c73",
+      "mount": "sources/shenron/packages/config",
+      "parent": "shenron",
+      "submodulePath": "packages/config",
+      "gitlinks": []
+    },
+    {
+      "id": "iecode",
+      "repository": "aphrody-labs/iecode",
+      "revision": "ba98a9413704efc2e9aeb6262ddfb16746fe016d",
+      "mount": "sources/iecode",
+      "branch": "main",
+      "gitlinks": [
+        {
+          "path": "design/aphrody-m3",
+          "revision": "f54653807a810c615e6e9361a48945ef120a949c",
+          "repository": "aphrody-labs/aphrody-m3"
+        }
+      ]
+    },
+    {
+      "id": "iecode/design/aphrody-m3",
+      "repository": "aphrody-labs/aphrody-m3",
+      "revision": "f54653807a810c615e6e9361a48945ef120a949c",
+      "mount": "sources/iecode/design/aphrody-m3",
+      "parent": "iecode",
+      "submodulePath": "design/aphrody-m3",
+      "gitlinks": [
+        {
+          "path": "forks/fonts",
+          "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+          "repository": "aphrody-labs/fonts"
+        },
+        {
+          "path": "forks/material-color-utilities",
+          "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
+          "repository": "aphrody-labs/material-color-utilities"
+        },
+        {
+          "path": "forks/material-design-icons",
+          "revision": "737e3324305806514d7909874fa1818ae1808232",
+          "repository": "aphrody-labs/material-design-icons"
+        },
+        {
+          "path": "forks/material-web",
+          "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10",
+          "repository": "aphrody-labs/material-web"
+        }
+      ]
+    },
+    {
+      "id": "iecode/design/aphrody-m3/forks/fonts",
+      "repository": "aphrody-labs/fonts",
+      "revision": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+      "mount": "sources/iecode/design/aphrody-m3/forks/fonts",
+      "parent": "iecode/design/aphrody-m3",
+      "submodulePath": "forks/fonts",
+      "gitlinks": []
+    },
+    {
+      "id": "iecode/design/aphrody-m3/forks/material-color-utilities",
+      "repository": "aphrody-labs/material-color-utilities",
+      "revision": "51f0744f9cfbbef63f45c1058c2a883c5656b0fe",
+      "mount": "sources/iecode/design/aphrody-m3/forks/material-color-utilities",
+      "parent": "iecode/design/aphrody-m3",
+      "submodulePath": "forks/material-color-utilities",
+      "gitlinks": []
+    },
+    {
+      "id": "iecode/design/aphrody-m3/forks/material-design-icons",
+      "repository": "aphrody-labs/material-design-icons",
+      "revision": "737e3324305806514d7909874fa1818ae1808232",
+      "mount": "sources/iecode/design/aphrody-m3/forks/material-design-icons",
+      "parent": "iecode/design/aphrody-m3",
+      "submodulePath": "forks/material-design-icons",
+      "gitlinks": []
+    },
+    {
+      "id": "iecode/design/aphrody-m3/forks/material-web",
+      "repository": "aphrody-labs/material-web",
+      "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10",
+      "mount": "sources/iecode/design/aphrody-m3/forks/material-web",
+      "parent": "iecode/design/aphrody-m3",
+      "submodulePath": "forks/material-web",
+      "gitlinks": []
     }
   ]
 }

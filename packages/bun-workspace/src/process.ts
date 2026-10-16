@@ -1,10 +1,5 @@
 export type ProcessErrorCode =
-  | "INVALID_OPTIONS"
-  | "INTERRUPTED"
-  | "TIMEOUT"
-  | "OUTPUT_LIMIT"
-  | "START_FAILED"
-  | "FAILED";
+  "INVALID_OPTIONS" | "INTERRUPTED" | "TIMEOUT" | "OUTPUT_LIMIT" | "START_FAILED" | "FAILED";
 
 export class ProcessError extends Error {
   constructor(

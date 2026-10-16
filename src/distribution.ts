@@ -6,6 +6,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { sourceIntegrity } from "../container/source-integrity.ts";
 import { inspectLinuxABI } from "./elf.ts";
+import { sourceWorkspaceLocations } from "./source-workspace.ts";
 
 export const packageRoot = resolve(import.meta.dir, "..");
 export function materialCheckout(config: Config = {}): string {
@@ -192,7 +193,10 @@ export async function identity(path: string) {
 export async function contentIdentity(blob: Blob) {
   return {
     bytes: blob.size,
-    sha256: await hashStream(blob.stream(), { maxBytes: blob.size, expectedBytes: blob.size }),
+    sha256: await hashStream(blob.stream(), {
+      maxBytes: blob.size,
+      expectedBytes: blob.size,
+    }),
   };
 }
 
@@ -242,7 +246,11 @@ export async function assembleSources(output: string, config: Config) {
   return exportPinnedSources(output, {
     ...config.sourceExport,
     lock: await readLock(),
-    checkouts: { bun: runtimeCheckout(config), ...config.checkouts },
+    checkouts: {
+      ...(await sourceWorkspaceLocations(config)),
+      bun: runtimeCheckout(config),
+      ...config.checkouts,
+    },
   });
 }
 
@@ -354,7 +362,10 @@ export async function buildWasm(output: string, config: Config) {
       cwd: material,
       onlyFiles: true,
     }))
-      sourceFiles.push({ path: path.replaceAll("\\", "/"), ...(await identity(join(material, path))) });
+      sourceFiles.push({
+        path: path.replaceAll("\\", "/"),
+        ...(await identity(join(material, path))),
+      });
     sourceFiles.sort((a, b) => a.path.localeCompare(b.path));
     const receipt = {
       schemaVersion: 1,

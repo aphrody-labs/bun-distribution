@@ -177,14 +177,23 @@ async function hashFile(path: string): Promise<string> {
   }
   return digest.digest("hex");
 }
-async function proveConsumer(member: string, lock: any): Promise<Set<string>> {
+type DependencySection = "dependencies" | "devDependencies" | "optionalDependencies" | "peerDependencies";
+type LockedWorkspace = {
+  name: string;
+  version?: string;
+} & Partial<Record<DependencySection, Record<string, string>>>;
+interface BunLockfile {
+  workspaces?: Record<string, LockedWorkspace>;
+  packages?: Record<string, [identity: string, ...metadata: unknown[]]>;
+}
+async function proveConsumer(member: string, lock: BunLockfile): Promise<Set<string>> {
   const label = relative(root, member).replaceAll("\\", "/");
   const consumer = await Bun.file(join(member, "package.json")).json();
   const locked = lock.workspaces?.[label];
   if (!locked || locked.name !== consumer.name || locked.version !== consumer.version || consumer.version !== "1.4.4")
     throw new Error("Consumer manifest is not aligned with the root lockfile.");
   const known = new Set<string>();
-  for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
+  for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const) {
     for (const [name, requested] of Object.entries(consumer[section] ?? {})) {
       known.add(name);
       if (locked[section]?.[name] !== requested) throw new Error("Consumer declaration differs from lockfile.");
@@ -261,7 +270,7 @@ async function proveBuild(): Promise<void> {
   }
   if (receipt.sources.bunLockSHA256 !== (await hashFile(join(root, "bun.lock"))))
     throw new Error("Build receipt lockfile has changed.");
-  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as Record<string, any>;
+  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as BunLockfile;
   for (const member of members) await proveConsumer(member, lock);
   const files: { path: string; bytes: number; sha256: string }[] = [];
   async function walk(directory: string): Promise<void> {
@@ -310,7 +319,7 @@ async function qualifyAligned(member: string): Promise<{ links: string[]; snapsh
   if ((await git(["ls-files", "--", ownerPath], owner)).trim())
     throw new Error("Nested install contains Git-tracked paths.");
   await git(["check-ignore", "--quiet", ownerPath], owner);
-  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as Record<string, any>;
+  const lock = Bun.JSONC.parse(await Bun.file(join(root, "bun.lock")).text()) as BunLockfile;
   const known = await proveConsumer(member, lock);
   // The immutable original frontend manifests identify removed tooling; they do not authorize source deletion.
   if (owner !== root) {

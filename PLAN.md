@@ -1,5 +1,21 @@
 # Integration plan
 
+## Complete source-directory inventory — 2026-10-16
+
+- [x] Extend the existing pinned source graph with Android, Aphrody, IECODE/M3
+      and Shenron/config without changing the 85 existing pins: 95 mounts,
+      82 repository/revision identities and 82 gitlinks.
+- [x] Add the relative checkout catalog and read-only `bun src/cli.ts workspace`
+      inventory through the existing root CLI; connect catalog locations to
+      the canonical source exporter and check Bun Libraries ancestry.
+- [x] Preserve active sibling checkouts, the linked migration worktree, all
+      ignored/protected inputs and existing nested workspace owners.
+- [x] Fix formatter configuration selection for the installed native CLI:
+      use `--config`; its `-c` flag means check-only.
+- [ ] Complete physical source relocation after active consumers and protected
+      local state have explicit migration paths. Source coverage alone does
+      not qualify relocation, native builds or one Cargo/Bun workspace.
+
 ## Delivered in this batch
 
 - [x] Merge Bun OS and Bun Libraries histories into this checkout on branch `os`.

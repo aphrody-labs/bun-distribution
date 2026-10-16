@@ -39,6 +39,9 @@ packages-build selection:
 source-plan:
     bun run source:plan
 
+source-workspace:
+    bun run workspace:source
+
 source-refresh:
     bun run source:refresh
 

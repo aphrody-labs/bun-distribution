@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "..",
+  "components": [
+    {
+      "id": "bun-os",
+      "checkout": ".",
+      "repository": "aphrody-labs/bun-distribution",
+      "owner": "distribution assembly",
+      "integration": "root"
+    },
+    {
+      "id": "bun",
+      "checkout": "../bun",
+      "repository": "aphrody-labs/bun",
+      "owner": "runtime and native SDK",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "android",
+      "checkout": "../android",
+      "repository": "aphrody-labs/bun-engine-android",
+      "owner": "Android integration",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "aphrody",
+      "checkout": "../aphrody",
+      "repository": "aphrody-labs/aphrody",
+      "owner": "product integration and Infra",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "apt",
+      "checkout": "../apt",
+      "repository": "aphrody-labs/apt",
+      "owner": "Debian package manager",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "material",
+      "checkout": "../material",
+      "repository": "aphrody-labs/material",
+      "owner": "Material framework and shared UI",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "iecode",
+      "checkout": "../iecode",
+      "repository": "aphrody-labs/iecode",
+      "owner": "game tooling",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "shenron",
+      "checkout": "../shenron",
+      "repository": "aphrody-labs/shenron",
+      "owner": "DBFR application; production administered by Omar",
+      "integration": "pinned-source"
+    },
+    {
+      "id": "bun-libraries",
+      "checkout": "../bun-libraries",
+      "repository": "aphrody-labs/bun-libraries",
+      "owner": "Bun OS shared library workspace",
+      "integration": "merged-history",
+      "integratedRevision": "15cd85a497dbd7d9e07e4e01aad08109f04fdea8"
+    }
+  ]
+}

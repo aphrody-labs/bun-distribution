@@ -85,8 +85,8 @@ export async function decompress(data: Uint8Array, nativeDecoder?: string): Prom
       },
     );
   } catch (error) {
-    if (outputExceeded) throw new Error("Decoded data exceeds byte limit");
-    if (errorExceeded) throw new Error("Native decoder error output exceeds limit");
+    if (outputExceeded) throw new Error("Decoded data exceeds byte limit", { cause: error });
+    if (errorExceeded) throw new Error("Native decoder error output exceeds limit", { cause: error });
     throw error;
   }
   if (result.code !== 0) throw new Error(`Native ${format} decoder failed`);

@@ -217,7 +217,6 @@ export async function publishContentObject(
     throw new Error("R2 endpoint must be injected from the protected environment.");
   const objectKey = storage.prefix + expected.sha256;
   const object = client.file(objectKey);
-  let created = false;
   const put = await fetch(
     object.presign({ method: "PUT", expiresIn: 60, type: file.type || "application/octet-stream" }),
     {
@@ -234,7 +233,7 @@ export async function publishContentObject(
   );
   await put.body?.cancel();
   if (!put.ok && put.status !== 412) throw new Error("R2 conditional content write failed.");
-  created = put.status !== 412;
+  const created = put.status !== 412;
   const verified = await fetch(object.presign({ method: "GET", expiresIn: 60 }), {
     signal,
     redirect: "error",

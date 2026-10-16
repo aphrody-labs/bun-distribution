@@ -182,7 +182,7 @@ async function main(): Promise<void> {
     await mkdir(outputPath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-      throw new Error("Output must be fresh; choose a new --output path for each build.");
+      throw new Error("Output must be fresh; choose a new --output path for each build.", { cause: error });
     }
     throw error;
   }

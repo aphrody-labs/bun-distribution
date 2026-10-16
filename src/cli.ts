@@ -2,6 +2,7 @@
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { runProductCLI } from "../packages/bun-app-host/src/cli.ts";
+import { inspectSourceWorkspace } from "./source-workspace.ts";
 import {
   assembleSources,
   buildImage,
@@ -17,6 +18,7 @@ import {
 const usage = `Bun OS factory
   server serve [ROOT] | verify [BINARY] [RECEIPT] | --version
   plan [--profile full|perf] [--target linux-x64|linux-arm64|windows-x64|macos-arm64|wasm]
+  workspace [--config FILE]
   sources --out DIR [--config FILE]
   stage --out DIR --runtime FILE --receipt FILE --profile full|perf --target TARGET
   wasm --out DIR [--config FILE]
@@ -76,6 +78,12 @@ try {
     }
     let result: unknown;
     switch (positionals[0]) {
+      case "workspace": {
+        const workspace = await inspectSourceWorkspace(config);
+        if (!workspace.allSourceOwnersCovered) process.exitCode = 1;
+        result = workspace;
+        break;
+      }
       case "plan":
         result = await plan(profile, target, config);
         break;
