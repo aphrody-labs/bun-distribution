@@ -1,19 +1,19 @@
 {
   "name": "@aphrody/m3-showcase",
-  "version": "3.3.3",
+  "version": "1.4.4",
   "private": true,
   "description": "Adaptive Aphrody M3 web showcase with mobile, desktop and TV layouts, a Bun UI/API executable and a prepared canonical Tauri desktop shell.",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "inventory": "bun scripts/inventory.ts",
-    "dev": "bun scripts/inventory.ts && m3-bun dev",
-    "build": "bun scripts/inventory.ts && m3-bun build",
-    "serve": "m3-bun serve",
-    "compile": "bun scripts/inventory.ts && m3-bun compile",
-    "package": "m3-bun package",
-    "deploy": "m3-bun deploy all",
-    "smoke": "m3-bun smoke",
+    "dev": "bun scripts/inventory.ts && bun ../../packages/m3-bun/bin/m3-bun.ts dev",
+    "build": "bun scripts/inventory.ts && bun ../../packages/m3-bun/bin/m3-bun.ts build",
+    "serve": "bun ../../packages/m3-bun/bin/m3-bun.ts serve",
+    "compile": "bun scripts/inventory.ts && bun ../../packages/m3-bun/bin/m3-bun.ts compile",
+    "package": "bun ../../packages/m3-bun/bin/m3-bun.ts package",
+    "deploy": "bun ../../packages/m3-bun/bin/m3-bun.ts deploy all",
+    "smoke": "bun ../../packages/m3-bun/bin/m3-bun.ts smoke",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test ./test && bun run test:dom",
     "icons": "bun scripts/icons.ts",
@@ -31,6 +31,7 @@
     "@aphrody/m3-baseui": "workspace:*",
     "@aphrody/m3-bun": "workspace:*",
     "@aphrody/m3-codemods": "workspace:*",
+    "@aphrody/m3-config": "workspace:*",
     "@aphrody/m3-design": "workspace:*",
     "@aphrody/m3-explorer": "workspace:*",
     "@aphrody/m3-fonts": "workspace:*",
@@ -50,9 +51,16 @@
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.31.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "react-hook-form": "catalog:"
   },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "playwright-core": "catalog:"
+  },
   "engines": {
-    "bun": ">=1.4.2"
+    "bun": "=1.4.4"
   }
 }

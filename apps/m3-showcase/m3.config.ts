@@ -20,7 +20,7 @@ export const bun = defineM3Bun({
       title: "Aphrody M3 Showcase",
       publisher: "Aphrody",
       description: "Every @aphrody/m3 package in one adaptive app",
-      version: "3.3.3.0",
+      version: "1.4.4.0",
       copyright: "Apache-2.0",
     },
   },
