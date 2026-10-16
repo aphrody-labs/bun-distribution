@@ -91,6 +91,16 @@
     ]
   },
   "overlay": "factory/usr/overlay",
+  "multicall": {
+    "crate": "crates/bunos-utils",
+    "binary": "usr/bin/bunos-utils",
+    "target": "x86_64-unknown-linux-gnu",
+    "features": ["binutils", "procps", "diffutils", "coreutils", "findutils"],
+    "appletList": "usr/share/bun-os/bunos-utils.applets",
+    "linkDir": "usr/lib/bunos-utils/bin",
+    "install": "usr/lib/bun-os/install-bunos-utils <root>",
+    "reason": "Pacman packages own the GNU names in /usr/bin; the multicall links live in linkDir and take precedence when it is prepended to PATH."
+  },
   "images": {
     "formats": ["erofs", "squashfs"],
     "erofsCompression": "lz4hc,12",

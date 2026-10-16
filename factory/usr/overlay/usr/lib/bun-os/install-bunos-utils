@@ -1,0 +1,8 @@
+#!/bin/sh
+# Links every bunos-utils applet into /usr/lib/bunos-utils/bin (run by the /usr builder).
+set -eu
+root="${1:-}"
+dir="$root/usr/lib/bunos-utils/bin"
+[ -x "$root/usr/bin/bunos-utils" ] || exit 0
+mkdir -p "$dir"
+while read -r applet _suite; do ln -sf ../../../bin/bunos-utils "$dir/$applet"; done < "$root/usr/share/bun-os/bunos-utils.applets"

@@ -1,0 +1,128 @@
+[package]
+name = "bunos-utils"
+description = "Bun OS multicall system utilities: uutils coreutils/findutils plus procps, diffutils and binutils applets."
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "bunos-utils"
+path = "src/main.rs"
+
+[features]
+default = ["binutils", "procps", "diffutils"]
+binutils = ["dep:object", "dep:addr2line", "dep:rustc-demangle"]
+procps = ["dep:sysinfo"]
+diffutils = ["dep:similar"]
+# uutils (MIT) from crates.io; same upstream as toolchains/bun/src/coreutils.
+coreutils = [
+  "dep:uucore", "dep:uu_base32", "dep:uu_base64", "dep:uu_basename", "dep:uu_cat", "dep:uu_cksum",
+  "dep:uu_comm", "dep:uu_cp", "dep:uu_cut", "dep:uu_date", "dep:uu_dd", "dep:uu_df", "dep:uu_dirname",
+  "dep:uu_du", "dep:uu_echo", "dep:uu_env", "dep:uu_expand", "dep:uu_expr", "dep:uu_factor", "dep:uu_false",
+  "dep:uu_fmt", "dep:uu_fold", "dep:uu_head", "dep:uu_join", "dep:uu_link", "dep:uu_ln", "dep:uu_ls",
+  "dep:uu_mkdir", "dep:uu_mktemp", "dep:uu_mv", "dep:uu_nl", "dep:uu_nproc", "dep:uu_numfmt", "dep:uu_od",
+  "dep:uu_paste", "dep:uu_pr", "dep:uu_printenv", "dep:uu_printf", "dep:uu_pwd", "dep:uu_readlink",
+  "dep:uu_realpath", "dep:uu_rm", "dep:uu_rmdir", "dep:uu_seq", "dep:uu_shred", "dep:uu_shuf", "dep:uu_sleep",
+  "dep:uu_sort", "dep:uu_split", "dep:uu_sum", "dep:uu_tac", "dep:uu_tail", "dep:uu_tee", "dep:uu_test",
+  "dep:uu_touch", "dep:uu_tr", "dep:uu_true", "dep:uu_truncate", "dep:uu_tsort", "dep:uu_uname",
+  "dep:uu_unexpand", "dep:uu_uniq", "dep:uu_unlink", "dep:uu_wc", "dep:uu_whoami", "dep:uu_yes",
+  "dep:uu_chmod", "dep:uu_chown", "dep:uu_chgrp", "dep:uu_id", "dep:uu_install", "dep:uu_kill",
+  "dep:uu_mkfifo", "dep:uu_nohup", "dep:uu_stat", "dep:uu_sync", "dep:uu_timeout", "dep:uu_tty", "dep:uu_uptime",
+]
+findutils = ["dep:findutils"]
+
+[dependencies]
+object = { workspace = true, optional = true, features = ["read", "std", "archive"] }
+addr2line = { workspace = true, optional = true, features = ["loader", "std", "rustc-demangle"] }
+rustc-demangle = { version = "0.1", optional = true }
+sysinfo = { workspace = true, optional = true }
+similar = { workspace = true, optional = true, features = ["text"] }
+findutils = { version = "0.10", optional = true }
+uucore = { version = "0.12", optional = true }
+uu_base32 = { version = "0.12", optional = true }
+uu_base64 = { version = "0.12", optional = true }
+uu_basename = { version = "0.12", optional = true }
+uu_cat = { version = "0.12", optional = true }
+uu_cksum = { version = "0.12", optional = true }
+uu_comm = { version = "0.12", optional = true }
+uu_cp = { version = "0.12", optional = true }
+uu_cut = { version = "0.12", optional = true }
+uu_date = { version = "0.12", optional = true }
+uu_dd = { version = "0.12", optional = true }
+uu_df = { version = "0.12", optional = true }
+uu_dirname = { version = "0.12", optional = true }
+uu_du = { version = "0.12", optional = true }
+uu_echo = { version = "0.12", optional = true }
+uu_env = { version = "0.12", optional = true }
+uu_expand = { version = "0.12", optional = true }
+uu_expr = { version = "0.12", optional = true }
+uu_factor = { version = "0.12", optional = true }
+uu_false = { version = "0.12", optional = true }
+uu_fmt = { version = "0.12", optional = true }
+uu_fold = { version = "0.12", optional = true }
+uu_head = { version = "0.12", optional = true }
+uu_join = { version = "0.12", optional = true }
+uu_link = { version = "0.12", optional = true }
+uu_ln = { version = "0.12", optional = true }
+uu_ls = { version = "0.12", optional = true }
+uu_mkdir = { version = "0.12", optional = true }
+uu_mktemp = { version = "0.12", optional = true }
+uu_mv = { version = "0.12", optional = true }
+uu_nl = { version = "0.12", optional = true }
+uu_nproc = { version = "0.12", optional = true }
+uu_numfmt = { version = "0.12", optional = true }
+uu_od = { version = "0.12", optional = true }
+uu_paste = { version = "0.12", optional = true }
+uu_pr = { version = "0.12", optional = true }
+uu_printenv = { version = "0.12", optional = true }
+uu_printf = { version = "0.12", optional = true }
+uu_pwd = { version = "0.12", optional = true }
+uu_readlink = { version = "0.12", optional = true }
+uu_realpath = { version = "0.12", optional = true }
+uu_rm = { version = "0.12", optional = true }
+uu_rmdir = { version = "0.12", optional = true }
+uu_seq = { version = "0.12", optional = true }
+uu_shred = { version = "0.12", optional = true }
+uu_shuf = { version = "0.12", optional = true }
+uu_sleep = { version = "0.12", optional = true }
+uu_sort = { version = "0.12", optional = true }
+uu_split = { version = "0.12", optional = true }
+uu_sum = { version = "0.12", optional = true }
+uu_tac = { version = "0.12", optional = true }
+uu_tail = { version = "0.12", optional = true }
+uu_tee = { version = "0.12", optional = true }
+uu_test = { version = "0.12", optional = true }
+uu_touch = { version = "0.12", optional = true }
+uu_tr = { version = "0.12", optional = true }
+uu_true = { version = "0.12", optional = true }
+uu_truncate = { version = "0.12", optional = true }
+uu_tsort = { version = "0.12", optional = true }
+uu_uname = { version = "0.12", optional = true }
+uu_unexpand = { version = "0.12", optional = true }
+uu_uniq = { version = "0.12", optional = true }
+uu_unlink = { version = "0.12", optional = true }
+uu_wc = { version = "0.12", optional = true }
+uu_whoami = { version = "0.12", optional = true }
+uu_yes = { version = "0.12", optional = true }
+
+[target.'cfg(unix)'.dependencies]
+uu_chmod = { version = "0.12", optional = true }
+uu_chown = { version = "0.12", optional = true }
+uu_chgrp = { version = "0.12", optional = true }
+uu_id = { version = "0.12", optional = true }
+uu_install = { version = "0.12", optional = true }
+uu_kill = { version = "0.12", optional = true }
+uu_mkfifo = { version = "0.12", optional = true }
+uu_nohup = { version = "0.12", optional = true }
+uu_stat = { version = "0.12", optional = true }
+uu_sync = { version = "0.12", optional = true }
+uu_timeout = { version = "0.12", optional = true }
+uu_tty = { version = "0.12", optional = true }
+uu_uptime = { version = "0.12", optional = true }
+
+[lints]
+workspace = true
