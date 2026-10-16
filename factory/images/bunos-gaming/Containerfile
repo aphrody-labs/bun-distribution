@@ -10,8 +10,11 @@ ARG OMARCHY_SHA256
 COPY pacman.conf /etc/pacman.conf
 COPY install-packages.sh /usr/local/sbin/bunos-install-packages
 COPY usr.packages gaming.packages bootable.packages /usr/share/bun-os/
+# Local [bunos] repository (bun-aphrody, bunos-filesystem, aphrody, ...) built by `bun factory usr build --composition gaming`.
+COPY bunos-repo/ /var/lib/bun-os/repo/
 ADD --checksum=sha256:${OMARCHY_SHA256} https://github.com/basecamp/omarchy/archive/refs/tags/v${OMARCHY_VERSION}.tar.gz /tmp/omarchy.tar.gz
-RUN set -e; pacman-key --init; pacman-key --populate archlinux \
+RUN set -e; repo-add -q /var/lib/bun-os/repo/bunos.db.tar.zst /var/lib/bun-os/repo/*.pkg.tar.zst \
+  && pacman-key --init; pacman-key --populate archlinux \
   && for spec in ${PACMAN_KEYS}; do key=${spec%@*}; server=${spec#*@}; \
        pacman-key --keyserver "hkps://$server" --recv-keys "$key" && pacman-key --lsign-key "$key"; done \
   && pacman -Syu --noconfirm --needed git cachyos-keyring cachyos-mirrorlist \

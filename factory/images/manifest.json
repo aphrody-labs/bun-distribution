@@ -8,11 +8,17 @@
   "sources": "~/.local/share/bun-os/sources",
   "pins": {
     "bun": {
+      "version": "1.4.4",
+      "revision": "b2bcad9e46d80efba97fb60ef454abc1ebba9290",
+      "note": "Same aphrody-labs/bun build as factory/usr/pkgs/bun-aphrody; glibc x86_64 only.",
+      "file": "bun-aphrody-1.4.4-linux-x64.tar.gz",
+      "url": "https://github.com/aphrody-labs/bun/releases/download/native-candidate-20261014-b2bcad9e46/bun-linux-x64.tar.gz",
+      "sha256": "f3b26a658539d7ee33ab049d6c357355b46a492492012c9d1a1db9d59d192b93"
+    },
+    "bun-musl": {
       "version": "1.4.3",
-      "note": "Latest oven-sh/bun release with Linux binaries; the aphrody-labs bun-v1.4.4 release publishes no Linux assets yet.",
+      "note": "aphrody-labs/bun publishes no musl build of 1.4.4; bunos-alpine keeps the oven-sh musl release.",
       "assets": {
-        "bun-linux-x64.zip": "3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18",
-        "bun-linux-aarch64.zip": "efa9813da5ed72423bf847f916e8d2c47c0d776add972354026a75e10da9aa21",
         "bun-linux-x64-musl.zip": "6e9ea98554ea0d05efda5840ae292618aaa3adefd66b0853520c5c86a37eac9c",
         "bun-linux-aarch64-musl.zip": "8de8a0003cc2707bb555887e3d450e24e1edf3f605f491393e89ed61a8853420"
       },
@@ -91,9 +97,18 @@
       "usrComposition": "gaming",
       "agentTooling": {
         "note": "Claude Code and Codex skills and MCP servers for Omarchy/Arch; installed into /etc/skel/.claude and /etc/skel/.codex.",
-        "packages": ["arch-wiki-docs", "namcap", "expac", "pacman-contrib", "devtools"],
+        "packages": [
+          "arch-wiki-docs",
+          "namcap",
+          "expac",
+          "pacman-contrib",
+          "devtools"
+        ],
         "skills": [
-          { "name": "arch-linux", "source": "packages/bun-arch-mcp/skills/arch-linux" },
+          {
+            "name": "arch-linux",
+            "source": "packages/bun-arch-mcp/skills/arch-linux"
+          },
           {
             "name": "omarchy",
             "repo": "https://github.com/robzolkos/omarchy-skill",
@@ -112,7 +127,9 @@
             "name": "bun-arch",
             "command": ["bun", "/usr/share/bun-os/bun-arch-mcp/src/mcp.ts"],
             "source": "packages/bun-arch-mcp",
-            "env": { "ARCH_WIKI_HTML": "/usr/share/doc/arch-wiki/html" }
+            "env": {
+              "ARCH_WIKI_HTML": "/usr/share/doc/arch-wiki/html"
+            }
           },
           {
             "name": "arch-wiki",

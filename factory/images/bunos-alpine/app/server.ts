@@ -9,9 +9,12 @@ const server = Bun.serve({
     const { pathname } = new URL(request.url);
     if (pathname === "/healthz") return new Response("ok");
     const path = pathname.endsWith("/") ? `${pathname}index.html` : pathname;
-    if (path.includes("..")) return new Response("Bad Request", { status: 400 });
+    if (path.includes(".."))
+      return new Response("Bad Request", { status: 400 });
     const file = Bun.file(`${root}${path}`);
-    return (await file.exists()) ? new Response(file) : new Response("Not Found", { status: 404 });
+    return (await file.exists())
+      ? new Response(file)
+      : new Response("Not Found", { status: 404 });
   },
 });
 

@@ -18,13 +18,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
   && rm -rf /var/lib/apt/lists/*
 
 FROM base AS bun
-ARG BUN_VERSION
+ARG BUN_URL
 ARG BUN_SHA256_AMD64
-ADD --checksum=sha256:${BUN_SHA256_AMD64} https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip /tmp/bun.zip
-RUN cd /tmp && unzip -q bun.zip && install -m755 bun-linux-x64/bun /usr/local/bin/bun
+# aphrody-labs/bun 1.4.4 (bun:python, Bun Shell): the build packaged as factory/usr bun-aphrody.
+ADD --checksum=sha256:${BUN_SHA256_AMD64} ${BUN_URL} /tmp/bun.tar.gz
+RUN cd /tmp && tar -xzf bun.tar.gz && install -m755 bun-linux-x64/bun /usr/local/bin/bun \
+  && install -Dm644 -t /usr/share/licenses/bun-aphrody bun-linux-x64/LICENSE.md bun-linux-x64/MULLVAD-*.md \
+  && rm -rf /tmp/bun*
 
 FROM base AS desktop
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=bun /usr/share/licenses/bun-aphrody/ /usr/share/licenses/bun-aphrody/
 ARG COSMIC_APT_SERVER
 ARG COSMIC_APT_SUITE
 ARG COSMIC_APT_KEY
