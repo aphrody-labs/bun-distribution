@@ -1,5 +1,5 @@
 import { rename, readdir, appendFile } from "node:fs/promises";
-import { resolve, relative, dirname, isAbsolute, sep, extname } from "node:path";
+import { resolve, relative, isAbsolute, sep, extname } from "node:path";
 
 export type Source = { id: string; kind: string; [key: string]: unknown };
 export type Topic = { id: string; title: string; sources: Source[] };
