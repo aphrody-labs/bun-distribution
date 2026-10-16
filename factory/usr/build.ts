@@ -125,7 +125,7 @@ async function build(composition: UsrComposition, host: string, verity: boolean)
       [
         "scp",
         ...sshOptions,
-        ..."-r",
+        "-r",
         ...["env", "pacman.conf", "packages.txt", "builder.sh"].map(f => join(stage, f)),
         resolve(workspace, manifest.overlay),
         `${host}:${remote}/`,
