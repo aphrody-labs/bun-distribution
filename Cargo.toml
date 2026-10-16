@@ -146,7 +146,7 @@ aphrody-vpn = { path = "crates/infra/vpn", version = "1.4.4", features = [] }
 aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "1.4.4", features = [] }
 aphrody-wireguard = { path = "crates/infra/wireguard", version = "1.4.4", features = [] }
 aphrody-web-crawl = { path = "../bun/packages/web/rust/crates/web-crawl", version = "1.4.4", features = [] }
-aphrody-web-detect = { path = "../bun/packages/web/rust/crates/web-detect", version = "1.4.4", features = [] }
+aphrody-web-detect = { path = "../bun/src/browser/crates/detect", version = "1.4.4", package = "bun_browser_detect", features = ["fetch"] }
 yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.4.4" }
 aphrody-web-engine = { path = "../bun/packages/web/rust/crates/web-engine", version = "1.4.4", features = [] }
 aphrody-web-extract = { path = "../bun/packages/web/rust/crates/web-extract", version = "1.4.4", features = [] }
