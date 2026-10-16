@@ -3,6 +3,7 @@
 resolver = "3"
 members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/ostd/*", "crates/os/kernel/core", "crates/os/kernel/client", "crates/os/kernel/comps/*", "crates/os/kernel/libs/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/interop/*", "crates/engine/*", "crates/tauri/*", "crates/pkg/*"]
 exclude = [
+  "crates/ai/jev",
   "crates/shell/web",
   "crates/contracts/schema",
   "crates/os/kernel/comps/drive",
@@ -92,7 +93,7 @@ aphrody-http-error = { path = "crates/ai/http-error", version = "1.4.4", feature
 aphrody-infer = { path = "crates/ai/infer", version = "1.4.4", features = ["onnx"] }
 aphrody-infra = { path = "crates/infra/infra", version = "1.4.4" }
 aphrody-ovh = { path = "crates/infra/ovh", version = "1.4.4" }
-aphrody-jev = { path = "crates/ai/jev", version = "1.4.4", features = [] }
+aphrody-jev = { git = "https://github.com/aphrody-labs/bun", rev = "892ea1ae93820a9ea839027ff466f44f732ccfa8", version = "1.4.4", default-features = false, features = ["client"] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.4.4", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.4.4", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.4.4", features = [] }

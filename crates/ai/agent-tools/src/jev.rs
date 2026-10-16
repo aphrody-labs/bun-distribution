@@ -45,7 +45,15 @@ impl JevDecideTool {
     /// # Errors
     /// A present but invalid configuration (for example a malformed URL).
     pub fn from_env() -> Result<Option<Self>, JevError> {
-        match JevRouter::from_env() {
+        Self::from_env_with_native_endpoint(None)
+    }
+
+    /// Use the product's selected chat endpoint without discovering host processes here.
+    ///
+    /// # Errors
+    /// A present but invalid Jev configuration.
+    pub fn from_env_with_native_endpoint(endpoint: Option<&str>) -> Result<Option<Self>, JevError> {
+        match JevRouter::from_env_with_native_endpoint(endpoint) {
             Ok(router) => Ok(Some(Self::new(Arc::new(router)))),
             Err(JevError::NoBackend) => Ok(None),
             Err(error) => Err(error),
@@ -189,7 +197,7 @@ mod tests {
         let base = format!("http://{}", listener.local_addr().unwrap());
         let app = Router::new().route("/v1/systemone", post(|Json(input): Json<serde_json::Value>| async move {
             assert_eq!(input["state"], json!({"fixture":true}));
-            Json(json!({"model":"fixture","answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
+            Json(json!({"model":"fixture","usage":null,"answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
         }));
         let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         let router = JevRouter::new(

@@ -34,7 +34,12 @@ pub(crate) struct JevDecideRequest {
 
 fn router() -> Result<&'static Arc<JevRouter>, String> {
     static ROUTER: OnceLock<Arc<JevRouter>> = OnceLock::new();
-    configured_router(&ROUTER, JevRouter::from_env)
+    configured_router(&ROUTER, || {
+        let endpoint = aphrody_config::ai_env::CHAT_BASE_URL.resolve().or_else(|| {
+            crate::shenron_llm_backend::running_managed_url().map(|url| url.to_string())
+        });
+        JevRouter::from_env_with_native_endpoint(endpoint.as_deref())
+    })
 }
 
 fn configured_router(
@@ -120,7 +125,7 @@ mod tests {
         })
         .await;
         let output: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert!(output["error"].as_str().unwrap().contains("at least one question"));
+        assert!(output["error"].as_str().unwrap().contains("1 to 64 named questions"));
     }
 
     #[tokio::test]
@@ -142,7 +147,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
         let app = Router::new().route("/v1/systemone", post(|| async {
-            Json(json!({"model":"fixture","answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
+            Json(json!({"model":"fixture","usage":null,"answers":{"tool":{"type":"choice","choice":"read","confidence":0.7,"probabilities":{"read":0.7,"search":0.3}}}}))
         }));
         let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         let router = JevRouter::new(

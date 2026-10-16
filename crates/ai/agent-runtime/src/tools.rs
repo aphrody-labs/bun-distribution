@@ -366,7 +366,12 @@ pub fn build_tool_registry(config: &RuntimeConfig) -> Result<Arc<ToolRegistry>, 
     )?;
 
     // Jev typed decisions, only when a Jev backend is configured.
-    match JevDecideTool::from_env() {
+    let mut jev_endpoint = aphrody_config::ai_env::CHAT_BASE_URL.resolve();
+    if jev_endpoint.is_none() {
+        jev_endpoint = aphrody_llama_server::discover_running(aphrody_llama_server::Role::Chat)
+            .map(|server| server.base_url());
+    }
+    match JevDecideTool::from_env_with_native_endpoint(jev_endpoint.as_deref()) {
         Ok(tool) => register_jev_tool(&mut registry, profile, tool)?,
         Err(error) => tracing::warn!(%error, "jev_decide disabled: invalid Jev configuration"),
     }
