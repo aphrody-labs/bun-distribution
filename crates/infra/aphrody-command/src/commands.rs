@@ -415,7 +415,8 @@ impl AutoCommand {
             .bright_black()
         );
 
-        let status = std::process::Command::new(cmd).no_window()
+        let status = std::process::Command::new(cmd)
+            .no_window()
             .args(args)
             .status()
             .map_err(|e| miette::miette!("Erreur lors de l'appel au moteur {}: {}", cmd, e))?;
@@ -448,7 +449,9 @@ impl TerminalCommand for GoogleCommand {
                 println!("Usage: aphrody google <COMMAND> [OPTIONS]");
                 println!();
                 println!("Commands:");
-                println!("  routes               Print public Google routes and official web guidance as JSON");
+                println!(
+                    "  routes               Print public Google routes and official web guidance as JSON"
+                );
                 println!(
                     "  dns <NAME> [TYPE]    Query Google Public DNS-over-HTTPS (A, AAAA, MX, TXT...)"
                 );
@@ -481,7 +484,11 @@ impl TerminalCommand for GoogleCommand {
                 if self.args.len() > 1 && self.args[1..] != ["--json"] {
                     return Err(miette::miette!("Usage: aphrody google routes [--json]"));
                 }
-                println!("{}", serde_json::to_string_pretty(&aphrody_google::routes::catalog()).map_err(|error| miette::miette!("{error}"))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&aphrody_google::routes::catalog())
+                        .map_err(|error| miette::miette!("{error}"))?
+                );
                 return Ok(());
             },
             "dns" => {
@@ -781,7 +788,8 @@ impl TerminalCommand for SshCommand {
         if is_openssh_config_dump(&self.args) {
             let ssh = which::which("ssh")
                 .map_err(|_| miette::miette!("OpenSSH `ssh` introuvable dans PATH"))?;
-            let status = std::process::Command::new(&ssh).no_window()
+            let status = std::process::Command::new(&ssh)
+                .no_window()
                 .args(&self.args)
                 .status()
                 .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", ssh.display()))?;
@@ -794,10 +802,12 @@ impl TerminalCommand for SshCommand {
         if let Ok(explicit) = std::env::var("APHRODY_SSH_BIN") {
             let p = std::path::PathBuf::from(explicit.trim());
             if !explicit.trim().is_empty() && p.exists() {
-                let status = std::process::Command::new(&p).no_window()
-                    .args(&self.args)
-                    .status()
-                    .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", p.display()))?;
+                let status =
+                    std::process::Command::new(&p)
+                        .no_window()
+                        .args(&self.args)
+                        .status()
+                        .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", p.display()))?;
                 if !status.success() {
                     return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
                 }
@@ -821,16 +831,78 @@ impl TerminalCommand for SshCommand {
 /// profile that answered. There is no fallback to another scraper: it would bring the silent
 /// failure back.
 pub(crate) struct SearchCommand {
+    pub provider: String,
+    pub count: Option<u16>,
+    pub offset: Option<u16>,
+    pub freshness: Option<String>,
+    pub country: Option<String>,
+    pub json: bool,
     pub query: Vec<String>,
+}
+
+impl SearchCommand {
+    async fn brave(&self, q: String) -> miette::Result<()> {
+        use crate::brave_search as brave;
+        let freshness = self
+            .freshness
+            .as_deref()
+            .map(brave::validate_freshness)
+            .transpose()
+            .map_err(|e| miette::miette!("--freshness : {e}"))?;
+        let key = brave::api_key(&aphrody_secrets::EnvSecretStore::new()).await?;
+        let query = brave::WebQuery {
+            q,
+            count: self.count,
+            offset: self.offset,
+            freshness,
+            country: self.country.clone(),
+        };
+        let hits = brave::web_search(&brave::base_url(), &key, &query).await?;
+        if self.json {
+            let out = serde_json::json!({ "provider": "brave", "query": query.q, "results": hits });
+            println!("{}", serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?);
+            return Ok(());
+        }
+        for hit in &hits {
+            println!(
+                "
+{}",
+                hit.title.bold().green()
+            );
+            println!("{}", hit.url.cyan().underline());
+            if !hit.snippet.is_empty() {
+                println!("{}", hit.snippet);
+            }
+        }
+        println!(
+            "
+{}",
+            "via Brave Search API".dimmed()
+        );
+        Ok(())
+    }
 }
 
 #[async_trait]
 impl TerminalCommand for SearchCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
         let q = self.query.join(" ");
-        println!("{}", format!("🔍 Recherche : {}", q).bold().blue());
+        if q.trim().is_empty() {
+            return Err(miette::miette!("requête vide"));
+        }
+        if self.provider == "brave" {
+            return self.brave(q).await;
+        }
+        if !self.json {
+            println!("{}", format!("🔍 Recherche : {}", q).bold().blue());
+        }
 
-        let options = aphrody_google::search::SearchOptions { num: Some(10), ..Default::default() };
+        let num = u8::try_from(self.count.unwrap_or(10)).unwrap_or(u8::MAX);
+        let options = aphrody_google::search::SearchOptions {
+            num: Some(num),
+            start: self.offset.map(u32::from),
+            ..Default::default()
+        };
         let results = match aphrody_google::search::search_rich(&q, &options).await {
             Ok(res) => res,
             Err(e) => {
@@ -859,7 +931,23 @@ impl TerminalCommand for SearchCommand {
             },
         };
 
-        for hit in results.content.organic.iter().take(10) {
+        if self.json {
+            let hits: Vec<_> = results
+                .content
+                .organic
+                .iter()
+                .take(usize::from(num))
+                .map(|h| crate::brave_search::Hit {
+                    title: h.title.clone(),
+                    url: h.url.clone(),
+                    snippet: h.snippet.clone(),
+                })
+                .collect();
+            let out = serde_json::json!({ "provider": "google", "query": q, "results": hits });
+            println!("{}", serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?);
+            return Ok(());
+        }
+        for hit in results.content.organic.iter().take(usize::from(num)) {
             println!("\n{}", hit.title.bold().green());
             if !hit.url.is_empty() {
                 println!("{}", hit.url.cyan().underline());

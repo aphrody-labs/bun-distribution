@@ -12,6 +12,8 @@ pub mod ai_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
 #[cfg(not(target_arch = "wasm32"))]
+mod brave_search;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod codex_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod commands;
@@ -75,13 +77,13 @@ mod runtime_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod scan_cmd;
 #[cfg(not(target_arch = "wasm32"))]
-mod site_cmd;
-#[cfg(not(target_arch = "wasm32"))]
 mod self_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod self_install;
 #[cfg(not(target_arch = "wasm32"))]
 mod self_update;
+#[cfg(not(target_arch = "wasm32"))]
+mod site_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -306,8 +308,26 @@ enum Commands {
         #[command(subcommand)]
         action: A2aAction,
     },
-    /// Recherche Google Native
+    /// Recherche web (Google natif par défaut, Brave Search API avec `--provider brave`)
     Search {
+        /// Backend : google ou brave (clé `BRAVE_SEARCH_API_KEY`)
+        #[arg(long, default_value = "google", value_parser = ["google", "brave"])]
+        provider: String,
+        /// Nombre de résultats
+        #[arg(long)]
+        count: Option<u16>,
+        /// Décalage de pagination (brave)
+        #[arg(long)]
+        offset: Option<u16>,
+        /// Fraîcheur (brave) : pd, pw, pm, py ou YYYY-MM-DDtoYYYY-MM-DD
+        #[arg(long)]
+        freshness: Option<String>,
+        /// Code pays (brave), ex. US, FR
+        #[arg(long)]
+        country: Option<String>,
+        /// Sortie JSON
+        #[arg(long)]
+        json: bool,
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         query: Vec<String>,
     },
@@ -1183,8 +1203,10 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::A2a { action }) => {
             commands::dispatch_a2a(action, ctx).await?;
         },
-        Some(Commands::Search { query }) => {
-            commands::SearchCommand { query }.execute(ctx).await?;
+        Some(Commands::Search { provider, count, offset, freshness, country, json, query }) => {
+            commands::SearchCommand { provider, count, offset, freshness, country, json, query }
+                .execute(ctx)
+                .await?;
         },
         Some(Commands::Google { args }) => {
             commands::GoogleCommand { args }.execute(ctx).await?;
@@ -1858,6 +1880,42 @@ mod tests {
                 },
                 _ => panic!("expected translation"),
             }
+        });
+    }
+
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn search_parses_brave_flags() {
+        in_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "aphrody",
+                "search",
+                "--provider",
+                "brave",
+                "--count",
+                "5",
+                "--offset",
+                "2",
+                "--freshness",
+                "pw",
+                "--country",
+                "FR",
+                "--json",
+                "rust",
+                "async",
+            ])
+            .expect("search parses");
+            let Some(Commands::Search { provider, count, offset, freshness, country, json, query }) =
+                cli.command
+            else {
+                panic!("expected search")
+            };
+            assert_eq!(provider, "brave");
+            assert_eq!((count, offset), (Some(5), Some(2)));
+            assert_eq!((freshness.as_deref(), country.as_deref()), (Some("pw"), Some("FR")));
+            assert!(json);
+            assert_eq!(query, ["rust", "async"]);
+            assert!(Cli::try_parse_from(["aphrody", "search", "--provider", "bing", "x"]).is_err());
         });
     }
 

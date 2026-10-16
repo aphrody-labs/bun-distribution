@@ -187,7 +187,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 316 comma
   - `aphrody a2a peers` — List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.
   - `aphrody a2a inbox` — Read this agent's hub mailbox (newest first); `--ack` sends read receipts.
   - `aphrody a2a register` — Refresh this agent's presence on the hub and print its identity.
-- `aphrody search` — Recherche Google Native
+- `aphrody search` — Recherche web (Google natif par défaut, Brave Search API avec `--provider brave`)
 - `aphrody google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
 - `aphrody translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
 - `aphrody n2b` — Execute the integrated N2B engine (Node 2 Bun) in-process; also the `n2b` link.

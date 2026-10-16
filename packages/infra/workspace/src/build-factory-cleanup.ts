@@ -475,7 +475,9 @@ export async function prewarmFactorySccache(config: BuildFactoryConfig, binary =
   const cacheRoot = inheritedLease
     ? posix.join(posix.dirname(process.env.APHRODY_FACTORY_RESOURCE!), "cache")
     : config.cacheRoot;
-  const cache = posix.join(cacheRoot, "sccache");
+  // The cache root may be a host-managed symlink (storage pool); compare against its real path.
+  mkdirSync(posix.join(cacheRoot, "sccache"), { recursive: true, mode: 0o700 });
+  const cache = realpathSync(posix.join(cacheRoot, "sccache"));
   const controlTmp = posix.join(cache, "control-plane-tmp");
   mkdirSync(controlTmp, { recursive: true, mode: 0o700 });
   if (lstatSync(controlTmp).isSymbolicLink() || realpathSync(controlTmp) !== controlTmp)
