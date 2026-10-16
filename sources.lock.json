@@ -1221,6 +1221,158 @@
       "mount": "vendor/uutils-findutils",
       "branch": "main",
       "gitlinks": []
+    },
+    {
+      "id": "vendor/uutils/procps",
+      "repository": "aphrody-labs/uutils-procps",
+      "revision": "b536810e8746385e1862aa8e344821854e2fea79",
+      "mount": "vendor/uutils/procps",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/uutils/util-linux",
+      "repository": "aphrody-labs/uutils-util-linux",
+      "revision": "09959d43054c2af206c4fb9c725224d629e47e7f",
+      "mount": "vendor/uutils/util-linux",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/archisteamfarm",
+      "repository": "JustArchiNET/ArchiSteamFarm",
+      "revision": "a044ad607c6d55dcdea4a373cdd5afd804f5b217",
+      "mount": "vendor/steam/archisteamfarm",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/depotdownloader",
+      "repository": "SteamRE/DepotDownloader",
+      "revision": "6396afe2e34a6c40459bcb6bdafa43c83c9db8cc",
+      "mount": "vendor/steam/depotdownloader",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/facepunch-steamworks",
+      "repository": "Facepunch/Facepunch.Steamworks",
+      "revision": "a9ab9a18208bd2532933e46a35860296d7dda688",
+      "mount": "vendor/steam/facepunch-steamworks",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/internalsteamwebapi",
+      "repository": "Revadike/InternalSteamWebAPI",
+      "revision": "ebe75a861a374c7c95b59a8906a8c19cad6c1ca5",
+      "mount": "vendor/steam/internalsteamwebapi",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/node-steam-user",
+      "repository": "DoctorMcKay/node-steam-user",
+      "revision": "02818bd08090b58ff54f1d9ce0073319b8e1eef7",
+      "mount": "vendor/steam/node-steam-user",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/protobufs",
+      "repository": "SteamTracking/Protobufs",
+      "revision": "f7a8414fee565b2b92a68520a70024c5ccb0c12d",
+      "mount": "vendor/steam/protobufs",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/python-steam",
+      "repository": "ValvePython/steam",
+      "revision": "26166e047b66a7be10bdf3c90e2e14de9283ab5a",
+      "mount": "vendor/steam/python-steam",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamachievementmanager",
+      "repository": "gibbed/SteamAchievementManager",
+      "revision": "de8b71048a0cee3c3e97cd8535e0f55ca86513e4",
+      "mount": "vendor/steam/steamachievementmanager",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamappinfo",
+      "repository": "xPaw/SteamAppInfo",
+      "revision": "32a4912a9b49679cfc6a7c6f7988b39ba86b267a",
+      "mount": "vendor/steam/steamappinfo",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamctl",
+      "repository": "ValvePython/steamctl",
+      "revision": "274a8db0ccedb7cf1f80546581916874c20dc317",
+      "mount": "vendor/steam/steamctl",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamkit",
+      "repository": "SteamRE/SteamKit",
+      "revision": "b05e5ff7bc117b62840202df2f96499ad4ae9052",
+      "mount": "vendor/steam/steamkit",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamlocate-rs",
+      "repository": "CosmicHorrorDev/steamlocate-rs",
+      "revision": "ab86878d79a2df3214c3f01d21e1cb9b5adb7204",
+      "mount": "vendor/steam/steamlocate-rs",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamtools",
+      "repository": "BeyondDimension/SteamTools",
+      "revision": "d04213147e77a8d73277fa8b86eeecfa444df071",
+      "mount": "vendor/steam/steamtools",
+      "branch": "develop",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamwebapidocumentation",
+      "repository": "xPaw/SteamWebAPIDocumentation",
+      "revision": "249bdff382f8fc8c97028c885c808b4b840d3f39",
+      "mount": "vendor/steam/steamwebapidocumentation",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamworks-js",
+      "repository": "ceifa/steamworks.js",
+      "revision": "80c5fd7c4958ba90cf87403c3f967b8a6d748473",
+      "mount": "vendor/steam/steamworks-js",
+      "branch": "main",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/steamworks-net",
+      "repository": "rlabrecque/Steamworks.NET",
+      "revision": "ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
+      "mount": "vendor/steam/steamworks-net",
+      "branch": "master",
+      "gitlinks": []
+    },
+    {
+      "id": "vendor/steam/valvekeyvalue",
+      "repository": "ValveResourceFormat/ValveKeyValue",
+      "revision": "1253961d9220a98b400c918a16a348a75fc2cbb1",
+      "mount": "vendor/steam/valvekeyvalue",
+      "branch": "master",
+      "gitlinks": []
     }
   ]
 }

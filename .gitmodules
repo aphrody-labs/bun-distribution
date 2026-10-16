@@ -439,6 +439,74 @@
 	shallow = true
 [submodule "vendor/uutils/util-linux"]
 	path = vendor/uutils/util-linux
+[submodule "vendor/steam/steamkit"]
+	path = vendor/steam/steamkit
+	url = https://github.com/SteamRE/SteamKit.git
+	branch = master
+[submodule "vendor/steam/depotdownloader"]
+	path = vendor/steam/depotdownloader
+	url = https://github.com/SteamRE/DepotDownloader.git
+	branch = master
+[submodule "vendor/steam/protobufs"]
+	path = vendor/steam/protobufs
+	url = https://github.com/SteamTracking/Protobufs.git
+	branch = master
+[submodule "vendor/steam/valvekeyvalue"]
+	path = vendor/steam/valvekeyvalue
+	url = https://github.com/ValveResourceFormat/ValveKeyValue.git
+	branch = master
+[submodule "vendor/steam/steamappinfo"]
+	path = vendor/steam/steamappinfo
+	url = https://github.com/xPaw/SteamAppInfo.git
+	branch = master
+[submodule "vendor/steam/steamwebapidocumentation"]
+	path = vendor/steam/steamwebapidocumentation
+	url = https://github.com/xPaw/SteamWebAPIDocumentation.git
+	branch = master
+[submodule "vendor/steam/python-steam"]
+	path = vendor/steam/python-steam
+	url = https://github.com/ValvePython/steam.git
+	branch = master
+[submodule "vendor/steam/steamctl"]
+	path = vendor/steam/steamctl
+	url = https://github.com/ValvePython/steamctl.git
+	branch = master
+[submodule "vendor/steam/internalsteamwebapi"]
+	path = vendor/steam/internalsteamwebapi
+	url = https://github.com/Revadike/InternalSteamWebAPI.git
+	branch = master
+[submodule "vendor/steam/facepunch-steamworks"]
+	path = vendor/steam/facepunch-steamworks
+	url = https://github.com/Facepunch/Facepunch.Steamworks.git
+	branch = master
+[submodule "vendor/steam/steamworks-net"]
+	path = vendor/steam/steamworks-net
+	url = https://github.com/rlabrecque/Steamworks.NET.git
+	branch = master
+[submodule "vendor/steam/archisteamfarm"]
+	path = vendor/steam/archisteamfarm
+	url = https://github.com/JustArchiNET/ArchiSteamFarm.git
+	branch = main
+[submodule "vendor/steam/steamtools"]
+	path = vendor/steam/steamtools
+	url = https://github.com/BeyondDimension/SteamTools.git
+	branch = develop
+[submodule "vendor/steam/steamachievementmanager"]
+	path = vendor/steam/steamachievementmanager
+	url = https://github.com/gibbed/SteamAchievementManager.git
+	branch = master
+[submodule "vendor/steam/steamworks-js"]
+	path = vendor/steam/steamworks-js
+	url = https://github.com/ceifa/steamworks.js.git
+	branch = main
+[submodule "vendor/steam/node-steam-user"]
+	path = vendor/steam/node-steam-user
+	url = https://github.com/DoctorMcKay/node-steam-user.git
+	branch = master
+[submodule "vendor/steam/steamlocate-rs"]
+	path = vendor/steam/steamlocate-rs
+	url = https://github.com/CosmicHorrorDev/steamlocate-rs.git
+	branch = master
 	url = https://github.com/aphrody-labs/uutils-util-linux.git
 	branch = main
 	shallow = true
