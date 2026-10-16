@@ -1,0 +1,10 @@
+{
+  "name": "@bun-os/re",
+  "version": "1.4.4",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Bun OS reverse-engineering tools (pipeline CLI, MCP tools, local API).",
+  "bin": { "re-pipeline": "src/pipeline/cli.ts" },
+  "exports": { "./pipeline": "./src/pipeline/index.ts" }
+}
