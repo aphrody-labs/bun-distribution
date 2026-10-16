@@ -40,6 +40,7 @@ use crate::steam::planning::{
     ExistingPath, ExistingPathKind, ManifestEntry, PlanningLimits, plan_manifest_application,
 };
 use crate::steam::session::SteamSession;
+use crate::steam::transfer::{CachedFetcher, RateLimiter, TransferStats};
 
 // ─── Downloader ───────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ impl SteamDepotDownloader {
         }
 
         // CDN servers.
-        let cdn_servers = session.cdn_servers(0, Some(20)).await.context("CDN servers")?;
+        let cdn_servers = session.cdn_servers(0, Some(opts.transfer.cdn_pool_size.clamp(1, 200) as _)).await.context("CDN servers")?;
         if cdn_servers.is_empty() {
             anyhow::bail!("Aucun serveur CDN Steam disponible.");
         }
@@ -152,6 +153,12 @@ impl SteamDepotDownloader {
         let mut completed_depots: Vec<u32> = Vec::new();
 
         emit(&progress, SteamDownloadPhase::Downloading, "Téléchargement en cours…", 0, 0);
+
+        let tstats = Arc::new(TransferStats::default());
+        let tstats_report = tstats.clone();
+        let limiter = RateLimiter::new(opts.transfer.max_rate_bytes_per_sec);
+        let depot_sem = Arc::new(tokio::sync::Semaphore::new(opts.transfer.max_depot_parallel.max(1)));
+        let mut depot_set: tokio::task::JoinSet<Result<(u32, u64, u64)>> = tokio::task::JoinSet::new();
 
         for plan in &plans {
             let cdn_auth_token =
@@ -202,166 +209,199 @@ impl SteamDepotDownloader {
                 );
             }
 
-            let (event_tx, mut event_rx) = mpsc::unbounded_channel::<DownloadEvent>();
+            let depot_id = plan.depot_id;
+            let depot_key = plan.depot_key.clone();
+            let install_dir = opts.install_dir.clone();
+            let max_downloads = opts.max_downloads;
+            let verify = opts.verify;
+            let stall_timeout = opts.stall_timeout;
+            let progress = progress.clone();
+            let cdn_servers = cdn_servers.clone();
+            let chunk_cache = opts.transfer.chunk_cache_dir.clone();
+            let limiter = limiter.clone();
+            let tstats = tstats.clone();
+            let depot_sem = depot_sem.clone();
+            depot_set.spawn(async move {
+                let _permit = depot_sem.acquire_owned().await?;
+                let (event_tx, mut event_rx) = mpsc::unbounded_channel::<DownloadEvent>();
 
-            // DepotJob steamroom-client.
-            let job = DepotJob::builder()
-                .depot_id(DepotId(plan.depot_id))
-                .depot_key(plan.depot_key.clone())
-                .install_dir(opts.install_dir.clone())
-                .max_downloads(opts.max_downloads)
-                .verify(opts.verify)
-                .event_sender(event_tx)
-                .build()
-                .map_err(|e| anyhow::anyhow!("DepotJob build : {e}"))?;
+                // DepotJob steamroom-client.
+                let job = DepotJob::builder()
+                    .depot_id(DepotId(depot_id))
+                    .depot_key(depot_key)
+                    .install_dir(install_dir)
+                    .max_downloads(max_downloads)
+                    .verify(verify)
+                    .event_sender(event_tx)
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("DepotJob build : {e}"))?;
 
-            let fetcher = Arc::new(CdnChunkFetcher::new(
-                CdnClient::new().context("CdnClient fetcher")?,
-                CdnServerPool::new(cdn_servers.clone()),
-                cdn_auth_token,
-            ));
+                let fetcher = Arc::new(CachedFetcher::new(
+                    CdnChunkFetcher::new(
+                        CdnClient::new().context("CdnClient fetcher")?,
+                        CdnServerPool::new(cdn_servers),
+                        cdn_auth_token,
+                    ),
+                    chunk_cache,
+                    limiter,
+                    tstats,
+                ));
 
-            // Horloge de vie du depot : millisecondes écoulées au dernier
-            // événement reçu, quel qu'il soit. C'est la seule chose que regarde
-            // le chien de garde — il n'a pas à savoir ce qui progresse.
-            let depot_start = Instant::now();
-            let last_progress = Arc::new(AtomicU64::new(0));
+                // Horloge de vie du depot : millisecondes écoulées au dernier
+                // événement reçu, quel qu'il soit. C'est la seule chose que regarde
+                // le chien de garde — il n'a pas à savoir ce qui progresse.
+                let depot_start = Instant::now();
+                let last_progress = Arc::new(AtomicU64::new(0));
 
-            // Consomme les DownloadEvent dans une tâche séparée pour ne pas bloquer.
-            let progress_clone = progress.clone();
-            let depot_id_for_task = plan.depot_id;
-            let last_progress_task = last_progress.clone();
-            let event_task = tokio::spawn(async move {
-                let mut depot_total: u64 = 0;
-                let mut depot_completed: u64 = 0;
-                let mut skipped: u64 = 0;
-                let mut failed_chunks: u64 = 0;
-                let mut last_log = Instant::now();
-                while let Some(evt) = event_rx.recv().await {
-                    // Tout événement vaut signe de vie, y compris FileSkipped :
-                    // la passe de vérification peut durer des minutes sans
-                    // télécharger le moindre octet.
-                    last_progress_task
-                        .store(depot_start.elapsed().as_millis() as u64, Ordering::Relaxed);
-                    match &evt {
-                        DownloadEvent::DownloadStarted { total_bytes, .. } => {
-                            depot_total = *total_bytes;
-                        },
-                        DownloadEvent::FileSkipped { .. } => skipped += 1,
-                        DownloadEvent::ChunkFailed { error } => {
-                            failed_chunks += 1;
-                            // Les premiers échecs disent la cause ; ensuite on
-                            // échantillonne pour ne pas noyer le journal.
-                            if failed_chunks <= 5 || failed_chunks.is_multiple_of(100) {
-                                warn!(
-                                    depot = depot_id_for_task,
-                                    total = failed_chunks,
-                                    "chunk en échec : {error}"
+                // Consomme les DownloadEvent dans une tâche séparée pour ne pas bloquer.
+                let progress_clone = progress.clone();
+                let depot_id_for_task = depot_id;
+                let last_progress_task = last_progress.clone();
+                let event_task = tokio::spawn(async move {
+                    let mut depot_total: u64 = 0;
+                    let mut depot_completed: u64 = 0;
+                    let mut skipped: u64 = 0;
+                    let mut failed_chunks: u64 = 0;
+                    let mut last_log = Instant::now();
+                    while let Some(evt) = event_rx.recv().await {
+                        // Tout événement vaut signe de vie, y compris FileSkipped :
+                        // la passe de vérification peut durer des minutes sans
+                        // télécharger le moindre octet.
+                        last_progress_task
+                            .store(depot_start.elapsed().as_millis() as u64, Ordering::Relaxed);
+                        match &evt {
+                            DownloadEvent::DownloadStarted { total_bytes, .. } => {
+                                depot_total = *total_bytes;
+                            },
+                            DownloadEvent::FileSkipped { .. } => skipped += 1,
+                            DownloadEvent::ChunkFailed { error } => {
+                                failed_chunks += 1;
+                                // Les premiers échecs disent la cause ; ensuite on
+                                // échantillonne pour ne pas noyer le journal.
+                                if failed_chunks <= 5 || failed_chunks.is_multiple_of(100) {
+                                    warn!(
+                                        depot = depot_id_for_task,
+                                        total = failed_chunks,
+                                        "chunk en échec : {error}"
+                                    );
+                                }
+                            },
+                            DownloadEvent::ChunkCompleted { bytes } => {
+                                depot_completed += bytes;
+                                emit(
+                                    &progress_clone,
+                                    SteamDownloadPhase::Downloading,
+                                    &format!("depot {depot_id_for_task}"),
+                                    depot_completed,
+                                    depot_total,
                                 );
-                            }
-                        },
-                        DownloadEvent::ChunkCompleted { bytes } => {
-                            depot_completed += bytes;
-                            emit(
-                                &progress_clone,
-                                SteamDownloadPhase::Downloading,
-                                &format!("depot {depot_id_for_task}"),
-                                depot_completed,
-                                depot_total,
+                            },
+                            _ => {},
+                        }
+                        // Battement régulier : sans lui le journal reste vide toute
+                        // la synchro, et un gel est indiscernable d'un travail long.
+                        if last_log.elapsed() >= Duration::from_secs(30) {
+                            last_log = Instant::now();
+                            let pct = if depot_total > 0 {
+                                depot_completed as f64 * 100.0 / depot_total as f64
+                            } else {
+                                0.0
+                            };
+                            info!(
+                                depot = depot_id_for_task,
+                                "progression {pct:.1} % — {:.2} / {:.2} Gio, \
+                                 {skipped} fichiers déjà à jour, {failed_chunks} chunks en échec",
+                                depot_completed as f64 / 1_073_741_824.0,
+                                depot_total as f64 / 1_073_741_824.0,
                             );
-                        },
-                        _ => {},
+                        }
                     }
-                    // Battement régulier : sans lui le journal reste vide toute
-                    // la synchro, et un gel est indiscernable d'un travail long.
-                    if last_log.elapsed() >= Duration::from_secs(30) {
-                        last_log = Instant::now();
-                        let pct = if depot_total > 0 {
-                            depot_completed as f64 * 100.0 / depot_total as f64
-                        } else {
-                            0.0
-                        };
-                        info!(
-                            depot = depot_id_for_task,
-                            "progression {pct:.1} % — {:.2} / {:.2} Gio, \
-                             {skipped} fichiers déjà à jour, {failed_chunks} chunks en échec",
-                            depot_completed as f64 / 1_073_741_824.0,
-                            depot_total as f64 / 1_073_741_824.0,
+                    (depot_completed, depot_total)
+                });
+
+                // Chien de garde : convertit un blocage silencieux en erreur nommée.
+                
+                let stall_secs = stall_timeout.map_or(0.0, |d| d.as_secs_f64());
+                let last_progress_wd = last_progress.clone();
+                let watchdog = async move {
+                    let Some(timeout) = stall_timeout else {
+                        // Garde désactivée : ne se résout jamais, `select!` retient
+                        // donc toujours la branche du téléchargement.
+                        return std::future::pending::<Duration>().await;
+                    };
+                    let tick = Duration::from_secs(15).min(timeout);
+                    loop {
+                        tokio::time::sleep(tick).await;
+                        let last = Duration::from_millis(last_progress_wd.load(Ordering::Relaxed));
+                        let idle = depot_start.elapsed().saturating_sub(last);
+                        if idle >= timeout {
+                            return idle;
+                        }
+                    }
+                };
+
+                let stats = tokio::select! {
+                    r = job.download(&manifest, fetcher) => {
+                        r.map_err(|e| anyhow::anyhow!("download depot {} : {e}", depot_id))?
+                    }
+                    idle = watchdog => {
+                        anyhow::bail!(
+                            "depot {} bloqué : aucun événement depuis {:.0} s (seuil {:.0} s). \
+                             Cause connue : tous les serveurs CDN passés en cooldown après un 429 \
+                             — chaque tâche de chunk part alors en sleep, le process tombe à zéro \
+                             CPU et zéro socket, et rien ne le réveille. Relancer reprend au même \
+                             point (les fichiers déjà à jour sont sautés).",
+                            depot_id,
+                            idle.as_secs_f64(),
+                            stall_secs,
                         );
                     }
-                }
-                (depot_completed, depot_total)
-            });
-
-            // Chien de garde : convertit un blocage silencieux en erreur nommée.
-            let stall_timeout = opts.stall_timeout;
-            let stall_secs = stall_timeout.map_or(0.0, |d| d.as_secs_f64());
-            let last_progress_wd = last_progress.clone();
-            let watchdog = async move {
-                let Some(timeout) = stall_timeout else {
-                    // Garde désactivée : ne se résout jamais, `select!` retient
-                    // donc toujours la branche du téléchargement.
-                    return std::future::pending::<Duration>().await;
                 };
-                let tick = Duration::from_secs(15).min(timeout);
-                loop {
-                    tokio::time::sleep(tick).await;
-                    let last = Duration::from_millis(last_progress_wd.load(Ordering::Relaxed));
-                    let idle = depot_start.elapsed().saturating_sub(last);
-                    if idle >= timeout {
-                        return idle;
-                    }
-                }
-            };
 
-            let stats = tokio::select! {
-                r = job.download(&manifest, fetcher) => {
-                    r.map_err(|e| anyhow::anyhow!("download depot {} : {e}", plan.depot_id))?
-                }
-                idle = watchdog => {
-                    anyhow::bail!(
-                        "depot {} bloqué : aucun événement depuis {:.0} s (seuil {:.0} s). \
-                         Cause connue : tous les serveurs CDN passés en cooldown après un 429 \
-                         — chaque tâche de chunk part alors en sleep, le process tombe à zéro \
-                         CPU et zéro socket, et rien ne le réveille. Relancer reprend au même \
-                         point (les fichiers déjà à jour sont sautés).",
-                        plan.depot_id,
-                        idle.as_secs_f64(),
-                        stall_secs,
-                    );
-                }
-            };
+                // `DepotJob::download` prend `&self` : le job SURVIT à l'appel et
+                // garde vivant le `event_tx` qu'il détient. Sans ce `drop`, le canal
+                // ne se ferme jamais, la boucle `recv()` de `event_task` ne se
+                // termine pas, et l'`await` ci-dessous bloque POUR TOUJOURS — process
+                // vivant, RSS effondré, zéro CPU, zéro socket, aucun message. Les
+                // deux gels du 2026-08-15 sont exactement cela : le téléchargement
+                // était en réalité TERMINÉ, seule la collecte d'événements pendait.
+                drop(job);
 
-            // `DepotJob::download` prend `&self` : le job SURVIT à l'appel et
-            // garde vivant le `event_tx` qu'il détient. Sans ce `drop`, le canal
-            // ne se ferme jamais, la boucle `recv()` de `event_task` ne se
-            // termine pas, et l'`await` ci-dessous bloque POUR TOUJOURS — process
-            // vivant, RSS effondré, zéro CPU, zéro socket, aucun message. Les
-            // deux gels du 2026-08-15 sont exactement cela : le téléchargement
-            // était en réalité TERMINÉ, seule la collecte d'événements pendait.
-            drop(job);
-
-            // Filet : même canal fermé, on ne rend pas l'attente inconditionnelle.
-            let (d, _) = match tokio::time::timeout(Duration::from_secs(30), event_task).await {
-                Ok(joined) => joined.unwrap_or((0, 0)),
-                Err(_) => {
-                    warn!(
-                        depot = plan.depot_id,
-                        "collecte des événements toujours ouverte après 30 s — \
-                         comptage partiel, téléchargement néanmoins terminé"
-                    );
-                    (0, 0)
-                },
-            };
-            total_downloaded += d;
-            total_files += stats.files_completed;
-            completed_depots.push(plan.depot_id);
-
+                // Filet : même canal fermé, on ne rend pas l'attente inconditionnelle.
+                let (d, _) = match tokio::time::timeout(Duration::from_secs(30), event_task).await {
+                    Ok(joined) => joined.unwrap_or((0, 0)),
+                    Err(_) => {
+                        warn!(
+                            depot = depot_id,
+                            "collecte des événements toujours ouverte après 30 s — \
+                             comptage partiel, téléchargement néanmoins terminé"
+                        );
+                        (0, 0)
+                    },
+                };
             info!(
                 "depot {} : {} fichiers, {} octets",
-                plan.depot_id, stats.files_completed, stats.bytes_downloaded
+                depot_id, stats.files_completed, stats.bytes_downloaded
             );
-        }
+            Ok::<(u32, u64, u64), anyhow::Error>((depot_id, d, stats.files_completed))
+        });
+    }
+
+    // Collecte : un depot en échec interrompt (abort au drop du JoinSet) les autres.
+    while let Some(joined) = depot_set.join_next().await {
+        let (id, d, files) = joined.context("tâche de depot interrompue")??;
+        total_downloaded += d;
+        total_files += files;
+        completed_depots.push(id);
+    }
+    {
+        let (hits, hit_bytes, net_chunks, net_bytes) = tstats_report.snapshot();
+        info!(
+            "transfert : {net_chunks} chunks réseau ({:.2} Gio), {hits} chunks du cache ({:.2} Gio)",
+            net_bytes as f64 / 1_073_741_824.0,
+            hit_bytes as f64 / 1_073_741_824.0
+        );
+    }
 
         let duration = start.elapsed();
         emit(

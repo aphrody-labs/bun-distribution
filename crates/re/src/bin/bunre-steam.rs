@@ -76,6 +76,22 @@ struct Cli {
     #[arg(long, default_value_t = 300)]
     stall_timeout: u64,
 
+    /// Plafond de débit réseau en Mio/s (0 = illimité).
+    #[arg(long, default_value_t = 0)]
+    max_rate: u64,
+
+    /// Depots téléchargés simultanément.
+    #[arg(long, default_value_t = 2)]
+    depot_parallel: usize,
+
+    /// Désactive le cache disque de chunks.
+    #[arg(long)]
+    no_chunk_cache: bool,
+
+    /// Dossier du cache de chunks (défaut : ~/.aphrody/cache/steam/chunks).
+    #[arg(long)]
+    chunk_cache: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -164,6 +180,16 @@ async fn main() -> Result<()> {
             guard_provider: None,
             stall_timeout: (cli.stall_timeout > 0)
                 .then(|| std::time::Duration::from_secs(cli.stall_timeout)),
+            transfer: bun_re::steam::options::TransferOptions {
+                max_rate_bytes_per_sec: cli.max_rate * 1024 * 1024,
+                max_depot_parallel: cli.depot_parallel.max(1),
+                chunk_cache_dir: (!cli.no_chunk_cache).then(|| {
+                    cli.chunk_cache
+                        .clone()
+                        .unwrap_or_else(bun_re::steam::transfer::default_chunk_cache_dir)
+                }),
+                ..Default::default()
+            },
         }
     };
 

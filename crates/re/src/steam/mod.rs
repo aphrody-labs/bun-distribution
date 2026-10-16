@@ -51,6 +51,9 @@ pub mod session;
 #[cfg(feature = "steam-download")]
 pub mod token_store;
 
+#[cfg(feature = "steam-download")]
+pub mod transfer;
+
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------

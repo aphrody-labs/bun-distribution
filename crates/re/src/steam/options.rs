@@ -149,6 +149,33 @@ pub struct SteamDownloadOptions {
     /// du depot : la passe `verify` lit et hache chaque fichier existant sans
     /// émettre d'événement entre-temps (4,26 Gio sur IEVR ≈ 90 s). Défaut : 300 s.
     pub stall_timeout: Option<Duration>,
+
+    /// Réglages de débit, de cache de chunks et de parallélisme inter-depots.
+    pub transfer: TransferOptions,
+}
+
+/// Optimisation du transfert (cf. [`crate::steam::transfer`]).
+#[derive(Clone, Debug)]
+pub struct TransferOptions {
+    /// Plafond de débit réseau en octets/s, tous depots confondus. `0` → illimité.
+    pub max_rate_bytes_per_sec: u64,
+    /// Depots téléchargés simultanément (≥ 1). Défaut : 2.
+    pub max_depot_parallel: usize,
+    /// Cache disque de chunks. `None` → désactivé.
+    pub chunk_cache_dir: Option<PathBuf>,
+    /// Serveurs CDN demandés à Steam pour la rotation (défaut : 50).
+    pub cdn_pool_size: usize,
+}
+
+impl Default for TransferOptions {
+    fn default() -> Self {
+        Self {
+            max_rate_bytes_per_sec: 0,
+            max_depot_parallel: 2,
+            chunk_cache_dir: Some(crate::steam::transfer::default_chunk_cache_dir()),
+            cdn_pool_size: 50,
+        }
+    }
 }
 
 impl SteamDownloadOptions {
@@ -183,6 +210,7 @@ impl SteamDownloadOptions {
             token_store_path: Some(crate::steam::token_store::default_path()),
             guard_provider: None,
             stall_timeout: Some(Duration::from_secs(300)),
+            transfer: TransferOptions::default(),
         }
     }
 }

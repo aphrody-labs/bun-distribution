@@ -2312,6 +2312,7 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
         // Garde anti-blocage : un depot muet est interrompu au lieu de dormir
         // indéfiniment (cf. aphrody_re::steam::options::SteamDownloadOptions::stall_timeout).
         stall_timeout: Some(std::time::Duration::from_secs(300)),
+        transfer: Default::default(),
     };
 
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;

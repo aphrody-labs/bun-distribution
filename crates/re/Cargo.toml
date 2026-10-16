@@ -36,6 +36,7 @@ steam-emulator = ["dep:aphrody-nie-net"]
 # Native Steam depot download (steamroom) and the `bunre-steam` CLI.
 steam-download = [
     "dep:anyhow",
+    "dep:bytes",
     "dep:clap",
     "dep:dirs-next",
     "dep:steamroom",
@@ -78,6 +79,7 @@ steamroom  = { workspace = true, optional = true }
 steamroom-client = { workspace = true, optional = true }
 tokio      = { workspace = true, optional = true, features = ["rt-multi-thread", "macros", "fs", "sync", "time"] }
 dirs-next  = { workspace = true, optional = true }
+bytes      = { workspace = true, optional = true }
 zip        = { workspace = true, optional = true, features = ["aes-crypto", "bzip2", "deflate64", "lzma", "time", "zstd", "xz"] }
 clap       = { workspace = true, optional = true, features = ["derive", "color", "env"] }
 tracing-subscriber = { version = "0.3.20", default-features = false, features = ["fmt", "env-filter", "ansi", "tracing-log"], optional = true }
