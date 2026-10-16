@@ -3,10 +3,14 @@
 
 //! CLI commands for machine learning training, fine-tuning, and model promotion (P10).
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use aphrody_train::{
-    Registry, TrainKind, TrainingJob, acquire_training_lease, find_python_train_project,
+    PromoteCriteria, PromoteVerdict, Registry, TrainKind, evaluate_candidate,
+    register_promoted_model, TrainingJob, acquire_training_lease, find_python_train_project,
     run_training_job,
 };
 use clap::{Args, Subcommand, ValueEnum};
@@ -58,7 +62,8 @@ enum TrainAction {
     /// Apply the training registry migrations (schema `training`) over the direct
     /// `APHRODY_TRAINING_DATABASE_URL`.
     RegistryMigrate,
-    /// Reserved for measured shadow-index A/B promotion; currently refuses installation.
+    /// Gate a candidate on measured shadow-index A/B scores, install it in the
+    /// model store when it passes, and record the verdict in the registry.
     Promote {
         /// Path to the candidate model artifact file.
         #[arg(long)]
@@ -66,6 +71,26 @@ enum TrainAction {
         /// Target model family name (e.g. "multilingual-e5-small-finetuned").
         #[arg(long)]
         name: String,
+        /// JSON evaluation report measured on the untouched gold set against the
+        /// shadow index: `{"baseline":{"recall_at_5":f,"tags":{..}},"candidate":{..}}`.
+        #[arg(long)]
+        eval: PathBuf,
+        /// Registry kind of the promoted artifact (e.g. `embed`, `rerank`).
+        #[arg(long, default_value = "embed")]
+        kind: String,
+        /// Registry artifact id of the candidate; when set, the verdict is
+        /// recorded in the training registry.
+        #[arg(long)]
+        artifact_id: Option<String>,
+        /// Registry artifact id of the baseline.
+        #[arg(long)]
+        baseline_artifact_id: Option<String>,
+        /// Minimum Recall@5 improvement.
+        #[arg(long, default_value_t = 0.01)]
+        min_delta: f64,
+        /// Maximum per-tag regression.
+        #[arg(long, default_value_t = 0.03)]
+        max_tag_regression: f64,
     },
 }
 
@@ -110,14 +135,129 @@ fn default_dbfr_input(kind: JobKind, domain: Option<&str>, state: &Path) -> Opti
     )
 }
 
+/// Measured scores of one side of the shadow-index A/B evaluation.
+#[derive(Debug, serde::Deserialize)]
+struct EvalSide {
+    recall_at_5: f64,
+    tags: BTreeMap<String, f64>,
+}
+
+/// Shadow-index A/B evaluation report on the untouched gold set.
+#[derive(Debug, serde::Deserialize)]
+struct EvalReport {
+    baseline: EvalSide,
+    candidate: EvalSide,
+}
+
+struct PromoteRequest<'a> {
+    artifact: &'a Path,
+    name: &'a str,
+    eval: &'a Path,
+    kind: &'a str,
+    artifact_id: Option<&'a str>,
+    baseline_artifact_id: Option<&'a str>,
+    criteria: PromoteCriteria,
+}
+
+fn load_eval_report(path: &Path) -> Result<EvalReport> {
+    let bytes = std::fs::read(path)
+        .map_err(|e| miette::miette!("read evaluation report {}: {e}", path.display()))?;
+    serde_json::from_slice(&bytes)
+        .map_err(|e| miette::miette!("parse evaluation report {}: {e}", path.display()))
+}
+
+async fn promote(req: PromoteRequest<'_>) -> Result<()> {
+    let report = load_eval_report(req.eval)?;
+    let verdict = evaluate_candidate(
+        report.baseline.recall_at_5,
+        report.candidate.recall_at_5,
+        &report.baseline.tags,
+        &report.candidate.tags,
+        req.artifact,
+        &req.criteria,
+    );
+
+    let mut summary = serde_json::json!({
+        "name": req.name,
+        "kind": req.kind,
+        "artifact": req.artifact.display().to_string(),
+    });
+    match &verdict {
+        PromoteVerdict::Promoted { model_id, delta_recall_at_5, sha256, .. } => {
+            let store = aphrody_models::ModelStore::open()
+                .map_err(|e| miette::miette!("open model store: {e}"))?;
+            let installed = register_promoted_model(&store, req.artifact)
+                .map_err(|e| miette::miette!("install promoted model `{}`: {e}", req.name))?;
+            summary["verdict"] = "promoted".into();
+            summary["model_id"] = model_id.clone().into();
+            summary["delta_recall_at_5"] = (*delta_recall_at_5).into();
+            summary["sha256"] = sha256.clone().into();
+            summary["installed"] = format!("{installed:?}").into();
+        },
+        PromoteVerdict::Rejected { reason, delta_recall_at_5, max_regression_observed } => {
+            summary["verdict"] = "rejected".into();
+            summary["reason"] = reason.clone().into();
+            summary["delta_recall_at_5"] = (*delta_recall_at_5).into();
+            summary["max_regression_observed"] = (*max_regression_observed).into();
+        },
+    }
+
+    if let Some(artifact_id) = req.artifact_id {
+        let registry = Registry::from_env()
+            .map_err(|e| miette::miette!("open training registry: {e}"))?
+            .ok_or_else(|| {
+                miette::miette!("--artifact-id given but APHRODY_TRAINING_DATABASE_URL is not set")
+            })?;
+        let decided_by = std::env::var("USERNAME")
+            .or_else(|_| std::env::var("USER"))
+            .unwrap_or_else(|_| "aphrody-train-cli".to_owned());
+        let promotion_id = registry
+            .record_verdict(
+                req.kind,
+                req.name,
+                artifact_id,
+                req.baseline_artifact_id,
+                &verdict,
+                &decided_by,
+            )
+            .await
+            .map_err(|e| miette::miette!("record promotion verdict: {e}"))?;
+        summary["promotion_id"] = promotion_id.into();
+    }
+
+    println!("{}", serde_json::to_string_pretty(&summary).into_diagnostic()?);
+    if verdict.is_promoted() {
+        Ok(())
+    } else {
+        Err(miette::miette!("Model `{}` was not promoted", req.name))
+    }
+}
+
 pub(crate) async fn run(args: TrainArgs) -> Result<()> {
-    if let TrainAction::Promote { artifact, name } = &args.action {
-        return Err(miette::miette!(
-            "Model `{name}` at {} was not installed: promotion requires measured baseline and \
-             candidate Recall@5 plus per-tag scores from an untouched gold set and shadow index; \
-             that workflow is not implemented",
-            artifact.display()
-        ));
+    if let TrainAction::Promote {
+        artifact,
+        name,
+        eval,
+        kind,
+        artifact_id,
+        baseline_artifact_id,
+        min_delta,
+        max_tag_regression,
+    } = &args.action
+    {
+        return promote(PromoteRequest {
+            artifact,
+            name,
+            eval,
+            kind,
+            artifact_id: artifact_id.as_deref(),
+            baseline_artifact_id: baseline_artifact_id.as_deref(),
+            criteria: PromoteCriteria {
+                min_delta_recall_at_5: *min_delta,
+                max_tag_regression: *max_tag_regression,
+            },
+        })
+        .await;
     }
     if matches!(args.action, TrainAction::RegistryMigrate) {
         let report = Registry::migrate_from_env()
@@ -217,16 +357,22 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn promote_refuses_unmeasured_artifact_before_state_access() {
+    async fn promote_without_eval_report_fails_before_install() {
+        let temp = tempfile::tempdir().unwrap();
         let args = TrainArgs {
             action: TrainAction::Promote {
-                artifact: PathBuf::from("candidate.onnx"),
+                artifact: temp.path().join("candidate.onnx"),
                 name: "candidate".to_owned(),
+                eval: temp.path().join("missing-eval.json"),
+                kind: "embed".to_owned(),
+                artifact_id: None,
+                baseline_artifact_id: None,
+                min_delta: 0.01,
+                max_tag_regression: 0.03,
             },
         };
         let error = run(args).await.unwrap_err().to_string();
-        assert!(error.contains("was not installed"));
-        assert!(error.contains("untouched gold set and shadow index"));
+        assert!(error.contains("read evaluation report"));
     }
 
     #[test]

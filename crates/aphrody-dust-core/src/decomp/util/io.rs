@@ -77,7 +77,7 @@ pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, FileError> {
             match err.kind() {
                 io::ErrorKind::NotFound => return FileNotFoundSnafu { path }.fail(),
                 io::ErrorKind::OutOfMemory => return FileOutOfMemorySnafu { path }.fail(),
-                _ => todo!(),
+                _ => Err(err)?,
             }
         },
     };
