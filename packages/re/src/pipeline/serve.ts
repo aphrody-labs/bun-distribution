@@ -10,10 +10,20 @@ export function servePipeline(port = 0) {
     async fetch(req) {
       const url = new URL(req.url);
       try {
-        if (req.method === "GET" && url.pathname === "/adapters") return Response.json(await listAdapters());
+        if (req.method === "GET" && url.pathname === "/adapters")
+          return Response.json(await listAdapters());
         if (req.method === "POST" && url.pathname === "/run") {
-          const b = (await req.json()) as { input: string; target?: TargetKind; outdir: string };
-          return Response.json(await runPipeline(b.input, { target: b.target ?? "os", outdir: b.outdir }));
+          const b = (await req.json()) as {
+            input: string;
+            target?: TargetKind;
+            outdir: string;
+          };
+          return Response.json(
+            await runPipeline(b.input, {
+              target: b.target ?? "os",
+              outdir: b.outdir,
+            }),
+          );
         }
         return new Response("not found", { status: 404 });
       } catch (e) {

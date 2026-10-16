@@ -1,0 +1,11 @@
+{
+  "name": "steam",
+  "version": "1.4.4",
+  "description": "Native Bun Steam indexer: local install scan, Web API catalogue, userdata/Steam Cloud, RE pipeline, relay download.",
+  "mcpServers": {
+    "steam": {
+      "command": "bun",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/../src/steam/mcp-server.ts"]
+    }
+  }
+}

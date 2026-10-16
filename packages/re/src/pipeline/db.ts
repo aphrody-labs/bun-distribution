@@ -20,18 +20,39 @@ export function openAnalysisDb(path: string): Database {
 }
 
 export function recordRun(db: Database, report: PipelineReport): number {
-  const acquire = report.stages.find((s) => s.stage === "acquire")?.output as { sha256?: string } | null;
+  const acquire = report.stages.find((s) => s.stage === "acquire")?.output as {
+    sha256?: string;
+  } | null;
   const tx = db.transaction(() => {
     const { lastInsertRowid } = db
-      .query("INSERT INTO runs (input, sha256, target, summary, outdir) VALUES (?, ?, ?, ?, ?)")
-      .run(report.input, acquire?.sha256 ?? null, report.target, report.summary, report.outdir);
+      .query(
+        "INSERT INTO runs (input, sha256, target, summary, outdir) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run(
+        report.input,
+        acquire?.sha256 ?? null,
+        report.target,
+        report.summary,
+        report.outdir,
+      );
     const id = Number(lastInsertRowid);
     for (const s of report.stages) {
       db.query("INSERT INTO stages VALUES (?, ?, ?, ?, ?, ?)").run(
-        id, s.stage, s.adapter, s.status, s.detail, s.output == null ? null : JSON.stringify(s.output),
+        id,
+        s.stage,
+        s.adapter,
+        s.status,
+        s.detail,
+        s.output == null ? null : JSON.stringify(s.output),
       );
       for (const a of s.artifacts) {
-        db.query("INSERT INTO artifacts VALUES (?, ?, ?, ?, ?)").run(id, s.stage, a.kind, a.path, a.bytes);
+        db.query("INSERT INTO artifacts VALUES (?, ?, ?, ?, ?)").run(
+          id,
+          s.stage,
+          a.kind,
+          a.path,
+          a.bytes,
+        );
       }
     }
     return id;
@@ -39,4 +60,5 @@ export function recordRun(db: Database, report: PipelineReport): number {
   return tx();
 }
 
-export const defaultDbPath = (outdir: string): string => join(outdir, "analysis.db");
+export const defaultDbPath = (outdir: string): string =>
+  join(outdir, "analysis.db");

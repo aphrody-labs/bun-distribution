@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { parseArgs } from "node:util";
-import { type AdapterInfo, type PipelineReport, type Stage, type TargetKind, STAGES } from "./contract.ts";
+import {
+  type AdapterInfo,
+  type PipelineReport,
+  type Stage,
+  type TargetKind,
+  STAGES,
+} from "./contract.ts";
 import { defaultDbPath, openAnalysisDb, recordRun } from "./db.ts";
 import { emitSchemas, listAdapters, runPipeline } from "./runner.ts";
 
@@ -12,14 +18,18 @@ bun re pipeline schema <dir>`;
 function printReport(r: PipelineReport): void {
   console.log(`pipeline ${r.summary}: ${r.input} (${r.target}) -> ${r.outdir}`);
   for (const s of r.stages) {
-    console.log(`  ${s.stage.padEnd(9)} ${s.status.padEnd(11)} ${s.adapter.padEnd(18)} ${s.detail}`);
+    console.log(
+      `  ${s.stage.padEnd(9)} ${s.status.padEnd(11)} ${s.adapter.padEnd(18)} ${s.detail}`,
+    );
   }
 }
 
 function printAdapters(list: AdapterInfo[]): void {
   for (const a of list) {
     const why = a.reason ? `  (${a.reason})` : "";
-    console.log(`${a.stage.padEnd(9)} ${a.status.padEnd(11)} ${a.id.padEnd(22)} ${a.kind.padEnd(8)} ${a.owner}${why}`);
+    console.log(
+      `${a.stage.padEnd(9)} ${a.status.padEnd(11)} ${a.id.padEnd(22)} ${a.kind.padEnd(8)} ${a.owner}${why}`,
+    );
   }
 }
 
@@ -49,7 +59,8 @@ export async function main(argv: string[]): Promise<number> {
   const [first, second] = positionals;
   if (first === "adapters") {
     const stage = values.stage as Stage | undefined;
-    if (stage && !STAGES.includes(stage)) throw new Error(`unknown stage ${stage}`);
+    if (stage && !STAGES.includes(stage))
+      throw new Error(`unknown stage ${stage}`);
     const list = await listAdapters(stage);
     if (values.json) console.log(JSON.stringify(list, null, 2));
     else printAdapters(list);
@@ -60,7 +71,8 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   const target = values.target as TargetKind;
-  if (!["os", "bios", "firmware"].includes(target)) throw new Error("--target must be os, bios or firmware");
+  if (!["os", "bios", "firmware"].includes(target))
+    throw new Error("--target must be os, bios or firmware");
   const input = first!;
   const out = values.out ?? `bunre-out/${Bun.hash(input).toString(16)}`;
   const report = await runPipeline(input, {
@@ -68,7 +80,9 @@ export async function main(argv: string[]): Promise<number> {
     outdir: out,
     external: values.external,
     trace: values.trace,
-    maxFunctions: values["max-functions"] ? Number(values["max-functions"]) : undefined,
+    maxFunctions: values["max-functions"]
+      ? Number(values["max-functions"])
+      : undefined,
     maxInsns: values["max-insns"] ? Number(values["max-insns"]) : undefined,
     timeoutSecs: values.timeout ? Number(values.timeout) : undefined,
   });

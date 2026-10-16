@@ -4,7 +4,16 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "description": "Bun OS reverse-engineering tools (pipeline CLI, MCP tools, local API).",
-  "bin": { "re-pipeline": "src/pipeline/cli.ts" },
-  "exports": { "./pipeline": "./src/pipeline/index.ts" }
+  "description": "Bun OS reverse-engineering tools (pipeline CLI, Steam indexer, MCP tools, local API).",
+  "bin": {
+    "re-pipeline": "src/pipeline/cli.ts",
+    "re-steam": "src/steam/cli.ts"
+  },
+  "exports": {
+    "./pipeline": "./src/pipeline/index.ts",
+    "./steam": "./src/steam/index.ts"
+  },
+  "dependencies": {
+    "@aphrody/paths": "workspace:*"
+  }
 }
