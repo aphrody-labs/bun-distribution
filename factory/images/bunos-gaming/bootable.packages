@@ -1,0 +1,7 @@
+# Bootable rootfs only: the container shares the host kernel.
+linux-cachyos
+linux-cachyos-headers
+linux-cachyos-nvidia-open
+linux-firmware
+mkinitcpio
+systemd-ukify

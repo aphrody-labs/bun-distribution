@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-images",
+  "observedAt": "2026-10-16",
+  "host": "vps",
+  "remoteRoot": "/home/ubuntu/bun-os-images",
+  "remoteTimeoutSeconds": 7200,
+  "sources": "~/.local/share/bun-os/sources",
+  "pins": {
+    "bun": {
+      "version": "1.4.3",
+      "note": "Latest oven-sh/bun release with Linux binaries; the aphrody-labs bun-v1.4.4 release publishes no Linux assets yet.",
+      "assets": {
+        "bun-linux-x64.zip": "3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18",
+        "bun-linux-aarch64.zip": "efa9813da5ed72423bf847f916e8d2c47c0d776add972354026a75e10da9aa21",
+        "bun-linux-x64-musl.zip": "6e9ea98554ea0d05efda5840ae292618aaa3adefd66b0853520c5c86a37eac9c",
+        "bun-linux-aarch64-musl.zip": "8de8a0003cc2707bb555887e3d450e24e1edf3f605f491393e89ed61a8853420"
+      },
+      "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.3/"
+    },
+    "omarchy": {
+      "version": "4.0.4",
+      "commit": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
+      "published": "2026-09-15",
+      "file": "omarchy-v4.0.4.tar.gz",
+      "url": "https://github.com/basecamp/omarchy/archive/refs/tags/v4.0.4.tar.gz",
+      "sha256": "cd576f3ea0d1d87ed45dd3f34c7dfd42c982884ac15fe8bf5b858241254ec508",
+      "pacmanRepository": {
+        "name": "omarchy",
+        "server": "https://pkgs.omarchy.org/stable/$arch"
+      },
+      "key": "40DFB630FF42BCFFB047046CF0134EE680CAC571",
+      "keyserver": "keys.openpgp.org"
+    },
+    "linux-cachyos": {
+      "version": "7.2.7-1",
+      "file": "linux-cachyos-7.2.7-1-x86_64.pkg.tar.zst",
+      "url": "https://mirror.cachyos.org/repo/x86_64/cachyos/linux-cachyos-7.2.7-1-x86_64.pkg.tar.zst",
+      "sha256": "cb164037efbdc8703580da9cca2a1f067e22a0ffc8a0fc1b7c03d4419e99fd37"
+    },
+    "ubuntu": {
+      "version": "26.10",
+      "file": "ubuntu-base-26.10-base-amd64.tar.gz",
+      "url": "https://cdimage.ubuntu.com/ubuntu-base/releases/26.10/release/ubuntu-base-26.10-base-amd64.tar.gz",
+      "sha256": "ff50c868fa972e956b6406d7efc6e3e47746247f5b301a7c29465e609788c3fc"
+    },
+    "ubuntu-kernel": {
+      "version": "7.3.0-070300rc3",
+      "note": "No 7.3.x stable exists on 2026-10-16 (kernel.org: 7.3-rc7, stable 7.2.11); latest Ubuntu mainline 7.3 build is v7.3-rc3.",
+      "baseUrl": "https://kernel.ubuntu.com/mainline/v7.3-rc3/amd64",
+      "image": {
+        "file": "linux-image-unsigned-7.3.0-070300rc3-generic_7.3.0-070300rc3.202609132247_amd64.deb",
+        "sha256": "5f2788b423366969fb819827aef682854871afb4f4851ef25b8341eef90359dd"
+      },
+      "modules": {
+        "file": "linux-modules-7.3.0-070300rc3-generic_7.3.0-070300rc3.202609132247_amd64.deb",
+        "sha256": "a8569d30cf9a24e38341df57b3d336e5c68121be73481aa22f068f1a21444852"
+      }
+    },
+    "cosmic": {
+      "version": "epoch-1.10.0",
+      "commit": "2780516ab74b8ec3df7b18eebbccac61900738f1",
+      "file": "cosmic-epoch-1.10.0.tar.gz",
+      "url": "https://github.com/pop-os/cosmic-epoch/archive/refs/tags/epoch-1.10.0.tar.gz",
+      "sha256": "f4cd4a347686154eddd5143bf30a6c8ce546b609e99a3c8a84846f5f68ae4e3f",
+      "apt": {
+        "server": "https://apt.pop-os.org/release",
+        "suite": "resolute",
+        "package": "cosmic-session",
+        "packageVersion": "1.10.0~1791314577~26.04~8093b59",
+        "key": "63C46DF0140D738961429F4E204DD8AEC33A7AFF",
+        "note": "Ubuntu 26.10 archive ships no COSMIC; System76 resolute (26.04) archive provides epoch 1.10.0."
+      }
+    },
+    "gnome": {
+      "version": "51.1",
+      "file": "gnome-shell-51.1.tar.xz",
+      "url": "https://download.gnome.org/sources/gnome-shell/51/gnome-shell-51.1.tar.xz",
+      "sha256": "c1eb08d9651a567ed5d9b2791371f1898e657cf45e75e1d88adefbab807977d6"
+    },
+    "alpine": {
+      "version": "3.24.2",
+      "file": "alpine-minirootfs-3.24.2-x86_64.tar.gz",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/alpine-minirootfs-3.24.2-x86_64.tar.gz",
+      "sha256": "c5ca053cfe1d85c5b96dff8b9bc57045f7f184a30ffb6b65776409ca90388677",
+      "aarch64Sha256": "9bf70a7f18ea44094cbb5f70c58f9af129c8214745743db0e68e5502cc2ce773"
+    }
+  },
+  "images": {
+    "bunos-gaming": {
+      "usrComposition": "gaming",
+      "platforms": ["linux/amd64"],
+      "targets": {
+        "gaming": "image",
+        "bootable": "rootfs"
+      }
+    },
+    "bunos-alpine": {
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "targets": {
+        "runtime": "image",
+        "edge": "image"
+      }
+    },
+    "bunos-ubuntu": {
+      "platforms": ["linux/amd64"],
+      "targets": {
+        "desktop": "image",
+        "bootable": "rootfs"
+      }
+    }
+  }
+}
