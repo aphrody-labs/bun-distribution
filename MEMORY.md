@@ -1,3 +1,46 @@
+## Arch factory ownership — 2026-10-16
+
+The expanded owner request selects CachyOS, ChimeraOS and Omarchy references,
+pacman/libalpm as the primary Linux package manager, and one root factory.
+The three agents delivered exhaustive custom recipe/package catalogs,
+upstream kernel/Rust source identities, build tools, SDK/library metadata and
+license boundaries. The root provisioned/read back 45 immutable references
+across 43 Aphrody Labs forks and registered their Git owners under forks/.
+Checkout initialization, nested gitlink/LFS closure and source export remain
+separate gates. External Rust projects retain their own locks/workspaces;
+they are not silently added to the product Cargo graph.
+
+factory/profile.json is Arch; factory/ubuntu-profile.json and ubuntu.ts are
+the distinct Ubuntu compatibility owner. Server is headless, Desktop uses
+COSMIC, and Gaming uses an optional explicit Gamescope session. full/perf
+remain runtime/rendering profiles. Complete catalogs do not select conflicting
+sessions or enable upstream services/installers. Existing Bun acceleration
+kernel aphrody-labs/linux remains unchanged; CachyOS, OGC and NVIDIA histories
+have distinct pinned owners. Aurora shares the CachyOS GitHub fork network.
+
+The admitted VPS has Docker 29.1.3, Buildx 0.30.1, Compose 2.40.3 and native
+Bun 1.4.4. Official Arch bootstrap digest is
+sha256:061679925e5d5028f2df9395d441ce6c4b9accf0157ff3486c06b6962e014ef1.
+Archive 2026-10-16 returned 404; the dated 2026-10-15 core database returned 200. Never replace an unavailable dated snapshot with a mutable last/latest
+URL. Rootfs, kernel/boot, desktop/hardware and release receipts are separate.
+
+The signed server closure resolves 137 packages. Offline Docker installation
+and exact inventory verification passed; rootfs.tar is 599900160 bytes with
+SHA-256 b4fe81b98f9c4f18daa66220a7eb8388b5bd77945b2985557f8bf79ce225d624.
+The committed package lock and qualification evidence live in factory/arch/.
+Docker resolution uses a job-owned network because the VPS default docker0
+bridge is absent; it never resets the shared daemon. The existing heavy lock
+is shared with other build owners and is never stolen.
+
+The owner supplied MSYS2 source and Home contexts. The read-only inspector
+reports 43 declarations, 26 source views, 25 Git checkouts and 100 native
+pacman packages. Seven broken CachyOS junctions now target the existing flat
+Bun Engine crate owners; ten pre-existing Linux recipe conflicts and a missing
+Git alternate remain preserved. These MSYS2 binaries do not qualify Linux
+glibc artifacts. Three newly created duplicate forks were removed from the
+source graph in favor of existing canonical owners; remote deletion is pending
+because GitHub rejects DELETE without the delete_repo credential scope.
+
 ## Flat member migration — 2026-10-16
 
 The selected product members are being merged into direct children of the root

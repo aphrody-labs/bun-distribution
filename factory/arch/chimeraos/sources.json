@@ -1,0 +1,939 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-16",
+  "lookup": {
+    "provider": "GitHub MCP official repository metadata, pinned Git trees and files",
+    "context7": {
+      "chimeraOs": "No relevant match; unrelated UCSF ChimeraX results rejected.",
+      "archLinuxLibrary": "/websites/wiki_archlinux_title",
+      "topics": ["Package signing", "Arch Linux Archive", "makepkg reproducibility"]
+    }
+  },
+  "sources": [
+    {
+      "id": "chimeraos-chimeraos",
+      "repository": "https://github.com/ChimeraOS/chimeraos.git",
+      "revision": "89b58ba69f52b4723a7bff472b9445b8b220c91f",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "87455253d6b1655150bb06dacc2d29f2ec2d9b82",
+        "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-chimeraos"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/build-builder.yml",
+          "gitBlob": "e98ec544a6d2b95e7c55d1153e563a3ceba377b8",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/.github/workflows/build-builder.yml"
+        },
+        {
+          "path": ".github/workflows/build-system-image.yml",
+          "gitBlob": "a4b77a540fea007106ba8d9476bb1a23b722fb23",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/.github/workflows/build-system-image.yml"
+        },
+        {
+          "path": ".github/workflows/main.yml",
+          "gitBlob": "2e4a8a4f772dab7f2e10ed07b4e7763be5f0eb66",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/.github/workflows/main.yml"
+        },
+        {
+          "path": "Dockerfile",
+          "gitBlob": "ddcbbde5d98dad4750c328ea60576267dc8193a2",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/Dockerfile"
+        },
+        {
+          "path": "manifest",
+          "gitBlob": "c1ccb3908c4cbd5f57ee45d9d15385e48d29eb3c",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/manifest"
+        },
+        {
+          "path": "pkgs/rtl88x2bu-dkms/PKGBUILD",
+          "gitBlob": "e4a61a6eacfeeadae4d0af9a80bfd724d498ac1a",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/pkgs/rtl88x2bu-dkms/PKGBUILD"
+        },
+        {
+          "path": "pkgs/xonedo-dkms/PKGBUILD",
+          "gitBlob": "be295cb7001bd87a3c1e2728f3a61d163d6d7302",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/pkgs/xonedo-dkms/PKGBUILD"
+        },
+        {
+          "path": "pkgs/xonedo-firmware/PKGBUILD",
+          "gitBlob": "c039614dbba1e802d3c87ec701b6344ddb85f123",
+          "url": "https://github.com/ChimeraOS/chimeraos/blob/89b58ba69f52b4723a7bff472b9445b8b220c91f/pkgs/xonedo-firmware/PKGBUILD"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-frzr",
+      "repository": "https://github.com/ChimeraOS/frzr.git",
+      "revision": "4d15ebe4fdff0925691f6a1c2766af0c5ca26314",
+      "role": "deployment-reference",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "61b99ebb0a293cf6f68f0534943434a1d858aa6d",
+        "url": "https://github.com/ChimeraOS/frzr/blob/4d15ebe4fdff0925691f6a1c2766af0c5ca26314/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-frzr"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/tests.yaml",
+          "gitBlob": "6ba43cf296e607c2fcc34c02b941b8aeec0ff2c5",
+          "url": "https://github.com/ChimeraOS/frzr/blob/4d15ebe4fdff0925691f6a1c2766af0c5ca26314/.github/workflows/tests.yaml"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-chimera",
+      "repository": "https://github.com/ChimeraOS/chimera.git",
+      "revision": "11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "8cc81c1093d34ac4d48cab96334bab84ff65f770",
+        "url": "https://github.com/ChimeraOS/chimera/blob/11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-chimera"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/container.yml",
+          "gitBlob": "5830ee18fb68d18cbbd41e8a5ce8be5bd76ac011",
+          "url": "https://github.com/ChimeraOS/chimera/blob/11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4/.github/workflows/container.yml"
+        },
+        {
+          "path": ".github/workflows/pythontests.yml",
+          "gitBlob": "01bee830eeec6dede30c6646b5cbf60d71ab6d96",
+          "url": "https://github.com/ChimeraOS/chimera/blob/11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4/.github/workflows/pythontests.yml"
+        },
+        {
+          "path": "Dockerfile",
+          "gitBlob": "ee68d6e18b4b25fb78e97fd53964182df2bd3e6f",
+          "url": "https://github.com/ChimeraOS/chimera/blob/11bb351abd46c2a0f9e9bec5bad56d7f7fbd07f4/Dockerfile"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-gamescope-session",
+      "repository": "https://github.com/ChimeraOS/gamescope-session.git",
+      "revision": "73d2da84ace7f41006a0f85bd2fdb19ef593a464",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "fa2608b0ac1c8cbcbf1aac7172861dd7abfe25e9",
+        "url": "https://github.com/ChimeraOS/gamescope-session/blob/73d2da84ace7f41006a0f85bd2fdb19ef593a464/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-gamescope-session"
+      },
+      "submodules": [],
+      "evidence": []
+    },
+    {
+      "id": "chimeraos-gamescope-session-steam",
+      "repository": "https://github.com/ChimeraOS/gamescope-session-steam.git",
+      "revision": "1a3fdb7fa15a4bba7204bef69702b7a10a297828",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "c24316985e66a4704f61ce5e0e75574ab74c06b2",
+        "url": "https://github.com/ChimeraOS/gamescope-session-steam/blob/1a3fdb7fa15a4bba7204bef69702b7a10a297828/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-gamescope-session-steam"
+      },
+      "submodules": [],
+      "evidence": []
+    },
+    {
+      "id": "chimeraos-device-quirks",
+      "repository": "https://github.com/ChimeraOS/device-quirks.git",
+      "revision": "ee8e66690eb460ec8b13b56eabb7388298e0972f",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "47800b140ccfb5139fcf0a924b5c7dd1183f5b3a",
+        "url": "https://github.com/ChimeraOS/device-quirks/blob/ee8e66690eb460ec8b13b56eabb7388298e0972f/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-device-quirks"
+      },
+      "submodules": [],
+      "evidence": []
+    },
+    {
+      "id": "chimeraos-linux-chimeraos",
+      "repository": "https://github.com/ChimeraOS/linux-chimeraos.git",
+      "revision": "343b478ab97c6eb54c48fb8f1442e7a51dc96be3",
+      "role": "historical-kernel-reference",
+      "license": {
+        "expression": "GPL-2.0-only",
+        "path": "LICENSE",
+        "gitBlob": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+        "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-linux-chimeraos"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/integration-test.yaml",
+          "gitBlob": "80f7378559c8c701f78ec103fa8bf515ce73332f",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/.github/workflows/integration-test.yaml"
+        },
+        {
+          "path": ".github/workflows/main.yaml",
+          "gitBlob": "9307368451fbc7f4b62f393e6baf0892359c82dd",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/.github/workflows/main.yaml"
+        },
+        {
+          "path": "linux/PKGBUILD",
+          "gitBlob": "4fa0f069557f09695f06d6808066df092ea97a42",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/linux/PKGBUILD"
+        },
+        {
+          "path": "linux/config",
+          "gitBlob": "1fcd94ab535a3a90255547b2ef3a62804092a2b4",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/linux/config"
+        },
+        {
+          "path": "linux/config-chimera",
+          "gitBlob": "ccebee7c4f7a7658c9004def23b0575d0d899ec2",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/linux/config-chimera"
+        },
+        {
+          "path": "linux/experiments.patch",
+          "gitBlob": "06fb5538eb127577f380926a1de49640cccb33b3",
+          "url": "https://github.com/ChimeraOS/linux-chimeraos/blob/343b478ab97c6eb54c48fb8f1442e7a51dc96be3/linux/experiments.patch"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-mesa-chimeraos",
+      "repository": "https://github.com/ChimeraOS/mesa-chimeraos.git",
+      "revision": "227702cc63526bafe1cc8418aece3b47ff5a9669",
+      "role": "optional-graphics-recipe",
+      "license": {
+        "expression": "MIT AND BSD-3-Clause AND SGI-B-2.0",
+        "path": "LICENSE",
+        "gitBlob": "060f4a925b9b0861fa37102ada8e10b2649895f0",
+        "url": "https://github.com/ChimeraOS/mesa-chimeraos/blob/227702cc63526bafe1cc8418aece3b47ff5a9669/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-mesa-chimeraos"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/integration-test.yaml",
+          "gitBlob": "f67028b682c112d591451bf608c622145f53aa91",
+          "url": "https://github.com/ChimeraOS/mesa-chimeraos/blob/227702cc63526bafe1cc8418aece3b47ff5a9669/.github/workflows/integration-test.yaml"
+        },
+        {
+          "path": ".github/workflows/main.yaml",
+          "gitBlob": "c3f55616836f484a0e749d144669b985c440aefe",
+          "url": "https://github.com/ChimeraOS/mesa-chimeraos/blob/227702cc63526bafe1cc8418aece3b47ff5a9669/.github/workflows/main.yaml"
+        },
+        {
+          "path": "lib32-mesa/PKGBUILD",
+          "gitBlob": "2d06800138b63da24f3aba7ba376cc2b520dfaa5",
+          "url": "https://github.com/ChimeraOS/mesa-chimeraos/blob/227702cc63526bafe1cc8418aece3b47ff5a9669/lib32-mesa/PKGBUILD"
+        },
+        {
+          "path": "mesa/PKGBUILD",
+          "gitBlob": "b3211d6b70600608878ee5caf68ecd9295234964",
+          "url": "https://github.com/ChimeraOS/mesa-chimeraos/blob/227702cc63526bafe1cc8418aece3b47ff5a9669/mesa/PKGBUILD"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-install-media",
+      "repository": "https://github.com/ChimeraOS/install-media.git",
+      "revision": "8a4f21f677f941dd8611679d7c667c5be8d0b049",
+      "role": "installer-reference",
+      "license": {
+        "expression": "GPL-3.0-or-later",
+        "path": "LICENSE",
+        "gitBlob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "url": "https://github.com/ChimeraOS/install-media/blob/8a4f21f677f941dd8611679d7c667c5be8d0b049/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-install-media"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/main.yml",
+          "gitBlob": "3d7bcf213455cb60c627c1acd50923664554b564",
+          "url": "https://github.com/ChimeraOS/install-media/blob/8a4f21f677f941dd8611679d7c667c5be8d0b049/.github/workflows/main.yml"
+        },
+        {
+          "path": "docker/Dockerfile",
+          "gitBlob": "629b848eef27c16f66ff1522c8cd8c1a488ed861",
+          "url": "https://github.com/ChimeraOS/install-media/blob/8a4f21f677f941dd8611679d7c667c5be8d0b049/docker/Dockerfile"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-gamescope",
+      "repository": "https://github.com/ChimeraOS/gamescope.git",
+      "revision": "5a053e8cd15043760d68b24954efbec73b425c8f",
+      "role": "reference-source",
+      "license": {
+        "expression": "BSD-2-Clause",
+        "path": "LICENSE",
+        "gitBlob": "5fa2814042b268d4a315119869d31f275cfb8769",
+        "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-gamescope"
+      },
+      "submodules": [
+        {
+          "path": "subprojects/wlroots",
+          "repository": "https://github.com/Joshua-Ashton/wlroots.git",
+          "revision": "4bc5333a2cbba0b0b88559f281dbde04b849e6ef",
+          "state": "pinned"
+        },
+        {
+          "path": "subprojects/libliftoff",
+          "repository": "https://gitlab.freedesktop.org/emersion/libliftoff.git",
+          "revision": "8b08dc1c14fd019cc90ddabe34ad16596b0691f4",
+          "state": "pinned"
+        },
+        {
+          "path": "subprojects/vkroots",
+          "repository": "https://github.com/Joshua-Ashton/vkroots",
+          "revision": "5106d8a0df95de66cc58dc1ea37e69c99afc9540",
+          "state": "pinned"
+        },
+        {
+          "path": "subprojects/libdisplay-info",
+          "repository": "https://gitlab.freedesktop.org/emersion/libdisplay-info",
+          "revision": "66b802d05b374cd8f388dc6ad1e7ae4f08cb3300",
+          "state": "pinned"
+        },
+        {
+          "path": "subprojects/openvr",
+          "repository": "https://github.com/ValveSoftware/openvr.git",
+          "revision": "ebd425331229365dc3ec42d1bb8b2cc3c2332f81",
+          "state": "pinned"
+        },
+        {
+          "path": "src/reshade",
+          "repository": "https://github.com/Joshua-Ashton/reshade",
+          "revision": "696b14cd6006ae9ca174e6164450619ace043283",
+          "state": "pinned"
+        },
+        {
+          "path": "thirdparty/SPIRV-Headers",
+          "repository": "https://github.com/KhronosGroup/SPIRV-Headers/",
+          "revision": "d790ced752b5bfc06b6988baadef6eb2d16bdf96",
+          "state": "pinned"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".github/workflows/main.yml",
+          "gitBlob": "2e5476b5e76787b3717f4c68974797820855d08e",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/.github/workflows/main.yml"
+        },
+        {
+          "path": ".gitmodules",
+          "gitBlob": "ec7d4e430ee83322a5b91e8caabcf73d9af460b3",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/.gitmodules"
+        },
+        {
+          "path": "layer/meson.build",
+          "gitBlob": "86e6efbd9bda430a395eb247bfc32ca56ea3e6c2",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/layer/meson.build"
+        },
+        {
+          "path": "meson.build",
+          "gitBlob": "c4924c7afb44b00be8441b30433b042f9fd0531e",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/meson.build"
+        },
+        {
+          "path": "protocol/meson.build",
+          "gitBlob": "dbce92edce5211a0260df1eb3ea69b4e8e72c3a8",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/protocol/meson.build"
+        },
+        {
+          "path": "src/meson.build",
+          "gitBlob": "d4ff3ea142f5955ba0a2b42ec4fa09d409905459",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/src/meson.build"
+        },
+        {
+          "path": "subprojects/glm.wrap",
+          "gitBlob": "3e009013971ba9bd0cee4a07a472524ed6132368",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/subprojects/glm.wrap"
+        },
+        {
+          "path": "subprojects/packagefiles/stb/meson.build",
+          "gitBlob": "69d02d58e42d539b2dba43e65221877fd70e88a6",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/subprojects/packagefiles/stb/meson.build"
+        },
+        {
+          "path": "subprojects/stb.wrap",
+          "gitBlob": "0083f4f76f800a94fdeb18e0bf1e8bed353371ca",
+          "url": "https://github.com/ChimeraOS/gamescope/blob/5a053e8cd15043760d68b24954efbec73b425c8f/subprojects/stb.wrap"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-flathub-proxy",
+      "repository": "https://github.com/ChimeraOS/flathub-proxy.git",
+      "revision": "9977ef98f99ef5b9fbcf42e44516a64cf23b13ec",
+      "role": "reference-source",
+      "license": {
+        "expression": "MIT",
+        "path": "LICENSE",
+        "gitBlob": "044ec5eb5c53ae38e495b88bf4cbd9c2d8130c2e",
+        "url": "https://github.com/ChimeraOS/flathub-proxy/blob/9977ef98f99ef5b9fbcf42e44516a64cf23b13ec/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-flathub-proxy"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/main.yml",
+          "gitBlob": "7ddbb814fec76760bca3507504d5ec16fb878966",
+          "url": "https://github.com/ChimeraOS/flathub-proxy/blob/9977ef98f99ef5b9fbcf42e44516a64cf23b13ec/.github/workflows/main.yml"
+        }
+      ]
+    },
+    {
+      "id": "opengamingcollective-kernel-packages",
+      "repository": "https://github.com/OpenGamingCollective/kernel-packages.git",
+      "revision": "170127c4226d4cc7747b4a4e07167cdb6ea7166b",
+      "role": "kernel-packaging",
+      "license": {
+        "expression": "GPL-3.0 (precise grant review required)",
+        "path": "LICENSE",
+        "gitBlob": "2bba47d3530e467ad70c36a55b57cf2f97c4aa76",
+        "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/opengamingcollective-kernel-packages"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/arch.yaml",
+          "gitBlob": "cfb6e04c080b4bb0421449320126b58497ac7c48",
+          "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/.github/workflows/arch.yaml"
+        },
+        {
+          "path": ".github/workflows/fedora.yaml",
+          "gitBlob": "2ac53ed85c0b7a7422c79c2969be5f982eef1488",
+          "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/.github/workflows/fedora.yaml"
+        },
+        {
+          "path": ".github/workflows/scorecard.yml",
+          "gitBlob": "8f9f16f6461cbc89fa97086c7a83de68d2f15bb2",
+          "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/.github/workflows/scorecard.yml"
+        },
+        {
+          "path": ".github/workflows/ubuntu.yaml",
+          "gitBlob": "c1fdcb98ef39a3dfe74d02651e7bb19e0f1aeec9",
+          "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/.github/workflows/ubuntu.yaml"
+        },
+        {
+          "path": "arch/PKGBUILD",
+          "gitBlob": "14f6b782b63c8dbb5c74cdfe48ab91e3602b8fe1",
+          "url": "https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/arch/PKGBUILD"
+        }
+      ]
+    },
+    {
+      "id": "shadowblip-inputplumber",
+      "repository": "https://github.com/ShadowBlip/InputPlumber.git",
+      "revision": "d951ef9df713a3ad3a88645a8c07b79ea5592274",
+      "role": "external-rust-capability",
+      "license": {
+        "expression": "GPL-3.0-or-later",
+        "path": "LICENSE",
+        "gitBlob": "53d1f3d01864c35841739c55aeba9700657627b7",
+        "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/shadowblip-inputplumber"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/docs.yaml",
+          "gitBlob": "81e0564fa687e55ee7f175aed183a76daffc8024",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/.github/workflows/docs.yaml"
+        },
+        {
+          "path": ".github/workflows/release.yaml",
+          "gitBlob": "e67910f4d4321cb5509e973467b6c3f5b797c43a",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/.github/workflows/release.yaml"
+        },
+        {
+          "path": ".github/workflows/test.yaml",
+          "gitBlob": "8d8c2f62efadae249e7154ebfe5f35c4fd33e76a",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/.github/workflows/test.yaml"
+        },
+        {
+          "path": "Cargo.lock",
+          "gitBlob": "c5bd0e4b66da89ec87c39582c5062fc7fe8623af",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/Cargo.lock"
+        },
+        {
+          "path": "Cargo.toml",
+          "gitBlob": "9e419310d4036dd629393072d67d0cbeaf77ff92",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/Cargo.toml"
+        },
+        {
+          "path": "Dockerfile",
+          "gitBlob": "a5377c92f4432cad97266c8359edea4a9c7cb05f",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/Dockerfile"
+        },
+        {
+          "path": "pkg/archlinux/PKGBUILD",
+          "gitBlob": "0a909391e1441ed2183c82357718de6fb567df92",
+          "url": "https://github.com/ShadowBlip/InputPlumber/blob/d951ef9df713a3ad3a88645a8c07b79ea5592274/pkg/archlinux/PKGBUILD"
+        }
+      ]
+    },
+    {
+      "id": "shadowblip-powerstation",
+      "repository": "https://github.com/ShadowBlip/PowerStation.git",
+      "revision": "f5145850eb649707811648b372eaf1f1066b439d",
+      "role": "external-rust-capability",
+      "license": {
+        "expression": "GPL-3.0-or-later",
+        "path": "LICENSE",
+        "gitBlob": "53d1f3d01864c35841739c55aeba9700657627b7",
+        "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/shadowblip-powerstation"
+      },
+      "submodules": [],
+      "evidence": [
+        {
+          "path": ".github/workflows/release.yaml",
+          "gitBlob": "5aa8baa3068d0a1948504a54f073289200e96329",
+          "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/.github/workflows/release.yaml"
+        },
+        {
+          "path": ".github/workflows/test.yaml",
+          "gitBlob": "7bd6515a1b993e5092af361d9afce4674d76beb8",
+          "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/.github/workflows/test.yaml"
+        },
+        {
+          "path": "Cargo.lock",
+          "gitBlob": "dd452e9eedde2153759cd3f1455a2a6ba2cf9675",
+          "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/Cargo.lock"
+        },
+        {
+          "path": "Cargo.toml",
+          "gitBlob": "e6fee3b3ec0c1983c0ec37a63405547036eea04d",
+          "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/Cargo.toml"
+        },
+        {
+          "path": "Dockerfile",
+          "gitBlob": "af8d23617b34a895092aee44ad572f266c867c6d",
+          "url": "https://github.com/ShadowBlip/PowerStation/blob/f5145850eb649707811648b372eaf1f1066b439d/Dockerfile"
+        }
+      ]
+    },
+    {
+      "id": "shadowblip-opengamepadui",
+      "repository": "https://github.com/ShadowBlip/OpenGamepadUI.git",
+      "revision": "0db5812f21e98d0a5ac70bb1b5a674f2f369c22c",
+      "role": "external-rust-capability",
+      "license": {
+        "expression": "GPL-3.0 (precise grant review required)",
+        "path": "LICENSE",
+        "gitBlob": "53d1f3d01864c35841739c55aeba9700657627b7",
+        "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/LICENSE",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/shadowblip-opengamepadui"
+      },
+      "submodules": [
+        {
+          "path": "gdext/godot-dbus",
+          "repository": "https://github.com/ShadowBlip/godot-dbus.git",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        },
+        {
+          "path": "gdext/godot-cpp",
+          "repository": "https://github.com/godotengine/godot-cpp",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        },
+        {
+          "path": "gdext/godot-linuxthread",
+          "repository": "https://github.com/ShadowBlip/godot-linuxthread.git",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        },
+        {
+          "path": "gdext/godot-pty",
+          "repository": "https://github.com/ShadowBlip/godot-pty.git",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        },
+        {
+          "path": "gdext/godot-unix-socket",
+          "repository": "https://github.com/ShadowBlip/godot-unix-socket.git",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        },
+        {
+          "path": "gdext/godot-xlib",
+          "repository": "https://github.com/ShadowBlip/godot-xlib.git",
+          "revision": null,
+          "state": "stale-declaration-no-gitlink"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".github/workflows/docker.yaml",
+          "gitBlob": "f2cd1c538f38a458df12b036ff41b3dda8a9f621",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/.github/workflows/docker.yaml"
+        },
+        {
+          "path": ".github/workflows/docs.yaml",
+          "gitBlob": "81e0564fa687e55ee7f175aed183a76daffc8024",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/.github/workflows/docs.yaml"
+        },
+        {
+          "path": ".github/workflows/release.yaml",
+          "gitBlob": "64c9382a68ac7ec2db7f09ed326a2ec2cdd8a0cc",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/.github/workflows/release.yaml"
+        },
+        {
+          "path": ".github/workflows/test.yaml",
+          "gitBlob": "ae6cc8ba5705a1e8009c3571235e4cdf7758591d",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/.github/workflows/test.yaml"
+        },
+        {
+          "path": ".gitmodules",
+          "gitBlob": "40faf87f6b066b96cb29e8412e3277172673ebe9",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/.gitmodules"
+        },
+        {
+          "path": "docker/Dockerfile",
+          "gitBlob": "594c62cd7d51fff276d00d7f9da64365afd54f31",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/docker/Dockerfile"
+        },
+        {
+          "path": "extensions/Cargo.lock",
+          "gitBlob": "cd1a5bfecfcafd3ca6d7c899cbed4f2dd030004c",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/extensions/Cargo.lock"
+        },
+        {
+          "path": "extensions/Cargo.toml",
+          "gitBlob": "b60cab8a3f3cade29ab9a7935d6a6987c712f3be",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/extensions/Cargo.toml"
+        },
+        {
+          "path": "extensions/core/Cargo.toml",
+          "gitBlob": "a37e6c4c4938391b997b527e0a75a3230483ef0c",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/extensions/core/Cargo.toml"
+        },
+        {
+          "path": "extensions/docgen/Cargo.toml",
+          "gitBlob": "aebc654b709e4ef7d61eff25c5ac6756156e53e1",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/extensions/docgen/Cargo.toml"
+        },
+        {
+          "path": "extensions/reaper/Cargo.toml",
+          "gitBlob": "ca0494240d42a9dd74da7c017aecbdfb59898df7",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/extensions/reaper/Cargo.toml"
+        },
+        {
+          "path": "package/archlinux/PKGBUILD",
+          "gitBlob": "8e7e0c210ac802eb8a0ce03a57eec96ab25c5256",
+          "url": "https://github.com/ShadowBlip/OpenGamepadUI/blob/0db5812f21e98d0a5ac70bb1b5a674f2f369c22c/package/archlinux/PKGBUILD"
+        }
+      ]
+    },
+    {
+      "id": "chimeraos-linux",
+      "repository": "https://github.com/ChimeraOS/linux.git",
+      "revision": "f65e28e97dcd11456b8ef6cbfec490e0bb95a646",
+      "role": "historical-kernel-reference",
+      "license": {
+        "expression": "GPL-2.0 WITH Linux-syscall-note; per-file licenses apply",
+        "path": "COPYING",
+        "gitBlob": null,
+        "url": "https://github.com/ChimeraOS/linux/blob/f65e28e97dcd11456b8ef6cbfec490e0bb95a646/COPYING",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/chimeraos-linux"
+      },
+      "submodules": [],
+      "evidence": []
+    },
+    {
+      "id": "opengamingcollective-linux",
+      "repository": "https://github.com/OpenGamingCollective/linux.git",
+      "revision": "2e50781f1e2e536ec33e167733edc9de71c153b0",
+      "role": "kernel-source",
+      "license": {
+        "expression": "GPL-2.0 WITH Linux-syscall-note; per-file licenses apply",
+        "path": "COPYING",
+        "gitBlob": null,
+        "url": "https://github.com/OpenGamingCollective/linux/blob/2e50781f1e2e536ec33e167733edc9de71c153b0/COPYING",
+        "packageClosureRequiresOwnLicenseNotices": true
+      },
+      "importPolicy": "Managed external source under root-owned forks; no product crate/workspace membership inferred.",
+      "fork": {
+        "owner": "root-infra",
+        "state": "not-provisioned",
+        "suggestedPath": "forks/opengamingcollective-linux"
+      },
+      "submodules": [],
+      "evidence": []
+    }
+  ],
+  "organizationInventory": [
+    {
+      "repository": "ChimeraOS/chimeraos",
+      "branch": "master",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/chimera",
+      "branch": "master",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/gamescope-session",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/steamos-compositor-plus",
+      "branch": "master",
+      "archived": true,
+      "decision": "reject-archived-implementation"
+    },
+    {
+      "repository": "ChimeraOS/frzr",
+      "branch": "master",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/install-media",
+      "branch": "master",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/gamescope-session-steam",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/gamescope",
+      "branch": "gamescope-plus",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/linux-chimeraos",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/device-quirks",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/chimera-data",
+      "branch": "master",
+      "archived": false,
+      "decision": "reject-data-and-unlicensed-binary-payload"
+    },
+    {
+      "repository": "ChimeraOS/chimeraos-installer",
+      "branch": "main",
+      "archived": true,
+      "decision": "reject-archived-implementation"
+    },
+    {
+      "repository": "ChimeraOS/mesa-chimeraos",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/chimeraos.github.io",
+      "branch": "master",
+      "archived": false,
+      "decision": "documentation-reference"
+    },
+    {
+      "repository": "ChimeraOS/linux",
+      "branch": "master",
+      "archived": false,
+      "decision": "source-catalogued"
+    },
+    {
+      "repository": "ChimeraOS/reverse-engineering-tools",
+      "branch": "main",
+      "archived": false,
+      "decision": "reject-data-and-unlicensed-binary-payload"
+    },
+    {
+      "repository": "ChimeraOS/flathub-proxy",
+      "branch": "main",
+      "archived": false,
+      "decision": "source-catalogued"
+    }
+  ],
+  "historicalKernel": {
+    "recipeRevision": "343b478ab97c6eb54c48fb8f1442e7a51dc96be3",
+    "tag": "v6.14.9-chos1",
+    "sourceRevision": "aa6c964544199c283c9e79a5f2c4b7fad572c0ef",
+    "note": "Recipe-paired historical pin; distinct from observed ChimeraOS/linux HEAD and current OGC image kernel."
+  },
+  "kernelTools": {
+    "ogc": {
+      "architecture": "x86_64",
+      "rustcMinimum": "1.85.0",
+      "bindgenMinimum": "0.71.1",
+      "buildSystem": "Kbuild; rust/Cargo.toml absent",
+      "buildPackages": [
+        "bc",
+        "cpio",
+        "gettext",
+        "libelf",
+        "pahole",
+        "perl",
+        "python",
+        "rust",
+        "rust-bindgen",
+        "rust-src",
+        "tar",
+        "xz",
+        "graphviz",
+        "imagemagick",
+        "python-sphinx",
+        "python-yaml",
+        "texlive-latexextra"
+      ],
+      "evidenceUrl": "https://github.com/OpenGamingCollective/linux/blob/2e50781f1e2e536ec33e167733edc9de71c153b0/scripts/min-tool-version.sh"
+    },
+    "chimeraHistorical": {
+      "architecture": "x86_64",
+      "observedHeadRustcMinimum": "1.78.0",
+      "observedHeadBindgenMinimum": "0.65.1",
+      "buildPackages": ["bc", "cpio", "gettext", "libelf", "pahole", "perl", "python", "tar", "xz"],
+      "note": "Observed HEAD requirements are not asserted for historical recipe tag without its separate gate."
+    }
+  },
+  "mesonWraps": [
+    {
+      "source": "ChimeraOS/gamescope",
+      "path": "subprojects/glm.wrap",
+      "version": "0.9.9.8",
+      "sourceUrl": "https://github.com/g-truc/glm/archive/0.9.9.8.tar.gz",
+      "sourceSha256": "7d508ab72cb5d43227a3711420f06ff99b0a0cb63ee2f93631b162bfe1fe9592",
+      "patchSha256": "d930a1fcd3a28d84be4e92cc4c71ff59e170a1ebbd3dbfce631eba19e478d83d"
+    },
+    {
+      "source": "ChimeraOS/gamescope",
+      "path": "subprojects/stb.wrap",
+      "repository": "https://github.com/nothings/stb.git",
+      "revision": "5736b15f7ea0ffb08dd38af21067c314d6a3aae9"
+    }
+  ]
+}

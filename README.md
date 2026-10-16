@@ -49,12 +49,24 @@ desktop binaries and deployment require their own qualification.
 
 ## Distribution factory
 
+Arch Linux is the primary Linux package model, with pacman/libalpm and one
+root factory. Complete CachyOS, ChimeraOS and Omarchy source/recipe catalogs
+feed separate headless Server, COSMIC Desktop and Gamescope Gaming compositions.
+See [factory usage](factory/README.md) and
+[architecture decisions](docs/architecture/arch-distribution.md).
+
+```sh
+bun run factory --action plan --composition server --snapshot YYYY-MM-DD
+bun run graph --composition server
+```
+
 ```sh
 bun src/cli.ts --help
 bun src/cli.ts plan --profile full --target linux-x64
 bun src/cli.ts sources --out ./out/full-new --config ./factory.local.json
 bun src/cli.ts stage --out ./out/full-new --profile full --target linux-x64 --runtime ./ARTIFACT --receipt ./RECEIPT.json
-bun src/cli.ts image --out ./out/full-new --profile full --target linux-x64 --tag bun-os:full
+bun src/cli.ts rootfs-stage --out ./out/full-new --receipt ./ROOTFS-RECEIPT.json --composition server
+bun src/cli.ts image --out ./out/full-new --root /ABSOLUTE/FACTORY --profile full --target linux-x64 --composition server --tag bun-os:server
 ```
 
 Profiles and ABIs are in `distribution.json`; source revisions are pinned in
@@ -62,9 +74,10 @@ Profiles and ABIs are in `distribution.json`; source revisions are pinned in
 hash, byte count, and native runtime qualification. A local Bun snapshot does
 not qualify a different locked runtime.
 
-The package converter and APT adapter produce metadata and package artifacts;
-they are distinct from the official APT installation engine. Native package
-transactions and signatures have separate qualification gates.
+The package converter parses ALPM metadata without executing PKGBUILDs.
+Pacman installs the exact signed closure offline through the root factory.
+APT remains a separate compatibility target. `bun run build` assembles the
+staged product image; `bun run desktop:web:build` bundles the desktop frontend.
 
 ## Libraries, desktop, and apps
 

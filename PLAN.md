@@ -1,5 +1,27 @@
 # Integration plan
 
+## Arch distribution assembly — 2026-10-16
+
+- [x] Stop the previous runtime build and local migration loop before reassessment.
+- [x] Assign three agents to CachyOS, ChimeraOS and Omarchy primary-source catalogs.
+- [x] Inventory all custom recipes, package lists, build tools, SDK/library inputs,
+      kernel sources, Rust manifests/locks and upstream licensing boundaries.
+- [x] Provision and read back 45 pinned source references in 43 Aphrody Labs forks;
+      preserve the existing Bun acceleration kernel and reuse existing source owners.
+- [x] Make Arch/pacman the primary factory profile; retain Ubuntu as a distinct
+      compatibility target. Separate server, COSMIC desktop and Gamescope gaming.
+- [x] Connect source catalogs and the Arch source/resolve/rootfs/payload/image
+      dependencies to the existing root CLI and factory graph.
+- [x] Qualify signed archive resolution and offline exact-package server rootfs
+      assembly on the admitted VPS Docker host: 137 packages from 2026-10-15,
+      exact inventory and a 599900160-byte archive with hashes and receipts.
+- [x] Reuse the owner's MSYS2 source/Home contexts through a native read-only
+      inspector; repair seven stale CachyOS junctions while preserving dirty Git work.
+- [ ] Build and qualify the selected kernel, complete desktop/gaming package
+      closures, boot media, hardware support and data-preserving updates.
+- [ ] Finish the existing Bun/Cargo member migration and frozen installation;
+      the source catalogs and new forks do not complete those older gates.
+
 ## Selected source integration and flat layout — 2026-10-16
 
 - [x] Apply the owner's narrowed scope: Bun Libraries and Aphrody only.

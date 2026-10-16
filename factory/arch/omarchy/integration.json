@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "omarchy-reference",
+  "kind": "bun-os-arch-capability-catalog",
+  "owner": "Bun OS root factory graph",
+  "enabled": false,
+  "qualified": false,
+  "executable": false,
+  "packageManager": "pacman/libalpm",
+  "catalogs": {
+    "sources": "factory/arch/omarchy/source.json",
+    "packages": "factory/arch/omarchy/packages.json",
+    "recipes": "factory/arch/omarchy/pkgbuilds.json",
+    "toolsConfigurationCLI": "factory/arch/omarchy/catalog.json",
+    "upstreams": "factory/arch/omarchy/upstreams.json",
+    "rust": "factory/arch/omarchy/rust.json",
+    "files": "factory/arch/omarchy/files.json",
+    "packageMetadata": "factory/arch/omarchy/package-metadata.json"
+  },
+  "profiles": {
+    "server": {
+      "includeDesktop": false,
+      "packages": [],
+      "reason": "Omarchy desktop packages and graphical user/session setup are not server defaults"
+    },
+    "desktop": {
+      "optional": true,
+      "session": "Hyprland + UWSM + SDDM + Quickshell",
+      "conflictsWith": ["COSMIC compositor/session selected as the same default session"],
+      "adoptedPackages": [],
+      "reason": "Catalogue is a selectable reference; central profiles must choose actual compatible capabilities"
+    }
+  },
+  "rootHooks": [
+    {
+      "owner": "factory/graph.ts",
+      "action": "Read this catalogue as nonexecutable source/package/configuration nodes after explicit central registration",
+      "dependsOn": [
+        "Pinned source policy",
+        "Common pacman repository/package snapshot",
+        "Selected host target/libc",
+        "Selected desktop/session profile"
+      ]
+    },
+    {
+      "owner": "Root Arch/pacman owner",
+      "action": "Resolve signed repository snapshot/package versions and transitive runtime/build dependencies; retain package recipe checksums/signatures"
+    },
+    {
+      "owner": "factory/native-targets.json + existing Bun native build owner",
+      "action": "Select and qualify kernel/Rust build inputs explicitly; retain Bun runtime fork and serialized build policy"
+    },
+    {
+      "owner": "Existing Aphrody Infra host/deployment owner",
+      "action": "Execute only future root-approved jobs on explicit native Linux/SSH/Docker target, no local WSL or upstream install runner"
+    }
+  ],
+  "policy": {
+    "branding": "Bun OS",
+    "runtime": "Canonical Aphrody Bun; imported Node/npm/pnpm/yarn/mise recipes are evidence, not replacement runtime policy",
+    "homeImport": false,
+    "providerTemplates": false,
+    "upstreamInstallExecution": false,
+    "upstreamMigrations": false,
+    "autoEnableServices": false,
+    "autoProvisionAccounts": false,
+    "autoConfigureBootEncryption": false,
+    "automaticKernelSelection": false,
+    "automaticBinaryRedistribution": false
+  },
+  "mechanisms": [
+    {
+      "id": "package-data",
+      "decision": "adopt",
+      "scope": "Pinned declarative lists, Arch dependency/source/license/checksum metadata",
+      "activation": "planning only"
+    },
+    {
+      "id": "desktop-capabilities",
+      "decision": "adapt",
+      "scope": "Hyprland/Quickshell session features, portals, audio and hardware recipes, only if chosen by desktop profile",
+      "activation": "blocked on session/target qualification"
+    },
+    {
+      "id": "installer-and-user-seeding",
+      "decision": "reject",
+      "scope": "Upstream apply-system/provision/reset/home/agent account/migration scripts are never the Bun OS orchestration owner"
+    },
+    {
+      "id": "kernel-recipes",
+      "decision": "adapt",
+      "scope": "Kernel fork/patch/toolchain evidence only; compare with central Bun kernel/Cachy/Chimera choices before adoption",
+      "activation": "no default selected"
+    }
+  ],
+  "requiredReceipts": [
+    "Source checkout/archive identity including recipe patches and licenses",
+    "Signed pacman database and complete resolved package closure",
+    "Host-specific resource/target/libc/toolchain receipt",
+    "Kernel/Rust and selected desktop/native runtime build receipts",
+    "Boot/session/display/GPU/input/audio qualification",
+    "Bun OS package/image/signature/update receipt"
+  ],
+  "state": "Declared integration contract; root registration and execution remain owned by main agent"
+}

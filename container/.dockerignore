@@ -14,6 +14,9 @@
 !sources/**
 !wasm/
 !wasm/**
+!arch/
+!arch/rootfs.tar
+!arch/rootfs.receipt.json
 # Sources are exported from Git's tracked inventory by the staging owner.
 # Preserve tracked fixture paths, including node_modules, PEM and dotenv files.
 # Provider stores and Git administration are never distribution source.

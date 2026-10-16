@@ -7,6 +7,9 @@ import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { sourceIntegrity } from "../container/source-integrity.ts";
 import { inspectLinuxABI } from "./elf.ts";
 import { sourceWorkspaceLocations } from "./source-workspace.ts";
+import type { Composition } from "../factory/arch/index.ts";
+import type { ArchRootfsReceipt } from "../factory/arch/pacman.ts";
+import { acquireArchHeavyLock, validateArchPackageLock } from "../factory/arch/pacman.ts";
 
 export const packageRoot = resolve(import.meta.dir, "..");
 export function materialCheckout(config: Config = {}): string {
@@ -389,24 +392,120 @@ export async function buildWasm(output: string, config: Config) {
   }
 }
 
-export async function buildImage(output: string, profile: Profile, target: Target, tag: string) {
+async function verifyArchRootfs(binary: string, receiptPath: string, target: Target, composition: Composition) {
+  const receipt: ArchRootfsReceipt = await Bun.file(receiptPath).json();
+  const artifact = await identity(binary);
+  const lock = validateArchPackageLock({
+    schemaVersion: receipt.schemaVersion,
+    target: receipt.target,
+    architecture: receipt.architecture,
+    snapshot: receipt.snapshot,
+    image: receipt.image,
+    composition: receipt.composition,
+    packages: receipt.packages,
+    approvedSigners: receipt.approvedSigners,
+  });
+  const lockSha256 = new Bun.CryptoHasher("sha256").update(JSON.stringify(lock)).digest("hex");
+  if (
+    receipt.kind !== "bun-os-arch-rootfs" ||
+    receipt.schemaVersion !== 1 ||
+    receipt.target !== target ||
+    receipt.composition !== composition ||
+    receipt.packageHashesVerified !== true ||
+    receipt.packageSignaturesVerified !== true ||
+    receipt.exactInventoryVerified !== true ||
+    receipt.artifact?.sha256 !== artifact.sha256 ||
+    receipt.artifact?.bytes !== artifact.bytes ||
+    receipt.lockSha256 !== lockSha256 ||
+    !/^[a-f0-9]{64}$/.test(receipt.inventory?.sha256) ||
+    !Number.isSafeInteger(receipt.inventory?.bytes) ||
+    receipt.inventory.bytes < 1
+  )
+    throw new Error("Arch rootfs requires an exact signed package inventory and matching archive receipt");
+  return receipt;
+}
+
+export async function stageArchRootfs(output: string, receiptPath: string, target: Target, composition: Composition) {
+  const input: ArchRootfsReceipt = await Bun.file(receiptPath).json();
+  const receipt = await verifyArchRootfs(input.artifact.path, receiptPath, target, composition);
+  const directory = join(output, "arch");
+  await mkdir(directory, { recursive: true });
+  // Exclusive destination protects a concurrently staged artifact.
+  const { constants } = await import("node:fs");
+  await copyFile(input.artifact.path, join(directory, "rootfs.tar"), constants.COPYFILE_EXCL);
+  await verifyArchRootfs(join(directory, "rootfs.tar"), receiptPath, target, composition);
+  await Bun.write(join(directory, "rootfs.receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
+  return { archive: join(directory, "rootfs.tar"), receipt: join(directory, "rootfs.receipt.json") };
+}
+
+export async function buildImage(
+  output: string,
+  profile: Profile,
+  target: Target,
+  tag: string,
+  composition: Composition,
+  factoryRoot: string,
+) {
+  if (process.platform !== "linux" || !isAbsolute(factoryRoot))
+    throw new Error("Image assembly requires an explicit native Linux factory root; use the selected SSH/Docker host");
+  const root = realpathSync.native(factoryRoot);
+  const settings = await Bun.file(join(packageRoot, "factory/profile.json")).json();
+  const token = crypto.randomUUID();
+  const claimPath = join(root, ".factory.lock");
+  const claim = await open(claimPath, "wx");
+  await claim.writeFile(JSON.stringify({ token, pid: process.pid, kind: "bun-os-image" }) + "\n");
+  let heavy: Awaited<ReturnType<typeof acquireArchHeavyLock>> | undefined;
+  let complete = false;
+  let buildStarted = false;
+  try {
+    heavy = await acquireArchHeavyLock(resolve(root, settings.sharedHeavyLockRelative));
+    const result = await assembleArchImage(output, profile, target, tag, composition, () => {
+      buildStarted = true;
+    });
+    complete = true;
+    return result;
+  } finally {
+    await claim.close();
+    if (complete || !buildStarted) {
+      await heavy?.release();
+      if ((await Bun.file(claimPath).json()).token === token) await unlink(claimPath);
+    } else heavy?.retain();
+  }
+}
+
+async function assembleArchImage(
+  output: string,
+  profile: Profile,
+  target: Target,
+  tag: string,
+  composition: Composition,
+  onBuildStart: () => void,
+) {
   if (target !== "linux-x64" && target !== "linux-arm64") throw new Error("Docker images require a Linux target");
   if (target === "linux-arm64")
-    throw new Error("The COSMIC package lock currently covers amd64; ARM64 needs its own verified package inventory");
+    throw new Error("The Arch bootstrap lock covers x86_64; ARM64 needs its own signed package inventory");
   const receipt = await Bun.file(join(output, "distribution.json")).json();
   if (receipt.profile !== profile || receipt.target !== target)
     throw new Error("Image profile and target must match the staged artifact");
+  const rootfs = await verifyArchRootfs(
+    join(output, "arch/rootfs.tar"),
+    join(output, "arch/rootfs.receipt.json"),
+    target,
+    composition,
+  );
   if (!/^[a-z0-9][a-z0-9._/:@-]+$/.test(tag)) throw new Error("Invalid OCI image tag");
+  onBuildStart();
   await command(
     [
       "docker",
       "buildx",
       "build",
       "--load",
+      "--network=none",
       "--platform",
       target === "linux-x64" ? "linux/amd64" : "linux/arm64",
       "--target",
-      profile,
+      composition,
       "--tag",
       tag,
       "--build-arg",
@@ -434,11 +533,15 @@ export async function buildImage(output: string, profile: Profile, target: Targe
     schemaVersion: 1,
     kind: "bun-os-image",
     profile,
+    composition,
     target,
     tag,
     imageId: image[0].Id,
     bytes: image[0].Size,
     runtimeSmoke: smoke,
+    packageManager: "pacman",
+    rootfs: { sha256: rootfs.artifact.sha256, lockSha256: rootfs.lockSha256, snapshot: rootfs.snapshot },
+    bootQualified: false,
     desktopQualified: false,
   };
   await Bun.write(join(output, "image.receipt.json"), JSON.stringify(result, null, 2) + "\n");

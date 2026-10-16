@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-arch-source-integration",
+  "id": "cachyos",
+  "observedAt": "2026-10-16",
+  "implementation": "declarative-inputs-only",
+  "rootBuilder": "The existing Bun OS factory graph owns source acquisition, native host admission, package building, qualification and release. This directory adds no runner, installer, host registry or package-manager implementation.",
+  "packageManager": {
+    "owner": "root common Pacman/libalpm capability",
+    "selection": "pacman",
+    "aptReplacement": "Root owner coordinates the product switch; existing APT portability history is not rewritten here.",
+    "cachyosSourceReference": {
+      "repository": "CachyOS/pacman",
+      "revision": "4056cd687f6379e61e7decb9b66e9b57cb3949a9",
+      "recipe": "pacman/PKGBUILD",
+      "recipeCatalog": "cachyos-pkgbuilds",
+      "license": "GPL-2.0-or-later",
+      "integration": "Pending root common Pacman source reconciliation; do not create another Pacman owner.",
+      "proposedRootPath": "forks/pacman"
+    }
+  },
+  "sources": [
+    {
+      "id": "cachyos-pkgbuilds",
+      "repository": "CachyOS/CachyOS-PKGBUILDS",
+      "revision": "a2e6c4392d397bed2df7134200dda558f2452af6",
+      "observedBranch": "master",
+      "proposedFork": "aphrody-labs/cachyos-pkgbuilds",
+      "role": "complete-package-recipe-catalog",
+      "license": "Per-package recipes, sources and notices; no root LICENSE was present in the inspected tree.",
+      "preserve": "Entire repository/history, all183 PKGBUILDs, all tracked metadata, patches, SDK/toolchain/library recipes and license files.",
+      "provisioning": "Root owner only; not created or mounted by this batch.",
+      "proposedRootPath": "forks/cachyos-pkgbuilds"
+    },
+    {
+      "id": "cachyos-linux-recipes",
+      "repository": "CachyOS/linux-cachyos",
+      "revision": "4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
+      "observedBranch": "master",
+      "proposedFork": "aphrody-labs/linux-cachyos",
+      "role": "complete-kernel-package-recipes",
+      "repositoryLicenseFile": {
+        "path": "LICENSE.md",
+        "gitBlob": "0a2e747f0d7ea5ac0d5428749513b82893821612",
+        "text": "GNU GPL version3"
+      },
+      "kernelPackageLicense": "GPL-2.0-only",
+      "preserve": "All10 kernel variants, configurations, metadata and notices; repository license text does not replace kernel source licensing.",
+      "provisioning": "Root owner only; not created or mounted by this batch.",
+      "proposedRootPath": "forks/linux-cachyos"
+    },
+    {
+      "id": "cachyos-linux",
+      "repository": "CachyOS/linux",
+      "revision": "b0ce79ee33ddd93d513f77341167956e1355758e",
+      "releaseTag": "cachyos-7.2.11-1",
+      "annotatedTagObject": "e561a0934fa339d071093630f77ee5ed050250a4",
+      "githubTagVerification": true,
+      "role": "kernel-source-reference-for-recipe",
+      "canonicalFork": "aphrody-labs/cachyos-linux",
+      "license": "GPL-2.0 WITH Linux-syscall-note plus per-file SPDX exceptions",
+      "copyingGitBlob": "a635a38ef9405fdfcfe97f3a435393c1e9cae971",
+      "integration": "The root owner verified different upstream GitHub fork networks: existing Bun acceleration aphrody-labs/linux is gregkh/linux; CachyOS/linux is torvalds/linux. Preserve this reference in aphrody-labs/cachyos-linux and let the single root kernel composition select/reconcile inputs. Existing Bun acceleration owner and pin remain unchanged.",
+      "defaultBranchWarning": "The repository default7.0/cachy resolved dc395da4, which does not identify the7.2.11 recipe release. Pin the dereferenced release tag, not the default branch.",
+      "proposedRootPath": "forks/cachyos-linux"
+    },
+    {
+      "id": "cachyos-kernel-patches",
+      "repository": "CachyOS/kernel-patches",
+      "revision": "17bb0bb818d283d0dc6e0280a2e9d5b95e66808b",
+      "observedBranch": "master",
+      "proposedFork": "aphrody-labs/cachyos-kernel-patches",
+      "role": "external-kernel-recipe-patch-inputs",
+      "license": "Per-patch source provenance; no root LICENSE in inspected top-level tree. Preserve each notice and validate before redistribution.",
+      "integration": "Upstream recipes use raw master URLs. Root acquisition must resolve exact pinned bytes and verify declared hashes; this pin alone is not proof of recipe-patch checksum parity.",
+      "proposedRootPath": "forks/cachyos-kernel-patches"
+    },
+    {
+      "id": "cachyos-devtools",
+      "repository": "CachyOS/devtools",
+      "revision": "8f0d146f8aaeba77a52fbe5db48f1e21b28d8551",
+      "observedBranch": "master",
+      "proposedFork": "aphrody-labs/cachyos-devtools",
+      "role": "existing-clean-chroot-package-build-capability",
+      "license": "GPL-3.0-or-later",
+      "licenseGitBlob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "recipeReference": "devtools1:1.5.2-2.1 packages Arch release tarball plus CachyOS patches3892c591,b0ed7224,33db0fc2; do not silently substitute this HEAD for that recipe closure.",
+      "integration": "Delegate to existing mkarchroot/makechrootpkg through the root native process/admission owners after source/toolchain qualification.",
+      "proposedRootPath": "forks/cachyos-devtools"
+    },
+    {
+      "id": "cachyos-pkg-manage-util",
+      "repository": "CachyOS/pkg-manage-util",
+      "revision": "927a956671108268d252523d6a0764e7cff6d969",
+      "releaseTag": "v0.1.0",
+      "annotatedTagObject": "f8ffd8b83b593a8c79140276f54e296c8da431d0",
+      "githubTagVerification": true,
+      "proposedFork": "aphrody-labs/cachyos-pkg-manage-util",
+      "role": "optional-existing-package-build-frontend",
+      "license": "GPL-3.0-or-later",
+      "licenseGitBlob": "ebd853e83a2d317422c52f3922f4c9c5bb4a10b7",
+      "integration": "Optional CLI delegates clean chroot builds to devtools. The root graph remains the only scheduler; do not add another build queue.",
+      "proposedRootPath": "forks/cachyos-pkg-manage-util"
+    },
+    {
+      "id": "cachyos-repo-manage-util",
+      "repository": "CachyOS/repo-manage-util",
+      "revision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
+      "releaseTag": "v0.3.0",
+      "annotatedTagObject": "83a297be419705aa1b4778c7bb3b8004ec2cf5d5",
+      "githubTagVerification": true,
+      "proposedFork": "aphrody-labs/cachyos-repo-manage-util",
+      "role": "optional-existing-repository-management-capability",
+      "license": "GPL-3.0-or-later",
+      "licenseGitBlob": "ebd853e83a2d317422c52f3922f4c9c5bb4a10b7",
+      "integration": "Requires libalpm and a nonoptional local pg_impl dependency. Do not add PostgreSQL/service state to a minimal package builder by assuming this is a small standalone replacement for repo-add.",
+      "proposedRootPath": "forks/cachyos-repo-manage-util"
+    },
+    {
+      "id": "cachyos-docker-makepkg-reference",
+      "repository": "CachyOS/docker-makepkg",
+      "revision": "9b0259d98e535487de07b44d7e0e7d73b7a6be29",
+      "role": "reference-only-not-admitted-runner",
+      "license": "GPLv3 license text; retain notices",
+      "licenseGitBlob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "defaultExecution": "rejected",
+      "reasons": [
+        "Mutable archlinux:base-devel image and rolling pacman sync",
+        "run.sh directly skips source integrity and masks makepkg failure with || true",
+        "No immutable image, host resource or root receipt contract"
+      ],
+      "integration": "Preserve as provenance/reference if root imports it. Do not copy or run its build chain."
+    },
+    {
+      "id": "cachyos-builder-dashboard-reference",
+      "repository": "CachyOS/builder-dashboard",
+      "revision": "cd648ede9ebcdef479e7eee81e09572807b6c0dd",
+      "role": "optional-observability-client-not-build-engine",
+      "license": "Not qualified by this batch; no source implementation copied",
+      "integration": "CachyBuilder API consumer only. No public CachyOS/cachybuilder or buildtool implementation was located; direct repo lookups returned404 and global name searches timed out. Do not invent a Rust backend or fork an unrelated repository."
+    }
+  ],
+  "catalog": "factory/arch/cachyos/catalog.json",
+  "catalogPolicy": {
+    "selection": "all-pinned-recipes",
+    "packageSubset": null,
+    "metadataReader": "Reuse packages/package-converter/src/alpm.ts srcinfo; no PKGBUILD sourcing during discovery.",
+    "missingMetadata": "Six package recipes have no tracked.SRCINFO. Keep them in the catalog as unresolved; require reviewed metadata generation on a separately admitted native host before dependency planning.",
+    "binaryRepositories": "The custom183-recipe source catalog is not all packages in CachyOS core/extra optimized binary repositories. Root Pacman owner must capture and authenticate the complete selected repository databases, signatures, package hashes and CPU tier before any installation or release.",
+    "cpuTiers": ["x86-64", "x86-64-v3", "x86-64-v4", "znver4"],
+    "cpuAdmission": "Explicit target ISA/host capability validation; never inherit native CPU tuning for redistributable generic artifacts."
+  },
+  "kernelInputs": {
+    "recipe": "linux-cachyos/PKGBUILD",
+    "recipeGitBlob": "2d69d7f7da57c57e4bf9a66195afa3d6bd1530c8",
+    "version": "7.2.11-1",
+    "sourceArchive": "https://github.com/CachyOS/linux/releases/download/cachyos-7.2.11-1/cachyos-7.2.11-1.tar.gz",
+    "sourceArchiveBLAKE2b512": "7d109d528db5d5d746f6c4c21e7f46ca7ade14fb7474e12fb39ce64369b71c7be92715db86b48823cdf0670b86d41d1f633a69d2e87038f2800b756d1b375842",
+    "detachedSignature": "https://github.com/CachyOS/linux/releases/download/cachyos-7.2.11-1/cachyos-7.2.11-1.tar.gz.asc",
+    "allowedSigningFingerprints": [
+      "E18447AC260021D31F3FF6C4C8A2A4774B8B63C4",
+      "E8B9AA39F054E30E8290D492C3C4820857F654FE"
+    ],
+    "requiredBuildPackages": [
+      "bc",
+      "binutils",
+      "cpio",
+      "gettext",
+      "glibc",
+      "libelf",
+      "libgcc",
+      "openssl",
+      "pahole",
+      "perl",
+      "python",
+      "rust",
+      "rust-bindgen",
+      "rust-src",
+      "tar",
+      "xxhash",
+      "xz",
+      "zlib",
+      "zstd",
+      "clang",
+      "llvm",
+      "lld"
+    ],
+    "toolchainMinimaFromKernelSource": {
+      "rustcNonS390": "1.85.0",
+      "bindgen": "0.71.1",
+      "llvmNonLoongarch": "17.0.1"
+    },
+    "rustBuildOwner": "Linux Kbuild rust/Makefile; not a Cargo workspace to flatten",
+    "requiredExplicitChoices": [
+      "kernel variant/scheduler",
+      "target CPU ISA",
+      "kernel config hash and Bun acceleration patch reconciliation",
+      "LLVM LTO mode",
+      "PGO/AutoFDO/Propeller workload/profile hashes when enabled",
+      "SOURCE_DATE_EPOCH",
+      "optional module sources/licenses/signatures"
+    ],
+    "disableHostDiscoveryForDistribution": [
+      "_localmodcfg=no",
+      "_use_current=no",
+      "explicit _processor_opt rather than upstream empty/native default"
+    ],
+    "serverVariant": "linux-cachyos-server/.SRCINFO declares a server-specific7.2.11 recipe without the main variant LLVM makedepends; keep variants distinct rather than assuming all use the default compiler/flags."
+  },
+  "rootBuilderHooks": [
+    {
+      "id": "source-catalog",
+      "owner": "existing root source-lock/export owner",
+      "inputs": ["sources", "catalog.json"],
+      "outputs": ["pinned source/history/license receipt"],
+      "state": "awaiting-root-source-admission"
+    },
+    {
+      "id": "metadata",
+      "owner": "existing ALPM metadata parser",
+      "inputs": ["all tracked.SRCINFO at pinned blobs"],
+      "outputs": ["all package/split-package names, dependencies, build dependencies, sources, signatures, checksums"],
+      "state": "metadata-not-yet-parsed"
+    },
+    {
+      "id": "build-input-closure",
+      "owner": "root common Pacman resolver and factory graph",
+      "inputs": ["signed repository snapshot", "CPU tier", "toolchain versions", "all selected recipe source digests"],
+      "outputs": ["fully pinned package/toolchain/source closure"],
+      "state": "blocked-until-root-contract-qualified"
+    },
+    {
+      "id": "package-build",
+      "owner": "root Infra admission + canonical native process owner + existing devtools",
+      "upstreamArgvTemplate": ["makechrootpkg", "-c", "-r", "<owned-chroot-root>"],
+      "cwd": "explicit pinned recipe directory",
+      "requiredInputs": [
+        "prequalified immutable chroot",
+        "nonroot build identity",
+        "bounded CPU/memory/disk/deadline",
+        "pinned package cache/config",
+        "source verification before internal build skipinteg"
+      ],
+      "state": "template-only-not-executable"
+    },
+    {
+      "id": "kernel-build",
+      "owner": "same root package-build hook and single linux source owner",
+      "inputs": ["kernelInputs", "selected variant metadata", "common kernel patch/provenance receipt"],
+      "outputs": ["kernel package", "modules", "headers", "source/config/toolchain/input receipt"],
+      "state": "unqualified"
+    },
+    {
+      "id": "repository-release",
+      "owner": "root common Pacman repository signer + existing Infra publication capability",
+      "inputs": [
+        "qualified pkg.tar artifacts",
+        "license/source notices",
+        "hashes",
+        "protected signing identity reference"
+      ],
+      "outputs": ["signed repository databases", "package signatures", "immutable published snapshot receipt"],
+      "state": "unqualified-no-service-or-key-created"
+    }
+  ],
+  "qualification": {
+    "metadataResearch": true,
+    "sourcesMaterialized": false,
+    "forksCreated": false,
+    "submodulesChanged": false,
+    "built": false,
+    "installed": false,
+    "testsRun": false,
+    "kernelBooted": false,
+    "released": false
+  },
+  "references": [
+    "https://github.com/CachyOS/CachyOS-PKGBUILDS/tree/a2e6c4392d397bed2df7134200dda558f2452af6",
+    "https://github.com/CachyOS/linux-cachyos/tree/4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
+    "https://github.com/CachyOS/linux/tree/b0ce79ee33ddd93d513f77341167956e1355758e",
+    "https://github.com/CachyOS/devtools/blob/8f0d146f8aaeba77a52fbe5db48f1e21b28d8551/src/makechrootpkg.in",
+    "https://github.com/CachyOS/pkg-manage-util/tree/927a956671108268d252523d6a0764e7cff6d969",
+    "https://github.com/CachyOS/repo-manage-util/tree/824f2033bcec4b0fb2232976a4fc6037577a6164",
+    "https://github.com/CachyOS/docker-makepkg/blob/9b0259d98e535487de07b44d7e0e7d73b7a6be29/docker-makepkg/run.sh",
+    "https://wiki.cachyos.org/features/optimized_repos/",
+    "https://wiki.cachyos.org/features/kernel/"
+  ]
+}

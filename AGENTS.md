@@ -22,6 +22,12 @@ services, pipelines, cloud). Merge product members into one root `crates/`,
 are not completed flattening. Reuse canonical implementations and preserve
 history, licenses and consumers before retiring source duplicates.
 
+Expanded OS direction (2026-10-16): integrate CachyOS, ChimeraOS and Omarchy
+catalogs through the root factory. Pacman/libalpm is the primary Linux package
+manager. Keep Server, COSMIC Desktop and Gamescope Gaming compositions separate;
+preserve upstream kernel/Rust histories and licenses. Imported source projects
+remain external pinned owners until deliberate Cargo/member migration.
+
 Use Bun 1.4.4 and native Bun APIs for JavaScript and TypeScript. Use the native
 quality commands directly: `bun check`, `bun lint`, `bun fmt` and `bun n2b`.
 Do not route these commands through subprocess backends, `bunx`, standalone

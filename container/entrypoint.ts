@@ -1,6 +1,6 @@
 import { verifyPayload } from "./verify-payload";
 
-const [mode = "cosmic", ...args] = Bun.argv.slice(2);
+const [mode = Bun.env.BUN_OS_COMPOSITION === "desktop" ? "cosmic" : "health", ...args] = Bun.argv.slice(2);
 const root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os";
 const desktopCommands = [
   "cosmic-session",
@@ -28,7 +28,7 @@ function requireDesktop() {
 if (mode === "health") {
   const receipt = await verifyPayload(root);
   // During image construction BUN_OS_PROFILE is not set yet.
-  if (Bun.env.BUN_OS_PROFILE === "full" || Bun.which("cosmic-session")) requireDesktop();
+  if (Bun.env.BUN_OS_COMPOSITION === "desktop") requireDesktop();
   console.log(
     JSON.stringify({
       name: receipt.name,
@@ -45,6 +45,14 @@ if (mode === "health") {
     }
     // COSMIC's own session starts the compositor, panel, launcher and daemons.
     command = ["dbus-run-session", "--", "cosmic-session", "cosmic-comp", ...args];
+  } else if (mode === "gamescope") {
+    if (Bun.env.BUN_OS_COMPOSITION !== "gaming" || !Bun.which("gamescope"))
+      throw new Error("Gamescope requires the gaming composition");
+    if (!args.length)
+      throw new Error(
+        "gamescope requires an explicit session executable after --; no account or Steam session is provisioned automatically",
+      );
+    command = ["gamescope", "--", ...args];
   } else if (mode === "exec") {
     if (!args.length) throw new Error("exec requires an executable and its arguments");
     command = args;

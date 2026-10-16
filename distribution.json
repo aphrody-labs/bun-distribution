@@ -7,7 +7,12 @@
   "desktop": "aphrody-labs/cosmic-epoch",
   "toolkit": "aphrody-labs/libcosmic",
   "material": "aphrody-labs/material",
-  "branches": { "bun": "os", "material": "os", "libcosmic": "os", "cosmic-epoch": "os" },
+  "branches": {
+    "bun": "os",
+    "material": "os",
+    "libcosmic": "os",
+    "cosmic-epoch": "os"
+  },
   "profiles": {
     "full": {
       "description": "Complete Bun fork and Material sources, COSMIC desktop and applications, GPU renderer",
@@ -41,10 +46,48 @@
       "desktop": "cosmic-session",
       "container": true
     },
-    "windows-x64": { "rust": "x86_64-pc-windows-msvc", "abi": "msvc", "libc": "ucrt", "desktop": "winit", "container": false },
-    "macos-arm64": { "rust": "aarch64-apple-darwin", "abi": "darwin", "libc": "libSystem", "desktop": "winit", "container": false },
-    "wasm": { "rust": "wasm32-unknown-unknown", "abi": "none", "libc": "none", "desktop": "browser", "container": false }
+    "windows-x64": {
+      "rust": "x86_64-pc-windows-msvc",
+      "abi": "msvc",
+      "libc": "ucrt",
+      "desktop": "winit",
+      "container": false
+    },
+    "macos-arm64": {
+      "rust": "aarch64-apple-darwin",
+      "abi": "darwin",
+      "libc": "libSystem",
+      "desktop": "winit",
+      "container": false
+    },
+    "wasm": {
+      "rust": "wasm32-unknown-unknown",
+      "abi": "none",
+      "libc": "none",
+      "desktop": "browser",
+      "container": false
+    }
   },
   "unresolvedRequirements": ["Identify the owner reference 9937-389B"],
-  "qualification": "development"
+  "qualification": "development",
+  "packageManager": "pacman/libalpm",
+  "linuxFamily": "arch",
+  "compositions": {
+    "server": {
+      "description": "Headless Bun OS",
+      "factory": "factory/profile.json",
+      "session": null
+    },
+    "desktop": {
+      "description": "COSMIC desktop",
+      "factory": "factory/profile.json",
+      "session": "cosmic-session"
+    },
+    "gaming": {
+      "description": "Optional gaming composition",
+      "factory": "factory/profile.json",
+      "session": "gamescope"
+    }
+  },
+  "profilePurpose": "full/perf select runtime/rendering features; server/desktop/gaming select system composition independently"
 }

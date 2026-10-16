@@ -1,0 +1,3547 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/omacom/omarchy-pkgs",
+  "revision": "a97afe08808ad81290792e9f9823c761be3a5f86",
+  "files": [
+    {
+      "source": {
+        "path": "pkgbuilds/1password/.omarchy/package.json",
+        "gitBlob": "56909ddfed437274879959b92b2306fcae5eeaa6",
+        "sha256": "8ef8e3576d0f593e97197c5d5ee3be72a701c5c547f9f6a6c85ac1ee05f9bec3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/1password/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "debian": "https://downloads.1password.com/linux/debian/amd64/dists/stable/main/binary-amd64/Packages",
+          "package": "1password",
+          "sources": {
+            "x86_64": [
+              "https://downloads.1password.com/linux/tar/stable/x86_64/1password-{pkgver}.x64.tar.gz",
+              "https://downloads.1password.com/linux/tar/stable/x86_64/1password-{pkgver}.x64.tar.gz.sig"
+            ],
+            "aarch64": [
+              "https://downloads.1password.com/linux/tar/stable/aarch64/1password-{pkgver}.arm64.tar.gz",
+              "https://downloads.1password.com/linux/tar/stable/aarch64/1password-{pkgver}.arm64.tar.gz.sig"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/1password-cli/.omarchy/package.json",
+        "gitBlob": "50e2a87a076cdd73e2b2a41a73bcfafda94b1a95",
+        "sha256": "d1cb29196db2f6ee5be74bb5d5d925d376ec48241f2b1542877d0b0edfe9d8dc",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/1password-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "json": "https://app-updates.agilebits.com/check/1/0/CLI2/en/0",
+            "path": "version"
+          }
+        },
+        "origin": {
+          "aur": "1password-cli",
+          "commit": "b0d208821677a5dbb883a8b92f06a5c92b9e861a"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/1password-beta/.omarchy/package.json",
+        "gitBlob": "61c481aa0af8a0ae172ae41acd4b37e26594b7e5",
+        "sha256": "2f2e65fc7d925fc11ca45e94c72e8ccc6b7db3972b0db501fda56f4db66982cf",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/1password-beta/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://downloads.1password.com/linux/debian/amd64/dists/beta/main/binary-amd64/Packages",
+            "package": "1password",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)~(?P<build>[0-9]+)\\.BETA",
+            "version": "{version}_{build}.BETA",
+            "variables": {
+              "_tarver": "{version}-{build}.BETA"
+            }
+          }
+        },
+        "origin": {
+          "aur": "1password-beta",
+          "commit": "18d2de51dc01c9a58c1e8e96262f7afadcbf0648"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/aquamarine/.omarchy/package.json",
+        "gitBlob": "7ddd330544918c0d5a6d75783c0224d50034aa7b",
+        "sha256": "e8486aeb3f55c8a04ed10e4b88cf2e30d10d4e7e2356e13af009f31906d55c4a",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/aquamarine/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/asus-proart-p14-speaker-firmware/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/asus-proart-p14-speaker-firmware/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/avd-fw/.omarchy/package.json",
+        "gitBlob": "2d609e65ebb15c2417fd27d7f8e6c5ad2c0d1c34",
+        "sha256": "10cebc12b988864411954ad7bde662bfce0ddc5ff089e6de554ee4d84d5a32ec",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/avd-fw/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)",
+            "git_tags": "https://github.com/AsahiLinux/avd-fw.git"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/asdcontrol/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/asdcontrol/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/aether/.omarchy/package.json",
+        "gitBlob": "03315a517e3ee9e253894b722a9461f7f8f859e0",
+        "sha256": "e095d271e39454bf1c681eb668e29166503624bfb1be6fd81335ed7066c07f6f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/aether/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "omacom/aether",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "aether",
+          "commit": "0f047f40a200121075ca3cedce59ddf226f2a0f1"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/claude-code/.omarchy/package.json",
+        "gitBlob": "b18b442f89a61ca40d5fccdf4ff99b291c3dfcab",
+        "sha256": "d08e13c3281ab06fa588224b1756cc5bb8e997a24b139f02f983edf75fd39359",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/claude-code/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://downloads.claude.ai/claude-code-releases/latest",
+            "pattern": "^(?P<version>[0-9]+(?:\\.[0-9]+)*)\\s*$"
+          }
+        },
+        "origin": {
+          "aur": "claude-code",
+          "commit": "27f61daa48ebdca87c9b2c7c83c162100d233ccc"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/bambustudio-bin/.omarchy/package.json",
+        "gitBlob": "ffa5b6281b4789df32c75c38b90f390563b59352",
+        "sha256": "58f3aed94344acd2ab31b25f27b5142bb3a6b3d99c8a615ac136b54e003d5c5d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/bambustudio-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "origin": {
+          "aur": "bambustudio-bin",
+          "commit": "b962c12d14873f94669e0e256a444f957b1843cd"
+        },
+        "upstream": {
+          "watch": {
+            "regex": "https://api.github.com/repos/bambulab/BambuStudio/releases/latest",
+            "pattern": "\"name\"\\s*:\\s*\"BambuStudio_ubuntu24\\.04-v(?P<version>[0-9]+(?:\\.[0-9]+)*)-(?P<build>[0-9]+)\\.AppImage\"",
+            "variables": {
+              "_build": "{build}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/brave-origin-bin/.omarchy/package.json",
+        "gitBlob": "90239d9658dba1754de18f3c6bfc3a2e49a9a498",
+        "sha256": "fa8bb9f6834484aeafe6c6de5d461650ee8b99440fbe357a5e2077cc7df2f9de",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/brave-origin-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://brave-browser-apt-release.s3.brave.com/dists/stable/main/binary-amd64/Packages",
+            "package": "brave-origin",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "brave-origin-bin",
+          "commit": "f2daecf7b7576cd445094ed09c3c783619ca0eb2"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/brave-bin/.omarchy/package.json",
+        "gitBlob": "89052c25cc8a945b39c91f3a5b62c30fa6b69aac",
+        "sha256": "af17d350fbe0f77bac86f091d788482c208787594578569d079aca1e23a0d3ad",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/brave-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://brave-browser-apt-release.s3.brave.com/dists/stable/main/binary-amd64/Packages",
+            "package": "brave-browser",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "brave-bin",
+          "commit": "d86e5479e163dac19d7ace3de472710e6eb06eea"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/buzz/.omarchy/package.json",
+        "gitBlob": "a92266b984af9e81de39082e909cc248b54db961",
+        "sha256": "4cff7ddd8d90214c9bf652f1982944b8e378f47e423fd2ff6e37d37a669b830b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/buzz/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "block/buzz",
+            "pattern": "desktop-v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/claude-desktop/.omarchy/package.json",
+        "gitBlob": "efc092b4a8be0b8ab4c7f386c97b804a0354f89c",
+        "sha256": "e78ca6db65e04ff16079e3d53770f57d1f3d7500c1390b313d0c3f41393c825c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/claude-desktop/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "debian": "https://downloads.claude.ai/claude-desktop/apt/stable/dists/stable/main/binary-amd64/Packages",
+          "package": "claude-desktop",
+          "sources": {
+            "x86_64": [
+              "https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_{pkgver}_amd64.deb"
+            ],
+            "aarch64": [
+              "https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_{pkgver}_arm64.deb"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/box64/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/box64/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/basecamp-cli/.omarchy/package.json",
+        "gitBlob": "c84e23e859c0a374de5e8bace102a60e03219f40",
+        "sha256": "9992814f65cc0de92a275b3e2ceeca84ca99f6021228ed325d2878a92a1f0a09",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/basecamp-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "basecamp/basecamp-cli",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "basecamp-cli",
+          "commit": "89c4eb5a0ac9ffe98aecd4ea8b789cf1fee42bf1"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cliamp/.omarchy/package.json",
+        "gitBlob": "1f2f14f2e80fb754b26e23e647973ee3b03e88dc",
+        "sha256": "36a98e1ce11bc33566d289865182e4e6dc2f4c4d8a51621d856d9db293bbdeae",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cliamp/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "bjarneo/cliamp",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "cliamp",
+          "commit": "92fb021a1c78f75043cbbd402aca8b515af069ec"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/collie-bin/.omarchy/package.json",
+        "gitBlob": "12aa7b94b7c4b359ffbda60723353e962093e236",
+        "sha256": "54ae19e5769949cf0638d6cfe6e035b2a9673f2ad0ab53216e4c0be135a849ea",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/collie-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "github": "AltanS/collie",
+          "digests": true,
+          "assets": {
+            "x86_64": "collie-{pkgver}-linux-x64.tar.gz",
+            "aarch64": "collie-{pkgver}-linux-arm64.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/crush-bin/.omarchy/package.json",
+        "gitBlob": "857d5c1bb957042c56fb949991da3063cca566d8",
+        "sha256": "5b0996633825445e117318f5173937b5f681747f8baa2d16dd2ad7b7a24043cc",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/crush-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "charmbracelet/crush",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "crush-bin",
+          "commit": "9c63847ccd3650646141f84384545c8fe2d68bb7"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cua-driver-bin/.omarchy/package.json",
+        "gitBlob": "76ece027fe9a06cfc3e8881210b9e6f84fc5f17d",
+        "sha256": "4a6cec4e96b6ad2665fc2cec98613bccad95dda0cbbe47a8ae45fb836008d32b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cua-driver-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "sync": false,
+        "min_release_age": "24h"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cursor-bin/.omarchy/package.json",
+        "gitBlob": "0dc98166b19be5a870c1608a7f3c807ad0b260cc",
+        "sha256": "dff8a25694e450cb6f05688f01a87ac6414c29131d755666c5593fd34d44e894",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cursor-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "json": "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable",
+            "path": "version",
+            "fields": {
+              "commit": "commitSha"
+            },
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        },
+        "origin": {
+          "aur": "cursor-bin",
+          "commit": "a87a0de17b0d8176ee4f046499b1e6e4b37cc422"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cuda/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cuda/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cua-hyprland-plugin/PROFILE.json",
+        "gitBlob": "bd098020aa4d70649e60c09c2d6fa39df366a571",
+        "sha256": "fe1b3f51a84962a188e9784116bf5f072ef692715adee71e996a6b95c5482976",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cua-hyprland-plugin/PROFILE.json"
+      },
+      "metadata": {
+        "architecture": "x86_64",
+        "compiler": {
+          "comment": "GCC: (GNU) 16.2.1 20260810",
+          "sha256": "f04191f6a7b2cd7d9a62e1745872b8a6088791e5af6955488c69c9b2c4668bc9",
+          "version": "16.2.1 20260810"
+        },
+        "hyprland": {
+          "header_version": "0.56.2",
+          "headers_sha256": "1fdefe6ac027a159d04a5dfee4928ec7ebd15544a9a25b5f66d2f5a46fcf364a",
+          "package_version": "0.56.2-4",
+          "sha256": "55da553be71222566ee73b973d2f56dbb9939044d8f22f81aa54b66c83f2f6d1"
+        },
+        "kit_version": "1.3.0",
+        "package_release": 3,
+        "profile_id": "omarchy-edge-20261004-abi",
+        "runtime": {
+          "basename": "libstdc++.so.6.0.36",
+          "packages": {
+            "aquamarine": "0.15.1-1",
+            "glibc": "2.44+r50+g1848099f063e-1",
+            "hyprcursor": "0.1.13-7",
+            "hyprgraphics": "0.5.1-4",
+            "hyprlang": "0.6.8-5",
+            "hyprutils": "0.14.2-1",
+            "libgcc": "16.2.1+r23+gd564253eb6c8-1",
+            "libstdc++": "16.2.1+r23+gd564253eb6c8-1",
+            "libxkbcommon": "1.13.2-1",
+            "wayland": "1.26.0-1"
+          },
+          "sha256": "f5fc7380f2ae46fa4053a64be04e7b98109f1066a4bbfff3c37042488aa0be0e"
+        },
+        "schema": 2,
+        "source": {
+          "archive_sha256": "79596a9a5e7300546ad4ab0646430edcf3e0c0456a541458de2a52b8c44a8fad",
+          "driver_version": "0.33.2",
+          "manifest_sha256": "9a7eba9fd642d6697213729311da620fad292cd3f693c8b49b8a07163ef22a1d",
+          "revision": "c82d32e3e1adbc6578a148962002ddf6e3e8a15a"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cua-hyprland-plugin/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cua-hyprland-plugin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dbxcli-bin/.omarchy/package.json",
+        "gitBlob": "1c340e162f7426f537f428ac6bb31321e084df05",
+        "sha256": "864f069d652f16f65f4c6742e0e369ef65ac847d664c6452588b32d4ae509c6d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dbxcli-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "dropbox/dbxcli",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "dbxcli-bin",
+          "commit": "80626b9efefc215d55eede4330d56c017a522682"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/cursor-cli/.omarchy/package.json",
+        "gitBlob": "6de14e9954e0cbe6b2684f95a59d1d0f76d3c225",
+        "sha256": "dba8eddf262bd4b4c04afa5bb0c8570576ea4e3d5ae8babb212fc7b3cd464c28",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/cursor-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://cursor.com/install",
+            "pattern": "https://downloads\\.cursor\\.com/lab/(?P<version>[0-9]{4}\\.[0-9]{2}\\.[0-9]{2})-(?P<hash>[a-f0-9]+)/",
+            "version": "{version}.1.{hash}",
+            "sequence": true
+          }
+        },
+        "origin": {
+          "aur": "cursor-cli",
+          "commit": "954e5556aa88f2309b86992b231c8b76f273cfb0"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dell-xps-touchpad-haptics/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dell-xps-touchpad-haptics/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/disktree-bin/.omarchy/package.json",
+        "gitBlob": "e62a9d4904e1209d6194b4f32b1112e40a224597",
+        "sha256": "e29d19e1642f83557c9ef7c83e77b38085449661bd8231a5f3988cb261440230",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/disktree-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "tobi/disktree",
+          "digests": true,
+          "assets": {
+            "x86_64": "disktree-{pkgver}-x86_64-linux.tar.gz",
+            "aarch64": "disktree-{pkgver}-aarch64-linux.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dingtalk-bin/.omarchy/package.json",
+        "gitBlob": "f09e50a5322ecc8b3b45b5f228df7db9e64d8701",
+        "sha256": "ac4e6c8ba946211fea58de121563d71b6622afca0a6a68406822c97b22081580",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dingtalk-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dell-xps13-sidecar-amps/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dell-xps13-sidecar-amps/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dotnet-core-bin/.omarchy/package.json",
+        "gitBlob": "283cb2392e52d668f10aaf8b72f466cd60b059cc",
+        "sha256": "e1cb6c6380f1a97a2fa78e66400ceb0e2924d23ee0fbc38973af5ff722f5c601",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dotnet-core-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "origin": {
+          "aur": "dotnet-core-bin",
+          "commit": "2c499d7ce634efb8e93eee4c4239490b02e98e09"
+        },
+        "upstream": {
+          "watch": {
+            "json": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+            "path": "latest-sdk",
+            "fields": {
+              "runtime": "latest-runtime"
+            },
+            "variables": {
+              "_runtimever": "{runtime}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dropbox-cli/.omarchy/package.json",
+        "gitBlob": "aaeee664a9dc042ded6431ba1328fe8e1db79413",
+        "sha256": "c8276ff002c6c0614d197bd4248ee398b3215119c147fcc5466d60f92b7bf559",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dropbox-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://linux.dropbox.com/packages/",
+            "pattern": "nautilus-dropbox-(?P<version>[0-9]{4}\\.[0-9]{2}\\.[0-9]{2})\\.tar\\.bz2"
+          }
+        },
+        "origin": {
+          "aur": "dropbox-cli",
+          "commit": "b67e475d16f4e061a16af53dae212a46d9bc3ea9"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/dropbox/.omarchy/package.json",
+        "gitBlob": "a96c4c5e385fe67a44765ea75568f2005498b038",
+        "sha256": "770f9ce34373d593040f053d8ee1a2c2f294dd529cc2a3b420516e996052c182",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/dropbox/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "redirect": "https://www.dropbox.com/download?plat=lnx.x86_64",
+            "pattern": "dropbox-lnx\\.x86_64-(?P<version>[0-9]+\\.4\\.[0-9]+)\\.tar\\.gz"
+          }
+        },
+        "origin": {
+          "aur": "dropbox",
+          "commit": "6379feda6f36bbbd496c97f040e4f71c5a1dcec7"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/flea/.omarchy/package.json",
+        "gitBlob": "18f5fbae27358895cd001248fb36b8d0d1e1b1bf",
+        "sha256": "3c55f192de53435db0cc7171807fa389e715a83d5c0cfe8b729325858b20d7e7",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/flea/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "min_release_age": "24h"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/github-copilot-cli/.omarchy/package.json",
+        "gitBlob": "ddb7995d4c79813e568011dd52dffb194a48266a",
+        "sha256": "41cffba052de7947df3c5222fc3bc01f0ec90ea08bc1e550b3fd4afefad32f71",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/github-copilot-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "npm": "@github/copilot",
+          "sources": {
+            "any": ["{npm_tarball}", "https://raw.githubusercontent.com/github/copilot-cli/v{pkgver}/changelog.md"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/google-chrome/.omarchy/package.json",
+        "gitBlob": "1be0651379d8371d25d7933a869ed1de380f0546",
+        "sha256": "46e74b639ae1281c852c2223e6a3fe345f26363c949f23622d3f1f042d1619f8",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/google-chrome/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages",
+            "package": "google-chrome-stable",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)-1"
+          }
+        },
+        "origin": {
+          "aur": "google-chrome",
+          "commit": "6bd49a411277b3f9bcc9e58ce0c579292db75804"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ghostty/.omarchy/package.json",
+        "gitBlob": "e525f4ac24c5e780553ae245c09c1e381ce132d2",
+        "sha256": "95f0b271471a7b8051e993ab7342de571d19a15e83f3a1311d5eadb4b6255cd2",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ghostty/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)",
+            "git_tags": "https://github.com/ghostty-org/ghostty.git"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/gliff/.omarchy/package.json",
+        "gitBlob": "815da54dd79b9095dcde77f9d7284fa2cc1247ff",
+        "sha256": "4f51c57d665055dc1da7577277a6b9ce80a8919111c2239283b022bfc0a5a5ec",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/gliff/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "upstream": {
+          "git_tags": "https://github.com/omacom/gliff.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/omacom/gliff/archive/refs/tags/{tag}.tar.gz"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ghost/.omarchy/package.json",
+        "gitBlob": "88c9a2325b92bcedfbdad5072bb01fd2f51760c8",
+        "sha256": "e4963b4fe4106e4badc81b0e8bb11331a3d6b0cae322288a5cf7bf1c06e361ce",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ghost/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "github": "ferdousbhai/ghost",
+          "digests": true,
+          "latest_only": true,
+          "assets": {
+            "any": ["ghost-{pkgver}.tar.gz", "ghost-runtime-{pkgver}-linux-any.tar.zst"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/grok-bot/.omarchy/package.json",
+        "gitBlob": "453ac60acbcac799ffc1ba524a0bb934821c98e0",
+        "sha256": "fbc6268bd8b11330205fe47920e2eb96b0063012d66e319edad2aabb54856f2d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/grok-bot/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "origin": {
+          "aur": "grok-bot",
+          "commit": "05eb78fca06b482affda28b26223cbf249d4bbcd"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/gtk2/.omarchy/package.json",
+        "gitBlob": "d034b5efef59e4bd5a51fd60a8e49bb2143c7736",
+        "sha256": "ba2976881b2e32aed3807fec59f6c2bbf4e0698204b693a1c195205af796f6c7",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/gtk2/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "origin": {
+          "aur": "gtk2",
+          "commit": "19829b43450b1a7e838896f9b2dd391a227eabd1"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/hyprland-preview-share-picker/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/hyprland-preview-share-picker/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/herdr/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/herdr/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/heroic-games-launcher-bin/.omarchy/package.json",
+        "gitBlob": "abcdf7c2b6810d7cdb310c477bb6eb90b6d573f8",
+        "sha256": "01e28335218602f6e3d336491b7af22721b7842dd8d120cb7786658fb8dba54c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/heroic-games-launcher-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "Heroic-Games-Launcher/HeroicGamesLauncher",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "heroic-games-launcher-bin",
+          "commit": "44b4e963c69541700088a5719855d34f5cf16c85"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/hyprland/.omarchy/package.json",
+        "gitBlob": "aebca54ea6d37343e8f573038ffecdc6f4d7b249",
+        "sha256": "51818506d2956bfb74d559114da8eb6f8d6e0cbda31c9e078197ff791cb5d4c3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/hyprland/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "upstream": {
+          "git_tags": "https://github.com/hyprwm/Hyprland.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/hyprwm/Hyprland/releases/download/v{pkgver}/source-v{pkgver}.tar.gz"]
+          }
+        },
+        "rebuild_on": ["aquamarine"],
+        "rebuilt_against": {
+          "aarch64": {
+            "aquamarine": "0.15.1-1.3"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/intel-ipu7-camera/.omarchy/package.json",
+        "gitBlob": "1cd78291840c4c117bf2b497301aacd6baea522f",
+        "sha256": "9c451efd3b100b92a45c4e47a669e8ade3d6c393895b01ebd0fbaf255be7507f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/intel-ipu7-camera/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "rebuild_on": ["jsoncpp"],
+        "rebuilt_against": {
+          "x86_64": {
+            "jsoncpp": "1.9.8-1"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/hermes-desktop/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/hermes-desktop/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libretro-cap32-git/.omarchy/package.json",
+        "gitBlob": "41c7005816907fd5a993d2a5e5e579d651a7525a",
+        "sha256": "b56e270e4b0754f8faeeaecfc5e514436daa4c59358363d4a6435e838c919927",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libretro-cap32-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libretro-cap32-git",
+          "commit": "2dbe3348fb970d34155e652ce4a84fe4fbb42ecf"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/lib32-nvidia-580xx-utils/.omarchy/package.json",
+        "gitBlob": "93ef7eb03e4a8a8437201112908ba72b054007f9",
+        "sha256": "6792ac4e36daab4b7b379ae33fc24fe63e8994854b05cbd88f3f7500d6895840",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/lib32-nvidia-580xx-utils/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "regex": "https://download.nvidia.com/XFree86/Linux-x86_64/",
+            "pattern": "href=[\\'\"](?P<version>580\\.[0-9]+\\.[0-9]+)/[\\'\"]"
+          }
+        },
+        "origin": {
+          "aur": "lib32-nvidia-580xx-utils",
+          "commit": "bbe7b771c897f78e518ab4453b0bc9210ef2f201"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/learn-omarchy/.omarchy/package.json",
+        "gitBlob": "7fed64584d12415f8e9234e478fc2b44cfa5455a",
+        "sha256": "5eb60679b036b097b6a3cd7a4a5cf0c01bb45ecbc90adf1ed4713582aa9db146",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/learn-omarchy/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "DanWahlin/learn-omarchy",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "any": "learn-omarchy-{pkgver}.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libfprint-git/.omarchy/package.json",
+        "gitBlob": "eed18f7e9f68032095d947071cff1a65680b5ca7",
+        "sha256": "a6af4d4222cdd7ae21aa8fe3e4007c79b89916d75f67987aaf914d814bbde9d1",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libfprint-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libfprint-git",
+          "commit": "d225acd677e4a2af8f99698ea11386d8ad3af1bf"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libretro-database-git/.omarchy/package.json",
+        "gitBlob": "7fcb920c8b6da8dd04fe687977d03f58b45b8918",
+        "sha256": "17278f6584b941fcf621c3f0c6ac99b9d2d3dbbe0abcc5539c1c0f371f404e8e",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libretro-database-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libretro-database-git",
+          "commit": "11ff3d3d1fc62f44a35a813f818235b7313ff7e0"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/hype/.omarchy/package.json",
+        "gitBlob": "177382a837e2b9a44f01f938260754f74b274f7c",
+        "sha256": "82b54047c99b9c83e52100a9034ca2fde4e036cf3297f0c6ee8476200d58b749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/hype/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/hype",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libretro-uae-git/.omarchy/package.json",
+        "gitBlob": "479ac60ebe78a7c9f6803a93aa5ab6f51330e27e",
+        "sha256": "47d861e67638c77faf417b8234d2e4f51020cf0e35fb8376bfa924b3be7db20e",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libretro-uae-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libretro-uae-git",
+          "commit": "f1bbed73caf47bfcb07a2c15f18485b42cb58584"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libretro-vice-git/.omarchy/package.json",
+        "gitBlob": "664ce232745d9a4dba61cb531c458d1f28cfdabc",
+        "sha256": "c7d62d4ce81058b318e96b408608595f77bc09c1880e6a5b5114884526116b30",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libretro-vice-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libretro-vice-git",
+          "commit": "6b1839b0a1154ef29ddb2b67910f6d4c90bc1edd"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-aarch64-pkgbase-shim/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-aarch64-pkgbase-shim/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/limine-snapper-sync/.omarchy/package.json",
+        "gitBlob": "76ad41c5baac66e08dd6f85af0bb851278f7603a",
+        "sha256": "74cc0645646fd9b014e5ee2161fa14c8b3ec3de4e6f115bce40d0089b1c47783",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/limine-snapper-sync/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://gitlab.com/Zesko/limine-snapper-sync.git",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "limine-snapper-sync",
+          "commit": "35aff513bf1f0284380c8592d3de213f00bb6a7b"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libretro-fbneo-git/.omarchy/package.json",
+        "gitBlob": "07b490f31412ad0f4f40bbcb57e7b1ec770f8716",
+        "sha256": "511b621e28ca3f664826d58a5d86fbec16b16f45b1c463f0561737238a77fc19",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libretro-fbneo-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "libretro-fbneo-git",
+          "commit": "c33a5ce38a6a493fe88f092561d5197db1f97a1d"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/link-studio/.omarchy/package.json",
+        "gitBlob": "f71d42b82eacdae8f5520f0d6a852c7ff4c0d600",
+        "sha256": "aa3705dccb92d78db4f759f998c4a9132bad0a7109f5317141118a9190f623ce",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/link-studio/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "github": "jweaver60/link-studio",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "any": "dist/link-studio-{pkgver}.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/limine-mkinitcpio-hook/.omarchy/package.json",
+        "gitBlob": "86036c2376484991067055054e5609498f5f3d1f",
+        "sha256": "3caa6793e38970b0aa7ac70815e6658bfb0503b40bba423e5f87f7fb2533e878",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/limine-mkinitcpio-hook/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://gitlab.com/Zesko/limine-entry-tool.git",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "limine-mkinitcpio-hook",
+          "commit": "0c6f3a88d5928907d79c58bb67c9cb018774f60d"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/libva-v4l2_request-avd/.omarchy/package.json",
+        "gitBlob": "7fb1414eebd5213ce609b152eecdfac17b747155",
+        "sha256": "2f5ac85bbace1ccd6ec50fb92d6956c7a4fba54850f5fad0dcbbb926fbbf2c75",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/libva-v4l2_request-avd/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "rebuild_on": ["libva"],
+        "rebuilt_against": {
+          "aarch64": {
+            "libva": "2.24.1-1"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-aurora/.omarchy/package.json",
+        "gitBlob": "04e6ea9d023689570ddd42c13909eacc2685ba77",
+        "sha256": "7ddcb98ff955e8889b1594f61dc174b9505e004c40df0005c71dea331a8a3512",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-aurora/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true,
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-firmware-cirrus-dx13260/.omarchy/package.json",
+        "gitBlob": "ba6af6cb2c186c4f72b7f2c1b91d69d690aaa5b9",
+        "sha256": "f9f14313415ff0f0614921aa9f9e11b66942d6b3066184bbd689f54db8cd95ff",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-firmware-cirrus-dx13260/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "sync": false
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-omarchy-aarch64/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-omarchy-aarch64/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-aurora/rust-toolchain.toml",
+        "gitBlob": "6a1cc414a7d13d09bd5ae7195ff287a91cf5f027",
+        "sha256": "2a95563bb9f5b216cc3c170a17e9471448bc63a7084bdd67df23d074939b366c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-aurora/rust-toolchain.toml"
+      },
+      "metadata": {
+        "toolchain": {
+          "channel": "1.93.1",
+          "components": ["rustc", "cargo", "rust-src"],
+          "targets": ["aarch64-unknown-linux-gnu"]
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-omarchy-bore/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-omarchy-bore/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-omarchy-eevdf/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-omarchy-eevdf/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-n1x/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-n1x/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-omarchy-muqss/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-omarchy-muqss/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-omarchy/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-omarchy/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linux-ptl/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linux-ptl/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/linuxqq/.omarchy/package.json",
+        "gitBlob": "b3d7dc53f1504e652a91af0e7f66d74fc13cdfd7",
+        "sha256": "f996c57366dcb2c21dbb17257b3e8b48625c7a11518888d3dd2d2f6f370cc8bc",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/linuxqq/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://docs.qq.com/doc/DVXNoRlpKaWhEY015",
+            "pattern": "https://qqdl\\.gtimg\\.cn/qqfile/QQNT/(?P<ntver>[0-9]+(?:\\.[0-9]+)+)/beta/(?P<dir>[0-9a-f]{8})/linuxqq_(?P<version>[0-9]+(?:\\.[0-9]+)+)-(?P<build>[0-9]+)_amd64\\.deb",
+            "version": "{version}_{build}",
+            "variables": {
+              "_ntver": "{ntver}",
+              "_dir": "{dir}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/lmstudio-bin/.omarchy/package.json",
+        "gitBlob": "8359e5efd25e2f292daa8279ef94736e4f3e7ce1",
+        "sha256": "6cceacc69af6ed1a62d080669117fbdddc6385f7407b1e3428cb168efb182b83",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/lmstudio-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://lmstudio.ai/download",
+            "unescape_json": true,
+            "pattern": "\"linux\":\\{\"x64\":\\{\"version\":\"(?P<version>[0-9]+(?:\\.[0-9]+)*)\",\"build\":\"(?P<build>[0-9]+)\"",
+            "variables": {
+              "_build": "{build}"
+            },
+            "revision": "{build}",
+            "revision_variable": "_build"
+          }
+        },
+        "origin": {
+          "aur": "lmstudio-bin",
+          "commit": "8e97652a62a284b0c3436688bed6dfae0b54c669"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/localsend/.omarchy/package.json",
+        "gitBlob": "5e3c138e4e4b3ad50bc68f4d0f13c2f102788606",
+        "sha256": "5802988875964407bdc9260735e6da4b3e0308c601f31e13455791a67cf30555",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/localsend/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "localsend/localsend",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "localsend",
+          "commit": "11788eb33c9298d611382884e8775fc34f874703"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/m1n1-aurora/.omarchy/package.json",
+        "gitBlob": "dd11ed8693090021bdff618ce625f256f56fe754",
+        "sha256": "2d5cc05e2880a5ce7e6e43266502b87c41ede5ec9e936d6c40f2ab00570a8481",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/m1n1-aurora/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "sync": false
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/macbook12-spi-driver-dkms/.omarchy/package.json",
+        "gitBlob": "811c3269289d419d52499b46a37bf8a574c664c0",
+        "sha256": "646783919b1b026da7ab9b513bd6c3c64393b32bbab1e4a8abc2b9074e8e1567",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/macbook12-spi-driver-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_branch": "https://github.com/marc-git/macbook12-spi-driver.git",
+            "branch": "touchbar-driver-hid-driver",
+            "version": "0+git.{count}",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        },
+        "origin": {
+          "aur": "macbook12-spi-driver-dkms",
+          "commit": "38f085c6470eee409c22a4753eaf58d58b4759fd"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/microsoft-edge-stable-bin/.omarchy/package.json",
+        "gitBlob": "ae8f887f3dc768ef60fc9521afd7541cbaacbfa8",
+        "sha256": "adc05c52ebce45934b62536a42a356ec129ded39d480a4e08effb3e7907f1a35",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/microsoft-edge-stable-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://packages.microsoft.com/repos/edge/dists/stable/main/binary-amd64/Packages",
+            "package": "microsoft-edge-stable",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)-1"
+          }
+        },
+        "origin": {
+          "aur": "microsoft-edge-stable-bin",
+          "commit": "4f6358224df9e58ad9ef84980505d1ead732f8dc"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/macbook8-spi-pxa2xx-nodma-dkms/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/macbook8-spi-pxa2xx-nodma-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/mise-bin/.omarchy/package.json",
+        "gitBlob": "e5224ba102a18bed84191134ddb60a7cbbacb2c5",
+        "sha256": "ef21b18043f2587bdf24a863b7b5084de5a57e4f01b1e53931f448491bead58c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/mise-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "jdx/mise",
+          "checksums": "SHASUMS256.txt",
+          "assets": {
+            "x86_64": "mise-{tag}-linux-x64.tar.xz",
+            "aarch64": "mise-{tag}-linux-arm64.tar.xz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/minecraft-launcher/.omarchy/package.json",
+        "gitBlob": "1bd6241140c4c68e377cd16bd7a9c29122c00ef4",
+        "sha256": "d4d2e12a84ee31e4b96f8f2b220606ea35c8e47f776ec6d5b85f49f5f0af933c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/minecraft-launcher/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "archive": "https://launcher.mojang.com/download/Minecraft.deb",
+            "pattern": "(?m)^Version: (?P<version>[0-9]+(?:\\.[0-9]+)*)$",
+            "mutable_sources": ["source:0", "source:1"]
+          }
+        },
+        "origin": {
+          "aur": "minecraft-launcher",
+          "commit": "c6cac125f8cfc5d9a45e93b7f3ac9b01385dae23"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/monologue/.omarchy/package.json",
+        "gitBlob": "c715bec3bf25404d9421f4dd5b12f44098365d2f",
+        "sha256": "fec889fb1e571e2fc5059000324da06c66b200dfd4a2150a59f755f6331dda9f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/monologue/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "git_tags": "https://github.com/omacom/monologue.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/omacom/monologue/archive/refs/tags/{tag}.tar.gz"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/mil-hwx-compiler/.omarchy/package.json",
+        "gitBlob": "ef0873a42dcc6b636ea1edcaa131b882bb361e44",
+        "sha256": "1a9be503195d1adf1a8e64bfa6ebead79909c498ad4c2bdcfa01f36fa57663fa",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/mil-hwx-compiler/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "min_release_age": "24h",
+        "upstream": {
+          "watch": {
+            "github": "joshuaswarren/mil-hwx-compiler",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/nordvpn-bin/.omarchy/package.json",
+        "gitBlob": "2edd57897f49ed459b74ede50a0d7c5626910e8e",
+        "sha256": "968f37c787a0dd73355c5a1f93e5ac53db60a3d26fe0589343eff950a78ac88c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/nordvpn-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://repo.nordvpn.com/deb/nordvpn/debian/dists/stable/main/binary-amd64/Packages",
+            "package": "nordvpn"
+          }
+        },
+        "origin": {
+          "aur": "nordvpn-bin",
+          "commit": "8d4c074f4b0a373c04c6f41baba83d3bd7d6d97b"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/nautilus-dropbox/.omarchy/package.json",
+        "gitBlob": "d7046be680d5c108481eb94cdca069fbdb9510e6",
+        "sha256": "314bd8f82cee90987f1cdbf0cd27732783f2819f3201ea744a56a9079efb0d10",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/nautilus-dropbox/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "dropbox/nautilus-dropbox",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "nautilus-dropbox",
+          "commit": "f7907953200ffd14f1260691f4ff1b7290fcd887"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/nvidia-580xx-utils/.omarchy/package.json",
+        "gitBlob": "9439b286ba37ea554b091916c3763216f221911f",
+        "sha256": "7731c72d7e0f928a5e1ce78cc039c414c5b8b62f719436e09defff87cd6ae1dc",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/nvidia-580xx-utils/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "regex": "https://download.nvidia.com/XFree86/Linux-x86_64/",
+            "pattern": "href=[\\'\"](?P<version>580\\.[0-9]+\\.[0-9]+)/[\\'\"]"
+          }
+        },
+        "origin": {
+          "aur": "nvidia-580xx-utils",
+          "commit": "85c38619ce2267787d0515baa443739cb9d2883c"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/nvidia-open-dkms/.omarchy/package.json",
+        "gitBlob": "7ddd330544918c0d5a6d75783c0224d50034aa7b",
+        "sha256": "e8486aeb3f55c8a04ed10e4b88cf2e30d10d4e7e2356e13af009f31906d55c4a",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/nvidia-open-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ollama/.omarchy/package.json",
+        "gitBlob": "c3ed3893c06e83c3b120f407c783fefbaf78c51b",
+        "sha256": "64219855dc61a1e18c72bb10afbd2d1daaadbb21db74843a9589e3ab0ed8a9fd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ollama/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "skip_build": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/obs-studio/.omarchy/package.json",
+        "gitBlob": "2a67d7e0701f9a2f143a0f3a259d2495d625a696",
+        "sha256": "833afc2fa1ada7ca14e4b980bac17d5254fa1b13d866998ded788b58d576707e",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/obs-studio/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "obsproject/obs-studio",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omacalc/.omarchy/package.json",
+        "gitBlob": "1b2964a2395c4ee2b5edae1d526df9481d32b2d2",
+        "sha256": "eec06939e40696b2302d275fbb7d43278eed1280de12f7da91abc1bb7c870a95",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omacalc/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/omacalc",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/nvidia-utils/.omarchy/package.json",
+        "gitBlob": "7ddd330544918c0d5a6d75783c0224d50034aa7b",
+        "sha256": "e8486aeb3f55c8a04ed10e4b88cf2e30d10d4e7e2356e13af009f31906d55c4a",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/nvidia-utils/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/obsidian/.omarchy/package.json",
+        "gitBlob": "bdb0c4e06a5fa93ee238c2169d5e9a2d1443eff8",
+        "sha256": "a6e7022e8a29678967a3cd992368dbda5fc11e7b2d84ad1b03ca07f33bfff1ac",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/obsidian/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omacut/.omarchy/package.json",
+        "gitBlob": "670d6645ba65317dfb498ac8ec71a9729935df7f",
+        "sha256": "3ed786aad6a53f466fcad2018951fefb7cd25e102efde283fce3921a2a0c1251",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omacut/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/omacut",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omadesign-bin/.omarchy/package.json",
+        "gitBlob": "8a71042c32747ae748a3127bdbf8fcba562a69bf",
+        "sha256": "2cb801697adc3e9bc730f7dfddc46d14b59e58db2c8cd4d68c971ed388e99728",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omadesign-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "michaelmonetized/omadesign",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omacharts/.omarchy/package.json",
+        "gitBlob": "37cbe43eec04c575774aa27a07d92034e9c77408",
+        "sha256": "b2f61d1943e5d686ddd74568bb91561dce215a19be9c4a461402c6d75a45b2e4",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omacharts/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "jorgemanrubia/omacharts",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omairc/.omarchy/package.json",
+        "gitBlob": "6c8860aa3f76fbe5d8045341c4462ad6956cc334",
+        "sha256": "7881967dae3ec6c1497895ca3c1c7d0472a8c6461ca4580746c207e454bbe6e8",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omairc/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "rebuild_on": ["qt6-base", "qt6-declarative", "qt6-svg", "qt6-wayland"],
+        "upstream": {
+          "git_tags": "https://github.com/fredimachado/omairc.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": [
+              "https://github.com/fredimachado/omairc/archive/refs/tags/{tag}.tar.gz",
+              "file:qt6.12-http-header-case.patch",
+              "file:qt6.12-leave-click.patch"
+            ]
+          }
+        },
+        "rebuilt_against": {
+          "x86_64": {
+            "qt6-base": "6.12.0-3",
+            "qt6-declarative": "6.12.0-1",
+            "qt6-svg": "6.12.0-1",
+            "qt6-wayland": "6.12.0-1"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omakade/.omarchy/package.json",
+        "gitBlob": "85aac287e537e254862830ba25364d3d4498d374",
+        "sha256": "86b3adcd7aae83a5b4fafea29fd90047e85a3f5c5013dd320b100403b062d1d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omakade/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "github": "btsouth/omakade",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "any": "omakade-{pkgver}.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omakeyboard/.omarchy/package.json",
+        "gitBlob": "15a9e445ebe7aa56a9e0426a515c6102aa1a817f",
+        "sha256": "594fa745bc1bc7e80f5f17223d4e9e9fe808a7092ca1dec81fe8f676e727adff",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omakeyboard/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "gabamnml/omakeyboard",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omapresent/.omarchy/package.json",
+        "gitBlob": "47767bc39a25f912702f919b2545cbb2f509ecc3",
+        "sha256": "4aab0c60368a3d9b232c0fbf2aca6e997e25d7b063bbca2b8e74905ef94de538",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omapresent/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-ane-dkms/.omarchy/package.json",
+        "gitBlob": "6a457a127f54bf31cabb188aded184898d86f89f",
+        "sha256": "f24716635f2d43b589fd52bff72575f1c244202cd0a0d945cd4893f08957a2b7",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-ane-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "min_release_age": "24h",
+        "upstream": {
+          "watch": {
+            "github": "joshuaswarren/omarchy-ane",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-audio-tuner/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-audio-tuner/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-billboard-generator/.omarchy/package.json",
+        "gitBlob": "d9c0d058c0faeacc9d300cbc70fa959cc63a7a6f",
+        "sha256": "efc44dcae456e81e229c7935b8ecfc6ed0b8b5d1b828b7d73d4f1816c1282fbe",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-billboard-generator/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "llstrk/omarchy-billboard-generator",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "any": "omarchy-billboard-generator.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-chromium-bin/.omarchy/package.json",
+        "gitBlob": "05723484a353a664cd5908e151815227f754d2f8",
+        "sha256": "c3e28e0577467f99b0750341467c30ca84b9f6bc90c9d7d37d11c29690a2e302",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-chromium-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "omacom/omarchy-chromium",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)-(?P<build>[0-9]+)",
+            "variables": {
+              "_build": "{build}"
+            },
+            "revision": "{build}",
+            "revision_variable": "_build"
+          }
+        },
+        "origin": {
+          "aur": "omarchy-chromium-bin",
+          "commit": "344d4e2b006988df7f3a11952c7776d37891fb7a"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-dev/.omarchy/package.json",
+        "gitBlob": "64dc20579fabe32270fceb7f6268e7949c1ed71a",
+        "sha256": "044f3e5cc085df2317e81950f1e4c4d92e3a3e8a22999ef4ebbf29e05123af08",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-dev/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "auto_merge": true,
+        "min_release_age": "30m",
+        "upstream": {
+          "watch": {
+            "git_branch": "https://github.com/basecamp/omarchy.git",
+            "branch": "quattro",
+            "tag_pattern": "v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "version": "{version}.r{count}.g{commit:.7}",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-emacs/.omarchy/package.json",
+        "gitBlob": "5d0b9fccd6c0bff7e237490bfff068b4e902cb93",
+        "sha256": "03e63ed4902b4ae588963c33fb3d16e81da699f85830333bf118325ef41ca3a5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-emacs/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://github.com/scottjones/omarchy-emacs.git",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "omarchy-emacs",
+          "commit": "c79a5ad3d523ad9a22fa57274d8b3fab8e87e5b2"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-fish/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-fish/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-keyring/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-keyring/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-mac-boot/.omarchy/package.json",
+        "gitBlob": "9adf3728584f15d725e79f796c6f65d956ad7cac",
+        "sha256": "9467878830509b8582f55f217d6157e722d21f77714a92ae044c6ee8ec084e2f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-mac-boot/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-mac-ml/.omarchy/package.json",
+        "gitBlob": "9adf3728584f15d725e79f796c6f65d956ad7cac",
+        "sha256": "9467878830509b8582f55f217d6157e722d21f77714a92ae044c6ee8ec084e2f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-mac-ml/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-mac/.omarchy/package.json",
+        "gitBlob": "9adf3728584f15d725e79f796c6f65d956ad7cac",
+        "sha256": "9467878830509b8582f55f217d6157e722d21f77714a92ae044c6ee8ec084e2f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-mac/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-hyprland-titlebars/.omarchy/package.json",
+        "gitBlob": "cc2b649d902ac7594843b89bacdb791890668f51",
+        "sha256": "1a845fbe0226d8cd801a8f99064b20c3d80cd8a9e5e2cbb3dec54065a977e089",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-hyprland-titlebars/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "git_tags": "https://github.com/omacom/omarchy-hyprland-titlebars.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/omacom/omarchy-hyprland-titlebars/archive/refs/tags/{tag}.tar.gz"]
+          }
+        },
+        "rebuild_on": ["hyprland"],
+        "rebuilt_against": {
+          "x86_64": {
+            "hyprland": "0.56.2-4"
+          },
+          "aarch64": {
+            "hyprland": "0.56.2-7"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-nvim/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-nvim/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-mlx/.omarchy/package.json",
+        "gitBlob": "1ab3c9489f9a8d5f34c4ef0b1c7845a2a32893e4",
+        "sha256": "3dd197621e17424ce33b8092aaa6ef50f927d4c64db4248c124e8aadf0fa8744",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-mlx/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "min_release_age": "24h",
+        "rebuild_on": ["llvm"],
+        "upstream": {
+          "watch": {
+            "github": "joshuaswarren/omarchy-mlx",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "rebuilt_against": {
+          "aarch64": {
+            "llvm": "23.1.1-1"
+          }
+        },
+        "sync": false
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-power-profiles-daemon/.omarchy/package.json",
+        "gitBlob": "8bd3e84d23edba57f73a4bef39349e1d1c322c32",
+        "sha256": "428cb7e9031d7d04ef1dad8ac918e84d860e585d42a1ba3c1f407a8a8f84a3f3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-power-profiles-daemon/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://gitlab.freedesktop.org/upower/power-profiles-daemon.git",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-settings-dev/.omarchy/package.json",
+        "gitBlob": "64dc20579fabe32270fceb7f6268e7949c1ed71a",
+        "sha256": "044f3e5cc085df2317e81950f1e4c4d92e3a3e8a22999ef4ebbf29e05123af08",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-settings-dev/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "auto_merge": true,
+        "min_release_age": "30m",
+        "upstream": {
+          "watch": {
+            "git_branch": "https://github.com/basecamp/omarchy.git",
+            "branch": "quattro",
+            "tag_pattern": "v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "version": "{version}.r{count}.g{commit:.7}",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-meeting-recorder-bin/.omarchy/package.json",
+        "gitBlob": "743b87f4ea24b90e8b59db46cab67bd126e779f8",
+        "sha256": "5af1e94d7d118dd38680e0e21ab5c9c71993c023a008a0b19f9529c974e97a4b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-meeting-recorder-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "jankeesvw/omarchy-meeting-recorder",
+          "digests": true,
+          "assets": {
+            "x86_64": "omarchy-meeting-recorder-{pkgver}-x86_64-linux.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-settings/.omarchy/package.json",
+        "gitBlob": "1036ceef17cc826c6b53ea6542fc3dd8494d6fd8",
+        "sha256": "60a989167cbc65f03a02f9de306cd0c05895491714fdd0d91b5f000506eaef4c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-settings/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge", "rc", "stable"],
+        "pinned": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-steam-fex/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-steam-fex/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-task-manager/.omarchy/package.json",
+        "gitBlob": "15c212329210339d7f3b99b5404c0ca4200e915b",
+        "sha256": "7a9cac658fcd406fb67154d58252a13a85fb98a96f5f78415e9ce4729ac2a540",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-task-manager/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "tcballard/omarchy-task-manager",
+            "pattern": "v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "allow_prerelease": true
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-themes-intros/.omarchy/package.json",
+        "gitBlob": "39ff6d6df0cc40a595a760d3a87d42d6bf010574",
+        "sha256": "ee8702170cbdd20b928d87bb9e1a8f55420010e926c0e378799dfb58a8a8be28",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-themes-intros/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge", "rc", "stable"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy-zsh/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy-zsh/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omarchy/.omarchy/package.json",
+        "gitBlob": "1036ceef17cc826c6b53ea6542fc3dd8494d6fd8",
+        "sha256": "60a989167cbc65f03a02f9de306cd0c05895491714fdd0d91b5f000506eaef4c",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omarchy/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge", "rc", "stable"],
+        "pinned": true
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omareel/.omarchy/package.json",
+        "gitBlob": "3098a18a26f38765b80f3db61340a967fc737569",
+        "sha256": "ca4722230d50e691c7e480879f08511eff028af8964780bc0e32229e23aeb6d9",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omareel/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/omareel",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "rebuild_on": ["hyprland"],
+        "rebuilt_against": {
+          "x86_64": {
+            "hyprland": "0.56.2-4"
+          },
+          "aarch64": {
+            "hyprland": "0.56.2-7"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omasnap-git/.omarchy/package.json",
+        "gitBlob": "45751235a10dba255460766752d464b6bd46c6b3",
+        "sha256": "cb7d3c8d18cc19681b5ced4af8adb13ce53d7050ff17c00ffcf1736e8913afe6",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omasnap-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "auto_merge": true,
+        "min_release_age": "30m",
+        "upstream": {
+          "watch": {
+            "git_branch": "https://github.com/omacom/omasnap.git",
+            "branch": "main",
+            "tag_pattern": "v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "version": "{version}.r{distance}.g{commit:.7}",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omaspeak-bin/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omaspeak-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omasnap/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omasnap/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omawake-bin/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omawake-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omatrack/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omatrack/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omawrite/.omarchy/package.json",
+        "gitBlob": "3554e394d0e6894eecb3bb129f1995bf2ca7e165",
+        "sha256": "f91b8fab88e8b840cc7a0fe32317de41d593cc31286384425378441602bc7c65",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omawrite/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/omawrite",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/openai-codex-desktop/.omarchy/package.json",
+        "gitBlob": "f09e50a5322ecc8b3b45b5f228df7db9e64d8701",
+        "sha256": "ac4e6c8ba946211fea58de121563d71b6622afca0a6a68406822c97b22081580",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/openai-codex-desktop/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/once-bin/.omarchy/package.json",
+        "gitBlob": "c624bc4d14b0934e9f38c4483b2be3b3733599d2",
+        "sha256": "7c9ce71c72e9e0a9b15c83ec138a4b616f4b7248f1ccbfc66498c8b005a2e934",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/once-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "basecamp/once",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "once-bin",
+          "commit": "24d97ea4671538cec0b827fc40b01a3f3fc8ff49"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/omazed/.omarchy/package.json",
+        "gitBlob": "84d820bfce77bedbfa2b33625531544208264818",
+        "sha256": "8d19c353f13587a6e78f169f6de6023414d40f60cdc50d9f11f9c35ddc0310ed",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/omazed/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://github.com/aps6/omazed.git",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "omazed",
+          "commit": "cbc25a60a791ccda07ed5e8300e8acb267d23007"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/openvino-genai/.omarchy/package.json",
+        "gitBlob": "191cd981ecc8d065f3076dec913d7a61df17451f",
+        "sha256": "48ea08773e0a333ddd4a1e71d85db4a664bf4e8f58c9d2965130b62939714ccf",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/openvino-genai/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "channels": ["edge"]
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/owe-lockfeed/.omarchy/package.json",
+        "gitBlob": "7d31cb0b9cfcf965e910da723513bca612d7de8c",
+        "sha256": "bb6f0f11829ab50cde9831f98a92d1288b168f8fdaef83649e54d9ad8ce3cfc0",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/owe-lockfeed/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/owe",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/owe/.omarchy/package.json",
+        "gitBlob": "d22dd2231254eb384014edf0dfffe01ac9f35459",
+        "sha256": "7795e785af434f8db64048ed15556986b206b53d6f29987b2355183d4e9109a1",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/owe/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "omacom/owe",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "owe",
+          "commit": "884100f82cf2940e4c1ef50dff39a99e37e9895e"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/perplexity/.omarchy/package.json",
+        "gitBlob": "f09e50a5322ecc8b3b45b5f228df7db9e64d8701",
+        "sha256": "ac4e6c8ba946211fea58de121563d71b6622afca0a6a68406822c97b22081580",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/perplexity/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/python-mediapipe/.omarchy/package.json",
+        "gitBlob": "1861de95d378f6be862f26830f5f8ba650f2aba9",
+        "sha256": "a365f963ee920495278a9e08c96913d8266df7af14177395cdf908fb4f3946b3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/python-mediapipe/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "google-ai-edge/mediapipe",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "python-mediapipe",
+          "commit": "99700efde7dc0200719dfed1a1147ace2cd7b0c0"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/pinta/.omarchy/package.json",
+        "gitBlob": "aad5b86ea7c6085036262b8df299602186522114",
+        "sha256": "94b6b829a019987d5adbe33dbe2693e108c782292051ffe9da63e64448f723a6",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/pinta/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "PintaProject/Pinta",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/openclaw/.omarchy/package.json",
+        "gitBlob": "d4c830915f738ee3215749ad2eb9c1ac36c6b7f5",
+        "sha256": "ec65e6a20a18171a8a5bad2505cbbdb8537c93e45625420a470462841d67dc17",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/openclaw/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "npm": "openclaw",
+          "sources": {
+            "any": ["{npm_tarball}"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/python-sounddevice/.omarchy/package.json",
+        "gitBlob": "7501b7da01be29c5ff597bc5b68a413cfa502aa2",
+        "sha256": "d12d5fe3cf0f4109b9f0d2c9d2a093a21824ee8467ae94c487e6e0220a047479",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/python-sounddevice/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "pypi": "sounddevice"
+          }
+        },
+        "origin": {
+          "aur": "python-sounddevice",
+          "commit": "c3a5320f95ada9ccebd629b5722276e645388ced"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/python-terminaltexteffects/.omarchy/package.json",
+        "gitBlob": "808589a44e92b77c9bbce020f4fdc660ea06185e",
+        "sha256": "56e1872b93153dc1d37fdf0e91ae6a5f60ccd6dec6c620304487fcedcd6eff0a",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/python-terminaltexteffects/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "pypi": "terminaltexteffects"
+          }
+        },
+        "origin": {
+          "aur": "python-terminaltexteffects",
+          "commit": "efbe1ae0019e7c44c9e1c7e22904f9fc77150b6a"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/qemu-user-static/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/qemu-user-static/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/qcom-firmware-extract/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/qcom-firmware-extract/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/qmk-hid/.omarchy/package.json",
+        "gitBlob": "962e0eb5152ad7881a62d8ad7f8dd9718a8f967d",
+        "sha256": "64489744cb6d91466d74d017764a671e3d7ad9ba65083e836c112fe1854c5e5b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/qmk-hid/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "git_tags": "https://github.com/FrameworkComputer/qmk_hid.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/FrameworkComputer/qmk_hid/archive/refs/tags/{tag}.tar.gz"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/rawmakase-bin/.omarchy/package.json",
+        "gitBlob": "744b212a3162c561f7138a9b02993490ed8f6789",
+        "sha256": "c4a5dcdfbc008b0c432c767c71aa3960e0442b37a1e6e933c3e38584b1abfcfd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/rawmakase-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "pch/rawmakase",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "x86_64": "rawmakase-{pkgver}-x86_64-linux.tar.gz",
+            "aarch64": "rawmakase-{pkgver}-aarch64-linux.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/quickshell/.omarchy/package.json",
+        "gitBlob": "5a2f6f6a6076fe625d422b72e6845381ff12c437",
+        "sha256": "68252c2d6a858b3b33510884dcb8222f90ee5df22bd998d5d752b45667d98b5d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/quickshell/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "quickshell-mirror/quickshell",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "rebuild_on": ["qt6-base", "qt6-declarative", "qt6-wayland"],
+        "rebuilt_against": {
+          "x86_64": {
+            "qt6-base": "6.12.0-3",
+            "qt6-declarative": "6.12.0-1",
+            "qt6-wayland": "6.12.0-1"
+          },
+          "aarch64": {
+            "qt6-base": "6.12.0-3",
+            "qt6-declarative": "6.12.0-1",
+            "qt6-wayland": "6.12.0-1"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/quickshell-git/.omarchy/package.json",
+        "gitBlob": "cf3c9c21e6f788cf702689e85a45389e079feabb",
+        "sha256": "ea4b417517d37c929c7dd674cd31770e4a7feecbc68f100d66a2e7057e7fb146",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/quickshell-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "rebuild_on": ["qt6-base", "qt6-declarative", "qt6-wayland"],
+        "rebuilt_against": {
+          "x86_64": {
+            "qt6-base": "6.12.0-3",
+            "qt6-declarative": "6.12.0-1",
+            "qt6-wayland": "6.12.0-1"
+          },
+          "aarch64": {
+            "qt6-base": "6.12.0-3",
+            "qt6-declarative": "6.12.0-1",
+            "qt6-wayland": "6.12.0-1"
+          }
+        },
+        "origin": {
+          "aur": "quickshell-git",
+          "commit": "2494139bce7b7fc71372da00b68fb745a2c72d90"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/retroarch-joypad-autoconfig-git/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/retroarch-joypad-autoconfig-git/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/schist-bin/.omarchy/package.json",
+        "gitBlob": "df8963a1fe59c916ec7284c2c70a66a8efc73b13",
+        "sha256": "e868c6398141f3a5da6b39ebf41c22bd1ec9ff40ee1c1b8c38da822ea01536df",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/schist-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "Infrawrench/schist",
+          "digests": true,
+          "assets": {
+            "x86_64": "schist-{pkgver}-1-x86_64.pkg.tar.zst",
+            "aarch64": "schist-{pkgver}-1-aarch64.pkg.tar.zst"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/slack-desktop/.omarchy/package.json",
+        "gitBlob": "f0df45cdb5ac5feb5871505d525cdf3a676527e3",
+        "sha256": "7e11eebb9f97d09ab6fbb69ea5e93891092d7efec19a916749b33b280f310460",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/slack-desktop/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "json": "https://slack.com/api/desktop.latestRelease?arch=x64&variant=deb",
+            "path": "version"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/signed/.omarchy/package.json",
+        "gitBlob": "12e5697c3866ab2bff11d507bf4ef0dd47a18130",
+        "sha256": "8fff9e2db304f6b03832c83a4cd31751c2f4a8edd9781e9072325125d90415e3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/signed/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/signed",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/steam/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/steam/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/slap-notes-bin/.omarchy/package.json",
+        "gitBlob": "a77bdb3a8f489fbc35f93ea62eda32fb20b21398",
+        "sha256": "68330b764e9f4442f6a0e26820d9f8ebda4b51e214e31d690d8a826d502b6596",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/slap-notes-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "Onefailatatime/slap-notes",
+          "checksums": "SHA256SUMS",
+          "assets": {
+            "x86_64": "slap-notes-{tag}-linux-x64.tar.zst"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/spotify/.omarchy/package.json",
+        "gitBlob": "18ae5ff3f6889fcc8a114b18cbba98a365d4aff4",
+        "sha256": "d640ff02275141d9fcf7bae31e5d013af3ce23efc63d2fc8a81b3f55c165889b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/spotify/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "debian": "https://repository.spotify.com/dists/testing/non-free/binary-amd64/Packages",
+            "package": "spotify-client",
+            "pattern": "1:(?P<version>[0-9]+(?:\\.[0-9]+)*)\\.(?P<commit>g[0-9a-f]+)",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        },
+        "origin": {
+          "aur": "spotify",
+          "commit": "0af779c21295d2875d06b07f8760a0e98256f3e4"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/strata/.omarchy/package.json",
+        "gitBlob": "bbe9ae19325521a98ed659290b5ef25e6ddc60ba",
+        "sha256": "95b5bc6bfd1195edc303e2cb611b39e7f12af34491225a5d8490656c71a323b8",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/strata/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "24h"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/rustdesk/.omarchy/package.json",
+        "gitBlob": "1b9725b1f616ef27b2657354a220f47294755ba3",
+        "sha256": "8f51e967863555528d228abbe944ee9e262549c7aa5f601c39ba3a54f2df473f",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/rustdesk/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "rustdesk/rustdesk",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)",
+            "submodules": {
+              "_hbb_commit": "libs/hbb_common"
+            }
+          }
+        },
+        "origin": {
+          "aur": "rustdesk",
+          "commit": "b19996732fccf6c9d436afccb704d65b320cf837"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/sublime-text-4/.omarchy/package.json",
+        "gitBlob": "b891c1997902e25541ff8e1598100724beb4517a",
+        "sha256": "dbc04fef73f566369ce63761cf35a8c13ad24c8c5ca220743ae5093012fb7637",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/sublime-text-4/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "json": "https://www.sublimetext.com/updates/4/stable_update_check",
+            "path": "latest_version",
+            "version": "4.{version}"
+          }
+        },
+        "origin": {
+          "aur": "sublime-text-4",
+          "commit": "a00e0a71a6e923093b855e5fd9ee10441b362271"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/superwhisper-bin/.omarchy/package.json",
+        "gitBlob": "2db93aaee2c617f4d9dfecd4388a27393407d547",
+        "sha256": "d7a4a2d6b9bf9201970a236d22c5ea15210705d3c91d7d05524b2c36aa12ba88",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/superwhisper-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "watch": {
+            "github": "superultrainc/superwhisper-linux-releases",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)",
+            "variables": {
+              "_version": "{version}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/sunshine/.omarchy/package.json",
+        "gitBlob": "fa0de1adaa2471777788a7c211f79f15bf0e7bb6",
+        "sha256": "864c9795d30045b9b26a81490d7ef8514dfd495a47c311ea1a9ab343aff9326b",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/sunshine/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "LizardByte/Sunshine",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        },
+        "origin": {
+          "aur": "sunshine",
+          "commit": "42bc63ecad9478b35338d34ed923887bdbd81b29"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/symfony-cli/.omarchy/package.json",
+        "gitBlob": "b9e29500e86b8af58da859bfc03a2a66c957e9ab",
+        "sha256": "bdd794b31bd8c8881aa50af8e7de22c37e588603c4f17a8c220756822e110d37",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/symfony-cli/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "github": "symfony-cli/symfony-cli",
+          "checksums": "checksums.txt",
+          "assets": {
+            "any": "symfony-cli-{pkgver}.tar.gz"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/t3code-bin/.omarchy/package.json",
+        "gitBlob": "db153c3eb028f16a70a56ed49b726bc98302e468",
+        "sha256": "46915fe39736c2929e5a78e9a0915ca9a5398fd1b795e053678128d99972c749",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/t3code-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/supergfxctl/.omarchy/package.json",
+        "gitBlob": "f72c893ded9f50fc6372e225a7e253ff09c71146",
+        "sha256": "44bebf5348ee11f275c1d9dccaac61821e07c2ce5871b53fd08c2fe99aa06dcd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/supergfxctl/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "sync": false,
+        "origin": {
+          "aur": "supergfxctl",
+          "commit": null
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/t3code-nightly-bin/.omarchy/package.json",
+        "gitBlob": "238c95e4f0e1d4a9e52a85d6f529fcd220f34ab9",
+        "sha256": "1324adf56434bb2d68c480d2a1ef544b24edf02805d57d981ff257008d793b25",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/t3code-nightly-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "30m",
+        "upstream": {
+          "watch": {
+            "github": "pingdotgg/t3code",
+            "pattern": "v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)-nightly\\.(?P<date>[0-9]{8})\\.(?P<run>[0-9]+)",
+            "version": "{version}_nightly.{date}.{run}",
+            "allow_prerelease": true
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/thinkpad-t14-amd-touchpad-dkms/.omarchy/package.json",
+        "gitBlob": "fa58d7dd414d2d92143a02948c7d272f8f9621d3",
+        "sha256": "7a713c4c03da050eab370d2fcccdd4cb1c22ef54f751037c141a199db67d588e",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/thinkpad-t14-amd-touchpad-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "git_tags": "https://github.com/orospakr/thinkpad-t14-amd-touchpad.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": [
+              "https://github.com/orospakr/thinkpad-t14-amd-touchpad/archive/refs/tags/{tag}.tar.gz",
+              "file:thinkpad-t14-amd-touchpad.conf",
+              "file:thinkpad-t14-amd-touchpad-dkms.install"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/tensaku/.omarchy/package.json",
+        "gitBlob": "e0058363d4dbd69c475ee6e8279f8a9029742742",
+        "sha256": "7c0f158da19cb0f5ad76e4906a894ecbf5caa0df6daa4b09344335ce70ea4b99",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/tensaku/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "git_tags": "https://github.com/jondkinney/tensaku.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": ["https://github.com/jondkinney/tensaku/archive/refs/tags/{tag}.tar.gz"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/tmog-bin/.omarchy/package.json",
+        "gitBlob": "2a9719d3fbb0a9054048dda881eae277703d01e2",
+        "sha256": "5a1f7783227b40fc074b2be24c1e10c6182bbcfa95708b313c03c78ba87bb4d5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/tmog-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local"
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ttf-ia-writer/.omarchy/package.json",
+        "gitBlob": "d5635be236f82cff8a42d11685de92607365d4b5",
+        "sha256": "5db03bd08bbbf80c138800b9f35da761776d68166972b28795cc7827fc74da9d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ttf-ia-writer/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "git_branch": "https://github.com/iaolo/iA-Fonts.git",
+            "branch": "master",
+            "version": "{date}.r{count}",
+            "variables": {
+              "_commit": "{commit}"
+            }
+          }
+        },
+        "origin": {
+          "aur": "ttf-ia-writer",
+          "commit": "e9aa94080338d7a7f83a561ce64bf30ab4fb24e4"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ttf-jetbrains-mono-nerd-basic/.omarchy/package.json",
+        "gitBlob": "302b6aa1212ba576b30bb4b088b062819aa2512b",
+        "sha256": "0004e51b516f7be139c818e631db16bcc50e8096d6e091f6c08097616169fffd",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ttf-jetbrains-mono-nerd-basic/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "ryanoasis/nerd-fonts",
+          "checksums": "SHA-256.txt",
+          "assets": {
+            "any": "JetBrainsMono.zip"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/tobi-try/.omarchy/package.json",
+        "gitBlob": "e7f48c0fae899753cc4cf209b1642970e8e36033",
+        "sha256": "09172e06376d5dcfae42adf6f2289a83554855862f043435b8e6daf0b28de1d8",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/tobi-try/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "git_tags": "https://github.com/tobi/try.git",
+          "tag_pattern": "v{pkgver}",
+          "sources": {
+            "any": [
+              "https://raw.githubusercontent.com/tobi/try/{tag}/try.rb",
+              "https://raw.githubusercontent.com/tobi/try/{tag}/lib/fuzzy.rb",
+              "https://raw.githubusercontent.com/tobi/try/{tag}/lib/tui.rb"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/tuxedo-drivers-nocompatcheck-dkms/.omarchy/package.json",
+        "gitBlob": "b86b16463294fbe768ce2d2d75d3200de7e9f842",
+        "sha256": "9f973ca7708e8a561cf5a11f864fe422c89d3c8f9704023319489a48b30652b8",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/tuxedo-drivers-nocompatcheck-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://gitlab.com/kronerm/tuxedo-drivers-nocompatcheck.git",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)-patched\\.(?P<build>[0-9]+)",
+            "variables": {
+              "_patchrel": "{build}"
+            },
+            "revision": "{build}",
+            "revision_variable": "_patchrel"
+          }
+        },
+        "origin": {
+          "aur": "tuxedo-drivers-nocompatcheck-dkms",
+          "commit": "58203050bad3d23406a1e2e4357f1b7be2c6a45b"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ttfx/.omarchy/package.json",
+        "gitBlob": "a9e60db456d39a548e6cad7c7c1a37c77d9c8c05",
+        "sha256": "abcc9837cda37e916e4d6ca19677c563e72e35b77db5fed6eca94430bf29f3f7",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ttfx/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "omacom/ttfx",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/tzupdate/.omarchy/package.json",
+        "gitBlob": "ca3f53197a8223487a639fc030e4b2c3a115833e",
+        "sha256": "2b3dea19cf55c3984cb17b6677b74cf3a84a9e111e372139b46e93ddb1ba83b6",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/tzupdate/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "git_tags": "https://github.com/cdown/tzupdate.git",
+          "tag_pattern": "{pkgver}",
+          "sources": {
+            "any": ["https://github.com/cdown/tzupdate/archive/refs/tags/{tag}.tar.gz"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/uboot-asahi/.omarchy/package.json",
+        "gitBlob": "dd11ed8693090021bdff618ce625f256f56fe754",
+        "sha256": "2d5cc05e2880a5ce7e6e43266502b87c41ede5ec9e936d6c40f2ab00570a8481",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/uboot-asahi/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "channels": ["edge"],
+        "sync": false
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/ufw-docker/.omarchy/package.json",
+        "gitBlob": "a5b48119d099c0541d972ad98dba6a13d79a7303",
+        "sha256": "3eef00f3201531977fd2e56c881c6419aa6db446be71307987a9f6574593443d",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/ufw-docker/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://github.com/chaifeng/ufw-docker.git",
+            "pattern": "(?P<version>[0-9]{6})"
+          }
+        },
+        "origin": {
+          "aur": "ufw-docker",
+          "commit": "76e18ac8c40a4e8f018f4b35289718a29eca3d6d"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/v4l2-relayd/.omarchy/package.json",
+        "gitBlob": "daea8850210f98d4c13af4e69f08c3521aaf7ab2",
+        "sha256": "496c247bf604662ca5b0d82fcdf2e13d68f3cc82535b69f2d76f157943580dee",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/v4l2-relayd/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "git_tags": "https://gitlab.com/vicamo/v4l2-relayd.git",
+          "tag_pattern": "upstream/{pkgver}",
+          "sources": {
+            "any": [
+              "https://gitlab.com/vicamo/v4l2-relayd/-/archive/upstream/{pkgver}/v4l2-relayd-upstream-{pkgver}.tar.gz",
+              "file:0001-reset-output-on-idle.patch",
+              "file:0002-escape-optional-splashsrc-expansion.patch"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/vi/.omarchy/package.json",
+        "gitBlob": "5354a14c9dc634384be92c885652bbf2209360b1",
+        "sha256": "1cd672097f8b3bb092b9ad2b9e6ab9dbdc059d4b4d104db59bfae1d0a2103a06",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/vi/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "regex": "https://sources.archlinux.org/other/vi/",
+            "pattern": "ex-(?P<version>[0-9]{6})\\.tar\\.xz"
+          }
+        },
+        "origin": {
+          "aur": "vi",
+          "commit": "9aa84b0998874261e94bbbe25e0dcf3de7286b94"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/visual-studio-code-bin/.omarchy/package.json",
+        "gitBlob": "b4c425ba96f6bf8704b7477edc3af802a84cb602",
+        "sha256": "b2aa7ed9b044295e320d8d5edd261f4e6efaed2ad12cf4afaf448993ef11afe1",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/visual-studio-code-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "json": "https://update.code.visualstudio.com/api/update/linux-deb-x64/stable/latest",
+            "path": "productVersion"
+          }
+        },
+        "origin": {
+          "aur": "visual-studio-code-bin",
+          "commit": "4e46b8b4ca50f6aed23c848aa4f2d16fbd2432e5"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/typora/.omarchy/package.json",
+        "gitBlob": "4afe7e1686ec793a77d9eabfbb7bdf5afd388960",
+        "sha256": "3613c0fd4dceb3b630e49cde5d12bc2da0ff6f8bea182898f6bc99645d091ad3",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/typora/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "debian": "https://downloads.typora.io/linux/Packages",
+            "package": "typora",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*)(?:-[0-9]+)?"
+          }
+        },
+        "origin": {
+          "aur": "typora",
+          "commit": "029ff738d5928db82edfa34fc365fcb6743a74e5"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/voxtype-bin/.omarchy/package.json",
+        "gitBlob": "ce60357c091bf84d635fb3ce8b785ab12e6e991f",
+        "sha256": "4f92cf42e682a7f992ba136f977619db5e1b466db8e1789b61eb0395d168e766",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/voxtype-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "min_release_age": "24h",
+        "upstream": {
+          "github": "peteonrails/voxtype",
+          "digests": true,
+          "latest_only": true,
+          "assets": {
+            "x86_64": [
+              "voxtype-{pkgver}-linux-x86_64-baseline",
+              "voxtype-{pkgver}-linux-x86_64-baseline.asc",
+              "voxtype-{pkgver}-linux-x86_64-avx2",
+              "voxtype-{pkgver}-linux-x86_64-avx2.asc",
+              "voxtype-{pkgver}-linux-x86_64-avx512",
+              "voxtype-{pkgver}-linux-x86_64-avx512.asc",
+              "voxtype-{pkgver}-linux-x86_64-vulkan",
+              "voxtype-{pkgver}-linux-x86_64-vulkan.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-avx2",
+              "voxtype-{pkgver}-linux-x86_64-onnx-avx2.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-avx512",
+              "voxtype-{pkgver}-linux-x86_64-onnx-avx512.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-12",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-12.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-12.libonnxruntime_providers_cuda.so",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-12.libonnxruntime_providers_shared.so",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-13",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-13.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-13.libonnxruntime_providers_cuda.so",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-13.libonnxruntime_providers_shared.so",
+              "voxtype-{pkgver}-linux-x86_64-onnx-cuda-13.libonnxruntime.so.1.24.4",
+              "voxtype-{pkgver}-linux-x86_64-onnx-migraphx",
+              "voxtype-{pkgver}-linux-x86_64-onnx-migraphx.asc",
+              "voxtype-{pkgver}-linux-x86_64-onnx-migraphx.libonnxruntime_providers_migraphx.so",
+              "voxtype-{pkgver}-linux-x86_64-onnx-migraphx.libonnxruntime_providers_shared.so",
+              "voxtype-{pkgver}-linux-x86_64-osd",
+              "voxtype-{pkgver}-linux-x86_64-osd.asc",
+              "voxtype-{pkgver}-linux-x86_64-osd-gtk4",
+              "voxtype-{pkgver}-linux-x86_64-osd-gtk4.asc",
+              "voxtype-{pkgver}-linux-x86_64-osd-quickshell",
+              "voxtype-{pkgver}-linux-x86_64-osd-quickshell.asc",
+              "voxtype-{pkgver}-linux-x86_64-audio-bridge",
+              "voxtype-{pkgver}-linux-x86_64-audio-bridge.asc"
+            ],
+            "aarch64": [
+              "voxtype-{pkgver}-linux-aarch64-cpu",
+              "voxtype-{pkgver}-linux-aarch64-cpu.asc",
+              "voxtype-{pkgver}-linux-aarch64-onnx",
+              "voxtype-{pkgver}-linux-aarch64-onnx.asc",
+              "voxtype-{pkgver}-linux-aarch64-osd",
+              "voxtype-{pkgver}-linux-aarch64-osd.asc",
+              "voxtype-{pkgver}-linux-aarch64-osd-gtk4",
+              "voxtype-{pkgver}-linux-aarch64-osd-gtk4.asc",
+              "voxtype-{pkgver}-linux-aarch64-osd-quickshell",
+              "voxtype-{pkgver}-linux-aarch64-osd-quickshell.asc",
+              "voxtype-{pkgver}-linux-aarch64-audio-bridge",
+              "voxtype-{pkgver}-linux-aarch64-audio-bridge.asc"
+            ]
+          },
+          "sources": {
+            "any": [
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/config/default.toml",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/systemd/voxtype.service",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/completions/voxtype.bash",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/completions/voxtype.zsh",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/completions/voxtype.fish",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/LICENSE",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/README.md",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/voxtype-configure.desktop",
+              "https://raw.githubusercontent.com/peteonrails/voxtype/{tag}/packaging/scripts/voxtype-configure-launcher",
+              "https://github.com/peteonrails/voxtype/archive/refs/tags/{tag}.tar.gz",
+              "https://github.com/peteonrails/voxtype/releases/download/{tag}/voxtype-{pkgver}.tar.gz.asc"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/walker/.omarchy/package.json",
+        "gitBlob": "30aa09124a292caeeb1fc004d448424ba3a6ace7",
+        "sha256": "60f7c30c949339985d4d1ce6ba913f2aee13a071998f82c130c4ebd762140774",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/walker/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "abenz1267/walker",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "walker",
+          "commit": "9dbe9e62a133a14a16f4a6f6e9fe7de04ef651ef"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/xpadneo-dkms/.omarchy/package.json",
+        "gitBlob": "906b4215ef33c1b9117b2dd37a0efde32f2d1388",
+        "sha256": "bd34f1d31ce96d4feb7edcab9818743ea9ab2467d7e35a8bcb06217b95624e77",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/xpadneo-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "atar-axis/xpadneo",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "xpadneo-dkms",
+          "commit": "ae15a8de85094bee24c0e24408a22decb21121e7"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/wps-office-cn/.omarchy/package.json",
+        "gitBlob": "279eda21697cef85cd55f9d798a1bc120f07c58b",
+        "sha256": "cca68b404d6a529a3836d29673886c8d96b4c37d35b921e5747aa87c8fb40c9a",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/wps-office-cn/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "regex": "https://linux.wps.cn/",
+            "pattern": "https://wps-linux-personal\\.wpscdn\\.cn/wps/download/ep/(?P<series>Linux[0-9]+)/(?P<build>[0-9]+)/wps-office_(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+\\.(?P=build))\\.AK\\.preread\\.sw\\.Personal_(?P<channel>[0-9]+)_amd64\\.deb",
+            "variables": {
+              "_series": "{series}",
+              "_channel": "{channel}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/yaru-icon-theme/.omarchy/package.json",
+        "gitBlob": "c22c559a38734b35a8cb53ee2a8b456e48892531",
+        "sha256": "e3a1a4723c551aa2a0e005a71e27a0241157e3bb042024b1902417fc0d4066aa",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/yaru-icon-theme/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "git_tags": "https://github.com/ubuntu/yaru.git",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*(?:ubuntu)?)"
+          }
+        },
+        "origin": {
+          "aur": "yaru",
+          "commit": "7206d6736121b4564998262d99d6afdbc28b1563"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/yay/.omarchy/package.json",
+        "gitBlob": "eec3de3f977952807d7ccdf6b9f2f8f79953aa2f",
+        "sha256": "d1385fdd41b8f23cf7ae3befa57557c32777087d9c2bce6a16f13eb491978267",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/yay/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "github": "Jguer/yay",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        },
+        "origin": {
+          "aur": "yay",
+          "commit": "cb43f84828ab4f9700f7c6f9c6d7a923d4cfaff0"
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/wechat-bin/.omarchy/package.json",
+        "gitBlob": "24792f4892c36c677be10828547115cbd171bebb",
+        "sha256": "1ec2e504f62b46fb5bba58b005643866bb971b00b11bade6e4bda01d337f3a87",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/wechat-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "archive": "https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb",
+            "pattern": "(?m)^Version: (?P<version>[0-9]+(?:\\.[0-9]+)*)$",
+            "mutable_sources": ["source_x86_64:0", "source_aarch64:0"]
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/zed/.omarchy/package.json",
+        "gitBlob": "a9b046e688ba6482743e8ba867068016567c1eb7",
+        "sha256": "91f4e79892974f9174185d86bc07c042b34944bc94396981cdb63520c818d298",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/zed/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "release_ring": "fast",
+        "auto_merge": true,
+        "upstream": {
+          "watch": {
+            "github": "zed-industries/zed",
+            "pattern": "v(?P<version>[0-9]+(?:\\.[0-9]+)*)"
+          }
+        }
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/yt6801-dkms/.omarchy/package.json",
+        "gitBlob": "45f07e4810d192a2ff0d2df3ae3823036e214961",
+        "sha256": "8cf79fd81792d1f64e62b2874011ab630a84c23a614804f0ee740741b78a1045",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/yt6801-dkms/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "upstream": {
+          "watch": {
+            "archive": "https://www.motor-comm.com/Cn/Skippower/downloadFile.html?id=1817",
+            "filenames": true,
+            "pattern": "yt6801-(?P<version>[0-9]+(?:\\.[0-9]+)*)\\.tar\\.gz",
+            "mutable_sources": ["source:0"]
+          }
+        },
+        "origin": {
+          "aur": "yt6801-dkms",
+          "commit": "020a0f11079cc974794e49856a1a98ab677570a9"
+        },
+        "sync": false
+      }
+    },
+    {
+      "source": {
+        "path": "pkgbuilds/zen-browser-bin/.omarchy/package.json",
+        "gitBlob": "a64a2ac60f85c1948a4c7ad95ca6d89820e26602",
+        "sha256": "3768f46ac80d501ba55959eadf868334686aa196c30f8cbf78aadc99da1c1fe5",
+        "url": "https://raw.githubusercontent.com/omacom/omarchy-pkgs/a97afe08808ad81290792e9f9823c761be3a5f86/pkgbuilds/zen-browser-bin/.omarchy/package.json"
+      },
+      "metadata": {
+        "source": "local",
+        "auto_merge": true,
+        "release_ring": "fast",
+        "upstream": {
+          "watch": {
+            "github": "zen-browser/desktop",
+            "pattern": "(?P<version>[0-9]+(?:\\.[0-9]+)*b)"
+          }
+        },
+        "origin": {
+          "aur": "zen-browser-bin",
+          "commit": "f4c4f31acf056e4756596fb958ae7fa824c760bb"
+        }
+      }
+    }
+  ],
+  "execution": false
+}

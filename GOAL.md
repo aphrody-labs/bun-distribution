@@ -6,9 +6,18 @@ histories, active concurrent work, and all applicable license notices.
 
 The owner's selected integration scope is Bun Libraries and Aphrody. Shenron,
 IECODE and Android remain outside this absorption. Existing Bun runtime,
-Material and APT distribution dependencies retain their pinned contracts.
+Material and compatibility distribution dependencies retain their pinned contracts.
 The root catalog and source graph own discovery/export; physical relocation
 and nested workspace migration remain separate gates.
+
+The owner's expanded OS direction (2026-10-16) integrates the complete CachyOS,
+ChimeraOS and Omarchy package/source catalogs, build tools, SDKs and libraries.
+Pacman/libalpm replaces APT as the primary Linux distribution package manager.
+Use one Arch factory and separate Server, COSMIC Desktop and Gamescope Gaming
+compositions. Keep the optional Hyprland/Omarchy session distinct from COSMIC.
+Fork upstream kernels and Rust source projects with their history, pins,
+licenses and locks; imported projects are not automatically root Cargo members.
+APT remains an explicitly separate portability qualification target.
 
 Aphrody retains exactly two capability layers: AI (models, agents, memory,
 A2A and MCP) and infrastructure (hosts, deployment, services, pipelines and

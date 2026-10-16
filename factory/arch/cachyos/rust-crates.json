@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "kind": "cachyos-rust-source-inventory",
+  "observedAt": "2026-10-16",
+  "rootCratesAdded": 0,
+  "decision": "No new Rust dependency or crate is required for this declarative integration. Preserve existing source owners and locks; qualify optional tool reuse before any controlled root Cargo migration.",
+  "crates": [
+    {
+      "name": "pkg-manage-util",
+      "version": "0.1.0",
+      "repository": "CachyOS/pkg-manage-util",
+      "revision": "927a956671108268d252523d6a0764e7cff6d969",
+      "manifest": "Cargo.toml",
+      "manifestGitBlob": "92ba4d382ab695ebb0bfeac8784e0528029793f5",
+      "lock": "Cargo.lock",
+      "lockGitBlob": "345a9930481f7a41c3437b14ac523a5b694f4113",
+      "license": "GPL-3.0-or-later",
+      "edition": "2024",
+      "role": "Optional existing clean-chroot build CLI, not another scheduler",
+      "nativeRequirements": [
+        "Linux process/signal APIs",
+        "pacman",
+        "devtools",
+        "libgit2 or declared vendored-libgit2",
+        "Clang/LLVM/lld for the upstream package recipe"
+      ],
+      "declaredDependencies": {
+        "anyhow": "1; no default features; std",
+        "clap": "4.5; derive",
+        "tracing": "0.1; no default features",
+        "tracing-subscriber": "0.3; fmt,env-filter; no default features",
+        "git2": "0.20; https,vendored-libgit2; no default features",
+        "tokio": "1.48; full",
+        "tokio-stream": "0.1; io-util",
+        "nix": "0.30; signal,process,time,feature",
+        "uuid": "1.19; v4; no default features",
+        "tempfile": "3.24; no default features",
+        "serde": "1; derive",
+        "toml": "0.9",
+        "xdg": "3.0"
+      },
+      "dependencySemantics": "Declared version ranges/features, not resolved lock versions. Full immutable upstream Cargo.lock remains authoritative."
+    },
+    {
+      "name": "repo-manage-util",
+      "version": "0.3.0",
+      "repository": "CachyOS/repo-manage-util",
+      "revision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
+      "manifest": "Cargo.toml",
+      "manifestGitBlob": "98881c38bf4882edc0eb5b97208afc9be5c517d0",
+      "lock": "Cargo.lock",
+      "lockGitBlob": "0980d0456324dc752446d83e817055549d80aaa4",
+      "license": "GPL-3.0-or-later",
+      "edition": "2024",
+      "role": "Optional repository-management capability; broader than simple signed database publication",
+      "nativeRequirements": [
+        "libalpm ABI",
+        "Linux Pacman ecosystem",
+        "nonoptional local pg_impl/PostgreSQL integration"
+      ],
+      "declaredDependencies": {
+        "alpm": "4; checkver; no default features",
+        "anyhow": "1; std; no default features",
+        "chrono": "0.4; no default features",
+        "clap": "4.5; derive",
+        "glob": "0.3",
+        "tracing": "0.1",
+        "tracing-subscriber": "0.3; env-filter",
+        "tracing-appender": "0.2",
+        "rand": "0.9; std,std_rng,thread_rng; no default features",
+        "serde": "1; derive",
+        "subprocess": "0.2",
+        "tokio": "1.46; macros,rt-multi-thread; no default features",
+        "toml": "0.9",
+        "uuid": "1.17; v4; no default features",
+        "pg_impl": "path ./pg_impl; nonoptional"
+      },
+      "dependencySemantics": "Declared requirements only. Reuse the root common Pacman/libalpm owner; no duplicate ALPM implementation or Rust binding added."
+    },
+    {
+      "name": "pg_impl",
+      "version": "0.1.0",
+      "repository": "CachyOS/repo-manage-util",
+      "revision": "824f2033bcec4b0fb2232976a4fc6037577a6164",
+      "manifest": "pg_impl/Cargo.toml",
+      "manifestGitBlob": "3740453a9733a2de36b548b54ed4e834ff5ff21f",
+      "lock": "pg_impl/Cargo.lock",
+      "lockGitBlob": "fb68b2551db552b85081caa2f0e5213aecd7e965",
+      "license": "GPL-3.0-or-later",
+      "edition": "2024",
+      "role": "Nonoptional local crate of the optional repository-management tool",
+      "declaredDependencies": {
+        "thiserror": "2.0; no default features",
+        "chrono": "0.4; no default features",
+        "sqlx": "0.8; runtime-tokio-rustls,postgres,runtime-tokio,migrate,chrono,uuid,macros; no default features",
+        "tokio": "1.46; macros,rt-multi-thread; no default features",
+        "uuid": "1; v4; no default features"
+      },
+      "decision": "No database, credentials or service provisioned. Do not admit this crate by assuming PostgreSQL support is optional."
+    }
+  ],
+  "kernelRust": {
+    "repository": "CachyOS/linux",
+    "revision": "b0ce79ee33ddd93d513f77341167956e1355758e",
+    "owner": "Linux Kbuild rust/Makefile",
+    "manifestGitBlob": "9211d82ac96daf1c0e7d8039fa751cdf8612693e",
+    "componentsObserved": [
+      "core",
+      "compiler_builtins",
+      "ffi",
+      "zerocopy",
+      "bindings",
+      "pin_init",
+      "kernel",
+      "uapi",
+      "proc_macro2",
+      "quote",
+      "syn"
+    ],
+    "decision": "Retain in the pinned kernel source/Kbuild graph with its compiler and rust-src contract. These are not product Cargo workspace members to fork or flatten independently."
+  },
+  "pacmanRust": {
+    "owner": "root common Pacman source capability",
+    "sourceRepository": "CachyOS/pacman",
+    "sourceRevision": "4056cd687f6379e61e7decb9b66e9b57cb3949a9",
+    "recipeEvidence": "CachyOS-PKGBUILDS pacman/PKGBUILD patches scripts/repo-add/Cargo.toml and builds Rust through Meson",
+    "decision": "Inventory and preserve embedded repo-add Rust manifests/locks through the single Pacman owner; this batch does not create a competing repo-add crate or ALPM binding."
+  },
+  "cachybuilder": {
+    "publicBackendSource": "not located",
+    "directLookups": [
+      "CachyOS/cachybuilder returned404",
+      "CachyOS/buildtool returned404",
+      "CachyOS/cachyos-buildtool returned404"
+    ],
+    "historicalOfficialEvidence": "CachyOS website2023-happy-new-year article describes a C++ Cachybuilder; current backend language/source is not established by that historical statement.",
+    "dashboard": "CachyOS/builder-dashboard cd648ede9ebcdef479e7eee81e09572807b6c0dd is an API client, not the engine",
+    "decision": "Do not invent a Rust builder implementation or admit an unrelated similarly named crate."
+  },
+  "qualification": {
+    "manifestResearch": true,
+    "locksMaterialized": false,
+    "cargoMetadataRun": false,
+    "crateMigration": false,
+    "built": false,
+    "testsRun": false
+  }
+}

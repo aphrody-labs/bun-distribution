@@ -15,7 +15,9 @@ from executed artifacts.
 - Source topology: sources.lock.json and [source export](docs/SOURCE-EXPORT.md).
 - Profiles and target ABIs: distribution.json.
 - Distribution factory: src/cli.ts and src/distribution.ts.
-- Ubuntu factory: factory/ubuntu.ts and factory/profile.json.
+- Primary Arch/pacman factory: factory/arch/, factory/profile.json and
+  [distribution architecture](docs/architecture/arch-distribution.md).
+- Ubuntu compatibility factory: factory/ubuntu.ts and factory/ubuntu-profile.json.
 - Kernel/WSL/APT recipes: [native targets](docs/NATIVE-TARGETS.md).
 - Package/source conversion: src/apt.ts and packages/package-converter/.
 - Standalone compiler and assets: [app builds](docs/APP-BUILDS.md).
@@ -26,6 +28,8 @@ Start with the native help and read-only plan:
 
 ```sh
 bun src/cli.ts --help
+bun src/cli.ts factory --action plan --composition server --snapshot 2026-10-16
+bun src/cli.ts graph --composition server
 bun src/cli.ts plan --profile full --target linux-x64
 bun infra/app-build.ts plan apt --config infra/apps.json --target windows-x64
 ```

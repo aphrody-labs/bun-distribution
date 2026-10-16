@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "omarchy",
+  "role": "Pinned architecture/package reference; optional desktop capability catalogue",
+  "product": "Bun OS",
+  "sources": [
+    {
+      "id": "omarchy",
+      "repository": "https://github.com/omacom/omarchy",
+      "revision": "51bfd1dbaa1b5f790e19623faf2745945d40c796",
+      "observedBranch": "quattro",
+      "observedVersion": "4.0.0.alpha",
+      "license": "MIT",
+      "licenseFile": "LICENSE",
+      "status": "Reference only; alpha branch is not a qualified Bun OS release",
+      "gitTree": "a9e3932a9442c33bf55026c66406cda3c14dae5c"
+    },
+    {
+      "id": "omarchy-pkgs",
+      "repository": "https://github.com/omacom/omarchy-pkgs",
+      "revision": "a97afe08808ad81290792e9f9823c761be3a5f86",
+      "observedBranch": "master",
+      "license": "See LICENSE-PACKAGING and per-recipe licenses",
+      "licenseFile": "LICENSE-PACKAGING",
+      "gitTree": "78263d5c14f4644f5be01a2c55130dcdcc24cfd8"
+    },
+    {
+      "id": "omarchy-recipe-release",
+      "repository": "https://github.com/omacom/omarchy",
+      "revision": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
+      "gitTree": "1d48adc1ba8636fd9362f7b9bf8819f3ac3258a4",
+      "version": "4.0.4",
+      "role": "Actual source selected by stable omarchy/omarchy-settings PKGBUILDs; distinct from default quattro architecture reference",
+      "license": "MIT",
+      "status": "Commit verified via GitHub MCP, not source-tree overlay or installed artifact"
+    }
+  ],
+  "acquisition": {
+    "githubMcp": true,
+    "context7Library": "/omacom/omarchy",
+    "rawBlobs": "Official raw.githubusercontent.com immutable commit URLs; every inspected blob checked against its Git SHA-1 and SHA-256 retained",
+    "treeTruncated": false,
+    "textFilesInspected": 2025,
+    "binaryExcluded": ["default/hypr/cursors/omarchy-startup/cursors/left_ptr"],
+    "protectedInputs": "No live HOME, provider auth, sessions, databases or secrets read/imported",
+    "additionalMetadataFiles": 187
+  },
+  "qualification": {
+    "sourceInventory": true,
+    "build": false,
+    "install": false,
+    "test": false,
+    "boot": false,
+    "release": false
+  },
+  "compatibility": "Default quattro reference and stable packaging source are deliberately distinct. Never build stable recipes against the alpha reference pin by silently substituting a checkout."
+}

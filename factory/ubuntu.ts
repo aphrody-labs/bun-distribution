@@ -865,7 +865,7 @@ async function main() {
   if (requested === "/" || requested === Bun.env.HOME) throw new Error("Select a dedicated factory directory");
   await mkdir(requested, { recursive: true });
   const root = await realpath(requested);
-  const profile: FactoryProfile = await Bun.file(join(import.meta.dir, "profile.json")).json();
+  const profile: FactoryProfile = await Bun.file(join(import.meta.dir, "ubuntu-profile.json")).json();
   if (
     profile.schemaVersion !== 1 ||
     !/^[a-z][a-z0-9-]*$/.test(profile.series) ||

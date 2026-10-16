@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "kind": "bun-os-executed-factory-sources",
+  "files": [
+    {
+      "path": "factory/arch/pacman.ts",
+      "bytes": 26608,
+      "sha256": "21016b35c266af7b372eeb38b60608c447a9a6936e88c7773179225efd8eff0b"
+    },
+    {
+      "path": "factory/arch/resolve.ts",
+      "bytes": 22886,
+      "sha256": "ff622f291cd5dc57044acfff801b4c7d18befdd20abdad3b98831cc217695894"
+    },
+    {
+      "path": "factory/profile.json",
+      "bytes": 3119,
+      "sha256": "65bc4cb5fbfeae5ad8630dbd9d204071b3d7c7b4e4c4fc3c7f59c9670c32565e"
+    },
+    {
+      "path": "packages/bun-workspace/src/process.ts",
+      "bytes": 10175,
+      "sha256": "8d31bc36a2fe6eb6086c5dbd01f0e7a19647b09bd8539af4a13cc50c467a5c48"
+    },
+    {
+      "path": "packages/bun-workspace/src/hash.ts",
+      "bytes": 2796,
+      "sha256": "8b6559db93d0998f0c4d59c998561b3696f26d314f4faf4b1ac910ff2052f7cf"
+    }
+  ]
+}

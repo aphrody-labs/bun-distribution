@@ -241,3 +241,175 @@
 	path = crates/cadcraft
 	url = bun-forge:aphrody-dev/bun-crate-cadcraft.git
 	branch = os
+[submodule "forks/cachyos-pkgbuilds"]
+	path = forks/cachyos-pkgbuilds
+	url = https://github.com/aphrody-labs/cachyos-pkgbuilds.git
+	shallow = true
+[submodule "forks/linux-cachyos"]
+	path = forks/linux-cachyos
+	url = https://github.com/aphrody-labs/linux-cachyos.git
+	shallow = true
+[submodule "forks/cachyos-linux"]
+	path = forks/cachyos-linux
+	url = https://github.com/aphrody-labs/cachyos-linux.git
+	shallow = true
+[submodule "forks/kernel-patches"]
+	path = forks/kernel-patches
+	url = https://github.com/aphrody-labs/kernel-patches.git
+	shallow = true
+[submodule "forks/cachyos-devtools"]
+	path = forks/cachyos-devtools
+	url = https://github.com/aphrody-labs/cachyos-devtools.git
+	shallow = true
+[submodule "forks/pkg-manage-util"]
+	path = forks/pkg-manage-util
+	url = https://github.com/aphrody-labs/pkg-manage-util.git
+	shallow = true
+[submodule "forks/cachyos-repo-manage-util"]
+	path = forks/cachyos-repo-manage-util
+	url = https://github.com/aphrody-labs/cachyos-repo-manage-util.git
+	shallow = true
+[submodule "forks/cachyos-builder-dashboard-reference"]
+	path = forks/cachyos-builder-dashboard-reference
+	url = https://github.com/aphrody-labs/cachyos-builder-dashboard-reference.git
+	shallow = true
+[submodule "forks/chimeraos"]
+	path = forks/chimeraos
+	url = https://github.com/aphrody-labs/chimeraos.git
+	shallow = true
+[submodule "forks/frzr"]
+	path = forks/frzr
+	url = https://github.com/aphrody-labs/frzr.git
+	shallow = true
+[submodule "forks/chimeraos-chimera"]
+	path = forks/chimeraos-chimera
+	url = https://github.com/aphrody-labs/chimeraos-chimera.git
+	shallow = true
+[submodule "forks/chimeraos-gamescope-session"]
+	path = forks/chimeraos-gamescope-session
+	url = https://github.com/aphrody-labs/chimeraos-gamescope-session.git
+	shallow = true
+[submodule "forks/chimeraos-gamescope-session-steam"]
+	path = forks/chimeraos-gamescope-session-steam
+	url = https://github.com/aphrody-labs/chimeraos-gamescope-session-steam.git
+	shallow = true
+[submodule "forks/chimeraos-device-quirks"]
+	path = forks/chimeraos-device-quirks
+	url = https://github.com/aphrody-labs/chimeraos-device-quirks.git
+	shallow = true
+[submodule "forks/chimeraos-install-media"]
+	path = forks/chimeraos-install-media
+	url = https://github.com/aphrody-labs/chimeraos-install-media.git
+	shallow = true
+[submodule "forks/gamescope"]
+	path = forks/gamescope
+	url = https://github.com/aphrody-labs/gamescope.git
+	shallow = true
+[submodule "forks/chimeraos-flathub-proxy"]
+	path = forks/chimeraos-flathub-proxy
+	url = https://github.com/aphrody-labs/chimeraos-flathub-proxy.git
+	shallow = true
+[submodule "forks/ogc-kernel-packages"]
+	path = forks/ogc-kernel-packages
+	url = https://github.com/aphrody-labs/ogc-kernel-packages.git
+	shallow = true
+[submodule "forks/inputplumber"]
+	path = forks/inputplumber
+	url = https://github.com/aphrody-labs/inputplumber.git
+	shallow = true
+[submodule "forks/powerstation"]
+	path = forks/powerstation
+	url = https://github.com/aphrody-labs/powerstation.git
+	shallow = true
+[submodule "forks/opengamepadui"]
+	path = forks/opengamepadui
+	url = https://github.com/aphrody-labs/opengamepadui.git
+	shallow = true
+[submodule "forks/ogc-linux"]
+	path = forks/ogc-linux
+	url = https://github.com/aphrody-labs/ogc-linux.git
+	shallow = true
+[submodule "forks/omarchy"]
+	path = forks/omarchy
+	url = https://github.com/aphrody-labs/omarchy.git
+	shallow = true
+[submodule "forks/omarchy-pkgs"]
+	path = forks/omarchy-pkgs
+	url = https://github.com/aphrody-labs/omarchy-pkgs.git
+	shallow = true
+[submodule "forks/buzz"]
+	path = forks/buzz
+	url = https://github.com/aphrody-labs/buzz.git
+	shallow = true
+[submodule "forks/flea"]
+	path = forks/flea
+	url = https://github.com/aphrody-labs/flea.git
+	shallow = true
+[submodule "forks/gliff"]
+	path = forks/gliff
+	url = https://github.com/aphrody-labs/gliff.git
+	shallow = true
+[submodule "forks/herdr"]
+	path = forks/herdr
+	url = https://github.com/aphrody-labs/herdr.git
+	shallow = true
+[submodule "forks/hyprland-preview-share-picker"]
+	path = forks/hyprland-preview-share-picker
+	url = https://github.com/aphrody-labs/hyprland-preview-share-picker.git
+	shallow = true
+[submodule "forks/localsend"]
+	path = forks/localsend
+	url = https://github.com/aphrody-labs/localsend.git
+	shallow = true
+[submodule "forks/m1n1-aurora"]
+	path = forks/m1n1-aurora
+	url = https://github.com/aphrody-labs/m1n1-aurora.git
+	shallow = true
+[submodule "forks/omacharts"]
+	path = forks/omacharts
+	url = https://github.com/aphrody-labs/omacharts.git
+	shallow = true
+[submodule "forks/omarchy-task-manager"]
+	path = forks/omarchy-task-manager
+	url = https://github.com/aphrody-labs/omarchy-task-manager.git
+	shallow = true
+[submodule "forks/omatrack"]
+	path = forks/omatrack
+	url = https://github.com/aphrody-labs/omatrack.git
+	shallow = true
+[submodule "forks/qmk-hid"]
+	path = forks/qmk-hid
+	url = https://github.com/aphrody-labs/qmk-hid.git
+	shallow = true
+[submodule "forks/rustdesk"]
+	path = forks/rustdesk
+	url = https://github.com/aphrody-labs/rustdesk.git
+	shallow = true
+[submodule "forks/strata"]
+	path = forks/strata
+	url = https://github.com/aphrody-labs/strata.git
+	shallow = true
+[submodule "forks/tensaku"]
+	path = forks/tensaku
+	url = https://github.com/aphrody-labs/tensaku.git
+	shallow = true
+[submodule "forks/ttfx"]
+	path = forks/ttfx
+	url = https://github.com/aphrody-labs/ttfx.git
+	shallow = true
+[submodule "forks/tzupdate"]
+	path = forks/tzupdate
+	url = https://github.com/aphrody-labs/tzupdate.git
+	shallow = true
+[submodule "forks/walker"]
+	path = forks/walker
+	url = https://github.com/aphrody-labs/walker.git
+	shallow = true
+[submodule "forks/nvidia-kernels"]
+	path = forks/nvidia-kernels
+	url = https://github.com/aphrody-labs/nvidia-kernels.git
+	shallow = true
+[submodule "forks/pacman"]
+	path = forks/pacman
+	url = https://github.com/aphrody-labs/pacman.git
+	shallow = true

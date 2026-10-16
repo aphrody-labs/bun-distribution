@@ -1,0 +1,2198 @@
+{
+  "schemaVersion": 1,
+  "kind": "cachyos-pinned-recipe-catalog",
+  "observedAt": "2026-10-16",
+  "sourceAcquisition": "GitHub MCP metadata only; no clone, source archive, package download or PKGBUILD execution",
+  "scope": "All recipes in both complete pinned Git source trees. This is not the full Arch/CachyOS binary repository database.",
+  "catalogs": [
+    {
+      "id": "cachyos-pkgbuilds",
+      "repository": "CachyOS/CachyOS-PKGBUILDS",
+      "revision": "a2e6c4392d397bed2df7134200dda558f2452af6",
+      "treeResponseComplete": true,
+      "treeEntries": 1055,
+      "recipeCount": 183,
+      "preserve": "Entire pinned source repository and all patches/configs/licenses/notices; no recipe allowlist or source pruning",
+      "recipes": [
+        {
+          "recipe": "adaptivemm/PKGBUILD",
+          "gitBlob": "9f6ffe3084debfe559eeec96b05efdea778be0f0",
+          "bytes": 882,
+          "metadata": {
+            "path": "adaptivemm/.SRCINFO",
+            "gitBlob": "5d12a93bc2101c05fbda774a43bd33a284585dd8",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "adiosctl/PKGBUILD",
+          "gitBlob": "68f59e6895a5ca4574d4beb01a199ee2322b9e69",
+          "bytes": 619,
+          "metadata": {
+            "path": "adiosctl/.SRCINFO",
+            "gitBlob": "09bbf7ac32420d9c91a33774a383d792be33f3c8",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "arch-install-scripts/PKGBUILD",
+          "gitBlob": "de7fe70a8b3c74ae66231de9fe1d000d44f89091",
+          "bytes": 1143,
+          "metadata": {
+            "path": "arch-install-scripts/.SRCINFO",
+            "gitBlob": "2e11c0d587d1e5a40e4e09fd2a5ca26069bf7ea3",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "archlinux-keyring/PKGBUILD",
+          "gitBlob": "5228318792a514d0d95cdc4e89e97623b44b9ec1",
+          "bytes": 1815,
+          "metadata": {
+            "path": "archlinux-keyring/.SRCINFO",
+            "gitBlob": "73b7163fc8b2603519547f868c8677c48df6abe0",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "aura/PKGBUILD",
+          "gitBlob": "af7d30af2cdae20f1ffeac85b9abf8a31eca95c4",
+          "bytes": 1742,
+          "metadata": {
+            "path": "aura/.SRCINFO",
+            "gitBlob": "250f7bbc8a90799f8250d10c11363d70e2ebed8d",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "autofdo-bin/PKGBUILD",
+          "gitBlob": "73daa63f1d24c1fd1b2ee5b360365738fb1f8a0d",
+          "bytes": 663,
+          "metadata": {
+            "path": "autofdo-bin/.SRCINFO",
+            "gitBlob": "95388574c2f29709a84014cd8e2d397d1b093bd2",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "bash/PKGBUILD",
+          "gitBlob": "838af48078d536b6d59185a87d0b7f28d28fd1a4",
+          "bytes": 7286,
+          "metadata": {
+            "path": "bash/.SRCINFO",
+            "gitBlob": "99b85bc843be7e0baf758095c648da878c0eb2bf",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "blocky/PKGBUILD",
+          "gitBlob": "94c31eae8987094df0d75cccfbe9f6e9f78dc829",
+          "bytes": 2118,
+          "metadata": {
+            "path": "blocky/.SRCINFO",
+            "gitBlob": "3224a9d2e236b89803d3355be08df8787180976e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "bpftune-gaming/PKGBUILD",
+          "gitBlob": "721cbfe4989a693b7d46381efae36d17bc73dd19",
+          "bytes": 1196,
+          "metadata": {
+            "path": "bpftune-gaming/.SRCINFO",
+            "gitBlob": "cfa336299a9d5829dff22e091d9991f84541814c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "bpftune-git/PKGBUILD",
+          "gitBlob": "572414f085f1fd822227177a6e93ba0d49b8d8eb",
+          "bytes": 1144,
+          "metadata": {
+            "path": "bpftune-git/.SRCINFO",
+            "gitBlob": "cb6be3a66bb9e7b9afff87f1589e0a805ac864fc",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "broadcom-wl-dkms/PKGBUILD",
+          "gitBlob": "0639b69ab1d4aaa132bae27f5b3f611ec9820dd1",
+          "bytes": 6055,
+          "metadata": {
+            "path": "broadcom-wl-dkms/.SRCINFO",
+            "gitBlob": "0da1c0a6345fa48b9f57681cc06fd3f8dfc60191",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachy-chroot/PKGBUILD",
+          "gitBlob": "be3c12d7d5a1e57f194b42b046c142a71dfc03e6",
+          "bytes": 1510,
+          "metadata": {
+            "path": "cachy-chroot/.SRCINFO",
+            "gitBlob": "388f0b34f5a64aac9de896a09792e9e75788456f",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachy-update/PKGBUILD",
+          "gitBlob": "7719d87d75c15442b31134aaa111dbbbb74706ec",
+          "bytes": 1723,
+          "metadata": {
+            "path": "cachy-update/.SRCINFO",
+            "gitBlob": "f2c117a8c4588bcb914dca39e8d6ed7a6018094e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-alacritty-config/PKGBUILD",
+          "gitBlob": "c4e4047340965f7f71cecb182aa4dbd803140d03",
+          "bytes": 552,
+          "metadata": {
+            "path": "cachyos-alacritty-config/.SRCINFO",
+            "gitBlob": "d3c5fa1bc3fbcf62e70cbc594dd36084614a5d6e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-ananicy-rules/PKGBUILD",
+          "gitBlob": "bfc838384ffa7c1f8284e0a9ad1bb5e4e3d3e04e",
+          "bytes": 937,
+          "metadata": {
+            "path": "cachyos-ananicy-rules/.SRCINFO",
+            "gitBlob": "4e518b86ebf038af95a75c72c3c9905ea0188993",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-benchmarker/PKGBUILD",
+          "gitBlob": "780fea6d5d299031688b7e6fe11db91200889081",
+          "bytes": 1039,
+          "metadata": {
+            "path": "cachyos-benchmarker/.SRCINFO",
+            "gitBlob": "220ff23dc592b2748f2c1128a2969dbf5ffbd6eb",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-calamares/PKGBUILD",
+          "gitBlob": "a741d225bb6ae04a5a41ec73603205607a243399",
+          "bytes": 3230,
+          "metadata": {
+            "path": "cachyos-calamares/.SRCINFO",
+            "gitBlob": "245de41df148bd1754ac17173e46857eb1df300a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-calamares/deckify/PKGBUILD",
+          "gitBlob": "75c16549451bc3b3cb2ff640edece72d2f80ae9a",
+          "bytes": 3217,
+          "metadata": {
+            "path": "cachyos-calamares/deckify/.SRCINFO",
+            "gitBlob": "e98a76d1240cbb4024c916e86151b09406390235",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-cli-installer-new-git/PKGBUILD",
+          "gitBlob": "69c496f168ec17dcc5aa9a0f95de43bb7d3c5ddc",
+          "bytes": 1620,
+          "metadata": {
+            "path": "cachyos-cli-installer-new-git/.SRCINFO",
+            "gitBlob": "aef862f4cbc5fdcced50b72379bbe9925d5775db",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-cli-installer-new/PKGBUILD",
+          "gitBlob": "74226c01af378a9eb6d6766cdad082ad2308c7af",
+          "bytes": 1549,
+          "metadata": {
+            "path": "cachyos-cli-installer-new/.SRCINFO",
+            "gitBlob": "147e2890f03d460b6eaae5d88e2b0b3b66163b9a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-drm-awaiter/PKGBUILD",
+          "gitBlob": "df3ab2165ec0c8328c1bdf95e8709acdce7e82c2",
+          "bytes": 1053,
+          "metadata": {
+            "path": "cachyos-drm-awaiter/.SRCINFO",
+            "gitBlob": "3091fdae2428dfdb7188439cff870661baae648d",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-firefox-settings/PKGBUILD",
+          "gitBlob": "d23baf5c6f351642a9294ecb75325d5d077cbf60",
+          "bytes": 875,
+          "metadata": {
+            "path": "cachyos-firefox-settings/.SRCINFO",
+            "gitBlob": "cf3eaa7a43c8e0b574640a08d4d31d7a99ac71f6",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-fish-config/PKGBUILD",
+          "gitBlob": "18129ac03de5db39a48478d4638fbc15aacc0a7b",
+          "bytes": 1054,
+          "metadata": {
+            "path": "cachyos-fish-config/.SRCINFO",
+            "gitBlob": "4e1fd856fbaf51554a8092afae68ea257b5ede7e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-gaming-applications/PKGBUILD",
+          "gitBlob": "453b439be9eb2453df22fe5630353ff678f21b00",
+          "bytes": 360,
+          "metadata": {
+            "path": "cachyos-gaming-applications/.SRCINFO",
+            "gitBlob": "09edc597cc1f0c03f4b898a1a32353ac09b1bd15",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-gaming-meta/PKGBUILD",
+          "gitBlob": "31976d8854309eb12d1b377a49b13289db47af0d",
+          "bytes": 785,
+          "metadata": {
+            "path": "cachyos-gaming-meta/.SRCINFO",
+            "gitBlob": "a50550f8d90582f68598f501b65f42127bcd00a7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-gnome-settings/PKGBUILD",
+          "gitBlob": "1923f05b90f13913f07293118fc09cb08b6735b5",
+          "bytes": 773,
+          "metadata": {
+            "path": "cachyos-gnome-settings/.SRCINFO",
+            "gitBlob": "a65c05c53593baee26dce0d44b8621469cb01e8e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-grub-theme/PKGBUILD",
+          "gitBlob": "2c4c9b6c7ae4be712d6ce291ab228cfc9294e2ed",
+          "bytes": 599,
+          "metadata": {
+            "path": "cachyos-grub-theme/.SRCINFO",
+            "gitBlob": "ea20c3d7453e1792a89ac38a257fd71df57f02d9",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-hello-git/PKGBUILD",
+          "gitBlob": "17a2730bbd9ca9c03a8b54085e2845ccb49ae8d7",
+          "bytes": 1920,
+          "metadata": {
+            "path": "cachyos-hello-git/.SRCINFO",
+            "gitBlob": "6422e9d83385b0f8b30b02019779ba69a31ebf61",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-hello/PKGBUILD",
+          "gitBlob": "3eb58a0e67c917bc4fb05d66b205033fd95189a0",
+          "bytes": 2062,
+          "metadata": {
+            "path": "cachyos-hello/.SRCINFO",
+            "gitBlob": "9341f6419ef21659901c22d45d2c757157eab35c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-hooks/PKGBUILD",
+          "gitBlob": "f10f20031d3959c047ec9772dd9a7fc4c61f5d71",
+          "bytes": 1462,
+          "metadata": {
+            "path": "cachyos-hooks/.SRCINFO",
+            "gitBlob": "a867f9257f636ded195a2ec66c21fcd960907a47",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-hypr-noctalia/PKGBUILD",
+          "gitBlob": "02e96c7946b675c86437cb0bc26306838e2e47d9",
+          "bytes": 1084,
+          "metadata": {
+            "path": "cachyos-hypr-noctalia/.SRCINFO",
+            "gitBlob": "d26c0911e1e0265bdf5f08532d5d96be73200981",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-hyprland-settings/PKGBUILD",
+          "gitBlob": "1dedae8fb621cef33d8d6cc4b8969b9c90d0b608",
+          "bytes": 1317,
+          "metadata": {
+            "path": "cachyos-hyprland-settings/.SRCINFO",
+            "gitBlob": "4c93b74327df5cc2bf57bf8250496b575a3bf757",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-i3wm-settings/PKGBUILD",
+          "gitBlob": "10c5093a48703b8f5bcfd0b8a5c3bf2690cb14f6",
+          "bytes": 1054,
+          "metadata": {
+            "path": "cachyos-i3wm-settings/.SRCINFO",
+            "gitBlob": "2f44fb34260026ce22b0839b9c3764b6dcce20a4",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-jay-noctalia/PKGBUILD",
+          "gitBlob": "9db5c08d56c5722ccf115d257b7b08408282c9d7",
+          "bytes": 872,
+          "metadata": {
+            "path": "cachyos-jay-noctalia/.SRCINFO",
+            "gitBlob": "19c9c558a2f040c9afe88fbe2662d61441f169c4",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-kde-settings/PKGBUILD",
+          "gitBlob": "a1a7889e6d72a6298f041d5412af974844c26f42",
+          "bytes": 896,
+          "metadata": {
+            "path": "cachyos-kde-settings/.SRCINFO",
+            "gitBlob": "125282eaa8268349318ad3d6f0530040734c4cc1",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-kdump-tools/PKGBUILD",
+          "gitBlob": "51435344d232cd9e5220ea97068c5ffa9bb3ea6d",
+          "bytes": 1277,
+          "metadata": {
+            "path": "cachyos-kdump-tools/.SRCINFO",
+            "gitBlob": "a88f511810171cef5c6989bff56e8b84478b0ea0",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-kernel-manager-git/PKGBUILD",
+          "gitBlob": "031dd0acb7c36f59dd5d96d7d1d73eeed1a2277e",
+          "bytes": 1882,
+          "metadata": {
+            "path": "cachyos-kernel-manager-git/.SRCINFO",
+            "gitBlob": "5748734d1a1f757fa135ea05573e0d159bb391ed",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-kernel-manager/PKGBUILD",
+          "gitBlob": "e4e6fe7a84901c37c2e24a6f01ca839b1bf89723",
+          "bytes": 1880,
+          "metadata": {
+            "path": "cachyos-kernel-manager/.SRCINFO",
+            "gitBlob": "32b7a650d8f69bfe40b03eb4503f54d68c5829ae",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-keyring/PKGBUILD",
+          "gitBlob": "7fbd4b2236297c731835450c5cbe3c56a6398bd1",
+          "bytes": 1078,
+          "metadata": {
+            "path": "cachyos-keyring/.SRCINFO",
+            "gitBlob": "b6d8d2b7dfe3221d89388efda92aa869a8fa0248",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-ksm-settings/PKGBUILD",
+          "gitBlob": "74bb2cd12d805071d2546d442bf076b7aa91286e",
+          "bytes": 2139,
+          "metadata": {
+            "path": "cachyos-ksm-settings/.SRCINFO",
+            "gitBlob": "29ae9340fe4e67766c79634a3f70695dc22153f5",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-mango-noctalia/PKGBUILD",
+          "gitBlob": "cf3dc8f3956b21b41d069abf538e0d47239393ae",
+          "bytes": 919,
+          "metadata": {
+            "path": "cachyos-mango-noctalia/.SRCINFO",
+            "gitBlob": "574bb6f23df40e9f9d044a622d43168312b12d84",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-mangowc-dms/PKGBUILD",
+          "gitBlob": "63d88d501e3906cc308079afb7768c9a29e2e85a",
+          "bytes": 1339,
+          "metadata": {
+            "path": "cachyos-mangowc-dms/.SRCINFO",
+            "gitBlob": "d558bfc2223d835ec39581528edbe185c42f37af",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-micro-settings/PKGBUILD",
+          "gitBlob": "214f43dba1234be7bc37385b85466304b3872df3",
+          "bytes": 558,
+          "metadata": {
+            "path": "cachyos-micro-settings/.SRCINFO",
+            "gitBlob": "9d16273299da541bba074dc9e1e435d367e4f762",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-mirrorlist/PKGBUILD",
+          "gitBlob": "53068aeb016dd2d09f48a6116c43198c958c74dc",
+          "bytes": 1226,
+          "metadata": {
+            "path": "cachyos-mirrorlist/.SRCINFO",
+            "gitBlob": "8f514ea3950e31c986db0acfbced56016db69f70",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-niri-noctalia/PKGBUILD",
+          "gitBlob": "544c7b2dae28692e8cabfba725ee341a40658a30",
+          "bytes": 819,
+          "metadata": {
+            "path": "cachyos-niri-noctalia/.SRCINFO",
+            "gitBlob": "77d3590e5cccac03af1d7a92e35348c88a0c5878",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-niri-settings/PKGBUILD",
+          "gitBlob": "4e862e9a132695a674adb0ad65ee878dbb24f174",
+          "bytes": 1275,
+          "metadata": {
+            "path": "cachyos-niri-settings/.SRCINFO",
+            "gitBlob": "b7d7f7739325dd4541b0b2f29884864b227c2a32",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-nord-gtk/PKGBUILD",
+          "gitBlob": "19021090d9599e55721ed41562d4cd6f453df0a2",
+          "bytes": 728,
+          "metadata": {
+            "path": "cachyos-nord-gtk/.SRCINFO",
+            "gitBlob": "bacaf77cbd342ad85242cf491f329d76d9c61702",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-nord-kde/PKGBUILD",
+          "gitBlob": "71936bcd8b333918d5c13217b658458cfbe9423b",
+          "bytes": 2435,
+          "metadata": {
+            "path": "cachyos-nord-kde/.SRCINFO",
+            "gitBlob": "d71f19ba5515af689ac872d51be1749b81832c7b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-openbox-settings/PKGBUILD",
+          "gitBlob": "9e8c7ee8454e8ca56eede4cb0937e21b78c60c11",
+          "bytes": 1511,
+          "metadata": {
+            "path": "cachyos-openbox-settings/.SRCINFO",
+            "gitBlob": "2ccd5114f3792624c75a5d85f842d8b81e5779fa",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-packageinstaller/PKGBUILD",
+          "gitBlob": "160a9be829a1f27cfff97d76652a76ac6d67a3a4",
+          "bytes": 1695,
+          "metadata": {
+            "path": "cachyos-packageinstaller/.SRCINFO",
+            "gitBlob": "0770843a8cce349aebccc0e4ffccc3084fdae473",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-plymouth-bootanimation/PKGBUILD",
+          "gitBlob": "a9edc7473bfabda7593406802e856e60b8f7754b",
+          "bytes": 1132,
+          "metadata": {
+            "path": "cachyos-plymouth-bootanimation/.SRCINFO",
+            "gitBlob": "d4b1472a631ade989c7be1cab62051205fce5f18",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-plymouth-spinner/PKGBUILD",
+          "gitBlob": "9bd43902d4bd93c154995b39115c5bb05879456e",
+          "bytes": 1861,
+          "metadata": {
+            "path": "cachyos-plymouth-spinner/.SRCINFO",
+            "gitBlob": "6cb9123223fbd38917abd3a0449f9640e3c046c8",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-plymouth-theme/PKGBUILD",
+          "gitBlob": "152f002e0c6c189df2dca702ffeefa51dc7e0a6d",
+          "bytes": 924,
+          "metadata": {
+            "path": "cachyos-plymouth-theme/.SRCINFO",
+            "gitBlob": "ec725d32d6a2c1c0568e00880b6c3b2411339f8a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-qtile-settings/PKGBUILD",
+          "gitBlob": "324e364372da555e9e1489d7521d385c707d6266",
+          "bytes": 1673,
+          "metadata": {
+            "path": "cachyos-qtile-settings/.SRCINFO",
+            "gitBlob": "04dd6c65b4a83a7ea37bd2c1fe45f7b6190e72ab",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-rate-mirrors/PKGBUILD",
+          "gitBlob": "a362d9fff2b9558fcf799831977b405c340f7277",
+          "bytes": 1097,
+          "metadata": {
+            "path": "cachyos-rate-mirrors/.SRCINFO",
+            "gitBlob": "a162a63595a6e4015e0edfd16ea1c66d094ef43c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-samba-settings/PKGBUILD",
+          "gitBlob": "24547864035fe599605e4a49ef4b7d1e43a3ca8b",
+          "bytes": 714,
+          "metadata": {
+            "path": "cachyos-samba-settings/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-settings/PKGBUILD",
+          "gitBlob": "1407cd690452e1b445ad2890520942f592c4d74b",
+          "bytes": 1258,
+          "metadata": {
+            "path": "cachyos-settings/.SRCINFO",
+            "gitBlob": "bedbb3318ca17d4e7a7b4cf9225546f55ea0dff5",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-snapper-support/PKGBUILD",
+          "gitBlob": "c82f7f96c303bf967eccc1a59d7bf8626f66f284",
+          "bytes": 636,
+          "metadata": {
+            "path": "cachyos-snapper-support/.SRCINFO",
+            "gitBlob": "e90ed5f23703d3a824d6ed0fd4a931345082759e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-sysctl-manager-git/PKGBUILD",
+          "gitBlob": "4ebb4e7fc90fbb8bbf2aec1265fc625b5adcbe92",
+          "bytes": 1201,
+          "metadata": {
+            "path": "cachyos-sysctl-manager-git/.SRCINFO",
+            "gitBlob": "cd0ce8f463d34a96ab52b41ac0ffbe55f92f67f2",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-sysctl-manager/PKGBUILD",
+          "gitBlob": "60e0c49fff6bccedd1c17cb0c43d7f74305666c9",
+          "bytes": 956,
+          "metadata": {
+            "path": "cachyos-sysctl-manager/.SRCINFO",
+            "gitBlob": "2b6a1b4126715ad3e424b5b3580f08b2622a70a6",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-themes-sddm/PKGBUILD",
+          "gitBlob": "3a3f570dac54ac9cbe7e42481ca9da57d9dd6f69",
+          "bytes": 890,
+          "metadata": {
+            "path": "cachyos-themes-sddm/.SRCINFO",
+            "gitBlob": "e1ea13ad5c668997136ec27e8a1c9aa57b598b75",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-wallpapers/PKGBUILD",
+          "gitBlob": "2f21154ae05c55594da898ffdeb10877d5cc9124",
+          "bytes": 493,
+          "metadata": {
+            "path": "cachyos-wallpapers/.SRCINFO",
+            "gitBlob": "9978b5441fd45194c20bb5f3ab4f46499424d2d7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-wayfire-settings/PKGBUILD",
+          "gitBlob": "a5a274b70924e625b53480c89c347b4483cdbcb2",
+          "bytes": 1145,
+          "metadata": {
+            "path": "cachyos-wayfire-settings/.SRCINFO",
+            "gitBlob": "d302fe242460738c37fa7d4865eb508b5baf9bc1",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-xfce-settings/PKGBUILD",
+          "gitBlob": "ff040121abe4c1c47643dd2cbeac57f841fa74af",
+          "bytes": 1125,
+          "metadata": {
+            "path": "cachyos-xfce-settings/.SRCINFO",
+            "gitBlob": "4556a69c30ae5f73f9988bb903f216a5fe5ec0b8",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "cachyos-zsh-config/PKGBUILD",
+          "gitBlob": "8d536aa4959c7d5265942b1b08dfe9ef461c612b",
+          "bytes": 883,
+          "metadata": {
+            "path": "cachyos-zsh-config/.SRCINFO",
+            "gitBlob": "ea96d75eba5e2590748ba05a2c49a2e54693f3e4",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "char-white/PKGBUILD",
+          "gitBlob": "bdc0d55ada7ce418d0dcef1c42788dd92dc7c5f6",
+          "bytes": 472,
+          "metadata": {
+            "path": "char-white/.SRCINFO",
+            "gitBlob": "6244cb542c8b26b37f15c9b26612a058d314c09d",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "chwd/PKGBUILD",
+          "gitBlob": "351fe8c2b78c27260f0c5080e83254ca8e5b3ae1",
+          "bytes": 2204,
+          "metadata": {
+            "path": "chwd/.SRCINFO",
+            "gitBlob": "0ff3ad6f2983fc067d66e5db68a8976c52fa1001",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "clang/PKGBUILD",
+          "gitBlob": "16c011e4af9764471920c2b9265b477a63b309ca",
+          "bytes": 8127,
+          "metadata": {
+            "path": "clang/.SRCINFO",
+            "gitBlob": "d0a4292d279cf56c0bce4ce7de5e6759de4d1835",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "davinci-resolve/PKGBUILD",
+          "gitBlob": "0ab31eda037c77b467c495de3483181675c05c78",
+          "bytes": 9046,
+          "metadata": {
+            "path": "davinci-resolve/.SRCINFO",
+            "gitBlob": "d8ffba318d16c3518adf8c41372a928c8fd44594",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "devtools/PKGBUILD",
+          "gitBlob": "c78ed6911326b7048cedc6600bc2f932a1ac76b2",
+          "bytes": 3000,
+          "metadata": {
+            "path": "devtools/.SRCINFO",
+            "gitBlob": "0cfeb5f63ea7b811579016684c7552923a001fc1",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "dkms/PKGBUILD",
+          "gitBlob": "9e7b543ec8e6032dd1aed8c127482c194e8b33a4",
+          "bytes": 2275,
+          "metadata": {
+            "path": "dkms/.SRCINFO",
+            "gitBlob": "7c07f3c223b4dc8f20379f8b8d3ab7848ebc9527",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "dmemcg-cgroup/dmemcg-booster/PKGBUILD",
+          "gitBlob": "8ff05ef37027d667ee3c539a057efd4907dd3291",
+          "bytes": 1115,
+          "metadata": {
+            "path": "dmemcg-cgroup/dmemcg-booster/.SRCINFO",
+            "gitBlob": "28f3f15e0b98aefa973f3c620de05b6372746c5c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "dmemcg-cgroup/kcgroups/PKGBUILD",
+          "gitBlob": "2a7e2cf6b9946073100e26fbddbdc359608c058b",
+          "bytes": 2009,
+          "metadata": {
+            "path": "dmemcg-cgroup/kcgroups/.SRCINFO",
+            "gitBlob": "29a7a493662ad12aabfaf9790cc70ed63674485b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "dms-shell/PKGBUILD",
+          "gitBlob": "4851c875c7390e81539f9d23109aab41a112fe21",
+          "bytes": 2659,
+          "metadata": {
+            "path": "dms-shell/.SRCINFO",
+            "gitBlob": "0ddf2e081a0b68102f7ae2e65133c8f47e336fc9",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "dracut-cachyos/PKGBUILD",
+          "gitBlob": "045f5fd33860eefd175854df62e6913ae2bc0a65",
+          "bytes": 6301,
+          "metadata": {
+            "path": "dracut-cachyos/.SRCINFO",
+            "gitBlob": "acf85a68eb8a734fe36ea2f294aa5d405bd85f28",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "geocode-glib/PKGBUILD",
+          "gitBlob": "498eb3ef7b7216fa7dfd327aa6cc75046d6cb708",
+          "bytes": 1456,
+          "metadata": {
+            "path": "geocode-glib/.SRCINFO",
+            "gitBlob": "00ea6c5545bd8091d1422528feb4a44d5f76bfae",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "go/PKGBUILD",
+          "gitBlob": "3ee2b5fcac0ca9094b8ebb8c9d11bc18bcd22cb9",
+          "bytes": 3759,
+          "metadata": {
+            "path": "go/.SRCINFO",
+            "gitBlob": "5b2ce301b66e88f226dca52863155c72e6cf9bfd",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "grub-btrfs-support/PKGBUILD",
+          "gitBlob": "55d5374cf30bb8b387f27cbadad6c5985bab649a",
+          "bytes": 867,
+          "metadata": {
+            "path": "grub-btrfs-support/.SRCINFO",
+            "gitBlob": "25aa1583e395fbe9ed1f0609db01b7dc1e21c934",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/cachyos-handheld/PKGBUILD",
+          "gitBlob": "fcd4f92b3e144a976509c5ca83275c7817c85f6a",
+          "bytes": 1303,
+          "metadata": {
+            "path": "handheld/cachyos-handheld/.SRCINFO",
+            "gitBlob": "673fa259dc325fc30e3a9fe9b03028ed686f51a7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/cachyos-vapor/PKGBUILD",
+          "gitBlob": "c92d8d496f5c43c0181a8980a2816f440b9825aa",
+          "bytes": 410,
+          "metadata": {
+            "path": "handheld/cachyos-vapor/.SRCINFO",
+            "gitBlob": "cc09dff5121b15479da24474351a03b50083e011",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/galileo-mura/PKGBUILD",
+          "gitBlob": "07f786f43987026f2abd84a8345da3c2af45f37e",
+          "bytes": 854,
+          "metadata": {
+            "path": "handheld/galileo-mura/.SRCINFO",
+            "gitBlob": "3fa2a69b9835ca620081666c1e90c153ace0b004",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/gamescope-session-cachyos/PKGBUILD",
+          "gitBlob": "ea7ae6f26a7c2fa035978bfe5626df4dd625d895",
+          "bytes": 1019,
+          "metadata": {
+            "path": "handheld/gamescope-session-cachyos/.SRCINFO",
+            "gitBlob": "fec3481f8dd8e2ef5096be445d379d38b59508a0",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/gamescope/PKGBUILD",
+          "gitBlob": "f9ae52761fe6ff224952aaf335171734468ba1fa",
+          "bytes": 2483,
+          "metadata": {
+            "path": "handheld/gamescope/.SRCINFO",
+            "gitBlob": "2d1f419708e6397a8e412823a0b95a0823911bda",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/jupiter-fan-control/PKGBUILD",
+          "gitBlob": "53c538df406513c2e627763a3ad7ae2cb44de771",
+          "bytes": 732,
+          "metadata": {
+            "path": "handheld/jupiter-fan-control/.SRCINFO",
+            "gitBlob": "9fbc2987002f6fd196a4679a43f4fdc2148854ba",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/jupiter-hw-support/PKGBUILD",
+          "gitBlob": "a809b7f9350fffd3b6bb23b424b63a768b033661",
+          "bytes": 2366,
+          "metadata": {
+            "path": "handheld/jupiter-hw-support/.SRCINFO",
+            "gitBlob": "840b2263244119cbe2225aad7ff3916107b9c37c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/lib32-gamescope/PKGBUILD",
+          "gitBlob": "e879f9418f792b5f14a0b8ce7a34d2c5e1ff8bf6",
+          "bytes": 1413,
+          "metadata": {
+            "path": "handheld/lib32-gamescope/.SRCINFO",
+            "gitBlob": "7a5f6d96154efaf9027f0a57b3bf3589bfbb2928",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/steam-jupiter-stable/PKGBUILD",
+          "gitBlob": "19a4b1728fba4932168e8971ec489dd7b4f41822",
+          "bytes": 5577,
+          "metadata": {
+            "path": "handheld/steam-jupiter-stable/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/steamdeck-dsp/PKGBUILD",
+          "gitBlob": "0c4cebce48bbc7e65a1650a8ef1f65477237dfa1",
+          "bytes": 809,
+          "metadata": {
+            "path": "handheld/steamdeck-dsp/.SRCINFO",
+            "gitBlob": "00d47db6572fb02a625d814ac8263e9bc2c4ad56",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/steamos-manager/PKGBUILD",
+          "gitBlob": "860ce1dbd4a62618def446dc81f81c66bcb00524",
+          "bytes": 1911,
+          "metadata": {
+            "path": "handheld/steamos-manager/.SRCINFO",
+            "gitBlob": "fd1290a71ecdc0fff672ffba252f30e09678e0aa",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/steamos-networking-tools/PKGBUILD",
+          "gitBlob": "1b4044e73fd58a80c0cb0e2442d099b5aec4758a",
+          "bytes": 1478,
+          "metadata": {
+            "path": "handheld/steamos-networking-tools/.SRCINFO",
+            "gitBlob": "e7c9104d33bcd620e09a7e4ffd72958262a21549",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "handheld/steamos-powerbuttond/PKGBUILD",
+          "gitBlob": "1e8cf5da94ab049468b29860cebdd4471bb7a9d8",
+          "bytes": 764,
+          "metadata": {
+            "path": "handheld/steamos-powerbuttond/.SRCINFO",
+            "gitBlob": "83ba553f1fe8b8a0805a5a8f30d065e3d08d0d7a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "intel-lpmd/PKGBUILD",
+          "gitBlob": "c6f6fe4b0e905ee95c10bbbc38b5fe8edf6e780e",
+          "bytes": 956,
+          "metadata": {
+            "path": "intel-lpmd/.SRCINFO",
+            "gitBlob": "107f96c0ca9393842495c8cad09aa6f226634aa0",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "java/java-openjdk/PKGBUILD",
+          "gitBlob": "83faae7bd1d3e6a79a2a9adf58687f779c1f9eb4",
+          "bytes": 13579,
+          "metadata": {
+            "path": "java/java-openjdk/.SRCINFO",
+            "gitBlob": "2324cf3ff6e796cf8e44efe58c01232571b10d7f",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "java/java17-openjdk/PKGBUILD",
+          "gitBlob": "dfa4858c3c5d8864a3ce381aa2f170ca0e6cda87",
+          "bytes": 13436,
+          "metadata": {
+            "path": "java/java17-openjdk/.SRCINFO",
+            "gitBlob": "2f54f394ae3758048b453e43d7b373684ab639ea",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "java/java21-openjdk/PKGBUILD",
+          "gitBlob": "6fdb3683421aa531be9be2b3254241b4c9de4fe8",
+          "bytes": 13488,
+          "metadata": {
+            "path": "java/java21-openjdk/.SRCINFO",
+            "gitBlob": "94b4865b4fc80bf4eaef14b9c782884f51ef172c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "kxkb2locale1/PKGBUILD",
+          "gitBlob": "00b15f60f34e857c37bdbfada09f161753ef49d6",
+          "bytes": 896,
+          "metadata": {
+            "path": "kxkb2locale1/.SRCINFO",
+            "gitBlob": "e91569e3a845c38d78169d84e018e1c6fd984969",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "lenovolegionlinux-dkms/PKGBUILD",
+          "gitBlob": "803726523e07531eedbb1d0f7a27869263ee3b50",
+          "bytes": 1292,
+          "metadata": {
+            "path": "lenovolegionlinux-dkms/.SRCINFO",
+            "gitBlob": "57d0a8e8b4e316b44df75ae3ccee4d0b9b6ec165",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "lenovolegionlinux/PKGBUILD",
+          "gitBlob": "27f4a21adc3be323a369e306b6939328e4f36bf3",
+          "bytes": 1867,
+          "metadata": {
+            "path": "lenovolegionlinux/.SRCINFO",
+            "gitBlob": "9bf24112c5526739aee69dc077998cfbe53a9909",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "libpamac-aur/PKGBUILD",
+          "gitBlob": "a9025343a46d3963a0b2247c7b850ab8adf00098",
+          "bytes": 2975,
+          "metadata": {
+            "path": "libpamac-aur/.SRCINFO",
+            "gitBlob": "3aac718edc7828bd99175660ae16dc6c9b330017",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "limine/PKGBUILD",
+          "gitBlob": "3d59ea305149094246adc4a9d7debe32f960f901",
+          "bytes": 892,
+          "metadata": {
+            "path": "limine/.SRCINFO",
+            "gitBlob": "546e9d9c3b08a4287db0d213ba964502cb9f014a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-firmware/PKGBUILD",
+          "gitBlob": "691204a654c977a12a9d85e74f68bed245dcdd6b",
+          "bytes": 11900,
+          "metadata": {
+            "path": "linux-firmware/.SRCINFO",
+            "gitBlob": "947a3bce0ee373aea9642e5ac1d7b318c5ee8ec2",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-git/lib32-llvm-git/PKGBUILD",
+          "gitBlob": "56e617bb9ea85c1c4d080bc256a33d899e9b9c29",
+          "bytes": 5084,
+          "metadata": {
+            "path": "llvm-git/lib32-llvm-git/.SRCINFO",
+            "gitBlob": "a52ac3b2629a0fe0834e59609ba0760b602d5325",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-git/llvm-git/PKGBUILD",
+          "gitBlob": "7ffdb1d59215cd0cac00eb07b01fb96e49f9f32c",
+          "bytes": 7446,
+          "metadata": {
+            "path": "llvm-git/llvm-git/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-git/wasi-compiler-rt-git/PKGBUILD",
+          "gitBlob": "1a3eea36e76bcfbf0f6880d006d7bf7a3c07b4b5",
+          "bytes": 2965,
+          "metadata": {
+            "path": "llvm-git/wasi-compiler-rt-git/.SRCINFO",
+            "gitBlob": "5fb42fbf6fd7f6f0eeb7d8d646d7c5b24c92a05e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-git/wasi-libc-git/PKGBUILD",
+          "gitBlob": "0489438ed9fb5e5e5e685b674c903e60b368df33",
+          "bytes": 1312,
+          "metadata": {
+            "path": "llvm-git/wasi-libc-git/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-git/wasi-libcplusplus-git/PKGBUILD",
+          "gitBlob": "36981950ee8d19dc1c0fedde52e10d11f38d2827",
+          "bytes": 9046,
+          "metadata": {
+            "path": "llvm-git/wasi-libcplusplus-git/.SRCINFO",
+            "gitBlob": "176143c6b1405060ba04b3e668d9e9d323be2fa4",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm-propeller/PKGBUILD",
+          "gitBlob": "a360959fe5cecef7b8a26c0134883b159b528bbc",
+          "bytes": 2097,
+          "metadata": {
+            "path": "llvm-propeller/.SRCINFO",
+            "gitBlob": "e28b1920d1307f75b1a15205c3fd222266b7a518",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "llvm/PKGBUILD",
+          "gitBlob": "fb83a0877c14a15b8490496788380c2d7b58b9a6",
+          "bytes": 8512,
+          "metadata": {
+            "path": "llvm/.SRCINFO",
+            "gitBlob": "dbeafd4e57b70750b48d3462a2e5561c0a567b41",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "lsfg-vk/PKGBUILD",
+          "gitBlob": "177f27d7a54b5bdabc1a7f6ba70c41cffc50cb54",
+          "bytes": 1136,
+          "metadata": {
+            "path": "lsfg-vk/.SRCINFO",
+            "gitBlob": "6eed3f9299b926fbccd340f2fffc96f9d8286b49",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "lz4/PKGBUILD",
+          "gitBlob": "123642f4e551531dfeeac5db95f1c08470fb87c7",
+          "bytes": 3510,
+          "metadata": {
+            "path": "lz4/.SRCINFO",
+            "gitBlob": "987db1edf3af146f92068675bf20a11f601b99ae",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "mesa/lib32-mesa/PKGBUILD",
+          "gitBlob": "51504032e9e7eeb0525844a635eb6da816ea5b90",
+          "bytes": 24412,
+          "metadata": {
+            "path": "mesa/lib32-mesa/.SRCINFO",
+            "gitBlob": "a0ee54bc5fea36316548c07146f9e7aa9fe3b93c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "mesa/mesa-git/PKGBUILD",
+          "gitBlob": "32073914446540009aa7055431f33e062d23b247",
+          "bytes": 29496,
+          "metadata": {
+            "path": "mesa/mesa-git/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "mesa/mesa/PKGBUILD",
+          "gitBlob": "50ecbb80aec93b2b64b6c8200d5a50a6a32e7e55",
+          "bytes": 23606,
+          "metadata": {
+            "path": "mesa/mesa/.SRCINFO",
+            "gitBlob": "1330cba7447a97a90322ecb264a999627331e95e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "mpv-git/PKGBUILD",
+          "gitBlob": "5ee2970f2f72923e1a97ba64c8dfbd9361eed721",
+          "bytes": 2801,
+          "metadata": {
+            "path": "mpv-git/.SRCINFO",
+            "gitBlob": "e54740a0b2d55297bb757eda1d9f5c52943fe4a1",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "mutter/PKGBUILD",
+          "gitBlob": "8dba37bc4e3125b7a7756622be72953dc9843fe8",
+          "bytes": 2912,
+          "metadata": {
+            "path": "mutter/.SRCINFO",
+            "gitBlob": "e986c6e79fa4b60463b9411252ce48d2bc88707c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nginx/PKGBUILD",
+          "gitBlob": "7c9ce44c9505d29c5108b1f0c563d5ed3c7dc874",
+          "bytes": 12712,
+          "metadata": {
+            "path": "nginx/.SRCINFO",
+            "gitBlob": "965a814caead3d52ddd02c1d5d717d84231e28b0",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nodejs/PKGBUILD",
+          "gitBlob": "30149baf2836e03aa62fc44aec0fc9bc2f298755",
+          "bytes": 4867,
+          "metadata": {
+            "path": "nodejs/.SRCINFO",
+            "gitBlob": "a455a345bc70715f5d4ff26abbe8845ce313ea41",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/lib32-nvidia-utils/PKGBUILD",
+          "gitBlob": "16c2d828a58e103a8f36504334729c67fb6582ab",
+          "bytes": 5120,
+          "metadata": {
+            "path": "nvidia/lib32-nvidia-utils/.SRCINFO",
+            "gitBlob": "7075ece2d158eb7b1012b76c34f1544da4cce040",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-390xx-utils/PKGBUILD",
+          "gitBlob": "736b9ac64116e61c4c1ce8ecd03e3ea7a067b476",
+          "bytes": 16467,
+          "metadata": {
+            "path": "nvidia/nvidia-390xx-utils/.SRCINFO",
+            "gitBlob": "05d13bc8310cf9eaaaa0eac301978cb4296a059f",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-470xx-utils/PKGBUILD",
+          "gitBlob": "b8bc69601929dda4ced52fd0643b5e82c7f0199a",
+          "bytes": 16690,
+          "metadata": {
+            "path": "nvidia/nvidia-470xx-utils/.SRCINFO",
+            "gitBlob": "3f0f98d8871eb160258c0743047156ec888a058f",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-580xx/lib32-nvidia-580xx-utils/PKGBUILD",
+          "gitBlob": "5ee5c7713ededb5f56ec1363770b1ea7c779a702",
+          "bytes": 5021,
+          "metadata": {
+            "path": "nvidia/nvidia-580xx/lib32-nvidia-580xx-utils/.SRCINFO",
+            "gitBlob": "e237fa80c6fbd900db89732daca9ab8ff4a979e7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-580xx/nvidia-580xx-utils/PKGBUILD",
+          "gitBlob": "1f34fe371fd8cf998fd779c0d33b74aed6868a5d",
+          "bytes": 18909,
+          "metadata": {
+            "path": "nvidia/nvidia-580xx/nvidia-580xx-utils/.SRCINFO",
+            "gitBlob": "a1a3d14419c10496142e9d6e5f2fafa4ca504441",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-settings/PKGBUILD",
+          "gitBlob": "4a8abb64f87603d28f7cdea3ea70a4efa9ecdafc",
+          "bytes": 2414,
+          "metadata": {
+            "path": "nvidia/nvidia-settings/.SRCINFO",
+            "gitBlob": "dcbbc6f4280431ec9cd7766fbdb820ba0495dcf7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-utils/PKGBUILD",
+          "gitBlob": "33165335750ddca7e2b08c886c89a04153a5247e",
+          "bytes": 16714,
+          "metadata": {
+            "path": "nvidia/nvidia-utils/.SRCINFO",
+            "gitBlob": "10cbd21f397f4fb678880acfb9e1f5c09606d051",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "nvidia/nvidia-vulkan/PKGBUILD",
+          "gitBlob": "f418827c49cd31cddfddb48741d4ad8e4e7a12bf",
+          "bytes": 21171,
+          "metadata": {
+            "path": "nvidia/nvidia-vulkan/.SRCINFO",
+            "gitBlob": "156edc201321dbcbcecd80c9e5262c88b79e70aa",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "obs-studio-browser/PKGBUILD",
+          "gitBlob": "b6a44fffc8b65018332a7788dbcb18a5dd6f758e",
+          "bytes": 6569,
+          "metadata": {
+            "path": "obs-studio-browser/.SRCINFO",
+            "gitBlob": "6e13d78691963d803e6ff54ec90051851f550fba",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "openblas/openblas-v3/PKGBUILD",
+          "gitBlob": "52a59e135779bda8b40066319ff0800b5296ea08",
+          "bytes": 3476,
+          "metadata": {
+            "path": "openblas/openblas-v3/.SRCINFO",
+            "gitBlob": "41ad38ab1986f731c95280a55edf119d27ed83c3",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "openblas/openblas-v4/PKGBUILD",
+          "gitBlob": "39b273307fe9510e7b7be4152013900e4dfb3588",
+          "bytes": 3478,
+          "metadata": {
+            "path": "openblas/openblas-v4/.SRCINFO",
+            "gitBlob": "41ad38ab1986f731c95280a55edf119d27ed83c3",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "pacman-contrib/PKGBUILD",
+          "gitBlob": "039e56dae629e4402a0df0f6b31c64177ca7a863",
+          "bytes": 1434,
+          "metadata": {
+            "path": "pacman-contrib/.SRCINFO",
+            "gitBlob": "e5a32bb54f410083b2d04fe977b3f0370df7fcbf",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "pacman/PKGBUILD",
+          "gitBlob": "40a260899f959f9e9f9dcae64d08d36faccffca8",
+          "bytes": 7467,
+          "metadata": {
+            "path": "pacman/.SRCINFO",
+            "gitBlob": "ae29bfa49691c59167b2ce696d1af8f1f31779eb",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "pacutils/PKGBUILD",
+          "gitBlob": "83e54216a468f1b39ece10c755b0053dfe31fab3",
+          "bytes": 1431,
+          "metadata": {
+            "path": "pacutils/.SRCINFO",
+            "gitBlob": "312aa76415b07545d23eafc6df10a2edf9cd020f",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "pak-git/PKGBUILD",
+          "gitBlob": "c8abb766dc8b813d4e9fe7ec14774a7cf08171c8",
+          "bytes": 3079,
+          "metadata": {
+            "path": "pak-git/.SRCINFO",
+            "gitBlob": "5fa9b1936aba222c61e7b54a8b6a52acd973db80",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "paru/PKGBUILD",
+          "gitBlob": "f42371e2023c4097837a6b63da2fd2440185826e",
+          "bytes": 2146,
+          "metadata": {
+            "path": "paru/.SRCINFO",
+            "gitBlob": "a6c5d69293e99608e48a870533ebb34aacea6c9c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "php/PKGBUILD",
+          "gitBlob": "02f52b7785067225bf3ccaf3abce04401702210b",
+          "bytes": 11729,
+          "metadata": {
+            "path": "php/.SRCINFO",
+            "gitBlob": "989e88c71c0794a072c1b4a2d6855384982ac944",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "pkg-manage-util/PKGBUILD",
+          "gitBlob": "bd8c2cb0ae04e25be8c8126a2bcbab6220e986a7",
+          "bytes": 1190,
+          "metadata": {
+            "path": "pkg-manage-util/.SRCINFO",
+            "gitBlob": "42e7e55514c1dfdb2ff12af1f3add6de49483250",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "plasma-login-manager/PKGBUILD",
+          "gitBlob": "9806e02b0f30e1229dda5d5c264200d857ce5cec",
+          "bytes": 1752,
+          "metadata": {
+            "path": "plasma-login-manager/.SRCINFO",
+            "gitBlob": "ecd4bb9c301f973ddd8878dc6f8ddcf655309479",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "plymouth/PKGBUILD",
+          "gitBlob": "d70e7c7f430d212a9e3f8079b288779123cfce32",
+          "bytes": 4472,
+          "metadata": {
+            "path": "plymouth/.SRCINFO",
+            "gitBlob": "5f76b7e0453fe56c43ccf748896f425c6f291d5e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "power-profiles-daemon/PKGBUILD",
+          "gitBlob": "62dd742e187a04ea0ca9d74dd06769a51fb3b399",
+          "bytes": 1532,
+          "metadata": {
+            "path": "power-profiles-daemon/.SRCINFO",
+            "gitBlob": "7e5259be1a36840b13dbc9a89deadcf296ea5b3b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "proton-cachyos-native/PKGBUILD",
+          "gitBlob": "f0842bb2df904d93910b464e86fa348ab251fd65",
+          "bytes": 9255,
+          "metadata": {
+            "path": "proton-cachyos-native/.SRCINFO",
+            "gitBlob": "8ce5a9d0f584d140dc2c310e58b757320eb4e7d4",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "proton-cachyos-slr/PKGBUILD",
+          "gitBlob": "5411f5b2c859e8e2a6187856f5c28aac584420e1",
+          "bytes": 2862,
+          "metadata": {
+            "path": "proton-cachyos-slr/.SRCINFO",
+            "gitBlob": "40e65748ab3c21eea5296ac61474c6e0a4b82293",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "python/PKGBUILD",
+          "gitBlob": "456e03b5db574d46a31170b9f29d71bb5cd97bbe",
+          "bytes": 6508,
+          "metadata": {
+            "path": "python/.SRCINFO",
+            "gitBlob": "c40ce0dfe6caa834dfea2b5647330a5843363f0d",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "python313/PKGBUILD",
+          "gitBlob": "8d850e177de4b376ffbec2db37e22debd9e15100",
+          "bytes": 6007,
+          "metadata": {
+            "path": "python313/.SRCINFO",
+            "gitBlob": "cc6ac98457df75c1adb3cafbcf65dd6ba3bb71c7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "quickshell-git/PKGBUILD",
+          "gitBlob": "66fcee77244decff7e26bbe7737ec7555d22a498",
+          "bytes": 2047,
+          "metadata": {
+            "path": "quickshell-git/.SRCINFO",
+            "gitBlob": "ffe71eb9846648e8b8962e5426bf4738ffd9bf44",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "rare/PKGBUILD",
+          "gitBlob": "b15327b50d4d2c73308618526b9c7764a124750d",
+          "bytes": 2640,
+          "metadata": {
+            "path": "rare/.SRCINFO",
+            "gitBlob": "5920e0aceb1de98f2f30720605afb1feac3f2efd",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "rate-mirrors/PKGBUILD",
+          "gitBlob": "1c5b4f81d1b1863e753e54a976f974fa2ce674f2",
+          "bytes": 1986,
+          "metadata": {
+            "path": "rate-mirrors/.SRCINFO",
+            "gitBlob": "d8f5f3d683c5198c26bb65e59a369b2db2fe2e52",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "repo-manage-util/PKGBUILD",
+          "gitBlob": "303a9a9427a722ca531645b54de664a00b0ac97b",
+          "bytes": 1285,
+          "metadata": {
+            "path": "repo-manage-util/.SRCINFO",
+            "gitBlob": "732488c8eae89664ce0f118d6f74e8cc0bf6e7ad",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "ripgrep/PKGBUILD",
+          "gitBlob": "b7391c4cb09dde919335b8eb2524003ee5274322",
+          "bytes": 3460,
+          "metadata": {
+            "path": "ripgrep/.SRCINFO",
+            "gitBlob": "d82f057b7767f53b97d049f74938ad718e369f4b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-manager-git/PKGBUILD",
+          "gitBlob": "e48bf9524a696b42c52ebda8e0ffe1408573bb23",
+          "bytes": 1617,
+          "metadata": {
+            "path": "scx/scx-manager-git/.SRCINFO",
+            "gitBlob": "fbc2e47b93376927a10527c20ca8625e74944984",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-manager/PKGBUILD",
+          "gitBlob": "d96de1361ce57b352547831881259c915e9bf197",
+          "bytes": 1611,
+          "metadata": {
+            "path": "scx/scx-manager/.SRCINFO",
+            "gitBlob": "7a9dbcc2a03b5c6cf653fa31263adad06d38b023",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-scheds/scx-scheds-git/PKGBUILD",
+          "gitBlob": "121c81a4f9301513ca31698e2c1e5fb0bfa6e4c3",
+          "bytes": 2166,
+          "metadata": {
+            "path": "scx/scx-scheds/scx-scheds-git/.SRCINFO",
+            "gitBlob": "39f124833869a992102ec3dd9c7d2322df6d742a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-scheds/scx-scheds/PKGBUILD",
+          "gitBlob": "287c6bc1db83019ca7fe9402b71f24103350c3ce",
+          "bytes": 2477,
+          "metadata": {
+            "path": "scx/scx-scheds/scx-scheds/.SRCINFO",
+            "gitBlob": "ea55055fbaac49864b6286d0afa3a7b933a2ebe1",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-tools/scx-tools-git/PKGBUILD",
+          "gitBlob": "3f1771440d202be63e912cd6fdeb753f781319db",
+          "bytes": 2021,
+          "metadata": {
+            "path": "scx/scx-tools/scx-tools-git/.SRCINFO",
+            "gitBlob": "7af1d0b848adc642891dcce4327e62d6b4786bee",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "scx/scx-tools/scx-tools/PKGBUILD",
+          "gitBlob": "b66725927525a68f57e43965bdf2c567a34d7406",
+          "bytes": 2117,
+          "metadata": {
+            "path": "scx/scx-tools/scx-tools/.SRCINFO",
+            "gitBlob": "bd2a275245890cda2373f4b4b5be6673e44c0e5a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "shelly/PKGBUILD",
+          "gitBlob": "9a3e6e935dac0072a905d8a08b730fb80f811ec8",
+          "bytes": 10159,
+          "metadata": {
+            "path": "shelly/.SRCINFO",
+            "state": "missing"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "sqlite/PKGBUILD",
+          "gitBlob": "5797f40cbee5393518d5ddf601e826c4b2d510b0",
+          "bytes": 7262,
+          "metadata": {
+            "path": "sqlite/.SRCINFO",
+            "gitBlob": "a0ed5219523f5ea23b44c2a062dc0af591fa9cc5",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "stacer/PKGBUILD",
+          "gitBlob": "3eaac1cd1f05649712b0330e79460321b86ccfb0",
+          "bytes": 1330,
+          "metadata": {
+            "path": "stacer/.SRCINFO",
+            "gitBlob": "24cab02a9c9fc5ec4a9b9daa21a8817385b12a2b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "sudo-rs/PKGBUILD",
+          "gitBlob": "6947756449094da57046bee430f3c1a5184789fb",
+          "bytes": 2484,
+          "metadata": {
+            "path": "sudo-rs/.SRCINFO",
+            "gitBlob": "62a258d6464ab5a0ea308ad5083337941dc95c7c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "svt-av1/PKGBUILD",
+          "gitBlob": "774ba58177171d08eb1ae8b9f632e718eb245a42",
+          "bytes": 1351,
+          "metadata": {
+            "path": "svt-av1/.SRCINFO",
+            "gitBlob": "9ca45fa35b8f47edd61c0b624cd0a9fd785b1993",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "systemd-boot-manager/PKGBUILD",
+          "gitBlob": "fe2a9cd3bfee66c24bdb322dda8642f02e3d6bed",
+          "bytes": 1770,
+          "metadata": {
+            "path": "systemd-boot-manager/.SRCINFO",
+            "gitBlob": "634a9bd2b092bc3eb821f2360ab0b33c299a97c6",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "tiny-dfr/PKGBUILD",
+          "gitBlob": "df6b34877995ada415acc593cc09f0b824e4439f",
+          "bytes": 2151,
+          "metadata": {
+            "path": "tiny-dfr/.SRCINFO",
+            "gitBlob": "4747ffe04dcf742dd3606dc06a207d016f87037e",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "toolchain/binutils/PKGBUILD",
+          "gitBlob": "5c63801f1bbb0f64e07b13a484d61fa486a937d6",
+          "bytes": 4954,
+          "metadata": {
+            "path": "toolchain/binutils/.SRCINFO",
+            "gitBlob": "64b24a51b3e576299539eeb7693bf363de2dd19c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "toolchain/gcc/PKGBUILD",
+          "gitBlob": "384e04fc2d844d3622b3bca0b25e1f517c3ad784",
+          "bytes": 21495,
+          "metadata": {
+            "path": "toolchain/gcc/.SRCINFO",
+            "gitBlob": "4ea4439779c30da3a9fc452f376e46c8fe0efef6",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "toolchain/glibc/PKGBUILD",
+          "gitBlob": "3f3e8898dad8b2af8309169fd092418c24c69584",
+          "bytes": 11706,
+          "metadata": {
+            "path": "toolchain/glibc/.SRCINFO",
+            "gitBlob": "a5a742206b2cbb0d6a82fbb868a9ee1c31df2ba2",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "toolchain/libtool/PKGBUILD",
+          "gitBlob": "6af215c826357a6b1aa0c5067f2c28404cb6a80a",
+          "bytes": 2525,
+          "metadata": {
+            "path": "toolchain/libtool/.SRCINFO",
+            "gitBlob": "12e586787a27398ee0370c986e203a582ad38f74",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "toolchain/linux-api-headers/PKGBUILD",
+          "gitBlob": "d1364da9f5ae423926ffd1fe7608b315a5545c63",
+          "bytes": 1053,
+          "metadata": {
+            "path": "toolchain/linux-api-headers/.SRCINFO",
+            "gitBlob": "05676aba51ee0d57154ebdda1301da6e47d44caa",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "tuned/PKGBUILD",
+          "gitBlob": "d29834f3b40bfa1f942926bf68e7d9ddc7ed1e4b",
+          "bytes": 2508,
+          "metadata": {
+            "path": "tuned/.SRCINFO",
+            "gitBlob": "d1f20b700f263433ae571e43c288e41007d27594",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "umbriel/umbriel/PKGBUILD",
+          "gitBlob": "ede65deeef27730066c8d42cd71756216741da11",
+          "bytes": 1313,
+          "metadata": {
+            "path": "umbriel/umbriel/.SRCINFO",
+            "gitBlob": "9f549866b5c24c874e93b1ae383cbad9acd0925c",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "umbriel/xdg-desktop-portal-umbriel/PKGBUILD",
+          "gitBlob": "e36c281fc0c12435c5bdd6eb1f399faff77aa68b",
+          "bytes": 1385,
+          "metadata": {
+            "path": "umbriel/xdg-desktop-portal-umbriel/.SRCINFO",
+            "gitBlob": "6c22de6f5dba9b184bb6f711aaa4abd5878df80b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "umu-launcher/PKGBUILD",
+          "gitBlob": "ce4c8008b76f09450f479be2aedbaa6a3e6ed6e9",
+          "bytes": 1879,
+          "metadata": {
+            "path": "umu-launcher/.SRCINFO",
+            "gitBlob": "5d6abe82885b9910877932a14e02b793d126c175",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "valkey/PKGBUILD",
+          "gitBlob": "537e5f221b6d6fa8f81ec5f5a3605969b9807efd",
+          "bytes": 4596,
+          "metadata": {
+            "path": "valkey/.SRCINFO",
+            "gitBlob": "8632a04a62e6cdcbd849cb1a58dc7bf97c480275",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "vapormark-git/PKGBUILD",
+          "gitBlob": "6b9fd258109f587f0d52719cd1ed2ce1132d5340",
+          "bytes": 814,
+          "metadata": {
+            "path": "vapormark-git/.SRCINFO",
+            "gitBlob": "41498e2649f83983f36f1559e0cef9903ef6acea",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "wine-cachyos-opt/PKGBUILD",
+          "gitBlob": "1f09a3e0c7c35e064305dfc5a82a42dfd19e5590",
+          "bytes": 7218,
+          "metadata": {
+            "path": "wine-cachyos-opt/.SRCINFO",
+            "gitBlob": "c5f4b3f4a0dadfafc45248462a42a0da22d4905d",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "wine-cachyos/PKGBUILD",
+          "gitBlob": "7ccf9b3c3ccbd9a2127a53bf2bfca9f1972bd327",
+          "bytes": 7226,
+          "metadata": {
+            "path": "wine-cachyos/.SRCINFO",
+            "gitBlob": "5ece3ab3a53b09ee67a14a02f44f32f70e8c687a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "xz/PKGBUILD",
+          "gitBlob": "c3dec2c943274807ab65b8dd5a1479f7e81be287",
+          "bytes": 1457,
+          "metadata": {
+            "path": "xz/.SRCINFO",
+            "gitBlob": "5f4bc471152e966c0629c8b9473df49863c7d345",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zfs/zfs-dkms/PKGBUILD",
+          "gitBlob": "ecf42a7056fabb4cc7fd43426ed99ea2830ac4c3",
+          "bytes": 2349,
+          "metadata": {
+            "path": "zfs/zfs-dkms/.SRCINFO",
+            "gitBlob": "e143494de5b062c63cbd34688196d9f280fd969b",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zfs/zfs-meta/PKGBUILD",
+          "gitBlob": "f19e3e97300fb8d0d42a7adf240da8872ef92794",
+          "bytes": 246,
+          "metadata": {
+            "path": "zfs/zfs-meta/.SRCINFO",
+            "gitBlob": "63ab4037681f8ef65b29b2176c42bef0572d2f7a",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zfs/zfs-utils/PKGBUILD",
+          "gitBlob": "de6c65b31577a6f60259eca1af25ba66b7d66e58",
+          "bytes": 3488,
+          "metadata": {
+            "path": "zfs/zfs-utils/.SRCINFO",
+            "gitBlob": "78da31e1be31de5573de8f536a5f801ecff4c084",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zlib-ng/lib32-zlib-ng/PKGBUILD",
+          "gitBlob": "2d158241251496d706f7f26f0813cb49eb7ccced",
+          "bytes": 2484,
+          "metadata": {
+            "path": "zlib-ng/lib32-zlib-ng/.SRCINFO",
+            "gitBlob": "1b578c99a4104816075e2f43434c0a4461f53f72",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zlib-ng/zlib-ng/PKGBUILD",
+          "gitBlob": "e32958a01a490e6694261ab8094367579eb8606c",
+          "bytes": 2269,
+          "metadata": {
+            "path": "zlib-ng/zlib-ng/.SRCINFO",
+            "gitBlob": "e191f06c56a6425c4248503cc5428015d7cdd730",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zsh/PKGBUILD",
+          "gitBlob": "6702aed7e90cf85e719ea9a3725448c45cecc132",
+          "bytes": 6362,
+          "metadata": {
+            "path": "zsh/.SRCINFO",
+            "gitBlob": "dd5097ba81a4c6aa5c49e5b49ec6a2810f3f0a68",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zstd/lib32-zstd/PKGBUILD",
+          "gitBlob": "acfc9c1edc13ce33a25805d38fc4cda492cf5868",
+          "bytes": 2569,
+          "metadata": {
+            "path": "zstd/lib32-zstd/.SRCINFO",
+            "gitBlob": "6e1fd330323e74adf806c7fa59c1346d6096f885",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zstd/zstd-pgo/PKGBUILD",
+          "gitBlob": "6fb0efc61af4730f2a210a06a2d1f4c6c000f375",
+          "bytes": 4077,
+          "metadata": {
+            "path": "zstd/zstd-pgo/.SRCINFO",
+            "gitBlob": "c39c6b7e9fe37234796f830a6c8c92ab4ee2e3a2",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "zstd/zstd/PKGBUILD",
+          "gitBlob": "4b7ac4f3c0a892e956026a61e457e72a008ddf6c",
+          "bytes": 2845,
+          "metadata": {
+            "path": "zstd/zstd/.SRCINFO",
+            "gitBlob": "0765d157203d5f165478074ceb0ab618b94207db",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        }
+      ],
+      "orphanMetadata": [
+        {
+          "path": ".SRCINFO",
+          "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+        }
+      ],
+      "licenseInventory": [
+        {
+          "path": "cachy-update/LICENSE",
+          "gitBlob": "caab0779558b979cedb1f0a542f7eb33fca0aa99"
+        },
+        {
+          "path": "limine/LICENSE",
+          "gitBlob": "b87c5e4be4423b16c1d17bfe86ccf4b0ac8abd5d"
+        },
+        {
+          "path": "mesa/mesa-git/LICENSE",
+          "gitBlob": "ae33d2709c44d97e1ba6d23ef138af90e4b008f7"
+        },
+        {
+          "path": "pacman-contrib/LICENSE",
+          "gitBlob": "b87c5e4be4423b16c1d17bfe86ccf4b0ac8abd5d"
+        },
+        {
+          "path": "plymouth/LICENSE",
+          "gitBlob": "b87c5e4be4423b16c1d17bfe86ccf4b0ac8abd5d"
+        },
+        {
+          "path": "sqlite/license.txt",
+          "gitBlob": "118c5d5e60ed43662fd8cc114cedb665d3bed315"
+        },
+        {
+          "path": "systemd-boot-manager/LICENSE",
+          "gitBlob": "cd2ce6cc6999a5a21a3db76e497f6865233e2f26"
+        }
+      ]
+    },
+    {
+      "id": "cachyos-linux-recipes",
+      "repository": "CachyOS/linux-cachyos",
+      "revision": "4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c",
+      "treeResponseComplete": true,
+      "treeEntries": 58,
+      "recipeCount": 10,
+      "preserve": "Entire pinned source repository and all patches/configs/licenses/notices; no recipe allowlist or source pruning",
+      "recipes": [
+        {
+          "recipe": "linux-cachyos-bmq/PKGBUILD",
+          "gitBlob": "84116c3247beb984267dfdb0e4966c7f34c4e688",
+          "bytes": 27023,
+          "metadata": {
+            "path": "linux-cachyos-bmq/.SRCINFO",
+            "gitBlob": "215cd27be646f7e075b1366d8589b29081881518",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-bore/PKGBUILD",
+          "gitBlob": "abf9d1c1c00efd75acb073944808aea14a499717",
+          "bytes": 27033,
+          "metadata": {
+            "path": "linux-cachyos-bore/.SRCINFO",
+            "gitBlob": "4cdbe322102d7ff2697639573ec19f8fc63bbb35",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-deckify/PKGBUILD",
+          "gitBlob": "f9da94e42f1cec20926d72b6a008933220d46c95",
+          "bytes": 27878,
+          "metadata": {
+            "path": "linux-cachyos-deckify/.SRCINFO",
+            "gitBlob": "18d2612726910c9e2bf926d4d59e5600973825e9",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-eevdf/PKGBUILD",
+          "gitBlob": "e3e44dcaf9d99b8ad69306087b5612664cb59757",
+          "bytes": 26966,
+          "metadata": {
+            "path": "linux-cachyos-eevdf/.SRCINFO",
+            "gitBlob": "9f429faaece3f19c36df16bdf202adb2ad5644e7",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-hardened/PKGBUILD",
+          "gitBlob": "606fd5d156e1086ffcc4ab2a9ed84c34b42fa9e3",
+          "bytes": 27030,
+          "metadata": {
+            "path": "linux-cachyos-hardened/.SRCINFO",
+            "gitBlob": "1b318c46dce73edcd502dde55b2ef992da20edb9",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-lts/PKGBUILD",
+          "gitBlob": "7cd8d368ac70e1b5aa4e750f34772c82ef8ef07e",
+          "bytes": 26870,
+          "metadata": {
+            "path": "linux-cachyos-lts/.SRCINFO",
+            "gitBlob": "6c2b1d9d03273131036b1afe5f444b17393df4be",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-rc/PKGBUILD",
+          "gitBlob": "b75d6d45338c12bba5ed219c17a159bc2a1dbd5b",
+          "bytes": 29670,
+          "metadata": {
+            "path": "linux-cachyos-rc/.SRCINFO",
+            "gitBlob": "de0cac628cc90887f9c2d9d30d3652fd04186971",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-rt-bore/PKGBUILD",
+          "gitBlob": "171600fc898e746b5a29f2ff355ab8163257f36d",
+          "bytes": 27238,
+          "metadata": {
+            "path": "linux-cachyos-rt-bore/.SRCINFO",
+            "gitBlob": "1b13736f7457da148bbafd70b33d44310a92b795",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos-server/PKGBUILD",
+          "gitBlob": "94e64628daa2387314bd91409b5b21eeacbe1d10",
+          "bytes": 26850,
+          "metadata": {
+            "path": "linux-cachyos-server/.SRCINFO",
+            "gitBlob": "e3c942ed02e1efb927e4189628b5a339dfa3e480",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        },
+        {
+          "recipe": "linux-cachyos/PKGBUILD",
+          "gitBlob": "2d69d7f7da57c57e4bf9a66195afa3d6bd1530c8",
+          "bytes": 29821,
+          "metadata": {
+            "path": "linux-cachyos/.SRCINFO",
+            "gitBlob": "a048be971407ad37d60a764461fe6a7e3ec51b19",
+            "state": "tracked-not-parsed"
+          },
+          "packageNames": "Read tracked .SRCINFO through the existing parser; never infer split packages from directory names."
+        }
+      ],
+      "orphanMetadata": [],
+      "licenseInventory": [
+        {
+          "path": "LICENSE.md",
+          "gitBlob": "0a2e747f0d7ea5ac0d5428749513b82893821612"
+        }
+      ]
+    }
+  ],
+  "qualification": {
+    "sourceTreeEnumerated": true,
+    "sourcesMaterialized": false,
+    "allPackageMetadataParsed": false,
+    "built": false,
+    "installed": false
+  }
+}

@@ -17,6 +17,35 @@ export async function verifyPayload(root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os")
     runtime: RuntimeReceipt;
   };
   const runtime = receipt.runtime;
+  if (Bun.env.BUN_OS_PACKAGE_MANAGER === "pacman") {
+    const arch = await Bun.file(`${root}/arch/rootfs.receipt.json`).json();
+    if (
+      arch.kind !== "bun-os-arch-rootfs" ||
+      arch.schemaVersion !== 1 ||
+      arch.target !== runtime.target ||
+      arch.architecture !== "x86_64" ||
+      !["server", "desktop", "gaming"].includes(arch.composition) ||
+      (Bun.env.BUN_OS_COMPOSITION && arch.composition !== Bun.env.BUN_OS_COMPOSITION) ||
+      !/^[a-f0-9]{64}$/.test(arch.lockSha256) ||
+      !Array.isArray(arch.packages) ||
+      !arch.packages.length ||
+      arch.packageHashesVerified !== true ||
+      arch.packageSignaturesVerified !== true ||
+      arch.exactInventoryVerified !== true
+    )
+      throw new Error("The primary image requires a verified pacman rootfs receipt");
+    const inventory = Bun.spawn(["pacman", "-Q"], { stdout: "pipe", stderr: "pipe", timeout: 10_000 });
+    const [actual, errors] = await Promise.all([
+      new Response(inventory.stdout).text(),
+      new Response(inventory.stderr).text(),
+    ]);
+    const expected = arch.packages
+      .map((pkg: { name: string; version: string }) => `${pkg.name} ${pkg.version}`)
+      .sort()
+      .join("\n");
+    if ((await inventory.exited) !== 0 || actual.trim().split("\n").sort().join("\n") !== expected)
+      throw new Error(`Installed pacman inventory differs from the locked rootfs: ${errors.slice(-1000)}`);
+  }
   if (
     runtime?.repository !== "aphrody-labs/bun" ||
     runtime.abi !== "gnu" ||
