@@ -76,8 +76,8 @@ describe("formes acceptées d'un permalien", () => {
   test("deux écritures du même post donnent le MÊME permalien canonique", () => {
     const a = analyserPermalien(`https://www.instagram.com/rose_griffonfr/p/${CODE}/?igsh=abc`);
     const b = analyserPermalien(`instagram.com/p/${CODE}`);
-    expect(a?.permalien).toBe(b?.permalien!);
-    expect(a?.shortcode).toBe(b?.shortcode!);
+    expect(a?.permalien).toBe(b?.permalien);
+    expect(a?.shortcode).toBe(b?.shortcode);
   });
 
   test("le permalien reconstruit depuis le shortcode est celui de l'analyse", () => {

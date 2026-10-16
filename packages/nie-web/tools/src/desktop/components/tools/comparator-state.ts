@@ -20,7 +20,14 @@ export function comparisonFromSearch(search: string): {
   const params = new URLSearchParams(search);
   const identity = (canonical: string, legacy: string) => {
     const value = params.get(canonical) ?? params.get(legacy);
-    return value && value.length <= 256 && !/[\u0000-\u001f\u007f]/u.test(value) ? value : null;
+    return value &&
+      value.length <= 256 &&
+      !Array.from(value).some(character => {
+        const code = character.charCodeAt(0);
+        return code <= 31 || code === 127;
+      })
+      ? value
+      : null;
   };
   const level = Number(params.get("level") ?? 99);
   return {

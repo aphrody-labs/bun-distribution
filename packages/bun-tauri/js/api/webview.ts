@@ -41,10 +41,10 @@
  * @module
  */
 
-import { PhysicalPosition, PhysicalSize } from './dpi'
-import type { LogicalPosition, LogicalSize } from './dpi'
-import { Position, Size } from './dpi'
-import type { EventName, EventCallback, UnlistenFn } from './event'
+import { PhysicalPosition, PhysicalSize } from "./dpi";
+import type { LogicalPosition, LogicalSize } from "./dpi";
+import { Position, Size } from "./dpi";
+import type { EventName, EventCallback, UnlistenFn } from "./event";
 import {
   TauriEvent,
   // imported for documentation purposes
@@ -52,17 +52,11 @@ import {
   emit,
   emitTo,
   listen,
-  once
-} from './event'
-import { invoke } from './core'
-import {
-  BackgroundThrottlingPolicy,
-  ScrollBarStyle,
-  Color,
-  Window,
-  getCurrentWindow
-} from './window'
-import { WebviewWindow } from './webviewWindow'
+  once,
+} from "./event";
+import { invoke } from "./core";
+import { type BackgroundThrottlingPolicy, type ScrollBarStyle, type Color, Window, getCurrentWindow } from "./window";
+import { WebviewWindow } from "./webviewWindow";
 
 /**
  * The payload of a drag and drop event, see {@link Webview.onDragDropEvent}.
@@ -75,10 +69,10 @@ import { WebviewWindow } from './webviewWindow'
  * Positions are in physical pixels, relative to the webview's top-left corner.
  */
 type DragDropEvent =
-  | { type: 'enter'; paths: string[]; position: PhysicalPosition }
-  | { type: 'over'; position: PhysicalPosition }
-  | { type: 'drop'; paths: string[]; position: PhysicalPosition }
-  | { type: 'leave' }
+  | { type: "enter"; paths: string[]; position: PhysicalPosition }
+  | { type: "over"; position: PhysicalPosition }
+  | { type: "drop"; paths: string[]; position: PhysicalPosition }
+  | { type: "leave" };
 
 /**
  * Get an instance of `Webview` for the current webview.
@@ -86,14 +80,10 @@ type DragDropEvent =
  * @since 2.0.0
  */
 function getCurrentWebview(): Webview {
-  return new Webview(
-    getCurrentWindow(),
-    window.__TAURI_INTERNALS__.metadata.currentWebview.label,
-    {
-      // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-      skip: true
-    }
-  )
+  return new Webview(getCurrentWindow(), window.__TAURI_INTERNALS__.metadata.currentWebview.label, {
+    // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
+    skip: true,
+  });
 }
 
 /**
@@ -105,31 +95,29 @@ function getCurrentWebview(): Webview {
  * @since 2.0.0
  */
 async function getAllWebviews(): Promise<Webview[]> {
-  return invoke<Array<{ windowLabel: string; label: string }>>(
-    'plugin:webview|get_all_webviews'
-  ).then((webviews) =>
+  return invoke<Array<{ windowLabel: string; label: string }>>("plugin:webview|get_all_webviews").then(webviews =>
     webviews.map(
-      (w) =>
+      w =>
         new Webview(
           new Window(w.windowLabel, {
             // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-            skip: true
+            skip: true,
           }),
           w.label,
           {
             // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-            skip: true
-          }
-        )
-    )
-  )
+            skip: true,
+          },
+        ),
+    ),
+  );
 }
 
 /** @ignore */
 // events that are emitted right here instead of by the created webview
-const localTauriEvents = ['tauri://created', 'tauri://error']
+const localTauriEvents = ["tauri://created", "tauri://error"];
 /** @ignore */
-export type WebviewLabel = string
+export type WebviewLabel = string;
 
 /**
  * Create new webview or get a handle to an existing one.
@@ -206,12 +194,12 @@ export type WebviewLabel = string
  */
 class Webview {
   /** The webview label. It is a unique identifier for the webview, can be used to reference it later. */
-  label: WebviewLabel
+  label: WebviewLabel;
   /** The window hosting this webview. */
-  window: Window
+  window: Window;
   /** Local event listeners. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  listeners: Record<string, Array<EventCallback<any>>>
+  listeners: Record<string, Array<EventCallback<any>>>;
 
   /**
    * Creates a new Webview.
@@ -253,22 +241,22 @@ class Webview {
    * `core:webview:default`.
    */
   constructor(window: Window, label: WebviewLabel, options: WebviewOptions) {
-    this.window = window
-    this.label = label
+    this.window = window;
+    this.label = label;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.listeners = Object.create(null)
+    this.listeners = Object.create(null);
 
     // @ts-expect-error `skip` is not a public API so it is not defined in WebviewOptions
     if (!options?.skip) {
-      invoke('plugin:webview|create_webview', {
+      invoke("plugin:webview|create_webview", {
         windowLabel: window.label,
         options: {
           ...options,
-          label
-        }
+          label,
+        },
       })
-        .then(async () => this.emit('tauri://created'))
-        .catch(async (e: string) => this.emit('tauri://error', e))
+        .then(async () => this.emit("tauri://created"))
+        .catch(async (e: string) => this.emit("tauri://error", e));
     }
   }
 
@@ -284,21 +272,21 @@ class Webview {
    * @returns The Webview instance to communicate with the webview or null if the webview doesn't exist.
    */
   static async getByLabel(label: string): Promise<Webview | null> {
-    return (await getAllWebviews()).find((w) => w.label === label) ?? null
+    return (await getAllWebviews()).find(w => w.label === label) ?? null;
   }
 
   /**
    * Get an instance of `Webview` for the current webview.
    */
   static getCurrent(): Webview {
-    return getCurrentWebview()
+    return getCurrentWebview();
   }
 
   /**
    * Gets a list of instances of `Webview` for all available webviews.
    */
   static async getAll(): Promise<Webview[]> {
-    return getAllWebviews()
+    return getAllWebviews();
   }
 
   /**
@@ -324,20 +312,17 @@ class Webview {
    * returned function when the listener's own scope ends, e.g. on page navigation
    * or when a component unmounts.
    */
-  async listen<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async listen<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return listen(event, handler, {
-      target: { kind: 'Webview', label: this.label }
-    })
+      target: { kind: "Webview", label: this.label },
+    });
   }
 
   /**
@@ -362,20 +347,17 @@ class Webview {
    * automatically when this webview is destroyed. Do call the returned function if
    * the listener's own scope ends before the event arrives.
    */
-  async once<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async once<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return once(event, handler, {
-      target: { kind: 'Webview', label: this.label }
-    })
+      target: { kind: "Webview", label: this.label },
+    });
   }
 
   /**
@@ -397,12 +379,12 @@ class Webview {
         handler({
           event,
           id: -1,
-          payload
-        })
+          payload,
+        });
       }
-      return
+      return;
     }
-    return emit<T>(event, payload)
+    return emit<T>(event, payload);
   }
 
   /**
@@ -418,23 +400,19 @@ class Webview {
    * @param event Event name. Must include only alphanumeric characters, `-`, `/`, `:` and `_`.
    * @param payload Event payload.
    */
-  async emitTo<T>(
-    target: string | EventTarget,
-    event: string,
-    payload?: T
-  ): Promise<void> {
+  async emitTo<T>(target: string | EventTarget, event: string, payload?: T): Promise<void> {
     if (localTauriEvents.includes(event)) {
       // eslint-disable-next-line
       for (const handler of this.listeners[event] || []) {
         handler({
           event,
           id: -1,
-          payload
-        })
+          payload,
+        });
       }
-      return
+      return;
     }
-    return emitTo<T>(target, event, payload)
+    return emitTo<T>(target, event, payload);
   }
 
   /** @ignore */
@@ -442,14 +420,14 @@ class Webview {
     if (localTauriEvents.includes(event)) {
       if (!(event in this.listeners)) {
         // eslint-disable-next-line security/detect-object-injection
-        this.listeners[event] = [handler]
+        this.listeners[event] = [handler];
       } else {
         // eslint-disable-next-line security/detect-object-injection
-        this.listeners[event].push(handler)
+        this.listeners[event].push(handler);
       }
-      return true
+      return true;
     }
-    return false
+    return false;
   }
 
   // Getters
@@ -467,9 +445,9 @@ class Webview {
    * part of `core:webview:default`.
    */
   async position(): Promise<PhysicalPosition> {
-    return invoke<{ x: number; y: number }>('plugin:webview|webview_position', {
-      label: this.label
-    }).then((p) => new PhysicalPosition(p))
+    return invoke<{ x: number; y: number }>("plugin:webview|webview_position", {
+      label: this.label,
+    }).then(p => new PhysicalPosition(p));
   }
 
   /**
@@ -487,12 +465,9 @@ class Webview {
    * of `core:webview:default`.
    */
   async size(): Promise<PhysicalSize> {
-    return invoke<{ width: number; height: number }>(
-      'plugin:webview|webview_size',
-      {
-        label: this.label
-      }
-    ).then((s) => new PhysicalSize(s))
+    return invoke<{ width: number; height: number }>("plugin:webview|webview_size", {
+      label: this.label,
+    }).then(s => new PhysicalSize(s));
   }
 
   // Setters
@@ -511,9 +486,9 @@ class Webview {
    * included in `core:webview:default`).
    */
   async close(): Promise<void> {
-    return invoke('plugin:webview|webview_close', {
-      label: this.label
-    })
+    return invoke("plugin:webview|webview_close", {
+      label: this.label,
+    });
   }
 
   /**
@@ -532,10 +507,10 @@ class Webview {
    * included in `core:webview:default`).
    */
   async setSize(size: LogicalSize | PhysicalSize | Size): Promise<void> {
-    return invoke('plugin:webview|set_webview_size', {
+    return invoke("plugin:webview|set_webview_size", {
       label: this.label,
-      value: size instanceof Size ? size : new Size(size)
-    })
+      value: size instanceof Size ? size : new Size(size),
+    });
   }
 
   /**
@@ -554,13 +529,11 @@ class Webview {
    * @remarks Requires the `core:webview:allow-set-webview-position` permission (not
    * included in `core:webview:default`).
    */
-  async setPosition(
-    position: LogicalPosition | PhysicalPosition | Position
-  ): Promise<void> {
-    return invoke('plugin:webview|set_webview_position', {
+  async setPosition(position: LogicalPosition | PhysicalPosition | Position): Promise<void> {
+    return invoke("plugin:webview|set_webview_position", {
       label: this.label,
-      value: position instanceof Position ? position : new Position(position)
-    })
+      value: position instanceof Position ? position : new Position(position),
+    });
   }
 
   /**
@@ -577,9 +550,9 @@ class Webview {
    * included in `core:webview:default`).
    */
   async setFocus(): Promise<void> {
-    return invoke('plugin:webview|set_webview_focus', {
-      label: this.label
-    })
+    return invoke("plugin:webview|set_webview_focus", {
+      label: this.label,
+    });
   }
 
   /**
@@ -596,10 +569,10 @@ class Webview {
    * (not included in `core:webview:default`).
    */
   async setAutoResize(autoResize: boolean): Promise<void> {
-    return invoke('plugin:webview|set_webview_auto_resize', {
+    return invoke("plugin:webview|set_webview_auto_resize", {
       label: this.label,
-      value: autoResize
-    })
+      value: autoResize,
+    });
   }
 
   /**
@@ -616,9 +589,9 @@ class Webview {
    * included in `core:webview:default`).
    */
   async hide(): Promise<void> {
-    return invoke('plugin:webview|webview_hide', {
-      label: this.label
-    })
+    return invoke("plugin:webview|webview_hide", {
+      label: this.label,
+    });
   }
 
   /**
@@ -635,9 +608,9 @@ class Webview {
    * included in `core:webview:default`).
    */
   async show(): Promise<void> {
-    return invoke('plugin:webview|webview_show', {
-      label: this.label
-    })
+    return invoke("plugin:webview|webview_show", {
+      label: this.label,
+    });
   }
 
   /**
@@ -655,10 +628,10 @@ class Webview {
    * included in `core:webview:default`).
    */
   async setZoom(scaleFactor: number): Promise<void> {
-    return invoke('plugin:webview|set_webview_zoom', {
+    return invoke("plugin:webview|set_webview_zoom", {
       label: this.label,
-      value: scaleFactor
-    })
+      value: scaleFactor,
+    });
   }
 
   /**
@@ -676,10 +649,10 @@ class Webview {
    * `core:webview:default`).
    */
   async reparent(window: Window | WebviewWindow | string): Promise<void> {
-    return invoke('plugin:webview|reparent', {
+    return invoke("plugin:webview|reparent", {
       label: this.label,
-      window: typeof window === 'string' ? window : window.label
-    })
+      window: typeof window === "string" ? window : window.label,
+    });
   }
 
   /**
@@ -697,7 +670,7 @@ class Webview {
    * (not included in `core:webview:default`).
    */
   async clearAllBrowsingData(): Promise<void> {
-    return invoke('plugin:webview|clear_all_browsing_data')
+    return invoke("plugin:webview|clear_all_browsing_data");
   }
 
   /**
@@ -727,10 +700,10 @@ class Webview {
    * @since 2.1.0
    */
   async setBackgroundColor(color: Color | null): Promise<void> {
-    return invoke('plugin:webview|set_webview_background_color', {
+    return invoke("plugin:webview|set_webview_background_color", {
       label: this.label,
-      value: color
-    })
+      value: color,
+    });
   }
 
   // Listeners
@@ -766,65 +739,51 @@ class Webview {
    * destroyed. Do call the returned function when the listener's own scope ends,
    * e.g. on page navigation or when a component unmounts.
    */
-  async onDragDropEvent(
-    handler: EventCallback<DragDropEvent>
-  ): Promise<UnlistenFn> {
-    type DragPayload = { paths: string[]; position: PhysicalPosition }
+  async onDragDropEvent(handler: EventCallback<DragDropEvent>): Promise<UnlistenFn> {
+    type DragPayload = { paths: string[]; position: PhysicalPosition };
 
-    const unlistenDragEnter = await this.listen<DragPayload>(
-      TauriEvent.DRAG_ENTER,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'enter',
-            paths: event.payload.paths,
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDragEnter = await this.listen<DragPayload>(TauriEvent.DRAG_ENTER, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "enter",
+          paths: event.payload.paths,
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenDragOver = await this.listen<DragPayload>(
-      TauriEvent.DRAG_OVER,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'over',
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDragOver = await this.listen<DragPayload>(TauriEvent.DRAG_OVER, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "over",
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenDragDrop = await this.listen<DragPayload>(
-      TauriEvent.DRAG_DROP,
-      (event) => {
-        handler({
-          ...event,
-          payload: {
-            type: 'drop',
-            paths: event.payload.paths,
-            position: new PhysicalPosition(event.payload.position)
-          }
-        })
-      }
-    )
+    const unlistenDragDrop = await this.listen<DragPayload>(TauriEvent.DRAG_DROP, event => {
+      handler({
+        ...event,
+        payload: {
+          type: "drop",
+          paths: event.payload.paths,
+          position: new PhysicalPosition(event.payload.position),
+        },
+      });
+    });
 
-    const unlistenDragLeave = await this.listen<null>(
-      TauriEvent.DRAG_LEAVE,
-      (event) => {
-        handler({ ...event, payload: { type: 'leave' } })
-      }
-    )
+    const unlistenDragLeave = await this.listen<null>(TauriEvent.DRAG_LEAVE, event => {
+      handler({ ...event, payload: { type: "leave" } });
+    });
 
     return () => {
-      unlistenDragEnter()
-      unlistenDragDrop()
-      unlistenDragOver()
-      unlistenDragLeave()
-    }
+      unlistenDragEnter();
+      unlistenDragDrop();
+      unlistenDragOver();
+      unlistenDragLeave();
+    };
   }
 }
 
@@ -841,33 +800,33 @@ interface WebviewOptions {
    * - data: URL such as `data:text/html,<html>...` is only supported with the `webview-data-url` Cargo feature for the `tauri` dependency.
    * - local file path or route such as `/path/to/page.html` or `/users` is appended to the application URL (the devServer URL on development, or `tauri://localhost/` and `https://tauri.localhost/` on production).
    */
-  url?: string
+  url?: string;
   /** The initial horizontal position in logical pixels, relative to the window's top-left corner. */
-  x: number
+  x: number;
   /** The initial vertical position in logical pixels, relative to the window's top-left corner. */
-  y: number
+  y: number;
   /** The initial width in logical pixels. */
-  width: number
+  width: number;
   /** The initial height in logical pixels. */
-  height: number
+  height: number;
   /**
    * Whether the webview is transparent or not.
    *
    * On Windows, using `noRedirectionBitmap` can help avoid a white flash when creating a transparent window.
    */
-  transparent?: boolean
+  transparent?: boolean;
   /**
    * Whether the webview should have focus or not
    *
    * @since 2.1.0
    */
-  focus?: boolean
+  focus?: boolean;
   /**
    * Whether the drag and drop is enabled or not on the webview. By default it is enabled.
    *
    * Disabling it is required to use HTML5 drag and drop on the frontend on Windows.
    */
-  dragDropEnabled?: boolean
+  dragDropEnabled?: boolean;
   /**
    * Whether clicking an inactive webview also clicks through to the webview on macOS.
    *
@@ -877,11 +836,11 @@ interface WebviewOptions {
    *   the window reaches the page: it is swallowed on regular windows and only clicks through on
    *   always-on-top windows or while a DevTools debugger is attached.
    */
-  acceptFirstMouse?: boolean
+  acceptFirstMouse?: boolean;
   /**
    * The user agent for the webview.
    */
-  userAgent?: string
+  userAgent?: string;
   /**
    * Whether or not the webview should be launched in incognito mode.
    *
@@ -889,7 +848,7 @@ interface WebviewOptions {
    *
    * - **Android:** Unsupported.
    */
-  incognito?: boolean
+  incognito?: boolean;
   /**
    * The proxy URL for the WebView for all network requests.
    *
@@ -899,7 +858,7 @@ interface WebviewOptions {
    *
    * - **macOS**: Requires the `macos-proxy` feature flag and only compiles for macOS 14+.
    * */
-  proxyUrl?: string
+  proxyUrl?: string;
   /**
    * Whether page zooming by hotkeys is enabled
    *
@@ -911,7 +870,7 @@ interface WebviewOptions {
    *
    * - **Android / iOS**: Unsupported.
    */
-  zoomHotkeysEnabled?: boolean
+  zoomHotkeysEnabled?: boolean;
 
   /**
    * Sets whether the custom protocols should use `https://<scheme>.localhost` instead of the default `http://<scheme>.localhost` on Windows and Android. Defaults to `false`.
@@ -926,7 +885,7 @@ interface WebviewOptions {
    *
    * @since 2.1.0
    */
-  useHttpsScheme?: boolean
+  useHttpsScheme?: boolean;
   /**
    * Whether web inspector, which is usually called browser devtools, is enabled or not. Enabled by default.
    *
@@ -940,7 +899,7 @@ interface WebviewOptions {
    *
    * @since 2.1.0
    */
-  devtools?: boolean
+  devtools?: boolean;
   /**
    * Set the window and webview background color.
    *
@@ -953,7 +912,7 @@ interface WebviewOptions {
    *
    * @since 2.1.0
    */
-  backgroundColor?: Color
+  backgroundColor?: Color;
 
   /** Change the default background throttling behaviour.
    *
@@ -972,23 +931,23 @@ interface WebviewOptions {
    *
    * @since 2.3.0
    */
-  backgroundThrottling?: BackgroundThrottlingPolicy
+  backgroundThrottling?: BackgroundThrottlingPolicy;
   /**
    * Whether we should disable JavaScript code execution on the webview or not.
    */
-  javascriptDisabled?: boolean
+  javascriptDisabled?: boolean;
   /**
    * on macOS and iOS there is a link preview on long pressing links, this is enabled by default.
    * see https://docs.rs/objc2-web-kit/latest/objc2_web_kit/struct.WKWebView.html#method.allowsLinkPreview
    */
-  allowLinkPreview?: boolean
+  allowLinkPreview?: boolean;
   /**
    * Allows disabling the input accessory view on iOS.
    *
    * The accessory view is the view that appears above the keyboard when a text input element is focused.
    * It usually displays a view with "Done", "Next" buttons.
    */
-  disableInputAccessoryView?: boolean
+  disableInputAccessoryView?: boolean;
   /**
    * Set a custom path for the webview's data directory (localStorage, cache, etc.) **relative to [`appDataDir()`]/${label}**.
    * For security reasons, paths outside of that location can only be configured on the Rust side.
@@ -1001,7 +960,7 @@ interface WebviewOptions {
    *
    * @since 2.9.0
    */
-  dataDirectory?: string
+  dataDirectory?: string;
   /**
    * Initialize the WebView with a custom data store identifier. This can be seen as a replacement for `dataDirectory` which is unavailable in WKWebView.
    * See https://developer.apple.com/documentation/webkit/wkwebsitedatastore/init(foridentifier:)?language=objc
@@ -1015,7 +974,7 @@ interface WebviewOptions {
    *
    * @since 2.9.0
    */
-  dataStoreIdentifier?: number[]
+  dataStoreIdentifier?: number[];
   /**
    * Specifies the native scrollbar style to use with the webview.
    * CSS styles that modify the scrollbar are applied on top of the native appearance configured here.
@@ -1030,7 +989,7 @@ interface WebviewOptions {
    *   - This option must be given the same value for all webviews.
    * - **Linux / Android / iOS / macOS**: Unsupported. Only supports `Default` and performs no operation.
    */
-  scrollBarStyle?: ScrollBarStyle
+  scrollBarStyle?: ScrollBarStyle;
   /**
    * Controls the WebView's browser-level general autofill behavior.
    *
@@ -1049,9 +1008,9 @@ interface WebviewOptions {
    *
    * @since 2.11.0
    */
-  generalAutofillEnabled?: boolean
+  generalAutofillEnabled?: boolean;
 }
 
-export { Webview, getCurrentWebview, getAllWebviews }
+export { Webview, getCurrentWebview, getAllWebviews };
 
-export type { DragDropEvent, WebviewOptions, Color }
+export type { DragDropEvent, WebviewOptions, Color };

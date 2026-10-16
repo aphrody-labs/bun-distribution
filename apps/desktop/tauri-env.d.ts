@@ -1,1 +1,1 @@
-import "../../toolchains/bun/packages/bun-tauri/js/api/global";
+import "../../packages/bun-tauri/js/api/global";

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// The ambient module declarations must not become runtime imports.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../types/kuroshiro.d.ts" />
 import Kuroshiro from "kuroshiro";
 import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";

@@ -56,7 +56,7 @@ export function resetRedisClient(): void {
   if (clientInstance) {
     try {
       clientInstance.close();
-    } catch (_) {}
+    } catch {}
     clientInstance = null;
   }
 }
@@ -335,7 +335,7 @@ export const vectorStore = {
       score *= langWeight;
 
       // Supprimer l'embedding de la réponse pour économiser de la bande passante
-      const { embedding, ...documentWithoutEmbedding } = doc;
+      const { embedding: _embedding, ...documentWithoutEmbedding } = doc;
       return {
         document: documentWithoutEmbedding,
         score,
@@ -416,7 +416,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
   }
 
   // Fallback : Feature Hashing Vectorizer (dimension 1536) L2-normalisé
-  const vector = new Array<number>(dimension).fill(0);
+  const vector = Array.from({ length: dimension }, () => 0);
   const words = text
     .toLowerCase()
     .replace(/[.,/#!$%^&*;:{}=\-_`~()[\]]/g, " ")

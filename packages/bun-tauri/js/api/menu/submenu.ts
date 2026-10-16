@@ -2,98 +2,89 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-import {
-  IconMenuItemOptions,
-  PredefinedMenuItemOptions,
-  CheckMenuItemOptions
-} from '../menu'
-import { MenuItem, type MenuItemOptions } from './menuItem'
-import { CheckMenuItem } from './checkMenuItem'
-import { IconMenuItem } from './iconMenuItem'
-import { PredefinedMenuItem } from './predefinedMenuItem'
-import { invoke } from '../core'
-import { type LogicalPosition, PhysicalPosition, type Window } from '../window'
-import { type ItemKind, MenuItemBase, newMenu } from './base'
-import { type MenuOptions } from './menu'
-import { Position } from '../dpi'
-import { transformImage, MenuIcon } from '../image'
+import type { IconMenuItemOptions, PredefinedMenuItemOptions, CheckMenuItemOptions } from "../menu";
+import { MenuItem, type MenuItemOptions } from "./menuItem";
+import { CheckMenuItem } from "./checkMenuItem";
+import { IconMenuItem } from "./iconMenuItem";
+import { PredefinedMenuItem } from "./predefinedMenuItem";
+import { invoke } from "../core";
+import { type LogicalPosition, PhysicalPosition, type Window } from "../window";
+import { type ItemKind, MenuItemBase, newMenu } from "./base";
+import { type MenuOptions } from "./menu";
+import { Position } from "../dpi";
+import { transformImage, type MenuIcon } from "../image";
 
 /** @ignore */
 export function itemFromKind([rid, id, kind]: [number, string, ItemKind]):
-  | Submenu
-  | MenuItem
-  | PredefinedMenuItem
-  | CheckMenuItem
-  | IconMenuItem {
+  Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem {
   /* eslint-disable @typescript-eslint/no-unsafe-return */
   switch (kind) {
-    case 'Submenu':
+    case "Submenu":
       // @ts-expect-error constructor is protected for external usage only, safe for us to use
-      return new Submenu(rid, id)
-    case 'Predefined':
+      return new Submenu(rid, id);
+    case "Predefined":
       // @ts-expect-error constructor is protected for external usage only, safe for us to use
-      return new PredefinedMenuItem(rid, id)
-    case 'Check':
+      return new PredefinedMenuItem(rid, id);
+    case "Check":
       // @ts-expect-error constructor is protected for external usage only, safe for us to use
-      return new CheckMenuItem(rid, id)
-    case 'Icon':
+      return new CheckMenuItem(rid, id);
+    case "Icon":
       // @ts-expect-error constructor is protected for external usage only, safe for us to use
-      return new IconMenuItem(rid, id)
-    case 'MenuItem':
+      return new IconMenuItem(rid, id);
+    case "MenuItem":
     default:
       // @ts-expect-error constructor is protected for external usage only, safe for us to use
-      return new MenuItem(rid, id)
+      return new MenuItem(rid, id);
   }
   /* eslint-enable @typescript-eslint/no-unsafe-return */
 }
 
-export type SubmenuOptions = (Omit<MenuItemOptions, 'accelerator' | 'action'>
-  & MenuOptions) & {
+export type SubmenuOptions = (Omit<MenuItemOptions, "accelerator" | "action"> & MenuOptions) & {
   /**
    * Icon to be used for the submenu.
    * Note: you may need the `image-ico` or `image-png` Cargo features to use this API.
    */
-  icon?: MenuIcon
-}
+  icon?: MenuIcon;
+};
 
 /** A type that is a submenu inside a {@linkcode Menu} or {@linkcode Submenu}. */
 export class Submenu extends MenuItemBase {
   /** @ignore */
   protected constructor(rid: number, id: string) {
-    super(rid, id, 'Submenu')
+    super(rid, id, "Submenu");
   }
 
   /** Create a new submenu. */
   static async new(opts: SubmenuOptions): Promise<Submenu> {
-    return newMenu('Submenu', opts).then(([rid, id]) => new Submenu(rid, id))
+    return newMenu("Submenu", opts).then(([rid, id]) => new Submenu(rid, id));
   }
 
   /** Returns the text of this submenu. */
   async text(): Promise<string> {
-    return invoke('plugin:menu|text', { rid: this.rid, kind: this.kind })
+    return invoke("plugin:menu|text", { rid: this.rid, kind: this.kind });
   }
 
   /** Sets the text for this submenu. */
   async setText(text: string): Promise<void> {
-    return invoke('plugin:menu|set_text', {
+    return invoke("plugin:menu|set_text", {
       rid: this.rid,
       kind: this.kind,
-      text
-    })
+      text,
+    });
   }
 
   /** Returns whether this submenu is enabled or not. */
   async isEnabled(): Promise<boolean> {
-    return invoke('plugin:menu|is_enabled', { rid: this.rid, kind: this.kind })
+    return invoke("plugin:menu|is_enabled", { rid: this.rid, kind: this.kind });
   }
 
   /** Sets whether this submenu is enabled or not. */
   async setEnabled(enabled: boolean): Promise<void> {
-    return invoke('plugin:menu|set_enabled', {
+    return invoke("plugin:menu|set_enabled", {
       rid: this.rid,
       kind: this.kind,
-      enabled
-    })
+      enabled,
+    });
   }
 
   /**
@@ -114,15 +105,13 @@ export class Submenu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[]): Promise<void> {
-    return invoke('plugin:menu|append', {
+    return invoke("plugin:menu|append", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      )
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+    });
   }
 
   /**
@@ -143,15 +132,13 @@ export class Submenu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[]): Promise<void> {
-    return invoke('plugin:menu|prepend', {
+    return invoke("plugin:menu|prepend", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      )
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+    });
   }
 
   /**
@@ -172,75 +159,51 @@ export class Submenu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[], position: number): Promise<void> {
-    return invoke('plugin:menu|insert', {
+    return invoke("plugin:menu|insert", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      ),
-      position
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+      position,
+    });
   }
 
   /** Remove a menu item from this submenu. */
-  async remove(
-    item: Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem
-  ): Promise<void> {
-    return invoke('plugin:menu|remove', {
+  async remove(item: Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem): Promise<void> {
+    return invoke("plugin:menu|remove", {
       rid: this.rid,
       kind: this.kind,
-      item: [item.rid, item.kind]
-    })
+      item: [item.rid, item.kind],
+    });
   }
 
   /** Remove a menu item from this submenu at the specified position. */
   async removeAt(
-    position: number
-  ): Promise<
-    | Submenu
-    | MenuItem
-    | PredefinedMenuItem
-    | CheckMenuItem
-    | IconMenuItem
-    | null
-  > {
-    return invoke<[number, string, ItemKind]>('plugin:menu|remove_at', {
+    position: number,
+  ): Promise<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem | null> {
+    return invoke<[number, string, ItemKind]>("plugin:menu|remove_at", {
       rid: this.rid,
       kind: this.kind,
-      position
-    }).then(itemFromKind)
+      position,
+    }).then(itemFromKind);
   }
 
   /** Returns a list of menu items that has been added to this submenu. */
-  async items(): Promise<
-    Array<
-      Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem
-    >
-  > {
-    return invoke<Array<[number, string, ItemKind]>>('plugin:menu|items', {
+  async items(): Promise<Array<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem>> {
+    return invoke<Array<[number, string, ItemKind]>>("plugin:menu|items", {
       rid: this.rid,
-      kind: this.kind
-    }).then((i) => i.map(itemFromKind))
+      kind: this.kind,
+    }).then(i => i.map(itemFromKind));
   }
 
   /** Retrieves the menu item matching the given identifier. */
-  async get(
-    id: string
-  ): Promise<
-    | Submenu
-    | MenuItem
-    | PredefinedMenuItem
-    | CheckMenuItem
-    | IconMenuItem
-    | null
-  > {
-    return invoke<[number, string, ItemKind] | null>('plugin:menu|get', {
+  async get(id: string): Promise<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem | null> {
+    return invoke<[number, string, ItemKind] | null>("plugin:menu|get", {
       rid: this.rid,
       kind: this.kind,
-      id
-    }).then((r) => (r ? itemFromKind(r) : null))
+      id,
+    }).then(r => (r ? itemFromKind(r) : null));
   }
 
   /**
@@ -248,16 +211,13 @@ export class Submenu extends MenuItemBase {
    *
    * If the position, is provided, it is relative to the window's top-left corner.
    */
-  async popup(
-    at?: PhysicalPosition | LogicalPosition,
-    window?: Window
-  ): Promise<void> {
-    return invoke('plugin:menu|popup', {
+  async popup(at?: PhysicalPosition | LogicalPosition, window?: Window): Promise<void> {
+    return invoke("plugin:menu|popup", {
       rid: this.rid,
       kind: this.kind,
       window: window?.label ?? null,
-      at: at instanceof Position ? at : at ? new Position(at) : null
-    })
+      at: at instanceof Position ? at : at ? new Position(at) : null,
+    });
   }
 
   /**
@@ -271,9 +231,9 @@ export class Submenu extends MenuItemBase {
    * - **Windows / Linux**: Unsupported.
    */
   async setAsWindowsMenuForNSApp(): Promise<void> {
-    return invoke('plugin:menu|set_as_windows_menu_for_nsapp', {
-      rid: this.rid
-    })
+    return invoke("plugin:menu|set_as_windows_menu_for_nsapp", {
+      rid: this.rid,
+    });
   }
 
   /**
@@ -289,17 +249,17 @@ export class Submenu extends MenuItemBase {
    * - **Windows / Linux**: Unsupported.
    */
   async setAsHelpMenuForNSApp(): Promise<void> {
-    return invoke('plugin:menu|set_as_help_menu_for_nsapp', {
-      rid: this.rid
-    })
+    return invoke("plugin:menu|set_as_help_menu_for_nsapp", {
+      rid: this.rid,
+    });
   }
 
   /** Sets an icon for this submenu */
   async setIcon(icon: MenuIcon | null): Promise<void> {
-    return invoke('plugin:menu|set_icon', {
+    return invoke("plugin:menu|set_icon", {
       rid: this.rid,
       kind: this.kind,
-      icon: transformImage(icon)
-    })
+      icon: transformImage(icon),
+    });
   }
 }

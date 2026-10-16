@@ -1,3 +1,25 @@
 {
-  "ignorePatterns": ["packages/base-ui/**", "packages/tailwindcss/**", "vendor/**", "toolchains/**", "**/node_modules/**", "**/dist/**", "packages/eslint-plugin-m3/test/fixtures/**"]
+  "ignorePatterns": [
+    "packages/base-ui/**",
+    "packages/tailwindcss/**",
+    "vendor/**",
+    "toolchains/**",
+    "**/node_modules/**",
+    "**/dist/**",
+    "apps/aphrody-app/ui-dist/**",
+    "apps/artcraft-web-app/app/public/jsm/libs/ammo.wasm.js",
+    "packages/eslint-plugin-m3/test/fixtures/**",
+    "packages/m3-codemods/__testfixtures__/**",
+    "packages/bun-tauri/crates/aphrody-tauri-cli/templates/**",
+    "packages/bun-tauri/crates/aphrody-tauri/scripts/bundle.global.js",
+    "packages/bun-tauri/crates/aphrody-tauri/scripts/init.js",
+    "packages/bun-tauri/crates/tauri-plugin-aphrody/iife/**",
+    "packages/bun-tauri/crates/tauri-plugin-aphrody/src/*/init-iife.js",
+    "packages/bun-windows-chakra/index.d.ts",
+    "packages/bun-windows-webservices/index.d.ts",
+    "packages/canvas/vendor/**",
+    "packages/menu-render-webgpu/src/wasm/nie_wasm_bg.js",
+    "packages/nie-web/assets/nie-viewer/nie_viewer_web.js",
+    "packages/nie-web/src/nie-wasm-web/nie_wasm.js"
+  ]
 }

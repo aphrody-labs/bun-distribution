@@ -243,6 +243,8 @@ export class PostgresQueryBuilder implements PromiseLike<Result> {
       };
     }
   }
+  // Query builders are intentionally awaitable for the PostgREST-compatible API.
+  // eslint-disable-next-line unicorn/no-thenable
   then<TResult1 = Result, TResult2 = never>(
     ok?: ((value: Result) => TResult1 | PromiseLike<TResult1>) | null,
     fail?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,

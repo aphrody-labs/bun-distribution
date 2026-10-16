@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-import { MenuItemBase, newMenu } from './base'
-import { type MenuItemOptions } from '../menu'
-import { invoke } from '../core'
-import { transformImage, MenuIcon } from '../image'
+import { MenuItemBase, newMenu } from "./base";
+import { type MenuItemOptions } from "../menu";
+import { invoke } from "../core";
+import { transformImage, type MenuIcon } from "../image";
 
 /**
  * A native Icon to be used for the menu item
@@ -16,117 +16,117 @@ import { transformImage, MenuIcon } from '../image'
  */
 export enum NativeIcon {
   /** An add item template image. */
-  Add = 'Add',
+  Add = "Add",
   /** Advanced preferences toolbar icon for the preferences window. */
-  Advanced = 'Advanced',
+  Advanced = "Advanced",
   /** A Bluetooth template image. */
-  Bluetooth = 'Bluetooth',
+  Bluetooth = "Bluetooth",
   /** Bookmarks image suitable for a template. */
-  Bookmarks = 'Bookmarks',
+  Bookmarks = "Bookmarks",
   /** A caution image. */
-  Caution = 'Caution',
+  Caution = "Caution",
   /** A color panel toolbar icon. */
-  ColorPanel = 'ColorPanel',
+  ColorPanel = "ColorPanel",
   /** A column view mode template image. */
-  ColumnView = 'ColumnView',
+  ColumnView = "ColumnView",
   /** A computer icon. */
-  Computer = 'Computer',
+  Computer = "Computer",
   /** An enter full-screen mode template image. */
-  EnterFullScreen = 'EnterFullScreen',
+  EnterFullScreen = "EnterFullScreen",
   /** Permissions for all users. */
-  Everyone = 'Everyone',
+  Everyone = "Everyone",
   /** An exit full-screen mode template image. */
-  ExitFullScreen = 'ExitFullScreen',
+  ExitFullScreen = "ExitFullScreen",
   /** A cover flow view mode template image. */
-  FlowView = 'FlowView',
+  FlowView = "FlowView",
   /** A folder image. */
-  Folder = 'Folder',
+  Folder = "Folder",
   /** A burnable folder icon. */
-  FolderBurnable = 'FolderBurnable',
+  FolderBurnable = "FolderBurnable",
   /** A smart folder icon. */
-  FolderSmart = 'FolderSmart',
+  FolderSmart = "FolderSmart",
   /** A link template image. */
-  FollowLinkFreestanding = 'FollowLinkFreestanding',
+  FollowLinkFreestanding = "FollowLinkFreestanding",
   /** A font panel toolbar icon. */
-  FontPanel = 'FontPanel',
+  FontPanel = "FontPanel",
   /** A `go back` template image. */
-  GoLeft = 'GoLeft',
+  GoLeft = "GoLeft",
   /** A `go forward` template image. */
-  GoRight = 'GoRight',
+  GoRight = "GoRight",
   /** Home image suitable for a template. */
-  Home = 'Home',
+  Home = "Home",
   /** An iChat Theater template image. */
-  IChatTheater = 'IChatTheater',
+  IChatTheater = "IChatTheater",
   /** An icon view mode template image. */
-  IconView = 'IconView',
+  IconView = "IconView",
   /** An information toolbar icon. */
-  Info = 'Info',
+  Info = "Info",
   /** A template image used to denote invalid data. */
-  InvalidDataFreestanding = 'InvalidDataFreestanding',
+  InvalidDataFreestanding = "InvalidDataFreestanding",
   /** A generic left-facing triangle template image. */
-  LeftFacingTriangle = 'LeftFacingTriangle',
+  LeftFacingTriangle = "LeftFacingTriangle",
   /** A list view mode template image. */
-  ListView = 'ListView',
+  ListView = "ListView",
   /** A locked padlock template image. */
-  LockLocked = 'LockLocked',
+  LockLocked = "LockLocked",
   /** An unlocked padlock template image. */
-  LockUnlocked = 'LockUnlocked',
+  LockUnlocked = "LockUnlocked",
   /** A horizontal dash, for use in menus. */
-  MenuMixedState = 'MenuMixedState',
+  MenuMixedState = "MenuMixedState",
   /** A check mark template image, for use in menus. */
-  MenuOnState = 'MenuOnState',
+  MenuOnState = "MenuOnState",
   /** A MobileMe icon. */
-  MobileMe = 'MobileMe',
+  MobileMe = "MobileMe",
   /** A drag image for multiple items. */
-  MultipleDocuments = 'MultipleDocuments',
+  MultipleDocuments = "MultipleDocuments",
   /** A network icon. */
-  Network = 'Network',
+  Network = "Network",
   /** A path button template image. */
-  Path = 'Path',
+  Path = "Path",
   /** General preferences toolbar icon for the preferences window. */
-  PreferencesGeneral = 'PreferencesGeneral',
+  PreferencesGeneral = "PreferencesGeneral",
   /** A Quick Look template image. */
-  QuickLook = 'QuickLook',
+  QuickLook = "QuickLook",
   /** A refresh template image. */
-  RefreshFreestanding = 'RefreshFreestanding',
+  RefreshFreestanding = "RefreshFreestanding",
   /** A refresh template image. */
-  Refresh = 'Refresh',
+  Refresh = "Refresh",
   /** A remove item template image. */
-  Remove = 'Remove',
+  Remove = "Remove",
   /** A reveal contents template image. */
-  RevealFreestanding = 'RevealFreestanding',
+  RevealFreestanding = "RevealFreestanding",
   /** A generic right-facing triangle template image. */
-  RightFacingTriangle = 'RightFacingTriangle',
+  RightFacingTriangle = "RightFacingTriangle",
   /** A share view template image. */
-  Share = 'Share',
+  Share = "Share",
   /** A slideshow template image. */
-  Slideshow = 'Slideshow',
+  Slideshow = "Slideshow",
   /** A badge for a `smart` item. */
-  SmartBadge = 'SmartBadge',
+  SmartBadge = "SmartBadge",
   /** Small green indicator, similar to iChat's available image. */
-  StatusAvailable = 'StatusAvailable',
+  StatusAvailable = "StatusAvailable",
   /** Small clear indicator. */
-  StatusNone = 'StatusNone',
+  StatusNone = "StatusNone",
   /** Small yellow indicator, similar to iChat's idle image. */
-  StatusPartiallyAvailable = 'StatusPartiallyAvailable',
+  StatusPartiallyAvailable = "StatusPartiallyAvailable",
   /** Small red indicator, similar to iChat's unavailable image. */
-  StatusUnavailable = 'StatusUnavailable',
+  StatusUnavailable = "StatusUnavailable",
   /** A stop progress template image. */
-  StopProgressFreestanding = 'StopProgressFreestanding',
+  StopProgressFreestanding = "StopProgressFreestanding",
   /** A stop progress button template image. */
-  StopProgress = 'StopProgress',
+  StopProgress = "StopProgress",
   /** An image of the empty trash can. */
-  TrashEmpty = 'TrashEmpty',
+  TrashEmpty = "TrashEmpty",
   /** An image of the full trash can. */
-  TrashFull = 'TrashFull',
+  TrashFull = "TrashFull",
   /** Permissions for a single user. */
-  User = 'User',
+  User = "User",
   /** User account toolbar icon for the preferences window. */
-  UserAccounts = 'UserAccounts',
+  UserAccounts = "UserAccounts",
   /** Permissions for a group of users. */
-  UserGroup = 'UserGroup',
+  UserGroup = "UserGroup",
   /** Permissions for guests. */
-  UserGuest = 'UserGuest'
+  UserGuest = "UserGuest",
 }
 
 /** Options for creating a new icon menu item. */
@@ -141,7 +141,7 @@ export interface IconMenuItemOptions extends MenuItemOptions {
    * tauri = { version = "...", features = ["...", "image-png"] }
    * ```
    */
-  icon?: MenuIcon
+  icon?: MenuIcon;
 }
 
 /**
@@ -151,40 +151,40 @@ export interface IconMenuItemOptions extends MenuItemOptions {
 export class IconMenuItem extends MenuItemBase {
   /** @ignore */
   protected constructor(rid: number, id: string) {
-    super(rid, id, 'Icon')
+    super(rid, id, "Icon");
   }
 
   /** Create a new icon menu item. */
   static async new(opts: IconMenuItemOptions): Promise<IconMenuItem> {
-    return newMenu('Icon', opts).then(([rid, id]) => new IconMenuItem(rid, id))
+    return newMenu("Icon", opts).then(([rid, id]) => new IconMenuItem(rid, id));
   }
 
   /** Returns the text of this icon menu item. */
   async text(): Promise<string> {
-    return invoke('plugin:menu|text', { rid: this.rid, kind: this.kind })
+    return invoke("plugin:menu|text", { rid: this.rid, kind: this.kind });
   }
 
   /** Sets the text for this icon menu item. */
   async setText(text: string): Promise<void> {
-    return invoke('plugin:menu|set_text', {
+    return invoke("plugin:menu|set_text", {
       rid: this.rid,
       kind: this.kind,
-      text
-    })
+      text,
+    });
   }
 
   /** Returns whether this icon menu item is enabled or not. */
   async isEnabled(): Promise<boolean> {
-    return invoke('plugin:menu|is_enabled', { rid: this.rid, kind: this.kind })
+    return invoke("plugin:menu|is_enabled", { rid: this.rid, kind: this.kind });
   }
 
   /** Sets whether this icon menu item is enabled or not. */
   async setEnabled(enabled: boolean): Promise<void> {
-    return invoke('plugin:menu|set_enabled', {
+    return invoke("plugin:menu|set_enabled", {
       rid: this.rid,
       kind: this.kind,
-      enabled
-    })
+      enabled,
+    });
   }
 
   /**
@@ -193,19 +193,19 @@ export class IconMenuItem extends MenuItemBase {
    * See {@linkcode MenuItemOptions.accelerator} for the accepted format.
    */
   async setAccelerator(accelerator: string | null): Promise<void> {
-    return invoke('plugin:menu|set_accelerator', {
+    return invoke("plugin:menu|set_accelerator", {
       rid: this.rid,
       kind: this.kind,
-      accelerator
-    })
+      accelerator,
+    });
   }
 
   /** Sets an icon for this icon menu item */
   async setIcon(icon: MenuIcon | null): Promise<void> {
-    return invoke('plugin:menu|set_icon', {
+    return invoke("plugin:menu|set_icon", {
       rid: this.rid,
       kind: this.kind,
-      icon: transformImage(icon)
-    })
+      icon: transformImage(icon),
+    });
   }
 }

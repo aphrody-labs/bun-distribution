@@ -17,9 +17,9 @@
  * @module
  */
 
-import { addPluginListener, invoke, PluginListener } from './core'
-import { Image } from './image'
-import { Theme } from './window'
+import { addPluginListener, invoke, PluginListener } from "./core";
+import { Image } from "./image";
+import type { Theme } from "./window";
 
 /**
  * Identifier type used for data stores on macOS and iOS.
@@ -44,8 +44,8 @@ export type DataStoreIdentifier = [
   number,
   number,
   number,
-  number
-]
+  number,
+];
 
 /**
  * Bundle type of the current application.
@@ -56,17 +56,17 @@ export type DataStoreIdentifier = [
  */
 export enum BundleType {
   /** Windows NSIS */
-  Nsis = 'nsis',
+  Nsis = "nsis",
   /** Windows MSI */
-  Msi = 'msi',
+  Msi = "msi",
   /** Linux Debian package */
-  Deb = 'deb',
+  Deb = "deb",
   /** Linux RPM */
-  Rpm = 'rpm',
+  Rpm = "rpm",
   /** Linux AppImage */
-  AppImage = 'appimage',
+  AppImage = "appimage",
   /** macOS app bundle */
-  App = 'app'
+  App = "app",
 }
 
 /**
@@ -80,7 +80,7 @@ export enum BundleType {
  * @since 1.0.0
  */
 async function getVersion(): Promise<string> {
-  return invoke('plugin:app|version')
+  return invoke("plugin:app|version");
 }
 
 /**
@@ -94,7 +94,7 @@ async function getVersion(): Promise<string> {
  * @since 1.0.0
  */
 async function getName(): Promise<string> {
-  return invoke('plugin:app|name')
+  return invoke("plugin:app|name");
 }
 
 /**
@@ -109,7 +109,7 @@ async function getName(): Promise<string> {
  * @since 1.0.0
  */
 async function getTauriVersion(): Promise<string> {
-  return invoke('plugin:app|tauri_version')
+  return invoke("plugin:app|tauri_version");
 }
 
 /**
@@ -125,7 +125,7 @@ async function getTauriVersion(): Promise<string> {
  * @since 2.4.0
  */
 async function getIdentifier(): Promise<string> {
-  return invoke('plugin:app|identifier')
+  return invoke("plugin:app|identifier");
 }
 
 /**
@@ -143,7 +143,7 @@ async function getIdentifier(): Promise<string> {
  * @since 1.2.0
  */
 async function show(): Promise<void> {
-  return invoke('plugin:app|app_show')
+  return invoke("plugin:app|app_show");
 }
 
 /**
@@ -160,7 +160,7 @@ async function show(): Promise<void> {
  * @since 1.2.0
  */
 async function hide(): Promise<void> {
-  return invoke('plugin:app|app_hide')
+  return invoke("plugin:app|app_hide");
 }
 
 /**
@@ -180,7 +180,7 @@ async function hide(): Promise<void> {
  * @since 2.4.0
  */
 async function fetchDataStoreIdentifiers(): Promise<DataStoreIdentifier[]> {
-  return invoke('plugin:app|fetch_data_store_identifiers')
+  return invoke("plugin:app|fetch_data_store_identifiers");
 }
 
 /**
@@ -204,7 +204,7 @@ async function fetchDataStoreIdentifiers(): Promise<DataStoreIdentifier[]> {
  * @since 2.4.0
  */
 async function removeDataStore(uuid: DataStoreIdentifier): Promise<void> {
-  return invoke('plugin:app|remove_data_store', { uuid })
+  return invoke("plugin:app|remove_data_store", { uuid });
 }
 
 /**
@@ -223,9 +223,7 @@ async function removeDataStore(uuid: DataStoreIdentifier): Promise<void> {
  */
 
 async function defaultWindowIcon(): Promise<Image | null> {
-  return invoke<number | null>('plugin:app|default_window_icon').then((rid) =>
-    rid ? new Image(rid) : null
-  )
+  return invoke<number | null>("plugin:app|default_window_icon").then(rid => (rid ? new Image(rid) : null));
 }
 
 /**
@@ -248,7 +246,7 @@ async function defaultWindowIcon(): Promise<Image | null> {
  * @since 2.0.0
  */
 async function setTheme(theme?: Theme | null): Promise<void> {
-  return invoke('plugin:app|set_app_theme', { theme })
+  return invoke("plugin:app|set_app_theme", { theme });
 }
 
 /**
@@ -268,7 +266,7 @@ async function setTheme(theme?: Theme | null): Promise<void> {
  * @since 2.5.0
  */
 async function setDockVisibility(visible: boolean): Promise<void> {
-  return invoke('plugin:app|set_dock_visibility', { visible })
+  return invoke("plugin:app|set_dock_visibility", { visible });
 }
 
 /**
@@ -283,7 +281,7 @@ async function setDockVisibility(visible: boolean): Promise<void> {
  * @since 2.5.0
  */
 async function getBundleType(): Promise<BundleType> {
-  return invoke('plugin:app|bundle_type')
+  return invoke("plugin:app|bundle_type");
 }
 
 /**
@@ -293,8 +291,8 @@ async function getBundleType(): Promise<BundleType> {
  */
 type OnBackButtonPressPayload = {
   /** Whether the webview canGoBack property is true. */
-  canGoBack: boolean
-}
+  canGoBack: boolean;
+};
 
 /**
  * Listens to the Android hardware/gesture back button.
@@ -330,14 +328,8 @@ type OnBackButtonPressPayload = {
  *
  * @since 2.9.0
  */
-async function onBackButtonPress(
-  handler: (payload: OnBackButtonPressPayload) => void
-): Promise<PluginListener> {
-  return addPluginListener<OnBackButtonPressPayload>(
-    'app',
-    'back-button',
-    handler
-  )
+async function onBackButtonPress(handler: (payload: OnBackButtonPressPayload) => void): Promise<PluginListener> {
+  return addPluginListener<OnBackButtonPressPayload>("app", "back-button", handler);
 }
 
 /**
@@ -369,7 +361,7 @@ async function onBackButtonPress(
  * @since 2.11.0
  */
 async function supportsMultipleWindows(): Promise<boolean> {
-  return invoke('plugin:app|supports_multiple_windows')
+  return invoke("plugin:app|supports_multiple_windows");
 }
 
 /**
@@ -398,7 +390,7 @@ async function supportsMultipleWindows(): Promise<boolean> {
  * @since 2.12.0
  */
 async function exit(code = 0): Promise<void> {
-  return invoke('plugin:app|exit', { code })
+  return invoke("plugin:app|exit", { code });
 }
 
 export {
@@ -417,5 +409,5 @@ export {
   type OnBackButtonPressPayload,
   onBackButtonPress,
   supportsMultipleWindows,
-  exit
-}
+  exit,
+};

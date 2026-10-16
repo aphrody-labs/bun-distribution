@@ -34,18 +34,13 @@
  * @module
  */
 
-import {
-  getCurrentWebview,
-  Webview,
-  WebviewLabel,
-  WebviewOptions
-} from './webview'
-import type { WindowOptions } from './window'
-import { Window } from './window'
-import { listen, once } from './event'
-import type { EventName, EventCallback, UnlistenFn } from './event'
-import { invoke } from './core'
-import type { Color, DragDropEvent } from './webview'
+import { getCurrentWebview, Webview, type WebviewLabel, type WebviewOptions } from "./webview";
+import type { WindowOptions } from "./window";
+import { Window } from "./window";
+import { listen, once } from "./event";
+import type { EventName, EventCallback, UnlistenFn } from "./event";
+import { invoke } from "./core";
+import type { Color, DragDropEvent } from "./webview";
 
 /**
  * Get an instance of `Webview` for the current webview window.
@@ -53,9 +48,9 @@ import type { Color, DragDropEvent } from './webview'
  * @since 2.0.0
  */
 function getCurrentWebviewWindow(): WebviewWindow {
-  const webview = getCurrentWebview()
+  const webview = getCurrentWebview();
   // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-  return new WebviewWindow(webview.label, { skip: true })
+  return new WebviewWindow(webview.label, { skip: true });
 }
 
 /**
@@ -67,15 +62,15 @@ function getCurrentWebviewWindow(): WebviewWindow {
  * @since 2.0.0
  */
 async function getAllWebviewWindows(): Promise<WebviewWindow[]> {
-  return invoke<string[]>('plugin:window|get_all_windows').then((windows) =>
+  return invoke<string[]>("plugin:window|get_all_windows").then(windows =>
     windows.map(
-      (w) =>
+      w =>
         new WebviewWindow(w, {
           // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-          skip: true
-        })
-    )
-  )
+          skip: true,
+        }),
+    ),
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -83,10 +78,10 @@ interface WebviewWindow extends Webview, Window {}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 class WebviewWindow {
-  label: string
+  label: string;
   /** Local event listeners. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  listeners: Record<string, Array<EventCallback<any>>>
+  listeners: Record<string, Array<EventCallback<any>>>;
 
   /**
    * Creates a new {@link Window} hosting a {@link Webview}.
@@ -112,29 +107,22 @@ class WebviewWindow {
    * @remarks Requires the `core:webview:allow-create-webview-window` permission
    * (not included in `core:webview:default`).
    */
-  constructor(
-    label: WebviewLabel,
-    options: Omit<WebviewOptions, 'x' | 'y' | 'width' | 'height'>
-      & WindowOptions = {}
-  ) {
-    this.label = label
+  constructor(label: WebviewLabel, options: Omit<WebviewOptions, "x" | "y" | "width" | "height"> & WindowOptions = {}) {
+    this.label = label;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.listeners = Object.create(null)
+    this.listeners = Object.create(null);
 
     // @ts-expect-error `skip` is not a public API so it is not defined in WebviewOptions
     if (!options?.skip) {
-      invoke('plugin:webview|create_webview_window', {
+      invoke("plugin:webview|create_webview_window", {
         options: {
           ...options,
-          parent:
-            typeof options.parent === 'string'
-              ? options.parent
-              : options.parent?.label,
-          label
-        }
+          parent: typeof options.parent === "string" ? options.parent : options.parent?.label,
+          label,
+        },
       })
-        .then(async () => this.emit('tauri://created'))
-        .catch(async (e: string) => this.emit('tauri://error', e))
+        .then(async () => this.emit("tauri://created"))
+        .catch(async (e: string) => this.emit("tauri://error", e));
     }
   }
 
@@ -150,27 +138,26 @@ class WebviewWindow {
    * @returns The Webview instance to communicate with the webview or null if the webview doesn't exist.
    */
   static async getByLabel(label: string): Promise<WebviewWindow | null> {
-    const webview =
-      (await getAllWebviewWindows()).find((w) => w.label === label) ?? null
+    const webview = (await getAllWebviewWindows()).find(w => w.label === label) ?? null;
     if (webview) {
       // @ts-expect-error `skip` is not defined in the public API but it is handled by the constructor
-      return new WebviewWindow(webview.label, { skip: true })
+      return new WebviewWindow(webview.label, { skip: true });
     }
-    return null
+    return null;
   }
 
   /**
    * Get an instance of `Webview` for the current webview.
    */
   static getCurrent(): WebviewWindow {
-    return getCurrentWebviewWindow()
+    return getCurrentWebviewWindow();
   }
 
   /**
    * Gets a list of instances of `Webview` for all available webviews.
    */
   static async getAll(): Promise<WebviewWindow[]> {
-    return getAllWebviewWindows()
+    return getAllWebviewWindows();
   }
 
   /**
@@ -196,20 +183,17 @@ class WebviewWindow {
    * Do call the returned function when the listener's own scope ends, e.g. on page
    * navigation or when a component unmounts.
    */
-  async listen<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async listen<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return listen(event, handler, {
-      target: { kind: 'WebviewWindow', label: this.label }
-    })
+      target: { kind: "WebviewWindow", label: this.label },
+    });
   }
 
   /**
@@ -234,20 +218,17 @@ class WebviewWindow {
    * automatically when this webview window is destroyed. Do call the returned
    * function if the listener's own scope ends before the event arrives.
    */
-  async once<T>(
-    event: EventName,
-    handler: EventCallback<T>
-  ): Promise<UnlistenFn> {
+  async once<T>(event: EventName, handler: EventCallback<T>): Promise<UnlistenFn> {
     if (this._handleTauriEvent(event, handler)) {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
-        const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
-      }
+        const listeners = this.listeners[event];
+        listeners.splice(listeners.indexOf(handler), 1);
+      };
     }
     return once(event, handler, {
-      target: { kind: 'WebviewWindow', label: this.label }
-    })
+      target: { kind: "WebviewWindow", label: this.label },
+    });
   }
 
   /**
@@ -278,47 +259,37 @@ class WebviewWindow {
    * @since 2.1.0
    */
   async setBackgroundColor(color: Color): Promise<void> {
-    return invoke('plugin:window|set_background_color', {
+    return invoke("plugin:window|set_background_color", {
       label: this.label,
-      value: color
+      value: color,
     }).then(() => {
-      return invoke('plugin:webview|set_webview_background_color', {
+      return invoke("plugin:webview|set_webview_background_color", {
         label: this.label,
-        value: color
-      })
-    })
+        value: color,
+      });
+    });
   }
 }
 
 // Order matters, we use window APIs by default
-applyMixins(WebviewWindow, [Window, Webview])
+applyMixins(WebviewWindow, [Window, Webview]);
 
 /** Extends a base class by other specified classes, without overriding existing properties */
-function applyMixins(
-  baseClass: { prototype: unknown },
-  extendedClasses: unknown
-): void {
-  ;(Array.isArray(extendedClasses)
-    ? extendedClasses
-    : [extendedClasses]
-  ).forEach((extendedClass: { prototype: unknown }) => {
-    Object.getOwnPropertyNames(extendedClass.prototype).forEach((name) => {
-      if (
-        typeof baseClass.prototype === 'object'
-        && baseClass.prototype
-        && name in baseClass.prototype
-      )
-        return
-      Object.defineProperty(
-        baseClass.prototype,
-        name,
-        // eslint-disable-next-line
-        Object.getOwnPropertyDescriptor(extendedClass.prototype, name)
-          ?? Object.create(null)
-      )
-    })
-  })
+function applyMixins(baseClass: { prototype: unknown }, extendedClasses: unknown): void {
+  (Array.isArray(extendedClasses) ? extendedClasses : [extendedClasses]).forEach(
+    (extendedClass: { prototype: unknown }) => {
+      Object.getOwnPropertyNames(extendedClass.prototype).forEach(name => {
+        if (typeof baseClass.prototype === "object" && baseClass.prototype && name in baseClass.prototype) return;
+        Object.defineProperty(
+          baseClass.prototype,
+          name,
+          // eslint-disable-next-line
+          Object.getOwnPropertyDescriptor(extendedClass.prototype, name) ?? Object.create(null),
+        );
+      });
+    },
+  );
 }
 
-export { WebviewWindow, getCurrentWebviewWindow, getAllWebviewWindows }
-export type { DragDropEvent, Color }
+export { WebviewWindow, getCurrentWebviewWindow, getAllWebviewWindows };
+export type { DragDropEvent, Color };

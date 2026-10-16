@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import * as cheerio from "cheerio";
 import type {
   GameKey,

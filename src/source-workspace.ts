@@ -82,7 +82,7 @@ export async function inspectSourceWorkspace(config: Config = {}) {
     workspace: { members: string[] };
   };
   const nestedBunMembers = bun.workspaces.filter(member => !/^(?:packages|apps)\/[^/*]+$/.test(member));
-  const nestedCargoMembers = cargo.workspace.members.filter(member => !/^crates\/[^/*]+$/.test(member));
+  const nestedCargoMembers = cargo.workspace.members.filter(member => !/^(?:crates|apps)\/[^/*]+$/.test(member));
   const common = await git(packageRoot, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
   if (common.code !== 0) throw new Error("Cannot inspect the distribution Git owner");
   const components = [];

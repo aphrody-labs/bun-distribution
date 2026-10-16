@@ -2,27 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-import {
+import type {
   MenuItemOptions,
   SubmenuOptions,
   IconMenuItemOptions,
   PredefinedMenuItemOptions,
-  CheckMenuItemOptions
-} from '../menu'
-import { MenuItem } from './menuItem'
-import { CheckMenuItem } from './checkMenuItem'
-import { IconMenuItem } from './iconMenuItem'
-import { PredefinedMenuItem } from './predefinedMenuItem'
-import { itemFromKind, Submenu } from './submenu'
-import { type LogicalPosition, PhysicalPosition, Position } from '../dpi'
-import { type Window } from '../window'
-import { invoke } from '../core'
-import { type ItemKind, MenuItemBase, newMenu } from './base'
+  CheckMenuItemOptions,
+} from "../menu";
+import { MenuItem } from "./menuItem";
+import { CheckMenuItem } from "./checkMenuItem";
+import { IconMenuItem } from "./iconMenuItem";
+import { PredefinedMenuItem } from "./predefinedMenuItem";
+import { itemFromKind, Submenu } from "./submenu";
+import { type LogicalPosition, PhysicalPosition, Position } from "../dpi";
+import { type Window } from "../window";
+import { invoke } from "../core";
+import { type ItemKind, MenuItemBase, newMenu } from "./base";
 
 /** Options for creating a new menu. */
 export interface MenuOptions {
   /** Specify an id to use for the new menu. */
-  id?: string
+  id?: string;
   /** List of items to add to the new menu. */
   items?: Array<
     | Submenu
@@ -35,7 +35,7 @@ export interface MenuOptions {
     | IconMenuItemOptions
     | PredefinedMenuItemOptions
     | CheckMenuItemOptions
-  >
+  >;
 }
 
 /** A type that is either a menu bar on the window
@@ -48,7 +48,7 @@ export interface MenuOptions {
 export class Menu extends MenuItemBase {
   /** @ignore */
   protected constructor(rid: number, id: string) {
-    super(rid, id, 'Menu')
+    super(rid, id, "Menu");
   }
 
   /**
@@ -73,7 +73,7 @@ export class Menu extends MenuItemBase {
    * ```
    */
   static async new(opts?: MenuOptions): Promise<Menu> {
-    return newMenu('Menu', opts).then(([rid, id]) => new Menu(rid, id))
+    return newMenu("Menu", opts).then(([rid, id]) => new Menu(rid, id));
   }
 
   /**
@@ -102,9 +102,7 @@ export class Menu extends MenuItemBase {
    * ```
    */
   static async default(): Promise<Menu> {
-    return invoke<[number, string]>('plugin:menu|create_default').then(
-      ([rid, id]) => new Menu(rid, id)
-    )
+    return invoke<[number, string]>("plugin:menu|create_default").then(([rid, id]) => new Menu(rid, id));
   }
 
   /**
@@ -125,15 +123,13 @@ export class Menu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[]): Promise<void> {
-    return invoke('plugin:menu|append', {
+    return invoke("plugin:menu|append", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      )
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+    });
   }
 
   /**
@@ -154,15 +150,13 @@ export class Menu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[]): Promise<void> {
-    return invoke('plugin:menu|prepend', {
+    return invoke("plugin:menu|prepend", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      )
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+    });
   }
 
   /**
@@ -183,75 +177,51 @@ export class Menu extends MenuItemBase {
       | SubmenuOptions
       | IconMenuItemOptions
       | PredefinedMenuItemOptions
-      | CheckMenuItemOptions
+      | CheckMenuItemOptions,
   >(items: T | T[], position: number): Promise<void> {
-    return invoke('plugin:menu|insert', {
+    return invoke("plugin:menu|insert", {
       rid: this.rid,
       kind: this.kind,
-      items: (Array.isArray(items) ? items : [items]).map((i) =>
-        'rid' in i ? [i.rid, i.kind] : i
-      ),
-      position
-    })
+      items: (Array.isArray(items) ? items : [items]).map(i => ("rid" in i ? [i.rid, i.kind] : i)),
+      position,
+    });
   }
 
   /** Remove a menu item from this menu. */
-  async remove(
-    item: Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem
-  ): Promise<void> {
-    return invoke('plugin:menu|remove', {
+  async remove(item: Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem): Promise<void> {
+    return invoke("plugin:menu|remove", {
       rid: this.rid,
       kind: this.kind,
-      item: [item.rid, item.kind]
-    })
+      item: [item.rid, item.kind],
+    });
   }
 
   /** Remove a menu item from this menu at the specified position. */
   async removeAt(
-    position: number
-  ): Promise<
-    | Submenu
-    | MenuItem
-    | PredefinedMenuItem
-    | CheckMenuItem
-    | IconMenuItem
-    | null
-  > {
-    return invoke<[number, string, ItemKind]>('plugin:menu|remove_at', {
+    position: number,
+  ): Promise<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem | null> {
+    return invoke<[number, string, ItemKind]>("plugin:menu|remove_at", {
       rid: this.rid,
       kind: this.kind,
-      position
-    }).then(itemFromKind)
+      position,
+    }).then(itemFromKind);
   }
 
   /** Returns a list of menu items that has been added to this menu. */
-  async items(): Promise<
-    Array<
-      Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem
-    >
-  > {
-    return invoke<Array<[number, string, ItemKind]>>('plugin:menu|items', {
+  async items(): Promise<Array<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem>> {
+    return invoke<Array<[number, string, ItemKind]>>("plugin:menu|items", {
       rid: this.rid,
-      kind: this.kind
-    }).then((i) => i.map(itemFromKind))
+      kind: this.kind,
+    }).then(i => i.map(itemFromKind));
   }
 
   /** Retrieves the menu item matching the given identifier. */
-  async get(
-    id: string
-  ): Promise<
-    | Submenu
-    | MenuItem
-    | PredefinedMenuItem
-    | CheckMenuItem
-    | IconMenuItem
-    | null
-  > {
-    return invoke<[number, string, ItemKind] | null>('plugin:menu|get', {
+  async get(id: string): Promise<Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem | null> {
+    return invoke<[number, string, ItemKind] | null>("plugin:menu|get", {
       rid: this.rid,
       kind: this.kind,
-      id
-    }).then((r) => (r ? itemFromKind(r) : null))
+      id,
+    }).then(r => (r ? itemFromKind(r) : null));
   }
 
   /**
@@ -281,16 +251,13 @@ export class Menu extends MenuItemBase {
    * If there isn't one provided, the menu will pop up at the current location of the mouse.
    * @param window The window to show the menu on. Defaults to the current window.
    */
-  async popup(
-    at?: PhysicalPosition | LogicalPosition | Position,
-    window?: Window
-  ): Promise<void> {
-    return invoke('plugin:menu|popup', {
+  async popup(at?: PhysicalPosition | LogicalPosition | Position, window?: Window): Promise<void> {
+    return invoke("plugin:menu|popup", {
       rid: this.rid,
       kind: this.kind,
       window: window?.label ?? null,
-      at: at instanceof Position ? at : at ? new Position(at) : null
-    })
+      at: at instanceof Position ? at : at ? new Position(at) : null,
+    });
   }
 
   /**
@@ -315,9 +282,9 @@ export class Menu extends MenuItemBase {
    * @returns The menu that was set before this call, or `null` if there was none.
    */
   async setAsAppMenu(): Promise<Menu | null> {
-    return invoke<[number, string] | null>('plugin:menu|set_as_app_menu', {
-      rid: this.rid
-    }).then((r) => (r ? new Menu(r[0], r[1]) : null))
+    return invoke<[number, string] | null>("plugin:menu|set_as_app_menu", {
+      rid: this.rid,
+    }).then(r => (r ? new Menu(r[0], r[1]) : null));
   }
 
   /**
@@ -341,9 +308,9 @@ export class Menu extends MenuItemBase {
    * @returns The menu that was set on that window before this call, or `null` if there was none.
    */
   async setAsWindowMenu(window?: Window): Promise<Menu | null> {
-    return invoke<[number, string] | null>('plugin:menu|set_as_window_menu', {
+    return invoke<[number, string] | null>("plugin:menu|set_as_window_menu", {
       rid: this.rid,
-      window: window?.label ?? null
-    }).then((r) => (r ? new Menu(r[0], r[1]) : null))
+      window: window?.label ?? null,
+    }).then(r => (r ? new Menu(r[0], r[1]) : null));
   }
 }

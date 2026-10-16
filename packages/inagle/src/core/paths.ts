@@ -4,7 +4,6 @@
  */
 
 import { basename, dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 /** Sync existence check sans node:fs — Bun.Glob.scanSync sert de stat shim. */
 function existsSync(p: string): boolean {

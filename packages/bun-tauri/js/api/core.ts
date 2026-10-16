@@ -56,7 +56,7 @@
 // if this value changes, make sure to update it in:
 // 1. ipc.js
 // 2. process-ipc-message-fn.js
-export const SERIALIZE_TO_IPC_FN = '__TAURI_TO_IPC_KEY__'
+export const SERIALIZE_TO_IPC_FN = "__TAURI_TO_IPC_KEY__";
 
 /**
  * Stores the callback in a known location, and returns an identifier that can be passed to the backend.
@@ -69,9 +69,9 @@ export const SERIALIZE_TO_IPC_FN = '__TAURI_TO_IPC_KEY__'
 function transformCallback<T = unknown>(
   // TODO: Make this not optional in v3
   callback?: (response: T) => void,
-  once = false
+  once = false,
 ): number {
-  return window.__TAURI_INTERNALS__.transformCallback(callback, once)
+  return window.__TAURI_INTERNALS__.transformCallback(callback, once);
 }
 
 /**
@@ -123,63 +123,63 @@ class Channel<T = unknown> {
    * This is the value sent across the IPC, it is used by the Rust side to
    * address this channel and should not be changed.
    */
-  id: number
-  #onmessage: (response: T) => void
+  id: number;
+  #onmessage: (response: T) => void;
 
   // the index is used as a mechanism to preserve message order
-  #nextMessageIndex = 0
-  #pendingMessages: T[] = []
-  #messageEndIndex: number | undefined
+  #nextMessageIndex = 0;
+  #pendingMessages: T[] = [];
+  #messageEndIndex: number | undefined;
 
   constructor(onmessage?: (response: T) => void) {
-    this.#onmessage = onmessage || (() => {})
+    this.#onmessage = onmessage || (() => {});
 
     this.id = transformCallback<
       // Normal message
       | { message: T; index: number }
       // Message when the channel gets dropped in the rust side
       | { end: true; index: number }
-    >((rawMessage) => {
-      const index = rawMessage.index
+    >(rawMessage => {
+      const index = rawMessage.index;
 
-      if ('end' in rawMessage) {
+      if ("end" in rawMessage) {
         if (index == this.#nextMessageIndex) {
-          this.cleanupCallback()
+          this.cleanupCallback();
         } else {
-          this.#messageEndIndex = index
+          this.#messageEndIndex = index;
         }
-        return
+        return;
       }
 
-      const message = rawMessage.message
+      const message = rawMessage.message;
       // Process the message if we're at the right order
       if (index == this.#nextMessageIndex) {
-        this.#onmessage(message)
-        this.#nextMessageIndex += 1
+        this.#onmessage(message);
+        this.#nextMessageIndex += 1;
 
         // process pending messages
         while (this.#nextMessageIndex in this.#pendingMessages) {
-          const message = this.#pendingMessages[this.#nextMessageIndex]
-          this.#onmessage(message)
+          const message = this.#pendingMessages[this.#nextMessageIndex];
+          this.#onmessage(message);
           // eslint-disable-next-line @typescript-eslint/no-array-delete
-          delete this.#pendingMessages[this.#nextMessageIndex]
-          this.#nextMessageIndex += 1
+          delete this.#pendingMessages[this.#nextMessageIndex];
+          this.#nextMessageIndex += 1;
         }
 
         if (this.#nextMessageIndex === this.#messageEndIndex) {
-          this.cleanupCallback()
+          this.cleanupCallback();
         }
       }
       // Queue the message if we're not
       else {
         // eslint-disable-next-line security/detect-object-injection
-        this.#pendingMessages[index] = message
+        this.#pendingMessages[index] = message;
       }
-    })
+    });
   }
 
   private cleanupCallback() {
-    window.__TAURI_INTERNALS__.unregisterCallback(this.id)
+    window.__TAURI_INTERNALS__.unregisterCallback(this.id);
   }
 
   /**
@@ -190,20 +190,20 @@ class Channel<T = unknown> {
    * constructor) before sending the channel to the backend.
    */
   set onmessage(handler: (response: T) => void) {
-    this.#onmessage = handler
+    this.#onmessage = handler;
   }
 
   get onmessage(): (response: T) => void {
-    return this.#onmessage
+    return this.#onmessage;
   }
 
   [SERIALIZE_TO_IPC_FN]() {
-    return `__CHANNEL__:${this.id}`
+    return `__CHANNEL__:${this.id}`;
   }
 
   toJSON(): string {
     // eslint-disable-next-line security/detect-object-injection
-    return this[SERIALIZE_TO_IPC_FN]()
+    return this[SERIALIZE_TO_IPC_FN]();
   }
 }
 
@@ -218,24 +218,24 @@ class Channel<T = unknown> {
  */
 class PluginListener {
   /** The plugin name the listener is registered to. */
-  plugin: string
+  plugin: string;
   /** The plugin event name the listener is registered to. */
-  event: string
+  event: string;
   /** The id of the {@linkcode Channel} backing this listener. */
-  channelId: number
+  channelId: number;
 
   constructor(plugin: string, event: string, channelId: number) {
-    this.plugin = plugin
-    this.event = event
-    this.channelId = channelId
+    this.plugin = plugin;
+    this.event = event;
+    this.channelId = channelId;
   }
 
   /** Removes this listener from the plugin, so its handler stops being called. */
   async unregister(): Promise<void> {
     return invoke(`plugin:${this.plugin}|remove_listener`, {
       event: this.event,
-      channelId: this.channelId
-    })
+      channelId: this.channelId,
+    });
   }
 }
 
@@ -271,27 +271,23 @@ class PluginListener {
  *
  * @since 2.0.0
  */
-async function addPluginListener<T>(
-  plugin: string,
-  event: string,
-  cb: (payload: T) => void
-): Promise<PluginListener> {
-  const handler = new Channel<T>(cb)
+async function addPluginListener<T>(plugin: string, event: string, cb: (payload: T) => void): Promise<PluginListener> {
+  const handler = new Channel<T>(cb);
   try {
     await invoke(`plugin:${plugin}|register_listener`, {
       event,
-      handler
-    })
-    return new PluginListener(plugin, event, handler.id)
+      handler,
+    });
+    return new PluginListener(plugin, event, handler.id);
   } catch {
     // TODO(v3): remove this fallback
     // note: we must try with camelCase here for backwards compatibility
-    await invoke(`plugin:${plugin}|registerListener`, { event, handler })
-    return new PluginListener(plugin, event, handler.id)
+    await invoke(`plugin:${plugin}|registerListener`, { event, handler });
+    return new PluginListener(plugin, event, handler.id);
   }
 }
 
-type PermissionState = 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'
+type PermissionState = "granted" | "denied" | "prompt" | "prompt-with-rationale";
 
 /**
  * Get permission state for a plugin.
@@ -320,7 +316,7 @@ type PermissionState = 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'
  * @since 2.0.0
  */
 async function checkPermissions<T>(plugin: string): Promise<T> {
-  return invoke(`plugin:${plugin}|check_permissions`)
+  return invoke(`plugin:${plugin}|check_permissions`);
 }
 
 /**
@@ -350,7 +346,7 @@ async function checkPermissions<T>(plugin: string): Promise<T> {
  * @since 2.0.0
  */
 async function requestPermissions<T>(plugin: string): Promise<T> {
-  return invoke(`plugin:${plugin}|request_permissions`)
+  return invoke(`plugin:${plugin}|request_permissions`);
 }
 
 /**
@@ -387,7 +383,7 @@ async function requestPermissions<T>(plugin: string): Promise<T> {
  *
  * @since 1.0.0
  */
-type InvokeArgs = Record<string, unknown> | number[] | ArrayBuffer | Uint8Array
+type InvokeArgs = Record<string, unknown> | number[] | ArrayBuffer | Uint8Array;
 
 /**
  * @since 2.0.0
@@ -409,7 +405,7 @@ interface InvokeOptions {
    * });
    * ```
    */
-  headers: HeadersInit
+  headers: HeadersInit;
 }
 
 /**
@@ -427,12 +423,8 @@ interface InvokeOptions {
  *
  * @since 1.0.0
  */
-async function invoke<T>(
-  cmd: string,
-  args: InvokeArgs = {},
-  options?: InvokeOptions
-): Promise<T> {
-  return window.__TAURI_INTERNALS__.invoke(cmd, args, options)
+async function invoke<T>(cmd: string, args: InvokeArgs = {}, options?: InvokeOptions): Promise<T> {
+  return window.__TAURI_INTERNALS__.invoke(cmd, args, options);
 }
 
 /**
@@ -479,8 +471,8 @@ async function invoke<T>(
  *
  * @since 1.0.0
  */
-function convertFileSrc(filePath: string, protocol = 'asset'): string {
-  return window.__TAURI_INTERNALS__.convertFileSrc(filePath, protocol)
+function convertFileSrc(filePath: string, protocol = "asset"): string {
+  return window.__TAURI_INTERNALS__.convertFileSrc(filePath, protocol);
 }
 
 /**
@@ -542,14 +534,14 @@ function convertFileSrc(filePath: string, protocol = 'asset'): string {
  * [Explicit Resource Management]: https://github.com/tc39/proposal-explicit-resource-management
  */
 export class Resource {
-  readonly #rid: number
+  readonly #rid: number;
 
   get rid(): number {
-    return this.#rid
+    return this.#rid;
   }
 
   constructor(rid: number) {
-    this.#rid = rid
+    this.#rid = rid;
   }
 
   /**
@@ -560,13 +552,13 @@ export class Resource {
    * the `core:resources:default` permission set enabled by default.
    */
   async close(): Promise<void> {
-    return invoke('plugin:resources|close', {
-      rid: this.rid
-    })
+    return invoke("plugin:resources|close", {
+      rid: this.rid,
+    });
   }
 
   async [Symbol.asyncDispose]() {
-    await this.close()
+    await this.close();
   }
 }
 
@@ -591,20 +583,19 @@ export class Resource {
  */
 function isTauri(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-  return !!((globalThis as any) || window).isTauri
+  return !!((globalThis as any) || window).isTauri;
 }
 
-export type { InvokeArgs, InvokeOptions }
+export type { InvokeArgs, InvokeOptions, PermissionState };
 
 export {
   transformCallback,
   Channel,
   PluginListener,
   addPluginListener,
-  PermissionState,
   checkPermissions,
   requestPermissions,
   invoke,
   convertFileSrc,
-  isTauri
-}
+  isTauri,
+};

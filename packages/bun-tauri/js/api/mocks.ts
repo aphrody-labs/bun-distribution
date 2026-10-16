@@ -41,13 +41,12 @@
  * @module
  */
 
-import type { InvokeArgs, InvokeOptions } from './core'
-import { EventName } from './event'
+import type { InvokeArgs, InvokeOptions } from "./core";
+import type { EventName } from "./event";
 
 function mockInternals() {
-  window.__TAURI_INTERNALS__ = window.__TAURI_INTERNALS__ ?? {}
-  window.__TAURI_EVENT_PLUGIN_INTERNALS__ =
-    window.__TAURI_EVENT_PLUGIN_INTERNALS__ ?? {}
+  window.__TAURI_INTERNALS__ = window.__TAURI_INTERNALS__ ?? {};
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__ = window.__TAURI_EVENT_PLUGIN_INTERNALS__ ?? {};
 }
 
 /**
@@ -60,7 +59,7 @@ function mockInternals() {
  * @since 2.7.0
  */
 export interface MockIPCOptions {
-  shouldMockEvents?: boolean
+  shouldMockEvents?: boolean;
 }
 
 /**
@@ -140,109 +139,98 @@ export interface MockIPCOptions {
  *
  * @since 1.0.0
  */
-export function mockIPC(
-  cb: (cmd: string, payload?: InvokeArgs) => unknown,
-  options?: MockIPCOptions
-): void {
-  mockInternals()
+export function mockIPC(cb: (cmd: string, payload?: InvokeArgs) => unknown, options?: MockIPCOptions): void {
+  mockInternals();
 
   function isEventPluginInvoke(cmd: string): boolean {
-    return cmd.startsWith('plugin:event|')
+    return cmd.startsWith("plugin:event|");
   }
 
   function handleEventPlugin(cmd: string, args?: InvokeArgs): unknown {
     switch (cmd) {
-      case 'plugin:event|listen':
-        return handleListen(args as { event: EventName; handler: number })
-      case 'plugin:event|emit':
-        return handleEmit(args as { event: EventName; payload?: unknown })
-      case 'plugin:event|unlisten':
-        return handleRemoveListener(args as { event: EventName; id: number })
+      case "plugin:event|listen":
+        return handleListen(args as { event: EventName; handler: number });
+      case "plugin:event|emit":
+        return handleEmit(args as { event: EventName; payload?: unknown });
+      case "plugin:event|unlisten":
+        return handleRemoveListener(args as { event: EventName; id: number });
     }
   }
 
-  const listeners = new Map<string, number[]>()
+  const listeners = new Map<string, number[]>();
   function handleListen(args: { event: EventName; handler: number }) {
     if (!listeners.has(args.event)) {
-      listeners.set(args.event, [])
+      listeners.set(args.event, []);
     }
-    listeners.get(args.event)!.push(args.handler)
-    return args.handler
+    listeners.get(args.event)!.push(args.handler);
+    return args.handler;
   }
 
   function handleEmit(args: { event: EventName; payload?: unknown }) {
-    const eventListeners = listeners.get(args.event) || []
+    const eventListeners = listeners.get(args.event) || [];
     for (const handler of eventListeners) {
-      runCallback(handler, args)
+      runCallback(handler, args);
     }
-    return null
+    return null;
   }
   function handleRemoveListener(args: { event: EventName; id: number }) {
-    const eventListeners = listeners.get(args.event)
+    const eventListeners = listeners.get(args.event);
     if (eventListeners) {
-      const index = eventListeners.indexOf(args.id)
+      const index = eventListeners.indexOf(args.id);
       if (index !== -1) {
-        eventListeners.splice(index, 1)
+        eventListeners.splice(index, 1);
       }
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async function invoke<T>(
-    cmd: string,
-    args?: InvokeArgs,
-    _options?: InvokeOptions
-  ): Promise<T> {
+  async function invoke<T>(cmd: string, args?: InvokeArgs, _options?: InvokeOptions): Promise<T> {
     if (options?.shouldMockEvents && isEventPluginInvoke(cmd)) {
-      return handleEventPlugin(cmd, args) as T
+      return handleEventPlugin(cmd, args) as T;
     }
 
-    return cb(cmd, args) as T
+    return cb(cmd, args) as T;
   }
 
-  const callbacks = new Map<number, (data: unknown) => void>()
+  const callbacks = new Map<number, (data: unknown) => void>();
 
-  function registerCallback<T = unknown>(
-    callback?: (response: T) => void,
-    once = false
-  ) {
-    const identifier = window.crypto.getRandomValues(new Uint32Array(1))[0]
-    callbacks.set(identifier, (data) => {
+  function registerCallback<T = unknown>(callback?: (response: T) => void, once = false) {
+    const identifier = window.crypto.getRandomValues(new Uint32Array(1))[0];
+    callbacks.set(identifier, data => {
       if (once) {
-        unregisterCallback(identifier)
+        unregisterCallback(identifier);
       }
-      return callback && callback(data as T)
-    })
-    return identifier
+      return callback && callback(data as T);
+    });
+    return identifier;
   }
 
   function unregisterCallback(id: number) {
-    callbacks.delete(id)
+    callbacks.delete(id);
   }
 
   function runCallback(id: number, data: unknown) {
-    const callback = callbacks.get(id)
+    const callback = callbacks.get(id);
     if (callback) {
-      callback(data)
+      callback(data);
     } else {
       // eslint-disable-next-line no-console
       console.warn(
-        `[TAURI] Couldn't find callback id ${id}. This might happen when the app is reloaded while Rust is running an asynchronous operation.`
-      )
+        `[TAURI] Couldn't find callback id ${id}. This might happen when the app is reloaded while Rust is running an asynchronous operation.`,
+      );
     }
   }
 
   function unregisterListener(event: EventName, id: number) {
-    unregisterCallback(id)
+    unregisterCallback(id);
   }
 
-  window.__TAURI_INTERNALS__.invoke = invoke
-  window.__TAURI_INTERNALS__.transformCallback = registerCallback
-  window.__TAURI_INTERNALS__.unregisterCallback = unregisterCallback
-  window.__TAURI_INTERNALS__.runCallback = runCallback
-  window.__TAURI_INTERNALS__.callbacks = callbacks
-  window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener =
-    unregisterListener
+  window.__TAURI_INTERNALS__.invoke = invoke;
+  window.__TAURI_INTERNALS__.transformCallback = registerCallback;
+  window.__TAURI_INTERNALS__.unregisterCallback = unregisterCallback;
+  window.__TAURI_INTERNALS__.runCallback = runCallback;
+  window.__TAURI_INTERNALS__.callbacks = callbacks;
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener = unregisterListener;
 }
 
 /**
@@ -284,15 +272,12 @@ export function mockIPC(
  *
  * @since 1.0.0
  */
-export function mockWindows(
-  current: string,
-  ..._additionalWindows: string[]
-): void {
-  mockInternals()
+export function mockWindows(current: string, ..._additionalWindows: string[]): void {
+  mockInternals();
   window.__TAURI_INTERNALS__.metadata = {
     currentWindow: { label: current },
-    currentWebview: { windowLabel: current, label: current }
-  }
+    currentWebview: { windowLabel: current, label: current },
+  };
 }
 
 /**
@@ -314,16 +299,11 @@ export function mockWindows(
  * @since 1.6.0
  */
 export function mockConvertFileSrc(osName: string): void {
-  mockInternals()
-  window.__TAURI_INTERNALS__.convertFileSrc = function (
-    filePath,
-    protocol = 'asset'
-  ) {
-    const path = encodeURIComponent(filePath)
-    return osName === 'windows'
-      ? `http://${protocol}.localhost/${path}`
-      : `${protocol}://localhost/${path}`
-  }
+  mockInternals();
+  window.__TAURI_INTERNALS__.convertFileSrc = function (filePath, protocol = "asset") {
+    const path = encodeURIComponent(filePath);
+    return osName === "windows" ? `http://${protocol}.localhost/${path}` : `${protocol}://localhost/${path}`;
+  };
 }
 
 /**
@@ -353,28 +333,28 @@ export function mockConvertFileSrc(osName: string): void {
  * @since 1.0.0
  */
 export function clearMocks(): void {
-  if (typeof window.__TAURI_INTERNALS__ !== 'object') {
-    return
+  if (typeof window.__TAURI_INTERNALS__ !== "object") {
+    return;
   }
 
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.invoke
+  delete window.__TAURI_INTERNALS__.invoke;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.transformCallback
+  delete window.__TAURI_INTERNALS__.transformCallback;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.unregisterCallback
+  delete window.__TAURI_INTERNALS__.unregisterCallback;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.runCallback
+  delete window.__TAURI_INTERNALS__.runCallback;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.callbacks
+  delete window.__TAURI_INTERNALS__.callbacks;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.convertFileSrc
+  delete window.__TAURI_INTERNALS__.convertFileSrc;
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_INTERNALS__.metadata
+  delete window.__TAURI_INTERNALS__.metadata;
 
-  if (typeof window.__TAURI_EVENT_PLUGIN_INTERNALS__ !== 'object') {
-    return
+  if (typeof window.__TAURI_EVENT_PLUGIN_INTERNALS__ !== "object") {
+    return;
   }
   // @ts-expect-error "The operand of a 'delete' operator must be optional." does not matter in this case
-  delete window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener
+  delete window.__TAURI_EVENT_PLUGIN_INTERNALS__.unregisterListener;
 }
