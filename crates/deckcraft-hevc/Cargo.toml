@@ -1,0 +1,28 @@
+[package]
+name = "deckcraft-hevc"
+description = "Clean-room pure-Rust H.265/HEVC decoder (ITU-T H.265)"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[features]
+default = ["threads"]
+threads = ["dep:rayon"]
+
+[dependencies]
+deckcraft-bitstream = { path = "../deckcraft-bitstream" }
+thiserror = "2"
+rayon = { version = "1", optional = true }

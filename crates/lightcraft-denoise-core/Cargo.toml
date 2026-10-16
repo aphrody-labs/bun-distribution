@@ -1,0 +1,34 @@
+[package]
+name = "lightcraft-denoise-core"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft denoise model metadata, Bayer tiling and cache formats (L1; no inference backend)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[features]
+default = []
+rawnind-model = []
+
+[dependencies]
+lightcraft-raster = { path = "../lightcraft-raster" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+sha2 = "0.10"
+thiserror = "2"
+miniz_oxide = "0.8"
+rayon = "1"
+web-time = "1"
+
+[dev-dependencies]
+proptest = "1"

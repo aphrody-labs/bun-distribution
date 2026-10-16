@@ -1,0 +1,24 @@
+[package]
+name = "deckcraft-mcp"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DeckCraft MCP server: JSON-RPC 2.0 over stdio, driving a running app or a headless session"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[dependencies]
+deckcraft-engine = { path = "../deckcraft-engine" }
+deckcraft-render = { path = "../deckcraft-render" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"

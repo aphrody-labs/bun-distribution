@@ -1,0 +1,26 @@
+[package]
+name = "wordcraft-formats"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "WordCraft import/export: plain text, Markdown, HTML, RTF, OpenDocument Text and LaTeX"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+wordcraft-doc = { path = "../wordcraft-doc" }
+wordcraft-geom = { path = "../wordcraft-geom" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
+quick-xml = "0.41"
+zip = { version = "3", default-features = false, features = ["deflate"] }
+log = "0.4"
+
+[dev-dependencies]
+proptest = "1"

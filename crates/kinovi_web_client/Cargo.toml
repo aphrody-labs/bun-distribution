@@ -1,0 +1,29 @@
+[package]
+name = "kinovi_web_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "kinovi_web_client"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+chrono = { version = "0.4.44", features = ["serde"] }
+cloudflare_errors = { path = "../cloudflare_errors" }
+log = "0.4.29"
+rand = "0.9.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+wreq-util = "3.0.0-rc.10"
+wreq = { version = "6.0.0-rc.28", features = ["json", "query", "form", "multipart", "cookies", "ws", "stream", "gzip", "brotli", "zstd", "deflate"] }
+url = { version = "2.5.8", features = ["serde"] }
+
+[dev-dependencies]
+env = "1.0.1"
+env_logger = "0.11.9"
+test_data = { path = "../artcraft-test_data", package = "artcraft-test_data" }
+test_utils = { path = "../artcraft-test_utils", package = "artcraft-test_utils" }
+tokio = { version = "1", features = ["full"] }

@@ -1,0 +1,26 @@
+[package]
+name = "gridcraft-xtask"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+description = "GridCraft workspace tooling: cargo xtask ci | layers | assets | wasm | parity | version | stats | ico"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[features]
+# `cargo xtask parity` reads the command catalog from the engine. CI steps that only need the
+# version or the layer/asset checks run with --no-default-features and skip compiling it.
+default = ["engine"]
+engine = ["dep:gridcraft-engine"]
+
+[dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+gridcraft-engine = { path = "../gridcraft-engine", optional = true }

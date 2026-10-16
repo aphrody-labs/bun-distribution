@@ -1,0 +1,15 @@
+[package]
+name = "browser_emulation"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "browser_emulation"
+path = "src/lib.rs"
+
+[dependencies]
+wreq = { version = "6.0.0-rc.28", features = ["json", "query", "form", "multipart", "cookies", "ws", "stream", "gzip", "brotli", "zstd", "deflate"] }
+wreq-util = "3.0.0-rc.10"
+
+[dev-dependencies]

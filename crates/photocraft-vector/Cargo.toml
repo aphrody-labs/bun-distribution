@@ -1,0 +1,20 @@
+[package]
+name = "photocraft-vector"
+description = "Vector paths, shape layers, strokes and vector masks → anti-aliased coverage and surfaces"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }

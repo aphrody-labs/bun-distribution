@@ -1,0 +1,28 @@
+[package]
+name = "deckcraft-cli"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DeckCraft on the command line: render, convert, run commands, inspect, and serve MCP"
+publish = false
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[[bin]]
+name = "deckcraft-cli"
+path = "src/main.rs"
+
+[dependencies]
+deckcraft-engine = { path = "../../crates/deckcraft-engine" }
+deckcraft-mcp = { path = "../../crates/deckcraft-mcp" }
+serde_json = { version = "1", features = ["float_roundtrip"] }

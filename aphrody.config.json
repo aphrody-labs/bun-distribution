@@ -30,7 +30,7 @@
   "modules": [
     {
       "id": "filmcraft",
-      "path": "libraries/filmcraft",
+      "path": ".",
       "upstream": "storytold/filmcraft",
       "fork": "aphrody-labs/filmcraft",
       "branch": "main",
@@ -39,17 +39,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Video",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["filmcraft-cli"],
+      "manifestPath": "apps/filmcraft-cli/Cargo.toml",
+      "binaries": [
+        "filmcraft-cli"
+      ],
       "stars": 11833,
       "binary": "filmcraft-cli",
       "cargoPackage": "filmcraft-cli",
       "role": "engine",
-      "protocol": "cli-json"
+      "protocol": "cli-json",
+      "sourceKind": "workspace"
     },
     {
       "id": "artcraft",
-      "path": "libraries/artcraft",
+      "path": ".",
       "upstream": "storytold/artcraft",
       "fork": "aphrody-labs/artcraft",
       "branch": "os",
@@ -58,17 +61,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Generation",
-      "manifestPath": "Cargo.toml",
+      "manifestPath": "apps/artcraft/Cargo.toml",
       "stars": 23258,
       "role": "engine",
       "cargoPackage": "artcraft_router",
       "binary": "artcraft-cli",
-      "binaries": ["artcraft-cli"],
-      "protocol": "jsonl"
+      "binaries": [
+        "artcraft-cli"
+      ],
+      "protocol": "jsonl",
+      "sourceKind": "workspace"
     },
     {
       "id": "photocraft",
-      "path": "libraries/photocraft",
+      "path": ".",
       "upstream": "storytold/photocraft",
       "fork": "aphrody-labs/photocraft",
       "branch": "main",
@@ -77,17 +83,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Images",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["photocraft-cli"],
+      "manifestPath": "apps/photocraft-cli/Cargo.toml",
+      "binaries": [
+        "photocraft-cli"
+      ],
       "stars": 54861,
       "binary": "photocraft-cli",
       "cargoPackage": "photocraft-cli",
       "role": "engine",
-      "protocol": "jsonl"
+      "protocol": "jsonl",
+      "sourceKind": "workspace"
     },
     {
       "id": "vectorcraft",
-      "path": "libraries/vectorcraft",
+      "path": ".",
       "upstream": "storytold/vectorcraft",
       "fork": "aphrody-labs/vectorcraft",
       "branch": "main",
@@ -96,17 +105,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Vectors",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["vectorcraft-cli"],
+      "manifestPath": "apps/vectorcraft-cli/Cargo.toml",
+      "binaries": [
+        "vectorcraft-cli"
+      ],
       "stars": 8073,
       "binary": "vectorcraft-cli",
       "cargoPackage": "vectorcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "effectcraft",
-      "path": "libraries/effectcraft",
+      "path": ".",
       "upstream": "storytold/effectcraft",
       "fork": "aphrody-labs/effectcraft",
       "branch": "main",
@@ -115,17 +127,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Compositing",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["effectcraft-cli"],
+      "manifestPath": "apps/effectcraft-cli/Cargo.toml",
+      "binaries": [
+        "effectcraft-cli"
+      ],
       "stars": 5927,
       "binary": "effectcraft-cli",
       "cargoPackage": "effectcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "lightcraft",
-      "path": "libraries/lightcraft",
+      "path": ".",
       "upstream": "storytold/lightcraft",
       "fork": "aphrody-labs/lightcraft",
       "branch": "main",
@@ -134,17 +149,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Photo processing",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["lightcraft-cli"],
+      "manifestPath": "apps/lightcraft-cli/Cargo.toml",
+      "binaries": [
+        "lightcraft-cli"
+      ],
       "stars": 11480,
       "binary": "lightcraft-cli",
       "cargoPackage": "lightcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "pdfcraft",
-      "path": "libraries/pdfcraft",
+      "path": ".",
       "upstream": "storytold/pdfcraft",
       "fork": "aphrody-labs/pdfcraft",
       "branch": "main",
@@ -153,17 +171,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "PDF",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["pdfcraft-cli"],
+      "manifestPath": "apps/pdfcraft-cli/Cargo.toml",
+      "binaries": [
+        "pdfcraft-cli"
+      ],
       "stars": 11844,
       "binary": "pdfcraft-cli",
       "cargoPackage": "pdfcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "wordcraft",
-      "path": "libraries/wordcraft",
+      "path": ".",
       "upstream": "storytold/wordcraft",
       "fork": "aphrody-labs/wordcraft",
       "branch": "main",
@@ -172,17 +193,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Documents",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["wordcraft-cli"],
+      "manifestPath": "apps/wordcraft-cli/Cargo.toml",
+      "binaries": [
+        "wordcraft-cli"
+      ],
       "stars": 9759,
       "binary": "wordcraft-cli",
       "cargoPackage": "wordcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "soundcraft",
-      "path": "libraries/soundcraft",
+      "path": ".",
       "upstream": "storytold/soundcraft",
       "fork": "aphrody-labs/soundcraft",
       "branch": "main",
@@ -191,17 +215,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Audio",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["soundcraft-cli"],
+      "manifestPath": "apps/soundcraft-cli/Cargo.toml",
+      "binaries": [
+        "soundcraft-cli"
+      ],
       "stars": 2333,
       "binary": "soundcraft-cli",
       "cargoPackage": "soundcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "designcraft",
-      "path": "libraries/designcraft",
+      "path": ".",
       "upstream": "storytold/designcraft",
       "fork": "aphrody-labs/designcraft",
       "branch": "main",
@@ -210,36 +237,42 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Layout",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["designcraft-cli"],
+      "manifestPath": "apps/designcraft-cli/Cargo.toml",
+      "binaries": [
+        "designcraft-cli"
+      ],
       "stars": 3510,
       "binary": "designcraft-cli",
       "cargoPackage": "designcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "cadcraft",
-      "path": "libraries/cadcraft",
+      "path": ".",
       "upstream": "storytold/cadcraft",
       "fork": "aphrody-labs/cadcraft",
       "branch": "os",
-      "revision": "421652b27081ef984ebb1c86c80b4e0d34f6211a",
+      "revision": "36a8fb41f577ac46ad258f8c1387629c764d80e9",
       "upstreamRevision": "00c7613f1af3c73f7157fa91d9fe2635c6f23c06",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "CAD",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["cadcraft-cli"],
+      "manifestPath": "crates/cadcraft/Cargo.toml",
+      "binaries": [
+        "cadcraft-cli"
+      ],
       "stars": 3665,
       "binary": "cadcraft-cli",
       "cargoPackage": "cadcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "deckcraft",
-      "path": "libraries/deckcraft",
+      "path": ".",
       "upstream": "storytold/deckcraft",
       "fork": "aphrody-labs/deckcraft",
       "branch": "main",
@@ -248,17 +281,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Slides",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["deckcraft-cli"],
+      "manifestPath": "apps/deckcraft-cli/Cargo.toml",
+      "binaries": [
+        "deckcraft-cli"
+      ],
       "stars": 2699,
       "binary": "deckcraft-cli",
       "cargoPackage": "deckcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "gridcraft",
-      "path": "libraries/gridcraft",
+      "path": ".",
       "upstream": "storytold/gridcraft",
       "fork": "aphrody-labs/gridcraft",
       "branch": "main",
@@ -267,17 +303,20 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Tables",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["gridcraft-cli"],
+      "manifestPath": "apps/gridcraft-cli/Cargo.toml",
+      "binaries": [
+        "gridcraft-cli"
+      ],
       "stars": 4023,
       "binary": "gridcraft-cli",
       "cargoPackage": "gridcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "figcraft",
-      "path": "libraries/figcraft",
+      "path": ".",
       "upstream": "storytold/figcraft",
       "fork": "aphrody-labs/figcraft",
       "branch": "main",
@@ -286,13 +325,16 @@
       "license": "MIT OR Apache-2.0",
       "kind": "library",
       "description": "Interface layouts",
-      "manifestPath": "Cargo.toml",
-      "binaries": ["figcraft-cli"],
+      "manifestPath": "apps/figcraft-cli/Cargo.toml",
+      "binaries": [
+        "figcraft-cli"
+      ],
       "stars": 24,
       "binary": "figcraft-cli",
       "cargoPackage": "figcraft-cli",
       "role": "engine",
-      "protocol": "cli"
+      "protocol": "cli",
+      "sourceKind": "workspace"
     },
     {
       "id": "craft-libs",
@@ -300,7 +342,7 @@
       "upstream": "storytold/craft-libs",
       "fork": "aphrody-labs/craft-libs",
       "branch": "os",
-      "revision": "7ddc04be8f88a21fc132dbbe1671a319f04999b2",
+      "revision": "e50b8a2f3ff25403295502a40d365b94e39c08c9",
       "upstreamRevision": "e9546e191dd62f2bc1d61eca45dbdc2f1b3c1d8e",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
@@ -309,13 +351,23 @@
       "stars": 188,
       "role": "shared",
       "sourceKind": "workspace",
-      "cargoPackages": ["craft-atomic", "craft-settings", "craft-cms", "craft-print", "craft-quit", "craft-ui"]
+      "cargoPackages": [
+        "craft-atomic",
+        "craft-settings",
+        "craft-cms",
+        "craft-print",
+        "craft-quit",
+        "craft-ui"
+      ]
     },
     {
       "id": "craft-fonts",
       "path": "crates/craft-fonts",
       "sourceKind": "workspace",
-      "cargoPackages": ["craft-fonts", "craft-fonts-tests"],
+      "cargoPackages": [
+        "craft-fonts",
+        "craft-fonts-tests"
+      ],
       "upstream": "storytold/craft-fonts",
       "fork": "aphrody-labs/craft-fonts",
       "branch": "os",
@@ -329,7 +381,9 @@
       "role": "fonts"
     }
   ],
-  "priorities": ["filmcraft"],
+  "priorities": [
+    "filmcraft"
+  ],
   "deployment": {
     "domain": "aphrody.app",
     "appPrefix": "app-",

@@ -1,0 +1,31 @@
+[package]
+name = "lightcraft-raster"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft raster (L0)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[dependencies]
+serde = { version = "1", features = ["derive", "rc"] }
+lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-color = { path = "../lightcraft-color" }
+rayon = { version = "1", optional = true }
+
+[features]
+default = ["parallel"]
+parallel = ["dep:rayon"]
+
+[dev-dependencies]
+proptest = "1"
+libc = "0.2"

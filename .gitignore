@@ -26,3 +26,16 @@ apps/desktop/src-tauri/gen/
 
 # Editor temporary files
 *~
+
+# Flattened Bun Libraries
+.DS_Store
+*~
+*.swp
+__pycache__/
+venv/
+secrets/
+secrets.yaml
+secrets.toml
+twitch_secrets.toml
+/target-*/
+/vendor/msys2-source-metadata/graph.json

@@ -1,0 +1,37 @@
+[package]
+name = "filmcraft-gpu"
+description = "wgpu compositor: YUV/RGB layer sampling, linear-light premultiplied compositing in WGSL"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[dependencies]
+filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-frame = { path = "../filmcraft-frame" }
+filmcraft-geom = { path = "../filmcraft-geom" }
+filmcraft-project = { path = "../filmcraft-project" }
+filmcraft-render = { path = "../filmcraft-render" }
+filmcraft-time = { path = "../filmcraft-time" }
+wgpu = { version = "30", default-features = false, features = ["wgsl"] }
+log = "0.4"
+pollster = "0.4"
+rayon = "1"
+
+[dev-dependencies]
+pollster = "0.4"
+filmcraft-export = { path = "../filmcraft-export" }
+image = { version = "0.25", default-features = false, features = ["png"] }
+wgpu = { version = "30", features = ["wgsl", "metal", "vulkan", "dx12", "gles"] }
+filmcraft-media = { path = "../filmcraft-media" }
+filmcraft-time = { path = "../filmcraft-time" }

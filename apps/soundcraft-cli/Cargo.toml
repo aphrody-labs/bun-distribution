@@ -1,0 +1,27 @@
+[package]
+name = "soundcraft-cli"
+description = "SoundCraft command line: headless editing, conversion, bounce, MCP server, app control"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[[bin]]
+name = "soundcraft-cli"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+soundcraft-engine = { path = "../../crates/soundcraft-engine" }
+soundcraft-automation = { path = "../../crates/soundcraft-automation" }
+soundcraft-audio-io = { path = "../../crates/soundcraft-audio-io" }
+soundcraft-dsp = { path = "../../crates/soundcraft-dsp" }
+serde_json = { version = "1", features = ["float_roundtrip"] }

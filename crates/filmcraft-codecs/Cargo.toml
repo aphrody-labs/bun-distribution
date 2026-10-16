@@ -1,0 +1,53 @@
+[package]
+name = "filmcraft-codecs"
+description = "Container + codec hub: MP4/MOV, Matroska, MXF, Ogg and MPEG TS/PS sources, image sequences, GOP-aware seeking, decoder registry, audio decoding"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[dependencies]
+filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-frame = { path = "../filmcraft-frame" }
+filmcraft-media = { path = "../filmcraft-media" }
+filmcraft-avi = { path = "../filmcraft-avi" }
+filmcraft-isobmff = { path = "../filmcraft-isobmff" }
+filmcraft-matroska = { path = "../filmcraft-matroska" }
+filmcraft-mxf = { path = "../filmcraft-mxf" }
+filmcraft-mpegts = { path = "../filmcraft-mpegts" }
+filmcraft-mpeg2v = { path = "../filmcraft-mpeg2v" }
+filmcraft-ac3 = { path = "../filmcraft-ac3" }
+filmcraft-mpa = { path = "../filmcraft-mpa" }
+filmcraft-ogg = { path = "../filmcraft-ogg" }
+filmcraft-bitstream = { path = "../filmcraft-bitstream" }
+filmcraft-h264 = { path = "../filmcraft-h264" }
+filmcraft-hevc = { path = "../filmcraft-hevc" }
+filmcraft-vp8 = { path = "../filmcraft-vp8" }
+filmcraft-vp9 = { path = "../filmcraft-vp9" }
+filmcraft-prores = { path = "../filmcraft-prores" }
+filmcraft-dnx = { path = "../filmcraft-dnx" }
+filmcraft-av1 = { path = "../filmcraft-av1" }
+filmcraft-apv = { path = "../filmcraft-apv" }
+filmcraft-aac = { path = "../filmcraft-aac" }
+filmcraft-opus = { path = "../filmcraft-opus" }
+rayon = "1"
+thiserror = "2"
+log = "0.4"
+web-time = "1"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+symphonia = { version = "0.5.5", default-features = false, features = ["aac", "mp1", "mp2", "mp3", "flac", "alac", "pcm", "wav", "aiff", "ogg", "vorbis", "isomp4"] }
+
+[dev-dependencies]
+filmcraft-testkit = { path = "../filmcraft-testkit" }
+serde_json = "1"

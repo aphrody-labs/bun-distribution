@@ -1,0 +1,48 @@
+[package]
+name = "photocraft-engine"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[features]
+# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when the corpus is missing.
+corpus = []
+
+[dependencies]
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-cms = { path = "../photocraft-cms" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-ops = { path = "../photocraft-ops" }
+photocraft-compose = { path = "../photocraft-compose" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+thiserror = "2"
+rayon = "1"
+photocraft-paint = { path = "../photocraft-paint" }
+photocraft-algo = { path = "../photocraft-algo" }
+photocraft-text = { path = "../photocraft-text" }
+photocraft-vector = { path = "../photocraft-vector" }
+photocraft-io = { path = "../photocraft-io" }
+photocraft-psd = { path = "../photocraft-psd" }
+photocraft-format = { path = "../photocraft-format" }
+photocraft-plugins = { path = "../photocraft-plugins" }
+blake3 = { version = "1.8", default-features = false, features = ["pure"] }
+photocraft-codecs = { path = "../photocraft-codecs" }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+craft-print = { path = "../craft-print" }
+roxmltree = "0.20"
+
+[dev-dependencies]
+photocraft-affinity = { path = "../photocraft-affinity", features = ["synth"] }
+photocraft-raw = { path = "../photocraft-raw", features = ["testgen"] }
+wat = "1.228"
+exr = { version = "1.73", default-features = false }

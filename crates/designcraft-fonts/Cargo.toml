@@ -1,0 +1,27 @@
+[package]
+name = "designcraft-fonts"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft fonts: font database (bundled OFL + system), metrics, glyph outlines, shaping"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[features]
+# Synthetic fonts for other crates' tests (`designcraft_fonts::testing`).
+testing = []
+
+[dependencies]
+kurbo = { version = "0.13", features = ["serde"] }
+skrifa = "0.47"
+harfrust = "0.13"
+unicode-bidi = "0.3"
+unicode-script = "0.5"
+log = "0.4"

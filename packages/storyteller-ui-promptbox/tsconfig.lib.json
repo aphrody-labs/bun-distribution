@@ -1,0 +1,100 @@
+{
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@aphrody/bun-types", "node"],
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+  },
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "**/*.spec.js",
+    "**/*.test.js",
+    "**/*.spec.jsx",
+    "**/*.test.jsx",
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.js",
+    "src/**/*.spec.js",
+    "src/**/*.test.jsx",
+    "src/**/*.spec.jsx"
+  ],
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../storyteller-ui-sliderv2/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-omni-gen/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-google-analytics/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-tauri-api/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-camera-settings-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-button-icon-select/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-tauri-utils/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-api-enums/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-popover/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-common/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-action-reminder-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-label/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-input/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-gallery-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-toaster/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-api/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-icons/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-modal/tsconfig.lib.json"
+    }
+  ]
+}

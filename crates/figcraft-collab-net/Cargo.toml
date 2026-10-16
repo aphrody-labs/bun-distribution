@@ -1,0 +1,34 @@
+[package]
+name = "figcraft-collab-net"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft live sessions over the network: the WebSocket transport, the session host the app embeds, invite links and presence relay (carries figcraft-collab's messages)"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+figcraft-engine = { path = "../figcraft-engine" }
+figcraft-collab = { path = "../figcraft-collab" }
+figcraft-doc = { path = "../figcraft-doc" }
+log = "0.4"
+web-time = "1"
+
+[dev-dependencies]
+proptest = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }

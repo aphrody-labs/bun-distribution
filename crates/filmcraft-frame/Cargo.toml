@@ -1,0 +1,23 @@
+[package]
+name = "filmcraft-frame"
+description = "Video frames and audio buffers with explicit colour metadata"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[dependencies]
+filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-time = { path = "../filmcraft-time" }
+rayon = "1"
+serde = { version = "1", features = ["derive", "rc"] }

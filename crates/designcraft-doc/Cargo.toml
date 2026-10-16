@@ -1,0 +1,25 @@
+[package]
+name = "designcraft-doc"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft document model: spreads, pages, parents, layers, frames, stories, styles, swatches"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+designcraft-geom = { path = "../designcraft-geom" }
+designcraft-color = { path = "../designcraft-color" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+
+[dev-dependencies]
+proptest = "1"

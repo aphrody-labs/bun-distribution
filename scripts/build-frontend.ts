@@ -7,8 +7,8 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 const repositoryRoot = await realpath(resolve(import.meta.dir, ".."));
 const defaultOutput = "build/frontend/artcraft";
 const outputBase = resolve(repositoryRoot, "build/frontend");
-const frontendScript = resolve(repositoryRoot, "libraries/artcraft/frontend/scripts/artcraft.ts");
-const frontendOwner = resolve(repositoryRoot, "libraries/artcraft");
+const frontendScript = resolve(repositoryRoot, "packages/artcraft-frontend/scripts/artcraft.ts");
+const frontendOwner = repositoryRoot;
 const receiptPrefix = "APHRODY_FRONTEND_BUILD_RECEIPT=";
 const usage = "Usage: bun scripts/build-frontend.ts build [--output build/frontend/<fresh-name>]";
 
@@ -142,7 +142,7 @@ function safeFailure(error) {
   if (candidate && candidate.length <= 1024 && !/[\\x00-\\x1f]/.test(candidate)) {
     const relativePath = path.relative(owner, path.resolve(candidate));
     if (relativePath && relativePath !== ".." && !relativePath.startsWith(".." + path.sep) && !path.isAbsolute(relativePath)) {
-      sourcePath = "libraries/artcraft/" + relativePath.split(path.sep).join("/");
+      sourcePath = relativePath.split(path.sep).join("/");
     }
   }
   const diagnostic = { code, path: sourcePath };

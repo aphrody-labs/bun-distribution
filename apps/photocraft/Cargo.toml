@@ -1,0 +1,45 @@
+[package]
+name = "photocraft"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+default-run = "photocraft"
+description = "Photocraft: an open-source, native image editor"
+build = "build.rs"
+
+[features]
+# Open HEIC/HEIF photos (the optional photocraft-heif crate). Not default so distributors choose
+# it; official builds (CI, packaging/, release) build with `--features heif`.
+heif = ["photocraft-codecs/heif"]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+photocraft-doc = { path = "../../crates/photocraft-doc" }
+photocraft-color = { path = "../../crates/photocraft-color" }
+photocraft-raster = { path = "../../crates/photocraft-raster" }
+photocraft-geom = { path = "../../crates/photocraft-geom" }
+photocraft-compose = { path = "../../crates/photocraft-compose" }
+photocraft-engine = { path = "../../crates/photocraft-engine" }
+photocraft-codecs = { path = "../../crates/photocraft-codecs" }
+photocraft-io = { path = "../../crates/photocraft-io" }
+photocraft-format = { path = "../../crates/photocraft-format" }
+photocraft-automation = { path = "../../crates/photocraft-automation" }
+photocraft-ui-egui = { path = "../../crates/photocraft-ui-egui" }
+photocraft-tablet = { path = "../../crates/photocraft-tablet" }
+eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit", "wayland", "x11", "persistence"] }
+egui = { version = "0.36", default-features = false }
+serde_json = "1"
+log = "0.4"
+
+[[test]]
+name = "mac_menu_appkit"
+harness = false
+
+[build-dependencies]
+winresource = "0.1"

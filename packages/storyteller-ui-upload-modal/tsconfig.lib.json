@@ -1,0 +1,67 @@
+{
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@aphrody/bun-types", "node"],
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+  },
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "**/*.spec.js",
+    "**/*.test.js",
+    "**/*.spec.jsx",
+    "**/*.test.jsx",
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.js",
+    "src/**/*.spec.js",
+    "src/**/*.test.jsx",
+    "src/**/*.spec.jsx"
+  ],
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../storyteller-ui-viewer-3d/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-gallery-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-loading/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-checkbox/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-file-uploader/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-select/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-list-dropdown/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-api/tsconfig.lib.json"
+    }
+  ]
+}

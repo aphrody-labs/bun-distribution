@@ -1,0 +1,26 @@
+[package]
+name = "designcraft-mcp"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft MCP server: JSON-RPC 2.0 over stdio, driving a running app or a headless session"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+designcraft-engine = { path = "../designcraft-engine" }
+designcraft-render = { path = "../designcraft-render" }
+designcraft-tools = { path = "../designcraft-tools" }
+designcraft-geom = { path = "../designcraft-geom" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

@@ -1,0 +1,27 @@
+[package]
+name = "figcraft-geom"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft geometry: affine transforms, shape path builders (rounded/smoothed corners, polygons, stars, arcs)"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+kurbo = { version = "0.13", features = ["serde"] }
+serde = { version = "1", features = ["derive", "rc"] }

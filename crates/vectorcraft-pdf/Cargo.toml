@@ -1,0 +1,48 @@
+[package]
+name = "vectorcraft-pdf"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft PDF export and import"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-effects = { path = "../vectorcraft-effects" }
+vectorcraft-brush = { path = "../vectorcraft-brush" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-text = { path = "../vectorcraft-text" }
+skrifa = "0.47"
+kurbo = { version = "0.13", features = ["serde"] }
+thiserror = "2"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
+krilla = "0.8"
+hayro-syntax = "0.7.2"
+hayro-interpret = { version = "0.7.0", default-features = false, features = ["embed-fonts", "embed-cmaps"] }
+log = "0.4"
+smallvec = "1"
+serde = { version = "1", features = ["derive", "rc"] }
+aes = "0.8"
+md-5 = { version = "0.10", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+
+[dev-dependencies]
+vectorcraft-testkit = { path = "../vectorcraft-testkit" }
+vectorcraft-text = { path = "../vectorcraft-text", features = ["test-fonts"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }

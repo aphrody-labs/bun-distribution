@@ -1,0 +1,15 @@
+[package]
+name = "photocraft-geom"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+serde = { version = "1", features = ["derive", "rc"] }

@@ -1,0 +1,25 @@
+[package]
+name = "lightcraft-preview"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft preview cache: content hashing, memory LRU, disk thumbnail cache, prioritized job pool (L3)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[dependencies]
+lightcraft-raster = { path = "../lightcraft-raster" }
+siphasher = "1"
+jpeg-encoder = { version = "0.7", default-features = false, features = ["std"] }
+zune-jpeg = { version = "0.5", default-features = false, features = ["std", "x86", "neon"] }
+zune-core = { version = "0.5", default-features = false, features = ["std"] }
+log = "0.4"

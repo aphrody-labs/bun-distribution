@@ -1,0 +1,40 @@
+[package]
+name = "filmcraft-platform"
+description = "OS media integration: hardware video decoding through the operating system's codecs (VideoToolbox on macOS, Media Foundation on Windows, VA-API and NVDEC on Linux), with transparent fallback to the pure-Rust decoders"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+# The one crate allowed to contain `unsafe` (OS media FFI; AGENTS.md §0.3, docs/adr/0001-platform-ffi.md).
+# The workspace lints, except that `unsafe_code` is `deny` instead of `forbid`: only the FFI modules
+# opt in with `#[allow(unsafe_code)]`, and every `unsafe` block carries a `// SAFETY:` comment.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+undocumented_unsafe_blocks = "deny"
+
+[dependencies]
+filmcraft-bitstream = { path = "../filmcraft-bitstream" }
+filmcraft-codecs = { path = "../filmcraft-codecs" }
+filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-export = { path = "../filmcraft-export" }
+filmcraft-frame = { path = "../filmcraft-frame" }
+filmcraft-h264 = { path = "../filmcraft-h264" }
+filmcraft-hevc = { path = "../filmcraft-hevc" }
+filmcraft-isobmff = { path = "../filmcraft-isobmff" }
+filmcraft-time = { path = "../filmcraft-time" }
+log = "0.4"
+
+[dev-dependencies]
+filmcraft-testkit = { path = "../filmcraft-testkit" }
+filmcraft-media = { path = "../filmcraft-media" }
+filmcraft-frame = { path = "../filmcraft-frame" }
+filmcraft-project = { path = "../filmcraft-project" }
+filmcraft-render = { path = "../filmcraft-render" }

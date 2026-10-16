@@ -1,0 +1,20 @@
+[package]
+name = "designcraft-textimport"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft text import: plain text, Word (.docx) and RTF into stories"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+designcraft-doc = { path = "../designcraft-doc" }
+quick-xml = "0.38"
+zip = { version = "3", default-features = false, features = ["deflate"] }

@@ -1,0 +1,87 @@
+# NB(bt): We've made some changes to the packages and directives.
+# The original values are commented out.
+
+[package]
+name = "artcraft-tauri-plugin-http"
+version = "2.4.3"
+description = "Access an HTTP client written in Rust."
+#edition = { workspace = true }
+edition = "2021"
+#authors = { workspace = true }
+#license = { workspace = true }
+#rust-version = { workspace = true }
+rust-version = "1.77.2"
+#repository = { workspace = true }
+links = "tauri-plugin-http"
+
+[lib]
+name = "tauri_plugin_http"
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[build-dependencies]
+tauri-plugin = { version = "2.6.2", features = ["build"] }
+schemars = "0.8"
+serde = { version = "1.0.228", features = ["derive"] }
+url = { version = "2.5.8", features = ["serde"] }
+urlpattern = "0.3"
+regex = "1"
+
+[dependencies]
+artcraft_client_identity = { path = "../artcraft_client_identity" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tauri = { version = "2.11.2", features = ["unstable", "devtools", "protocol-asset"] }
+thiserror = "2.0.18"
+tokio = { version = "1", features = ["sync", "macros"] }
+tauri-plugin-fs = "2.5.1"
+urlpattern = "0.3"
+regex = "1"
+http = "1"
+reqwest = { version = "0.12", default-features = false }
+url = { version = "2.5.8", features = ["serde"] }
+data-url = "0.3"
+cookie_store = { version = "0.21.1", optional = true, features = ["serde"] }
+bytes = { version = "1.9", optional = true }
+tracing = { version = "0.1", optional = true }
+
+[features]
+default = [
+  "rustls-tls",
+  "http2",
+  "charset",
+  "macos-system-configuration",
+  "cookies",
+]
+multipart = ["reqwest/multipart"]
+json = ["reqwest/json"]
+stream = ["reqwest/stream"]
+native-tls = ["reqwest/native-tls"]
+native-tls-vendored = ["reqwest/native-tls-vendored"]
+native-tls-alpn = ["reqwest/native-tls-alpn"]
+rustls-tls = ["reqwest/rustls-tls"]
+rustls-tls-manual-roots = ["reqwest/rustls-tls-manual-roots"]
+rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
+rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
+blocking = ["reqwest/blocking"]
+cookies = ["reqwest/cookies", "dep:cookie_store", "dep:bytes"]
+gzip = ["reqwest/gzip"]
+brotli = ["reqwest/brotli"]
+deflate = ["reqwest/deflate"]
+zstd = ["reqwest/zstd"]
+trust-dns = ["reqwest/trust-dns"]
+socks = ["reqwest/socks"]
+http2 = ["reqwest/http2"]
+charset = ["reqwest/charset"]
+macos-system-configuration = ["reqwest/macos-system-configuration"]
+unsafe-headers = []
+tracing = ["dep:tracing"]
+dangerous-settings = []

@@ -1,0 +1,38 @@
+[package]
+name = "lightcraft-denoise"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft AI denoise (L1): denoise-model manifests, Bayer packing, tiling and blending, the cache file, and pure-Rust CPU inference"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[features]
+default = []
+runtime = ["dep:faer"]
+# Product-policy switch: absent by default; users may install their own model.
+rawnind-model = ["lightcraft-denoise-core/rawnind-model"]
+
+[dependencies]
+lightcraft-denoise-core = { path = "../lightcraft-denoise-core" }
+faer = { package = "faer-core", version = "=0.17.1", default-features = false, features = ["std"], optional = true }
+lightcraft-raster = { path = "../lightcraft-raster" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+sha2 = "0.10"
+thiserror = "2"
+miniz_oxide = "0.8"
+rayon = "1"
+web-time = "1"
+
+[dev-dependencies]
+proptest = "1"

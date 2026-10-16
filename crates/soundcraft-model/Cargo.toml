@@ -1,0 +1,28 @@
+[package]
+name = "soundcraft-model"
+description = "SoundCraft session document: tracks, playlists, clips, mixer, routing, automation, markers"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+repository = "https://github.com/storytold/soundcraft"
+
+[dependencies]
+soundcraft-time = { path = "../soundcraft-time" }
+soundcraft-audio-io = { path = "../soundcraft-audio-io" }
+soundcraft-midi = { path = "../soundcraft-midi" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"

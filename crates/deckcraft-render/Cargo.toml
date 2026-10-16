@@ -1,0 +1,32 @@
+[package]
+name = "deckcraft-render"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DeckCraft renderer: slides, layouts and masters to pixels (vello_cpu): fills, outlines, effects, pictures, text, tables, charts"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[dependencies]
+deckcraft-geom = { path = "../deckcraft-geom" }
+deckcraft-color = { path = "../deckcraft-color" }
+deckcraft-metafile = { path = "../deckcraft-metafile" }
+deckcraft-model = { path = "../deckcraft-model" }
+deckcraft-fonts = { path = "../deckcraft-fonts" }
+deckcraft-text = { path = "../deckcraft-text" }
+vello_cpu = "0.2"
+vello_common = { version = "0.2", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+log = "0.4"
+kurbo = { version = "0.13", features = ["serde"] }
+skrifa = "0.47"

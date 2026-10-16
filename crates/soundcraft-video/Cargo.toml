@@ -1,0 +1,32 @@
+[package]
+name = "soundcraft-video"
+description = "SoundCraft video: MP4/MOV demux, H.264 / ProRes / Motion JPEG decoding to RGBA, timeline thumbnails"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+repository = "https://github.com/storytold/soundcraft"
+
+[features]
+default = []
+# Frame-parallel H.264 and slice-parallel ProRes decoding (rayon). Off by default: SoundCraft
+# decodes on its own background thread and only needs one picture at a time.
+threads = ["dep:rayon"]
+
+[dependencies]
+thiserror = "2"
+serde = { version = "1", features = ["derive", "rc"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+rayon = { version = "1", optional = true }
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"

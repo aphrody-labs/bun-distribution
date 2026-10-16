@@ -1,0 +1,13 @@
+[package]
+name = "cloudflare_errors"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "cloudflare_errors"
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]

@@ -1,0 +1,23 @@
+[package]
+name = "gridcraft-calc"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "GridCraft calculation engine: dependency graph, recalculation, evaluator, dynamic arrays"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+gridcraft-core = { path = "../gridcraft-core" }
+gridcraft-formula = { path = "../gridcraft-formula" }
+gridcraft-functions = { path = "../gridcraft-functions" }
+gridcraft-numfmt = { path = "../gridcraft-numfmt" }
+gridcraft-model = { path = "../gridcraft-model" }
+log = "0.4"

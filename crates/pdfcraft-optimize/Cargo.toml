@@ -1,0 +1,32 @@
+[package]
+name = "pdfcraft-optimize"
+description = "The PDF Optimizer: image downsampling and recompression, discarding objects, clean-up"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+repository = "https://github.com/storytold/pdfcraft"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+# `"*"` matches every non-workspace package: crates.io dependencies and the
+# vendored crates under `vendor/` (excluded from the workspace). Our own crates
+# keep full debug info. Dependencies keep only line tables, so backtraces still
+# show file and line, but debug info for the whole dependency graph stays out of
+# every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
+
+[dependencies]
+pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
+pdfcraft-content = { path = "../pdfcraft-content", version = "0.7.0" }
+pdfcraft-model = { path = "../pdfcraft-model", version = "0.7.0" }
+pdfcraft-annot = { path = "../pdfcraft-annot", version = "0.7.0" }
+thiserror = "2"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+
+[dev-dependencies]
+pdfcraft-render = { path = "../pdfcraft-render", version = "0.7.0" }

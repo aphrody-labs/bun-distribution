@@ -1,0 +1,24 @@
+[package]
+name = "lightcraft-mcp"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft MCP server (L5): JSON-RPC 2.0 over stdio, driving a running app or a headless session"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[dependencies]
+lightcraft-engine = { path = "../lightcraft-engine" }
+lightcraft-codecs = { path = "../lightcraft-codecs" }
+lightcraft-raster = { path = "../lightcraft-raster" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"

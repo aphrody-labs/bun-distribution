@@ -1,0 +1,37 @@
+[package]
+name = "photocraft-web"
+description = "Photocraft in the browser (eframe web runner, WebGPU with WebGL2 fallback)"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[features]
+# Open HEIC/HEIF photos (the optional photocraft-heif crate). Not default so distributors choose
+# it; official builds (CI, packaging/, release) build with `--features heif`.
+heif = ["photocraft-codecs/heif"]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[[bin]]
+name = "photocraft-web"
+path = "src/main.rs"
+
+[dependencies]
+photocraft-engine = { path = "../../crates/photocraft-engine" }
+photocraft-io = { path = "../../crates/photocraft-io" }
+photocraft-codecs = { path = "../../crates/photocraft-codecs" }
+photocraft-doc = { path = "../../crates/photocraft-doc" }
+photocraft-ui-egui = { path = "../../crates/photocraft-ui-egui" }
+egui = { version = "0.36", default-features = false }
+log = "0.4"
+
+[dev-dependencies]
+serde_json = "1"
+photocraft-paint = { path = "../../crates/photocraft-paint" }
+photocraft-psd = { path = "../../crates/photocraft-psd" }

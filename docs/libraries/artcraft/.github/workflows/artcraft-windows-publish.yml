@@ -1,0 +1,87 @@
+name: "Artcraft Windows Publish"
+
+on:
+  push:
+    branches:
+      - release
+      - artcraft-release
+      - artcraft-windows  # Additional branch for Windows testing
+
+# This workflow creates Windows builds.
+# On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
+
+jobs:
+  publish-artcraft-windows:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows builds
+          - platform: 'windows-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install wreq dependencies
+        run: |
+          choco install cmake -y
+          choco install strawberryperl -y
+          choco install pkgconfiglite -y
+          choco install llvm -y
+          choco install nasm -y
+        shell: cmd
+
+      - name: install Aphrody Bun 1.4.4
+        shell: pwsh
+        run: |
+          & ([scriptblock]::Create((Invoke-RestMethod https://aphrody.app/install.ps1))) -Version bun-v1.4.4 -Flavor full
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value (Join-Path $env:USERPROFILE '.bun/bin')
+
+      - name: install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Pre-build frontend to avoid Tauri build issues
+        run: |
+          # Build the frontend app from the correct directory
+          cd ./frontend
+
+          bun run build
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          echo "Checking build output..."
+          dir apps/artcraft/dist/ | Select-Object -First 10
+
+          # Update Tauri config to skip the build (since we already built)
+          cd ${{ github.workspace }}/crates/desktop/artcraft
+
+          # Set beforeBuildCommand to empty using PowerShell
+          $config = Get-Content tauri.conf.json | ConvertFrom-Json
+          $config.build.beforeBuildCommand = ""
+          $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
+
+      - name: build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
+          RUSTFLAGS: "-C target-feature=+crt-static"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use the SQLx query cache for SQLite
+          SQLX_OFFLINE: true
+        with:
+          projectPath: ./crates/desktop/artcraft
+          tagName: artcraft-v__VERSION__ # the action automatically replaces __VERSION__ with the app version.
+          releaseName: "ArtCraft v__VERSION__"
+          releaseBody: "Production build of ArtCraft. See the assets below to download and install."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

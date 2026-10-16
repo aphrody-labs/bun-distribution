@@ -1,0 +1,27 @@
+[package]
+name = "photocraft-text"
+description = "Font database, text shaping/layout (parley) and text-layer rasterization"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-psd = { path = "../photocraft-psd" }
+parley = { version = "0.11", default-features = false, features = ["std"] }
+skrifa = "0.44"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[build-dependencies]
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }

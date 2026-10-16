@@ -35,7 +35,7 @@ const gitlinks = (await git(root, ["ls-files", "--stage", "-z"]))
   .split("\0")
   .filter(line => line.startsWith("160000 "))
   .map(line => line.slice(line.indexOf("\t") + 1))
-  .filter(path => path.startsWith("libraries/") || path.startsWith("crates/") || path === "toolchains/bun")
+  .filter(path => path.startsWith("crates/") || path === "toolchains/bun")
   .map(path => ({ owner: path, path: resolve(root, path) }));
 const sources = [...gitlinks, ...extraSources];
 if (new Set(sources.map(source => source.owner)).size !== sources.length) throw new Error("Duplicate source owner");

@@ -1,0 +1,26 @@
+[package]
+name = "designcraft-geom"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft geometry: anchor paths, shapes, units and measurements, hit testing"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+kurbo = { version = "0.13", features = ["serde"] }
+flo_curves = "0.8"
+qrcodegen = "1.8"
+serde = { version = "1", features = ["derive", "rc"] }
+thiserror = "2"
+
+[dev-dependencies]
+proptest = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }

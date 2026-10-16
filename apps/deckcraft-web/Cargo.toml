@@ -1,0 +1,30 @@
+[package]
+name = "deckcraft-web"
+description = "DeckCraft in the browser (eframe web runner, WebGPU with WebGL2 fallback)"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[[bin]]
+name = "deckcraft-web"
+path = "src/main.rs"
+
+[dependencies]
+deckcraft-engine = { path = "../../crates/deckcraft-engine" }
+deckcraft-ui-egui = { path = "../../crates/deckcraft-ui-egui" }
+egui = "0.36"
+log = "0.4"
+serde_json = { version = "1", features = ["float_roundtrip"] }

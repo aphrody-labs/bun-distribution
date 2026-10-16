@@ -1,0 +1,88 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-keybinds"
+    },
+    {
+      "path": "../storyteller-ui-tab-selector"
+    },
+    {
+      "path": "../storyteller-ui-button-icon"
+    },
+    {
+      "path": "../storyteller-ui-loading-spinner"
+    },
+    {
+      "path": "../storyteller-ui-label"
+    },
+    {
+      "path": "../storyteller-ui-button-dropdown"
+    },
+    {
+      "path": "../storyteller-ui-button-icon-select"
+    },
+    {
+      "path": "../storyteller-ui-badge"
+    },
+    {
+      "path": "../storyteller-ui-input"
+    },
+    {
+      "path": "../storyteller-ui-close-button"
+    },
+    {
+      "path": "../storyteller-ui-button"
+    },
+    {
+      "path": "../storyteller-ui-modal"
+    },
+    {
+      "path": "../storyteller-ui-checkbox"
+    },
+    {
+      "path": "../storyteller-ui-promptbox"
+    },
+    {
+      "path": "../storyteller-ui-loading"
+    },
+    {
+      "path": "../storyteller-ui-pricing-modal"
+    },
+    {
+      "path": "../storyteller-ui-help-menu"
+    },
+    {
+      "path": "../storyteller-api-enums"
+    },
+    {
+      "path": "../storyteller-model-list"
+    },
+    {
+      "path": "../storyteller-ui-tooltip"
+    },
+    {
+      "path": "../storyteller-ui-popover"
+    },
+    {
+      "path": "../storyteller-ui-model-selector"
+    },
+    {
+      "path": "../storyteller-ui-gallery-modal"
+    },
+    {
+      "path": "../storyteller-common"
+    },
+    {
+      "path": "../storyteller-icons"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

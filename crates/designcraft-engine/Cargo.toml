@@ -1,0 +1,46 @@
+[package]
+name = "designcraft-engine"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft engine: session, documents, history, selection, command registry, tool hosting"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+craft-print = { path = "../craft-print", version = "0.1.0" }
+designcraft-images = { path = "../designcraft-images" }
+designcraft-geom = { path = "../designcraft-geom" }
+designcraft-color = { path = "../designcraft-color" }
+designcraft-doc = { path = "../designcraft-doc" }
+designcraft-fonts = { path = "../designcraft-fonts" }
+designcraft-compose = { path = "../designcraft-compose" }
+designcraft-render = { path = "../designcraft-render" }
+designcraft-format = { path = "../designcraft-format" }
+designcraft-epub = { path = "../designcraft-epub" }
+designcraft-textimport = { path = "../designcraft-textimport" }
+designcraft-pdf = { path = "../designcraft-pdf" }
+designcraft-tools = { path = "../designcraft-tools" }
+designcraft-idml = { path = "../designcraft-idml" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+regex = { version = "1", default-features = false, features = ["std", "unicode", "perf"] }
+quick-xml = "0.38"
+caseless = "0.2"
+
+[dev-dependencies]
+designcraft-fonts = { path = "../designcraft-fonts", features = ["testing"] }
+zip = { version = "3", default-features = false, features = ["deflate"] }
+hayro-syntax = "0.7.2"
+hayro-interpret = { version = "0.7.0", default-features = false, features = ["embed-fonts"] }
+hayro-cmap = "0.1"
+kurbo = { version = "0.13", features = ["serde"] }

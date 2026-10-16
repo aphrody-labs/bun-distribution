@@ -1,0 +1,32 @@
+[package]
+name = "vectorcraft-plugins"
+description = "Sandboxed WebAssembly plug-ins for VectorCraft: a resource-limited wasmi host for object filters and live effects"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+wasmi = { version = "2.0.0", default-features = false, features = ["std", "validate", "stable", "portable-dispatch"] }
+
+[dev-dependencies]
+wat = "1.228"

@@ -1,0 +1,27 @@
+[package]
+name = "figcraft-layout"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft layout: auto layout (horizontal, vertical, wrap, grid; hug/fill/fixed), constraints, layout grid geometry"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+figcraft-geom = { path = "../figcraft-geom" }
+figcraft-doc = { path = "../figcraft-doc" }

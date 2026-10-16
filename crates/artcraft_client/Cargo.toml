@@ -1,0 +1,41 @@
+[package]
+name = "artcraft_client"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+# [lints.rust]
+# unused_imports = "forbid"
+
+[lib]
+name = "artcraft_client"
+path = "src/lib.rs"
+
+[dependencies]
+artcraft_api_defs = { path = "../artcraft_api_defs" }
+artcraft_client_identity = { path = "../artcraft_client_identity" }
+cloudflare_errors = { path = "../cloudflare_errors" }
+enums = { path = "../artcraft-enums", package = "artcraft-enums" }
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+uuid_utils = { path = "../artcraft-uuid_utils", package = "artcraft-uuid_utils" }
+mimetypes = { path = "../artcraft-mimetypes", package = "artcraft-mimetypes" }
+tokens = { path = "../artcraft-tokens", package = "artcraft-tokens" }
+anyhow = "1.0.102"
+chrono = { version = "0.4.44", features = ["serde"] }
+cookie = "0.18.1"
+log = "0.4.29"
+reqwest = { version = "0.12.23", default-features = false, features = ["charset", "http2", "system-proxy", "json", "cookies", "rustls-tls", "gzip", "multipart"] }
+url = { version = "2.5.8", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+backoff = { version = "0.4.0", features = ["futures"] }
+uuid = { version = "1.8.0", features = ["v4"] }
+url-builder = "0.1.1"
+
+[dev-dependencies]
+tokio = { version = "1.50.0", features = ["macros"] }

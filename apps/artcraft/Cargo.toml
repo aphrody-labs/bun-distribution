@@ -1,0 +1,91 @@
+[package]
+name = "artcraft"
+version = "0.0.1"
+description = "Artcraft"
+authors = ["you"]
+license = "MIT OR Apache-2.0"
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+publish = false
+
+# [lints.rust]
+# unused_imports = "forbid"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "artcraft_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.2", features = [] }
+
+[dependencies]
+toml = "1.0.7+spec-1.1.0"
+browser_emulation = { path = "../../crates/browser_emulation" }
+cookie_store_wrapper = { path = "../../crates/cookie_store_wrapper", features = ["wreq"] }
+artcraft_api_defs = { path = "../../crates/artcraft_api_defs" }
+artcraft_client = { path = "../../crates/artcraft_client" }
+artcraft_router = { path = "../../crates/artcraft_router" }
+build_metadata = { path = "../../crates/artcraft-build_metadata", package = "artcraft-build_metadata" }
+cookie_store = { path = "../../crates/artcraft-cookie_store", package = "artcraft-cookie_store" }
+enums = { path = "../../crates/artcraft-enums", package = "artcraft-enums" }
+errors = { path = "../../crates/artcraft-errors", package = "artcraft-errors" }
+fal_client = { path = "../../crates/fal_client" }
+filesys = { path = "../../crates/artcraft-filesys", package = "artcraft-filesys" }
+grok_consumer_client = { path = "../../crates/grok_consumer_client" }
+uuid_utils = { path = "../../crates/artcraft-uuid_utils", package = "artcraft-uuid_utils" }
+images = { path = "../../crates/artcraft-images", package = "artcraft-images" }
+memory_store = { path = "../../crates/artcraft-memory_store", package = "artcraft-memory_store" }
+midjourney_client = { path = "../../crates/midjourney_client" }
+mimetypes = { path = "../../crates/artcraft-mimetypes", package = "artcraft-mimetypes" }
+openai_sora_client = { path = "../../crates/openai_sora_client" }
+primitives = { path = "../../crates/artcraft-primitives", package = "artcraft-primitives" }
+sqlite_tasks = { path = "../../crates/sqlite_tasks" }
+tokens = { path = "../../crates/artcraft-tokens", package = "artcraft-tokens" }
+url_utils = { path = "../../crates/artcraft-url_utils", package = "artcraft-url_utils" }
+web_base64 = { path = "../../crates/artcraft-web_base64", package = "artcraft-web_base64" }
+worldlabs_consumer_client = { path = "../../crates/worldlabs_consumer_client" }
+anyhow = "1.0.102"
+base64 = "0.22.1"
+bytes = "1.10.1"
+chrono = { version = "0.4.44", features = ["serde"] }
+directories = "6.0.0"
+dirs = "6.0.0"
+discord-rich-presence = "1.1.0"
+futures = "0.3"
+image = "0.25.5"
+indexmap = "2.13.0"
+log = "0.4.29"
+once_cell = "1.21.4"
+os_info = { version = "3.12.0", default-features = false }
+rand = "0.9.1"
+reqwest = { version = "0.12.23", default-features = false, features = ["charset", "http2", "system-proxy", "json", "cookies", "rustls-tls", "gzip", "multipart", "stream"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+tauri-plugin-dialog = "2.7.1"
+tauri-plugin-log = "2.8.0"
+tauri-plugin-upload = "2.4.0"
+tauri = { version = "2.11.2", features = ["unstable", "devtools", "protocol-asset"] }
+tempdir = "0.3.7"
+tempfile = "3.27.0"
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "fs"] }
+tokio-util = "0.7.12"
+url = { version = "2.5.8", features = ["serde"] }
+tauri-plugin-http = { path = "../../crates/artcraft-tauri-plugin-http", package = "artcraft-tauri-plugin-http" }
+tauri-plugin-opener = "2"
+
+[dev-dependencies]
+serial_test = "3.2.0"
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = 3 # `s` prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.

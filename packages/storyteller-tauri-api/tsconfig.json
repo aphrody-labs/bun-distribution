@@ -1,0 +1,22 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-api"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "../storyteller-model-list"
+    },
+    {
+      "path": "../storyteller-api-enums"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

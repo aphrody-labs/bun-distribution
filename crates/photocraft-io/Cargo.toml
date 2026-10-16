@@ -1,0 +1,50 @@
+[package]
+name = "photocraft-io"
+description = "Import/export between photocraft documents and PSD/PSB and flat raster formats"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[features]
+# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when the corpus is missing.
+corpus = []
+# HEIC/HEIF decode (forwarded to photocraft-codecs; see its `heif` feature).
+heif = ["photocraft-codecs/heif"]
+
+[dependencies]
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-cms = { path = "../photocraft-cms" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-compose = { path = "../photocraft-compose" }
+photocraft-algo = { path = "../photocraft-algo" }
+photocraft-psd = { path = "../photocraft-psd" }
+photocraft-codecs = { path = "../photocraft-codecs" }
+photocraft-raw = { path = "../photocraft-raw" }
+photocraft-affinity = { path = "../photocraft-affinity" }
+photocraft-text = { path = "../photocraft-text" }
+photocraft-paint = { path = "../photocraft-paint" }
+photocraft-vector = { path = "../photocraft-vector" }
+photocraft-format = { path = "../photocraft-format" }
+thiserror = "2"
+serde_json = "1"
+blake3 = { version = "1.8", default-features = false, features = ["pure"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+roxmltree = "0.20"
+
+[dev-dependencies]
+crc32fast = "1.5"
+photocraft-affinity = { path = "../photocraft-affinity", features = ["synth"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+photocraft-psd = { path = "../photocraft-psd", features = ["testgen"] }
+photocraft-raw = { path = "../photocraft-raw", features = ["testgen"] }
+proptest = "1"

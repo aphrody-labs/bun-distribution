@@ -1,0 +1,18 @@
+[package]
+name = "artcraft-uuid_utils"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "uuid_utils"
+path = "src/lib.rs"
+
+[dependencies]
+uuid = { version = "1.8.0", features = ["v4"] }
+
+[dev-dependencies]

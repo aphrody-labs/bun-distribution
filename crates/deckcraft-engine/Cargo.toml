@@ -1,0 +1,36 @@
+[package]
+name = "deckcraft-engine"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DeckCraft engine: sessions, undo history, selection, the command registry every frontend dispatches through, and pointer tools"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[dependencies]
+deckcraft-geom = { path = "../deckcraft-geom" }
+deckcraft-color = { path = "../deckcraft-color" }
+deckcraft-model = { path = "../deckcraft-model" }
+deckcraft-fonts = { path = "../deckcraft-fonts" }
+deckcraft-text = { path = "../deckcraft-text" }
+deckcraft-render = { path = "../deckcraft-render" }
+deckcraft-pdf = { path = "../deckcraft-pdf" }
+deckcraft-format = { path = "../deckcraft-format" }
+deckcraft-pptx = { path = "../deckcraft-pptx" }
+deckcraft-media = { path = "../deckcraft-media" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+i_overlay = "9"
+thiserror = "2"
+log = "0.4"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

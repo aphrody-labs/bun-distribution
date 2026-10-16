@@ -1,0 +1,34 @@
+[package]
+name = "vectorcraft-testkit"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft test helpers: fixtures, generators, render comparison, geometry assertions"
+publish = false
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-engine = { path = "../vectorcraft-engine" }
+vectorcraft-render = { path = "../vectorcraft-render" }
+vectorcraft-format = { path = "../vectorcraft-format" }
+vectorcraft-svg = { path = "../vectorcraft-svg" }
+kurbo = { version = "0.13", features = ["serde"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+proptest = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

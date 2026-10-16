@@ -1,0 +1,19 @@
+[package]
+name = "wordcraft-metafile"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "WordCraft metafiles: parses Windows WMF and EMF records into a neutral vector model (paths and bitmaps)"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+kurbo = { version = "0.13", features = ["serde"] }
+thiserror = "2"

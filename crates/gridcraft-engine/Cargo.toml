@@ -1,0 +1,35 @@
+[package]
+name = "gridcraft-engine"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "GridCraft engine: sessions, commands, history, clipboard, fill, sort, filter"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+gridcraft-core = { path = "../gridcraft-core" }
+gridcraft-numfmt = { path = "../gridcraft-numfmt" }
+gridcraft-formula = { path = "../gridcraft-formula" }
+gridcraft-functions = { path = "../gridcraft-functions" }
+gridcraft-model = { path = "../gridcraft-model" }
+gridcraft-calc = { path = "../gridcraft-calc" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+gridcraft-xlsx = { path = "../gridcraft-xlsx" }
+gridcraft-chart = { path = "../gridcraft-chart" }
+gridcraft-pdf = { path = "../gridcraft-pdf" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[dev-dependencies]
+gridcraft-xlsx = { path = "../gridcraft-xlsx", features = ["test-support"] }
+zip = { version = "3", default-features = false, features = ["deflate"] }

@@ -1,0 +1,42 @@
+[package]
+name = "vectorcraft-text"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft text: font database, shaping, layout, glyph outlines"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+kurbo = { version = "0.13", features = ["serde"] }
+skrifa = "0.47"
+harfrust = "0.13"
+log = "0.4"
+subsetter = { version = "0.2", default-features = false, features = ["variable-fonts"] }
+unicode-bidi = "0.3.18"
+unicode-general-category = "1"
+unicode-script = "0.5"
+icu_segmenter = "2.3"
+unicode-segmentation = "1.13"
+write-fonts = { version = "0.48", optional = true }
+
+[features]
+# `vectorcraft_text::test_fonts` for other crates' tests (dev-dependencies only).
+test-fonts = ["dep:write-fonts"]
+
+[dev-dependencies]
+write-fonts = "0.48"

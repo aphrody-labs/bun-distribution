@@ -1,0 +1,34 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-api"
+    },
+    {
+      "path": "../storyteller-ui-loading-spinner"
+    },
+    {
+      "path": "../storyteller-common"
+    },
+    {
+      "path": "../storyteller-ui-audio-player"
+    },
+    {
+      "path": "../storyteller-model-list"
+    },
+    {
+      "path": "../storyteller-ui-tooltip"
+    },
+    {
+      "path": "../storyteller-icons"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

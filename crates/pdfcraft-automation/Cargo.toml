@@ -1,0 +1,43 @@
+[package]
+name = "pdfcraft-automation"
+description = "Agent control for PdfCraft: a headless tool set over the engine and an MCP server"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+# `"*"` matches every non-workspace package: crates.io dependencies and the
+# vendored crates under `vendor/` (excluded from the workspace). Our own crates
+# keep full debug info. Dependencies keep only line tables, so backtraces still
+# show file and line, but debug info for the whole dependency graph stays out of
+# every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
+
+[dependencies]
+pdfcraft-engine = { path = "../pdfcraft-engine", version = "0.7.0" }
+pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.0" }
+pdfcraft-render = { path = "../pdfcraft-render", version = "0.7.0" }
+pdfcraft-organize = { path = "../pdfcraft-organize", version = "0.7.0" }
+pdfcraft-platform = { path = "../pdfcraft-platform", version = "0.7.0" }
+serde_json = "1"
+sha2 = "0.11"
+tempfile = "3.27"
+png = "0.18"
+base64 = { version = "0.22", optional = true }
+
+[features]
+default = ["mcp"]
+# The MCP server module. Opt-in at run time either way; disable to leave it out of the build.
+mcp = ["dep:base64"]
+
+[dev-dependencies]
+pdfcraft-fonts = { path = "../pdfcraft-fonts", version = "0.7.0" }
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+pdfcraft-model = { path = "../pdfcraft-model", version = "0.7.0" }
+pdfcraft-xfa = { path = "../pdfcraft-xfa", version = "0.7.0" }
+image = { version = "0.25", default-features = false, features = ["jpeg"] }

@@ -33,7 +33,6 @@
     "target",
     "dist",
     "toolchains",
-    "libraries",
     "apps/desktop/dist",
     "apps/desktop/src-tauri"
   ]

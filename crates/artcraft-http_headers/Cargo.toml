@@ -1,0 +1,15 @@
+[package]
+name = "artcraft-http_headers"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+# NB: public `http_headers` crate appears to be abandoned, so this name seems fine. Wish we had namespacing, though.
+name = "http_headers"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+
+[dev-dependencies]

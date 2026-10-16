@@ -1,0 +1,31 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-tauri-utils"
+    },
+    {
+      "path": "../storyteller-ui-tooltip"
+    },
+    {
+      "path": "../storyteller-tauri-api"
+    },
+    {
+      "path": "../storyteller-ui-popover"
+    },
+    {
+      "path": "../storyteller-api-enums"
+    },
+    {
+      "path": "../storyteller-model-list"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

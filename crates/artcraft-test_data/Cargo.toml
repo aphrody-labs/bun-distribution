@@ -1,0 +1,16 @@
+[package]
+name = "artcraft-test_data"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[lib]
+# NB: Did not look for public-facing crate with same name.
+name = "test_data"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+anyhow = "1.0.102"
+
+[dev-dependencies]

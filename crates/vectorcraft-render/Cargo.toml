@@ -1,0 +1,44 @@
+[package]
+name = "vectorcraft-render"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft renderer: document to pixels (vello_cpu backend)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-text = { path = "../vectorcraft-text" }
+vectorcraft-effects = { path = "../vectorcraft-effects" }
+vectorcraft-brush = { path = "../vectorcraft-brush" }
+vello_cpu = { version = "0.2", features = ["f32_pipeline"] }
+vello_common = { version = "0.2", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+jpeg-encoder = { version = "0.6", default-features = false, features = ["std"] }
+gif = { version = "0.14", default-features = false, features = ["std", "raii_no_panic"] }
+weezl = "0.1"
+log = "0.4"
+
+[dev-dependencies]
+vectorcraft-testkit = { path = "../vectorcraft-testkit" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp", "tga"] }
+tiff = "0.11"
+psd = "0.3"
+proptest = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }

@@ -1,0 +1,20 @@
+[package]
+name = "artcraft-primitives"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "primitives" crate does not exist, so we're fine to use this internally.
+name = "primitives"
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]
+test_utils = { path = "../artcraft-test_utils", package = "artcraft-test_utils" }
+assertor = "0.0.3"

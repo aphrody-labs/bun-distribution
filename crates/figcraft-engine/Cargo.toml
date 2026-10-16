@@ -1,0 +1,48 @@
+[package]
+name = "figcraft-engine"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft engine: sessions, undo history, the command registry every surface (UI, CLI, control channel, MCP) dispatches through, pointer tools, components and the Figma menu catalog"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+figcraft-geom = { path = "../figcraft-geom" }
+figcraft-color = { path = "../figcraft-color" }
+figcraft-doc = { path = "../figcraft-doc" }
+figcraft-collab = { path = "../figcraft-collab" }
+figcraft-layout = { path = "../figcraft-layout" }
+figcraft-text = { path = "../figcraft-text" }
+figcraft-pathops = { path = "../figcraft-pathops" }
+figcraft-render = { path = "../figcraft-render" }
+figcraft-format = { path = "../figcraft-format" }
+figcraft-svg = { path = "../figcraft-svg" }
+figcraft-pdf = { path = "../figcraft-pdf" }
+figcraft-plugin = { path = "../figcraft-plugin" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+base64 = "0.22"
+regex = "1.13"
+web-time = "1.1.0"
+
+[dev-dependencies]
+wat = "1.261"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }

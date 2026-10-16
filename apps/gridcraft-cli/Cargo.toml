@@ -1,0 +1,28 @@
+[package]
+name = "gridcraft-cli"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "GridCraft command line: inspect, convert, evaluate, script and serve MCP without a window"
+publish = false
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[[bin]]
+name = "gridcraft-cli"
+path = "src/main.rs"
+
+[dependencies]
+gridcraft-engine = { path = "../../crates/gridcraft-engine" }
+gridcraft-mcp = { path = "../../crates/gridcraft-mcp" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+zip = { version = "3", default-features = false, features = ["deflate"] }
+quick-xml = "0.41"

@@ -82,8 +82,8 @@ staged product image; `bun run desktop:web:build` bundles the desktop frontend.
 ## Libraries, desktop, and apps
 
 Root packages include the shared workspace/process/hash owners, video adapter,
-artifact compiler, package converter, and desktop application. Library source
-projects are pinned below `libraries/`; the Bun runtime and Tauri SDK source are
+artifact compiler, package converter, and desktop application. Library sources
+are flat in `crates/`, `packages/` and `apps/` (docs in `docs/libraries/`); the Bun runtime and Tauri SDK source are
 pinned below `toolchains/bun/`. App builds and shared assets use the
 `@aphrody/bun-artifacts` and `@aphrody/bun-workspace` owners.
 Shared Craft font assets, licenses and optional embedding are integrated under

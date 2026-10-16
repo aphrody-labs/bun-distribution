@@ -1,0 +1,28 @@
+[package]
+name = "wordcraft-cli"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+description = "WordCraft command line: convert, inspect, render, run commands, MCP server"
+
+[[bin]]
+name = "wordcraft-cli"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+wordcraft-doc = { path = "../../crates/wordcraft-doc" }
+wordcraft-engine = { path = "../../crates/wordcraft-engine" }
+wordcraft-render = { path = "../../crates/wordcraft-render" }
+wordcraft-mcp = { path = "../../crates/wordcraft-mcp" }
+wordcraft-zotero = { path = "../../crates/wordcraft-zotero" }
+serde_json = { version = "1", features = ["float_roundtrip"] }

@@ -1,0 +1,32 @@
+[package]
+name = "effectcraft-interchange"
+description = "Premiere Pro interop through timeline interchange: Final Cut Pro 7 XML (xmeml), FCPXML, OpenTimelineIO and CMX 3600 EDL sequences to and from compositions (via filmcraft-interchange)"
+version = "0.9.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[dependencies]
+effectcraft-time = { path = "../effectcraft-time" }
+effectcraft-color = { path = "../effectcraft-color" }
+effectcraft-keyframe = { path = "../effectcraft-keyframe" }
+effectcraft-project = { path = "../effectcraft-project" }
+filmcraft-interchange = { path = "../filmcraft-interchange" }
+filmcraft-project = { path = "../filmcraft-project" }
+filmcraft-media = { path = "../filmcraft-media" }
+filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-geom = { path = "../filmcraft-geom" }
+filmcraft-color = { path = "../filmcraft-color" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"

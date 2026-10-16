@@ -1,0 +1,60 @@
+[package]
+name = "lightcraft-engine"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "LightCraft engine: session, command registry, history, render jobs, view-models (L4)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[dependencies]
+lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-color = { path = "../lightcraft-color" }
+lightcraft-raster = { path = "../lightcraft-raster" }
+lightcraft-develop = { path = "../lightcraft-develop" }
+lightcraft-scenes = { path = "../lightcraft-scenes" }
+lightcraft-pipeline = { path = "../lightcraft-pipeline" }
+lightcraft-gpu = { path = "../lightcraft-gpu" }
+lightcraft-catalog = { path = "../lightcraft-catalog" }
+web-time = "1"
+lightcraft-preview = { path = "../lightcraft-preview" }
+lightcraft-codecs = { path = "../lightcraft-codecs" }
+lightcraft-raw = { path = "../lightcraft-raw" }
+lightcraft-denoise-core = { path = "../lightcraft-denoise-core" }
+lightcraft-denoise = { path = "../lightcraft-denoise", default-features = false, optional = true }
+lightcraft-meta = { path = "../lightcraft-meta" }
+lightcraft-lensdb = { path = "../lightcraft-lensdb" }
+lightcraft-faces = { path = "../lightcraft-faces" }
+miniz_oxide = "0.8"
+lightcraft-merge = { path = "../lightcraft-merge" }
+lightcraft-geocode = { path = "../lightcraft-geocode" }
+rayon = "1"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+ab_glyph = { version = "0.2", default-features = false, features = ["std"] }
+harfrust = { version = "0.12", default-features = false, features = ["std"] }
+unicode-segmentation = "1.13"
+lightcraft-segment = { path = "../lightcraft-segment", optional = true }
+
+[features]
+# AI masks with SAM 3 (Object / Describe). Off for the web and CLI builds.
+sam = ["dep:lightcraft-segment"]
+denoise = ["dep:lightcraft-denoise", "lightcraft-denoise/runtime", "lightcraft-gpu/denoise"]
+rawnind-model = ["denoise", "lightcraft-denoise/rawnind-model", "lightcraft-denoise-core/rawnind-model"]
+
+[dev-dependencies]
+jxl-oxide = { version = "0.12", default-features = false }
+lightcraft-heif = { path = "../lightcraft-heif", features = ["testdata"] }
+libc = "0.2"
+lightcraft-tiff = { path = "../lightcraft-tiff" }

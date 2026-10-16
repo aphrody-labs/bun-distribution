@@ -1,0 +1,24 @@
+[package]
+name = "artcraft-images"
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+# NB: Public "images" crate doesn't exist; "image" crate is the heavily used public library,
+# so perhaps this naming scheme causes confusion (?)
+name = "images"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+mimetypes = { path = "../artcraft-mimetypes", package = "artcraft-mimetypes" }
+image = { version = "0.25.6", features = ["jpeg", "png", "tiff", "webp"] }
+
+[dev-dependencies]
+anyhow = "1.0.102"
+test_utils = { path = "../artcraft-test_utils", package = "artcraft-test_utils" }

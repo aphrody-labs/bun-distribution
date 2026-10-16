@@ -1,0 +1,25 @@
+[package]
+name = "filmcraft-text"
+description = "FilmCraft text engine: font database (bundled + system), shaping, bidi, line breaking, paragraph layout and anti-aliased glyph/path rasterisation"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[dependencies]
+filmcraft-color = { path = "../filmcraft-color" }
+skrifa = { version = "0.44", default-features = false, features = ["std"] }
+harfrust = { version = "0.12", default-features = false, features = ["std"] }
+unicode-bidi = "0.3.18"
+unicode-linebreak = "0.1.5"
+unicode-segmentation = "1.13"

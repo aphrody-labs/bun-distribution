@@ -1,0 +1,19 @@
+{
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-common"
+    },
+    {
+      "path": "../storyteller-tauri-utils"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}

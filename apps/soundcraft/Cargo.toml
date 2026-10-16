@@ -1,0 +1,29 @@
+[package]
+name = "soundcraft"
+description = "SoundCraft desktop app"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+default-run = "soundcraft"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+soundcraft-engine = { path = "../../crates/soundcraft-engine" }
+soundcraft-ui-egui = { path = "../../crates/soundcraft-ui-egui" }
+soundcraft-playback = { path = "../../crates/soundcraft-playback" }
+eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "wayland", "x11", "links"] }
+egui = "0.36"
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[build-dependencies]
+winresource = "0.1"

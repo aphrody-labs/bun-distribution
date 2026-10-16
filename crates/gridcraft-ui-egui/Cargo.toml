@@ -1,0 +1,35 @@
+[package]
+name = "gridcraft-ui-egui"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "GridCraft egui frontend (Excel-style UI); swappable — nothing below depends on it"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+craft-ui = { path = "../craft-ui" }
+gridcraft-engine = { path = "../gridcraft-engine" }
+gridcraft-chart = { path = "../gridcraft-chart" }
+egui = "0.36"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+skrifa = { version = "0.44", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
+epaint_default_fonts = "0.36"
+gridcraft-xlsx = { path = "../gridcraft-xlsx", features = ["test-support"] }
+
+[build-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+toml = "1"

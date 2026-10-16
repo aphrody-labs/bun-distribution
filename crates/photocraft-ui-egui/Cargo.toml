@@ -1,0 +1,52 @@
+[package]
+name = "photocraft-ui-egui"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+craft-ui = { path = "../craft-ui", features = ["serde"] }
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-cms = { path = "../photocraft-cms" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-compose = { path = "../photocraft-compose" }
+photocraft-gpu = { path = "../photocraft-gpu" }
+photocraft-engine = { path = "../photocraft-engine" }
+photocraft-io = { path = "../photocraft-io" }
+photocraft-plugins = { path = "../photocraft-plugins" }
+photocraft-algo = { path = "../photocraft-algo" }
+photocraft-text = { path = "../photocraft-text" }
+photocraft-vector = { path = "../photocraft-vector" }
+photocraft-paint = { path = "../photocraft-paint" }
+photocraft-format = { path = "../photocraft-format" }
+photocraft-codecs = { path = "../photocraft-codecs" }
+egui = { version = "0.36", default-features = false }
+egui_extras = { version = "0.36", default-features = false, features = ["svg"] }
+eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit"] }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+log = "0.4"
+base64 = "0.22"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[dev-dependencies]
+egui = { version = "0.36", default-features = false, features = ["default_fonts"] }
+photocraft-raw = { path = "../photocraft-raw", features = ["testgen"] }
+egui_kittest = { version = "0.36", features = ["wgpu", "snapshot", "eframe"] }
+photocraft-testkit = { path = "../photocraft-testkit" }
+photocraft-psd = { path = "../photocraft-psd" }
+
+[build-dependencies]
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+epaint_default_fonts = "0.36"
+serde_json = "1"
+toml = "1"

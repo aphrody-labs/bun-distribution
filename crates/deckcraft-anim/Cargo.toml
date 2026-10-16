@@ -1,0 +1,23 @@
+[package]
+name = "deckcraft-anim"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DeckCraft slide show timing: animation sequences, per-shape animation state over time, and transition frame layouts"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+self_named_constructors = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+
+[dependencies]
+deckcraft-model = { path = "../deckcraft-model" }
+deckcraft-geom = { path = "../deckcraft-geom" }
+serde = { version = "1", features = ["derive", "rc"] }

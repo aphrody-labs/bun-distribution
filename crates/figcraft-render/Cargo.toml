@@ -1,0 +1,36 @@
+[package]
+name = "figcraft-render"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft renderer: the scene graph to pixels on tiny-skia (fills, gradients, images, aligned strokes, shadows, blurs, masks, blend modes, text)"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+figcraft-geom = { path = "../figcraft-geom" }
+figcraft-color = { path = "../figcraft-color" }
+figcraft-doc = { path = "../figcraft-doc" }
+figcraft-text = { path = "../figcraft-text" }
+figcraft-pathops = { path = "../figcraft-pathops" }
+tiny-skia = "0.12"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
+moxcms = "0.8"
+png = "0.18"
+crc32fast = "1"
+log = "0.4"

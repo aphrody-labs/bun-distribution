@@ -1,0 +1,36 @@
+[package]
+name = "figcraft-collab"
+version = "0.5.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "FigCraft real-time collaboration core: the synced object/property model, change sets, fractional positions, server ordering and validation, client reconciliation, per-user undo, offline queueing and reconnect, and the wire messages (no networking)"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+# Style lints from newer toolchains that fight index-heavy pixel code.
+needless_range_loop = "allow"
+chunks_exact_to_as_chunks = "allow"
+# FigCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Never crash). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+figcraft-doc = { path = "../figcraft-doc" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+imbl = { version = "7", features = ["serde"] }
+base64 = "0.22"
+postcard = { version = "1", default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+figcraft-color = { path = "../figcraft-color" }
+figcraft-geom = { path = "../figcraft-geom" }

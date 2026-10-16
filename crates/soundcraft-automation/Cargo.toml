@@ -1,0 +1,23 @@
+[package]
+name = "soundcraft-automation"
+description = "SoundCraft agent control: MCP server (stdio JSON-RPC), headless engine backend and control-channel client"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+repository = "https://github.com/storytold/soundcraft"
+
+[dependencies]
+soundcraft-engine = { path = "../soundcraft-engine" }
+soundcraft-time = { path = "../soundcraft-time" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"

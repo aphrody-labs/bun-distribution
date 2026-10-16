@@ -1,0 +1,49 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-tauri-api"
+    },
+    {
+      "path": "../storyteller-subscription"
+    },
+    {
+      "path": "../storyteller-ui-tab-selector"
+    },
+    {
+      "path": "../storyteller-ui-pricing-table"
+    },
+    {
+      "path": "../storyteller-ui-button"
+    },
+    {
+      "path": "../storyteller-ui-select"
+    },
+    {
+      "path": "../storyteller-icons"
+    },
+    {
+      "path": "../storyteller-ui-modal"
+    },
+    {
+      "path": "../storyteller-ui-model-selector"
+    },
+    {
+      "path": "../storyteller-model-list"
+    },
+    {
+      "path": "../storyteller-ui-promptbox"
+    },
+    {
+      "path": "../storyteller-api-enums"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

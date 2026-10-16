@@ -1,0 +1,28 @@
+[package]
+name = "soundcraft-mix"
+description = "SoundCraft mix engine: renders a session's tracks, plugins, sends, busses and automation to audio"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.90"
+repository = "https://github.com/storytold/soundcraft"
+
+[dependencies]
+soundcraft-time = { path = "../soundcraft-time" }
+soundcraft-audio-io = { path = "../soundcraft-audio-io" }
+soundcraft-midi = { path = "../soundcraft-midi" }
+soundcraft-dsp = { path = "../soundcraft-dsp" }
+soundcraft-clap-host = { path = "../soundcraft-clap-host" }
+soundcraft-vst3-host = { path = "../soundcraft-vst3-host" }
+soundcraft-au-host = { path = "../soundcraft-au-host" }
+soundcraft-model = { path = "../soundcraft-model" }
+log = "0.4"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"

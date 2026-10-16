@@ -1,0 +1,27 @@
+[package]
+name = "wordcraft-zotero"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "WordCraft Zotero integration: Zotero's word-processor wire protocol, answered against an engine Session"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+wordcraft-doc = { path = "../wordcraft-doc" }
+wordcraft-engine = { path = "../wordcraft-engine" }
+wordcraft-formats = { path = "../wordcraft-formats" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+
+[dev-dependencies]
+wordcraft-docx = { path = "../wordcraft-docx" }
+proptest = "1"

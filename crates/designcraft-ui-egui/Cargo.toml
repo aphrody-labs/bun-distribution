@@ -1,0 +1,46 @@
+[package]
+name = "designcraft-ui-egui"
+version = "0.7.1"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft egui frontend (InDesign-style UI); swappable — nothing below depends on it"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+craft-ui = { path = "../craft-ui", version = "0.1.0", features = ["serde"] }
+designcraft-geom = { path = "../designcraft-geom" }
+designcraft-color = { path = "../designcraft-color" }
+designcraft-doc = { path = "../designcraft-doc" }
+designcraft-fonts = { path = "../designcraft-fonts" }
+designcraft-compose = { path = "../designcraft-compose" }
+designcraft-render = { path = "../designcraft-render" }
+designcraft-tools = { path = "../designcraft-tools" }
+designcraft-engine = { path = "../designcraft-engine" }
+unicode-bidi = "0.3"
+unicode-bidi-mirroring = "0.4"
+unicode-segmentation = "1"
+regex = { version = "1", default-features = false, features = ["std", "unicode", "perf"] }
+egui = "0.36"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
+designcraft-idml = { path = "../designcraft-idml" }
+zip = { version = "3", default-features = false, features = ["deflate"] }
+egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
+designcraft-fonts = { path = "../designcraft-fonts", features = ["testing"] }
+
+[build-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+toml = "1"

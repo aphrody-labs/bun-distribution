@@ -1,0 +1,16 @@
+[package]
+name = "photocraft-color"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+photocraft-cms = { path = "../photocraft-cms" }
+serde = { version = "1", features = ["derive", "rc"] }

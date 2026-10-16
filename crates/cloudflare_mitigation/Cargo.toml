@@ -1,0 +1,15 @@
+[package]
+name = "cloudflare_mitigation"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "cloudflare_mitigation"
+path = "src/lib.rs"
+
+[dependencies]
+once_cell = "1.21.4"
+wreq = { version = "6.0.0-rc.28", features = ["json", "query", "form", "multipart", "cookies", "ws", "stream", "gzip", "brotli", "zstd", "deflate"] }
+
+[dev-dependencies]

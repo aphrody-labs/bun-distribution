@@ -1,0 +1,45 @@
+{
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": ["dom", "esnext"],
+    "types": ["@aphrody/bun-types", "node"],
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+  },
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "vite.config.ts",
+    "vite.config.mts"
+  ],
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../storyteller-ui-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-popover/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-ui-button-icon-select/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-keybinds/tsconfig.lib.json"
+    },
+    {
+      "path": "../storyteller-icons/tsconfig.lib.json"
+    }
+  ]
+}

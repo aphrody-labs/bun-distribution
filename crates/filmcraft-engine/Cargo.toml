@@ -1,0 +1,58 @@
+[package]
+name = "filmcraft-engine"
+description = "FilmCraft engine façade: session, command registry, history, media pool"
+version = "0.7.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[features]
+default = []
+# Speech-to-text with Whisper (candle, CPU). Off by default and in wasm builds.
+whisper = ["filmcraft-speech/whisper"]
+# Speech-model downloads over HTTPS.
+speech-download = ["filmcraft-speech/download"]
+# Natural voices for Text to Speech: Kokoro-82M on candle (CPU) and their download.
+neural-voices = ["filmcraft-tts/kokoro", "speech-download"]
+
+[dependencies]
+filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-geom = { path = "../filmcraft-geom" }
+filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-frame = { path = "../filmcraft-frame" }
+filmcraft-media = { path = "../filmcraft-media" }
+filmcraft-codecs = { path = "../filmcraft-codecs" }
+filmcraft-project = { path = "../filmcraft-project" }
+filmcraft-edit = { path = "../filmcraft-edit" }
+filmcraft-render = { path = "../filmcraft-render" }
+filmcraft-scopes = { path = "../filmcraft-scopes" }
+filmcraft-text = { path = "../filmcraft-text" }
+filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp" }
+filmcraft-export = { path = "../filmcraft-export" }
+filmcraft-mxf = { path = "../filmcraft-mxf" }
+filmcraft-format = { path = "../filmcraft-format" }
+filmcraft-interchange = { path = "../filmcraft-interchange" }
+filmcraft-captions = { path = "../filmcraft-captions" }
+filmcraft-speech = { path = "../filmcraft-speech" }
+filmcraft-tts = { path = "../filmcraft-tts" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+thiserror = "2"
+log = "0.4"
+web-time = "1"
+
+[dev-dependencies]
+filmcraft-testkit = { path = "../filmcraft-testkit" }
+filmcraft-dng = { path = "../filmcraft-dng", features = ["writer"] }
+filmcraft-isobmff = { path = "../filmcraft-isobmff" }
+image = { version = "0.25", default-features = false, features = ["png", "gif"] }

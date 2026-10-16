@@ -1,0 +1,29 @@
+{
+  "extends": "../../packages/artcraft-frontend/tsconfig.base.json",
+  "include": [
+    "env.d.ts",
+    "app/**/*.js",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "../../libs/components/video-editor/src/lib/types/*.d.ts"
+  ],
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "strict": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false
+  },
+  "exclude": ["app/public/**", "dist", "node_modules"]
+}

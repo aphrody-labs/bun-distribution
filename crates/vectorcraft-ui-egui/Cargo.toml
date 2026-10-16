@@ -1,0 +1,54 @@
+[package]
+name = "vectorcraft-ui-egui"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft egui frontend (menus, panels, tools and canvas); swappable — nothing below depends on it"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+craft-ui = { path = "../craft-ui", features = ["serde"] }
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-brush = { path = "../vectorcraft-brush" }
+vectorcraft-render = { path = "../vectorcraft-render" }
+vectorcraft-text = { path = "../vectorcraft-text" }
+vectorcraft-tools = { path = "../vectorcraft-tools" }
+vectorcraft-engine = { path = "../vectorcraft-engine" }
+vectorcraft-svg = { path = "../vectorcraft-svg" }
+vectorcraft-effects = { path = "../vectorcraft-effects" }
+vectorcraft-three-d = { path = "../vectorcraft-three-d" }
+vectorcraft-plugins = { path = "../vectorcraft-plugins" }
+vectorcraft-pdf = { path = "../vectorcraft-pdf" }
+vectorcraft-cad = { path = "../vectorcraft-cad" }
+vectorcraft-eps = { path = "../vectorcraft-eps" }
+vectorcraft-format = { path = "../vectorcraft-format" }
+egui = "0.36"
+egui_extras = { version = "0.36", default-features = false, features = ["svg"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[dev-dependencies]
+egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
+vectorcraft-testkit = { path = "../vectorcraft-testkit" }
+wat = "1.228"
+
+[build-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+toml = "1"

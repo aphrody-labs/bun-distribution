@@ -1,0 +1,31 @@
+[package]
+name = "photocraft-format"
+description = "Native .pcraft document bundle: manifest + content-addressed zstd tiles"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-codecs = { path = "../photocraft-codecs" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["unbounded_depth"] }
+thiserror = "2"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+crc32fast = "1.5"
+blake3 = { version = "1.8", default-features = false, features = ["pure"] }
+ruzstd = "0.9"
+
+[dev-dependencies]
+proptest = "1"

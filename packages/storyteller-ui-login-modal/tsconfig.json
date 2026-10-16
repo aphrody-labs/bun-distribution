@@ -1,0 +1,25 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../storyteller-api"
+    },
+    {
+      "path": "../storyteller-icons"
+    },
+    {
+      "path": "../storyteller-ui-button"
+    },
+    {
+      "path": "../storyteller-ui-input"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../artcraft-frontend/tsconfig.base.json"
+}

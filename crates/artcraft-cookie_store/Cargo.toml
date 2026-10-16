@@ -1,0 +1,17 @@
+[package]
+name = "artcraft-cookie_store"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "cookie_store"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+
+[dev-dependencies]

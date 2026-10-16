@@ -1,0 +1,27 @@
+[package]
+name = "gridcraft-web"
+description = "GridCraft in the browser (eframe web runner, WebGPU with WebGL2 fallback)"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[[bin]]
+name = "gridcraft-web"
+path = "src/main.rs"
+
+[dependencies]
+gridcraft-engine = { path = "../../crates/gridcraft-engine" }
+gridcraft-ui-egui = { path = "../../crates/gridcraft-ui-egui" }
+egui = "0.36"
+log = "0.4"
+serde_json = { version = "1", features = ["float_roundtrip"] }

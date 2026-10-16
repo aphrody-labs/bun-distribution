@@ -1,0 +1,24 @@
+[package]
+name = "lightcraft-heif"
+description = "Optional HEIF/HEIC still-image decoder for LightCraft (heic-rs for the container and HEVC, libheif-matching colour conversion, panic-guarded)"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+heic-rs = { version = "=0.1.4", default-features = false, features = ["std"] }
+
+[features]
+# `lightcraft_heif::testdata`: lossless synthetic HEIF files, for the tests of the crates above.
+testdata = []
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"

@@ -1,0 +1,29 @@
+[package]
+name = "fal_client"
+edition = "2021"
+rust-version = "1.75" # MSRV: async traits
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "fal_client"
+path = "src/lib.rs"
+
+[dependencies]
+errors = { path = "../artcraft-errors", package = "artcraft-errors" }
+file_to_base64_url = { path = "../file_to_base64_url" }
+anyhow = "1.0.102"
+futures = "0.3.32"
+log = "0.4.29"
+reqwest = { version = "0.12.23", default-features = false, features = ["charset", "http2", "system-proxy", "json", "cookies", "rustls-tls", "gzip"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+strum = { version = "0.28.0", features = ["derive"] }
+thiserror = "2.0.18"
+tokio = { version = "1.50.0", features = ["macros"] }
+url = { version = "2.5.8", features = ["serde"] }
+
+[dev-dependencies]
+test_utils = { path = "../artcraft-test_utils", package = "artcraft-test_utils" }
+test_data = { path = "../artcraft-test_data", package = "artcraft-test_data" }
+tokio = { version = "1.50.0", features = ["macros", "rt", "net", "io-util"] }

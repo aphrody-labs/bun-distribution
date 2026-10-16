@@ -32,7 +32,7 @@ flowchart TD
 - `packages/bun-video-project`: exact JSON, bounded native operations and runtime availability.
 - `packages/bun-artifacts`: target manifests, standalone compilation and verified
   native payload extraction.
-- `libraries/*`: pinned source forks awaiting complete crate ownership migration.
+- `crates/`, `packages/`, `apps/`: flat library sources (history merged), docs in `docs/libraries/`.
 - `toolchains/bun`: pinned SDK and runtime types.
 
 Imported libraries retain their history and licenses. The root Cargo workspace

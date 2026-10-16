@@ -156,9 +156,10 @@ interface InstallProof {
 }
 const retirementMembers = new Set([
   "apps/desktop",
-  "libraries/artcraft/frontend",
-  "libraries/artcraft/frontend/apps/artcraft",
+  "packages/artcraft-frontend",
+  "apps/artcraft-web-app",
 ]);
+const frontendSources = ["packages/artcraft-frontend", "apps/artcraft-web-app"];
 async function git(argv: string[], cwd = root): Promise<string> {
   const result = await runProcess(["git", ...argv], cwd, {
     timeoutMs: 15_000,
@@ -248,20 +249,11 @@ async function proveBuild(): Promise<void> {
   )
     throw new Error("Frontend receipt is not a qualified current build.");
   const head = (await git(["rev-parse", "HEAD"])).trim();
-  const child = (await git(["rev-parse", "HEAD"], join(root, "libraries/artcraft"))).trim();
-  if (
-    !/^[0-9a-f]{40}$/.test(receipt.sources?.rootGitHead ?? "") ||
-    receipt.sources.artcraftGitPin !== child ||
-    !(await git(["ls-tree", head, "libraries/artcraft"])).includes(`160000 commit ${child}\t`)
-  )
-    throw new Error("Frontend receipt does not match the committed ArtCraft gitlink.");
+  if (!/^[0-9a-f]{40}$/.test(receipt.sources?.rootGitHead ?? ""))
+    throw new Error("Frontend receipt lacks its root revision.");
   await git(["merge-base", "--is-ancestor", receipt.sources.rootGitHead, head]);
-  await git(["diff", "--exit-code", "HEAD", "--", "frontend"], join(root, "libraries/artcraft"));
-  if (
-    (
-      await git(["ls-files", "--others", "--exclude-standard", "--", "frontend"], join(root, "libraries/artcraft"))
-    ).trim()
-  )
+  await git(["diff", "--exit-code", "HEAD", "--", ...frontendSources]);
+  if ((await git(["ls-files", "--others", "--exclude-standard", "--", ...frontendSources])).trim())
     throw new Error("Uncommitted frontend source files exist.");
   for (const file of ["package.json", "bun.lock"]) {
     const committed = await git(["show", `HEAD:${file}`]);
@@ -301,11 +293,8 @@ async function proveBuild(): Promise<void> {
   )
     throw new Error("Frontend artifact tree differs from its build receipt.");
   if ((await git(["rev-parse", "HEAD"])).trim() !== head) throw new Error("Root HEAD changed during build proof.");
-  if (
-    (await git(["rev-parse", "HEAD"], join(root, "libraries/artcraft"))).trim() !== child ||
-    receipt.sources.bunLockSHA256 !== (await hashFile(join(root, "bun.lock")))
-  )
-    throw new Error("Source pin or root lock changed during build proof.");
+  if (receipt.sources.bunLockSHA256 !== (await hashFile(join(root, "bun.lock"))))
+    throw new Error("Root lock changed during build proof.");
 }
 async function qualifyAligned(member: string): Promise<{ links: string[]; snapshot: string; packages: number }> {
   const label = relative(root, member).replaceAll("\\", "/");
@@ -314,7 +303,7 @@ async function qualifyAligned(member: string): Promise<{ links: string[]; snapsh
   const directory = join(member, "node_modules");
   if (!(await regularPath(directory)) || directory === join(root, "node_modules"))
     throw new Error("Unsafe nested install root.");
-  const owner = label.startsWith("libraries/artcraft/") ? join(root, "libraries/artcraft") : root;
+  const owner: string = root;
   const ownerPath = relative(owner, directory).replaceAll("\\", "/");
   if ((await git(["ls-files", "--", ownerPath], owner)).trim())
     throw new Error("Nested install contains Git-tracked paths.");

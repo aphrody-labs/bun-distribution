@@ -1,0 +1,36 @@
+[package]
+name = "designcraft-pdf"
+version = "0.7.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "DesignCraft PDF export (krilla): real text with embedded font subsets, CMYK/spot colour, bleed and printer's marks"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+designcraft-geom = { path = "../designcraft-geom" }
+designcraft-color = { path = "../designcraft-color" }
+designcraft-doc = { path = "../designcraft-doc" }
+designcraft-fonts = { path = "../designcraft-fonts" }
+designcraft-compose = { path = "../designcraft-compose" }
+krilla = { version = "0.8", features = ["pdf"] }
+krilla-svg = "0.8"
+designcraft-images = { path = "../designcraft-images" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+thiserror = "2"
+log = "0.4"
+hayro-syntax = "0.7.2"
+
+[dev-dependencies]
+hayro-interpret = { version = "0.7.0", default-features = false, features = ["embed-fonts"] }
+hayro-cmap = "0.1"
+kurbo = { version = "0.13", features = ["serde"] }
+tiff = "0.11"
+designcraft-fonts = { path = "../designcraft-fonts", features = ["testing"] }

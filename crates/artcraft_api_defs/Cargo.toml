@@ -1,0 +1,26 @@
+[package]
+name = "artcraft_api_defs"
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "artcraft_api_defs"
+path = "src/lib.rs"
+
+[dependencies]
+enums = { path = "../artcraft-enums", package = "artcraft-enums" }
+tokens = { path = "../artcraft-tokens", package = "artcraft-tokens" }
+chrono = { version = "0.4.44", features = ["serde"] }
+url = { version = "2.5.8", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+utoipa = { version = "5.4.0", features = ["chrono", "actix_extras", "url"] }
+
+[dev-dependencies]
+anyhow = "1.0.102"

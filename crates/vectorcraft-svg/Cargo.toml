@@ -1,0 +1,44 @@
+[package]
+name = "vectorcraft-svg"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "VectorCraft SVG import and export"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-effects = { path = "../vectorcraft-effects" }
+vectorcraft-brush = { path = "../vectorcraft-brush" }
+vectorcraft-text = { path = "../vectorcraft-text" }
+kurbo = { version = "0.13", features = ["serde"] }
+usvg = "0.48"
+thiserror = "2"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
+svgtypes = "0.16"
+
+[dev-dependencies]
+skrifa = "0.47"
+vectorcraft-text = { path = "../vectorcraft-text", features = ["test-fonts"] }
+resvg = { version = "0.45", default-features = false }
+vectorcraft-testkit = { path = "../vectorcraft-testkit" }
+proptest = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

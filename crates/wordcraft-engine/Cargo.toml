@@ -1,0 +1,38 @@
+[package]
+name = "wordcraft-engine"
+version = "0.6.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "WordCraft engine: session, selection, undo, the command registry (every action is a command), Word's command catalog, file I/O dispatch"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[dependencies]
+wordcraft-geom = { path = "../wordcraft-geom" }
+wordcraft-doc = { path = "../wordcraft-doc" }
+wordcraft-fonts = { path = "../wordcraft-fonts" }
+wordcraft-layout = { path = "../wordcraft-layout" }
+wordcraft-render = { path = "../wordcraft-render" }
+wordcraft-proof = { path = "../wordcraft-proof" }
+wordcraft-docx = { path = "../wordcraft-docx" }
+wordcraft-docbin = { path = "../wordcraft-docbin" }
+wordcraft-pdf = { path = "../wordcraft-pdf" }
+wordcraft-formats = { path = "../wordcraft-formats" }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+log = "0.4"
+regex = { version = "1", default-features = false, features = ["std", "unicode", "perf"] }
+regex-automata = { version = "0.4", default-features = false, features = ["std", "syntax", "meta", "nfa-pikevm", "unicode"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
+zeroize = "1"
+
+[dev-dependencies]
+zip = { version = "3", default-features = false, features = ["deflate"] }

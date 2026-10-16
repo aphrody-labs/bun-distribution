@@ -1,0 +1,42 @@
+[package]
+name = "vectorcraft-cli"
+version = "0.10.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+description = "VectorCraft command line: MCP server (stdio) and headless batch runs"
+
+[[bin]]
+name = "vectorcraft-cli"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+# VectorCraft never crashes: shipped code returns `Result`/`Option` instead of panicking (see
+# AGENTS.md › Robustness). Tests may unwrap (clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+
+[dependencies]
+vectorcraft-color = { path = "../../crates/vectorcraft-color" }
+vectorcraft-doc = { path = "../../crates/vectorcraft-doc" }
+vectorcraft-engine = { path = "../../crates/vectorcraft-engine" }
+vectorcraft-format = { path = "../../crates/vectorcraft-format" }
+vectorcraft-geom = { path = "../../crates/vectorcraft-geom" }
+vectorcraft-svg = { path = "../../crates/vectorcraft-svg" }
+vectorcraft-mcp = { path = "../../crates/vectorcraft-mcp" }
+vectorcraft-render = { path = "../../crates/vectorcraft-render" }
+vectorcraft-text = { path = "../../crates/vectorcraft-text" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[dev-dependencies]
+vectorcraft-testkit = { path = "../../crates/vectorcraft-testkit" }
+serde_json = { version = "1", features = ["float_roundtrip"] }

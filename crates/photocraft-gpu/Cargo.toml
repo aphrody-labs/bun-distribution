@@ -1,0 +1,27 @@
+[package]
+name = "photocraft-gpu"
+version = "0.8.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[dependencies]
+half = "2"
+photocraft-geom = { path = "../photocraft-geom" }
+photocraft-color = { path = "../photocraft-color" }
+photocraft-raster = { path = "../photocraft-raster" }
+photocraft-doc = { path = "../photocraft-doc" }
+photocraft-compose = { path = "../photocraft-compose" }
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
+log = "0.4"
+
+[dev-dependencies]
+wgpu = "30"
+pollster = "1"
+photocraft-vector = { path = "../photocraft-vector" }

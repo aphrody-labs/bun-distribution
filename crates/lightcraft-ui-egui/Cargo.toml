@@ -1,0 +1,46 @@
+[package]
+name = "lightcraft-ui-egui"
+version = "0.7.1"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT OR Apache-2.0"
+description = "LightCraft egui frontend (Lightroom-style UI); swappable — nothing below depends on it (L5)"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"
+excessive_precision = "allow"
+
+[dependencies]
+craft-ui = { path = "../craft-ui", features = ["serde"] }
+lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-meta = { path = "../lightcraft-meta" }
+lightcraft-color = { path = "../lightcraft-color" }
+lightcraft-raster = { path = "../lightcraft-raster" }
+lightcraft-develop = { path = "../lightcraft-develop" }
+lightcraft-pipeline = { path = "../lightcraft-pipeline" }
+lightcraft-catalog = { path = "../lightcraft-catalog" }
+web-time = "1"
+lightcraft-engine = { path = "../lightcraft-engine" }
+lightcraft-preview = { path = "../lightcraft-preview" }
+egui = "0.36"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+log = "0.4"
+
+[dev-dependencies]
+egui_kittest = { version = "0.36", features = ["wgpu", "snapshot"] }
+lightcraft-denoise = { path = "../lightcraft-denoise", default-features = false, features = ["runtime"] }
+lightcraft-codecs = { path = "../lightcraft-codecs" }
+lightcraft-faces = { path = "../lightcraft-faces" }
+lightcraft-merge = { path = "../lightcraft-merge" }
+
+[build-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+toml = "1"
