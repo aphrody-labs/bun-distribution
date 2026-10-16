@@ -101,7 +101,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-next-migrate",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
   },

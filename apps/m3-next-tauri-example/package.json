@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-next-tauri-example",
-  "version": "3.3.6",
+  "version": "1.4.4",
   "private": true,
   "description": "Static export of a Next.js 16 app for a Tauri webview: no server, no proxy, no cookies read on the server; the theme preference lives in the browser.",
   "license": "Apache-2.0",
@@ -9,8 +9,8 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next dev",
-    "build": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next build",
+    "dev": "bun ../../packages/m3-next/bin/m3-next.ts dev",
+    "build": "bun ../../packages/m3-next/bin/m3-next.ts build",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test ./test/"
   },

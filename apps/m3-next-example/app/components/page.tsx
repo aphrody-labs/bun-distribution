@@ -34,13 +34,7 @@ const fruit = [
   { label: "Cherry", value: "cherry" },
 ];
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3 rounded-extra-large bg-surface-container-low p-6">
       <h2 className="text-title-medium text-on-surface-variant">{title}</h2>
@@ -69,11 +63,7 @@ export default function ComponentsPage() {
           <M3Switch defaultChecked aria-label="Wi-Fi" />
           <M3Checkbox defaultChecked aria-label="Accept" />
           <M3Checkbox indeterminate aria-label="Some" />
-          <M3RadioGroup
-            defaultValue="a"
-            aria-label="Choice"
-            className="flex-row"
-          >
+          <M3RadioGroup defaultValue="a" aria-label="Choice" className="flex-row">
             <M3Radio value="a" aria-label="A" />
             <M3Radio value="b" aria-label="B" />
           </M3RadioGroup>
@@ -89,20 +79,12 @@ export default function ComponentsPage() {
             <M3Field.Control placeholder="Ada Lovelace" />
             <M3Field.Description>As on your passport.</M3Field.Description>
           </M3Field.Root>
-          <M3Input
-            variant="filled"
-            aria-label="Email"
-            placeholder="Filled field"
-          />
+          <M3Input variant="filled" aria-label="Email" placeholder="Filled field" />
           <M3NumberField.Root defaultValue={3} min={0} max={9}>
             <M3NumberField.Group>
-              <M3NumberField.Decrement aria-label="Less">
-                -
-              </M3NumberField.Decrement>
+              <M3NumberField.Decrement aria-label="Less">-</M3NumberField.Decrement>
               <M3NumberField.Input aria-label="Quantity" />
-              <M3NumberField.Increment aria-label="More">
-                +
-              </M3NumberField.Increment>
+              <M3NumberField.Increment aria-label="More">+</M3NumberField.Increment>
             </M3NumberField.Group>
           </M3NumberField.Root>
         </Section>
@@ -117,7 +99,7 @@ export default function ComponentsPage() {
               <M3Select.Positioner sideOffset={4}>
                 <M3Select.Popup>
                   <M3Select.List>
-                    {fruit.map((item) => (
+                    {fruit.map(item => (
                       <M3Select.Item key={item.value} value={item.value}>
                         <M3Select.ItemIndicator>✓</M3Select.ItemIndicator>
                         <M3Select.ItemText>{item.label}</M3Select.ItemText>
@@ -130,9 +112,7 @@ export default function ComponentsPage() {
           </M3Select.Root>
 
           <M3Menu.Root>
-            <M3Menu.Trigger render={<M3Button variant="outlined" />}>
-              Menu
-            </M3Menu.Trigger>
+            <M3Menu.Trigger render={<M3Button variant="outlined" />}>Menu</M3Menu.Trigger>
             <M3Menu.Portal>
               <M3Menu.Positioner sideOffset={4}>
                 <M3Menu.Popup>
@@ -146,16 +126,12 @@ export default function ComponentsPage() {
           </M3Menu.Root>
 
           <M3Popover.Root>
-            <M3Popover.Trigger render={<M3Button variant="tonal" />}>
-              Popover
-            </M3Popover.Trigger>
+            <M3Popover.Trigger render={<M3Button variant="tonal" />}>Popover</M3Popover.Trigger>
             <M3Popover.Portal>
               <M3Popover.Positioner sideOffset={8}>
                 <M3Popover.Popup>
                   <M3Popover.Title>Rich content</M3Popover.Title>
-                  <M3Popover.Description>
-                    Anchored to its trigger.
-                  </M3Popover.Description>
+                  <M3Popover.Description>Anchored to its trigger.</M3Popover.Description>
                 </M3Popover.Popup>
               </M3Popover.Positioner>
             </M3Popover.Portal>
@@ -163,9 +139,7 @@ export default function ComponentsPage() {
 
           <M3Tooltip.Provider>
             <M3Tooltip.Root>
-              <M3Tooltip.Trigger render={<M3Button variant="text" />}>
-                Tooltip
-              </M3Tooltip.Trigger>
+              <M3Tooltip.Trigger render={<M3Button variant="text" />}>Tooltip</M3Tooltip.Trigger>
               <M3Tooltip.Portal>
                 <M3Tooltip.Positioner sideOffset={6}>
                   <M3Tooltip.Popup>Plain tooltip</M3Tooltip.Popup>
@@ -175,23 +149,15 @@ export default function ComponentsPage() {
           </M3Tooltip.Provider>
 
           <M3Dialog.Root>
-            <M3Dialog.Trigger render={<M3Button />}>
-              Open dialog
-            </M3Dialog.Trigger>
+            <M3Dialog.Trigger render={<M3Button />}>Open dialog</M3Dialog.Trigger>
             <M3Dialog.Portal>
               <M3Dialog.Backdrop />
               <M3Dialog.Popup>
                 <M3Dialog.Title>Discard draft?</M3Dialog.Title>
-                <M3Dialog.Description>
-                  The draft is deleted and cannot be restored.
-                </M3Dialog.Description>
+                <M3Dialog.Description>The draft is deleted and cannot be restored.</M3Dialog.Description>
                 <div className="flex justify-end gap-2">
-                  <M3Dialog.Close render={<M3Button variant="text" />}>
-                    Cancel
-                  </M3Dialog.Close>
-                  <M3Dialog.Close render={<M3Button variant="text" />}>
-                    Discard
-                  </M3Dialog.Close>
+                  <M3Dialog.Close render={<M3Button variant="text" />}>Cancel</M3Dialog.Close>
+                  <M3Dialog.Close render={<M3Button variant="text" />}>Discard</M3Dialog.Close>
                 </div>
               </M3Dialog.Popup>
             </M3Dialog.Portal>
@@ -211,13 +177,9 @@ export default function ComponentsPage() {
           <M3Accordion.Root className="w-full">
             <M3Accordion.Item value="a">
               <M3Accordion.Header>
-                <M3Accordion.Trigger>
-                  What is Cache Components?
-                </M3Accordion.Trigger>
+                <M3Accordion.Trigger>What is Cache Components?</M3Accordion.Trigger>
               </M3Accordion.Header>
-              <M3Accordion.Panel>
-                `use cache`, `cacheLife` and `cacheTag`, with a static shell.
-              </M3Accordion.Panel>
+              <M3Accordion.Panel>`use cache`, `cacheLife` and `cacheTag`, with a static shell.</M3Accordion.Panel>
             </M3Accordion.Item>
           </M3Accordion.Root>
         </Section>

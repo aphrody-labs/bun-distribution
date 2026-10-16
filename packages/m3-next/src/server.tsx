@@ -54,13 +54,7 @@ export interface M3CssOptions {
 }
 
 interface BunM3Module {
-  m3Css(request: {
-    sheet: string;
-    seed?: string;
-    variant?: string;
-    dark?: boolean;
-    contrast?: number;
-  }): string;
+  m3Css(request: { sheet: string; seed?: string; variant?: string; dark?: boolean; contrast?: number }): string;
 }
 
 const STATIC_SHEETS: Record<Exclude<M3SheetName, "scheme">, string> = {
@@ -71,30 +65,23 @@ const STATIC_SHEETS: Record<Exclude<M3SheetName, "scheme">, string> = {
 
 /** `true` when this process runs on Bun (`bun --bun next ...`, `bun test`). */
 export function isBunRuntime(): boolean {
-  return (
-    typeof process !== "undefined" && typeof process.versions?.bun === "string"
-  );
+  return typeof process !== "undefined" && typeof process.versions?.bun === "string";
 }
 
 /** A `require` rooted at the installed `@aphrody/m3-next`, so its own dependencies resolve. */
 function packageRequire(root?: string): NodeRequire {
-  const bases = [
-    root,
-    typeof process !== "undefined" ? process.cwd() : undefined,
-  ].filter((base): base is string => typeof base === "string");
+  const bases = [root, typeof process !== "undefined" ? process.cwd() : undefined].filter(
+    (base): base is string => typeof base === "string",
+  );
   for (const base of bases) {
     try {
-      const manifest = createRequire(join(base, "package.json")).resolve(
-        "@aphrody/m3-next/package.json",
-      );
+      const manifest = createRequire(join(base, "package.json")).resolve("@aphrody/m3-next/package.json");
       return createRequire(manifest);
     } catch {
       // Not installed under this base: try the next one.
     }
   }
-  return createRequire(
-    join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"),
-  );
+  return createRequire(join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"));
 }
 
 let bunModule: Promise<BunM3Module | null> | undefined;
@@ -107,9 +94,7 @@ function loadBunModule(root?: string): Promise<BunM3Module | null> {
     try {
       const entry = packageRequire(root).resolve("@aphrody/bun");
       const specifier = pathToFileURL(entry).href;
-      const loaded = (await import(
-        /* turbopackIgnore: true */ /* webpackIgnore: true */ specifier
-      )) as BunM3Module;
+      const loaded = (await import(/* turbopackIgnore: true */ /* webpackIgnore: true */ specifier)) as BunM3Module;
       return typeof loaded.m3Css === "function" ? loaded : null;
     } catch (error) {
       bunModuleError = error;
@@ -125,7 +110,7 @@ export function m3FfiError(): unknown {
 }
 
 function kebabVariant(variant: string): string {
-  return variant.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return variant.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
 }
 
 const cache = new Map<string, M3CssResult>();
@@ -144,25 +129,9 @@ function remember(key: string, result: M3CssResult): M3CssResult {
  * pre-generated files of `@aphrody/m3-theme` (baseline seed) and `scheme` is computed in JS with
  * material-color-utilities. Results are cached per request shape.
  */
-export async function m3CssResult(
-  request: M3CssRequest,
-  options: M3CssOptions = {},
-): Promise<M3CssResult> {
-  const {
-    sheet,
-    seed = M3_BASELINE_SEED,
-    variant = "tonalSpot",
-    contrast = 0,
-    dark = false,
-  } = request;
-  const key = JSON.stringify([
-    sheet,
-    seed.toLowerCase(),
-    variant,
-    contrast,
-    dark,
-    options.noFfi === true,
-  ]);
+export async function m3CssResult(request: M3CssRequest, options: M3CssOptions = {}): Promise<M3CssResult> {
+  const { sheet, seed = M3_BASELINE_SEED, variant = "tonalSpot", contrast = 0, dark = false } = request;
+  const key = JSON.stringify([sheet, seed.toLowerCase(), variant, contrast, dark, options.noFfi === true]);
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -193,10 +162,7 @@ export async function m3CssResult(
 }
 
 /** {@link m3CssResult}, returning only the CSS text. */
-export async function m3Css(
-  request: M3CssRequest,
-  options: M3CssOptions = {},
-): Promise<string> {
+export async function m3Css(request: M3CssRequest, options: M3CssOptions = {}): Promise<string> {
   return (await m3CssResult(request, options)).css;
 }
 
@@ -204,19 +170,13 @@ export async function m3Css(
  * The inline stylesheet of M3Html: the light and dark roles of one scheme, wired to the
  * `.light` / `.dark` classes and `prefers-color-scheme` (see `m3SchemeStylesheet`).
  */
-export async function m3SchemeCss(
-  scheme: M3SchemeOptions = {},
-  options: M3CssOptions = {},
-): Promise<M3CssResult> {
+export async function m3SchemeCss(scheme: M3SchemeOptions = {}, options: M3CssOptions = {}): Promise<M3CssResult> {
   const [light, dark] = await Promise.all([
     m3CssResult({ ...scheme, sheet: "scheme", dark: false }, options),
     m3CssResult({ ...scheme, sheet: "scheme", dark: true }, options),
   ]);
   return {
-    css: m3SchemeStylesheet(
-      rootDeclarations(light.css),
-      rootDeclarations(dark.css),
-    ),
+    css: m3SchemeStylesheet(rootDeclarations(light.css), rootDeclarations(dark.css)),
     source: light.source,
   };
 }
@@ -246,10 +206,7 @@ export interface M3DocumentProps {
   /** Extra `<head>` children. */
   head?: ReactNode;
   /** Extra attributes for `<html>`. */
-  htmlProps?: Omit<
-    HTMLAttributes<HTMLHtmlElement>,
-    "className" | "lang" | "style" | "children"
-  >;
+  htmlProps?: Omit<HTMLAttributes<HTMLHtmlElement>, "className" | "lang" | "style" | "children">;
 }
 
 /**
@@ -268,9 +225,7 @@ export function M3Document({
   head,
   htmlProps,
 }: M3DocumentProps) {
-  const classes = [className, mode === "system" ? undefined : mode]
-    .filter(Boolean)
-    .join(" ");
+  const classes = [className, mode === "system" ? undefined : mode].filter(Boolean).join(" ");
   return (
     <html
       {...htmlProps}
@@ -282,23 +237,10 @@ export function M3Document({
       suppressHydrationWarning
     >
       <head>
-        {schemeCss !== undefined ? (
-          <style
-            id="m3-scheme"
-            dangerouslySetInnerHTML={{ __html: schemeCss }}
-          />
-        ) : null}
-        {typefaceCss ? (
-          <style
-            id="m3-typefaces"
-            dangerouslySetInnerHTML={{ __html: typefaceCss }}
-          />
-        ) : null}
+        {schemeCss !== undefined ? <style id="m3-scheme" dangerouslySetInnerHTML={{ __html: schemeCss }} /> : null}
+        {typefaceCss ? <style id="m3-typefaces" dangerouslySetInnerHTML={{ __html: typefaceCss }} /> : null}
         {mode === "system" ? (
-          <script
-            id="m3-color-scheme"
-            dangerouslySetInnerHTML={{ __html: colorSchemeScript(cookieName) }}
-          />
+          <script id="m3-color-scheme" dangerouslySetInnerHTML={{ __html: colorSchemeScript(cookieName) }} />
         ) : null}
         {head}
       </head>
@@ -307,8 +249,7 @@ export function M3Document({
   );
 }
 
-export interface M3HtmlProps
-  extends Omit<M3DocumentProps, "mode" | "schemeCss">, M3SchemeOptions {
+export interface M3HtmlProps extends Omit<M3DocumentProps, "mode" | "schemeCss">, M3SchemeOptions {
   /** Force a mode instead of reading the cookie. */
   mode?: M3ThemeMode;
   /** Mode when the cookie is absent or invalid (default `system`). */
@@ -343,12 +284,8 @@ async function resolveDocument(props: M3HtmlProps): Promise<M3DocumentProps> {
     css,
     ...document
   } = props;
-  const resolved =
-    mode ??
-    (readCookie ? await readM3ThemeMode(cookieName, defaultMode) : defaultMode);
-  const schemeCss = inlineScheme
-    ? (await m3SchemeCss({ seed, variant, contrast }, css)).css
-    : undefined;
+  const resolved = mode ?? (readCookie ? await readM3ThemeMode(cookieName, defaultMode) : defaultMode);
+  const schemeCss = inlineScheme ? (await m3SchemeCss({ seed, variant, contrast }, css)).css : undefined;
   const typefaceCss = typefaces ? m3TypefaceCss(typefaces) : undefined;
   return { ...document, mode: resolved, schemeCss, typefaceCss, cookieName };
 }
@@ -368,14 +305,7 @@ export async function M3Html(props: M3HtmlProps) {
  * preference is written back to the cookie on every change.
  */
 export async function M3Root(props: M3HtmlProps) {
-  const {
-    children,
-    seed,
-    variant,
-    contrast,
-    cookieName = M3_THEME_COOKIE,
-    inlineScheme = true,
-  } = props;
+  const { children, seed, variant, contrast, cookieName = M3_THEME_COOKIE, inlineScheme = true } = props;
   const document = await resolveDocument(props);
   return (
     <M3Document {...document}>

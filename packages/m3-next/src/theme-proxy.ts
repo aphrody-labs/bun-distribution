@@ -29,12 +29,10 @@ export interface M3ProxyOptions {
  * invalid value) is forwarded with the default mode in its `cookie` header, so the server render of the same request sees
  * it, and the response sets the cookie for the next one.
  */
-export function createM3Proxy(
-  options: M3ProxyOptions = {},
-): (request: NextRequest) => NextResponse {
+export function createM3Proxy(options: M3ProxyOptions = {}): (request: NextRequest) => NextResponse {
   const { cookieName = M3_THEME_COOKIE, defaultMode = "system" } = options;
   validateThemeCookieName(cookieName);
-  return (request) => {
+  return request => {
     const current = request.cookies.get(cookieName)?.value;
     const mode = parseThemeMode(current, defaultMode);
     if (current === mode) return NextResponse.next();
@@ -42,9 +40,7 @@ export function createM3Proxy(
     const headers = new Headers(request.headers);
     const others = (headers.get("cookie") ?? "")
       .split(/;\s*/)
-      .filter(
-        (cookie) => cookie !== "" && !cookie.startsWith(`${cookieName}=`),
-      );
+      .filter(cookie => cookie !== "" && !cookie.startsWith(`${cookieName}=`));
     headers.set("cookie", [...others, `${cookieName}=${mode}`].join("; "));
 
     const response = NextResponse.next({ request: { headers } });

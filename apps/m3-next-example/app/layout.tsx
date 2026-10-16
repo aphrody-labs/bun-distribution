@@ -9,7 +9,7 @@ import "./globals.css";
 // next/font needs literal arguments in the module that calls it, so the font is loaded here and handed to
 // M3Root, which points the M3 reference typefaces at it.
 const roboto = localFont({
-  src: "../../../../m3-fonts/fonts/web/RobotoFlex-latin.woff2",
+  src: "../../../packages/m3-fonts/fonts/web/RobotoFlex-latin.woff2",
   variable: "--font-roboto-flex",
   weight: "100 1000",
   display: "swap",
@@ -17,8 +17,7 @@ const roboto = localFont({
 
 export const metadata: Metadata = generateM3Metadata({
   name: "M3 on Next 16",
-  description:
-    "Base UI, Tailwind v4 and Material 3 on Next.js 16, built and served on Bun.",
+  description: "Base UI, Tailwind v4 and Material 3 on Next.js 16, built and served on Bun.",
 });
 export const viewport: Viewport = generateM3Viewport();
 

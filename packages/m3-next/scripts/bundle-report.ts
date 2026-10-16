@@ -15,9 +15,7 @@ import { gzipSync } from "node:zlib";
 const PACKAGES = resolve(import.meta.dir, "../..");
 
 /** `@tailwindcss/node` as m3-tailwind resolves it, so the report measures the preset against its own engine. */
-const { compile } = (await import(
-  Bun.resolveSync("@tailwindcss/node", join(PACKAGES, "m3-tailwind"))
-)) as {
+const { compile } = (await import(Bun.resolveSync("@tailwindcss/node", join(PACKAGES, "m3-tailwind")))) as {
   compile(
     css: string,
     options: { base: string; onDependency(path: string): void },
@@ -30,8 +28,7 @@ export interface Measure {
 }
 export type Report = Record<string, Measure | number>;
 
-const gz = (text: string | Uint8Array): number =>
-  gzipSync(text, { level: 9 }).length;
+const gz = (text: string | Uint8Array): number => gzipSync(text, { level: 9 }).length;
 const size = (text: string): Measure => ({
   bytes: Buffer.byteLength(text),
   gzip: gz(text),
@@ -40,9 +37,7 @@ const size = (text: string): Measure => ({
 /** Entry file of a workspace package: the `.` export, falling back to `main`. */
 function entryOf(pkg: string): string {
   const dir = join(PACKAGES, pkg);
-  const manifest = JSON.parse(
-    readFileSync(join(dir, "package.json"), "utf8"),
-  ) as {
+  const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
     exports?: Record<string, unknown>;
     main?: string;
   };
@@ -51,8 +46,7 @@ function entryOf(pkg: string): string {
     typeof root === "string"
       ? root
       : typeof root === "object" && root !== null
-        ? ((root as Record<string, string>)["import"] ??
-          (root as Record<string, string>)["default"])
+        ? ((root as Record<string, string>)["import"] ?? (root as Record<string, string>)["default"])
         : manifest.main;
   if (file === undefined) throw new Error(`${pkg}: no entry`);
   return resolve(dir, file);
@@ -82,10 +76,7 @@ async function bundle(
  * Like {@link bundle} with code splitting: the entry chunk (what a page downloads up front) and the dynamic-import
  * chunks together (what is fetched on demand).
  */
-async function bundleSplit(
-  code: string,
-  external: string[],
-): Promise<{ entry: Measure; lazy: Measure }> {
+async function bundleSplit(code: string, external: string[]): Promise<{ entry: Measure; lazy: Measure }> {
   const entry = join(PACKAGES, "m3-next", "__bundle_entry__.ts");
   const result = await Bun.build({
     entrypoints: [entry],
@@ -175,12 +166,8 @@ async function tailwindCss(): Promise<{
   ].join("\n");
   const compiler = await compile(input, { base, onDependency() {} });
   const app = await minifyCss(compiler.build(TYPICAL_CANDIDATES));
-  const m3 = await minifyCss(
-    compiler.build([...TYPICAL_CANDIDATES, ...M3_CANDIDATES]),
-  );
-  const preset = await minifyCss(
-    readFileSync(join(base, "preset.css"), "utf8"),
-  );
+  const m3 = await minifyCss(compiler.build([...TYPICAL_CANDIDATES, ...M3_CANDIDATES]));
+  const preset = await minifyCss(readFileSync(join(base, "preset.css"), "utf8"));
   return { preset, app, m3 };
 }
 
@@ -196,9 +183,7 @@ export async function measure(): Promise<Report> {
   report["baseui.js.button+switch+tabs"] = await bundle(
     `import { M3Button, M3Switch, M3Tabs } from ${JSON.stringify(baseui)}; globalThis.x = [M3Button, M3Switch, M3Tabs.Root];`,
   );
-  report["baseui.js.everything"] = await bundle(
-    `import * as all from ${JSON.stringify(baseui)}; globalThis.x = all;`,
-  );
+  report["baseui.js.everything"] = await bundle(`import * as all from ${JSON.stringify(baseui)}; globalThis.x = all;`);
 
   report["baseui.js.dialog"] = await bundle(
     `import { M3Dialog } from ${JSON.stringify(baseui)}; globalThis.x = [M3Dialog.Root, M3Dialog.Popup, M3Dialog.Title];`,
@@ -208,9 +193,7 @@ export async function measure(): Promise<Report> {
   );
 
   const baseuiDir = join(PACKAGES, "m3-baseui");
-  report["baseui.css.all"] = await minifyCss(
-    `@import ${JSON.stringify(join(baseuiDir, "m3-baseui.css"))};`,
-  );
+  report["baseui.css.all"] = await minifyCss(`@import ${JSON.stringify(join(baseuiDir, "m3-baseui.css"))};`);
   if (existsSync(join(baseuiDir, "css/button.css"))) {
     report["baseui.css.button"] = await minifyCss(
       `@import ${JSON.stringify(join(baseuiDir, "css/core.css"))};\n@import ${JSON.stringify(join(baseuiDir, "css/button.css"))};`,
@@ -222,23 +205,20 @@ export async function measure(): Promise<Report> {
   report["tailwind.app.css"] = tw.app;
   report["tailwind.app.m3.css"] = tw.m3;
 
-  const clientExternal = [
-    "react",
-    "react-dom",
-    "react/jsx-runtime",
-    "next",
-    "next/*",
-  ];
+  const clientExternal = ["react", "react-dom", "react/jsx-runtime", "next", "next/*"];
   const client = await bundleSplit(
     `import * as c from ${JSON.stringify(nextClient)}; globalThis.x = c;`,
     clientExternal,
   );
   report["next.client.js"] = client.entry;
   if (client.lazy.bytes > 0) report["next.client.lazy.js"] = client.lazy;
-  report["next.index.js"] = await bundle(
-    `import * as c from ${JSON.stringify(nextIndex)}; globalThis.x = c;`,
-    ["react", "react-dom", "react/jsx-runtime", "next", "next/*"],
-  );
+  report["next.index.js"] = await bundle(`import * as c from ${JSON.stringify(nextIndex)}; globalThis.x = c;`, [
+    "react",
+    "react-dom",
+    "react/jsx-runtime",
+    "next",
+    "next/*",
+  ]);
   return report;
 }
 
@@ -252,18 +232,13 @@ const LABELS: Record<string, string> = {
   "baseui.css.button": "m3-baseui CSS, core + Button only (minified)",
   "tailwind.preset.css": "m3-tailwind `preset.css` (minified)",
   "tailwind.app.css": "Tailwind app CSS, 25 typical classes (minified)",
-  "tailwind.app.m3.css":
-    "same 25 classes plus 10 of the new utilities and variants (minified)",
-  "next.client.js":
-    "m3-next client entry JS (theme provider; downloaded up front)",
-  "next.client.lazy.js":
-    "m3-next colour engine chunk (loaded only for a custom seed, variant or contrast)",
-  "next.index.js":
-    "m3-next config/scheme entry JS (server and build time only)",
+  "tailwind.app.m3.css": "same 25 classes plus 10 of the new utilities and variants (minified)",
+  "next.client.js": "m3-next client entry JS (theme provider; downloaded up front)",
+  "next.client.lazy.js": "m3-next colour engine chunk (loaded only for a custom seed, variant or contrast)",
+  "next.index.js": "m3-next config/scheme entry JS (server and build time only)",
 };
 
-const delta = (a: number, b: number): string =>
-  a === 0 ? "n/a" : `${(((b - a) / a) * 100).toFixed(1)}%`;
+const delta = (a: number, b: number): string => (a === 0 ? "n/a" : `${(((b - a) / a) * 100).toFixed(1)}%`);
 
 export interface ExampleSize {
   js: Measure;
@@ -273,9 +248,7 @@ export interface ExampleSize {
 
 /** Client assets of a built example: `.next/static` (server app) or `out/_next/static` (static export). */
 export function exampleSizes(dir: string): ExampleSize | undefined {
-  const root = [join(dir, "out/_next/static"), join(dir, ".next/static")].find(
-    (d) => existsSync(d),
-  );
+  const root = [join(dir, "out/_next/static"), join(dir, ".next/static")].find(d => existsSync(d));
   if (!root) return undefined;
   let js = Buffer.alloc(0);
   let css = Buffer.alloc(0);
@@ -301,16 +274,11 @@ export function exampleSizes(dir: string): ExampleSize | undefined {
   };
 }
 
-export function markdown(
-  after: Report,
-  before: Report | undefined,
-  extra: string,
-): string {
-  const rows = Object.keys({ ...before, ...after }).map((key) => {
+export function markdown(after: Report, before: Report | undefined, extra: string): string {
+  const rows = Object.keys({ ...before, ...after }).map(key => {
     const a = after[key] as Measure | undefined;
     const b = before?.[key] as Measure | undefined;
-    const cell = (m: Measure | undefined): string =>
-      m ? `${m.bytes} (${m.gzip} gz)` : "n/a";
+    const cell = (m: Measure | undefined): string => (m ? `${m.bytes} (${m.gzip} gz)` : "n/a");
     return `| ${LABELS[key] ?? key} | ${cell(b)} | ${cell(a)} | ${a && b ? delta(b.bytes, a.bytes) : "n/a"} |`;
   });
   return `<!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -337,17 +305,15 @@ if (import.meta.main) {
   const out = flag("--out");
   if (out) writeFileSync(out, JSON.stringify(after, null, 2) + "\n");
   const beforePath = flag("--before");
-  const before = beforePath
-    ? (JSON.parse(readFileSync(beforePath, "utf8")) as Report)
-    : undefined;
+  const before = beforePath ? (JSON.parse(readFileSync(beforePath, "utf8")) as Report) : undefined;
   const mdPath = flag("--write");
   const extraPath = flag("--extra");
   let extra = extraPath ? readFileSync(extraPath, "utf8") : "";
   if (args.includes("--examples")) {
-    const examples = join(PACKAGES, "m3-next/examples");
+    const examples = resolve(PACKAGES, "../apps");
     const rows: string[] = [];
     for (const name of ["app", "tauri"]) {
-      const sizes = exampleSizes(join(examples, name));
+      const sizes = exampleSizes(join(examples, name === "app" ? "m3-next-example" : "m3-next-tauri-example"));
       if (!sizes) continue;
       const bench = flag(`--bench-${name}`);
       const times =
@@ -360,7 +326,7 @@ if (import.meta.main) {
             })
           : undefined;
       rows.push(
-        `| ${name === "app" ? "examples/app (server: Cache Components, proxy.ts, React Compiler)" : "examples/tauri (static export)"} | ${sizes.js.bytes} (${sizes.js.gzip} gz) | ${sizes.css.bytes} (${sizes.css.gzip} gz) | ${times ? `${times.coldMedian} ms (${times.cold.join(", ")})` : "n/a"} | ${times ? `${times.warmMedian} ms (${times.warm.join(", ")})` : "n/a"} |`,
+        `| ${name === "app" ? "apps/m3-next-example (server: Cache Components, proxy.ts, React Compiler)" : "apps/m3-next-tauri-example (static export)"} | ${sizes.js.bytes} (${sizes.js.gzip} gz) | ${sizes.css.bytes} (${sizes.css.gzip} gz) | ${times ? `${times.coldMedian} ms (${times.cold.join(", ")})` : "n/a"} | ${times ? `${times.warmMedian} ms (${times.warm.join(", ")})` : "n/a"} |`,
       );
     }
     if (rows.length > 0)
@@ -377,6 +343,5 @@ ${rows.join("\n")}
     writeFileSync(mdPath, markdown(after, before, extra));
     console.log(`wrote ${mdPath}`);
   }
-  if (args.includes("--json") || (!mdPath && !out))
-    console.log(JSON.stringify(after, null, 2));
+  if (args.includes("--json") || (!mdPath && !out)) console.log(JSON.stringify(after, null, 2));
 }

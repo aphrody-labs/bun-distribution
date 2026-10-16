@@ -2,38 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 // build.ts: the workspace pipeline. One process builds, typechecks and caches every package and app.
 //
-//   bun scripts/build.ts [build|typecheck|clean] [--only name,..] [--no-cache] [--no-apps] [--json]
+//   bun scripts/m3/build.ts [build|typecheck|clean] [--only name,..] [--no-cache] [--no-apps] [--json]
 //
 // build      every package with a `build.config.ts` (see @aphrody/m3-config/bun-build): `Bun.build` in-process,
-//            then the declarations with `tsc -p tsconfig.build.json`, packages of one dependency level in
+//            then native Bun checks and required declaration-output verification, packages of one dependency level in
 //            parallel; then each app's `build` script.
-// typecheck  `tsc -p tsconfig.json --noEmit` for every package and app that declares a `typecheck` script.
+// typecheck  `bun check -p tsconfig.json --noEmit` for every package and app that declares a `typecheck` script.
 // clean      removes `dist/` of the packages and the cache.
 //
 // Cache: a package is rebuilt only when its files (not `dist`, `node_modules`, tests), the hashes of the
 // workspace packages it depends on, `bun.lock`, the Bun version or this pipeline changed. The state lives
 // in `node_modules/.cache/m3-build/state.json`. `--no-cache` rebuilds everything.
-import {
-  existsSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-} from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { cpus } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import {
-  m3BunBuild,
-  type M3PackageConfig,
-} from "../packages/m3-config/bun-build.ts";
-import {
-  REPO,
-  levels,
-  workspaceDeps,
-  workspacePackages,
-  type WorkspacePackage,
-} from "./lib/workspace.ts";
+import { m3BunBuild, type M3PackageConfig } from "../../packages/m3-config/bun-build.ts";
+import { REPO, levels, workspaceDeps, workspacePackages, type WorkspacePackage } from "./lib/workspace.ts";
 
 export type Task = "build" | "typecheck";
 
@@ -45,8 +30,7 @@ export interface Outcome {
   detail?: string;
 }
 
-const cacheFile = (root: string) =>
-  join(root, "node_modules/.cache/m3-build/state.json");
+const cacheFile = (root: string) => join(root, "node_modules/.cache/m3-build/state.json");
 const SKIP_DIRS = new Set([
   "node_modules",
   "dist",
@@ -67,18 +51,9 @@ export function sourceFiles(dir: string, task: Task = "build"): string[] {
     for (const entry of readdirSync(join(dir, sub), { withFileTypes: true })) {
       const rel = sub ? `${sub}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
-        if (
-          !SKIP_DIRS.has(entry.name) ||
-          (task === "typecheck" &&
-            ["test", "tests", "__tests__"].includes(entry.name))
-        )
+        if (!SKIP_DIRS.has(entry.name) || (task === "typecheck" && ["test", "tests", "__tests__"].includes(entry.name)))
           walk(rel);
-      } else if (
-        entry.isFile() &&
-        !(task === "build" ? SKIP_FILES : /\.tsbuildinfo$|\.md$/).test(
-          entry.name,
-        )
-      )
+      } else if (entry.isFile() && !(task === "build" ? SKIP_FILES : /\.tsbuildinfo$|\.md$/).test(entry.name))
         out.push(rel);
     }
   };
@@ -107,7 +82,7 @@ export function globalSalt(root: string = REPO): string {
   // The pipeline and the preset it runs: a change to either invalidates every package.
   for (const file of [
     import.meta.path,
-    join(REPO, "scripts/lib/workspace.ts"),
+    join(REPO, "scripts/m3/lib/workspace.ts"),
     join(REPO, "packages/m3-config/bun-build.ts"),
   ]) {
     hasher.update(readFileSync(file));
@@ -121,9 +96,9 @@ export function closureHashes(
   salt: string,
   task: Task = "build",
 ): Map<string, string> {
-  const known = new Set(packages.map((p) => p.name));
-  const byName = new Map(packages.map((p) => [p.name, p]));
-  const own = new Map(packages.map((p) => [p.name, hashPackage(p.dir, task)]));
+  const known = new Set(packages.map(p => p.name));
+  const byName = new Map(packages.map(p => [p.name, p]));
+  const own = new Map(packages.map(p => [p.name, hashPackage(p.dir, task)]));
   const memo = new Map<string, string>();
   const visit = (name: string, trail: ReadonlySet<string>): string => {
     const cached = memo.get(name);
@@ -134,9 +109,7 @@ export function closureHashes(
     hasher.update(own.get(name)!);
     for (const dep of workspaceDeps(pkg, known)) {
       // Dependency cycles contribute their own hash only, so the walk terminates.
-      hasher.update(
-        trail.has(dep) ? own.get(dep)! : visit(dep, new Set([...trail, name])),
-      );
+      hasher.update(trail.has(dep) ? own.get(dep)! : visit(dep, new Set([...trail, name])));
     }
     const digest = hasher.digest("hex");
     memo.set(name, digest);
@@ -160,16 +133,8 @@ async function saveState(root: string, state: State): Promise<void> {
   await Bun.write(cacheFile(root), `${JSON.stringify(state, null, 1)}\n`);
 }
 
-const TSC = (() => {
-  const local = join(REPO, "node_modules/.bin/tsc");
-  return existsSync(local) ? [local] : [Bun.which("tsc") ?? "tsc"];
-})();
-
-async function run(
-  cmd: string[],
-  cwd: string,
-): Promise<{ code: number; text: string }> {
-  const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
+async function run(cmd: string[], cwd: string): Promise<{ code: number; text: string }> {
+  const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe", windowsHide: true, timeout: 1_800_000 });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -179,13 +144,8 @@ async function run(
 }
 
 /** Runs async jobs with at most `limit` in flight. */
-export async function pool<T, R>(
-  items: readonly T[],
-  limit: number,
-  job: (item: T) => Promise<R>,
-): Promise<R[]> {
-  if (!Number.isInteger(limit) || limit < 1)
-    throw new RangeError("pool limit must be a positive integer");
+export async function pool<T, R>(items: readonly T[], limit: number, job: (item: T) => Promise<R>): Promise<R[]> {
+  if (!Number.isInteger(limit) || limit < 1) throw new RangeError("pool limit must be a positive integer");
   const results: R[] = [];
   let next = 0;
   await Promise.all(
@@ -201,20 +161,13 @@ export async function pool<T, R>(
   return results;
 }
 
-async function loadConfig(
-  pkg: WorkspacePackage,
-): Promise<M3PackageConfig | undefined> {
+async function loadConfig(pkg: WorkspacePackage): Promise<M3PackageConfig | undefined> {
   const file = join(pkg.dir, "build.config.ts");
   if (!existsSync(file)) return undefined;
-  return (
-    (await import(pathToFileURL(file).href)) as { default: M3PackageConfig }
-  ).default;
+  return ((await import(pathToFileURL(file).href)) as { default: M3PackageConfig }).default;
 }
 
-async function buildPackage(
-  pkg: WorkspacePackage,
-  config: M3PackageConfig,
-): Promise<{ ok: boolean; detail: string }> {
+async function buildPackage(pkg: WorkspacePackage, config: M3PackageConfig): Promise<{ ok: boolean; detail: string }> {
   rmSync(join(pkg.dir, "dist"), { recursive: true, force: true });
   const started = performance.now();
   const js = await m3BunBuild({ ...config, cwd: pkg.dir });
@@ -223,8 +176,46 @@ async function buildPackage(
   let dtsMs = 0;
   if (existsSync(join(pkg.dir, "tsconfig.build.json"))) {
     const t = performance.now();
-    const dts = await run([...TSC, "-p", "tsconfig.build.json"], pkg.dir);
+    const declarationConfig = Bun.JSONC.parse(readFileSync(join(pkg.dir, "tsconfig.build.json"), "utf8")) as {
+      compilerOptions?: { rootDir?: string; outDir?: string };
+    };
+    const rootDir = declarationConfig.compilerOptions?.rootDir ?? "src";
+    const outDir = declarationConfig.compilerOptions?.outDir ?? "dist";
+    if (rootDir !== "src" || outDir !== "dist")
+      return {
+        ok: false,
+        detail: "M3 declaration inputs and outputs must use the package-owned src/ and dist/ directories.",
+      };
+    const inputs = [...new Bun.Glob("src/**/*.{ts,tsx}").scanSync({ cwd: pkg.dir, onlyFiles: true })]
+      .filter(path => !path.endsWith(".d.ts"))
+      .toSorted();
+    if (!inputs.length) return { ok: false, detail: "No declaration inputs found." };
+    // Native declaration callbacks require explicit CLI inputs and options, not project-only mode.
+    const dts = await run(
+      [
+        process.execPath,
+        "check",
+        "-p",
+        "tsconfig.build.json",
+        "--emitDeclarationOnly=true",
+        "--declaration=true",
+        "--noEmit=false",
+        "--rootDir",
+        rootDir,
+        "--outDir",
+        outDir,
+        "--no-pretty",
+        ...inputs,
+      ],
+      pkg.dir,
+    );
     if (dts.code !== 0) return { ok: false, detail: dts.text };
+    if (!new Bun.Glob("**/*.d.ts").scanSync({ cwd: join(pkg.dir, "dist"), onlyFiles: true }).next().value)
+      return {
+        ok: false,
+        detail:
+          "Native Bun checking passed but declaration output is missing; this package is not qualified for distribution.",
+      };
     dtsMs = Math.round(performance.now() - t);
   }
   return {
@@ -242,26 +233,17 @@ export interface PipelineOptions {
 }
 
 /** Default scope: the `@aphrody/m3*` packages and the apps; foreign and host-bound workspace members only on request. */
-const IN_SCOPE = (pkg: WorkspacePackage) =>
-  /^@[^/]+\/m3/.test(pkg.name) || pkg.rel.startsWith("apps/");
+const IN_SCOPE = (pkg: WorkspacePackage) => /^@[^/]+\/m3/.test(pkg.name) || pkg.rel.startsWith("apps/");
 
 const isApp = (pkg: WorkspacePackage) => pkg.rel.startsWith("apps/");
 
 const matches = (pkg: WorkspacePackage, only: string[] | undefined) =>
   !only
     ? IN_SCOPE(pkg)
-    : only.some(
-        (o) =>
-          o === pkg.name ||
-          o === pkg.rel ||
-          pkg.rel.endsWith(`/${o}`) ||
-          pkg.name.endsWith(`/${o}`),
-      );
+    : only.some(o => o === pkg.name || o === pkg.rel || pkg.rel.endsWith(`/${o}`) || pkg.name.endsWith(`/${o}`));
 
 /** Run the pipeline; resolves to one outcome per package or app. */
-export async function pipeline(
-  options: PipelineOptions = {},
-): Promise<Outcome[]> {
+export async function pipeline(options: PipelineOptions = {}): Promise<Outcome[]> {
   const task = options.task ?? "build";
   const useCache = options.cache !== false;
   const root = options.root ?? REPO;
@@ -271,9 +253,7 @@ export async function pipeline(
   const outcomes: Outcome[] = [];
   const limit = Math.max(2, Math.min(cpus().length, 8));
 
-  const wanted = all.filter(
-    (p) => matches(p, options.only) && (options.apps !== false || !isApp(p)),
-  );
+  const wanted = all.filter(p => matches(p, options.only) && (options.apps !== false || !isApp(p)));
 
   const process_ = async (pkg: WorkspacePackage): Promise<Outcome> => {
     const key = `${task}:${pkg.name}`;
@@ -289,25 +269,18 @@ export async function pipeline(
 
     if (task === "typecheck") {
       // Opt-in: a package takes part by declaring a `typecheck` script (the command itself is the pipeline's).
-      if (!pkg.manifest.scripts?.typecheck)
-        return done("skipped", "no typecheck script");
-      if (!existsSync(join(pkg.dir, "tsconfig.json")))
-        return done("skipped", "no tsconfig.json");
+      if (!pkg.manifest.scripts?.typecheck) return done("skipped", "no typecheck script");
+      if (!existsSync(join(pkg.dir, "tsconfig.json"))) return done("skipped", "no tsconfig.json");
       if (state[key] === hash) return done("cached");
-      const res = await run(
-        [...TSC, "-p", "tsconfig.json", "--noEmit"],
-        pkg.dir,
-      );
+      const res = await run([process.execPath, "check", "-p", "tsconfig.json", "--noEmit", "--no-pretty"], pkg.dir);
       if (res.code !== 0) return done("failed", res.text);
       state[key] = hash;
       return done("built");
     }
 
     if (isApp(pkg)) {
-      if (!pkg.manifest.scripts?.build)
-        return done("skipped", "no build script");
-      if (state[key] === hash && existsSync(join(pkg.dir, "dist")))
-        return done("cached");
+      if (!pkg.manifest.scripts?.build) return done("skipped", "no build script");
+      if (state[key] === hash && existsSync(join(pkg.dir, "dist"))) return done("cached");
       const res = await run(["bun", "run", "build"], pkg.dir);
       if (res.code !== 0) return done("failed", res.text);
       state[key] = hash;
@@ -316,8 +289,7 @@ export async function pipeline(
 
     const config = await loadConfig(pkg);
     if (!config) return done("skipped", "no build.config.ts");
-    if (state[key] === hash && existsSync(join(pkg.dir, "dist")))
-      return done("cached");
+    if (state[key] === hash && existsSync(join(pkg.dir, "dist"))) return done("cached");
     const res = await buildPackage(pkg, config);
     if (!res.ok) return done("failed", res.detail);
     state[key] = hash;
@@ -326,23 +298,18 @@ export async function pipeline(
 
   // Packages in dependency levels; apps last (they consume the packages from source, but a failed
   // package should stop the pipeline before the slower app builds).
-  const wantedNames = new Set(wanted.map((p) => p.name));
+  const wantedNames = new Set(wanted.map(p => p.name));
   const ordered = levels(all)
-    .map((level) => level.filter((p) => wantedNames.has(p.name)))
-    .filter((l) => l.length > 0);
-  const packageLevels = ordered
-    .map((l) => l.filter((p) => !isApp(p)))
-    .filter((l) => l.length > 0);
-  const appLevel = ordered.flatMap((l) => l.filter(isApp));
-  for (const level of [
-    ...packageLevels,
-    ...(appLevel.length > 0 ? [appLevel] : []),
-  ]) {
+    .map(level => level.filter(p => wantedNames.has(p.name)))
+    .filter(l => l.length > 0);
+  const packageLevels = ordered.map(l => l.filter(p => !isApp(p))).filter(l => l.length > 0);
+  const appLevel = ordered.flatMap(l => l.filter(isApp));
+  for (const level of [...packageLevels, ...(appLevel.length > 0 ? [appLevel] : [])]) {
     // Dependency levels must finish before their consumers start.
     // oxlint-disable-next-line no-await-in-loop
     const results = await pool(level, limit, process_);
     outcomes.push(...results);
-    if (results.some((r) => r.status === "failed")) break;
+    if (results.some(r => r.status === "failed")) break;
   }
   if (useCache) await saveState(root, state);
   return outcomes;
@@ -366,13 +333,12 @@ export function clean(root: string = REPO): number {
 
 function formatOutcomes(outcomes: Outcome[], totalMs: number): string {
   const rows = outcomes
-    .filter((o) => o.status !== "skipped")
+    .filter(o => o.status !== "skipped")
     .map(
-      (o) =>
+      o =>
         `${(o.task === "typecheck" && o.status === "built" ? "ok" : o.status).padEnd(6)} ${o.name.padEnd(30)} ${String(o.ms).padStart(5)} ms  ${o.status === "failed" ? "" : (o.detail ?? "")}`,
     );
-  const count = (s: Outcome["status"]) =>
-    outcomes.filter((o) => o.status === s).length;
+  const count = (s: Outcome["status"]) => outcomes.filter(o => o.status === s).length;
   rows.push(
     `${outcomes[0]?.task ?? "build"}: ${count("built")} run, ${count("cached")} cached, ${count("failed")} failed, ${count("skipped")} skipped in ${totalMs} ms`,
   );
@@ -381,7 +347,7 @@ function formatOutcomes(outcomes: Outcome[], totalMs: number): string {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const task = args.find((a) => !a.startsWith("--")) ?? "build";
+  const task = args.find(a => !a.startsWith("--")) ?? "build";
   const flag = (name: string) => args.includes(`--${name}`);
   const value = (name: string) => {
     const i = args.indexOf(`--${name}`);
@@ -403,10 +369,8 @@ if (import.meta.main) {
     apps: !flag("no-apps"),
   });
   const totalMs = Math.round(performance.now() - started);
-  if (flag("json"))
-    console.log(JSON.stringify({ task, totalMs, outcomes }, null, 2));
+  if (flag("json")) console.log(JSON.stringify({ task, totalMs, outcomes }, null, 2));
   else console.log(formatOutcomes(outcomes, totalMs));
-  for (const o of outcomes.filter((x) => x.status === "failed"))
-    console.error(`\n${o.name}: ${o.detail}`);
-  process.exit(outcomes.some((o) => o.status === "failed") ? 1 : 0);
+  for (const o of outcomes.filter(x => x.status === "failed")) console.error(`\n${o.name}: ${o.detail}`);
+  process.exit(outcomes.some(o => o.status === "failed") ? 1 : 0);
 }

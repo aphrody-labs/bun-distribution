@@ -3,7 +3,7 @@
 # `@aphrody/m3-next`
 
 Next.js 16 for the M3 stack: App Router, Cache Components, `proxy.ts`, React Compiler, typed routes, Tailwind v4 and Base UI,
-run on Bun with no Node. `examples/app` is a working app (build and serve through yolo), `examples/tauri` the static export a
+run on Bun with no Node. `apps/m3-next-example` is a working app (build and serve through m3-next), `apps/m3-next-tauri-example` the static export a
 Tauri webview loads.
 
 | Import                    | Runtime                            | Contents                                                                                                                                          |
@@ -65,7 +65,7 @@ export const config = {
   pre-paint script reads the `m3-theme` cookie in the browser and sets `.dark` / `.light` before first paint, so a saved
   preference never flashes. Without `readCookie={false}` the layout reads the cookie on the server (dynamic).
 - A Server Component that reads the cookie (`readM3ThemeMode()`) belongs behind `<Suspense>`; `proxy.ts` guarantees the cookie
-  exists on the first request, so the server and the client agree from the first byte (`examples/app/app/theme`).
+  exists on the first request, so the server and the client agree from the first byte (`apps/m3-next-example/app/theme`).
 - The client provider is a few hundred bytes (cookie, `.dark`, `.light`, `data-m3-theme`, `color-scheme`). The Material You
   engine (material-color-utilities, about 90 KB) is a separate chunk, loaded only when the seed, variant or contrast differ from the
   scheme the server inlined. It replaces the `@aphrody/m3-theme/react` provider: the client entry is 94 KB before and 3.3 KB now
@@ -99,13 +99,13 @@ const roboto = localFont({
 images, trailing slashes, `cacheComponents: false` and `NEXT_PUBLIC_M3_STATIC=1`, so `M3Root` stops reading the cookie.
 `TAURI_DEV_HOST` adds the dev `assetPrefix` a phone needs. A static export has no `proxy.ts`, route handlers (unless
 `force-static`) or server cookies: the preference lives in the cookie the client writes. Point Tauri's `frontendDist` at `../out`.
-`examples/tauri` imports only the sheets of the three components it renders.
+`apps/m3-next-tauri-example` imports only the sheets of the three components it renders.
 
 ## On Bun, no Node
 
 `bun --bun next build` runs Next itself on Bun, but Turbopack spawns `node` for its PostCSS and loader workers and fails when that
 is not Bun (`node: --bun is not allowed in NODE_OPTIONS`). `m3-next` puts a `node` that is Bun first on PATH, so the whole
-build, workers included, runs on one runtime and Turbopack stays the bundler (no `--webpack` fallback: `examples/app`, cold, back to back on one machine: 4.5 s with
+build, workers included, runs on one runtime and Turbopack stays the bundler (no `--webpack` fallback: `apps/m3-next-example`, cold, back to back on one machine: 4.5 s with
 Turbopack, 15.3 s with `--webpack`). `m3-next dev`, `build` and `start` pass their arguments to `next`.
 
 ### Moved to aphrody-labs/bun
@@ -121,12 +121,11 @@ lives in `theme-proxy.ts` (exported as `@aphrody/m3-next/proxy`).
 ## Examples and checks
 
 ```sh
-bun scripts/yolo-example.ts check          # yolo web build, yolo web dev, next start, yolo tauri build; curl every route
-bun scripts/yolo-example.ts bench          # cold and warm yolo web build, three runs each
+bun scripts/examples.ts check          # build, dev, production and static export; probe every route
+bun scripts/examples.ts bench          # cold and warm builds, three runs each
 bun scripts/bundle-report.ts --examples    # bundle sizes (docs/reports/M3-NEXT-BUNDLE.md)
 bun run test                               # unit tests, then the DOM tests (happy-dom preload)
 ```
 
-`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
-directory whose `m3/packages/app-ui` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
+The examples live under the root `apps/` owner. `scripts/examples.ts` invokes the existing `m3-next` runner in each application directory; no temporary workspace or source links are created.
 Migrating an existing app to this stack: `@aphrody/m3-next-migrate` (`next-migrate codemod all <dir>`).

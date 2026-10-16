@@ -5,7 +5,7 @@ import { useState } from "react";
 
 function Toasts() {
   const { toasts } = M3Toast.useToastManager();
-  return toasts.map((toast) => (
+  return toasts.map(toast => (
     <M3Toast.Root key={toast.id} toast={toast}>
       <M3Toast.Content>
         <M3Toast.Title />

@@ -16,8 +16,7 @@ export default function ThemePage() {
       <main className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
         <h1 className="text-headline-medium">Theme</h1>
         <p className="text-body-large text-on-surface-variant">
-          proxy.ts writes the cookie on the first visit; the toggle in the bar
-          changes it.
+          proxy.ts writes the cookie on the first visit; the toggle in the bar changes it.
         </p>
         <Suspense fallback={<p>Reading the cookie...</p>}>
           <ServerMode />

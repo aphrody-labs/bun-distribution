@@ -33,7 +33,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-forms",
     "typecheck": "bun check --noEmit",
     "typecheck:fast": "bun check --noEmit",
     "test": "bun test"

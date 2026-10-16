@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import {
-  M3_SITEMAP_MAX_URLS,
-  m3AbsoluteUrl,
-  m3JsonLd,
-  m3LlmsTxt,
-  m3RobotsTxt,
-  m3SitemapXml,
-} from "../src/crawl";
+import { M3_SITEMAP_MAX_URLS, m3AbsoluteUrl, m3JsonLd, m3LlmsTxt, m3RobotsTxt, m3SitemapXml } from "../src/crawl";
 
 const origin = "https://example.com";
 
@@ -32,29 +25,17 @@ describe("m3SitemapXml", () => {
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       ),
     ).toBe(true);
-    const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toEqual([
-      "https://example.com/a?x=1&amp;y=2",
-      "https://example.com/b",
-      "https://example.com/c",
-    ]);
+    const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map(m => m[1]);
+    expect(locs).toEqual(["https://example.com/a?x=1&amp;y=2", "https://example.com/b", "https://example.com/c"]);
     expect(xml).toContain("<lastmod>2026-10-01</lastmod>");
     expect(xml).toContain("<priority>0.8</priority>");
-    expect(m3SitemapXml(["/z", "/a"], origin)).toBe(
-      m3SitemapXml(["/a", "/z"], origin),
-    );
+    expect(m3SitemapXml(["/z", "/a"], origin)).toBe(m3SitemapXml(["/a", "/z"], origin));
   });
 
   test("rejects foreign origins, bad dates, bad priorities and oversized lists", () => {
-    expect(() => m3SitemapXml(["https://other.com/x"], origin)).toThrow(
-      RangeError,
-    );
-    expect(() =>
-      m3SitemapXml([{ path: "/a", lastmod: "yesterday" }], origin),
-    ).toThrow(RangeError);
-    expect(() => m3SitemapXml([{ path: "/a", priority: 2 }], origin)).toThrow(
-      RangeError,
-    );
+    expect(() => m3SitemapXml(["https://other.com/x"], origin)).toThrow(RangeError);
+    expect(() => m3SitemapXml([{ path: "/a", lastmod: "yesterday" }], origin)).toThrow(RangeError);
+    expect(() => m3SitemapXml([{ path: "/a", priority: 2 }], origin)).toThrow(RangeError);
     expect(() =>
       m3SitemapXml(
         Array.from({ length: M3_SITEMAP_MAX_URLS + 1 }, (_, i) => `/p${i}`),
@@ -71,9 +52,7 @@ describe("m3SitemapXml", () => {
 
 describe("m3RobotsTxt", () => {
   test("defaults allow everything and reference the sitemap", () => {
-    expect(m3RobotsTxt({ origin })).toBe(
-      "User-agent: *\nAllow: /\n\nSitemap: https://example.com/sitemap.xml\n",
-    );
+    expect(m3RobotsTxt({ origin })).toBe("User-agent: *\nAllow: /\n\nSitemap: https://example.com/sitemap.xml\n");
   });
 
   test("groups, crawl delay and custom sitemaps", () => {
@@ -86,12 +65,8 @@ describe("m3RobotsTxt", () => {
       sitemaps: ["/sitemap.xml", "https://example.com/news.xml"],
     });
     expect(txt).toContain("User-agent: *\nDisallow: /private/\n");
-    expect(txt).toContain(
-      "User-agent: GPTBot\nUser-agent: ClaudeBot\nDisallow: /\nCrawl-delay: 10",
-    );
-    expect(
-      txt.trimEnd().endsWith("Sitemap: https://example.com/news.xml"),
-    ).toBe(true);
+    expect(txt).toContain("User-agent: GPTBot\nUser-agent: ClaudeBot\nDisallow: /\nCrawl-delay: 10");
+    expect(txt.trimEnd().endsWith("Sitemap: https://example.com/news.xml")).toBe(true);
     expect(m3RobotsTxt({ origin, sitemaps: [] })).not.toContain("Sitemap:");
   });
 
@@ -102,9 +77,7 @@ describe("m3RobotsTxt", () => {
         rules: [{ userAgent: "*", disallow: ["/a\nAllow: /"] }],
       }),
     ).toThrow(TypeError);
-    expect(() => m3RobotsTxt({ origin, rules: [{ userAgent: [] }] })).toThrow(
-      TypeError,
-    );
+    expect(() => m3RobotsTxt({ origin, rules: [{ userAgent: [] }] })).toThrow(TypeError);
   });
 });
 
@@ -144,9 +117,7 @@ describe("m3LlmsTxt (llmstxt.org)", () => {
 
   test("requires a name and forbids headings in details", () => {
     expect(() => m3LlmsTxt({ origin, name: " " })).toThrow(TypeError);
-    expect(() =>
-      m3LlmsTxt({ origin, name: "X", details: "# not allowed" }),
-    ).toThrow(TypeError);
+    expect(() => m3LlmsTxt({ origin, name: "X", details: "# not allowed" })).toThrow(TypeError);
     expect(m3LlmsTxt({ origin, name: "X" })).toBe("# X\n");
   });
 });

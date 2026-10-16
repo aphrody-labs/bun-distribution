@@ -16,13 +16,7 @@ import {
   type ReactNode,
 } from "react";
 import type { SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
-import {
-  M3_BASELINE_SEED,
-  M3_THEME_COOKIE,
-  themeCookie,
-  validateThemeCookieName,
-  type M3ThemeMode,
-} from "./constants";
+import { M3_BASELINE_SEED, M3_THEME_COOKIE, themeCookie, validateThemeCookieName, type M3ThemeMode } from "./constants";
 
 export type { SchemeVariant };
 /** `light`, `dark`, or `system` (follow the OS). */
@@ -55,11 +49,9 @@ function readStoredMode(cookieName: string): ThemeMode | undefined {
   const prefix = `${validateThemeCookieName(cookieName)}=`;
   const value = document.cookie
     .split(/;\s*/)
-    .find((cookie) => cookie.startsWith(prefix))
+    .find(cookie => cookie.startsWith(prefix))
     ?.slice(prefix.length);
-  return value === "light" || value === "dark" || value === "system"
-    ? value
-    : undefined;
+  return value === "light" || value === "dark" || value === "system" ? value : undefined;
 }
 
 const M3ThemeContext = createContext<M3ThemeContextType | undefined>(undefined);
@@ -107,13 +99,8 @@ export function M3ThemeProvider({
     contrast: defaultContrastLevel,
   });
 
-  const systemDark = useSyncExternalStore(
-    subscribeToColorScheme,
-    prefersDark,
-    serverPrefersDark,
-  );
-  const resolvedTheme: "light" | "dark" =
-    themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
+  const systemDark = useSyncExternalStore(subscribeToColorScheme, prefersDark, serverPrefersDark);
+  const resolvedTheme: "light" | "dark" = themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
 
   // Cookie and <html>. The first run adopts a saved preference the server did not see, and leaves <html> to the
   // pre-paint script until the adopted mode renders; later runs write the cookie and the classes.
@@ -148,8 +135,7 @@ export function M3ThemeProvider({
     if (schemeInlined && !custom && !applied.current) return;
     let cancelled = false;
     void (async () => {
-      const { applyDynamicColor, clearDynamicColor } =
-        await import("@aphrody/m3-tokens/dynamic-color");
+      const { applyDynamicColor, clearDynamicColor } = await import("@aphrody/m3-tokens/dynamic-color");
       if (cancelled) return;
       const element = target ?? document.documentElement;
       if (schemeInlined && !custom) {
@@ -184,16 +170,13 @@ export function M3ThemeProvider({
     }),
     [themeMode, seedColor, resolvedTheme, contrastLevel, variant],
   );
-  return (
-    <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>
-  );
+  return <M3ThemeContext.Provider value={value}>{children}</M3ThemeContext.Provider>;
 }
 
 /** The theme state and its setters; throws outside {@link M3ThemeProvider}. */
 export function useM3Theme(): M3ThemeContextType {
   const context = useContext(M3ThemeContext);
-  if (context === undefined)
-    throw new Error("useM3Theme must be used within an M3ThemeProvider");
+  if (context === undefined) throw new Error("useM3Theme must be used within an M3ThemeProvider");
   return context;
 }
 
@@ -248,10 +231,7 @@ export function useM3ThemeToggle(): {
   toggle: () => void;
 } {
   const { themeMode, resolvedTheme, setThemeMode } = useM3Theme();
-  const toggle = useCallback(
-    () => setThemeMode(CYCLE[themeMode]),
-    [setThemeMode, themeMode],
-  );
+  const toggle = useCallback(() => setThemeMode(CYCLE[themeMode]), [setThemeMode, themeMode]);
   return {
     mode: themeMode,
     resolved: resolvedTheme,

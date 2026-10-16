@@ -24,10 +24,7 @@ describe("withM3 options", () => {
   });
 
   test("React Compiler, Cache Components and typed routes are Next 16 top-level keys", () => {
-    const config = withM3(
-      {},
-      { reactCompiler: true, cacheComponents: true, typedRoutes: true },
-    );
+    const config = withM3({}, { reactCompiler: true, cacheComponents: true, typedRoutes: true });
     expect(config.reactCompiler).toBe(true);
     expect(config.cacheComponents).toBe(true);
     expect(config.typedRoutes).toBe(true);
@@ -105,14 +102,11 @@ describe("Tauri static export", () => {
       delete env["TAURI_DEV_HOST"];
       env["NODE_ENV"] = "development";
       expect(withM3({}, { tauri: true }).assetPrefix).toBeUndefined();
-      expect(
-        withM3({}, { tauri: { devHost: "192.168.1.5", devPort: 3100 } })
-          .assetPrefix,
-      ).toBe("http://192.168.1.5:3100");
-      env["TAURI_DEV_HOST"] = "10.0.0.2";
-      expect(withM3({}, { tauri: true }).assetPrefix).toBe(
-        "http://10.0.0.2:3000",
+      expect(withM3({}, { tauri: { devHost: "192.168.1.5", devPort: 3100 } }).assetPrefix).toBe(
+        "http://192.168.1.5:3100",
       );
+      env["TAURI_DEV_HOST"] = "10.0.0.2";
+      expect(withM3({}, { tauri: true }).assetPrefix).toBe("http://10.0.0.2:3000");
       env["NODE_ENV"] = "production";
       expect(withM3({}, { tauri: true }).assetPrefix).toBeUndefined();
     } finally {
@@ -128,12 +122,7 @@ describe("Tauri static export", () => {
 });
 
 /** Run the script against a minimal document and report the classes and color-scheme it leaves. */
-function run(
-  cookie: string,
-  osDark: boolean,
-  initial: string[] = [],
-  name?: string,
-) {
+function run(cookie: string, osDark: boolean, initial: string[] = [], name?: string) {
   const classes = new Set(initial);
   const root = {
     classList: {
@@ -217,21 +206,16 @@ describe("typefaces", () => {
   });
 
   test("a value cannot escape the declaration", () => {
-    expect(
-      m3TypefaceCss({ plain: "Inter; } body { display: none" }),
-    ).not.toMatch(/[;}]\s*body/);
+    expect(m3TypefaceCss({ plain: "Inter; } body { display: none" })).not.toMatch(/[;}]\s*body/);
     expect(m3TypefaceCss({ plain: "</style><script>" })).not.toContain("<");
   });
 });
 
 describe("m3.css", () => {
-  const css = readFileSync(
-    join(import.meta.dir, "..", "m3.css"),
-    "utf8",
-  ).replace(/\/\*[\s\S]*?\*\//g, "");
+  const css = readFileSync(join(import.meta.dir, "..", "m3.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 
   test("imports tokens, expressive tokens, the colour sheets and the Tailwind preset, in that order", () => {
-    const imports = [...css.matchAll(/@import "([^"]+)";/g)].map((m) => m[1]);
+    const imports = [...css.matchAll(/@import "([^"]+)";/g)].map(m => m[1]);
     expect(imports).toEqual([
       "@aphrody/m3-tokens/m3-tokens.css",
       "@aphrody/m3-tokens/expressive.css",

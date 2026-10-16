@@ -1,31 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-// The example's configuration and files, without starting Next: `scripts/yolo-example.ts` builds and serves it.
+// The example's configuration and files, without starting Next: `scripts/examples.ts` builds and serves it.
 import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
 
 const root = join(import.meta.dir, "..");
-const m3Next = join(root, "../..");
+const m3Next = join(root, "../../packages/m3-next");
 
 beforeAll(() => {
   // `@aphrody/m3-next` resolves to its build output: make it when a fresh checkout has none.
   if (!existsSync(join(m3Next, "dist/index.js"))) {
     const build = Bun.spawnSync(
-      [
-        "bun",
-        join(m3Next, "../../scripts/build.ts"),
-        "build",
-        "--only",
-        "@aphrody/m3-next",
-      ],
+      ["bun", join(m3Next, "../../scripts/m3/build.ts"), "build", "--only", "@aphrody/m3-next"],
       { windowsHide: true, cwd: m3Next },
     );
     if (build.exitCode !== 0) throw new Error(build.stderr.toString());
   }
 });
 
-describe("examples/app", () => {
+describe("apps/m3-next-example", () => {
   test("next.config.ts: the Next 16 stack, with the monorepo root for Turbopack", async () => {
     const config = (await import("../next.config")).default;
     expect(config.cacheComponents).toBe(true);
@@ -33,7 +27,7 @@ describe("examples/app", () => {
     expect(config.typedRoutes).toBe(true);
     expect(config.output).toBeUndefined();
     expect(config.transpilePackages).toContain("@aphrody/m3-baseui");
-    expect(config.turbopack?.root).toBe(join(root, "../../../.."));
+    expect(config.turbopack?.root).toBe(join(root, "../.."));
   });
 
   test("proxy.ts: a function and a literal page matcher; a first visit gets the theme cookie", async () => {

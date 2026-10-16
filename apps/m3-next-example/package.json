@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-next-example",
-  "version": "3.3.6",
+  "version": "1.4.4",
   "private": true,
   "description": "Sample Next.js 16 app on the M3 stack: App Router, Cache Components, proxy.ts, React Compiler, typed routes, Tailwind v4 and Base UI, built and served on Bun through yolo.",
   "license": "Apache-2.0",
@@ -9,9 +9,9 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next dev",
-    "build": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next build",
-    "start": "bun ../../../../../packages/engine/yolo/src/index.ts m3 next start",
+    "dev": "bun ../../packages/m3-next/bin/m3-next.ts dev",
+    "build": "bun ../../packages/m3-next/bin/m3-next.ts build",
+    "start": "bun ../../packages/m3-next/bin/m3-next.ts start",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test ./test/"
   },

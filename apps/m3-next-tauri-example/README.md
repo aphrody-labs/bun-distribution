@@ -10,5 +10,5 @@ imported (`core`, `button`, `switch`).
 ```sh
 bun run build      # writes out/; point Tauri's frontendDist at ../out
 bun run test
-bun ../../scripts/yolo-example.ts export    # yolo tauri build, then checks out/index.html
+bun ../../packages/m3-next/scripts/examples.ts export    # m3-next static export, then checks out/index.html
 ```

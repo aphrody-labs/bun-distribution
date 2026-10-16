@@ -10,6 +10,6 @@ export default withM3(
     cacheComponents: true,
     typedRoutes: true,
     // The workspace packages live outside this app: Turbopack's root is the repository root.
-    turbopackRoot: resolve(process.cwd(), "../../../.."),
+    turbopackRoot: resolve(import.meta.dir, "../.."),
   },
 );

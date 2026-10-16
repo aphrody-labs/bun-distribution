@@ -1,41 +1,16 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// Build, serve and check the Next 16 examples through the yolo CLI.
-//
-//   bun scripts/yolo-example.ts <build|serve|start|export|bench|check> [--example app|tauri] [--json]
-//
-// yolo's `web` verb runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`. This script points YOLO_HOME at a directory
-// whose `m3/packages/app-ui` is the example (a symlink under the temp dir; nothing is written into this repository) and runs
-// `bun $YOLO_ROOT/packages/engine/yolo/src/index.ts web build|dev` (YOLO_ROOT: this Aphrody checkout by default). The example
-// scripts run `yolo m3 next`, so Next, Turbopack workers included, runs on Bun; no Node is involved.
-//
-//   build    yolo web build            (cold: `.next` removed first)
-//   serve    yolo web dev              (dev server, curl every route)
-//   start    yolo web build, then `bun run start` (production server, curl every route)
-//   export   yolo tauri build          (the tauri example: static export in out/)
-//   bench    cold and warm yolo web build, three runs each
-//   check    build, serve, start, export in turn
+// Build, serve and qualify the flat M3 examples through the canonical m3-next runner.
+// bun packages/m3-next/scripts/examples.ts <build|serve|start|export|bench|check> [--example app|tauri] [--json]
 /* oxlint-disable eslint/no-await-in-loop -- polling and benchmark runs are sequential on purpose */
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readlinkSync,
-  rmSync,
-  symlinkSync,
-  unlinkSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const PKG = resolve(import.meta.dir, "..");
-export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? resolve(PKG, "../../..");
-export const YOLO_CLI = join(YOLO_ROOT, "packages/engine/yolo/src/index.ts");
 
 export type Example = "app" | "tauri";
 export const exampleDir = (name: Example): string =>
-  join(PKG, "examples", name);
+  resolve(PKG, "../../apps", name === "app" ? "m3-next-example" : "m3-next-tauri-example");
 
 /** Routes that must answer, with the status each returns. */
 export const ROUTES: Record<Example, [string, number][]> = {
@@ -52,36 +27,16 @@ export const ROUTES: Record<Example, [string, number][]> = {
   ],
 };
 
-/** A YOLO_HOME whose `m3/packages/app-ui` (the `yolo web` app directory) is the example; created under the temp dir, repaired when it points elsewhere. */
-export function yoloHome(
-  example: Example,
-  root: string = join(tmpdir(), `m3-next-yolo-${process.getuid?.() ?? 0}`),
-): string {
-  const home = join(root, example);
-  const web = join(home, "m3", "packages", "app-ui");
-  mkdirSync(join(home, "m3", "packages"), { recursive: true });
-  const target = exampleDir(example);
-  try {
-    if (lstatSync(web).isSymbolicLink() && readlinkSync(web) === target)
-      return home;
-    unlinkSync(web);
-  } catch {
-    // Absent: create it below.
-  }
-  symlinkSync(target, web);
-  return home;
-}
-
-/** The yolo invocation: `bun <cli> <args>` with YOLO_HOME at the example. */
-export function yoloCommand(
+/** Invoke the canonical runner inside the selected root application. */
+export function exampleCommand(
   example: Example,
   ...args: string[]
-): { cmd: string[]; env: Record<string, string | undefined> } {
+): { cmd: string[]; env: Record<string, string | undefined>; cwd: string } {
   return {
-    cmd: ["bun", YOLO_CLI, ...args],
+    cwd: exampleDir(example),
+    cmd: [process.execPath, join(PKG, "bin/m3-next.ts"), ...args.slice(1)],
     env: {
       ...process.env,
-      YOLO_HOME: yoloHome(example),
       NEXT_TELEMETRY_DISABLED: "1",
     },
   };
@@ -94,16 +49,13 @@ export interface Timed {
 }
 
 /** Run a command to completion, capturing stdout and stderr. */
-async function run(
-  cmd: string[],
-  env: Record<string, string | undefined>,
-  cwd?: string,
-): Promise<Timed> {
+async function run(cmd: string[], env: Record<string, string | undefined>, cwd?: string): Promise<Timed> {
   const start = performance.now();
   const proc = Bun.spawn(cmd, {
     windowsHide: true,
     env,
     cwd,
+    timeout: 1_800_000,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -119,17 +71,11 @@ async function run(
   };
 }
 
-export async function yoloBuild(
-  example: Example,
-  verb: "web" | "tauri" = "web",
-  cold = true,
-): Promise<Timed> {
+export async function buildExample(example: Example, verb: "web" | "tauri" = "web", cold = true): Promise<Timed> {
   const dir = exampleDir(example);
-  if (cold)
-    for (const out of [".next", "out"])
-      rmSync(join(dir, out), { recursive: true, force: true });
-  const { cmd, env } = yoloCommand(example, verb, "build");
-  return run(cmd, env);
+  if (cold) for (const out of [".next", "out"]) rmSync(join(dir, out), { recursive: true, force: true });
+  const { cmd, env } = exampleCommand(example, verb, "build");
+  return run(cmd, env, dir);
 }
 
 /** Wait for the URL to answer, up to `timeoutMs`. */
@@ -153,18 +99,10 @@ export interface RouteResult {
   ok: boolean;
 }
 
-async function probe(
-  base: string,
-  routes: [string, number][],
-): Promise<RouteResult[]> {
+async function probe(base: string, routes: [string, number][]): Promise<RouteResult[]> {
   const out: RouteResult[] = [];
   for (const [route, expected] of routes) {
-    const status =
-      (
-        await fetch(`${base}${route}`, { redirect: "manual" }).catch(
-          () => undefined,
-        )
-      )?.status ?? 0;
+    const status = (await fetch(`${base}${route}`, { redirect: "manual" }).catch(() => undefined))?.status ?? 0;
     out.push({ route, expected, status, ok: status === expected });
   }
   return out;
@@ -195,8 +133,7 @@ async function withServer<T>(
     detached: true,
   });
   try {
-    if (!(await waitFor(url, 90_000)))
-      throw new Error(`${url} did not come up`);
+    if (!(await waitFor(url, 90_000))) throw new Error(`${url} did not come up`);
     return await body();
   } finally {
     try {
@@ -216,29 +153,21 @@ async function withServer<T>(
 const PORT_DEV = "3217";
 const PORT_START = "3218";
 
-/** `yolo web dev` serves the example; curl each route. */
-export async function yoloServe(
-  example: Example = "app",
-): Promise<RouteResult[]> {
-  const { cmd, env } = yoloCommand(example, "web", "dev");
+/** `m3-next dev` serves the example; curl each route. */
+export async function serveExample(example: Example = "app"): Promise<RouteResult[]> {
+  const { cmd, env } = exampleCommand(example, "web", "dev");
   const base = `http://localhost:${PORT_DEV}`;
-  return withServer(
-    cmd,
-    { ...env, PORT: PORT_DEV },
-    undefined,
-    `${base}/`,
-    () => probe(base, ROUTES[example]),
+  return withServer(cmd, { ...env, PORT: PORT_DEV }, exampleDir(example), `${base}/`, () =>
+    probe(base, ROUTES[example]),
   );
 }
 
-/** `yolo web build` then the production server (`bun run start`); curl each route. */
-export async function yoloStart(
-  example: Example = "app",
-): Promise<{ build: Timed; routes: RouteResult[] }> {
-  const build = await yoloBuild(example);
+/** `m3-next build` then the production server (`bun run start`); curl each route. */
+export async function startExample(example: Example = "app"): Promise<{ build: Timed; routes: RouteResult[] }> {
+  const build = await buildExample(example);
   if (build.exitCode !== 0) return { build, routes: [] };
   const base = `http://localhost:${PORT_START}`;
-  const { env } = yoloCommand(example, "web", "build");
+  const { env } = exampleCommand(example, "web", "build");
   const routes = await withServer(
     ["bun", "run", "start"],
     { ...env, PORT: PORT_START },
@@ -254,8 +183,8 @@ const median = (values: number[]): number =>
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy; ES2022 has no toSorted
   [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]!;
 
-/** Cold (`.next` removed) and warm (`.next` kept) `yolo web build` times, `runs` each. */
-export async function yoloBench(
+/** Cold (`.next` removed) and warm (`.next` kept) `m3-next build` times, `runs` each. */
+export async function benchExample(
   example: Example = "app",
   runs = 3,
 ): Promise<{
@@ -267,12 +196,12 @@ export async function yoloBench(
   const cold: number[] = [];
   const warm: number[] = [];
   for (let i = 0; i < runs; i += 1) {
-    const result = await yoloBuild(example, "web", true);
+    const result = await buildExample(example, "web", true);
     if (result.exitCode !== 0) throw new Error(result.output.slice(-2000));
     cold.push(result.ms);
   }
   for (let i = 0; i < runs; i += 1) {
-    const result = await yoloBuild(example, "web", false);
+    const result = await buildExample(example, "web", false);
     if (result.exitCode !== 0) throw new Error(result.output.slice(-2000));
     warm.push(result.ms);
   }
@@ -281,10 +210,8 @@ export async function yoloBench(
 
 function report(label: string, results: RouteResult[]): boolean {
   for (const r of results)
-    console.log(
-      `  ${r.ok ? "ok  " : "FAIL"} ${r.route.padEnd(14)} ${r.status} (expected ${r.expected})`,
-    );
-  const ok = results.length > 0 && results.every((r) => r.ok);
+    console.log(`  ${r.ok ? "ok  " : "FAIL"} ${r.route.padEnd(14)} ${r.status} (expected ${r.expected})`);
+  const ok = results.length > 0 && results.every(r => r.ok);
   console.log(`${ok ? "pass" : "FAIL"} ${label}`);
   return ok;
 }
@@ -292,31 +219,34 @@ function report(label: string, results: RouteResult[]): boolean {
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const [task = "check"] = args;
+  if (task === "--help" || task === "-h") {
+    console.log(
+      "Usage: bun packages/m3-next/scripts/examples.ts build|serve|start|export|bench|check [--example app|tauri] [--json]",
+    );
+    process.exit(0);
+  }
   const flag = (name: string): string | undefined => {
     const i = args.indexOf(name);
     return i >= 0 ? args[i + 1] : undefined;
   };
   const example = (flag("--example") ?? "app") as Example;
+  if (example !== "app" && example !== "tauri") throw new Error("Unknown M3 example");
   const json = args.includes("--json");
-  if (!existsSync(YOLO_CLI)) {
-    console.error(`yolo CLI not found at ${YOLO_CLI}; set YOLO_ROOT`);
+  if (!existsSync(join(PKG, "bin/m3-next.ts"))) {
+    console.error("Canonical m3-next runner is missing");
     process.exit(2);
   }
   let ok = true;
   const doBuild = async (name: Example, verb: "web" | "tauri") => {
-    const result = await yoloBuild(name, verb);
-    console.log(
-      `${result.exitCode === 0 ? "pass" : "FAIL"} yolo ${verb} build (${name}) ${result.ms} ms`,
-    );
+    const result = await buildExample(name, verb);
+    console.log(`${result.exitCode === 0 ? "pass" : "FAIL"} m3-next build (${name}) ${result.ms} ms`);
     if (result.exitCode !== 0) console.log(result.output.slice(-1500));
     return result.exitCode === 0;
   };
   const doExport = async () => {
     if (!(await doBuild("tauri", "tauri"))) return false;
     const out = join(exampleDir("tauri"), "out");
-    const html = existsSync(join(out, "index.html"))
-      ? readFileSync(join(out, "index.html"), "utf8")
-      : "";
+    const html = existsSync(join(out, "index.html")) ? readFileSync(join(out, "index.html"), "utf8") : "";
     const good =
       html.includes('id="m3-scheme"') &&
       html.includes("document.cookie.match") &&
@@ -331,13 +261,11 @@ if (import.meta.main) {
       ok = await doBuild(example, "web");
       break;
     case "serve":
-      ok = report(`yolo web dev (${example})`, await yoloServe(example));
+      ok = report(`m3-next dev (${example})`, await serveExample(example));
       break;
     case "start": {
-      const { build, routes } = await yoloStart(example);
-      console.log(
-        `yolo web build (${example}) ${build.ms} ms, exit ${build.exitCode}`,
-      );
+      const { build, routes } = await startExample(example);
+      console.log(`m3-next build (${example}) ${build.ms} ms, exit ${build.exitCode}`);
       ok = report(`next start (${example})`, routes);
       break;
     }
@@ -345,7 +273,7 @@ if (import.meta.main) {
       ok = await doExport();
       break;
     case "bench": {
-      const bench = await yoloBench(example);
+      const bench = await benchExample(example);
       console.log(
         json
           ? JSON.stringify(bench)
@@ -354,11 +282,9 @@ if (import.meta.main) {
       break;
     }
     case "check":
-      ok =
-        (await doBuild("app", "web")) &&
-        report("yolo web dev (app)", await yoloServe("app"));
+      ok = (await doBuild("app", "web")) && report("m3-next dev (app)", await serveExample("app"));
       if (ok) {
-        const { routes } = await yoloStart("app");
+        const { routes } = await startExample("app");
         ok = report("next start (app)", routes);
       }
       ok = (await doExport()) && ok;

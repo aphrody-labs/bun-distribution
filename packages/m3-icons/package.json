@@ -48,7 +48,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts build --only $npm_package_name",
+    "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-icons",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "APHRODY_FFI_DEV=1 bun test"
   },

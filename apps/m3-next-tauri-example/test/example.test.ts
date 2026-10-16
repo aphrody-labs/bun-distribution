@@ -1,29 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
-// The static export's configuration and files, without starting Next: `scripts/yolo-example.ts export` builds it.
+// The static export's configuration and files, without starting Next: `scripts/examples.ts export` builds it.
 import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "..");
-const m3Next = join(root, "../..");
+const m3Next = join(root, "../../packages/m3-next");
 
 beforeAll(() => {
   if (!existsSync(join(m3Next, "dist/index.js"))) {
     const build = Bun.spawnSync(
-      [
-        "bun",
-        join(m3Next, "../../scripts/build.ts"),
-        "build",
-        "--only",
-        "@aphrody/m3-next",
-      ],
+      ["bun", join(m3Next, "../../scripts/m3/build.ts"), "build", "--only", "@aphrody/m3-next"],
       { windowsHide: true, cwd: m3Next },
     );
     if (build.exitCode !== 0) throw new Error(build.stderr.toString());
   }
 });
 
-describe("examples/tauri", () => {
+describe("apps/m3-next-tauri-example", () => {
   test("next.config.ts is a static export for a webview", async () => {
     const config = (await import("../next.config")).default;
     expect(config.output).toBe("export");

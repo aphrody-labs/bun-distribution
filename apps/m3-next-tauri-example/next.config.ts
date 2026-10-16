@@ -11,6 +11,6 @@ export default withM3(
     typedRoutes: true,
     reactCompiler: false,
     tauri: true,
-    turbopackRoot: resolve(process.cwd(), "../../../.."),
+    turbopackRoot: resolve(import.meta.dir, "../.."),
   },
 );

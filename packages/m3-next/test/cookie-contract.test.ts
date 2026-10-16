@@ -27,13 +27,7 @@ describe("theme cookie identity", () => {
     expect(themeCookie("dark", "app.theme")).toStartWith("app.theme=dark;");
   });
   test("cookie delimiters and script markup cannot become a cookie name", () => {
-    for (const name of [
-      "",
-      "theme;path=/",
-      "theme=dark",
-      "</script>",
-      "with space",
-    ]) {
+    for (const name of ["", "theme;path=/", "theme=dark", "</script>", "with space"]) {
       expect(() => themeCookie("dark", name)).toThrow("HTTP cookie token");
       expect(() => colorSchemeScript(name)).toThrow("HTTP cookie token");
     }
