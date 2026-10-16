@@ -2,13 +2,13 @@
  * Proves that the bot dashboard stylesheet keeps its effective values once it
  * imports the shared `@shenron/ui/styles.css` layer (blue palette, radius 0).
  *
- *   bun packages/shenron-ui/scripts/check-dashboard-css.ts [--ref <rev>] [--keep <dir>] [--limit <n>]
+ *   bun packages/shenron-ui/scripts/check-dashboard-css.ts --dashboard-root <actual-dashboard> [--package-git-path <path>] [--ref <rev>] [--keep <dir>] [--limit <n>]
  *
  * Both sides are compiled like the site check: postcss + `@tailwindcss/postcss`
- * (no minification), `base` = apps/shenron/bot/src/dashboard, candidates scanned from
+ * (no minification), `base` = the explicit external dashboard, candidates scanned from
  * the working tree, one `bun` process per compilation.
  *
- * - Baseline: `git show <rev>:apps/shenron/bot/src/dashboard/styles.css` (default
+ * - Baseline: `git show <rev>:<host stylesheet>` in its own Git owner (default
  *   `HEAD`); an `@import "@shenron/ui/styles.css"` in that revision is inlined
  *   from the package stylesheet of the same revision.
  * - Candidate: the working-tree stylesheet, resolving the package import through
@@ -36,23 +36,14 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import {
-  analyze,
-  type Analysis,
-  compare,
-  type Findings,
-} from "./check-css-equivalence";
+import { resolveCssHost, type CssHost } from "./css-host";
+import { analyze, type Analysis, compare, type Findings } from "./check-css-equivalence";
 
-const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..");
-export const DASHBOARD_DIR = join(REPO_ROOT, "apps", "bot", "src", "dashboard");
-const STYLES_PATH = join(DASHBOARD_DIR, "styles.css");
-const STYLES_GIT_PATH = "apps/shenron/bot/src/dashboard/styles.css";
-const PACKAGE_STYLES_GIT_PATH = "packages/shenron-ui/src/styles.css";
+const dashboardHost = () => resolveCssHost("--dashboard-root", "SHENRON_DASHBOARD_ROOT", ["styles.css"]);
 const PACKAGE_IMPORT = /@import\s+["']@shenron\/ui\/styles\.css["']\s*;/;
 
 /** Selectors whose effective values the dashboard must keep. */
-export const PRIMITIVE =
-  /\.(card|btn(-[\w-]+)?|input|badge(-[\w-]+)?)(?![\w-])/;
+export const PRIMITIVE = /\.(card|btn(-[\w-]+)?|input|badge(-[\w-]+)?)(?![\w-])/;
 
 /** Initial values that make an added declaration inert. */
 const INITIAL: Record<string, string[]> = {
@@ -86,25 +77,19 @@ const INITIAL: Record<string, string[]> = {
 
 // ─── Compilation ────────────────────────────────────────────────────────────
 
-async function compileChild(
-  input: string,
-  from: string,
-  output: string,
-): Promise<void> {
+async function compileChild(input: string, from: string, output: string): Promise<void> {
   const { default: postcss } = await import("postcss");
   const { default: tailwindcss } = await import("@tailwindcss/postcss");
   const css = await Bun.file(input).text();
-  const result = await postcss([
-    tailwindcss({ base: DASHBOARD_DIR, optimize: { minify: false } }),
-  ]).process(css, { from });
+  const result = await postcss([tailwindcss({ base: dashboardHost().directory, optimize: { minify: false } })]).process(
+    css,
+    { from },
+  );
   await Bun.write(output, result.css);
 }
 
-async function compile(
-  css: string,
-  label: string,
-  workDir: string,
-): Promise<string> {
+async function compile(css: string, label: string, workDir: string): Promise<string> {
+  const host = dashboardHost();
   const input = join(workDir, `${label}.input.css`);
   const output = join(workDir, `${label}.compiled.css`);
   await Bun.write(input, css);
@@ -115,44 +100,48 @@ async function compile(
       import.meta.path,
       "--compile-child",
       input,
-      STYLES_PATH,
+      host.stylesheet,
       output,
+      "--dashboard-root",
+      host.directory,
     ],
     {
-      cwd: join(REPO_ROOT, "packages", "ui"),
+      cwd: resolve(import.meta.dir, ".."),
       stdout: "inherit",
       stderr: "inherit",
+      timeout: 25000,
+      windowsHide: true,
     },
   );
   const code = await child.exited;
-  if (code !== 0)
-    throw new Error(
-      `compilation of the ${label} stylesheet failed (exit ${code})`,
-    );
+  if (code !== 0) throw new Error(`compilation of the ${label} stylesheet failed (exit ${code})`);
   return Bun.file(output).text();
 }
 
-function gitShow(rev: string, path: string): string | null {
-  const res = Bun.spawnSync(["git", "show", `${rev}:${path}`], {
-    cwd: REPO_ROOT,
+function gitShow(rev: string, path: string, repository: string): string | null {
+  const res = Bun.spawnSync(["git", "show", "--end-of-options", `${rev}:${path}`], {
+    cwd: repository,
     stdout: "pipe",
     stderr: "pipe",
+    timeout: 10000,
+    windowsHide: true,
   });
   return res.exitCode === 0 ? res.stdout.toString() : null;
 }
 
 /** Baseline source: `<rev>` dashboard stylesheet, package stylesheet of `<rev>` inlined if imported. */
-export function baselineSource(rev: string): {
+export function baselineSource(
+  rev: string,
+  host: CssHost = dashboardHost(),
+): {
   css: string;
   inlinedPackage: boolean;
 } {
-  const css = gitShow(rev, STYLES_GIT_PATH);
-  if (css === null)
-    throw new Error(`git show ${rev}:${STYLES_GIT_PATH} failed`);
+  const css = gitShow(rev, host.gitPath, host.repository);
+  if (css === null) throw new Error(`git show ${rev}:${host.gitPath} failed`);
   if (!PACKAGE_IMPORT.test(css)) return { css, inlinedPackage: false };
-  const pkg = gitShow(rev, PACKAGE_STYLES_GIT_PATH);
-  if (pkg === null)
-    throw new Error(`git show ${rev}:${PACKAGE_STYLES_GIT_PATH} failed`);
+  const pkg = gitShow(rev, host.packageGitPath, host.repository);
+  if (pkg === null) throw new Error(`git show ${rev}:${host.packageGitPath} failed`);
   return { css: css.replace(PACKAGE_IMPORT, () => pkg), inlinedPackage: true };
 }
 
@@ -173,10 +162,7 @@ function parseKey(key: string): {
 
 /** Removes pseudo-classes of state so `.card:hover` maps back to `.card`. */
 function stateless(selector: string): string {
-  return selector.replace(
-    /:(hover|active|focus|focus-visible|focus-within|disabled|placeholder-shown)(?![\w-])/g,
-    "",
-  );
+  return selector.replace(/:(hover|active|focus|focus-visible|focus-within|disabled|placeholder-shown)(?![\w-])/g, "");
 }
 
 export interface DashboardVerdict {
@@ -188,8 +174,7 @@ export interface DashboardVerdict {
 export function judge(base: Analysis, next: Analysis): DashboardVerdict {
   const raw = compare(base, next);
   const baseCustom = new Set<string>();
-  for (const w of base.winners.values())
-    if (w.prop.startsWith("--")) baseCustom.add(w.prop);
+  for (const w of base.winners.values()) if (w.prop.startsWith("--")) baseCustom.add(w.prop);
 
   /**
    * A removed conditional (`@supports`, `@media`) pair is inert when, in the
@@ -205,17 +190,13 @@ export function judge(base: Analysis, next: Analysis): DashboardVerdict {
     const basePlain = base.winners.get(plainKey);
     const nextPlain = next.winners.get(plainKey);
     if (!self || !basePlain || !nextPlain) return false;
-    if (basePlain.important !== self.important || basePlain.order < self.order)
-      return false;
-    return (
-      nextPlain.value === basePlain.value &&
-      nextPlain.important === basePlain.important
-    );
+    if (basePlain.important !== self.important || basePlain.order < self.order) return false;
+    return nextPlain.value === basePlain.value && nextPlain.important === basePlain.important;
   };
 
   const failures: Findings = {
     changed: raw.changed,
-    removed: raw.removed.filter((entry) => !removedInert(entry)),
+    removed: raw.removed.filter(entry => !removedInert(entry)),
     orderConflicts: raw.orderConflicts,
     structure: raw.structure,
     added: [],
@@ -223,22 +204,13 @@ export function judge(base: Analysis, next: Analysis): DashboardVerdict {
   let tolerated = 0;
 
   /** Initial value, or the value the same selector already carries without the state. */
-  const valueInert = (
-    layer: string,
-    conds: string,
-    selector: string,
-    prop: string,
-    value: string,
-  ) => {
+  const valueInert = (layer: string, conds: string, selector: string, prop: string, value: string) => {
     if (INITIAL[prop]?.includes(value)) return true;
     // The value every element already receives from the `base` layer (`* { … }`).
     if (next.winners.get(`base |  | * | ${prop}`)?.value === value) return true;
     const plain = stateless(selector);
     if (plain === selector) return false;
-    return (
-      next.winners.get(`${layer} | ${conds} | ${plain} | ${prop}`)?.value ===
-      value
-    );
+    return next.winners.get(`${layer} | ${conds} | ${plain} | ${prop}`)?.value === value;
   };
 
   /**
@@ -246,30 +218,13 @@ export function judge(base: Analysis, next: Analysis): DashboardVerdict {
    * conditions (`@supports`, `@media`) and a later unconditional winner of the
    * same selector and property overrides it with an inert value.
    */
-  const declarationInert = (
-    layer: string,
-    conds: string,
-    selector: string,
-    prop: string,
-    value: string,
-  ): boolean => {
+  const declarationInert = (layer: string, conds: string, selector: string, prop: string, value: string): boolean => {
     if (valueInert(layer, conds, selector, prop, value)) return true;
     if (conds === "") return false;
-    const self = next.winners.get(
-      `${layer} | ${conds} | ${selector} | ${prop}`,
-    );
+    const self = next.winners.get(`${layer} | ${conds} | ${selector} | ${prop}`);
     const plain = next.winners.get(`${layer} |  | ${selector} | ${prop}`);
-    if (
-      !self ||
-      !plain ||
-      plain.important !== self.important ||
-      plain.order < self.order
-    )
-      return false;
-    return (
-      valueInert(layer, "", selector, prop, plain.value) ||
-      baseValue(layer, selector, prop) === plain.value
-    );
+    if (!self || !plain || plain.important !== self.important || plain.order < self.order) return false;
+    return valueInert(layer, "", selector, prop, plain.value) || baseValue(layer, selector, prop) === plain.value;
   };
 
   /** Unconditional baseline winner of a selector and property. */
@@ -281,24 +236,15 @@ export function judge(base: Analysis, next: Analysis): DashboardVerdict {
    * is inert only in the per-element `utilities` / `properties` layers or when
    * it restates the baseline theme value (dashboard palette pinned on :root).
    */
-  const customInert = (
-    layer: string,
-    selector: string,
-    prop: string,
-    value: string,
-  ): boolean => {
+  const customInert = (layer: string, selector: string, prop: string, value: string): boolean => {
     if (!baseCustom.has(prop)) return true;
     if (layer === "utilities" || layer === "properties") return true;
     const themed = base.winners.get(`theme |  | :root | ${prop}`)?.value;
-    return (
-      themed === value &&
-      (selector === ":root" || selector === ".dark" || selector === ":host")
-    );
+    return themed === value && (selector === ":root" || selector === ".dark" || selector === ":host");
   };
   for (const entry of raw.added) {
     if (entry.startsWith("at-rule ")) {
-      if (/@font-face/.test(entry) || PRIMITIVE.test(entry))
-        failures.added.push(entry);
+      if (/@font-face/.test(entry) || PRIMITIVE.test(entry)) failures.added.push(entry);
       else tolerated++;
       continue;
     }
@@ -322,13 +268,7 @@ export function judge(base: Analysis, next: Analysis): DashboardVerdict {
 }
 
 export function total(f: Findings): number {
-  return (
-    f.changed.length +
-    f.added.length +
-    f.removed.length +
-    f.orderConflicts.length +
-    f.structure.length
-  );
+  return f.changed.length + f.added.length + f.removed.length + f.orderConflicts.length + f.structure.length;
 }
 
 // ─── CLI ────────────────────────────────────────────────────────────────────
@@ -341,8 +281,7 @@ function argValue(argv: string[], name: string): string | undefined {
 async function main(argv: string[]): Promise<number> {
   if (argv[0] === "--compile-child") {
     const [, input, from, output] = argv;
-    if (!input || !from || !output)
-      throw new Error("usage: --compile-child <input> <from> <output>");
+    if (!input || !from || !output) throw new Error("usage: --compile-child <input> <from> <output>");
     await compileChild(input, from, output);
     return 0;
   }
@@ -350,10 +289,13 @@ async function main(argv: string[]): Promise<number> {
   const rev = argValue(argv, "--ref") ?? "HEAD";
   const keep = argValue(argv, "--keep");
   const limit = Number(argValue(argv, "--limit") ?? 25);
+  if (!Number.isInteger(limit) || limit < 0 || limit > 1000)
+    throw new Error("--limit must be an integer from 0 to 1000");
+  const host = dashboardHost();
   const workDir = mkdtempSync(join(tmpdir(), "shenron-dashboard-css-"));
   try {
-    const baseline = baselineSource(rev);
-    const candidate = await Bun.file(STYLES_PATH).text();
+    const baseline = baselineSource(rev, host);
+    const candidate = await Bun.file(host.stylesheet).text();
     const [baseCss, nextCss] = await Promise.all([
       compile(baseline.css, "baseline", workDir),
       compile(candidate, "candidate", workDir),
@@ -369,7 +311,7 @@ async function main(argv: string[]): Promise<number> {
     const count = total(failures);
 
     console.log(
-      `dashboard-css: baseline ${rev}:${STYLES_GIT_PATH}${baseline.inlinedPackage ? " (+ package stylesheet inlined)" : ""} vs working tree ${relative(REPO_ROOT, STYLES_PATH).replaceAll("\\", "/")}`,
+      `dashboard-css: baseline ${rev}:${host.gitPath}${baseline.inlinedPackage ? " (+ package stylesheet inlined)" : ""} vs working tree ${relative(host.repository, host.stylesheet).replaceAll("\\", "/")}`,
     );
     console.log(
       `dashboard-css: declarations ${base.declarations} → ${next.declarations}; selector+property pairs ${base.winners.size} → ${next.winners.size}; inert additions tolerated ${tolerated.added}`,
@@ -384,11 +326,7 @@ async function main(argv: string[]): Promise<number> {
     report("effective additions", failures.added);
     report("cascade-order conflicts", failures.orderConflicts);
     report("structure differences", failures.structure);
-    console.log(
-      count === 0
-        ? "dashboard-css: OK"
-        : `dashboard-css: FAILED (${count} findings)`,
-    );
+    console.log(count === 0 ? "dashboard-css: OK" : `dashboard-css: FAILED (${count} findings)`);
     return count === 0 ? 0 : 1;
   } finally {
     rmSync(workDir, { recursive: true, force: true });

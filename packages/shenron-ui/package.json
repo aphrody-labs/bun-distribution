@@ -1,6 +1,6 @@
 {
   "name": "@shenron/ui",
-  "version": "0.1.0",
+  "version": "1.4.4",
   "private": true,
   "type": "module",
   "sideEffects": [
@@ -61,8 +61,8 @@
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
+    "react-markdown": "catalog:",
+    "remark-gfm": "catalog:",
     "tailwind-merge": "catalog:"
   },
   "devDependencies": {
@@ -71,7 +71,7 @@
     "@tailwindcss/postcss": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "postcss": "8.5.28",
+    "postcss": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwindcss": "catalog:"
@@ -81,9 +81,9 @@
     "react-dom": "catalog:"
   },
   "engines": {
-    "bun": ">=1.4.2"
+    "bun": "=1.4.4"
   },
-  "shenron": {
+  "bunos": {
     "runtime": {
       ".": "pure",
       "./server": "react",

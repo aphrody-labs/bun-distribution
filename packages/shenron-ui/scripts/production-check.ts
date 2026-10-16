@@ -16,9 +16,7 @@ const forbiddenSpecifier = /["'`](?:node|bun):/;
 
 async function bundle(entry: (typeof entries)[number]) {
   const result = await Bun.build({
-    entrypoints: [
-      join(root, "src", entry === "reader" ? "reader/index.ts" : `${entry}.ts`),
-    ],
+    entrypoints: [join(root, "src", entry === "reader" ? "reader/index.ts" : `${entry}.ts`)],
     target: "browser",
     format: "esm",
     packages: "external",
@@ -30,16 +28,14 @@ async function bundle(entry: (typeof entries)[number]) {
     throw: false,
   });
   if (!result.success) {
-    const details = result.logs.map((log) => log.message).join("\n");
+    const details = result.logs.map(log => log.message).join("\n");
     throw new Error(`${entry}: Bun build failed\n${details}`);
   }
   let bytes = 0;
   for (const output of result.outputs) {
     bytes += output.size;
     if (forbiddenSpecifier.test(await output.text())) {
-      throw new Error(
-        `${entry}: browser bundle contains a Node or Bun specifier`,
-      );
+      throw new Error(`${entry}: browser bundle contains a Node or Bun specifier`);
     }
   }
   return {
@@ -61,19 +57,15 @@ async function compileCss() {
     '@import "@shenron/ui/reader-styles.css";',
     '@import "@shenron/ui/reader-dragon-ball.css";',
   ].join("\n");
-  const result = await postcss([
-    tailwindcss({ base: root, optimize: { minify: true } }),
-  ]).process(source, {
+  const result = await postcss([tailwindcss({ base: root, optimize: { minify: true } })]).process(source, {
     from: join(root, "src", "production.css"),
   });
   return textEncoder.encode(result.css).byteLength;
 }
 
 const bundles = await Promise.all(entries.map(bundle));
-const cssBytes = await compileCss();
 for (const result of bundles) {
-  console.log(
-    `${result.entry}: ${result.bytes} bytes minified, ${result.inputs} inputs`,
-  );
+  console.log(`${result.entry}: ${result.bytes} bytes minified, ${result.inputs} inputs`);
 }
+const cssBytes = await compileCss();
 console.log(`css: ${cssBytes} bytes minified`);

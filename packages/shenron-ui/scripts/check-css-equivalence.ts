@@ -1,17 +1,17 @@
 /**
  * Proves that the site stylesheet compiles to the same CSS before and after a
- * change of `apps/shenron/site/src/app/globals.css` / `packages/shenron-ui/src/styles.css`
+ * change of an explicitly selected host stylesheet / `packages/shenron-ui/src/styles.css`
  * (first use: moving the token layer into `@shenron/ui/styles.css`).
  *
- *   bun packages/shenron-ui/scripts/check-css-equivalence.ts [--ref <rev>] [--keep <dir>] [--limit <n>]
+ *   bun packages/shenron-ui/scripts/check-css-equivalence.ts --site-root <host-app> [--package-git-path <path>] [--ref <rev>] [--keep <dir>] [--limit <n>]
  *
  * Both sides are compiled like Next compiles the site: postcss +
- * `@tailwindcss/postcss`, `base` = apps/shenron/site, candidates scanned from the
+ * `@tailwindcss/postcss`, `base` = the explicit host app, candidates scanned from the
  * working tree. Tailwind's Lightning CSS pass (without minification) flattens
  * nesting so the two outputs compare rule by rule. Each compilation runs in its
  * own `bun` process: the plugin caches compilers per input file.
  *
- * - Baseline: `git show <rev>:apps/shenron/site/src/app/globals.css` (default `HEAD`).
+ * - Baseline: `git show <rev>:<host stylesheet>` in its own Git owner (default `HEAD`).
  *   When that revision already imports `@shenron/ui/styles.css`, the package
  *   stylesheet of the same revision is inlined at the import.
  * - Candidate: the working-tree `globals.css`; its `@import "@shenron/ui/styles.css"`
@@ -30,41 +30,27 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import postcss, {
-  type AtRule,
-  type ChildNode,
-  type Container,
-  type Rule,
-} from "postcss";
+import { resolveCssHost, type CssHost } from "./css-host";
+import postcss, { type AtRule, type ChildNode, type Container, type Rule } from "postcss";
 
-const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..");
-const SITE_DIR = join(REPO_ROOT, "apps", "site");
-const GLOBALS_PATH = join(SITE_DIR, "src", "app", "globals.css");
-const GLOBALS_GIT_PATH = "apps/shenron/site/src/app/globals.css";
-const PACKAGE_STYLES_GIT_PATH = "packages/shenron-ui/src/styles.css";
+const siteHost = () => resolveCssHost("--site-root", "SHENRON_SITE_ROOT", ["src", "app", "globals.css"]);
 const PACKAGE_IMPORT = /@import\s+["']@shenron\/ui\/styles\.css["']\s*;/;
 
 // ─── Compilation ────────────────────────────────────────────────────────────
 
 /** Child mode: compiles `input` as if it were `from`, writes the CSS to `output`. */
-async function compileChild(
-  input: string,
-  from: string,
-  output: string,
-): Promise<void> {
+async function compileChild(input: string, from: string, output: string): Promise<void> {
   const { default: tailwindcss } = await import("@tailwindcss/postcss");
   const css = await Bun.file(input).text();
-  const result = await postcss([
-    tailwindcss({ base: SITE_DIR, optimize: { minify: false } }),
-  ]).process(css, { from });
+  const result = await postcss([tailwindcss({ base: siteHost().directory, optimize: { minify: false } })]).process(
+    css,
+    { from },
+  );
   await Bun.write(output, result.css);
 }
 
-async function compile(
-  css: string,
-  label: string,
-  workDir: string,
-): Promise<string> {
+async function compile(css: string, label: string, workDir: string): Promise<string> {
+  const host = siteHost();
   const input = join(workDir, `${label}.input.css`);
   const output = join(workDir, `${label}.compiled.css`);
   await Bun.write(input, css);
@@ -75,45 +61,48 @@ async function compile(
       import.meta.path,
       "--compile-child",
       input,
-      GLOBALS_PATH,
+      host.stylesheet,
       output,
+      "--site-root",
+      host.directory,
     ],
     {
-      cwd: join(REPO_ROOT, "packages", "ui"),
+      cwd: resolve(import.meta.dir, ".."),
       stdout: "inherit",
       stderr: "inherit",
+      timeout: 25000,
+      windowsHide: true,
     },
   );
   const code = await child.exited;
-  if (code !== 0)
-    throw new Error(
-      `compilation of the ${label} stylesheet failed (exit ${code})`,
-    );
+  if (code !== 0) throw new Error(`compilation of the ${label} stylesheet failed (exit ${code})`);
   return Bun.file(output).text();
 }
 
-function gitShow(rev: string, path: string): string | null {
-  const res = Bun.spawnSync(["git", "show", `${rev}:${path}`], {
-    cwd: REPO_ROOT,
+function gitShow(rev: string, path: string, repository: string): string | null {
+  const res = Bun.spawnSync(["git", "show", "--end-of-options", `${rev}:${path}`], {
+    cwd: repository,
     stdout: "pipe",
     stderr: "pipe",
+    timeout: 10000,
+    windowsHide: true,
   });
   return res.exitCode === 0 ? res.stdout.toString() : null;
 }
 
 /** Baseline source: `<rev>` globals.css, with the package stylesheet of `<rev>` inlined if imported. */
-export function baselineSource(rev: string): {
+export function baselineSource(
+  rev: string,
+  host: CssHost = siteHost(),
+): {
   css: string;
   inlinedPackage: boolean;
 } {
-  const globals = gitShow(rev, GLOBALS_GIT_PATH);
-  if (globals === null)
-    throw new Error(`git show ${rev}:${GLOBALS_GIT_PATH} failed`);
-  if (!PACKAGE_IMPORT.test(globals))
-    return { css: globals, inlinedPackage: false };
-  const pkg = gitShow(rev, PACKAGE_STYLES_GIT_PATH);
-  if (pkg === null)
-    throw new Error(`git show ${rev}:${PACKAGE_STYLES_GIT_PATH} failed`);
+  const globals = gitShow(rev, host.gitPath, host.repository);
+  if (globals === null) throw new Error(`git show ${rev}:${host.gitPath} failed`);
+  if (!PACKAGE_IMPORT.test(globals)) return { css: globals, inlinedPackage: false };
+  const pkg = gitShow(rev, host.packageGitPath, host.repository);
+  if (pkg === null) throw new Error(`git show ${rev}:${host.packageGitPath} failed`);
   return {
     css: globals.replace(PACKAGE_IMPORT, () => pkg),
     inlinedPackage: true,
@@ -175,7 +164,7 @@ function splitTopLevel(list: string): string[] {
     }
   }
   parts.push(list.slice(start));
-  return parts.map((p) => p.trim()).filter(Boolean);
+  return parts.map(p => p.trim()).filter(Boolean);
 }
 
 function specificityTuple(selector: string): [number, number, number] {
@@ -219,11 +208,7 @@ function specificityTuple(selector: string): [number, number, number] {
     let best: [number, number, number] = [0, 0, 0];
     for (const part of splitTopLevel(list)) {
       const t = specificityTuple(part);
-      if (
-        t[0] * 1e6 + t[1] * 1e3 + t[2] >
-        best[0] * 1e6 + best[1] * 1e3 + best[2]
-      )
-        best = t;
+      if (t[0] * 1e6 + t[1] * 1e3 + t[2] > best[0] * 1e6 + best[1] * 1e3 + best[2]) best = t;
     }
     return best;
   };
@@ -251,18 +236,10 @@ function specificityTuple(selector: string): [number, number, number] {
       i += element ? 2 : 1;
       const name = readIdent().toLowerCase();
       const args = readArgs();
-      if (
-        element ||
-        ["before", "after", "first-line", "first-letter"].includes(name)
-      )
-        c++;
+      if (element || ["before", "after", "first-line", "first-letter"].includes(name)) c++;
       else if (name === "where") {
         /* zero specificity */
-      } else if (
-        ["is", "not", "has", "matches", "-webkit-any", "-moz-any"].includes(
-          name,
-        )
-      ) {
+      } else if (["is", "not", "has", "matches", "-webkit-any", "-moz-any"].includes(name)) {
         const t = maxOf(args ?? "");
         a += t[0];
         b += t[1];
@@ -306,37 +283,21 @@ export function analyze(css: string): Analysis {
     const head = `@${node.name} ${collapse(node.params)}`;
     if (node.name !== "font-face") return head;
     const descriptors: string[] = [];
-    node.walkDecls((d) => {
-      if (
-        [
-          "font-family",
-          "font-style",
-          "font-weight",
-          "font-stretch",
-          "unicode-range",
-        ].includes(d.prop.toLowerCase())
-      )
+    node.walkDecls(d => {
+      if (["font-family", "font-style", "font-weight", "font-stretch", "unicode-range"].includes(d.prop.toLowerCase()))
         descriptors.push(`${d.prop.toLowerCase()}:${collapse(d.value)}`);
     });
     return `${head}{${descriptors.sort().join(";")}}`;
   };
 
-  const walk = (
-    container: Container,
-    layer: string[],
-    conds: string[],
-    selectors: string[] | null,
-  ) => {
+  const walk = (container: Container, layer: string[], conds: string[], selectors: string[] | null) => {
     container.each((node: ChildNode) => {
       if (node.type === "atrule") {
         const name = node.name.toLowerCase();
         if (name === "layer") {
           if (!node.nodes) {
-            for (const n of node.params.split(",").map((p) => p.trim()))
-              seeLayer([...layer, n].join("."));
-            statements.push(
-              `@layer ${collapse(node.params)} @ ${layer.join(".")}`,
-            );
+            for (const n of node.params.split(",").map(p => p.trim())) seeLayer([...layer, n].join("."));
+            statements.push(`@layer ${collapse(node.params)} @ ${layer.join(".")}`);
             return;
           }
           const n = node.params.trim() || `<anonymous-${++anonymousLayers}>`;
@@ -352,31 +313,20 @@ export function analyze(css: string): Analysis {
           return;
         }
         if (!node.nodes) {
-          statements.push(
-            `@${name} ${collapse(node.params)} @ ${layer.join(".")}`,
-          );
+          statements.push(`@${name} ${collapse(node.params)} @ ${layer.join(".")}`);
           return;
         }
         // Conditional group rules (@media, @supports, @container, @starting-style, …)
         // and any other block at-rule scope their content.
-        walk(
-          node,
-          layer,
-          [...conds, `@${name} ${collapse(node.params)}`],
-          selectors,
-        );
+        walk(node, layer, [...conds, `@${name} ${collapse(node.params)}`], selectors);
         return;
       }
       if (node.type === "rule") {
         const rule = node as Rule;
         const own = splitTopLevel(rule.selector).map(collapse);
         const composed = selectors
-          ? selectors.flatMap((parent) =>
-              own.map((child) =>
-                child.includes("&")
-                  ? child.replaceAll("&", parent)
-                  : `${parent} ${child}`,
-              ),
+          ? selectors.flatMap(parent =>
+              own.map(child => (child.includes("&") ? child.replaceAll("&", parent) : `${parent} ${child}`)),
             )
           : own;
         walk(rule, layer, conds, composed);
@@ -385,9 +335,7 @@ export function analyze(css: string): Analysis {
       if (node.type === "decl") {
         declarations++;
         order++;
-        const prop = node.prop.startsWith("--")
-          ? node.prop
-          : node.prop.toLowerCase();
+        const prop = node.prop.startsWith("--") ? node.prop : node.prop.toLowerCase();
         const value = collapse(node.value);
         const layerName = layer.join(".");
         for (const selector of selectors ?? ["<top-level>"]) {
@@ -419,20 +367,13 @@ export interface Findings {
   structure: string[];
 }
 
-function diffMaps(
-  base: Map<string, string>,
-  next: Map<string, string>,
-  label: string,
-  out: Findings,
-): void {
+function diffMaps(base: Map<string, string>, next: Map<string, string>, label: string, out: Findings): void {
   for (const [key, value] of base) {
     const other = next.get(key);
     if (other === undefined) out.removed.push(`${label} ${key}`);
-    else if (other !== value)
-      out.changed.push(`${label} ${key}: ${value} → ${other}`);
+    else if (other !== value) out.changed.push(`${label} ${key}: ${value} → ${other}`);
   }
-  for (const key of next.keys())
-    if (!base.has(key)) out.added.push(`${label} ${key}`);
+  for (const key of next.keys()) if (!base.has(key)) out.added.push(`${label} ${key}`);
 }
 
 /** Compares two analyses; empty arrays everywhere mean the stylesheets are equivalent. */
@@ -449,27 +390,18 @@ export function compare(base: Analysis, next: Analysis): Findings {
   for (const [key, w] of base.winners) {
     const other = next.winners.get(key);
     if (!other) out.removed.push(`${key} = ${show(w)}`);
-    else if (show(other) !== show(w))
-      out.changed.push(`${key}: ${show(w)} → ${show(other)}`);
+    else if (show(other) !== show(w)) out.changed.push(`${key}: ${show(w)} → ${show(other)}`);
   }
-  for (const [key, w] of next.winners)
-    if (!base.winners.has(key)) out.added.push(`${key} = ${show(w)}`);
+  for (const [key, w] of next.winners) if (!base.winners.has(key)) out.added.push(`${key} = ${show(w)}`);
 
   if (base.layerOrder.join(",") !== next.layerOrder.join(","))
-    out.structure.push(
-      `layer order: ${base.layerOrder.join(", ")} → ${next.layerOrder.join(", ")}`,
-    );
+    out.structure.push(`layer order: ${base.layerOrder.join(", ")} → ${next.layerOrder.join(", ")}`);
   if (base.statements.join("\n") !== next.statements.join("\n"))
-    out.structure.push(
-      `statement at-rules: [${base.statements.join("; ")}] → [${next.statements.join("; ")}]`,
-    );
+    out.structure.push(`statement at-rules: [${base.statements.join("; ")}] → [${next.statements.join("; ")}]`);
   diffMaps(base.atomic, next.atomic, "at-rule", out);
 
   // Cascade order among keys present on both sides, per (layer, property, importance).
-  const groups = new Map<
-    string,
-    Array<{ key: string; a: Winner; b: Winner }>
-  >();
+  const groups = new Map<string, Array<{ key: string; a: Winner; b: Winner }>>();
   for (const [key, a] of base.winners) {
     const b = next.winners.get(key);
     if (!b || a.important !== b.important) continue;
@@ -483,10 +415,7 @@ export function compare(base: Analysis, next: Analysis): Findings {
     list.sort((x, y) => x.a.order - y.a.order);
     let monotonic = true;
     for (let i = 1; i < list.length && monotonic; i++)
-      if (
-        (list[i] as (typeof list)[number]).b.order <
-        (list[i - 1] as (typeof list)[number]).b.order
-      )
+      if ((list[i] as (typeof list)[number]).b.order < (list[i - 1] as (typeof list)[number]).b.order)
         monotonic = false;
     if (monotonic) continue;
     for (let i = 0; i < list.length; i++) {
@@ -496,9 +425,7 @@ export function compare(base: Analysis, next: Analysis): Findings {
         if (y.b.order > x.b.order) continue; // same relative order
         if (x.a.value === y.a.value) continue; // reordering without conflict
         if (x.a.specificity !== y.a.specificity) continue; // specificity decides, not order
-        out.orderConflicts.push(
-          `${x.key} (${x.a.value}) now after ${y.key} (${y.a.value})`,
-        );
+        out.orderConflicts.push(`${x.key} (${x.a.value}) now after ${y.key} (${y.a.value})`);
       }
     }
   }
@@ -515,8 +442,7 @@ function argValue(argv: string[], name: string): string | undefined {
 async function main(argv: string[]): Promise<number> {
   if (argv[0] === "--compile-child") {
     const [, input, from, output] = argv;
-    if (!input || !from || !output)
-      throw new Error("usage: --compile-child <input> <from> <output>");
+    if (!input || !from || !output) throw new Error("usage: --compile-child <input> <from> <output>");
     await compileChild(input, from, output);
     return 0;
   }
@@ -524,11 +450,14 @@ async function main(argv: string[]): Promise<number> {
   const rev = argValue(argv, "--ref") ?? "HEAD";
   const keep = argValue(argv, "--keep");
   const limit = Number(argValue(argv, "--limit") ?? 25);
+  if (!Number.isInteger(limit) || limit < 0 || limit > 1000)
+    throw new Error("--limit must be an integer from 0 to 1000");
+  const host = siteHost();
   const workDir = mkdtempSync(join(tmpdir(), "shenron-ui-css-"));
 
   try {
-    const baseline = baselineSource(rev);
-    const candidate = await Bun.file(GLOBALS_PATH).text();
+    const baseline = baselineSource(rev, host);
+    const candidate = await Bun.file(host.stylesheet).text();
     const [baseCss, nextCss] = await Promise.all([
       compile(baseline.css, "baseline", workDir),
       compile(candidate, "candidate", workDir),
@@ -550,7 +479,7 @@ async function main(argv: string[]): Promise<number> {
       findings.structure.length;
 
     console.log(
-      `css-equivalence: baseline ${rev}:${GLOBALS_GIT_PATH}${baseline.inlinedPackage ? " (+ package stylesheet inlined)" : ""} vs working tree ${relative(REPO_ROOT, GLOBALS_PATH).replaceAll("\\", "/")} + @shenron/ui/styles.css`,
+      `css-equivalence: baseline ${rev}:${host.gitPath}${baseline.inlinedPackage ? " (+ package stylesheet inlined)" : ""} vs working tree ${relative(host.repository, host.stylesheet).replaceAll("\\", "/")} + @shenron/ui/styles.css`,
     );
     console.log(
       `css-equivalence: declarations ${base.declarations} → ${next.declarations}; selector+property pairs ${base.winners.size} → ${next.winners.size}; layers ${base.layerOrder.length}; atomic at-rules ${base.atomic.size} → ${next.atomic.size}`,
@@ -565,11 +494,7 @@ async function main(argv: string[]): Promise<number> {
     report("removed pairs", findings.removed);
     report("cascade-order conflicts", findings.orderConflicts);
     report("structure differences", findings.structure);
-    console.log(
-      total === 0
-        ? "css-equivalence: OK"
-        : `css-equivalence: FAILED (${total} findings)`,
-    );
+    console.log(total === 0 ? "css-equivalence: OK" : `css-equivalence: FAILED (${total} findings)`);
     return total === 0 ? 0 : 1;
   } finally {
     rmSync(workDir, { recursive: true, force: true });

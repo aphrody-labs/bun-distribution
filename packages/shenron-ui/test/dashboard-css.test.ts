@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { analyze } from "../scripts/check-css-equivalence";
 import { judge, PRIMITIVE, total } from "../scripts/check-dashboard-css";
+import { resolveCssHost } from "../scripts/css-host";
 
-// Host checkout (aphrody): this package is its m3/packages/shenron-ui.
-const root = new URL("../../../../", import.meta.url);
-const dashboardCss = await Bun.file(
-  new URL("apps/shenron/bot/src/dashboard/styles.css", root),
-).text();
+// This host integration gate requires the real dashboard checkout explicitly.
+const dashboard = resolveCssHost("--dashboard-root", "SHENRON_DASHBOARD_ROOT", ["styles.css"]);
+const dashboardCss = await Bun.file(dashboard.stylesheet).text();
 
 const BASE = `
 @layer theme { :root { --color-dbz-bg: #050a15; --radius-lg: .5rem; } }
@@ -26,9 +25,7 @@ describe("dashboard styles.css", () => {
     const ui = dashboardCss.indexOf('@import "@shenron/ui/styles.css";');
     expect(tw).toBeGreaterThanOrEqual(0);
     expect(ui).toBeGreaterThan(tw);
-    expect(dashboardCss).toContain(
-      '@source "../../../../../m3/packages/shenron-ui/src";',
-    );
+    expect(dashboardCss).toContain('@source "../../../../../m3/packages/shenron-ui/src";');
   });
 
   test("keeps the blue palette and square primitives", () => {
@@ -40,9 +37,7 @@ describe("dashboard styles.css", () => {
       "--color-dbz-border: #142850;",
     ])
       expect(dashboardCss).toContain(token);
-    expect(
-      dashboardCss.match(/border-radius: 0;/g)?.length ?? 0,
-    ).toBeGreaterThanOrEqual(4);
+    expect(dashboardCss.match(/border-radius: 0;/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -54,32 +49,21 @@ describe("check-dashboard-css verdict", () => {
   test("a removed conditional pair already overridden by an unchanged winner is inert", () => {
     const shadowed = `${BASE}\n@layer components { @supports (color: color-mix(in lab, red, red)) { .card:hover { border-color: color-mix(in srgb, red 60%, blue); } } .card:hover { border-color: blue; } }`;
     const kept = `${BASE}\n@layer components { .card:hover { border-color: blue; } }`;
-    expect(
-      judge(analyze(shadowed), analyze(kept)).failures.removed.length,
-    ).toBe(0);
+    expect(judge(analyze(shadowed), analyze(kept)).failures.removed.length).toBe(0);
     const changed = `${BASE}\n@layer components { .card:hover { border-color: gold; } }`;
-    expect(
-      total(judge(analyze(shadowed), analyze(changed)).failures),
-    ).toBeGreaterThan(0);
+    expect(total(judge(analyze(shadowed), analyze(changed)).failures)).toBeGreaterThan(0);
     const unshadowed = `${BASE}\n@layer components { @supports (color: color-mix(in lab, red, red)) { .card:hover { border-color: red; } } }`;
-    expect(
-      judge(analyze(unshadowed), analyze(BASE)).failures.removed.length,
-    ).toBe(1);
+    expect(judge(analyze(unshadowed), analyze(BASE)).failures.removed.length).toBe(1);
   });
 
   test("a changed primitive value fails", () => {
-    const { failures } = verdict(
-      BASE.replace("border-radius: 0", "border-radius: .75rem"),
-    );
+    const { failures } = verdict(BASE.replace("border-radius: 0", "border-radius: .75rem"));
     expect(failures.changed.length).toBe(1);
   });
 
   test("an effective addition on a primitive fails, an inert one passes", () => {
     const lifted = verdict(
-      BASE.replace(
-        ".btn-ghost {",
-        ".btn-ghost:hover { transform: translate(-1px, -1px); } .btn-ghost {",
-      ),
+      BASE.replace(".btn-ghost {", ".btn-ghost:hover { transform: translate(-1px, -1px); } .btn-ghost {"),
     );
     expect(lifted.failures.added.length).toBe(1);
     const neutral = verdict(
@@ -102,16 +86,12 @@ describe("check-dashboard-css verdict", () => {
       ),
     );
     expect(total(overridden.failures)).toBe(0);
-    const leaked = verdict(
-      BASE.replace("@layer components {", `@layer components {\n${supports}`),
-    );
+    const leaked = verdict(BASE.replace("@layer components {", `@layer components {\n${supports}`));
     expect(leaked.failures.added.length).toBe(1);
   });
 
   test("a site palette on :root fails unless it restates the dashboard value", () => {
-    const site = verdict(
-      `${BASE}\n:root { --color-dbz-bg: var(--dbz-bg, #0a0a0a); }`,
-    );
+    const site = verdict(`${BASE}\n:root { --color-dbz-bg: var(--dbz-bg, #0a0a0a); }`);
     expect(site.failures.added.length).toBe(1);
     const pinned = verdict(`${BASE}\n:root { --color-dbz-bg: #050a15; }`);
     expect(total(pinned.failures)).toBe(0);
@@ -138,13 +118,7 @@ describe("check-dashboard-css verdict", () => {
       ".badge-warning",
     ])
       expect(PRIMITIVE.test(s)).toBe(true);
-    for (const s of [
-      ".cardinal",
-      ".btn2",
-      ".input-group",
-      ".shadow-comic",
-      ":root",
-    ])
+    for (const s of [".cardinal", ".btn2", ".input-group", ".shadow-comic", ":root"])
       expect(PRIMITIVE.test(s)).toBe(false);
   });
 });

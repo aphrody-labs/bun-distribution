@@ -44,12 +44,7 @@ export interface TokenSet {
 
 /** Collapses whitespace the way it reads in a single-line declaration. */
 export function normalizeValue(value: string): string {
-  return value
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .replace(/\s+,/g, ",")
-    .trim();
+  return value.replace(/\s+/g, " ").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")").replace(/\s+,/g, ",").trim();
 }
 
 /** `orange-dark` → `orangeDark`, `logo-titre2` → `logoTitre2`. */
@@ -98,9 +93,7 @@ function topLevelComma(value: string): number {
 }
 
 /** Every `var(--name, fallback)` call of a declaration value, nested ones included. */
-export function varFallbacks(
-  value: string,
-): Array<{ name: string; fallback: string }> {
+export function varFallbacks(value: string): Array<{ name: string; fallback: string }> {
   const found: Array<{ name: string; fallback: string }> = [];
   const pattern = /\bvar\(/g;
   for (let match = pattern.exec(value); match; match = pattern.exec(value)) {
@@ -119,20 +112,12 @@ export function varFallbacks(
 }
 
 function inTheme(node: ChildNode): boolean {
-  return (
-    node.parent?.type === "atrule" &&
-    (node.parent as { name: string }).name === "theme"
-  );
+  return node.parent?.type === "atrule" && (node.parent as { name: string }).name === "theme";
 }
 
 function inRootRule(node: ChildNode): boolean {
   const parent = node.parent;
-  return (
-    parent?.type === "rule" &&
-    (parent as { selectors: string[] }).selectors
-      .map((s) => s.trim())
-      .includes(":root")
-  );
+  return parent?.type === "rule" && (parent as { selectors: string[] }).selectors.map(s => s.trim()).includes(":root");
 }
 
 /** Extracts the token set from the stylesheet source. Throws on inconsistent defaults. */
@@ -144,12 +129,7 @@ export function extractTokens(css: string): TokenSet {
   const font: Record<string, string> = {};
   const errors: string[] = [];
 
-  const record = (
-    target: Record<string, string>,
-    key: string,
-    value: string,
-    what: string,
-  ) => {
+  const record = (target: Record<string, string>, key: string, value: string, what: string) => {
     const previous = target[key];
     if (previous !== undefined && previous !== value) {
       errors.push(`${what}: "${previous}" then "${value}"`);
@@ -166,28 +146,15 @@ export function extractTokens(css: string): TokenSet {
       record(color, key, fallback, `default of ${name}`);
     }
     const value = normalizeValue(decl.value);
-    if (decl.prop === "--radius" && inRootRule(decl))
-      record(radius, "base", value, "--radius");
+    if (decl.prop === "--radius" && inRootRule(decl)) record(radius, "base", value, "--radius");
     else if (decl.prop.startsWith("--radius-") && inTheme(decl))
-      record(
-        radius,
-        camelCase(decl.prop.slice("--radius-".length)),
-        value,
-        decl.prop,
-      );
+      record(radius, camelCase(decl.prop.slice("--radius-".length)), value, decl.prop);
     else if (decl.prop.startsWith("--font-") && inTheme(decl))
-      record(
-        font,
-        camelCase(decl.prop.slice("--font-".length)),
-        value,
-        decl.prop,
-      );
+      record(font, camelCase(decl.prop.slice("--font-".length)), value, decl.prop);
   });
 
   if (errors.length > 0) {
-    throw new Error(
-      `styles.css: inconsistent token declarations\n  ${errors.join("\n  ")}`,
-    );
+    throw new Error(`styles.css: inconsistent token declarations\n  ${errors.join("\n  ")}`);
   }
   const missing = [
     Object.keys(color).length === 0 && "var(--dbz-*, <default>) colours",
@@ -195,8 +162,7 @@ export function extractTokens(css: string): TokenSet {
     radius.base === undefined && ":root --radius",
     font.sans === undefined && "@theme --font-sans",
   ].filter(Boolean);
-  if (missing.length > 0)
-    throw new Error(`styles.css: missing ${missing.join(", ")}`);
+  if (missing.length > 0) throw new Error(`styles.css: missing ${missing.join(", ")}`);
 
   return {
     colorVars,
@@ -224,9 +190,7 @@ function key(name: string): string {
 }
 
 function objectLines(record: Record<string, string>, indent: string): string[] {
-  return Object.entries(record).map(
-    ([k, v]) => `${indent}${key(k)}: ${quote(v)},`,
-  );
+  return Object.entries(record).map(([k, v]) => `${indent}${key(k)}: ${quote(v)},`);
 }
 
 /** Renders the `src/tokens.ts` module (LF line endings, oxfmt layout). */
@@ -275,10 +239,31 @@ export function renderTokensModule(set: TokenSet): string {
 }
 
 /** Renders the module expected for the stylesheet currently on disk. */
-export async function expectedTokensModule(
-  stylesPath = STYLES_PATH,
-): Promise<string> {
-  return renderTokensModule(extractTokens(await Bun.file(stylesPath).text()));
+export async function expectedTokensModule(stylesPath = STYLES_PATH): Promise<string> {
+  const source = renderTokensModule(extractTokens(await Bun.file(stylesPath).text()));
+  const formatter = Bun.spawn(
+    [
+      process.execPath,
+      "fmt",
+      "--config",
+      join(import.meta.dir, "../../../bun-format.json"),
+      `--stdin-filepath=${TOKENS_PATH}`,
+    ],
+    {
+      cwd: join(import.meta.dir, "../../.."),
+      stdin: new Blob([source]),
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 10000,
+    },
+  );
+  const [formatted, error, code] = await Promise.all([
+    new Response(formatter.stdout).text(),
+    new Response(formatter.stderr).text(),
+    formatter.exited,
+  ]);
+  if (code !== 0) throw new Error(`Native token formatting failed (${code}): ${error}`);
+  return formatted;
 }
 
 function argValue(argv: string[], name: string): string | undefined {
@@ -293,9 +278,7 @@ async function main(argv: string[]): Promise<number> {
   const tokensPath = argValue(argv, "--tokens") ?? TOKENS_PATH;
   const expected = await expectedTokensModule(stylesPath);
   const file = Bun.file(tokensPath);
-  const current = (await file.exists())
-    ? (await file.text()).replace(/\r\n/g, "\n")
-    : null;
+  const current = (await file.exists()) ? (await file.text()).replace(/\r\n/g, "\n") : null;
 
   if (check) {
     if (current === expected) {
@@ -310,9 +293,7 @@ async function main(argv: string[]): Promise<number> {
         ? "tokens: src/tokens.ts is missing"
         : `tokens: src/tokens.ts is stale (first difference at line ${line + 1}: expected ${JSON.stringify(want[line])}, found ${JSON.stringify(have[line])})`,
     );
-    console.error(
-      "tokens: run `bun packages/shenron-ui/scripts/generate-tokens.ts`",
-    );
+    console.error("tokens: run `bun packages/shenron-ui/scripts/generate-tokens.ts`");
     return 1;
   }
 
