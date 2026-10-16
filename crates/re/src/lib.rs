@@ -99,6 +99,13 @@ pub mod headers;
 ///
 /// Entry point: [`minidump::Minidump::open`].
 pub mod minidump;
+/// `.pdata` (x86-64 unwind table) root-function discovery over raw PE bytes.
+pub mod pdata;
+/// Semi-supervised label propagation over a call graph.
+pub mod propagate;
+/// WebAssembly bindings (feature `wasm`).
+#[cfg(feature = "wasm")]
+pub mod wasm;
 
 /// Steam directory discovery, VDF / KeyValues parser, ACF AppManifest parser,
 /// Steam DRM and SteamStub wrapper detection, and library scanning.

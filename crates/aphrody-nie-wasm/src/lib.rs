@@ -337,35 +337,8 @@ pub fn ievr_pe_inspect_json(bytes: &[u8]) -> Result<String, String> {
     ievr_pe_inspect_impl(bytes)
 }
 
-const MAX_PDATA_INPUT_BYTES: usize = 64 * 1024 * 1024;
-
 fn pdata_inspect_impl(bytes: &[u8], max_roots: u32) -> Result<String, String> {
-    if bytes.len() > MAX_PDATA_INPUT_BYTES {
-        return Err(format!("PE input exceeds {MAX_PDATA_INPUT_BYTES} bytes"));
-    }
-    let report = aphrody_nie_re::pdata::inspect_roots(bytes, max_roots as usize)
-        .map_err(|error| error.to_string())?;
-    let roots: Vec<_> = report
-        .sampled_roots
-        .iter()
-        .map(|root| {
-            serde_json::json!({
-                "start": format!("{:#x}", root.start),
-                "end": format!("{:#x}", root.end),
-            })
-        })
-        .collect();
-    Ok(serde_json::json!({
-        "schemaVersion": 1,
-        "entries": report.entries,
-        "rootEntries": report.root_entries,
-        "chainedFragments": report.chained_fragments,
-        "unreadableUnwindEntries": report.unreadable_unwind_entries,
-        "invalidRootEntries": report.invalid_root_entries,
-        "sampledRoots": roots,
-        "sampleTruncated": report.sample_truncated,
-    })
-    .to_string())
+    aphrody_nie_re::pdata::inspect_json(bytes, max_roots)
 }
 
 /// Inspects a PE `.pdata` table with exact counters and a bounded root sample.

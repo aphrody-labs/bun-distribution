@@ -17,7 +17,6 @@ default = ["host"]
 # `.pdata` byte parser and label-propagation graph remain available without
 # this feature, including on `wasm32-unknown-unknown`.
 host = [
-    "dep:aphrody-re",
     "dep:iced-x86",
     "dep:aphrody-nie-dump",
     "dep:aphrody-nie-index",
@@ -33,7 +32,7 @@ tracing = { version = "0.1" }
 hashbrown.workspace = true
 goblin.workspace = true
 iced-x86 = { workspace = true, optional = true }
-aphrody-re = { workspace = true, optional = true }
+aphrody-re.workspace = true
 
 [[example]]
 name = "dump_census"
