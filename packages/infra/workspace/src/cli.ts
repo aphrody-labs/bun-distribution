@@ -3,9 +3,9 @@
 import { runInfra } from "./runtime.ts";
 
 export const workspaceHelp =
-  "Aphrody workspace: optimize <task> runs the optimization plugin workflow.\nplugins <command> manages user plugins, skills and MCP.\ncode-edit <operation> searches and transforms code using rg, sd, ast-grep and jscodeshift.\nOther commands are delegated to aphrody-infra.";
+  "Aphrody workspace: optimize <task> runs the optimization plugin workflow.\nplugins <command> manages user plugins, skills and MCP.\ncode-edit <operation> searches and transforms code using native literal edits, rg, sd (regex), ast-grep and jscodeshift.\nOther commands are delegated to aphrody-infra.";
 
-/** `yolo workspace <command> [arguments...]`: Workspace commands, then aphrody-infra for the rest. */
+/** `aphrody workspace <command> [arguments...]`: Workspace commands, then aphrody-infra for the rest. */
 export async function runWorkspace(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === "optimize") return (await import("./optimize.ts")).runOptimize(rest);
@@ -19,5 +19,5 @@ export async function runWorkspace(argv: readonly string[]): Promise<number> {
   return result.exitCode;
 }
 
-// Direct execution remains for the installed link ~/.local/bin/aphrody-workspace until hosts use `yolo workspace`.
+// Direct execution remains for the installed link ~/.local/bin/aphrody-workspace until hosts use `aphrody workspace`.
 if (import.meta.main) process.exit(await runWorkspace(process.argv.slice(2)));

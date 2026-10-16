@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { userHome } from "@aphrody/paths";
 import { spawnSync } from "@aphrody/update/process";
-import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
-const help = `Usage: yolo workspace code-edit <search|replace|add-before|add-after|remove|rename|restore> [options]
+const help = `Usage: aphrody workspace code-edit <search|replace|add-before|add-after|remove|rename|restore> [options]
   --engine text|regex|ast|codemod|yolo  Default: text (rename/restore: yolo)
   --root PATH                    Default: current directory
   --glob PATTERN                  Repeatable file filters (ripgrep syntax)
@@ -91,19 +91,12 @@ export function parseCodeEdit(argv: string[]): EditOptions {
         throw new Error(`Unknown option: ${flag}`);
     }
   }
-  if (
-    !["search", "replace", "add-before", "add-after", "remove", "rename", "restore"].includes(
-      options.operation,
-    )
-  )
+  if (!["search", "replace", "add-before", "add-after", "remove", "rename", "restore"].includes(options.operation))
     throw new Error("Unknown operation");
-  if (!["text", "regex", "ast", "codemod", "yolo"].includes(options.engine))
-    throw new Error("Unknown engine");
+  if (!["text", "regex", "ast", "codemod", "yolo"].includes(options.engine)) throw new Error("Unknown engine");
   if (options.engine === "yolo") {
-    if (!["rename", "restore"].includes(options.operation))
-      throw new Error("YOLO supports rename/restore");
-    if (options.operation === "restore" && !options.journal)
-      throw new Error("Restore requires --journal FILE");
+    if (!["rename", "restore"].includes(options.operation)) throw new Error("YOLO supports rename/restore");
+    if (options.operation === "restore" && !options.journal) throw new Error("Restore requires --journal FILE");
     if (options.operation === "rename" && (!options.find || options.replacement === undefined))
       throw new Error("Rename requires --find and --with");
   } else if (["rename", "restore"].includes(options.operation)) {
@@ -113,18 +106,13 @@ export function parseCodeEdit(argv: string[]): EditOptions {
       throw new Error("Codemod requires replace --transform FILE");
   } else {
     if (!options.find) throw new Error("A non-empty --find pattern is required");
-    if (
-      options.operation !== "search" &&
-      options.operation !== "remove" &&
-      options.replacement === undefined
-    )
+    if (options.operation !== "search" && options.operation !== "remove" && options.replacement === undefined)
       throw new Error("--with is required");
     if (options.engine === "ast" && (!options.lang || options.operation.startsWith("add-")))
       throw new Error("AST requires --lang; use replace with a rewrite template for insertion");
   }
   if (options.paths && options.operation !== "rename") throw new Error("--paths requires rename");
-  if (options.journal && options.operation !== "restore")
-    throw new Error("--journal requires restore");
+  if (options.journal && options.operation !== "restore") throw new Error("--journal requires restore");
   return options;
 }
 export function editCommand(options: EditOptions, paths: string[]): string[] {
@@ -140,7 +128,7 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
             options.find!,
             "--to",
             options.replacement!,
-            ...options.globs.flatMap((glob) =>
+            ...options.globs.flatMap(glob =>
               glob.startsWith("!") ? ["--exclude", glob.slice(1)] : ["--include", glob],
             ),
             ...(options.paths ? ["--paths"] : []),
@@ -168,25 +156,15 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
       options.lang!,
       ...(options.operation === "search"
         ? ["--json"]
-        : [
-            "-r",
-            options.operation === "remove" ? "" : options.replacement!,
-            ...(options.apply ? ["-U"] : []),
-          ]),
+        : ["-r", options.operation === "remove" ? "" : options.replacement!, ...(options.apply ? ["-U"] : [])]),
       ...paths,
     ];
   if (options.operation === "search")
-    return [
-      "rg",
-      "--line-number",
-      ...(options.engine === "text" ? ["-F"] : []),
-      "--",
-      options.find!,
-      ...paths,
-    ];
+    return ["rg", "--line-number", ...(options.engine === "text" ? ["-F"] : []), "--", options.find!, ...paths];
+  if (options.engine === "text") throw new Error("Literal text edits execute in-process");
   let replacement = options.operation === "remove" ? "" : options.replacement!;
   if (options.operation.startsWith("add-")) {
-    const match = options.engine === "text" ? options.find! : "$0";
+    const match = "$0";
     if (options.engine === "regex") replacement = replacement.replaceAll("$", () => "$$");
     replacement = options.operation === "add-before" ? replacement + match : match + replacement;
   }
@@ -200,10 +178,40 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
     ...paths,
   ];
 }
-function execute(
-  command: string[],
-  cwd: string,
-): { status: number; stdout: string; stderr: string } {
+function editLiteralText(options: EditOptions, paths: string[], root: string): void {
+  const find = options.find!;
+  const inserted = options.operation === "remove" ? "" : options.replacement!;
+  const replacement =
+    options.operation === "add-before"
+      ? inserted + find
+      : options.operation === "add-after"
+        ? find + inserted
+        : inserted;
+  for (const path of paths) {
+    const before = readFileSync(path, "utf8");
+    if (!before.includes(find)) continue;
+    // A callback preserves dollar signs and multiline text literally.
+    const after = before.replaceAll(find, () => replacement);
+    if (after === before) continue;
+    if (!options.apply) {
+      let offset = 0;
+      while ((offset = before.indexOf(find, offset)) !== -1) {
+        const line = before.slice(0, offset).split("\n").length;
+        process.stdout.write(`${path}:${line}: ${JSON.stringify(find)} -> ${JSON.stringify(replacement)}\n`);
+        offset += find.length;
+      }
+      continue;
+    }
+    const local = relative(root, realpathSync(path));
+    if (!lstatSync(path).isFile() || isAbsolute(local) || local === ".." || local.startsWith(`..${sep}`)) {
+      throw new Error(`Selected file changed ownership: ${path}`);
+    }
+    if (readFileSync(path, "utf8") !== before) throw new Error(`Selected file changed during editing: ${path}`);
+    writeFileSync(path, after);
+    process.stdout.write(`${path}\n`);
+  }
+}
+function execute(command: string[], cwd: string): { status: number; stdout: string; stderr: string } {
   const result = spawnSync(command[0]!, command.slice(1), {
     cwd,
     encoding: "utf8",
@@ -228,32 +236,28 @@ export function runCodeEdit(argv: string[]): number {
       return result.status;
     }
     const root = realpathSync(options.root);
-    const selected = execute(
-      ["rg", "--files", "-0", ...options.globs.flatMap((g) => ["-g", g]), "--", root],
-      root,
-    );
+    const selected = execute(["rg", "--files", "-0", ...options.globs.flatMap(g => ["-g", g]), "--", root], root);
     if (selected.status > 1) throw new Error(selected.stderr);
     const paths = selected.stdout
       .split("\0")
       .filter(Boolean)
-      .filter((path) => {
+      .filter(path => {
         if (!lstatSync(path).isFile()) return false;
         const local = relative(root, realpathSync(path));
-        return (
-          !isAbsolute(local) &&
-          local !== ".." &&
-          !local.startsWith(`..${sep}`) &&
-          !readFileSync(path).includes(0)
-        );
+        return !isAbsolute(local) && local !== ".." && !local.startsWith(`..${sep}`) && !readFileSync(path).includes(0);
       });
+    if (options.engine === "text" && options.operation !== "search") {
+      editLiteralText(options, paths, root);
+      console.error(`${options.apply ? "Apply" : "Preview"}: ${paths.length} selected text files; engine=text`);
+      return 0;
+    }
     let failed = false;
     for (let offset = 0; offset < paths.length; offset += 100) {
       const result = execute(editCommand(options, paths.slice(offset, offset + 100)), root);
       process.stdout.write(result.stdout);
       process.stderr.write(result.stderr);
       // Search tools use 1 to indicate no matches, not an execution error.
-      if (result.status !== 0 && !(options.operation === "search" && result.status === 1))
-        failed = true;
+      if (result.status !== 0 && !(options.operation === "search" && result.status === 1)) failed = true;
       if (failed) break;
     }
     console.error(
