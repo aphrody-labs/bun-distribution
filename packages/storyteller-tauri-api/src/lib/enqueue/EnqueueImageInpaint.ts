@@ -76,7 +76,7 @@ export type EnqueueImageInpaintResult = EnqueueImageInpaintSuccess | EnqueueImag
 export const EnqueueImageInpaint = async (request: EnqueueImageInpaintRequest) : Promise<EnqueueImageInpaintResult> => {
   let modelName = undefined;
 
-  if (!!request.model) {
+  if (request.model) {
     if (typeof request.model === "string") {
       modelName = request.model;
     } else if ("tauriId" in request.model && typeof request.model.tauriId === "string") {
@@ -95,27 +95,27 @@ export const EnqueueImageInpaint = async (request: EnqueueImageInpaintRequest) :
     prompt: request.prompt,
   };
   
-  if (!!request.provider) {
+  if (request.provider) {
     mutableRequest.provider = request.provider;
   }
 
-  if (!!request.image_media_token) {
+  if (request.image_media_token) {
     mutableRequest.image_media_token = request.image_media_token;
   }
 
-  if (!!request.mask_image_raw_bytes) {
+  if (request.mask_image_raw_bytes) {
     mutableRequest.mask_image_raw_bytes = request.mask_image_raw_bytes;
   }
 
-  if (!!request.image_count) {
+  if (request.image_count) {
     mutableRequest.image_count = request.image_count;
   }
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 

@@ -165,7 +165,7 @@ export function useAudioCostEstimate(
     const body: OmniGenAudioRequest = {
       model: params.model,
       audio_media_tokens: params.audioReferenceCount
-        ? new Array(params.audioReferenceCount).fill("placeholder")
+        ? Array.from({ length: params.audioReferenceCount }, () => "placeholder")
         : null,
       image_media_tokens: params.hasImageReference ? ["placeholder"] : null,
       sample_rate_hz: params.sampleRateHz ?? null,

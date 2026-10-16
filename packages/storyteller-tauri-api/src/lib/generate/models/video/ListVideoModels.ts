@@ -76,9 +76,5 @@ export interface OmniGenVideoModelDetails {
  * (`list_video_models_command` — retried + cached 60s in the Rust layer).
  */
 export const ListVideoModels = async (): Promise<ListVideoModelsSuccess> => {
-  try {
-    return (await invoke("list_video_models_command")) as ListVideoModelsSuccess;
-  } catch (error) {
-    throw error;
-  }
+  return (await invoke("list_video_models_command")) as ListVideoModelsSuccess;
 };

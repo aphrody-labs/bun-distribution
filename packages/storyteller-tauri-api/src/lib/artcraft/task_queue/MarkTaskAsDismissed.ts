@@ -6,16 +6,12 @@ interface MarkTaskAsDismissedSuccess extends CommandResult {
 }
 
 export const MarkTaskAsDismissed = async (task_id: string) : Promise<MarkTaskAsDismissedSuccess> => {
-  try {
-    let result = await invoke("mark_task_as_dismissed_command", { 
-      request: {
-        task: task_id 
-      } 
-    }) as MarkTaskAsDismissedSuccess;
-    return result;
-  } catch (error) {
-    throw error;
-  }
+  let result = await invoke("mark_task_as_dismissed_command", { 
+    request: {
+      task: task_id 
+    } 
+  }) as MarkTaskAsDismissedSuccess;
+  return result;
 }
 
 // Temporary just for testing -

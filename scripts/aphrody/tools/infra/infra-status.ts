@@ -216,7 +216,7 @@ async function probe(url: string) {
     const [, hostname, portText] = url.match(/^tcp:\/\/([^:]+):(\d+)$/u) ?? [];
     if (hostname && portText) {
       try {
-        const socket = await Bun.connect({
+        await Bun.connect({
           hostname,
           port: Number(portText),
           socket: {

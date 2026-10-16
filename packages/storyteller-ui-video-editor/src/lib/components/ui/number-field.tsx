@@ -131,7 +131,7 @@ function NumberField({
   onMouseDown,
   onReset,
   isDefault = false,
-  ref,
+  ref: _ref,
   ...props
 }: NumberFieldProps & { ref?: React.Ref<HTMLInputElement> }) {
   const iconRef = useRef<HTMLButtonElement>(null);

@@ -364,7 +364,7 @@ const is3DClass = (mediaClass: string | undefined | null): boolean =>
   mediaClass === "splat";
 
 const getLabel = (item: any) => {
-  if (!!item.maybe_title) {
+  if (item.maybe_title) {
     return item.maybe_title;
   }
   switch (item.media_class) {
@@ -2575,7 +2575,8 @@ export const GalleryModal = React.memo(
           onClose={() => {
             if (mode === "view") {
               clearBulkSelection();
-              onClose?.() || (galleryModalVisibleViewMode.value = false);
+              onClose?.();
+              galleryModalVisibleViewMode.value = false;
             } else {
               onClose?.();
             }

@@ -13,7 +13,7 @@ const UNLOCK_WINDOW_MS = 5000;
 
 interface AboutSettingsPaneProps {}
 
-export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
+export const AboutSettingsPane = (_args: AboutSettingsPaneProps) => {
   const [appInfo, setAppInfo] = useState<
     GetAppInfoPayload | undefined
   >(undefined);

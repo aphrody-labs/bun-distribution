@@ -130,7 +130,7 @@ export type EnqueueEditImageResult = EnqueueEditImageSuccess | EnqueueEditImageE
 export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promise<EnqueueEditImageResult> => {
   let modelName = undefined;
 
-  if (!!request.model) {
+  if (request.model) {
     // NB: We can't use "instanceof" checks with Vite minification and class name mangling.
     if (typeof request.model === "string") {
       modelName = request.model;
@@ -148,35 +148,35 @@ export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promi
     prompt: request.prompt,
   };
   
-  if (!!request.provider) {
+  if (request.provider) {
     mutableRequest.provider = request.provider;
   }
 
-  if (!!request.scene_image_media_token) {
+  if (request.scene_image_media_token) {
     mutableRequest.scene_image_media_token = request.scene_image_media_token;
   }
 
-  if (!!request.image_media_tokens) {
+  if (request.image_media_tokens) {
     mutableRequest.image_media_tokens = request.image_media_tokens;
   }
 
-  if (!!request.aspect_ratio) {
+  if (request.aspect_ratio) {
     mutableRequest.aspect_ratio = request.aspect_ratio;
   }
 
-  if (!!request.common_aspect_ratio) {
+  if (request.common_aspect_ratio) {
     mutableRequest.common_aspect_ratio = request.common_aspect_ratio;
   }
 
-  if (!!request.image_count) {
+  if (request.image_count) {
     mutableRequest.image_count = request.image_count;
   }
 
-  if (!!request.image_quality) {
+  if (request.image_quality) {
     mutableRequest.image_quality = request.image_quality;
   }
 
-  if (!!request.disable_system_prompt) {
+  if (request.disable_system_prompt) {
     mutableRequest.disable_system_prompt = request.disable_system_prompt;
   }
 
@@ -192,11 +192,11 @@ export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promi
     mutableRequest.zoom = request.zoom;
   }
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 

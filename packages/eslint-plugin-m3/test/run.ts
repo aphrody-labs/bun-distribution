@@ -8,7 +8,7 @@ import { spawnSync } from "bun";
 import { join } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
-const CONFIG = join(ROOT, "test", ".oxlintrc.json");
+const CONFIG = join(ROOT, "test", "m3.oxlintrc.json");
 
 const RULES = [
   "valid-icon-name",

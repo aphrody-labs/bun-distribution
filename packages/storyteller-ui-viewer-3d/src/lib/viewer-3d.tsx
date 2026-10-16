@@ -50,8 +50,6 @@ export interface Viewer3DProps {
 
 export function Viewer3D({
   modelUrl,
-  previewUrl,
-  isActive,
   className = "",
   showGrid = false,
   onThumbnailCapture,

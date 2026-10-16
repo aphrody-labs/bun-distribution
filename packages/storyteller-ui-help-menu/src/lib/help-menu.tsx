@@ -17,7 +17,7 @@ export type HelpMenuButtonProps = {
 };
 
 // Internal News Component
-const NewsView = ({ onBack }: { onBack: () => void }) => {
+const NewsView = (_props: { onBack: () => void }) => {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const bundledItems = useMemo(() => getNewsPosts(), []);

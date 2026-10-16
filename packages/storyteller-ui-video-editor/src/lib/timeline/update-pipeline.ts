@@ -157,7 +157,7 @@ export function applyElementUpdate({
     ...patch,
     params: {
       ...element.params,
-      ...(patch.params ?? {}),
+      ...patch.params,
     },
   } as TimelineElement;
   const changedFields = new Set(

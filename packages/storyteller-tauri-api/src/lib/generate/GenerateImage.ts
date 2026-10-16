@@ -91,7 +91,7 @@ export const GenerateImage = async (
 ): Promise<GenerateImageResult> => {
   let modelName: string | undefined;
 
-  if (!!request.model) {
+  if (request.model) {
     if (typeof request.model === "string") {
       modelName = request.model;
     } else if (typeof request.model.tauriId === "string") {

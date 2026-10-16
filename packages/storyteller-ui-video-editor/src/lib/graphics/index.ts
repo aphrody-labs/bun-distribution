@@ -74,7 +74,7 @@ export function resolveGraphicParams({
 }): ParamValues {
   return {
     ...buildDefaultParamValues(definition.params),
-    ...(params ?? {}),
+    ...params,
   };
 }
 

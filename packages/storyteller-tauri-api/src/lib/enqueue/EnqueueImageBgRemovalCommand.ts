@@ -47,19 +47,19 @@ export type EnqueueImageBgRemovalResult = EnqueueImageBgRemovalSuccess | Enqueue
 export const EnqueueImageBgRemoval = async (request: EnqueueImageBgRemovalRequest) : Promise<EnqueueImageBgRemovalResult> => {
   let mutableRequest : RawEnqueueImageBgRemovalRequest = {};
 
-  if (!!request.image_media_token) {
+  if (request.image_media_token) {
     mutableRequest.image_media_token = request.image_media_token;
   }
 
-  if (!!request.base64_image) {
+  if (request.base64_image) {
     mutableRequest.base64_image = request.base64_image;
   }
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 

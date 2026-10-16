@@ -71,7 +71,7 @@ function tickCost(step: (name: string, t: number) => unknown, n = 1_000_000): nu
 
 const element = await bundle("src/element.ts");
 const clock = await bundle("src/runtime.ts");
-const strip = ({ code: _, ...rest }: Awaited<ReturnType<typeof bundle>>) => rest;
+const strip = (b: Awaited<ReturnType<typeof bundle>>) => { const rest: Partial<typeof b> = { ...b }; delete rest.code; return rest; };
 const report: Record<string, unknown> = {
   optionB: {
     element: { ...strip(element), importMs: await importTime(element.code) },

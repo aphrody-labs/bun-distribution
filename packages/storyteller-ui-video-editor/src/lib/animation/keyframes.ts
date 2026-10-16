@@ -98,7 +98,7 @@ function cloneAnimationsState({
 }: {
   animations: ElementAnimations | undefined;
 }): ElementAnimations {
-  return { ...(animations ?? {}) };
+  return { ...animations };
 }
 
 function getChannelFromData({

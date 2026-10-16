@@ -73,7 +73,7 @@ export class CharacterAnimationManager {
   // load lanes that appeared. Idempotent — called on every timeline change.
   sync(clipLanes: ClipLane[]): void {
     const wanted = new Set(clipLanes.map((l) => l.id));
-    for (const laneId of [...this.lanes.keys()]) {
+    for (const laneId of Array.from(this.lanes.keys())) {
       if (!wanted.has(laneId)) this.disposeLane(laneId);
     }
     for (const lane of clipLanes) {
@@ -214,7 +214,7 @@ export class CharacterAnimationManager {
       roots.set(child.uuid, child);
     }
     let changed = false;
-    for (const [uuid, mixer] of [...this.mixers]) {
+    for (const [uuid, mixer] of Array.from(this.mixers)) {
       if (roots.get(uuid) !== mixer.getRoot()) {
         mixer.stopAllAction();
         this.mixers.delete(uuid);
@@ -222,7 +222,7 @@ export class CharacterAnimationManager {
         changed = true;
       }
     }
-    for (const rt of [...this.lanes.values()]) {
+    for (const rt of Array.from(this.lanes.values())) {
       if ((roots.get(rt.characterUuid) ?? null) !== rt.boundRoot) {
         this.disposeLane(rt.laneId);
         changed = true;
@@ -235,7 +235,7 @@ export class CharacterAnimationManager {
   }
 
   clear(): void {
-    for (const laneId of [...this.lanes.keys()]) this.disposeLane(laneId);
+    for (const laneId of Array.from(this.lanes.keys())) this.disposeLane(laneId);
     for (const uuid of this.mixers.keys()) this.resetToRestPose(uuid);
     for (const mixer of this.mixers.values()) mixer.stopAllAction();
     this.mixers.clear();
@@ -385,7 +385,7 @@ export class CharacterAnimationManager {
   // leave it frozen mid-animation.
   private pruneMixers(): void {
     const live = new Set([...this.lanes.values()].map((l) => l.characterUuid));
-    for (const uuid of [...this.mixers.keys()]) {
+    for (const uuid of Array.from(this.mixers.keys())) {
       if (!live.has(uuid)) {
         this.resetToRestPose(uuid);
         this.mixers.get(uuid)?.stopAllAction();

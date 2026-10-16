@@ -30,7 +30,7 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
         selectedProviders: {
           ...state.selectedProviders,
           [page]: {
-            ...(state.selectedProviders[page] ?? {}),
+            ...state.selectedProviders[page],
             [modelId]: resolveSelectedProvider(provider)!,
           },
         },

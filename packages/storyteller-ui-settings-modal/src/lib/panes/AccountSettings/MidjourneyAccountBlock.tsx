@@ -27,7 +27,7 @@ export const MidjourneyAccountBlock = () => {
     fetchSession();
   }, []);
 
-  useRefreshAccountStateEvent(async (event: RefreshAccountStateEvent) => {
+  useRefreshAccountStateEvent(async (_event: RefreshAccountStateEvent) => {
     fetchSession();
   });
 

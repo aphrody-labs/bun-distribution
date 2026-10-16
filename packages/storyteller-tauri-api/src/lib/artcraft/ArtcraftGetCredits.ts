@@ -13,9 +13,5 @@ export interface ArtcraftGetCreditsPayload {
 }
 
 export const ArtcraftGetCredits = async () : Promise<ArtcraftGetCreditsSuccess> => {
-  try {
-    return await invoke("storyteller_get_credits_command") as ArtcraftGetCreditsSuccess;
-  } catch (error) {
-    throw error;
-  }
+  return await invoke("storyteller_get_credits_command") as ArtcraftGetCreditsSuccess;
 }

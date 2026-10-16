@@ -27,7 +27,7 @@ export const GrokAccountBlock = () => {
     fetchSession();
   }, []);
 
-  useRefreshAccountStateEvent(async (event: RefreshAccountStateEvent) => {
+  useRefreshAccountStateEvent(async (_event: RefreshAccountStateEvent) => {
     fetchSession();
   });
 

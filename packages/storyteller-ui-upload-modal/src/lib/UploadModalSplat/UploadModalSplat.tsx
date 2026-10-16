@@ -65,7 +65,7 @@ export function UploadModalSplat(props: Props) {
               fileTypes={splatFileTypes}
               initialFiles={initialFiles}
               options={{
-                ...(options ?? {}),
+                ...options,
               }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}

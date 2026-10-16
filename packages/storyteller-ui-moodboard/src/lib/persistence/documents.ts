@@ -83,7 +83,7 @@ export function deserializeMoodboardDocument(
     },
     canvas: {
       ...EMPTY_CANVAS_DOCUMENT,
-      ...(document.canvas ?? {}),
+      ...document.canvas,
     },
   };
 }

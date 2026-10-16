@@ -111,7 +111,6 @@ export const PromptBox3D = ({
   setGridVisibility,
   selectedCameraId,
   deleteCamera,
-  focalLengthDragging,
   setFocalLengthDragging,
   isPromptBoxFocused,
   setIsPromptBoxFocused,
@@ -491,7 +490,7 @@ export const PromptBox3D = ({
           resolution: getCurrentResolution(),
         };
 
-        if (!!selectedProvider) {
+        if (selectedProvider) {
           request.provider = selectedProvider;
         }
 

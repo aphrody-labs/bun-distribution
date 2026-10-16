@@ -53,7 +53,7 @@ export const computeMasonryLayout = (
   const totalGap = density.gap * (columnCount - 1);
   const columnWidth = (usable - totalGap) / columnCount;
 
-  const columnHeights = new Array<number>(columnCount).fill(0);
+  const columnHeights = Array.from({ length: columnCount }, () => 0);
   const positions: PositionedItem[] = [];
   const byId: Record<string, PositionedItem> = {};
 

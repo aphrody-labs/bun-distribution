@@ -41,7 +41,7 @@ export const useGenerationFailedEvent = () => {
 }
 
 const makeMessage = (event: GenerationFailedEvent) => {
-  if (!!event.reason) {
+  if (event.reason) {
     return event.reason;
   }
   switch (event.action) {

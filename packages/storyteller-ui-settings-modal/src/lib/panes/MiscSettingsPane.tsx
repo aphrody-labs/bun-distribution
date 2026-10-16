@@ -6,7 +6,7 @@ import { useKeybindsStore } from "@storyteller/keybinds";
 
 interface MiscSettingsPaneProps {}
 
-export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
+export const MiscSettingsPane = (_args: MiscSettingsPaneProps) => {
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
 

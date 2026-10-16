@@ -30,7 +30,7 @@ export const clusterByProximity = (
   const e = eps ?? defaultEpsForNodes(nodes);
   const e2 = e * e;
   const centers = nodes.map(center);
-  const visited = new Array(nodes.length).fill(false);
+  const visited = Array.from({ length: nodes.length }, () => false);
   const clusters: MoodboardNode[][] = [];
 
   const neighbors = (i: number): number[] => {

@@ -136,7 +136,7 @@ export const DownloadsSettingsPane = () => {
       setFormatError("Format cannot be empty");
       return;
     }
-    if (/[/\\'"`%<>|:*?\x00-\x1f\x7f]/.test(format) || format.includes("..")) {
+    if (/[/\\'"`%<>|:*?\p{Cc}]/u.test(format) || format.includes("..")) {
       setFormatError("Format cannot contain slashes, quotes, or other unsafe characters");
       return;
     }

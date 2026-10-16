@@ -216,7 +216,6 @@ export const Modal = ({
   disableHotkeyInput = () => {},
   className,
   backdropClassName,
-  width,
   children,
   childPadding = true,
   titleIconClassName,

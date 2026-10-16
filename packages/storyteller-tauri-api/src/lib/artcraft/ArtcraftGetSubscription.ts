@@ -18,9 +18,5 @@ export interface ActiveSubscriptionInfo {
 }
 
 export const ArtcraftGetSubscription = async () : Promise<ArtcraftGetSubscriptionSuccess> => {
-  try {
-    return await invoke("storyteller_get_subscription_command") as ArtcraftGetSubscriptionSuccess;
-  } catch (error) {
-    throw error;
-  }
+  return await invoke("storyteller_get_subscription_command") as ArtcraftGetSubscriptionSuccess;
 }

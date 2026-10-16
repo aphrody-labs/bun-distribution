@@ -21,10 +21,5 @@ export interface GetAppInfoPayload {
 // Returns the Success and Error variants directly.
 // Throws on Network/Tauri errors.
 export const GetAppInfo = async () : Promise<GetAppInfoSuccess> => {
-  try {
-    return await invoke("get_app_info_command") as GetAppInfoSuccess;
-  } catch (error) {
-    // NB: Endpoint should be infalliable
-    throw error;
-  }
+  return await invoke("get_app_info_command") as GetAppInfoSuccess;
 }

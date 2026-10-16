@@ -65,7 +65,6 @@ function ProviderTooltipContent({
   page,
   modelId,
   model,
-  modelLabel,
   allowedProviders,
   onFinished,
 }: {

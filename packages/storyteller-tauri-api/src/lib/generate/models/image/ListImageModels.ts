@@ -55,9 +55,5 @@ export interface OmniGenImageModelDetails {
  * (`list_image_models_command` — retried + cached 60s in the Rust layer).
  */
 export const ListImageModels = async (): Promise<ListImageModelsSuccess> => {
-  try {
-    return (await invoke("list_image_models_command")) as ListImageModelsSuccess;
-  } catch (error) {
-    throw error;
-  }
+  return (await invoke("list_image_models_command")) as ListImageModelsSuccess;
 };

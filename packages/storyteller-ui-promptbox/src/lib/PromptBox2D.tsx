@@ -59,7 +59,6 @@ export const PromptBox2D = ({
   uploadImage,
   selectedImageModel,
   selectedProvider,
-  EncodeImageBitmapToBase64,
   onGenerateClick,
   isDisabled = false,
   isEnqueueing = false,

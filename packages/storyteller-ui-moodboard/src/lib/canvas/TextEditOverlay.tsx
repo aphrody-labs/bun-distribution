@@ -9,7 +9,7 @@ interface Props {
 // type directly. Konva Text has no native edit mode; this is the standard
 // react-konva pattern. Phase 1 has no zoom/pan, so absolute positioning is
 // simply (node.x, node.y) within the container.
-export const TextEditOverlay = ({ containerRef }: Props) => {
+export const TextEditOverlay = (_props: Props) => {
   const editingId = useMoodboardStore((s) => s.transient.editingTextId);
   const node = useMoodboardStore((s) =>
     editingId ? s.nodes[editingId] : null,

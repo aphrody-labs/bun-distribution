@@ -41,7 +41,7 @@ export const useGenerationEnqueueFailureEvent = () => {
 }
 
 const makeMessage = (event: GenerationEnqueueFailureEvent) => {
-  if (!!event.reason) {
+  if (event.reason) {
     return event.reason;
   }
   switch (event.action) {

@@ -15,7 +15,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 interface BillingSettingsPaneProps {}
 
-export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
+export const BillingSettingsPane = (_args: BillingSettingsPaneProps) => {
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
 
   const creditsStore = useCreditsState();

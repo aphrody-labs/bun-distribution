@@ -110,7 +110,6 @@ interface PromptBoxVideoProps {
 }
 
 export const PromptBoxVideo = ({
-  useJobContext,
   onEnqueuePressed,
   selectedModel,
   selectedProvider,
@@ -344,7 +343,7 @@ export const PromptBoxVideo = ({
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatio(selectedItem.label);
-    setAspectRatioList((prev) =>
+    setAspectRatioList(() =>
       aspectRatioOptions.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
@@ -1097,7 +1096,7 @@ export const PromptBoxVideo = ({
         frontend_subscriber_id: subscriberId,
       };
 
-      if (!!selectedProvider) {
+      if (selectedProvider) {
         request.provider = selectedProvider;
       }
 
@@ -1196,7 +1195,7 @@ export const PromptBoxVideo = ({
         } else {
           const maybeDefault = selectedModel.sizeOptions.find((option) => option.tauriValue === selectedModel.defaultAspectRatio)
             ?? selectedModel.sizeOptions[0];
-          if (!!maybeDefault) {
+          if (maybeDefault) {
             request.aspect_ratio =
               maybeDefault.tauriValue as typeof request.aspect_ratio;
           }

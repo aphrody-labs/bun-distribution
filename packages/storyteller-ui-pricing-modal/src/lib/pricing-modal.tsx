@@ -177,7 +177,7 @@ function PricingSection({ children }: { children: ReactNode }) {
 
 interface PricingModalProps {}
 
-export function PricingModal({}: PricingModalProps = {}) {
+export function PricingModal(_props: PricingModalProps = {}) {
   const { isOpen, closeModal, title, subtitle } = usePricingModalStore();
 
   return (

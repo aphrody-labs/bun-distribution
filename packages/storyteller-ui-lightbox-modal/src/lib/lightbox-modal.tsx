@@ -105,7 +105,6 @@ export function LightboxModal({
   mediaTokens,
   imageAlt = "",
   onImageError,
-  title,
   createdAt,
   additionalInfo,
   downloadUrl, // cdn url of the image
@@ -348,7 +347,7 @@ export function LightboxModal({
           setBatchImages(null);
           setBatchTokens(null);
         }
-      } catch (error: unknown) {
+      } catch {
         if (cancelled) return;
         setBatchImages(null);
         setBatchTokens(null);
@@ -1223,7 +1222,7 @@ export function LightboxModal({
                           },
                           1500,
                         );
-                      } catch (err) {
+                      } catch {
                         toast.error("Unable to copy link");
                       }
                     }}

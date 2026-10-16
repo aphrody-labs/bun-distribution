@@ -122,7 +122,7 @@ export function buildTextElement({
     trimEnd: ZERO_MEDIA_TIME,
     params: {
       ...buildDefaultElementParams({ type: "text" }),
-      ...(t.params ?? {}),
+      ...t.params,
     },
   };
 }

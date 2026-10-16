@@ -66,9 +66,9 @@ export const useSubscriptionState = create<SubscriptionState & SubscriptionActio
       return;
     }
     console.log("Fetched subscription from server: ", data);
-    if (!!data.payload) {
+    if (data.payload) {
       let activeSubscription = undefined;
-      if (!!data.payload.active_subscription) {
+      if (data.payload.active_subscription) {
         activeSubscription = {
           subscriptionToken: data.payload.active_subscription.subscription_token,
           productSlug: data.payload.active_subscription.product_slug,
@@ -77,7 +77,7 @@ export const useSubscriptionState = create<SubscriptionState & SubscriptionActio
           subscriptionEndAt: data.payload.active_subscription.subscription_end_at ? new Date(data.payload.active_subscription.subscription_end_at) : undefined,
         };
       }
-      set((state) => ({
+      set(() => ({
         subscriptionInfo: activeSubscription,
       }));
     }

@@ -41,7 +41,7 @@ export class UsersApi extends ApiManager {
     try {
       const responseData = JSON.parse(text);
       return responseData as T;
-    } catch (e) {
+    } catch {
       console.error("Failed to parse response as JSON:", text);
       throw new Error(text || `Request failed with status ${response.status}`);
     }

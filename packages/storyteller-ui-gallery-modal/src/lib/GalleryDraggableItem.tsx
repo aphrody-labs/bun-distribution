@@ -64,7 +64,6 @@ interface GalleryDraggableItemProps {
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   item,
   mode,
-  activeFilter,
   selected,
   disabled = false,
   onClick,
@@ -75,7 +74,6 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   onDeleted,
   onDelete,
   onEditClicked,
-  maxSelections,
   bulkSelected = false,
   onBulkSelectToggle,
   bulkSelectionMode = false,

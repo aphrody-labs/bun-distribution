@@ -2,8 +2,8 @@
 // Automated agent-home initialization for cloud sessions and containers.
 // Follows docs/operations/cloud/AGENT-HOME-SETUP.md: secret-free, idempotent, non-interactive.
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 export interface AgentHomeInitOptions {
   homeDir?: string;

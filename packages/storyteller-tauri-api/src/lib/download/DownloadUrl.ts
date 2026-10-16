@@ -18,14 +18,10 @@ export const GetDownloadPath = (url: string, options: DownloadOptions = {}): Pro
   invoke("get_download_path_command", { request: { url, ...options } });
 
 export const DownloadUrl = async (url: string, options: DownloadOptions = {}) : Promise<DownloadUrlSuccess> => {
-  try {
-    return await invoke("download_url_command", {
-      request: {
-        url,
-        ...options,
-      }
-    }) as DownloadUrlSuccess;
-  } catch (error) {
-    throw error;
-  }
+  return await invoke("download_url_command", {
+    request: {
+      url,
+      ...options,
+    }
+  }) as DownloadUrlSuccess;
 }

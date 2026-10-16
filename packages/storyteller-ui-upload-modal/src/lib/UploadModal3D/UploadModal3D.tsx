@@ -137,7 +137,7 @@ export function UploadModal3D(props: Props) {
               fileTypes={objectFileTypes}
               initialFiles={initialFiles}
               options={{
-                ...(options ?? {}),
+                ...options,
                 fileSubtypes: rigTypeOptions,
               }}
               onClose={onClose}

@@ -62,11 +62,11 @@ export const EnqueueImageTo3dObject = async (
     model: request.model,
   };
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 

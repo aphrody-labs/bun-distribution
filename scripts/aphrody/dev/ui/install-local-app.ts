@@ -6,7 +6,6 @@ import { chmod, cp, mkdir, readFile, readlink, rename, symlink, lstat, rm } from
 import { homedir, networkInterfaces } from "node:os";
 import { join, resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "../../../../docs/aphrody");
 const source = process.argv[2] && resolve(process.argv[2]);
 if (!source)
   throw new Error("Usage: bun scripts/dev/ui/install-local-app.ts <extracted-release> [--apply]");

@@ -148,7 +148,7 @@ export const HistoryStack = ({
   }, [imageBundles.length]);
 
   const getImageThumbnailSource = (image: BaseSelectorImage) => {
-    if (!!image.thumbnailUrlTemplate) {
+    if (image.thumbnailUrlTemplate) {
       return image.thumbnailUrlTemplate.replace("{WIDTH}", "256");
     }
     if (image.url.startsWith("data:") || image.url.startsWith("blob:")) {

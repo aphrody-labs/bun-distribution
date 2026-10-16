@@ -123,7 +123,7 @@ export const EnqueueTextToImage = async (
 ): Promise<EnqueueTextToImageResult> => {
   let modelName = undefined;
 
-  if (!!request.model) {
+  if (request.model) {
     // NB: We can't use "instanceof" checks with Vite minification and class name mangling.
     if (typeof request.model === "string") {
       modelName = request.model;
@@ -143,31 +143,31 @@ export const EnqueueTextToImage = async (
     prompt: request.prompt,
   };
 
-  if (!!request.provider) {
+  if (request.provider) {
     mutableRequest.provider = request.provider;
   }
 
-  if (!!request.common_aspect_ratio) {
+  if (request.common_aspect_ratio) {
     mutableRequest.common_aspect_ratio = request.common_aspect_ratio;
   }
 
-  if (!!request.common_resolution) {
+  if (request.common_resolution) {
     mutableRequest.common_resolution = request.common_resolution;
   }
 
-  if (!!request.quality) {
+  if (request.quality) {
     mutableRequest.quality = request.quality;
   }
 
-  if (!!request.aspect_ratio) {
+  if (request.aspect_ratio) {
     mutableRequest.aspect_ratio = request.aspect_ratio;
   }
 
-  if (!!request.image_resolution) {
+  if (request.image_resolution) {
     mutableRequest.image_resolution = request.image_resolution;
   }
 
-  if (!!request.number_images) {
+  if (request.number_images) {
     mutableRequest.number_images = request.number_images;
   }
 
@@ -175,11 +175,11 @@ export const EnqueueTextToImage = async (
     mutableRequest.image_media_tokens = request.image_media_tokens;
   }
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 

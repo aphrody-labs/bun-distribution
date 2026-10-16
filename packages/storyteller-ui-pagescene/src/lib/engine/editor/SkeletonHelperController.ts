@@ -57,7 +57,7 @@ export class SkeletonHelperController {
         wanted.set(child.uuid, child);
       }
     }
-    for (const [uuid, helper] of [...this.helpers]) {
+    for (const [uuid, helper] of Array.from(this.helpers)) {
       const obj = wanted.get(uuid);
       if (!obj || helper.parent !== scene || helper.root !== obj) {
         // parent-based removal: after Scene.initialize() the helper may

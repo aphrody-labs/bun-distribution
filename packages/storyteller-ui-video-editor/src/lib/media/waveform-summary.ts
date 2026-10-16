@@ -199,12 +199,9 @@ export function computeRmsBuckets({
     Math.floor(buffer.sampleRate * RMS_ANALYSIS_WINDOW_SECONDS),
   );
 
-  const channelData: Float32Array[] = new Array(channels);
-  for (let c = 0; c < channels; c++) {
-    channelData[c] = buffer.getChannelData(c);
-  }
+  const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) => buffer.getChannelData(c));
 
-  const result = new Array<number>(buckets.length);
+  const result = Array.from<number>({ length: buckets.length });
 
   for (let i = 0; i < buckets.length; i++) {
     const { bucketStart, bucketEnd } = buckets[i];

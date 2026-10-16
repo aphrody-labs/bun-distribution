@@ -13,7 +13,7 @@ import { Label } from "@storyteller/ui-label";
 
 interface AudioSettingsPaneProps {}
 
-export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
+export const AudioSettingsPane = (_args: AudioSettingsPaneProps) => {
   const [preferences, setPreferences] = useState<
     AppPreferencesPayload | undefined
   >(undefined);
@@ -215,7 +215,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
 };
 
 const orNone = (val: string | undefined | null): string => {
-  if (!!!val) {
+  if (!val) {
     return "none";
   }
   return val;

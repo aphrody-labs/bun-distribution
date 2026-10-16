@@ -173,9 +173,9 @@ export const AssetModal = () => {
   });
 
   const {
-    userObjects: userObjects,
+    userObjects,
     userFetchStatus: userObjectsFetchStatus,
-    fetchUserObjects: fetchUserObjects,
+    fetchUserObjects,
   } = useUserObjects({
     filterEngineCategories: [FilterEngineCategories.OBJECT],
     defaultErrorMessage: "Error fetching user objects",
@@ -218,7 +218,7 @@ export const AssetModal = () => {
   });
 
   const {
-    featuredObjects: featuredObjects,
+    featuredObjects,
     featuredFetchStatus: featuredObjectsFetchStatus,
   } = useFeaturedObjects({
     filterEngineCategories: [FilterEngineCategories.OBJECT],

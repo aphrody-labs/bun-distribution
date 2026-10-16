@@ -3,7 +3,7 @@
  * Diagnostic approfondi du lecteur USB Z: (Disque 1, General UDisk 2TB)
  * Exploite le runtime Bun de notre fork (Bun v1.4.3-aphrody.3) et le module natif `bun:windows`.
  */
-import { existsSync, readdirSync, statSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
+import { readdirSync, statSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 

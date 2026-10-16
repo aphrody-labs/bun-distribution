@@ -65,7 +65,6 @@ interface PromptBoxImageProps {
 }
 
 export const PromptBoxImage = ({
-  useJobContext,
   uploadImage,
   onEnqueuePressed,
   selectedModel: catalogModel,
@@ -394,7 +393,7 @@ export const PromptBoxImage = ({
         frontend_subscriber_id: subscriberId,
       };
 
-      if (!!selectedProvider) {
+      if (selectedProvider) {
         request.provider = selectedProvider;
       }
 

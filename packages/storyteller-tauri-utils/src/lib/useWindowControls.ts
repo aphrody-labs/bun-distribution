@@ -20,7 +20,7 @@ export function useTauriWindowControls() {
       try {
         const win = await getCurrentWindowSafe();
         setIsMaximized(await win.isMaximized());
-      } catch (err) {
+      } catch {
         // ignore
       }
 
@@ -36,11 +36,11 @@ export function useTauriWindowControls() {
           try {
             const win = await getCurrentWindowSafe();
             setIsMaximized(await win.isMaximized());
-          } catch (err) {
+          } catch {
             // ignore
           }
         });
-      } catch (err) {
+      } catch {
         // ignore
       }
     })();

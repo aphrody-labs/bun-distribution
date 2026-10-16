@@ -9,8 +9,7 @@ import { GenerationProvider } from "@storyteller/common";
 interface ProviderSetupModalProps {
 }
 
-export function ProviderSetupModal({
-}: ProviderSetupModalProps) {
+export function ProviderSetupModal(_props: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
 
