@@ -196,6 +196,154 @@ const LIVE: Record<
     ),
   },
 };
+// Asset and generation integrations of the add-on; `flag` is the scene toggle that exposes the handlers.
+// Keys come from the add-on preferences or BLENDERMCP_SKETCHFAB_API_KEY, BLENDERMCP_HYPER3D_API_KEY,
+// BLENDERMCP_HUNYUAN3D_SECRET_ID / _SECRET_KEY in the environment.
+const integer = { type: "integer" };
+const ASSETS: Record<
+  string,
+  { command: string; flag: string; description: string; inputSchema: Json }
+> = {
+  blender_polyhaven_categories: {
+    command: "get_polyhaven_categories",
+    flag: "blendermcp_use_polyhaven",
+    description: "Poly Haven categories for hdris, textures or models.",
+    inputSchema: obj({ asset_type: str("hdris, textures, models or all") }, [
+      "asset_type",
+    ]),
+  },
+  blender_polyhaven_search: {
+    command: "search_polyhaven_assets",
+    flag: "blendermcp_use_polyhaven",
+    description: "Search Poly Haven assets (CC0).",
+    inputSchema: obj({
+      asset_type: str("hdris, textures, models or all"),
+      category: str("Category filter"),
+      query: str("Keywords"),
+      limit: integer,
+    }),
+  },
+  blender_polyhaven_download: {
+    command: "download_polyhaven_asset",
+    flag: "blendermcp_use_polyhaven",
+    description:
+      "Download and import a Poly Haven asset (HDRI as world, texture as material, model into the scene).",
+    inputSchema: obj(
+      {
+        asset_id: str("Poly Haven id"),
+        asset_type: str("hdris, textures or models"),
+        resolution: str("1k, 2k, 4k, ..."),
+        file_format: str("hdr, exr, jpg, png, gltf, fbx, blend"),
+      },
+      ["asset_id", "asset_type"],
+    ),
+  },
+  blender_polyhaven_set_texture: {
+    command: "set_texture",
+    flag: "blendermcp_use_polyhaven",
+    description: "Apply a downloaded Poly Haven texture to an object.",
+    inputSchema: obj(
+      { object_name: str("Object"), texture_id: str("Poly Haven texture id") },
+      ["object_name", "texture_id"],
+    ),
+  },
+  blender_sketchfab_search: {
+    command: "search_sketchfab_models",
+    flag: "blendermcp_use_sketchfab",
+    description: "Search Sketchfab models (API key required).",
+    inputSchema: obj(
+      {
+        query: str("Keywords"),
+        categories: str("Comma-separated"),
+        count: integer,
+        downloadable: { type: "boolean" },
+      },
+      ["query"],
+    ),
+  },
+  blender_sketchfab_download: {
+    command: "download_sketchfab_model",
+    flag: "blendermcp_use_sketchfab",
+    description: "Download and import a Sketchfab model by uid.",
+    inputSchema: obj(
+      {
+        uid: str("Model uid"),
+        normalize_size: { type: "boolean" },
+        target_size: { type: "number" },
+      },
+      ["uid"],
+    ),
+  },
+  blender_hyper3d_create: {
+    command: "create_rodin_job",
+    flag: "blendermcp_use_hyper3d",
+    description:
+      "Start a Hyper3D Rodin generation from a text prompt or images.",
+    inputSchema: obj({
+      text_prompt: str("Prompt"),
+      images: {
+        type: "array",
+        description: "[suffix, base64] pairs (MAIN_SITE) or URLs (FAL_AI)",
+      },
+      bbox_condition: { type: "array", items: { type: "number" } },
+      mode: str("MAIN_SITE or FAL_AI"),
+      free_trial: {
+        type: "boolean",
+        description: "Use the shared Hyper3D free-trial key",
+      },
+    }),
+  },
+  blender_hyper3d_poll: {
+    command: "poll_rodin_job_status",
+    flag: "blendermcp_use_hyper3d",
+    description:
+      "Poll a Hyper3D job (subscription_key on MAIN_SITE, request_id on FAL_AI).",
+    inputSchema: obj({
+      subscription_key: str("MAIN_SITE key"),
+      request_id: str("FAL_AI id"),
+    }),
+  },
+  blender_hyper3d_import: {
+    command: "import_generated_asset",
+    flag: "blendermcp_use_hyper3d",
+    description: "Import a finished Hyper3D asset.",
+    inputSchema: obj(
+      {
+        name: str("Object name"),
+        task_uuid: str("MAIN_SITE task"),
+        request_id: str("FAL_AI id"),
+      },
+      ["name"],
+    ),
+  },
+  blender_hunyuan_create: {
+    command: "create_hunyuan_job",
+    flag: "blendermcp_use_hunyuan3d",
+    description: "Start a Hunyuan3D generation from a prompt or image.",
+    inputSchema: obj({
+      text_prompt: str("Prompt"),
+      image: str("Image URL or path"),
+      mode: str("OFFICIAL_API or LOCAL_API"),
+    }),
+  },
+  blender_hunyuan_poll: {
+    command: "poll_hunyuan_job_status",
+    flag: "blendermcp_use_hunyuan3d",
+    description: "Poll a Hunyuan3D job.",
+    inputSchema: obj({ job_id: str("Job id") }, ["job_id"]),
+  },
+  blender_hunyuan_import: {
+    command: "import_generated_asset_hunyuan",
+    flag: "blendermcp_use_hunyuan3d",
+    description: "Import a finished Hunyuan3D asset.",
+    inputSchema: obj(
+      { name: str("Object name"), zip_file_url: str("Result URL") },
+      ["name", "zip_file_url"],
+    ),
+  },
+};
+Object.assign(LIVE, ASSETS);
+
 for (const [name, { description, inputSchema }] of Object.entries(LIVE))
   tools.push({ name, description, inputSchema } as (typeof tools)[number]);
 
@@ -261,7 +409,30 @@ ${jsonPython(`{"exported": ${py(a.output)}}`)}`;
       await ensureLive(blend);
       if (name === "blender_live_command")
         return sendLive(a.type as string, (a.params ?? {}) as Json);
-      const { blend: _blend, ...params } = a;
+      const flag = ASSETS[name]?.flag;
+      if (flag)
+        await sendLive("execute_code", {
+          code: `import bpy\nbpy.context.scene.${flag} = True`,
+        });
+      const { blend: _blend, mode, free_trial, ...params } = a;
+      const setup: string[] = [];
+      if (mode && flag === "blendermcp_use_hyper3d")
+        setup.push(
+          `bpy.context.scene.blendermcp_hyper3d_mode = ${JSON.stringify(mode)}`,
+        );
+      if (mode && flag === "blendermcp_use_hunyuan3d")
+        setup.push(
+          `bpy.context.scene.blendermcp_hunyuan3d_mode = ${JSON.stringify(mode)}`,
+        );
+      // Hyper3D's shared free-trial key, as offered by the add-on's "Set Free Trial API Key" button.
+      if (free_trial && flag === "blendermcp_use_hyper3d")
+        setup.push(
+          `bpy.context.scene.blendermcp_hyper3d_api_key = "vibecoding"`,
+        );
+      if (setup.length)
+        await sendLive("execute_code", {
+          code: `import bpy\n${setup.join("\n")}`,
+        });
       return sendLive(live.command, params);
     }
   }
