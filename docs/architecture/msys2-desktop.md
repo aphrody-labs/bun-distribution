@@ -130,10 +130,10 @@ Its `--help` works without selecting an installation or workspace. The inherited
 mutation has been removed. `link` now validates the flat source bindings without
 creating duplicate junctions. The installed release now uses this contract.
 
-Eight valid old CachyOS junctions remain under the installed source-view root:
-automatic approval review rejected their removal (`blocked by policy`). The
-inspector reports those views separately from canonical vendor repositories,
-so they cannot create duplicate or external paths in the metadata lock.
+The eight old CachyOS junctions under the installed source-view root were
+removed on 2026-10-16; their vendor targets are intact. The inspector reads
+only canonical vendor repositories, so no duplicate or external path enters the
+metadata lock.
 
 Explicit synchronization, packaging and publishing retain their existing
 commands and permission boundaries. Synchronization fetches registered,

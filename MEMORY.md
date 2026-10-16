@@ -80,11 +80,11 @@ pacman. Qp/Qlp identity/payload checks, Q/Qkk (zero altered files), installed
 help/plan and source/payload hash read-back pass. The inventory remains 100;
 only cym's package release changed, while its configuration and pacman.conf
 remain byte-identical. The previous package archive was retired after the
-switch. Removing the eight obsolete /usr/src/cachyos junctions was rejected
-by automatic approval review (`blocked by policy`), so these valid views remain.
+switch. The eight obsolete /usr/src/cachyos junctions were removed on 2026-10-16 by the
+owner; their vendor targets are intact.
 The twelve active Bun Engine consumers and their external Git administration
-are required and must be preserved. Task recovery metadata is retained until
-the remaining retirement is permitted; it is not a published relocation API.
+are required and must be preserved. Task recovery metadata was removed after the
+verified cutover.
 
 ## Flat member migration — 2026-10-16
 
