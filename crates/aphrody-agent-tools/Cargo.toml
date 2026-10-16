@@ -35,3 +35,27 @@ async-trait = "0.1.92"
 pretty_assertions = { version = "1", features = [] }
 tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+aphrody-agent-proto = { path = "../aphrody-agent-proto", version = "1.4.4", features = [] }
+aphrody-guard = { path = "../aphrody-guard", version = "1.4.4", features = [] }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", version = "1.4.4", features = [] }
+aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", version = "1.4.4", features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", version = "1.4.4", features = ["render"] }
+aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", version = "1.4.4", features = [] }
+obscura-net = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-net", version = "1.4.4", features = [] }
+aphrody-remote-desktop = { path = "../aphrody-remote-desktop", version = "1.4.4", features = ["vnc-client"] }
+aphrody-term = { path = "../aphrody-term", version = "1.4.4", features = [] }
+anyhow = { version = "1.0.104" }
+thiserror = { version = "2.0.20" }
+tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
+base64 = { version = "0.23.1" }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
+tracing = { version = "0.1.44" }
+
+[target.'cfg(unix)'.dependencies]
+libc = { version = "0.2.189" }
+
+[target.'cfg(windows)'.dependencies]
+sysinfo = { version = "0.39.6", features = ["system","disk"], default-features = false }

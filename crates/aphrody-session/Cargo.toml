@@ -43,3 +43,10 @@ tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros"
 # tracing is consumed via macros (debug!/info!) only; keep it explicit so
 # machete does not misfire when the crate is built without log capture.
 ignored = ["tracing"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full","rt"] }
+dirs = { version = "7.0.0" }
+sysinfo = { version = "0.39.6", features = ["system","disk"], default-features = false }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-memory = { path = "../aphrody-memory", version = "1.4.4", features = [], optional = true }

@@ -134,3 +134,30 @@ criterion = { version = "0.8.2", features = ["html_reports"] }
 [[bench]]
 name    = "initialize_handshake"
 harness = false
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site", version = "1.4.4" }
+aphrody-remote-desktop = { path = "../aphrody-remote-desktop", version = "1.4.4", features = ["vnc-client"] }
+aphrody-voice = { path = "../aphrody-voice", version = "1.4.4", features = [] }
+base64 = { version = "0.23.1" }
+aphrody-re = { package = "bun-re", version = "=1.0.0-canary", features = [] }
+dirs = { version = "7.0.0" }
+aphrody-gemini-web = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-web", version = "1.4.4", features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.4", features = [], optional = true }
+aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", version = "1.4.4", features = [] }
+regex = { version = "1.11", features = [] }
+aphrody-session = { path = "../aphrody-session", version = "1.4.4", features = ["memory"] }
+aphrody-memory = { path = "../aphrody-memory", version = "1.4.4", features = [] }
+aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", version = "1.4.4", features = [], optional = true }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.4", features = [], optional = true }
+aphrody-ocr = { path = "../aphrody-ocr", version = "1.4.4", features = [], optional = true }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.4", features = ["onnx"], optional = true }
+aphrody-vision = { path = "../aphrody-vision", version = "1.4.4", features = [], optional = true }
+aphrody-jobs = { path = "../aphrody-jobs", version = "1.4.4", features = [], optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+tempfile = { version = "3.27.0", optional = true }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", version = "1.4.4", features = [], optional = true }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.4", features = [], optional = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62.2", features = ["Foundation","Globalization","Graphics_Imaging","Media_Ocr","Media_SpeechSynthesis","Media_Core","Storage_Streams","Win32_Foundation","Win32_Media_Audio","Win32_Security","Win32_Graphics_Dwm","Win32_Graphics_Gdi","Win32_Storage_IndexServer","Win32_System_Com","Win32_System_Ole","Win32_System_Search","Win32_System_Threading","Win32_System_IO","Win32_System_Diagnostics_Debug","Win32_System_Memory","Win32_System_SystemInformation","Win32_System_Diagnostics_ToolHelp","Win32_System_Variant","Win32_UI_WindowsAndMessaging","Win32","Win32_System","Win32_System_Console"] }

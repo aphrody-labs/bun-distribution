@@ -45,3 +45,7 @@ tonic-prost-build = { version = "0.14", features = [] }
 
 [package.metadata.cargo-machete]
 ignored = ["pbjson", "pbjson-build", "protoc-bin-vendored", "tonic-prost-build"]
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tonic = { version = "0.14", features = [] }
+tonic-prost = { version = "0.14", features = [] }

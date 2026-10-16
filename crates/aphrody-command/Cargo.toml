@@ -103,3 +103,100 @@ bytes = "1.12.1"
 
 [package.metadata.cargo-machete]
 ignored = ["ort"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.4.4" }
+aphrody-site = { path = "../../toolchains/bun/packages/web/rust/crates/site", version = "1.4.4" }
+toml_edit = { version = "0.25.15", features = [] }
+tempfile = { version = "3.27.0" }
+tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
+aphrody-git = { path = "crates/infra/git", version = "1.4.4", features = [] }
+aphrody-ssh = { path = "../aphrody-ssh", version = "1.4.4", features = [] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
+regex = { version = "1.11", features = [] }
+which = { version = "8", features = [] }
+colored = { version = "3", features = [] }
+mimalloc = { version = "0.1", default-features = false, features = [] }
+aphrody-web-service = { path = "../../toolchains/bun/packages/web/rust/crates/web-service", version = "1.4.4", features = ["render"] }
+aphrody-web-crawl = { path = "../../toolchains/bun/packages/web/rust/crates/web-crawl", version = "1.4.4", features = [] }
+aphrody-web-detect = { path = "../../toolchains/bun/src/browser/crates/detect", version = "1.4.4", package = "bun_browser_detect", features = ["fetch"] }
+aphrody-web-extract = { path = "../../toolchains/bun/packages/web/rust/crates/web-extract", version = "1.4.4", features = [] }
+aphrody-web-frames = { path = "../../toolchains/bun/packages/web/rust/crates/web-frames", version = "1.4.4", features = [] }
+aphrody-x = { path = "../../toolchains/bun/packages/web/rust/crates/x", version = "1.4.4", features = [] }
+obscura = { path = "../../toolchains/bun/packages/web/rust/crates/obscura", version = "1.4.4", package = "aphrody-obscura" }
+obscura-dom = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-dom", version = "1.4.4", features = [] }
+obscura-browser = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-browser", version = "1.4.4", features = [] }
+obscura-net = { path = "../../toolchains/bun/packages/web/rust/crates/obscura-net", version = "1.4.4", features = [] }
+aphrody-n2b = { version = "=0.7.0", features = [] }
+aphrody-translate = { path = "../aphrody-translate", version = "1.4.4", features = [] }
+aphrody-backend = { path = "../aphrody-backend", version = "1.4.4", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.4", features = ["tokio"] }
+rustls = { version = "0.23", default-features = false, features = ["ring","std","tls12"] }
+aphrody-native = { path = "crates/native/native", version = "1.4.4", features = [] }
+aphrody-discord = { path = "../aphrody-discord", version = "1.4.4", features = [] }
+aphrody-terminal-backend = { path = "../aphrody-terminal-backend", version = "1.4.4", features = [] }
+aphrody-term = { path = "../aphrody-term", version = "1.4.4", features = [] }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.4", features = [] }
+aphrody-a2a-client = { path = "../aphrody-a2a-client", version = "1.4.4", default-features = false, features = [] }
+aphrody-a2a-coord = { path = "../aphrody-a2a-coord", version = "1.4.4", features = [] }
+futures = { version = "0.3.34" }
+thiserror = { version = "2.0.20" }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../toolchains/bun/packages/bun-windows-winclean", version = "1.4.4", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.4", default-features = false, features = ["builtins"] }
+aphrody-infra = { path = "../aphrody-infra", version = "1.4.4" }
+aphrody-yolo = { path = "../aphrody-yolo", version = "1.4.4" }
+aphrody-mcp = { path = "../aphrody-mcp", version = "1.4.4" }
+aphrody-web-engine = { path = "../../toolchains/bun/packages/web/rust/crates/web-engine", version = "1.4.4", features = [] }
+aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", version = "1.4.4", features = ["cli"] }
+aphrody-render = { path = "../aphrody-render", version = "1.4.4" }
+aphrody-bindgen = { path = "../aphrody-bindgen", version = "1.4.4" }
+aphrody-rag-eval = { path = "../aphrody-rag-eval", version = "1.4.4", features = [] }
+tauri-cli = { path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-tauri-cli", package = "aphrody-tauri-cli", version = "1.4.4" }
+create-tauri-app = { path = "../../toolchains/bun/packages/bun-tauri/crates/aphrody-create-tauri-app", package = "aphrody-create-tauri-app", version = "1.4.4" }
+aphrody-embed = { path = "../aphrody-embed", version = "1.4.4", default-features = false, features = ["server"] }
+aphrody-oxc-bridge = { version = "=0.2.0" }
+aphrody-voice = { path = "../aphrody-voice", version = "1.4.4", features = [] }
+walkdir = { version = "2.5.0" }
+ignore = { version = "0.4", features = [] }
+rayon = { version = "1.12.0" }
+aphrody-gemini-runtime = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/gemini-runtime", version = "1.4.4", features = [] }
+aphrody-re = { package = "bun-re", version = "=1.0.0-canary", features = [] }
+ort = { version = "=2.0.0-rc.12", optional = true }
+rusqlite = { version = "0.40", features = ["bundled"], optional = true }
+aphrody-fsindex = { path = "../aphrody-fsindex", version = "1.4.4", features = [], optional = true }
+sha2 = { version = "0.11.0" }
+hex = { version = "0.4", features = [], optional = true }
+aphrody-identity = { path = "../aphrody-identity", version = "1.4.4", features = ["net"] }
+aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = ["serde"] }
+aphrody-memory = { path = "../aphrody-memory", version = "1.4.4", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.4", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.4", features = [] }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.4", features = ["onnx"], optional = true }
+aphrody-ocr = { path = "../aphrody-ocr", version = "1.4.4", features = [], optional = true }
+aphrody-jobs = { path = "../aphrody-jobs", version = "1.4.4", features = [], optional = true }
+dirs = { version = "7.0.0" }
+aphrody-antigravity = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/antigravity", version = "1.4.4", features = [] }
+aphrody-google = { path = "../../toolchains/bun/packages/bun-google/aphrody/crates/google", version = "1.4.4", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.4", features = ["git"] }
+aphrody-agent-runtime = { path = "../aphrody-agent-runtime", version = "1.4.4", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.4", features = [] }
+aphrody-diagnostics = { path = "../aphrody-diagnostics", version = "1.4.4" }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.4", features = [] }
+toml = { version = "1.1.5" }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.4", features = [] }
+aphrody-code-graph = { path = "../aphrody-code-graph", version = "1.4.4", features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.4", features = [] }
+aphrody-train = { path = "../aphrody-train", version = "1.4.4", features = [] }
+aphrody-app-server = { path = "../aphrody-app-server", version = "1.4.4", features = ["site"] }
+aphrody-gateway = { path = "../aphrody-gateway", version = "1.4.4", features = [] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+serde_json = { version = "1.0.151" }
+tempfile = { version = "3.27.0" }
+tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full","rt"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation","Win32_System_Registry","Win32_UI_WindowsAndMessaging","Win32_Security_Credentials"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tokio = { version = "1.52", default-features = false, features = ["sync","macros","io-util","rt","time"] }

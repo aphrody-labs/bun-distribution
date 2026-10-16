@@ -35,3 +35,6 @@ unimplemented = "deny"
 dbg_macro = "deny"
 correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation","Win32_Security","Win32_Security_Authorization","Win32_Foundation","Win32_System_Memory"] }

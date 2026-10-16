@@ -40,3 +40,13 @@ tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros"
 # `rustls` is referenced only through `rustls::crypto::ring::default_provider()`
 # inside a `Once`, which machete's symbol scan under-counts.
 ignored = ["rustls"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+hf-hub = { version = "1.0.0" }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.4", features = [] }
+dirs = { version = "7.0.0" }
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring","std","tls12"] }
+futures-util = { version = "0.3", features = [] }
+nvml-wrapper = { version = "0.13.0" }

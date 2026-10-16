@@ -20,3 +20,6 @@ aphrody-bindgen = { path = "../aphrody-bindgen", version = "1.4.4" }
 
 [package.metadata.cargo-machete]
 ignored = ["anyhow", "aphrody-bindgen", "libc", "libloading"]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = { version = "0.2.189" }

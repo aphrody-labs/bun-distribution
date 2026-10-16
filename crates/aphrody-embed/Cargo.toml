@@ -98,3 +98,7 @@ required-features = ["native"]
 [[test]]
 name              = "native_semantics"
 required-features = ["native"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std","api-24","ndarray","tracing"], optional = true }
+fastembed = { version = "5.13.4", default-features = false, features = ["ort-load-dynamic","ort-download-binaries-rustls-tls","hf-hub-rustls-tls"], optional = true }

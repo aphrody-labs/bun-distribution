@@ -54,3 +54,9 @@ harness = false
 # flags it as unused when the feature is off. `tracing` is used via macros
 # that machete's import scan misses on some passes.
 ignored = ["gix"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+memmap2 = { version = "0.9.11" }
+notify = { version = "8", features = [] }
+gix = { version = "0.88", default-features = false, features = ["sha1","basic","extras","comfort","max-performance-safe","revision","index","worktree-mutation"], optional = true }
+clap = { version = "4.6.6", features = ["derive","env","color"] }
