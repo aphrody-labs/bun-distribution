@@ -63,6 +63,16 @@ export class DocsStore {
       .run(url, source, lastmod);
   }
 
+  /** Queue links found in pages, leaving known URLs untouched. */
+  discover(urls: Iterable<string>, source: string): void {
+    const insert = this.db.query(
+      "INSERT OR IGNORE INTO pages (url, source) VALUES (?1, ?2)",
+    );
+    this.db.transaction(() => {
+      for (const url of urls) insert.run(url, source);
+    })();
+  }
+
   pending(
     source: string | null,
     limit: number,

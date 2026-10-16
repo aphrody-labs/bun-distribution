@@ -229,13 +229,14 @@ async function fetchPage(
       file,
       `---\ntitle: ${JSON.stringify(page.title)}\nurl: ${href}\n---\n\n${body}\n`,
     );
+    const found = new Set<string>();
     for (const link of page.links) {
       try {
         const url = new URL(link);
-        if (keep(url, source, disallow))
-          store.enqueue(url.href, source.name, null);
+        if (keep(url, source, disallow)) found.add(url.href);
       } catch {}
     }
+    store.discover(found, source.name);
     return store.save(
       href,
       source.name,
