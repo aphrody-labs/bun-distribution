@@ -1,5 +1,44 @@
 ## Unified product stabilization — 2026-10-16
 
+RG UI and Shenron UI are admitted: 559 root members, leaving only Admin UI and
+M3 showcase as physical declaration gaps. RG UI source was behind its installed
+published implementation. The source now uses that Base UI implementation,
+retaining import ancestry and published integrity metadata in SOURCE.json.
+All four consumers use workspace dependencies and resolve the local 1.4.4
+source. Native checks pass for RG UI (114 files), Website (1,568), Azalee (798),
+bot (607) and App Shell (124). Eighty-three focused UI tests pass. The seven
+theme projections now load actual local CSS imports and their layer/specificity
+cascade, retain 68 core variables and native role extensions, and add the six
+missing chart/destructive bridges for the two RG themes. This is not visual
+browser qualification; three SSR contracts cover basic element behavior only.
+
+All 62 original Shenron UI errors are corrected, including shared reader array
+guards and geometry boundaries. Consumers use CaptionedReader directly; no
+legacy alias was added. Native checking covers 130 files; 42 portable tests,
+tokens, exports/assets and lint pass. The real historical Apache-2.0 Dragon Ball
+reader theme was recovered into M3 Reader, preserving neutral styles. Five
+browser bundles and 273,186 bytes of minified CSS compile in memory. Site and
+dashboard parity, copied host assets and two host integration tests still
+require explicit real external checkouts; no host was fabricated.
+
+Native lock generation works for the current graph. RG UI generated directly;
+new Shenron UI initially reproduced the two old catalog-resolution failures.
+Its workspace metadata and locator were seeded without unrelated-record drift,
+then native generation and offline frozen installation both passed. The only
+package identity replacement is the intentional RG UI registry-to-workspace
+switch; five obsolete nested registry locators are removed. This does not prove
+an engine-level resolver repair. Both local workspace links are verified.
+
+Nine Patreon UI text nodes now use seven semantic keys in the existing i18n
+owner (fr/en/ja). The unchanged ratchet passes at 4,586 against 4,587; the debt
+predated this batch. Its identical, unreferenced imported test/baseline duplicate
+is retired; history remains in Git. The root workspace contract passes ten tests
+and 40 assertions; the complete RG UI/i18n suite passes 101 tests and 359
+assertions. The repository integration test is given a bounded 30-second
+budget for loaded hosts. Admin UI local imports/types improve, but its missing
+server host still yields 534 diagnostics; no stubs or permissive aliases were
+added. Full native lint remains red: 4,292 warnings, zero errors, 8,014 files.
+
 Base UI and Tailwind upstream monorepo sources now live under vendor/. All
 3,370 moved tracked files retain identical SHA-256 values, including licenses,
 UPSTREAM pins and nested locks. The source inventory records imported-upstream

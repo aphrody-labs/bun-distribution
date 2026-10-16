@@ -31,7 +31,7 @@ export type RolesMd3 = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["md3"]
 /** Rôles shadcn (pont MD3 → shadcn) résolus pour un thème donné. */
 export type RolesShadcn = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["shadcn"], string>>;
 
-/** Couleurs de marque Rose Griffon — identiques dans les 5 thèmes. */
+/** Shared Rose Griffon brand colors. */
 export const MARQUE = {
   marine: "#0a152c",
   rose: "#f13f8a",

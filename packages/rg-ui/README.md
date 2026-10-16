@@ -3,9 +3,9 @@
 Shared Bun OS source owner for Rose Griffon UI, using Base UI, Tailwind v4 and
 the canonical Material 3 tokens. Seven themes include Rose Griffon light/dark.
 `SOURCE.json` records the preserved import history and published implementation
-used for this migration. Root workspace admission and application qualification
-are separate gates; do not substitute the older Radix source for the currently
-installed UI alias before those gates pass.
+used for this migration. The shared root workspace now owns installation and
+all four application/library consumers resolve this local source. Application
+builds, interactive behavior and visual qualification remain separate gates.
 
 ---
 
@@ -190,7 +190,7 @@ Tous les composants suivent le pattern moderne shadcn :
 
 - **Touch targets** ≥ 44px (Button, Checkbox, RadioGroup, Slider thumb)
 - **Focus visible** systématique avec ring 3px coloré
-- **ARIA** : `role="alert"` + `aria-live="polite"` sur Alert ; `aria-current="page"` sur Pagination active ; `sr-only` pour labels invisibles ; Radix gère focus trap + escape sur Dialog/Sheet/Drawer
+- **ARIA**: Alert uses `role="alert"` and `aria-live="polite"`; active Pagination uses `aria-current="page"`; invisible labels use `sr-only`. Base UI owns the Dialog/Sheet/Drawer focus and escape primitives.
 - **`prefers-reduced-motion`** : à respecter manuellement dans les apps consommatrices (utiliser `motion-safe:` / `motion-reduce:` variants Tailwind)
 
 ---

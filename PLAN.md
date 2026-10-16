@@ -17,9 +17,27 @@
 - [x] Admit RE through its existing two CLI and two library entries. Native
       entry checking covers 20 files, local exports resolve and offline frozen
       installation passes without changing existing dependency versions.
-- [ ] Complete the four remaining physical Bun admissions. The current root
-      has 557 members; admin UI, RG UI, Shenron UI and M3 showcase still need
-      deliberate consumer and ownership qualification.
+- [ ] Complete the two remaining physical Bun admissions. The current root
+      has 559 members; Admin UI needs its missing server host contracts and
+      M3 showcase still needs dependency/source and native shell qualification.
+      Current M3 native checking reports 767 errors in 91 files; its source
+      presence and root inventory entry do not qualify it as an admitted app.
+- [x] Admit RG UI and Shenron UI through the root workspace and frozen install.
+      RG UI now owns the published Base UI implementation, rather than the old
+      Radix source; all four consumers use workspace dependencies. Its 114-file
+      native check and 83 scoped tests pass. Website, Azalee, bot and App Shell
+      type checks pass on 1,568, 798, 607 and 124 files respectively.
+- [x] Correct all 62 Shenron UI type errors without weakening strict checks.
+      Its 130-file check, 42 portable tests, exports/assets, tokens and lint pass.
+      The preserved Dragon Ball reader stylesheet now belongs to M3 Reader;
+      five browser bundles and minified CSS compile in memory. Two host parity
+      tests still require actual site/dashboard checkouts; they are not skipped
+      or counted as portable package success.
+- [x] Migrate nine existing Patreon UI text nodes into seven canonical i18n
+      keys across French, English and Japanese. The unchanged presentation
+      baseline now passes (4,586 versus 4,587); retire the duplicate imported
+      ratchet after proving identical baselines and no consumers.
+      The complete RG UI/i18n suite passes 101 tests and 359 assertions.
 - [x] Move 3,370 byte-identical Base UI and Tailwind source files into their
       explicit `vendor/` owners, preserving imported history, pins and licenses.
       Native root checking passes on 328 files. Installed catalog consumers are
@@ -48,10 +66,12 @@
       including reversed same-owner refreshes. Five tests and 25 assertions
       pass, with native checking on 61 files. Preserve the necessary dependency
       in `finally`; its remaining native memo-dependency warning is reproduced.
-- [ ] Qualify native lock generation with the newer runtime. The installed
-      runtime still fails two existing catalog resolutions. RE's two local
-      workspace records were repaired without existing-record drift and then
-      verified by native offline frozen installation; this is not a generator fix.
+- [x] Qualify native lock generation and offline frozen replay for the current
+      unified UI graph. RG UI generated natively; the new Shenron UI metadata
+      initially reproduced two catalog failures and needed its two workspace
+      records seeded. Native generation and frozen replay then passed. Existing
+      unrelated package versions are unchanged; this is not an engine bug fix
+      or qualification of every possible new-member catalog graph.
 - [ ] Qualify Storage private-directory permissions on an admitted host. The
       existing suite passes 19 tests on Windows; one POSIX-mode privacy check
       fails closed. No real Storage migration was performed.

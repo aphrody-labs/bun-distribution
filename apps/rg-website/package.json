@@ -99,7 +99,7 @@
     "@rosegriffon/preferences": "workspace:*",
     "@rosegriffon/search": "workspace:*",
     "@rosegriffon/types": "workspace:*",
-    "@rosegriffon/ui": "catalog:",
+    "@rosegriffon/ui": "workspace:*",
     "@sentry/nextjs": "catalog:",
     "@spacedrive/primitives": "catalog:",
     "@spacedrive/tokens": "catalog:",

@@ -4712,7 +4712,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 4,
+    "exports": 5,
     "bin": []
   },
   {
@@ -5322,13 +5322,13 @@
   },
   {
     "name": "@rosegriffon/ui",
-    "version": "1.0.3",
-    "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
+    "version": "1.4.4",
+    "description": "Shared Rose Griffon UI on Base UI and native Material 3 tokens",
     "dir": "packages/rg-ui",
     "kind": "package",
-    "workspace": false,
+    "workspace": true,
     "private": true,
-    "exports": 7,
+    "exports": 8,
     "bin": []
   },
   {
@@ -5344,11 +5344,11 @@
   },
   {
     "name": "@shenron/ui",
-    "version": "0.1.0",
+    "version": "1.4.4",
     "description": "",
     "dir": "packages/shenron-ui",
     "kind": "package",
-    "workspace": false,
+    "workspace": true,
     "private": true,
     "exports": 33,
     "bin": []

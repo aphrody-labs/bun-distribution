@@ -15,7 +15,7 @@
     "typecheck": "bun check --noEmit"
   },
   "dependencies": {
-    "@rosegriffon/ui": "catalog:",
+    "@rosegriffon/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next-themes": "catalog:"
   },

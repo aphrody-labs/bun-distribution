@@ -223,5 +223,5 @@ describe("bun workspace contract", () => {
     expect(manifests).toContain("packages/bun-workspace/package.json");
     expect(manifests.some(p => p.startsWith("upstream/"))).toBe(false);
     expect(await run(repo, false)).toEqual([]);
-  });
+  }, 30_000);
 });

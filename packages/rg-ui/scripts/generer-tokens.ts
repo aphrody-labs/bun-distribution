@@ -289,7 +289,7 @@ export function versCamel(nom: string): string {
   return nom.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 }
 
-/** Rôles shadcn exposés par thème (ceux que les 5 thèmes déclarent tous). */
+/** Shared shadcn roles required by all seven themes. */
 const ROLES_SHADCN = [
   "background",
   "foreground",
@@ -423,7 +423,7 @@ export type RolesMd3 = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["md3"]
 /** Rôles shadcn (pont MD3 → shadcn) résolus pour un thème donné. */
 export type RolesShadcn = Readonly<Record<keyof (typeof THEMES)["theme-roy"]["shadcn"], string>>;
 
-/** Couleurs de marque Rose Griffon — identiques dans les 5 thèmes. */
+/** Shared Rose Griffon brand colors. */
 export const MARQUE = ${litteral(tokens.marque, "")} as const;
 
 /** Couleurs imposées par des marques tierces (constantes, hors thème). */

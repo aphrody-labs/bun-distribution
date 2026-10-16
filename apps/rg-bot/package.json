@@ -56,7 +56,7 @@
     "@rosegriffon/realtime": "workspace:*",
     "@rosegriffon/storage": "workspace:*",
     "@rosegriffon/types": "workspace:*",
-    "@rosegriffon/ui": "catalog:",
+    "@rosegriffon/ui": "workspace:*",
     "brackets-manager": "catalog:",
     "brackets-model": "catalog:",
     "discord.js": "catalog:",
