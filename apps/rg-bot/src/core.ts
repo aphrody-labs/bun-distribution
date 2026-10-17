@@ -18,6 +18,9 @@
  * `rg-core bot` démarre la seule passerelle du profil courant (`RG_PROFIL_BOT`) : c'est la forme
  * de l'enfant `azalee`.
  */
+// Avant tout autre module : discordx et tsyringe (via @simplewebauthn → @peculiar/x509, chargé par
+// l'API) exigent `Reflect.getMetadata` dès leur évaluation.
+import "reflect-metadata";
 import packageJson from "../package.json" with { type: "json" };
 
 const argv = process.argv.slice(2);
