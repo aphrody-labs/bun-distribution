@@ -29,7 +29,7 @@ export interface Runtime extends RuntimeFacts {
 }
 
 const revisionPattern = /^[0-9a-f]{40}$/;
-export const runtimeVersionPattern = /^d+.d+.d+$/;
+export const runtimeVersionPattern = /^\d+\.\d+\.\d+$/;
 
 export function nativeRuntimeTarget(): RuntimeTarget | undefined {
   const platform = process.platform === "win32" ? "windows" : process.platform;
