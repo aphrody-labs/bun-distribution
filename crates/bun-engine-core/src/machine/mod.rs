@@ -4,6 +4,8 @@
 pub mod arm;
 #[cfg(feature = "nds")]
 pub mod nds;
+#[cfg(feature = "nes")]
+pub mod nes;
 #[cfg(feature = "wii")]
 pub mod wii;
 #[cfg(all(windows, feature = "x86"))]

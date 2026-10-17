@@ -3,16 +3,17 @@ import { importFirmware, listFirmware } from "./firmware/import";
 import { loadConsoleCatalog } from "./console/catalog";
 import { runNative } from "./nds/cli";
 import * as pm from "./pm";
+import { listInstalled } from "./usr";
 import { probeMedia, probeNativeCapabilities } from "./native-capabilities";
 import { NintendoDsFirmware } from "./nds/loader";
 
 const usage = [
   "bep init",
   "bep install [--frozen-lockfile] [--sources]",
-  "bep add <core...> | add firmware <console> <dump> | add rom <console> <image> [name]",
+  "bep add <core...> | add bin <emulator...> | add firmware <console> <dump> | add rom <console> <image> [name]",
   "bep remove <name...>",
   "bep ls | why <core> | info <core|console> | search [term] | outdated [core...] | update [core...]",
-  "bep cache [prune [project-dir...]]",
+  "bep cache [prune [project-dir...]] | usr (installed release binaries) | roms [console] (free ROMs)",
   "bep consoles | firmware:index | firmware:list [console] | run <system> <image> [options]",
   "bep ds:load [dir] | system:probe [path] | media:probe <file> | bun <bun-arguments>",
 ].join("\n  ");
@@ -117,6 +118,10 @@ export async function runEnginePackageManager(args: string[]): Promise<number> {
       return print(await pm.outdated(rest));
     case "update":
       return print(await pm.update(rest));
+    case "roms":
+      return print(await pm.freeRoms(rest[0]));
+    case "usr":
+      return print(await listInstalled());
     case "cache":
       return print(rest[0] === "prune" ? await pm.pruneCache(rest.slice(1)) : pm.cacheDirectories());
     case "bun":

@@ -7477,12 +7477,15 @@ dependencies = [
  "aphrody-dust-soft-2d",
  "aphrody-dust-soft-3d",
  "aphrody-gpu-backend",
+ "aphrody-wii-image",
+ "aphrody-wii-runtime",
  "bevy_app",
  "bevy_ecs",
  "pollster 1.0.1",
  "rdynarmic",
  "serde",
  "serde_json",
+ "tetanes-core",
  "wgpu 30.0.1",
  "windows 0.62.2",
  "winit 0.30.13",
@@ -35846,6 +35849,25 @@ dependencies = [
  "wezterm-dynamic",
  "wezterm-input-types",
  "winapi",
+]
+
+[[package]]
+name = "tetanes-core"
+version = "0.17.0"
+dependencies = [
+ "base64 0.23.1",
+ "bincode 2.0.1",
+ "bitflags 2.13.2",
+ "cfg-if 1.0.5",
+ "dirs 6.0.0",
+ "flate2",
+ "rand 0.10.3",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tracing",
+ "web-sys",
+ "web-time",
 ]
 
 [[package]]

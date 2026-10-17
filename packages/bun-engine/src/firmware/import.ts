@@ -1,4 +1,5 @@
 import { basename, join, resolve } from "node:path";
+import { usrRoot } from "../usr";
 
 const maxFirmwareBytes = 128 * 1024 * 1024;
 
@@ -23,9 +24,7 @@ function safeConsoleName(value: string): string {
 
 export function defaultFirmwareStore(): string {
   if (Bun.env.BUN_ENGINE_FIRMWARE_STORE) return resolve(Bun.env.BUN_ENGINE_FIRMWARE_STORE);
-  const localData = Bun.env.LOCALAPPDATA;
-  if (!localData) throw new Error("set BUN_ENGINE_FIRMWARE_STORE");
-  return join(localData, "Aphrody", "bun-engine", "firmware");
+  return join(usrRoot(), "share", "bun-engine", "firmware");
 }
 
 export async function hashFirmware(file: Blob): Promise<string> {

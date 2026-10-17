@@ -4,15 +4,17 @@ import { existsSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { type ConsoleCatalogComponent, loadConsoleCatalog } from "./console/catalog";
 import { defaultFirmwareStore, type FirmwareManifest, importFirmware, listFirmware } from "./firmware/import";
+import { installRelease, releaseCatalog, uninstallRelease, usrRoot } from "./usr";
 
 const repoRoot = resolve(import.meta.dir, "..", "..", "..");
 const lockName = "bep.lock";
 
-export type PackageKind = "core" | "firmware" | "rom";
+export type PackageKind = "core" | "bin" | "firmware" | "rom";
 
 /** The `bunEngine` field of package.json. */
 export interface EngineManifest {
   cores: string[];
+  binaries: string[];
   firmware: Record<string, string[]>;
   roms: Record<string, { console: string; sha256: string }>;
 }
@@ -25,9 +27,17 @@ export interface LockedCore {
   firmwarePolicy: string;
 }
 
+export interface LockedBinary {
+  version: string;
+  asset: string;
+  url: string;
+  sha256: string;
+}
+
 export interface EngineLock {
   lockfileVersion: 1;
   cores: Record<string, LockedCore>;
+  binaries: Record<string, LockedBinary>;
   firmware: Record<string, FirmwareManifest>;
   roms: Record<string, FirmwareManifest>;
 }
@@ -39,7 +49,7 @@ interface Project {
 }
 
 function emptyManifest(): EngineManifest {
-  return { cores: [], firmware: {}, roms: {} };
+  return { cores: [], binaries: [], firmware: {}, roms: {} };
 }
 
 /** Finds the nearest package.json, like bun does. */
@@ -61,6 +71,7 @@ async function findProject(start = process.cwd()): Promise<Project> {
 async function saveManifest(project: Project): Promise<void> {
   const manifest = project.manifest;
   manifest.cores = [...new Set(manifest.cores)].sort();
+  manifest.binaries = [...new Set(manifest.binaries)].sort();
   project.packageJson.bunEngine = manifest;
   await Bun.write(join(project.dir, "package.json"), `${JSON.stringify(project.packageJson, null, 2)}\n`);
 }
@@ -100,10 +111,11 @@ async function storedImage(store: string, owner: string, sha256: string): Promis
 }
 
 /** Resolves the manifest into a lock; with `frozen`, fails instead of changing bep.lock. */
-export async function install(options: { frozen?: boolean; sources?: boolean } = {}): Promise<EngineLock> {
+export async function install(options: { frozen?: boolean; sources?: boolean; latest?: string[] } = {}): Promise<EngineLock> {
   const project = await findProject();
   const catalog = await catalogById();
-  const lock: EngineLock = { lockfileVersion: 1, cores: {}, firmware: {}, roms: {} };
+  const previous = await readLock(project.dir);
+  const lock: EngineLock = { lockfileVersion: 1, cores: {}, binaries: {}, firmware: {}, roms: {} };
   const missing: string[] = [];
 
   for (const id of project.manifest.cores) {
@@ -127,6 +139,21 @@ export async function install(options: { frozen?: boolean; sources?: boolean } =
       }
     }
   }
+  const releases = await releaseCatalog();
+  for (const id of project.manifest.binaries) {
+    if (!releases[id]) {
+      missing.push(`binary ${id} has no upstream release package; see bep search`);
+      continue;
+    }
+    const pinned = options.latest?.includes(id) ? undefined : previous?.binaries?.[id];
+    if (options.latest?.includes(id)) await uninstallRelease(id);
+    try {
+      const record = await installRelease(id, pinned && { version: pinned.version, sha256: pinned.sha256 });
+      lock.binaries[id] = { version: record.version, asset: record.asset, url: record.url, sha256: record.sha256 };
+    } catch (error) {
+      missing.push(error instanceof Error ? error.message : String(error));
+    }
+  }
   for (const [consoleName, hashes] of Object.entries(project.manifest.firmware)) {
     for (const sha256 of hashes) {
       const manifest = await storedImage(defaultFirmwareStore(), consoleName, sha256);
@@ -143,9 +170,9 @@ export async function install(options: { frozen?: boolean; sources?: boolean } =
 
   const text = `${JSON.stringify(lock, null, 2)}\n`;
   const lockPath = join(project.dir, lockName);
-  const previous = (await Bun.file(lockPath).exists()) ? await Bun.file(lockPath).text() : "";
-  if (options.frozen && previous !== text) throw new Error(`${lockName} is out of date; run bep install`);
-  if (previous !== text) await Bun.write(lockPath, text);
+  const previousText = (await Bun.file(lockPath).exists()) ? await Bun.file(lockPath).text() : "";
+  if (options.frozen && previousText !== text) throw new Error(`${lockName} is out of date; run bep install`);
+  if (previousText !== text) await Bun.write(lockPath, text);
   return lock;
 }
 
@@ -159,11 +186,17 @@ export async function init(): Promise<string> {
   return path;
 }
 
-/** `bep add <core...>`, `bep add firmware <console> <dump>`, `bep add rom <console> <image> [name]`. */
+/** `bep add <core...>`, `bep add bin <emulator...>`, `bep add firmware <console> <dump>`, `bep add rom <console> <image> [name]`. */
 export async function add(args: string[]): Promise<void> {
   const project = await findProject();
   const [kind, consoleName, path, name] = args;
-  if (kind === "firmware" || kind === "rom") {
+  if (kind === "bin") {
+    const releases = await releaseCatalog();
+    for (const id of args.slice(1)) {
+      if (!releases[id]) throw new Error(`${id} has no upstream release package; see bep search`);
+      project.manifest.binaries.push(id);
+    }
+  } else if (kind === "firmware" || kind === "rom") {
     if (!consoleName || !path) throw new Error(`usage: bep add ${kind} <console> <file>${kind === "rom" ? " [name]" : ""}`);
     const consoles = new Set((await loadConsoleCatalog()).components.map(component => component.console));
     if (!consoles.has(consoleName)) throw new Error(`unknown console ${consoleName}; see bep consoles`);
@@ -190,6 +223,8 @@ export async function remove(names: string[]): Promise<void> {
   for (const name of names) {
     const before = JSON.stringify(project.manifest);
     project.manifest.cores = project.manifest.cores.filter(id => id !== name);
+    if (project.manifest.binaries.includes(name)) await uninstallRelease(name);
+    project.manifest.binaries = project.manifest.binaries.filter(id => id !== name);
     delete project.manifest.roms[name];
     delete project.manifest.firmware[name];
     for (const [consoleName, hashes] of Object.entries(project.manifest.firmware)) {
@@ -206,6 +241,7 @@ export async function list(): Promise<Array<{ kind: PackageKind; name: string; c
   const lock = (await readLock(project.dir)) ?? (await install());
   return [
     ...Object.entries(lock.cores).map(([name, core]) => ({ kind: "core" as const, name, console: core.console, version: core.sourceRev.slice(0, 12) })),
+    ...Object.entries(lock.binaries ?? {}).map(([name, bin]) => ({ kind: "bin" as const, name, console: "", version: bin.version })),
     ...Object.entries(lock.firmware).map(([name, image]) => ({ kind: "firmware" as const, name, console: image.console, version: image.sha256.slice(0, 12) })),
     ...Object.entries(lock.roms).map(([name, image]) => ({ kind: "rom" as const, name, console: image.console, version: image.sha256.slice(0, 12) })),
   ];
@@ -235,11 +271,15 @@ export async function info(name: string): Promise<unknown> {
   throw new Error(`${name} is neither a core nor a console`);
 }
 
-export async function search(term = ""): Promise<Array<{ id: string; console: string; runtime: string; license: string }>> {
+export async function search(term = ""): Promise<Array<{ id: string; kind: PackageKind; console: string; runtime: string }>> {
   const needle = term.toLowerCase();
-  return [...(await catalogById()).values()]
+  const cores = [...(await catalogById()).values()]
     .filter(component => [component.id, component.console, component.runtime, ...component.cpu].some(field => field.includes(needle)))
-    .map(({ id, console, runtime, license }) => ({ id, console, runtime, license }));
+    .map(({ id, console, runtime }) => ({ id, kind: "core" as const, console, runtime }));
+  const bins = Object.entries(await releaseCatalog())
+    .filter(([id, pkg]) => id.includes(needle) || pkg.console.includes(needle) || pkg.repo.toLowerCase().includes(needle))
+    .map(([id, pkg]) => ({ id, kind: "bin" as const, console: pkg.console, runtime: `release ${pkg.repo}` }));
+  return [...cores, ...bins];
 }
 
 /** Compares each submodule pin with its fork's default branch. */
@@ -262,11 +302,20 @@ export async function outdated(ids?: string[]): Promise<Array<{ id: string; curr
 
 /** Moves core pins to their fork heads: gitlink, catalog sourceRev and bep.lock together. */
 export async function update(ids: string[]): Promise<Array<{ id: string; from: string; to: string }>> {
-  const stale = await outdated(ids);
-  if (!stale.length) return [];
+  const project = await findProject().catch(() => undefined);
+  const binaries = project ? project.manifest.binaries.filter(id => !ids.length || ids.includes(id)) : [];
+  const moved: Array<{ id: string; from: string; to: string }> = [];
+  if (project && binaries.length) {
+    const before = (await readLock(project.dir))?.binaries ?? {};
+    const lock = await install({ latest: binaries });
+    for (const id of binaries)
+      if (before[id]?.version !== lock.binaries[id]?.version)
+        moved.push({ id, from: before[id]?.version ?? "", to: lock.binaries[id]?.version ?? "" });
+  }
+  const stale = await outdated(ids.filter(id => !binaries.includes(id)));
+  if (!stale.length) return moved;
   const manifestPath = join(import.meta.dir, "..", "plugins", "consoles", "manifest.json");
   const catalog = (await Bun.file(manifestPath).json()) as { components: ConsoleCatalogComponent[] };
-  const moved: Array<{ id: string; from: string; to: string }> = [];
   for (const row of stale) {
     const component = catalog.components.find(item => item.id === row.id)!;
     const path = component.sources[0]!.path;
@@ -294,8 +343,32 @@ export async function resolveImage(name: string): Promise<string> {
   return name;
 }
 
-export function cacheDirectories(): { firmware: string; roms: string } {
-  return { firmware: defaultFirmwareStore(), roms: romStore() };
+interface RomPack {
+  id: string;
+  console: string;
+  kind: "homebrew" | "test";
+  source: string;
+  glob: string;
+  license: string;
+}
+
+/** Free ROMs from vendored sources (`bep roms [console]`); checks out the source on demand. */
+export async function freeRoms(consoleName?: string): Promise<Array<{ pack: string; console: string; kind: string; path: string }>> {
+  const file = join(import.meta.dir, "..", "plugins", "consoles", "roms.json");
+  const { packs } = (await Bun.file(file).json()) as { packs: RomPack[] };
+  const rows: Array<{ pack: string; console: string; kind: string; path: string }> = [];
+  for (const pack of packs.filter(item => !consoleName || item.console === consoleName)) {
+    const dir = join(repoRoot, pack.source);
+    if (!existsSync(join(dir, ".git")))
+      Bun.spawnSync(["git", "-C", repoRoot, "submodule", "update", "--init", "--depth", "1", "--", pack.source]);
+    for await (const path of new Bun.Glob(pack.glob).scan({ cwd: dir, onlyFiles: true }))
+      rows.push({ pack: pack.id, console: pack.console, kind: pack.kind, path: join(pack.source, path) });
+  }
+  return rows;
+}
+
+export function cacheDirectories(): { usr: string; firmware: string; roms: string } {
+  return { usr: usrRoot(), firmware: defaultFirmwareStore(), roms: romStore() };
 }
 
 /** Removes store images no project lock references (`bep cache prune <project-dir...>`). */
@@ -306,7 +379,7 @@ export async function pruneCache(projectDirs: string[]): Promise<string[]> {
     for (const image of [...Object.values(lock?.firmware ?? {}), ...Object.values(lock?.roms ?? {})]) keep.add(image.sha256);
   }
   const removed: string[] = [];
-  for (const store of Object.values(cacheDirectories())) {
+  for (const store of [defaultFirmwareStore(), romStore()]) {
     if (!existsSync(store)) continue;
     for await (const path of new Bun.Glob("*/*.json").scan({ cwd: store, absolute: true, onlyFiles: true })) {
       const manifest = (await Bun.file(path).json()) as FirmwareManifest;

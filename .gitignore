@@ -52,3 +52,6 @@ twitch_secrets.toml
 # Local deployment links and run output
 .vercel/
 /var/
+
+# Bun OS root managed by bep (release binaries, sources junctions, firmware/ROM store)
+/usr/

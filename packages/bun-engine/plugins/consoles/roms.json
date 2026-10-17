@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "note": "Freely redistributable homebrew and test ROMs shipped by vendored emulator sources. bep never fetches commercial games.",
+  "packs": [
+    {
+      "id": "tetanes-homebrew",
+      "console": "nintendo-nes",
+      "kind": "homebrew",
+      "source": "vendor/tetanes",
+      "glob": "tetanes/assets/roms/*.nes",
+      "license": "Freeware homebrew bundled by TetaNES; per-game notes in the adjacent .txt files"
+    },
+    {
+      "id": "tetanes-test-roms",
+      "console": "nintendo-nes",
+      "kind": "test",
+      "source": "vendor/tetanes",
+      "glob": "tetanes-core/test_roms/**/*.nes",
+      "license": "NES accuracy test ROMs (blargg and others) bundled by TetaNES"
+    }
+  ]
+}

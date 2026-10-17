@@ -11,7 +11,7 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
-default = ["window", "nds", "host", "arm", "x86", "wii", "cartridge"]
+default = ["window", "nds", "nes", "host", "arm", "x86", "wii", "cartridge"]
 # Nintendo DS machine on Dust with software 2D/3D rendering.
 nds = ["dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
 # Bevy scheduling of the DS core (wasm and desktop hosts).
@@ -19,6 +19,8 @@ host = ["nds", "dep:bevy_app", "dep:bevy_ecs"]
 bevy-web = ["host", "bevy_app/web"]
 # AArch64 firmware machine on the rdynarmic JIT.
 arm = ["dep:rdynarmic"]
+# NES on TetaNES.
+nes = ["dep:tetanes-core"]
 # GameCube and Wii on the Gekko/Broadway interpreter.
 wii = ["dep:aphrody-wii-runtime", "dep:aphrody-wii-image"]
 # x86 guests on the Windows Hypervisor Platform.
@@ -36,6 +38,7 @@ aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
 bevy_app = { workspace = true, optional = true }
 bevy_ecs = { workspace = true, optional = true }
 rdynarmic = { path = "../rdynarmic", optional = true }
+tetanes-core = { path = "../../vendor/tetanes/tetanes-core", optional = true }
 aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
 aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }
 wgpu = { workspace = true, optional = true }
@@ -53,4 +56,4 @@ serde_json = { workspace = true }
 [[bin]]
 name = "bun-engine"
 path = "src/bin/bun-engine.rs"
-required-features = ["window", "nds", "arm", "wii", "cartridge"]
+required-features = ["window", "nds", "nes", "arm", "wii", "cartridge"]

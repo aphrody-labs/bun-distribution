@@ -1,5 +1,5 @@
 [workspace]
-exclude = ["vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
+exclude = ["vendor/tetanes", "vendor/uutils", "packages/bun-tauri", "apps/aphrody-model-view", "toolchains/bun", "apps/aphrody-drive", "apps/pdfcraft/vendor", "apps/figcraft/plugins", "apps/artcraft", "crates/artcraft-tauri-plugin-http", "crates/sqlite_tasks", "vendor/magika"]
 resolver = "3"
 members = [
   "crates/apkeep",
