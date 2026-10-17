@@ -149,9 +149,9 @@
       "targetHost": "vps"
     },
     {
-      "service": "nie-model-serve",
-      "unit": "nie-model-serve.service",
-      "path": "systemd/nie/nie-model-serve.service",
+      "service": "rg-core",
+      "unit": "rg-core.service",
+      "path": "systemd/rg/rg-core.service",
       "ownerRepo": "iecode",
       "targetHost": "vps"
     },
@@ -764,7 +764,14 @@
       "ownerRepo": "iecode",
       "targetHost": "vps",
       "site": "nie.aphrody.app",
-      "service": "nie-model-serve"
+      "service": "rg-core"
+    },
+    {
+      "file": "nginx/rg/rg-core.conf",
+      "ownerRepo": "iecode",
+      "targetHost": "vps",
+      "site": "ranked.rosegriffon.fr",
+      "service": "rg-core"
     },
     {
       "file": "nginx/shared/00-default.conf",

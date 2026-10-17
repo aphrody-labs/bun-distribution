@@ -5,22 +5,40 @@
   "proxy": "nginx",
   "services": [
     {
-      "id": "nie-model-serve",
-      "application": "nie",
-      "kind": "rust-http",
-      "runtime": "rust",
-      "unit": "nie-model-serve.service",
-      "health": "http://127.0.0.1:8792/health",
-      "port": 8792,
+      "id": "rg-core",
+      "application": "rg",
+      "kind": "bun-single-file",
+      "runtime": "bun",
+      "unit": "rg-core.service",
+      "health": "http://127.0.0.1:8810/health",
+      "port": 8810,
       "capabilities": [
+        "discord-gateway",
+        "ranked-colyseus",
+        "unified-api",
+        "cron",
         "3d-assets"
       ],
+      "children": [
+        {
+          "id": "nie-model-serve",
+          "runtime": "rust",
+          "port": 8792,
+          "health": "http://127.0.0.1:8792/health"
+        }
+      ],
       "sourceRepo": "bun-os",
-      "workingDirectory": "/home/ubuntu/apps/nie",
+      "workingDirectory": "/var/lib/rg-core",
+      "environmentFile": "/etc/aphrody/rg-core.env",
       "publicProxy": "nginx",
       "public": true,
       "status": "active",
-      "publicOrigin": "https://nie.aphrody.app",
+      "publicOrigins": [
+        "https://ranked.rosegriffon.fr",
+        "https://bot.rosegriffon.fr",
+        "https://cdn.rosegriffon.fr",
+        "https://nie.aphrody.app"
+      ],
       "consumers": [
         "iecode-web",
         "rg-website"
@@ -68,7 +86,8 @@
       "shenron-clean-vps.timer",
       "shenron-log-watcher.service",
       "shenron-zswap.service",
-      "filebrowser.service"
+      "filebrowser.service",
+      "nie-model-serve.service"
     ],
     "sharedRuntimes": [
       "bun",

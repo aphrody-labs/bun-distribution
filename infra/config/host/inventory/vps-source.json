@@ -118,11 +118,12 @@
     ],
     "removed_certificates": ["aphrody.com", "mcp.dragonballfr.com"],
     "remaining_routes": {
-      "cdn.rosegriffon.fr/dx11/*": "HTTP 410; IECode origin retired",
-      "cdn.rosegriffon.fr/dynamic-game-assets": "HTTP 410 until NIE is redeployed"
+      "cdn.rosegriffon.fr/dx11/*": "rg-core -> nie-model-serve /tex (nginx/rg/rg-core.conf)",
+      "cdn.rosegriffon.fr/dynamic-game-assets": "rg-core -> nie-model-serve (snippets/nie-assets.inc)"
     },
     "verified_active_services": [
       "nginx.service",
+      "rg-core.service",
       "rg-website.service",
       "shenron-site.service",
       "shenron-bot.service"
