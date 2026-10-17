@@ -1,4 +1,4 @@
-include "../../spec/gamecube/dsp.chipi"
+include "../../../vendor/chipi-spec/gamecube/dsp.chipi"
 
 target rust {
     dispatch GcDsp {

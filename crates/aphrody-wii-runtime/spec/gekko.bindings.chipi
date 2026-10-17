@@ -1,4 +1,4 @@
-include "../../spec/gamecube/gekko.chipi"
+include "../../../vendor/chipi-spec/gamecube/gekko.chipi"
 
 target rust {
     dispatch Gekko {

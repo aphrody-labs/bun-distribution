@@ -18,7 +18,7 @@ with `crates/re`, rea and Replica.
 
 ## Features
 
-`window`, `nds`, `host` (`bevy-web` for wasm), `arm`, `x86`, `cartridge`. Consumers take
+`window`, `nds`, `host` (`bevy-web` for wasm), `arm`, `x86`, `wii`, `cartridge`. Consumers take
 `bun-engine` from the workspace with `default-features = false` and enable what they share.
 
 ## Machines
@@ -28,7 +28,7 @@ with `crates/re`, rea and Replica.
 | Nintendo DS | `aphrody-dust-core` (interpreter, soft 2D/3D, HLE BIOS) | runs: `bun-engine run nds <rom>` |
 | ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs EL0 code: `bun-engine run arm <image>` |
 | x86 guests | Windows Hypervisor Platform partition, COM1 | runs flat images: `bun-engine run x86 <image>`; Linux 64-bit boot in progress |
-| Wii/GameCube | `aphrody-wii-runtime`, `aphrody-wii-render`, `aphrody-wii` | in tree, not yet a machine |
+| GameCube / Wii | `aphrody-wii-runtime` (Gekko/Broadway interpreter, DOL direct boot, XFB readback) | runs: `bun-engine run gc|wii <dol>`; GX scenes need the GPU renderer |
 | Switch | `ruzu`, `rdynarmic`, `aphrody-switch` | in tree, not yet a machine |
 | Other Rust cores | `vendor/{starpsx,zakuro,gopher64,jgenesis,rustboyadvance-ng,tetanes,retroboy}` | pinned in the console catalog |
 | C++ cores | `vendor/{ares,mame,retroarch}` | pinned in the console catalog |

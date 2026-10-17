@@ -583,3 +583,6 @@
 [submodule "vendor/gecko"]
 	path = vendor/gecko
 	url = https://github.com/aphrody-labs/gecko.git
+[submodule "vendor/chipi-spec"]
+	path = vendor/chipi-spec
+	url = https://github.com/aphrody-labs/chipi-spec.git

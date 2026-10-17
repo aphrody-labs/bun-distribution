@@ -18,7 +18,7 @@ sha256sums=('SKIP')
 
 build() {
   cd bun-os
-  git submodule update --init --depth 1 toolchains/bun
+  git submodule update --init --depth 1 toolchains/bun vendor/chipi-spec
   bash scripts/aphrody/build/rust/cargo-serial.sh build --release --locked -p bun-engine --bin bun-engine
 }
 
