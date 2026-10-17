@@ -187,6 +187,24 @@
 - [ ] Retire the old generated Workspace installation. Automatic approval review
       rejected removal with `blocked by policy`; its 25 dependency files remain.
 
+## IECODE native members and notices — 2026-10-17
+
+- [x] Machine-readable component inventory for NIE/IECODE, RE, rea, Replica,
+      DBXV2 and Bun Engine sources: `docs/re-iecode-inventory.json`.
+- [x] The private IECODE .NET solution, portable C++ core, `niepy`, the NIE
+      Blender add-on and `capture_harness` are split with their history into
+      private `aphrody-labs` repositories and mounted as flat submodules
+      (`apps/iecode-dotnet`, `packages/iecode-cpp`, `packages/niepy`,
+      `packages/nie-blender`, `crates/capture_harness`); `aphrody-labs/dbxv2`
+      is mounted at `packages/dbxv2`. Private histories are not grafted into
+      this public repository.
+- [x] Restore the NIE source-rights notice on 49 NIE crates and
+      `aphrody-homebrew`, the upstream Ruzu GPL-3.0-or-later license and
+      edition 2021, and the Ruzu, ds-rom and dsd license texts. The Ruzu
+      C/C++ externals now travel with their crates; `common` checks again.
+- [ ] Assign the remaining IECODE native scripts, private documentation and
+      agent skills; qualify the C++ member through `bun msvc vcpkg`.
+
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
 
 - All IECODE Rust crates (93 packages), Bun packages, apps and scripts are absorbed into the flat root `crates/`, `apps/` and `packages/` layout, one direct child per member, under the root nightly toolchain and Bun 1.4.4 native quality commands. `C:srciecode` is kept untouched until the owner retires it.

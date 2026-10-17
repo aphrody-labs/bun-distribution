@@ -1,0 +1,2610 @@
+{
+  "schemaVersion": 1,
+  "scope": "NIE/IECODE (Rust, .NET, C++, Python), reverse engineering (bun-re, rea, Replica), DBXV2 and Bun Engine RE/NDS sources",
+  "generated": "2026-10-17",
+  "workspaceRevisionBase": "fc692e30a4a5b4f792e00e871b05a2296bafc17e",
+  "fields": [
+    "component",
+    "path",
+    "type",
+    "source",
+    "submodule",
+    "cargoOwner",
+    "bunOwner",
+    "buildOwner",
+    "releaseOwner",
+    "qualification",
+    "migrationState"
+  ],
+  "migrationStates": {
+    "merged-history": "source history is an ancestor of the workspace",
+    "submodule": "flat member mounted as a pinned Git submodule carrying the split source history",
+    "merged-copy": "content imported without history; history stays in the source repository",
+    "folded": "merged into another canonical owner",
+    "retired": "duplicate removed after consumers moved",
+    "source-duplicate": "duplicate lives only in the source repository; workspace owner is canonical",
+    "out-of-scope": "owned by another active migration",
+    "pending": "still only in the source repository",
+    "protected": "local data store; never committed"
+  },
+  "components": [
+    {
+      "submodule": null,
+      "component": "aphrody-dust-web",
+      "path": "apps/iecode-web-wasm",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "apps/web/crate"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 5,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-web",
+      "path": "apps/iecode-web-wii-wasm",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "apps/web/wii/crate"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-ctr",
+      "path": "crates/aphrody-ctr",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/aphrody-ctr"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 14,
+        "changedFiles": 0,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "identical"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-emulator-host",
+      "path": "crates/aphrody-emulator-host",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/aphrody-emulator-host"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-homebrew",
+      "path": "crates/aphrody-homebrew",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/aphrody-homebrew"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-cli",
+      "path": "crates/aphrody-dust-cli",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/cli"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 67,
+        "changedFiles": 2,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-core",
+      "path": "crates/aphrody-dust-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 206,
+        "changedFiles": 3,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-soft-2d",
+      "path": "crates/aphrody-dust-soft-2d",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/render/soft-2d"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 7,
+        "changedFiles": 1,
+        "sourceOnly": 13,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-soft-2d-base",
+      "path": "crates/aphrody-dust-soft-2d-base",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/render/soft-2d/base"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 12,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-soft-3d",
+      "path": "crates/aphrody-dust-soft-3d",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/render/soft-3d"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-dust-wgpu",
+      "path": "crates/aphrody-dust-wgpu",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/render/wgpu"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 30,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "audio_core",
+      "path": "crates/ruzu-audio-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/audio_core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 154,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "common",
+      "path": "crates/ruzu-common",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/common"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 99,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "core",
+      "path": "crates/ruzu-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 805,
+        "changedFiles": 1,
+        "sourceOnly": 7,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "crypto",
+      "path": "crates/ruzu-crypto",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/core/crypto"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 6,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "dedicated_room",
+      "path": "crates/ruzu-dedicated-room",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/dedicated_room"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 0,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "identical"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "frontend_common",
+      "path": "crates/ruzu-frontend-common",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/frontend_common"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "hid_core",
+      "path": "crates/ruzu-hid-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/hid_core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 92,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "input_common",
+      "path": "crates/ruzu-input-common",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/input_common"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 35,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "network",
+      "path": "crates/ruzu-network",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/network"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 7,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "rdynarmic",
+      "path": "crates/rdynarmic",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/rdynarmic"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 295,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "ruzu",
+      "path": "crates/ruzu",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/ruzu"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 101,
+        "changedFiles": 4,
+        "sourceOnly": 0,
+        "workspaceOnly": 19,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "ruzu_cmd",
+      "path": "crates/ruzu-cmd",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/ruzu_cmd"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "shader_recompiler",
+      "path": "crates/ruzu-shader-recompiler",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/shader_recompiler"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 233,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "video_core",
+      "path": "crates/ruzu-video-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/video_core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 342,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "web_service",
+      "path": "crates/ruzu-web-service",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/ruzu/web_service"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 6,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-emu-utils",
+      "path": "crates/aphrody-emu-utils",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/utils"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 15,
+        "changedFiles": 1,
+        "sourceOnly": 3,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-emu-utils-macros",
+      "path": "crates/aphrody-emu-utils-macros",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/utils/macros"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-runtime",
+      "path": "crates/aphrody-wii-runtime",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/wii/core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 143,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-debug",
+      "path": "crates/aphrody-wii-debug",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/wii/debug"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 16,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-dff",
+      "path": "crates/aphrody-wii-dff",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/wii/dff"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 0,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "identical"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-disasm",
+      "path": "crates/aphrody-wii-disasm",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/wii/disasm"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 6,
+        "changedFiles": 0,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "identical"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-wii-render",
+      "path": "crates/aphrody-wii-render",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/wii/render"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 24,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-app",
+      "path": "crates/aphrody-nie-app",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-app"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 14,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-asm",
+      "path": "crates/aphrody-nie-asm",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-asm"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-bench",
+      "path": "crates/aphrody-nie-bench",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-bench"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-bevy",
+      "path": "crates/aphrody-nie-bevy",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-bevy"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-camera",
+      "path": "crates/aphrody-nie-camera",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-camera"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 11,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-cli",
+      "path": "crates/aphrody-nie-cli",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-cli"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 35,
+        "changedFiles": 3,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-computer-use",
+      "path": "crates/aphrody-nie-computer-use",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-computer-use"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 2,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-core",
+      "path": "crates/aphrody-nie-core",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-core"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 67,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-data",
+      "path": "crates/aphrody-nie-data",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-data"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 253,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-dump",
+      "path": "crates/re",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-dump"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "folded",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": null
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-editor",
+      "path": "crates/aphrody-nie-editor",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-editor"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-emu",
+      "path": "crates/aphrody-nie-emu",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-emu"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 4,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-explore",
+      "path": "crates/aphrody-nie-explore",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-explore"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 31,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-ffi",
+      "path": "crates/aphrody-nie-ffi",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-ffi"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-forge",
+      "path": "crates/aphrody-nie-forge",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-forge"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 12,
+        "changedFiles": 2,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-formats",
+      "path": "crates/aphrody-nie-formats",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-formats"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 124,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-game",
+      "path": "crates/aphrody-nie-game",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-game"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 43,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-geom",
+      "path": "crates/aphrody-nie-geom",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-geom"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-headless",
+      "path": "crates/aphrody-nie-headless",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-headless"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-identity-source",
+      "path": "crates/aphrody-nie-identity-source",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-identity-source"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 4,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-index",
+      "path": "crates/aphrody-nie-index",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-index"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 6,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-inventory",
+      "path": "crates/aphrody-nie-inventory",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-inventory"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 5,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-launcher",
+      "path": "crates/aphrody-nie-launcher",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-launcher"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 10,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-lua-web",
+      "path": "crates/aphrody-nie-lua-web",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-lua-web"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 5,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-lua",
+      "path": "crates/aphrody-nie-lua",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-lua"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 19,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-mcp",
+      "path": "crates/aphrody-nie-mcp",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-mcp"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-model-serve",
+      "path": "crates/aphrody-nie-model-serve",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-model-serve"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 7,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-net",
+      "path": "crates/aphrody-nie-net",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-net"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 18,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-ocgen",
+      "path": "crates/aphrody-nie-ocgen",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-ocgen"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 14,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-pe-inspect",
+      "path": "crates/aphrody-nie-pe-inspect",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-pe-inspect"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-pe",
+      "path": "crates/aphrody-nie-pe",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-pe"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 7,
+        "changedFiles": 2,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-pg",
+      "path": "crates/aphrody-nie-pg",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-pg"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 6,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-play",
+      "path": "crates/aphrody-nie-play",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-play"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-queue",
+      "path": "crates/aphrody-nie-queue",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-queue"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-re",
+      "path": "crates/re",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-re"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "folded",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": null
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-render",
+      "path": "crates/aphrody-nie-render",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-render"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-render3d",
+      "path": "crates/aphrody-nie-render3d",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-render3d"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 15,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-runtime",
+      "path": "crates/aphrody-nie-runtime",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-runtime"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 5,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-save",
+      "path": "crates/aphrody-nie-save",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-save"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 9,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-seed",
+      "path": "crates/aphrody-nie-seed",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-seed"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-sql",
+      "path": "crates/aphrody-nie-sql",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-sql"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 3,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-steam",
+      "path": "crates/re",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-steam"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "folded",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": null
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-tasks",
+      "path": "crates/aphrody-nie-tasks",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-tasks"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-trace",
+      "path": "crates/aphrody-nie-trace",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-trace"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 13,
+        "changedFiles": 3,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-ui",
+      "path": "crates/aphrody-nie-ui",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-ui"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 3,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-video",
+      "path": "crates/aphrody-nie-video",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-video"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 2,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-viewer-web",
+      "path": "crates/aphrody-nie-viewer-web",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-viewer-web"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 1,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-viola",
+      "path": "crates/aphrody-nie-viola",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-viola"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 14,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-wasm",
+      "path": "crates/aphrody-nie-wasm",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/nie-wasm"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 8,
+        "changedFiles": 3,
+        "sourceOnly": 0,
+        "workspaceOnly": 1,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-wiki",
+      "path": "crates/aphrody-nie-wiki",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-wiki"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 27,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-nie-zukan",
+      "path": "crates/aphrody-nie-zukan",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/nie/aphrody-nie-zukan"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 10,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-model-view",
+      "path": "apps/aphrody-model-view",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/apps/tauri/model-view"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 18,
+        "changedFiles": 0,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "identical"
+      }
+    },
+    {
+      "submodule": null,
+      "component": "aphrody-tauri-3d",
+      "path": "crates/aphrody-tauri-3d",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/nie-ui/rust/tauri-3d"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-copy",
+      "history": "source repository (private); not grafted into the public workspace",
+      "divergence": {
+        "identicalFiles": 7,
+        "changedFiles": 1,
+        "sourceOnly": 0,
+        "workspaceOnly": 0,
+        "newer": "bun-os"
+      }
+    },
+    {
+      "submodule": "884cbecfa285a55a63b0177ba3f7751f32b38b0d",
+      "component": "iecode-dotnet",
+      "path": "apps/iecode-dotnet",
+      "type": "dotnet-solution",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "src/IECODE, IECODE.sln, Directory.Build.props, Directory.Packages.props, NuGet.config, global.json"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/iecode-dotnet",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": "bun dotnet build apps/iecode-dotnet/IECODE.sln",
+      "releaseOwner": "root factory",
+      "qualification": "bun dotnet build -c Release: 5 projects, 0 errors, 302 existing warnings",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (19 commits) into the member repository"
+    },
+    {
+      "submodule": "9e4e7333d9baaa330453cf04f3ed53c374372987",
+      "component": "iecode-cpp",
+      "path": "packages/iecode-cpp",
+      "type": "cpp-cmake",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "src/iecode-cpp, vcpkg.json, vcpkg-configuration.json, cmake/overlay-ports, cmake/overlay-triplets, tools/a32_oracle.cpp, tools/build_a32_oracle.sh"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/iecode-cpp",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": "bun msvc vcpkg + CMake (vcpkg feature iecode-cpp)",
+      "releaseOwner": "root factory",
+      "qualification": "not built: the vcpkg dependency closure is not installed on this host",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (17 commits) into the member repository"
+    },
+    {
+      "submodule": "c246b311ec1933645aaba83992736bcfbe509686",
+      "component": "niepy",
+      "path": "packages/niepy",
+      "type": "python-package",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "src/niepy"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/niepy",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": "bun uv",
+      "releaseOwner": "root factory",
+      "qualification": "pytest: 104 passed, 18 skipped, 9 failed without a built aphrody-nie-ffi library or game root",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (11 commits) into the member repository"
+    },
+    {
+      "submodule": "e70c9273f164497030609d90adb9921a75c24592",
+      "component": "nie-blender",
+      "path": "packages/nie-blender",
+      "type": "python-blender-addon",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "src/nie-blender"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/nie-blender",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": null,
+      "bunOwner": "packages/bun-blender (host integration)",
+      "buildOwner": "bun uv / Blender 5.2",
+      "releaseOwner": "root factory",
+      "qualification": "not run (requires Blender)",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (4 commits) into the member repository"
+    },
+    {
+      "submodule": "bcbb10c4ca4bdd2b58a8f13002b82386dc847ca5",
+      "component": "capture_harness",
+      "path": "crates/capture_harness",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "tools/capture_harness"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/capture-harness",
+        "visibility": "private",
+        "branch": "os"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "bun scripts/cargo.ts",
+      "releaseOwner": "root factory",
+      "qualification": "cargo check -p capture_harness (root workspace)",
+      "migrationState": "submodule",
+      "history": "split with git filter-repo (2 commits); was not a member of the IECODE workspace"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-licenses",
+      "path": "docs/licenses/iecode",
+      "type": "notices",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "LICENSES.md, THIRD_PARTY.md, docs/licenses, docs/nie/LICENSE"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": null,
+      "releaseOwner": "root factory",
+      "qualification": "license-file references resolved by cargo metadata",
+      "migrationState": "merged-copy",
+      "notes": "49 NIE crates and aphrody-homebrew again reference the NIE source-rights notice instead of the root MIT license; the four Ruzu crates that inherit the upstream vricosti/ruzu-emu workspace license declare GPL-3.0-or-later instead of MIT, and the 14 Ruzu crates use its edition 2021"
+    },
+    {
+      "submodule": null,
+      "component": "ruzu-externals",
+      "path": "crates/ruzu-common/externals, crates/ruzu-video-core/externals",
+      "type": "c-cpp-sources",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "crates/emu/externals"
+      },
+      "cargoOwner": "root-workspace",
+      "bunOwner": null,
+      "buildOwner": "crate build scripts (cc)",
+      "releaseOwner": "root factory",
+      "qualification": "build scripts compile",
+      "migrationState": "merged-copy",
+      "notes": "previously missing; the Ruzu build scripts referenced ../../externals"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-bun-packages",
+      "path": "packages/inagle, packages/inagle-cross, packages/inagle-ui, packages/ieverse, packages/iecode-homebrew, packages/nie-ui, packages/nie-web, packages/menu-render, packages/menu-render-webgpu, apps/iecode-web",
+      "type": "bun-packages",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "packages/{inagle,inagle-cross,ieverse,iecode-homebrew,nie-ui}, apps/web"
+      },
+      "cargoOwner": null,
+      "bunOwner": "root workspace",
+      "buildOwner": "bun",
+      "releaseOwner": "root factory",
+      "qualification": "path coverage: every file present except relocated build scripts and .bun-tag markers",
+      "migrationState": "merged-copy"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-scripts-typescript",
+      "path": "scripts/iecode",
+      "type": "scripts",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "scripts/{audit,build,donnees,migration,rg,tools,validation}"
+      },
+      "bunOwner": "root workspace",
+      "buildOwner": "bun",
+      "migrationState": "merged-copy"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-scripts-native",
+      "path": null,
+      "type": "scripts",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "scripts/{audit (61 py/ps1/sh), dev (13), forge (6 py), gecko (9 lua), ops (2), ruzu (43), upstream (31)}"
+      },
+      "migrationState": "pending",
+      "notes": "Python, PowerShell, shell, Lua, Java and CMake scripts are not yet assigned to a member"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-ghidra-suite",
+      "path": "packages/re/plugin",
+      "type": "agent-skills",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "tools/re/ghidra-suite (18 files)"
+      },
+      "bunOwner": "@bun-os/re",
+      "migrationState": "merged-copy",
+      "notes": "every file path present in the unified RE plugin (afc56c49a1)"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-ghidra-scripts",
+      "path": null,
+      "type": "scripts",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "tools/re/scripts (find-ghidra, ghidra-analyze: ps1 and sh), scripts/ghidra (4 java), scripts/re (5 py)"
+      },
+      "migrationState": "pending",
+      "notes": "candidate owner packages/re; Ghidra discovery already exists in the RE pipeline adapters"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-docs",
+      "path": null,
+      "type": "documentation",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "docs (nie 151, rg 98, ruzu 23, gecko 12, development 12, architecture 10, upstream 10, ...), docs.7z, .agents/skills (68)"
+      },
+      "migrationState": "pending",
+      "notes": "private reverse-engineering documentation; publication into the public workspace needs an owner visibility decision"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-rg",
+      "path": "apps/rg-bot, apps/rg-website, apps/azalee-web, packages/rg-*, packages/achillea-*, packages/azalee",
+      "type": "bun-apps",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "apps/rg, packages/rg, packages/azalee, packages/nie-ui/apps/azalee-web"
+      },
+      "migrationState": "out-of-scope",
+      "notes": "owned by the aphrody-labs/rosegriffon extraction"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-root-orchestration",
+      "path": null,
+      "type": "workspace-root",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "CMakeLists.txt, CMakePresets.json, Cargo.toml, package.json, pyproject.toml, uv.lock, bun.lock, rust-toolchain.toml"
+      },
+      "migrationState": "retired",
+      "notes": "superseded by the Bun OS root Cargo, Bun, uv and CMake orchestration; not carried"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-data-stores",
+      "path": null,
+      "type": "protected-data",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "data/ (knowledge.db, rg, azalee, ds, roms), var/ (db, knowledge.db, mirror.sqlite)"
+      },
+      "migrationState": "protected",
+      "notes": "untracked SQLite stores, ROM and dump inputs; left in place in the source checkout, never committed"
+    },
+    {
+      "submodule": null,
+      "component": "iecode-replica",
+      "path": null,
+      "type": "empty",
+      "source": {
+        "repository": "aphrody-labs/iecode",
+        "visibility": "private",
+        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
+        "path": "replica/ (untracked, empty)"
+      },
+      "migrationState": "retired",
+      "notes": "no content"
+    },
+    {
+      "submodule": null,
+      "component": "rea",
+      "path": "packages/re",
+      "type": "bun-package",
+      "source": {
+        "repository": "aphrody-labs/rea",
+        "visibility": "public",
+        "revision": "7d27c6f92b1984a0ed03dfe9bb63d2db1b4df41b",
+        "upstream": "morluto/rea"
+      },
+      "cargoOwner": null,
+      "bunOwner": "root workspace (@bun-os/re)",
+      "buildOwner": "bun",
+      "releaseOwner": "root factory",
+      "migrationState": "merged-history",
+      "notes": "merged with history by 9494f7119f; the rea HEAD is an ancestor of the workspace"
+    },
+    {
+      "submodule": null,
+      "component": "replica",
+      "path": "packages/re/replica",
+      "type": "agent-skills",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "packages/bun-engine/src/core/replica"
+      },
+      "bunOwner": "@bun-os/re",
+      "migrationState": "merged-copy",
+      "notes": "canonical owner since e4024032b1; packages/replica retired; the bun-engine copy is a source-side duplicate; the bun-engine replica/ run record lives in docs/bun-engine/replica; iecode replica/ is empty"
+    },
+    {
+      "submodule": null,
+      "component": "bun-re",
+      "path": "crates/re",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/aphrody, aphrody-labs/shenron, aphrody-labs/iecode",
+        "visibility": "mixed",
+        "revision": null,
+        "path": "aphrody re, crates/shenron-re, crates/nie/aphrody-nie-{re,dump,steam}"
+      },
+      "cargoOwner": "root-workspace",
+      "buildOwner": "bun scripts/cargo.ts",
+      "migrationState": "folded",
+      "notes": "single RE core (features pipeline, nie, steam-emulator, steam-download)"
+    },
+    {
+      "submodule": "fabc19c0021e3e992786dc2a093a749c8a1c26f0",
+      "component": "dbxv2",
+      "path": "packages/dbxv2",
+      "type": "python-cli",
+      "source": {
+        "repository": "aphrody-labs/dbxv2",
+        "visibility": "private",
+        "revision": "fabc19c0021e3e992786dc2a093a749c8a1c26f0",
+        "branch": "master"
+      },
+      "memberRepository": {
+        "repository": "aphrody-labs/dbxv2",
+        "visibility": "private",
+        "branch": "master"
+      },
+      "cargoOwner": null,
+      "bunOwner": null,
+      "buildOwner": "bun uv",
+      "releaseOwner": "root factory",
+      "migrationState": "submodule",
+      "notes": "Dragon Ball Xenoverse 2 extraction and modding CLI; the Rust DBXV2 engine from shenron-re lives in crates/re (bunre-dbxv2) with partial command parity"
+    },
+    {
+      "submodule": null,
+      "component": "shenron-product",
+      "path": null,
+      "type": "product",
+      "source": {
+        "repository": "aphrody-labs/shenron",
+        "visibility": "private",
+        "revision": "09e8da0045c07a9f8ed08abe7b8571ab4fc18644"
+      },
+      "migrationState": "out-of-scope",
+      "notes": "only shenron-re belongs to this scope and is folded into crates/re"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-crates",
+      "path": "crates/android-native, crates/aphrody-aarch64, crates/aphrody-switch, crates/aphrody-wii, crates/aphrody-wii-image, crates/bun-engine-core",
+      "type": "rust-crates",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "crates/*"
+      },
+      "cargoOwner": "root-workspace",
+      "migrationState": "merged-copy"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-nds",
+      "path": "crates/bun-engine-nds",
+      "type": "rust-crate",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "crates/nds"
+      },
+      "cargoOwner": "root-workspace",
+      "migrationState": "merged-copy",
+      "notes": "its dust-core, emu-utils and emu-utils-macros copies are rustfmt-reformatted duplicates of iecode crates/emu at ba98a941; the canonical owners are crates/aphrody-dust-core, crates/aphrody-emu-utils and crates/aphrody-emu-utils-macros (source-duplicate)"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-package",
+      "path": "packages/bun-engine",
+      "type": "bun-package",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "packages/bun-engine, test, plugins/consoles, docs"
+      },
+      "bunOwner": "root workspace",
+      "migrationState": "merged-copy"
+    },
+    {
+      "submodule": null,
+      "component": "bun-engine-android-extras",
+      "path": null,
+      "type": "docs-and-scripts",
+      "source": {
+        "repository": "aphrody-labs/bun-engine",
+        "visibility": "public",
+        "revision": "6afa5a7e1f04e29ee1ec75ede9c7c2220ad12b68",
+        "path": "docs/android (17), tools/android (9), packages/java-latest (3)"
+      },
+      "migrationState": "pending",
+      "notes": "Android owners are packages/android-pipeline and docs; java-latest was excluded by the Android absorption"
+    }
+  ]
+}
