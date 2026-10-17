@@ -2,7 +2,17 @@ export const dynamic = "force-dynamic";
 
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar, ChevronLeft, Clock, Eye, Heart, MessageCircle, Share2, Tag, User } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  Clock,
+  Eye,
+  Heart,
+  MessageCircle,
+  Share2,
+  Tag,
+  User,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -46,7 +56,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function estimateReadTime(content: string): number {
   try {
-    const parsed = typeof content === "string" && content.startsWith("{") ? JSON.parse(content) : null;
+    const parsed =
+      typeof content === "string" && content.startsWith("{")
+        ? JSON.parse(content)
+        : null;
     if (parsed?.root) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const extractText = (node: any): string => {
@@ -85,7 +98,8 @@ function estimateReadTime(content: string): number {
   } catch {
     // Fallback
   }
-  const stripped = typeof content === "string" ? content.replaceAll(/<[^>]+>/g, "") : "";
+  const stripped =
+    typeof content === "string" ? content.replaceAll(/<[^>]+>/g, "") : "";
   return Math.max(1, Math.ceil(stripped.split(/\s+/).length / 300));
 }
 
@@ -127,7 +141,10 @@ async function getNews(slug: string, isPreview = false) {
       );
       news.author = profileRows[0] || null;
     } catch (error) {
-      console.error(`Error fetching author profile for article ${slug}:`, error);
+      console.error(
+        `Error fetching author profile for article ${slug}:`,
+        error,
+      );
       news.author = null;
     }
   } else {
@@ -167,7 +184,10 @@ async function getNews(slug: string, isPreview = false) {
             : c;
         });
       } catch (error) {
-        console.error(`Error fetching co-authors profiles for article ${slug}:`, error);
+        console.error(
+          `Error fetching co-authors profiles for article ${slug}:`,
+          error,
+        );
       }
     }
   }
@@ -211,9 +231,10 @@ async function getNewsMeta(slug: string, isPreview = false) {
 
   if (news.author_id) {
     try {
-      const { rows: profileRows } = await pool.query("SELECT full_name FROM profiles WHERE id = $1 LIMIT 1", [
-        news.author_id,
-      ]);
+      const { rows: profileRows } = await pool.query(
+        "SELECT full_name FROM profiles WHERE id = $1 LIMIT 1",
+        [news.author_id],
+      );
       news.author = profileRows[0] || null;
     } catch (error) {
       console.error(`Error fetching author meta for article ${slug}:`, error);
@@ -234,7 +255,8 @@ async function getNewsMeta(slug: string, isPreview = false) {
  */
 async function isCurrentUserAdmin(): Promise<boolean> {
   try {
-    const { getServerSession, hasMedailleAzaleeRole } = await import("@/lib/auth-helpers");
+    const { getServerSession, hasMedailleAzaleeRole } =
+      await import("@/lib/auth-helpers");
     const { ADMIN_ROLES } = await import("@/lib/auth-roles");
     const session = await getServerSession();
     if (!session?.user) {
@@ -245,10 +267,12 @@ async function isCurrentUserAdmin(): Promise<boolean> {
     if (!pool) {
       return false;
     }
-    const { rows: profileRows } = await pool.query<{ role: string | null; discord_id: string | null }>(
-      "SELECT role, discord_id FROM profiles WHERE id = $1 LIMIT 1",
-      [session.user.id],
-    );
+    const { rows: profileRows } = await pool.query<{
+      role: string | null;
+      discord_id: string | null;
+    }>("SELECT role, discord_id FROM profiles WHERE id = $1 LIMIT 1", [
+      session.user.id,
+    ]);
     const profile = profileRows[0];
 
     if (!profile) {
@@ -263,7 +287,10 @@ async function isCurrentUserAdmin(): Promise<boolean> {
   }
 }
 
-export async function generateMetadata({ params, searchParams }: ArticlePageProps) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: ArticlePageProps) {
   const { slug } = await params;
   const sp = await searchParams;
   const isPreview = sp.preview === "true";
@@ -275,7 +302,9 @@ export async function generateMetadata({ params, searchParams }: ArticlePageProp
 
   const seoTitle = news.meta_title || news.title;
   const seoDescription =
-    news.meta_description || news.excerpt || `${news.title} - Actualites Inazuma Eleven Victory Road`;
+    news.meta_description ||
+    news.excerpt ||
+    `${news.title} - Actualites Inazuma Eleven Victory Road`;
   const publishedDate = news.published_at || news.created_at;
   const modifiedDate = news.updated_at || publishedDate;
   // Pas `azalee.rosegriffon.fr` : cette route est servie par `apps/website` sous
@@ -312,7 +341,9 @@ export async function generateMetadata({ params, searchParams }: ArticlePageProp
     robots: { follow: true, index: news.status === "published" },
     title: `${seoTitle} - Azalee`,
     twitter: {
-      card: news.featured_image_url ? "summary_large_image" : ("summary" as const),
+      card: news.featured_image_url
+        ? "summary_large_image"
+        : ("summary" as const),
       description: seoDescription,
       images: news.featured_image_url ? [news.featured_image_url] : undefined,
       title: seoTitle,
@@ -320,7 +351,10 @@ export async function generateMetadata({ params, searchParams }: ArticlePageProp
   };
 }
 
-export default async function ArticlePage({ params, searchParams }: ArticlePageProps) {
+export default async function ArticlePage({
+  params,
+  searchParams,
+}: ArticlePageProps) {
   const { slug } = await params;
   const sp = await searchParams;
   const isPreview = sp.preview === "true";
@@ -332,12 +366,20 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 
   const publishedDate = news.published_at || news.created_at || undefined;
   const readTime = estimateReadTime(news.content || "");
-  const categoryLabel = news.category ? CATEGORY_LABELS[news.category] || news.category : "Article";
+  const categoryLabel = news.category
+    ? CATEGORY_LABELS[news.category] || news.category
+    : "Article";
   const authorName = news.author?.full_name || "Azalée";
   const canonicalUrl = `https://azalee.rosegriffon.fr/news/${slug}`;
   const tocItems = extractTableOfContents(news.content || "");
 
-  const [relatedArticles, allReactions, bookmarkStates, commentCount, seriesData] = await Promise.all([
+  const [
+    relatedArticles,
+    allReactions,
+    bookmarkStates,
+    commentCount,
+    seriesData,
+  ] = await Promise.all([
     getRelatedArticles(news.id, news.category, news.tags),
     getAllReactionCounts(news.id),
     getBookmarkStates([news.id]),
@@ -346,7 +388,10 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   ]);
 
   const isBookmarked = bookmarkStates[news.id] || false;
-  const totalReactions = Object.values(allReactions).reduce((sum, r) => sum + r.count, 0);
+  const totalReactions = Object.values(allReactions).reduce(
+    (sum, r) => sum + r.count,
+    0,
+  );
 
   // Structured Data
   const articleJsonLd = {
@@ -389,8 +434,8 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   };
 
   const faqItems = tocItems
-    .filter(item => item.text.endsWith("?"))
-    .map(item => ({
+    .filter((item) => item.text.endsWith("?"))
+    .map((item) => ({
       "@type": "Question",
       acceptedAnswer: {
         "@type": "Answer",
@@ -410,10 +455,19 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
   return (
     <>
       {/* Structured Data */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {faqJsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
       )}
 
       {/* Bandeau de prévisualisation pour les articles non publiés */}
@@ -421,8 +475,16 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
         <div className="sticky top-0 z-50 bg-amber-500 text-amber-950 px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-3">
           <Eye className="size-4" />
           Mode prévisualisation — cet article est en statut «{" "}
-          {news.status === "draft" ? "brouillon" : news.status === "scheduled" ? "programmé" : news.status} »
-          <Link href={`/dashboard/news/${news.id}`} className="ml-2 underline hover:no-underline font-bold">
+          {news.status === "draft"
+            ? "brouillon"
+            : news.status === "scheduled"
+              ? "programmé"
+              : news.status}{" "}
+          »
+          <Link
+            href={`/dashboard/news/${news.id}`}
+            className="ml-2 underline hover:no-underline font-bold"
+          >
             Modifier
           </Link>
         </div>
@@ -444,7 +506,8 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
               alt={news.featured_image_alt || news.title}
               fill
               className="object-cover"
-              priority
+              loading="eager"
+              fetchPriority="high"
               sizes="100vw"
               unoptimized={!news.featured_image_url}
             />
@@ -475,7 +538,11 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                 />
               </div>
               <div className="bg-black/30 backdrop-blur-md rounded-full">
-                <BookmarkButton articleId={news.id} initialBookmarked={isBookmarked} compact />
+                <BookmarkButton
+                  articleId={news.id}
+                  initialBookmarked={isBookmarked}
+                  compact
+                />
               </div>
             </div>
           </div>
@@ -504,7 +571,9 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
             {/* Author + Meta row */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-on-surface-variant">
               {/* Author */}
-              {(news.author || (Array.isArray(news.co_authors) && news.co_authors.length > 0)) && (
+              {(news.author ||
+                (Array.isArray(news.co_authors) &&
+                  news.co_authors.length > 0)) && (
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
                     {news.author && (
@@ -566,25 +635,35 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                         {authorName}
                       </Link>
                     ) : (
-                      <span className="font-semibold text-on-surface">{authorName}</span>
-                    )}
-                    {Array.isArray(news.co_authors) && news.co_authors.length > 0 && (
-                      <span className="text-[10px] sm:text-xs text-on-surface-variant/70">
-                        avec {news.co_authors.map((c: { name: string }) => c.name).join(", ")}
+                      <span className="font-semibold text-on-surface">
+                        {authorName}
                       </span>
                     )}
+                    {Array.isArray(news.co_authors) &&
+                      news.co_authors.length > 0 && (
+                        <span className="text-[10px] sm:text-xs text-on-surface-variant/70">
+                          avec{" "}
+                          {news.co_authors
+                            .map((c: { name: string }) => c.name)
+                            .join(", ")}
+                        </span>
+                      )}
                   </div>
                 </div>
               )}
 
-              <span className="text-on-surface-variant/30 hidden sm:inline">|</span>
+              <span className="text-on-surface-variant/30 hidden sm:inline">
+                |
+              </span>
 
               {/* Date */}
               <div className="flex items-center gap-1.5">
                 <Calendar className="size-3.5 text-on-surface-variant/50" />
                 <time dateTime={publishedDate}>
                   {publishedDate
-                    ? format(new Date(publishedDate), "d MMMM yyyy", { locale: fr })
+                    ? format(new Date(publishedDate), "d MMMM yyyy", {
+                        locale: fr,
+                      })
                     : "Date non renseignée"}
                 </time>
               </div>
@@ -671,7 +750,10 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
             {/* ============ ENGAGEMENT SECTION ============ */}
             <div className="space-y-5 pt-6 border-t border-outline-variant/15">
               {/* Reaction bar */}
-              <ReactionBar articleId={news.id} initialReactions={allReactions} />
+              <ReactionBar
+                articleId={news.id}
+                initialReactions={allReactions}
+              />
 
               {/* Action buttons row */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -682,9 +764,15 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                   url={canonicalUrl}
                   imageUrl={news.featured_image_url || undefined}
                 />
-                <BookmarkButton articleId={news.id} initialBookmarked={isBookmarked} />
+                <BookmarkButton
+                  articleId={news.id}
+                  initialBookmarked={isBookmarked}
+                />
                 <div className="ml-auto">
-                  <ArticleViewTracker articleId={news.id} initialViewCount={news.view_count || 0} />
+                  <ArticleViewTracker
+                    articleId={news.id}
+                    initialViewCount={news.view_count || 0}
+                  />
                 </div>
               </div>
             </div>
@@ -693,7 +781,10 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 						    exposee en HEADER de l'article (bloc "Author + Meta row"). */}
 
             {/* ============ COMMENTS ============ */}
-            <CommentSection articleId={news.id} initialCommentCount={commentCount} />
+            <CommentSection
+              articleId={news.id}
+              initialCommentCount={commentCount}
+            />
           </div>
 
           {/* === SIDEBAR (desktop only) === */}
@@ -714,7 +805,9 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                     </span>
                     <span className="text-on-surface text-xs font-medium">
                       {publishedDate
-                        ? format(new Date(publishedDate), "d MMM yyyy", { locale: fr })
+                        ? format(new Date(publishedDate), "d MMM yyyy", {
+                            locale: fr,
+                          })
                         : "Date non renseignée"}
                     </span>
                   </div>
@@ -722,31 +815,41 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Clock className="size-3.5" /> Lecture
                     </span>
-                    <span className="text-on-surface text-xs font-medium">~{readTime} min</span>
+                    <span className="text-on-surface text-xs font-medium">
+                      ~{readTime} min
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Eye className="size-3.5" /> Vues
                     </span>
-                    <span className="text-on-surface text-xs font-medium">{news.view_count || 0}</span>
+                    <span className="text-on-surface text-xs font-medium">
+                      {news.view_count || 0}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Heart className="size-3.5" /> Réactions
                     </span>
-                    <span className="text-on-surface text-xs font-medium">{totalReactions}</span>
+                    <span className="text-on-surface text-xs font-medium">
+                      {totalReactions}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <MessageCircle className="size-3.5" /> Commentaires
                     </span>
-                    <span className="text-on-surface text-xs font-medium">{commentCount}</span>
+                    <span className="text-on-surface text-xs font-medium">
+                      {commentCount}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-on-surface-variant/60 flex items-center gap-1.5">
                       <Share2 className="size-3.5" /> Partages
                     </span>
-                    <span className="text-on-surface text-xs font-medium">{news.share_count || 0}</span>
+                    <span className="text-on-surface text-xs font-medium">
+                      {news.share_count || 0}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -756,11 +859,16 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
                 <div className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10">
                   <div className="flex items-center gap-2 mb-3">
                     <Tag className="size-3.5 text-on-surface-variant/50" />
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">Tags</h3>
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">
+                      Tags
+                    </h3>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {news.tags.map((tag: string) => (
-                      <Link key={tag} href={`/news/tag/${encodeURIComponent(tag)}`}>
+                      <Link
+                        key={tag}
+                        href={`/news/tag/${encodeURIComponent(tag)}`}
+                      >
                         <Badge
                           variant="secondary"
                           className="rounded-full text-[10px] bg-secondary-container text-on-secondary-container

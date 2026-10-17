@@ -85,7 +85,11 @@
   /* `headline-sm`, `title-md` et `title-sm` étaient déjà utilisés dans les
 	 * fiches du wiki alors qu'aucun token ne les définissait : la classe était
 	 * inerte et la taille retombait sur l'héritage du parent. */
-  --text-fluid-headline-sm: clamp(1.125rem, 0.8vw + 0.5rem, 1.5rem); /* 18 → 24 */
+  --text-fluid-headline-sm: clamp(
+    1.125rem,
+    0.8vw + 0.5rem,
+    1.5rem
+  ); /* 18 → 24 */
   --text-fluid-title-md: clamp(1rem, 0.5vw + 0.5rem, 1.25rem); /* 16 → 20 */
   --text-fluid-title-sm: clamp(0.875rem, 0.3vw + 0.5rem, 1rem); /* 14 → 16 */
   --text-fluid-body-lg: clamp(1rem, 0.5vw + 0.875rem, 1.25rem); /* 16 → 20 */
@@ -97,11 +101,16 @@
 
   /* ─── M3 Elevation ───────────────────────────────────────────────────── */
   --md-sys-elevation-level0: none;
-  --md-sys-elevation-level1: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
-  --md-sys-elevation-level2: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
-  --md-sys-elevation-level3: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
-  --md-sys-elevation-level4: 0 2px 3px 0 rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
-  --md-sys-elevation-level5: 0 4px 4px 0 rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level1:
+    0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level2:
+    0 1px 2px 0 rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level3:
+    0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level4:
+    0 2px 3px 0 rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
+  --md-sys-elevation-level5:
+    0 4px 4px 0 rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
 
   /* ─── Pont MD3 → utilities Tailwind v4 ───────────────────────────────── */
   /* Expose chaque rôle MD3 comme utility Tailwind (`bg-primary-container`,
@@ -139,11 +148,15 @@
   --color-inverse-primary: var(--md-sys-color-inverse-primary);
   --color-surface-dim: var(--md-sys-color-surface-dim);
   --color-surface-bright: var(--md-sys-color-surface-bright);
-  --color-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
+  --color-surface-container-lowest: var(
+    --md-sys-color-surface-container-lowest
+  );
   --color-surface-container-low: var(--md-sys-color-surface-container-low);
   --color-surface-container: var(--md-sys-color-surface-container);
   --color-surface-container-high: var(--md-sys-color-surface-container-high);
-  --color-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --color-surface-container-highest: var(
+    --md-sys-color-surface-container-highest
+  );
 
   /* ─── Couleurs de marque Rose Griffon ────────────────────────────────── */
   /* Le pont vit ici et non dans le `globals.css` d'une app : les composants
@@ -349,6 +362,7 @@
   .theme-roy,
   :root.roy,
   .roy {
+    color-scheme: light;
     --md-sys-color-primary: oklch(0.45 0.12 250);
     --md-sys-color-on-primary: oklch(0.985 0 0);
     --md-sys-color-primary-container: oklch(0.85 0.08 250);
@@ -429,6 +443,7 @@
   .theme-gaelle,
   :root.gaelle,
   .gaelle {
+    color-scheme: light;
     --md-sys-color-primary: oklch(0.5 0.18 25);
     --md-sys-color-on-primary: oklch(0.985 0 0);
     --md-sys-color-primary-container: oklch(0.88 0.08 25);
@@ -508,6 +523,7 @@
   .theme-azalee-light,
   :root.azalee-light,
   .azalee-light {
+    color-scheme: light;
     --md-sys-color-primary: #f2a93b;
     --md-sys-color-on-primary: #2d1600;
     --md-sys-color-primary-container: #ffddb2;
@@ -581,6 +597,7 @@
   .theme-azalee-dark,
   :root.azalee-dark,
   .azalee-dark {
+    color-scheme: dark;
     --md-sys-color-primary: #ffc66c;
     --md-sys-color-on-primary: #412d00;
     --md-sys-color-primary-container: #5d4200;
@@ -659,6 +676,7 @@
   .theme-achillea,
   :root.achillea,
   .achillea {
+    color-scheme: dark;
     --md-sys-color-primary: #b875ff;
     --md-sys-color-on-primary: #2c005e;
     --md-sys-color-primary-container: #4f0099;
@@ -781,7 +799,6 @@
   }
 
   html {
-    scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -811,6 +828,22 @@
   :focus-visible {
     outline: 2px solid var(--rg-rose);
     outline-offset: 2px;
+  }
+
+  /* Défilement doux seulement si l'utilisateur n'a pas demandé moins d'animations. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Les anneaux de focus des composants sont des box-shadow, invisibles en
+   * mode Contraste élevé : un contour système les remplace. */
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 2px solid CanvasText !important;
+      outline-offset: 2px;
+    }
   }
 }
 
@@ -879,7 +912,8 @@
     inset: 0;
     background: currentColor;
     opacity: 0;
-    transition: opacity var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+    transition: opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard);
     pointer-events: none;
     border-radius: inherit;
   }
@@ -925,10 +959,14 @@
     transition-timing-function: var(--md-sys-motion-easing-emphasized);
   }
   .motion-emphasized-accelerate {
-    transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-accelerate
+    );
   }
   .motion-emphasized-decelerate {
-    transition-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
+    transition-timing-function: var(
+      --md-sys-motion-easing-emphasized-decelerate
+    );
   }
 
   /* ─── Typographie expressive ──────────────────────────────────────── */

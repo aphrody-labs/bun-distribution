@@ -2,10 +2,22 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ParticipantDTO, Tournament } from "@rosegriffon/achillea-types";
 import { TournamentState } from "@rosegriffon/achillea-types";
-import { stageTypeLabel, tournamentStateLabel, tournamentStateTone } from "@rosegriffon/achillea-core";
+import {
+  stageTypeLabel,
+  tournamentStateLabel,
+  tournamentStateTone,
+} from "@rosegriffon/achillea-core";
 import { Badge } from "@rosegriffon/ui";
 import { badgeVariant } from "@/lib/achillea";
-import { ArrowRight, Calendar, Radio, Shield, Swords, Trophy, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Radio,
+  Shield,
+  Swords,
+  Trophy,
+  Users,
+} from "lucide-react";
 
 interface HeroSectionProps {
   featured: Tournament | null;
@@ -30,18 +42,29 @@ function tournamentDate(value: unknown): string | null {
 }
 
 function tournamentImage(tournament: Tournament): string | null {
-  const extended = tournament as Tournament & { affiche?: string | null; logo?: string | null };
+  const extended = tournament as Tournament & {
+    affiche?: string | null;
+    logo?: string | null;
+  };
   const value = extended.affiche ?? extended.logo;
   return typeof value === "string" && value.trim() ? value : null;
 }
 
 /** Entrée publique, basée sur la hiérarchie du legacy: un tournoi et quatre accès. */
-export function HeroSection({ featured, featuredParticipants, otherActive, stats }: HeroSectionProps) {
+export function HeroSection({
+  featured,
+  featuredParticipants,
+  otherActive,
+  stats,
+}: HeroSectionProps) {
   const isLive = featured?.internalState === TournamentState.ONGOING;
   const startsAt = featured ? tournamentDate(featured.startsAt) : null;
   const capacity = featured?.participantsNumber ?? 0;
   const registered = featuredParticipants.length;
-  const fill = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : null;
+  const fill =
+    capacity > 0
+      ? Math.min(100, Math.round((registered / capacity) * 100))
+      : null;
 
   return (
     <section className="achillea-home" aria-labelledby="achillea-home-title">
@@ -50,17 +73,22 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
         <header className="achillea-home__intro">
           <Image
             src="/achillea/achillea site titre transparent-2.webp"
-            alt="Achilléa"
+            // Le titre est porté par le <h1> qui suit : le logo ne le répète pas.
+            alt=""
             width={740}
             height={196}
-            priority
+            loading="eager"
+            fetchPriority="high"
             className="achillea-home__wordmark"
           />
           <h1 id="achillea-home-title" className="sr-only">
             Achilléa
           </h1>
           <p>La scène compétitive Inazuma Eleven: Victory Road.</p>
-          <dl className="achillea-home__stats" aria-label="Chiffres de la scène Achilléa">
+          <dl
+            className="achillea-home__stats"
+            aria-label="Chiffres de la scène Achilléa"
+          >
             <div>
               <dt>Joueurs</dt>
               <dd>{formatNumber.format(stats.joueurs)}</dd>
@@ -77,21 +105,33 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
         </header>
 
         {featured ? (
-          <section className="achillea-home__featured" aria-labelledby="featured-tournament-title">
+          <section
+            className="achillea-home__featured"
+            aria-labelledby="featured-tournament-title"
+          >
             <div className="achillea-home__section-head">
               <div className="flex items-center gap-3">
                 {isLive ? (
                   <Radio className="size-5 text-red-300" aria-hidden="true" />
                 ) : (
-                  <Trophy className="size-5 text-achillea-lime" aria-hidden="true" />
+                  <Trophy
+                    className="size-5 text-achillea-lime"
+                    aria-hidden="true"
+                  />
                 )}
                 <p>{isLive ? "En direct" : "Tournoi à la une"}</p>
               </div>
-              <Link href="/achillea/tournaments" className="achillea-home__text-link">
+              <Link
+                href="/achillea/tournaments"
+                className="achillea-home__text-link"
+              >
                 Tous les tournois <ArrowRight aria-hidden="true" />
               </Link>
             </div>
-            <Link href={`/achillea/tournaments/${featured.id}`} className="achillea-home__featured-card">
+            <Link
+              href={`/achillea/tournaments/${featured.id}`}
+              className="achillea-home__featured-card"
+            >
               {tournamentImage(featured) && (
                 <Image
                   src={tournamentImage(featured)!}
@@ -101,16 +141,28 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
                   className="object-cover opacity-30"
                 />
               )}
-              <div className="achillea-home__featured-scrim" aria-hidden="true" />
+              <div
+                className="achillea-home__featured-scrim"
+                aria-hidden="true"
+              />
               <div className="achillea-home__featured-body">
                 <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant={badgeVariant(tournamentStateTone(featured.internalState))}>
+                  <Badge
+                    variant={badgeVariant(
+                      tournamentStateTone(featured.internalState),
+                    )}
+                  >
                     {tournamentStateLabel(featured.internalState)}
                   </Badge>
-                  {isLive && <span className="achillea-home__live">En cours</span>}
+                  {isLive && (
+                    <span className="achillea-home__live">En cours</span>
+                  )}
                 </div>
                 <h2 id="featured-tournament-title">{featured.name}</h2>
-                <ul className="achillea-home__facts" aria-label="Informations du tournoi">
+                <ul
+                  className="achillea-home__facts"
+                  aria-label="Informations du tournoi"
+                >
                   <li>
                     <Swords aria-hidden="true" />
                     {stageTypeLabel(featured.tournamentType)}
@@ -129,7 +181,10 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
                   )}
                 </ul>
                 {fill !== null && (
-                  <div className="achillea-home__progress" aria-label={`${fill} % des places occupées`}>
+                  <div
+                    className="achillea-home__progress"
+                    aria-label={`${fill} % des places occupées`}
+                  >
                     <div>
                       <span>Inscriptions</span>
                       <strong>{fill} %</strong>
@@ -140,17 +195,23 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
                   </div>
                 )}
                 <span className="achillea-home__cta">
-                  Voir le tableau et les inscriptions <ArrowRight aria-hidden="true" />
+                  Voir le tableau et les inscriptions{" "}
+                  <ArrowRight aria-hidden="true" />
                 </span>
               </div>
             </Link>
             {otherActive.length > 0 && (
-              <ul className="achillea-home__other-events" aria-label="Autres tournois actifs">
-                {otherActive.slice(0, 3).map(tournament => (
+              <ul
+                className="achillea-home__other-events"
+                aria-label="Autres tournois actifs"
+              >
+                {otherActive.slice(0, 3).map((tournament) => (
                   <li key={tournament.id}>
                     <Link href={`/achillea/tournaments/${tournament.id}`}>
                       <span>{tournament.name}</span>
-                      <small>{tournamentStateLabel(tournament.internalState)}</small>
+                      <small>
+                        {tournamentStateLabel(tournament.internalState)}
+                      </small>
                       <ArrowRight aria-hidden="true" />
                     </Link>
                   </li>
@@ -159,7 +220,10 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
             )}
           </section>
         ) : (
-          <section className="achillea-home__featured achillea-home__empty" aria-labelledby="tournaments-empty-title">
+          <section
+            className="achillea-home__featured achillea-home__empty"
+            aria-labelledby="tournaments-empty-title"
+          >
             <Trophy aria-hidden="true" />
             <div>
               <h2 id="tournaments-empty-title">Calendrier des tournois</h2>
@@ -171,7 +235,10 @@ export function HeroSection({ featured, featuredParticipants, otherActive, stats
           </section>
         )}
 
-        <nav className="achillea-home__actions" aria-label="Accès rapides Achilléa">
+        <nav
+          className="achillea-home__actions"
+          aria-label="Accès rapides Achilléa"
+        >
           <Link href="/achillea/clans">
             <Users aria-hidden="true" />
             <span>

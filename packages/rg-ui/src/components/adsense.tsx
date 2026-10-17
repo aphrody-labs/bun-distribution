@@ -33,9 +33,10 @@ declare global {
 /**
  * Charge `adsbygoogle.js`. À poser une seule fois, dans le layout racine.
  *
- * `strategy="afterInteractive"` laisse la page devenir interactive avant de
- * charger le script publicitaire : une balise collée dans le `<head>` retarde le
- * premier rendu, ce que Google lui-même pénalise via les Core Web Vitals.
+ * `strategy="lazyOnload"` charge le script publicitaire après l'événement `load`,
+ * sans `<link rel="preload">` dans le `<head>` : il ne dispute plus la bande
+ * passante à l'image LCP ni aux polices. Les emplacements déjà rendus empilent
+ * leur `push({})` dans `window.adsbygoogle`, traité au chargement du script.
  */
 export function AdSenseScript({
   client = ADSENSE_CLIENT,
@@ -52,7 +53,7 @@ export function AdSenseScript({
       crossOrigin="anonymous"
       id="google-adsense"
       src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`}
-      strategy="afterInteractive"
+      strategy="lazyOnload"
     />
   );
 }

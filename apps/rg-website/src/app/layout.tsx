@@ -6,7 +6,6 @@ import { cookies, headers } from "next/headers";
 import { lato, notoSans, poppins, roboto } from "@/lib/fonts";
 import { NETWORK_SAME_AS } from "@/lib/social-links";
 import { absoluteUrl, SITE_URL } from "@/lib/site-url";
-import { Geist } from "next/font/google";
 
 import { GoogleTagManager } from "@next/third-parties/google";
 import { resolveLocale } from "@rosegriffon/i18n";
@@ -28,12 +27,6 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
  * et la stabilité de la barre latérale et de la barre supérieure.
  */
 const SCRIPT_THEME = `(function(){try{var t=localStorage.getItem('rg-theme');var valid=['roy','gaelle','azalee-light','azalee-dark','achillea'];var theme=(t&&valid.indexOf(t)!==-1)?t:'roy';var cl=document.documentElement.classList;for(var i=0;i<valid.length;i++){cl.remove(valid[i],'theme-'+valid[i]);}cl.add(theme);}catch(e){document.documentElement.classList.add('roy');}})();`;
-
-const geistSans = Geist({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
 
 export const viewport: Viewport = {
   initialScale: 1,
@@ -101,7 +94,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     creator: "@rose_griffon",
-    description: "Site officiel de l'association Rose Griffon, rassemblant la communauté Inazuma Eleven en France",
+    description:
+      "Site officiel de l'association Rose Griffon, rassemblant la communauté Inazuma Eleven en France",
     title: "Rose Griffon | Association Inazuma Eleven France",
   },
 };
@@ -119,7 +113,11 @@ export default async function RootLayout({
   const initialLanguage = isLocaleId(locale.locale) ? locale.locale : "fr";
 
   return (
-    <html lang={initialLanguage} dir={locale.direction} suppressHydrationWarning>
+    <html
+      lang={initialLanguage}
+      dir={locale.direction}
+      suppressHydrationWarning
+    >
       <head>
         {/*
          * Pré-application du thème avant hydratation (évite le FOUC) ;
@@ -160,7 +158,8 @@ export default async function RootLayout({
                   alternateName: "Association Rose Griffon",
                   url: SITE_URL,
                   logo: absoluteUrl("/RG_Logo_V2.5.webp"),
-                  description: "Association rassemblant la communauté Inazuma Eleven en France.",
+                  description:
+                    "Association rassemblant la communauté Inazuma Eleven en France.",
                   founder: { "@id": absoluteUrl("/#yoyo") },
                   // Réseau Rose Griffon : 3 domaines siblings + tous les réseaux sociaux
                   // (X/YouTube/Twitch/Instagram/Discord). sameAs partagé à l'identique
@@ -206,7 +205,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${roboto.className} ${roboto.variable} ${poppins.variable} ${notoSans.variable} ${lato.variable}`}
+        className={`${roboto.className} ${roboto.variable} ${poppins.variable} ${notoSans.variable} ${lato.variable}`}
         suppressHydrationWarning
       >
         {/* Google Tag Manager — composant officiel de `@next/third-parties`.
@@ -222,7 +221,9 @@ export default async function RootLayout({
 				    nginx (`infra/nginx/rg-csp-website.inc`) : y ajouter les hôtes
 				    publicitaires avant toute bascule en mode bloquant. */}
         <AdSenseScript />
-        <ClientLayout initialLanguage={initialLanguage}>{children}</ClientLayout>
+        <ClientLayout initialLanguage={initialLanguage}>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

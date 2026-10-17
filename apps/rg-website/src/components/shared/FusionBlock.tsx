@@ -29,10 +29,15 @@ export default function FusionBlock({
         className="object-center object-cover group-hover:scale-105 transition-transform duration-500"
         sizes="(max-width: 768px) 100vw, 50vw"
         style={imageStyle}
-        priority={isPriority}
-        loading={isPriority ? undefined : "lazy"}
+        // Image LCP de l'accueil : priorité réseau haute, jamais différée.
+        fetchPriority={isPriority ? "high" : undefined}
+        loading={isPriority ? "eager" : "lazy"}
       />
-      {imageOverlay && <div className="absolute inset-0 flex items-center justify-center">{imageOverlay}</div>}
+      {imageOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {imageOverlay}
+        </div>
+      )}
     </div>
   );
 

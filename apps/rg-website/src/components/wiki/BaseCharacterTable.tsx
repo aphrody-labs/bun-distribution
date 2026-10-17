@@ -10,10 +10,20 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { CommonSpriteIcon } from "@/components/ui/CommonSpriteIcon";
 import { RarityBadge } from "@/components/ui/rarity-badge";
 import { SafeImage } from "@/components/ui/SafeImage";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rosegriffon/ui";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@rosegriffon/ui";
 import type { SpriteCommonKey } from "@/config/sprites-common";
 import { isFemaleGender } from "@rosegriffon/azalee/game/gender";
-import { getCharacterImageUrl, getSkillCategoryIconUrl } from "@rosegriffon/azalee/images";
+import {
+  getCharacterImageUrl,
+  getSkillCategoryIconUrl,
+} from "@rosegriffon/azalee/images";
 import { cn } from "@/lib/utils";
 import { CharacterStatsPopover } from "./CharacterStatsPopover";
 
@@ -75,7 +85,13 @@ function useLienWiki(): (chemin: string) => string {
 /**
  * Row component for a single base character with variant switching
  */
-function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; rowIndex: number }) {
+function BaseCharacterRow({
+  character,
+  rowIndex,
+}: {
+  character: BaseCharacter;
+  rowIndex: number;
+}) {
   const { t, language } = useLanguage();
   const lienWiki = useLienWiki();
   const variants = character.variants || [];
@@ -86,7 +102,11 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
   }
 
   const name =
-    (language === "ja" ? character.names.ja : language === "en" ? character.names.en : character.names.fr) ||
+    (language === "ja"
+      ? character.names.ja
+      : language === "en"
+        ? character.names.en
+        : character.names.fr) ||
     character.names.fr ||
     character.names.en ||
     character.names.ja ||
@@ -157,7 +177,9 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
   const positionFr = getPositionName(activeVariant.position);
 
   const subPositionImage =
-    activeVariant.subPosition && activeVariant.subPosition !== "Coach" && positionCategoryMap[activeVariant.subPosition]
+    activeVariant.subPosition &&
+    activeVariant.subPosition !== "Coach" &&
+    positionCategoryMap[activeVariant.subPosition]
       ? getSkillCategoryIconUrl(positionCategoryMap[activeVariant.subPosition])
       : null;
 
@@ -196,9 +218,12 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
 
   const charAny = character as any;
   const variantAny = activeVariant as any;
-  const playstyle = (variantAny.sheetData?.playstyle || charAny.sheetData?.playstyle) as string | undefined;
+  const playstyle = (variantAny.sheetData?.playstyle ||
+    charAny.sheetData?.playstyle) as string | undefined;
   const playstyleSprite = playstyle ? PLAYSTYLE_SPRITE[playstyle] : undefined;
-  const playstyleLabel = playstyle ? PLAYSTYLE_LABEL[playstyle] || playstyle : null;
+  const playstyleLabel = playstyle
+    ? PLAYSTYLE_LABEL[playstyle] || playstyle
+    : null;
 
   const isFemale = isFemaleGender(character.gender);
   const genderName = isFemale ? t("common.female") : t("common.male");
@@ -218,7 +243,9 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
       {/* Nom avec image */}
       <TableCell>
         <Link
-          href={lienWiki(`/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`)}
+          href={lienWiki(
+            `/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`,
+          )}
           className="flex items-center gap-3 group"
         >
           <div className="relative size-12 rounded-lg overflow-hidden bg-surface-container-highest shrink-0 ring-1 ring-outline-variant/30">
@@ -243,7 +270,11 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
                   className="flex items-center justify-center size-4 rounded-full bg-linear-to-br from-[#4facfe] via-[#7367f0] to-[#9733ee] shadow-sm animate-pulse"
                   title="Personnage BASARA"
                 >
-                  <Sparkles size={10} aria-hidden="true" className="text-white scale-90" />
+                  <Sparkles
+                    size={10}
+                    aria-hidden="true"
+                    className="text-white scale-90"
+                  />
                 </div>
               )}
               {!character.isBasara && character.bestRarityCode >= 10 && (
@@ -279,7 +310,9 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
             className="text-xs text-on-surface-variant"
             title={charAny.constellation.names?.fr || charAny.constellation}
           >
-            {typeof charAny.constellation === "string" ? charAny.constellation : charAny.constellation.names?.fr || "—"}
+            {typeof charAny.constellation === "string"
+              ? charAny.constellation
+              : charAny.constellation.names?.fr || "—"}
           </span>
         ) : (
           <span className="text-on-surface-variant/40 text-xs">—</span>
@@ -299,9 +332,15 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
           {elementSprite ? (
             <CommonSpriteIcon name={elementSprite} scale={0.35} />
           ) : (
-            <CircleDot size={20} aria-hidden="true" className="text-on-surface-variant" />
+            <CircleDot
+              size={20}
+              aria-hidden="true"
+              className="text-on-surface-variant"
+            />
           )}
-          <span className="text-xs text-on-surface-variant hidden sm:inline">{elementFr}</span>
+          <span className="text-xs text-on-surface-variant hidden sm:inline">
+            {elementFr}
+          </span>
         </div>
       </TableCell>
 
@@ -310,13 +349,21 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
         <div className="flex flex-col items-center gap-1">
           {positionImage ? (
             <div className="relative size-6" title={positionFr}>
-              <Image src={positionImage} alt={positionFr} fill sizes="24px" className="object-contain" />
+              <Image
+                src={positionImage}
+                alt={positionFr}
+                fill
+                sizes="24px"
+                className="object-contain"
+              />
             </div>
           ) : (
             <span
               className={cn(
                 "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                activeVariant.position === "Coach" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600",
+                activeVariant.position === "Coach"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-gray-100 text-gray-600",
               )}
             >
               {positionFr}
@@ -324,8 +371,17 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
           )}
 
           {subPositionImage && (
-            <div className="relative size-4 opacity-70" title={activeVariant.subPosition || ""}>
-              <Image src={subPositionImage} alt={activeVariant.subPosition || ""} fill className="object-contain" />
+            <div
+              className="relative size-4 opacity-70"
+              title={activeVariant.subPosition || ""}
+            >
+              <Image
+                src={subPositionImage}
+                alt={activeVariant.subPosition || ""}
+                fill
+                sizes="16px"
+                className="object-contain"
+              />
             </div>
           )}
         </div>
@@ -341,9 +397,14 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
       {/* Style de jeu */}
       <TableCell className="text-center hidden md:table-cell">
         {playstyleSprite ? (
-          <div className="inline-flex items-center gap-1.5" title={playstyleLabel || ""}>
+          <div
+            className="inline-flex items-center gap-1.5"
+            title={playstyleLabel || ""}
+          >
             <CommonSpriteIcon name={playstyleSprite} scale={0.3} />
-            <span className="text-xs text-on-surface-variant">{playstyleLabel}</span>
+            <span className="text-xs text-on-surface-variant">
+              {playstyleLabel}
+            </span>
           </div>
         ) : (
           <span className="text-on-surface-variant/40 text-xs">—</span>
@@ -353,7 +414,12 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
       {/* Stats */}
       <TableCell className="text-center p-0 hidden sm:table-cell">
         <div className="flex items-center justify-center gap-2 pr-2">
-          {activeVariant.stats?.lv99 && <CharacterStatsPopover stats={activeVariant.stats.lv99} name={name} />}
+          {activeVariant.stats?.lv99 && (
+            <CharacterStatsPopover
+              stats={activeVariant.stats.lv99}
+              name={name}
+            />
+          )}
         </div>
       </TableCell>
     </TableRow>
@@ -363,7 +429,15 @@ function BaseCharacterRow({ character, rowIndex }: { character: BaseCharacter; r
 /**
  * Card component for displaying character info on mobile viewports
  */
-function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; rowIndex: number }) {
+function BaseCharacterCard({
+  character,
+  rowIndex,
+  deferred = false,
+}: {
+  character: BaseCharacter;
+  rowIndex: number;
+  deferred?: boolean;
+}) {
   const { t, language } = useLanguage();
   const lienWiki = useLienWiki();
   const variants = character.variants || [];
@@ -374,7 +448,11 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
   }
 
   const name =
-    (language === "ja" ? character.names.ja : language === "en" ? character.names.en : character.names.fr) ||
+    (language === "ja"
+      ? character.names.ja
+      : language === "en"
+        ? character.names.en
+        : character.names.fr) ||
     character.names.fr ||
     character.names.en ||
     character.names.ja ||
@@ -446,9 +524,12 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
 
   const charAny = character as any;
   const variantAny = activeVariant as any;
-  const playstyle = (variantAny.sheetData?.playstyle || charAny.sheetData?.playstyle) as string | undefined;
+  const playstyle = (variantAny.sheetData?.playstyle ||
+    charAny.sheetData?.playstyle) as string | undefined;
   const playstyleSprite = playstyle ? PLAYSTYLE_SPRITE[playstyle] : undefined;
-  const playstyleLabel = playstyle ? PLAYSTYLE_LABEL[playstyle] || playstyle : null;
+  const playstyleLabel = playstyle
+    ? PLAYSTYLE_LABEL[playstyle] || playstyle
+    : null;
 
   const isFemale = isFemaleGender(character.gender);
   const genderName = isFemale ? t("common.female") : t("common.male");
@@ -458,25 +539,41 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
     : getCharacterImageUrl(character.internalCode);
 
   return (
-    <div className="relative rounded-2xl border border-outline-variant/40 bg-surface-container-low p-4 flex flex-col gap-3 hover:bg-surface-container-high/60 transition-all duration-300 shadow-sm group">
+    <div
+      className={cn(
+        "relative rounded-2xl border border-outline-variant/40 bg-surface-container-low p-4 flex flex-col gap-3 hover:bg-surface-container-high/60 transition-all duration-300 shadow-sm group",
+        // Cartes hors du premier écran : rendu différé, taille réservée.
+        deferred &&
+          "[content-visibility:auto] [contain-intrinsic-size:auto_none_auto_176px]",
+      )}
+    >
       {/* Top Bar: Number + Rarity + Stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono text-xs text-on-surface-variant/60">N°{rowIndex + 1}</span>
+          <span className="font-mono text-xs text-on-surface-variant/60">
+            N°{rowIndex + 1}
+          </span>
           <RarityBadge rarity={rarity} size="xs" />
         </div>
         <div className="flex items-center gap-2">
           <div title={genderName} className="opacity-80">
             <CommonSpriteIcon name={isFemale ? "girl" : "boy"} scale={0.3} />
           </div>
-          {activeVariant.stats?.lv99 && <CharacterStatsPopover stats={activeVariant.stats.lv99} name={name} />}
+          {activeVariant.stats?.lv99 && (
+            <CharacterStatsPopover
+              stats={activeVariant.stats.lv99}
+              name={name}
+            />
+          )}
         </div>
       </div>
 
       {/* Main character info (Portrait + Name/Element/Position) */}
       <div className="flex gap-3 items-start">
         <Link
-          href={lienWiki(`/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`)}
+          href={lienWiki(
+            `/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`,
+          )}
           className="relative size-16 rounded-xl overflow-hidden bg-surface-container-highest shrink-0 ring-1 ring-outline-variant/30"
         >
           <SafeImage
@@ -493,7 +590,9 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
 
         <div className="flex flex-col min-w-0 flex-1">
           <Link
-            href={lienWiki(`/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`)}
+            href={lienWiki(
+              `/chara/${(character as any).baseSlug || character.slug || activeVariant.charaParamId}`,
+            )}
             className="flex flex-wrap items-center gap-1.5"
           >
             <span className="font-black text-on-surface group-hover:text-primary transition-colors text-sm sm:text-base leading-tight font-grade-high truncate">
@@ -516,14 +615,18 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
             )}
           </Link>
           {nameSub && nameSub !== name && (
-            <span className="text-[10px] text-on-surface-variant/60 leading-normal truncate">{nameSub}</span>
+            <span className="text-[10px] text-on-surface-variant/60 leading-normal truncate">
+              {nameSub}
+            </span>
           )}
 
           {/* Badges Row (Element + Position) */}
           <div className="flex items-center gap-2 mt-2">
             {/* Element */}
             <div className="inline-flex items-center gap-1 bg-surface-container/60 px-2 py-0.5 rounded-md text-[10px] font-medium text-on-surface-variant">
-              {elementSprite && <CommonSpriteIcon name={elementSprite} scale={0.25} />}
+              {elementSprite && (
+                <CommonSpriteIcon name={elementSprite} scale={0.25} />
+              )}
               <span>{elementFr}</span>
             </div>
 
@@ -531,7 +634,13 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
             <div className="inline-flex items-center gap-1 bg-surface-container/60 px-2 py-0.5 rounded-md text-[10px] font-medium text-on-surface-variant">
               {positionImage ? (
                 <div className="relative size-3.5">
-                  <Image src={positionImage} alt={positionFr} fill sizes="14px" className="object-contain" />
+                  <Image
+                    src={positionImage}
+                    alt={positionFr}
+                    fill
+                    sizes="14px"
+                    className="object-contain"
+                  />
                 </div>
               ) : (
                 <span className="text-[9px]">{positionFr}</span>
@@ -546,7 +655,9 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
       <div className="flex items-center justify-between border-t border-outline-variant/35 pt-2 mt-1 text-[11px] text-on-surface-variant">
         {/* Constellation */}
         <div className="flex items-center gap-1">
-          <span className="opacity-60 text-[10px] uppercase font-bold">Const :</span>
+          <span className="opacity-60 text-[10px] uppercase font-bold">
+            Const :
+          </span>
           <span className="font-medium">
             {charAny.constellation
               ? typeof charAny.constellation === "string"
@@ -570,11 +681,17 @@ function BaseCharacterCard({ character, rowIndex }: { character: BaseCharacter; 
   );
 }
 
+/** Cartes mobiles rendues immédiatement ; les suivantes sont différées. */
+const MOBILE_EAGER_CARDS = 6;
+
 /**
  * Table component that displays base characters with variant switching
  * Each row represents one unique character with all their variants accessible
  */
-export function BaseCharacterTable({ characters, startIndex = 0 }: BaseCharacterTableProps) {
+export function BaseCharacterTable({
+  characters,
+  startIndex = 0,
+}: BaseCharacterTableProps) {
   const { t } = useLanguage();
 
   return (
@@ -582,7 +699,12 @@ export function BaseCharacterTable({ characters, startIndex = 0 }: BaseCharacter
       {/* Mobile/Tablet Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
         {characters.map((character, idx) => (
-          <BaseCharacterCard key={character.charaId} character={character} rowIndex={startIndex + idx} />
+          <BaseCharacterCard
+            key={character.charaId}
+            character={character}
+            rowIndex={startIndex + idx}
+            deferred={idx >= MOBILE_EAGER_CARDS}
+          />
         ))}
       </div>
 
@@ -625,7 +747,11 @@ export function BaseCharacterTable({ characters, startIndex = 0 }: BaseCharacter
           </TableHeader>
           <TableBody>
             {characters.map((character, idx) => (
-              <BaseCharacterRow key={character.charaId} character={character} rowIndex={startIndex + idx} />
+              <BaseCharacterRow
+                key={character.charaId}
+                character={character}
+                rowIndex={startIndex + idx}
+              />
             ))}
           </TableBody>
         </Table>

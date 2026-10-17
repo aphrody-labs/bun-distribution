@@ -1,7 +1,14 @@
 "use client";
 
 import { wiki } from "@rosegriffon/app-shell";
-import { ArrowLeftRight, Eye, EyeOff, Gamepad2, Loader2, X } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Eye,
+  EyeOff,
+  Gamepad2,
+  Loader2,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/providers/language-provider";
@@ -11,7 +18,10 @@ import { CharacterFilters } from "@/components/wiki/filters/CharacterFilters";
 import type { TeamOption } from "@/components/wiki/filters/TeamFilter";
 import { WikiPagination } from "@/components/wiki/WikiPagination";
 import { WikiSearchToolbar } from "@/components/wiki/WikiSearchToolbar";
-import { FilterTransitionContext, useFilterTransition } from "@/lib/hooks/use-filter-navigation";
+import {
+  FilterTransitionContext,
+  useFilterTransition,
+} from "@/lib/hooks/use-filter-navigation";
 import { cn } from "@/lib/utils";
 
 interface PlayersClientProps {
@@ -90,7 +100,7 @@ export function PlayersClient({
       "ageGroup",
       "schoolYear",
     ];
-    filterKeys.forEach(key => params.delete(key));
+    filterKeys.forEach((key) => params.delete(key));
     params.delete("page");
     filterTransition.startTransition(() => {
       router.replace(`?${params.toString()}`, { scroll: false });
@@ -114,7 +124,9 @@ export function PlayersClient({
         return value;
       }
       case "gender": {
-        return value === "1" ? t("wiki.genders.male") : t("wiki.genders.female");
+        return value === "1"
+          ? t("wiki.genders.male")
+          : t("wiki.genders.female");
       }
       case "playstyle": {
         if (value === "Bond") return t("wiki.playstyles.bond");
@@ -127,7 +139,7 @@ export function PlayersClient({
         return value === "Coordinator" ? "Coordinateur" : "Entraîneur";
       }
       case "team": {
-        return teams?.find(t => t.id === value)?.name || value;
+        return teams?.find((t) => t.id === value)?.name || value;
       }
       // Les 9 clés du groupe d'âge (`wiki.filters.age_group` + les 8
       // `wiki.age_groups.*`) provenaient de l'ancien frontend autonome
@@ -139,7 +151,8 @@ export function PlayersClient({
       case "ageGroup": {
         if (value === "Child") return t("wiki.age_groups.child");
         if (value === "Elementary") return t("wiki.age_groups.elementary");
-        if (value === "Middle School") return t("wiki.age_groups.middle_school");
+        if (value === "Middle School")
+          return t("wiki.age_groups.middle_school");
         if (value === "High School") return t("wiki.age_groups.high_school");
         if (value === "College") return t("wiki.age_groups.college");
         if (value === "Adult") return t("wiki.age_groups.adult");
@@ -173,7 +186,7 @@ export function PlayersClient({
     "schoolYear",
   ];
   const activeFilters = filterKeys
-    .map(key => {
+    .map((key) => {
       const value = searchParams.get(key);
       if (!value) return null;
       return { key, value, label: getFilterLabel(key, value) };
@@ -214,7 +227,7 @@ export function PlayersClient({
               <span className="text-[11px] font-bold text-on-surface-variant/60 uppercase tracking-wider mr-1">
                 Filtres actifs :
               </span>
-              {activeFilters.map(filter => (
+              {activeFilters.map((filter) => (
                 <button
                   key={filter.key}
                   onClick={() => removeFilter(filter.key)}
@@ -238,10 +251,14 @@ export function PlayersClient({
 
         <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs font-medium text-on-surface-variant px-1">
           <span className="tabular-nums uppercase tracking-wider">
-            {isPending ? <Loader2 size={12} className="inline animate-spin mr-1" /> : null}
-            {totalItems.toLocaleString("fr-FR")} personnage{totalItems !== 1 ? "s" : ""}
+            {isPending ? (
+              <Loader2 size={12} className="inline animate-spin mr-1" />
+            ) : null}
+            {totalItems.toLocaleString("fr-FR")} personnage
+            {totalItems !== 1 ? "s" : ""}
           </span>
           <button
+            type="button"
             onClick={toggleIncomplete}
             disabled={isPending}
             className={cn(
@@ -252,13 +269,23 @@ export function PlayersClient({
               isPending && "opacity-50 pointer-events-none",
             )}
           >
-            {showIncomplete ? <Eye size={13} aria-hidden="true" /> : <EyeOff size={13} aria-hidden="true" />}
-            <span className="hidden sm:inline">{showIncomplete ? "Tous affichés" : "Incomplets masqués"}</span>
-            <span className="sm:hidden">{showIncomplete ? "Tous" : "Incomplets"}</span>
+            {showIncomplete ? (
+              <Eye size={13} aria-hidden="true" />
+            ) : (
+              <EyeOff size={13} aria-hidden="true" />
+            )}
+            <span className="hidden sm:inline">
+              {showIncomplete ? "Tous affichés" : "Incomplets masqués"}
+            </span>
+            <span className="sm:hidden">
+              {showIncomplete ? "Tous" : "Incomplets"}
+            </span>
           </button>
           <button
+            type="button"
             onClick={toggleControllable}
             disabled={isPending}
+            aria-pressed={showControllable}
             className={cn(
               "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] md:text-xs font-medium normal-case tracking-normal transition-all duration-200",
               showControllable
@@ -268,7 +295,8 @@ export function PlayersClient({
             )}
           >
             <Gamepad2 size={13} aria-hidden="true" />
-            <span className="hidden sm:inline">Jouables</span>
+            {/* Sur mobile, l'icône seule reste nommée pour les lecteurs d'écran. */}
+            <span className="sr-only sm:not-sr-only sm:inline">Jouables</span>
           </button>
           {/* Le wiki est monté sous `/wiki` dans cette app : un `/tools/compare`
 					    en dur partait sur une redirection 308 vers `/wiki/tools/compare`.
@@ -288,15 +316,25 @@ export function PlayersClient({
             <div className="absolute inset-0 z-10 flex items-start justify-center pt-32 bg-surface/60 backdrop-blur-[1px] rounded-2xl transition-opacity duration-150 animate-in fade-in">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-high shadow-level-2">
                 <Loader2 size={16} className="animate-spin text-primary" />
-                <span className="text-xs font-medium text-on-surface-variant">Chargement...</span>
+                <span className="text-xs font-medium text-on-surface-variant">
+                  Chargement...
+                </span>
               </div>
             </div>
           )}
 
           {paginatedCharacters.length > 0 ? (
-            <div className={cn("transition-opacity duration-200", isPending && "opacity-40")}>
+            <div
+              className={cn(
+                "transition-opacity duration-200",
+                isPending && "opacity-40",
+              )}
+            >
               <FadeInItem>
-                <BaseCharacterTable characters={paginatedCharacters} startIndex={startIndex} />
+                <BaseCharacterTable
+                  characters={paginatedCharacters}
+                  startIndex={startIndex}
+                />
               </FadeInItem>
 
               <WikiPagination
@@ -308,7 +346,9 @@ export function PlayersClient({
             </div>
           ) : (
             <div className="py-20 text-center rounded-[32px] border border-outline-variant bg-surface-container-low border-dashed">
-              <p className="text-on-surface-variant italic">{t("wiki.players.no_results")}</p>
+              <p className="text-on-surface-variant italic">
+                {t("wiki.players.no_results")}
+              </p>
             </div>
           )}
         </div>

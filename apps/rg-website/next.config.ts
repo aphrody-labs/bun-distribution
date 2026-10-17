@@ -375,10 +375,16 @@ const nextConfig: NextConfig = {
           // Anti-clickjacking : seuls le site et ses sous-domaines (Azalée,
           // Achilléa) peuvent l'encadrer. `frame-ancestors` prime sur
           // X-Frame-Options dans les navigateurs qui le comprennent.
-          { key: "Content-Security-Policy", value: "frame-ancestors 'self' https://*.rosegriffon.fr" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://*.rosegriffon.fr",
+          },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
         ],
         source: "/(.*)",
       },
