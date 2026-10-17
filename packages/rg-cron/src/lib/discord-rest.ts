@@ -108,6 +108,7 @@ export interface EncartDiscord {
   color?: number;
   timestamp?: string;
   footer?: { text: string };
+  image?: { url: string };
   fields?: Array<{ name: string; value: string; inline?: boolean }>;
 }
 

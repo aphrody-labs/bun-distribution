@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { iecodeDataPath } from "@aphrody/paths";
 import {
   getDiscordClient,
-  hasVerifiedDiscordRoster,
   GUILD_ID,
   GUILDES_SUIVIES,
+  identifiantBot,
+  membresAnnonces,
   syncAllMembers,
   syncAllRoles,
   syncStaffPhotos,
 } from "../lib/discord.js";
 import { sql } from "../lib/db.js";
-import { syncDiscordGuildSnapshot, syncOAuthLinkMetadata } from "@rosegriffon/discord-sync";
+import { listGuildMembers, syncDiscordGuildSnapshot, syncOAuthLinkMetadata } from "@rosegriffon/discord-sync";
 
 /**
  * Synchronisation Discord — TOUS les serveurs suivis.
@@ -31,6 +31,10 @@ import { syncDiscordGuildSnapshot, syncOAuthLinkMetadata } from "@rosegriffon/di
  *
  * Un serveur en échec n'arrête pas les autres : le rapport le dit, et les
  * données du serveur suivant sont quand même rafraîchies.
+ *
+ * Tout passe par l'API REST (aucune passerelle) : l'inventaire des membres est
+ * listé par pages de 1000 (`GET /guilds/{id}/members`), lu UNE fois, puis
+ * partagé entre le miroir `discord_mirror` et les tables du site.
  */
 export async function runDiscordSync(): Promise<{ success: boolean; error?: string }> {
   console.log("[Cron Discord] Démarrage de la synchronisation Discord...");
@@ -62,37 +66,23 @@ export async function runDiscordSync(): Promise<{ success: boolean; error?: stri
         throw new Error(`serveur introuvable (${serveur.id})`);
       }
 
-      console.log(`[Cron Discord] ${serveur.nom} (${guild.id}) — rôles...`);
-      let snapshotMembersComplete = false;
-      if (client.user) {
-        const cachedRosterVerified = hasVerifiedDiscordRoster(guild.id);
-        const instantane = await syncDiscordGuildSnapshot(
-          guild,
-          {
-            sourceBotId: client.user.id,
-            profile: "rg",
-          },
-          cachedRosterVerified
-            ? {
-                members: guild.members.cache,
-                membersComplete: true,
-              }
-            : {},
-        );
-        if (instantane) {
-          snapshotMembersComplete = instantane.membersComplete;
-          console.log(
-            `[Cron Discord] ${serveur.nom} — miroir SQLite : ${instantane.memberCount} membres, complétude=${instantane.membersComplete}`,
-          );
-        }
-      }
+      console.log(`[Cron Discord] ${serveur.nom} (${guild.id}) — inventaire des membres...`);
+      const membres = await listGuildMembers(guild);
+      const instantane = await syncDiscordGuildSnapshot(
+        guild,
+        { sourceBotId: await identifiantBot(client), profile: "rg" },
+        { members: membres, membersComplete: true },
+      );
+      console.log(
+        `[Cron Discord] ${serveur.nom} — miroir : ${instantane.memberCount} membres, complétude=${instantane.membersComplete}`,
+      );
       const rapportRoles = await syncAllRoles(guild);
       console.log(
         `[Cron Discord] ${serveur.nom} — rôles : ${rapportRoles.upserted}/${rapportRoles.fetched} en ${rapportRoles.durationMs} ms`,
       );
 
       console.log(`[Cron Discord] ${serveur.nom} — membres...`);
-      const rapportMembres = await syncAllMembers(guild, snapshotMembersComplete ? guild.members.cache : undefined);
+      const rapportMembres = await syncAllMembers(guild, membres);
       console.log(
         `[Cron Discord] ${serveur.nom} — membres : ${rapportMembres.upserted}/${rapportMembres.fetched}, ${rapportMembres.partis} parti(s) en ${rapportMembres.durationMs} ms`,
       );
@@ -141,7 +131,7 @@ export async function runDiscordSync(): Promise<{ success: boolean; error?: stri
         updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
       })),
     );
-    if (linked !== null) resume.push(`liens OAuth : ${linked}`);
+    resume.push(`liens OAuth : ${linked}`);
   } catch (error) {
     const motif = error instanceof Error ? error.message : String(error);
     console.error("[Cron Discord] liens OAuth :", motif);
@@ -209,7 +199,8 @@ interface ChannelScanResult {
 
 /**
  * Scanne en parallèle tous les salons textuels et fils actifs du serveur.
- * Analyse les derniers messages et écrit un rapport JSON sur disque via les APIs natives de Bun.
+ * Analyse les derniers messages ; le rapport est rendu par la tâche et résumé
+ * dans `discord_sync_logs` (aucun fichier : la fonction n'a pas de disque).
  */
 export async function runDiscordChannelScan(): Promise<{
   success: boolean;
@@ -320,17 +311,12 @@ export async function runDiscordChannelScan(): Promise<{
       mostActiveChannels,
     };
 
-    // Écriture du rapport sur le disque en utilisant Bun.write (API native rapide)
-    const reportPath = iecodeDataPath("discord-channels-scan.json");
-    const reportContent = JSON.stringify({ stats, channels: results }, null, 2);
-
-    await Bun.write(reportPath, reportContent);
-    console.log(`✓ Scan terminé en ${stats.durationMs}ms. Rapport écrit sur : ${reportPath}`);
+    console.log(`✓ Scan terminé en ${stats.durationMs}ms.`);
 
     // Insertion du log du scan
     await sql`
 			INSERT INTO discord_sync_logs (status, total_members, updated_count, error_count, message, created_at)
-			VALUES ('scan_success', ${guild.memberCount}, ${totalMessages}, 0, ${`Scan de ${textChannels.length} salons terminé. Total messages : ${totalMessages}`}, NOW())
+			VALUES ('scan_success', ${membresAnnonces(guild)}, ${totalMessages}, 0, ${`Scan de ${textChannels.length} salons terminé. Total messages : ${totalMessages}`}, NOW())
 		`.catch(err => console.error("[Cron Discord] Échec log scan:", err));
 
     return { success: true, stats };

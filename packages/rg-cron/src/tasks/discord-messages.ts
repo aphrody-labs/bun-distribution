@@ -6,17 +6,12 @@
 /**
  * Veille des salons Discord suivis.
  *
- * Deux chemins d'écriture, un seul mapping :
- *   1. Rattrapage REST (`runDiscordMessagesSync`) — idempotent, rejoue tout ce
- *      que la passerelle a pu manquer (redémarrage du démon, coupure réseau).
- *   2. Passerelle temps réel (`brancherVeilleMessagesTempsReel`) — écrit en base
- *      dès réception de l'événement ; le trigger Postgres `rg_realtime_notify()`
- *      se charge de la diffusion SSE vers le site.
- *
- * Les deux passent par `enregistrerMessage()`, qui consomme l'objet BRUT de
- * l'API Discord : la passerelle redemande donc le message brut plutôt que de
- * traduire une structure discord.js, pour qu'il n'existe qu'une seule définition
- * du mapping « message Discord -> ligne ».
+ * Un seul chemin d'écriture : le rattrapage REST (`runDiscordMessagesSync`),
+ * idempotent, planifié tous les quarts d'heure par `pg_cron`. Il passe par
+ * `enregistrerMessage()`, qui consomme l'objet BRUT de l'API Discord ; le
+ * trigger Postgres `rg_realtime_notify()` diffuse ensuite chaque écriture vers
+ * le site (Supabase Broadcast). Aucune passerelle : une fonction serverless ne
+ * garde pas de connexion ouverte entre deux appels.
  *
  * La liste des salons est lue en base (`discord_channels.suivi`), jamais codée
  * en dur ; `DISCORD_SALONS_SUIVIS` (identifiants séparés par des virgules) permet
@@ -42,7 +37,6 @@
  * rattrapés, ils prennent simplement leur tour.
  */
 
-import type { Client, Message, MessageReaction, PartialMessage, PartialMessageReaction } from "discord.js";
 import { sql } from "../lib/db.js";
 import { DISCORD_TOKEN, GUILD_ID } from "../lib/discord.js";
 
@@ -52,8 +46,6 @@ const PREFIXE = "[Cron Discord]";
 const TAILLE_PAGE = 100;
 /** Petite pause entre deux pages : politesse envers le quota Discord. */
 const PAUSE_PAGE_MS = 150;
-/** Fenêtre de regroupement des rafales de réactions sur un même message. */
-const REGROUPEMENT_REACTIONS_MS = 1500;
 /** Nombre maximal de pages remontées en une passe de rattrapage (garde-fou). */
 const PAGES_MAX = 500;
 
@@ -747,137 +739,4 @@ export async function runDiscordMessagesBackfill(): Promise<{
   await armerSalonsDepuisEnv();
   await sql`UPDATE discord_channels SET backfill_complete = false, updated_at = now() WHERE suivi`;
   return runDiscordMessagesSync();
-}
-
-// ─── VEILLE TEMPS RÉEL (PASSERELLE) ──────────────────────────────────────────
-
-/** Rafales de réactions regroupées par message pour éviter un appel par clic. */
-const rafraichissementsEnAttente = new Map<string, ReturnType<typeof setTimeout>>();
-
-/**
- * Identifiant du salon d'un message d'événement. Un événement peut arriver
- * « partiel » (message absent du cache) : `channelId` reste renseigné, mais on
- * complète par un `.fetch()` dans le cas contraire.
- */
-async function resoudreSalon(message: Message | PartialMessage): Promise<string | null> {
-  if (message.channelId) return message.channelId;
-  if (message.partial) {
-    const complet = await message.fetch().catch(() => null);
-    return complet?.channelId ?? null;
-  }
-  return null;
-}
-
-/** Redemande le message brut à l'API et l'écrit en base (mapping unique). */
-async function archiverDepuisApi(salonId: string, messageId: string): Promise<void> {
-  const brut = await appelDiscord<MessageBrut>(`/channels/${salonId}/messages/${messageId}`);
-  await enregistrerMessage(brut, salonId, brut.guild_id ?? GUILD_ID ?? "");
-}
-
-/** Programme un réarchivage regroupé (rafales de réactions sur un même message). */
-function programmerRafraichissement(salonId: string, messageId: string): void {
-  const enCours = rafraichissementsEnAttente.get(messageId);
-  if (enCours) clearTimeout(enCours);
-  rafraichissementsEnAttente.set(
-    messageId,
-    setTimeout(() => {
-      rafraichissementsEnAttente.delete(messageId);
-      archiverDepuisApi(salonId, messageId).catch(err =>
-        console.error(`${PREFIXE} Réarchivage du message ${messageId} impossible :`, err),
-      );
-    }, REGROUPEMENT_REACTIONS_MS),
-  );
-}
-
-/**
- * Marque des messages comme supprimés (suppression logique, jamais un DELETE).
- *
- * La liste passe par `jsonb_array_elements_text` et non par `= ANY($1::text[])` :
- * Bun.SQL sérialise un tableau JS en JSON, pas en littéral de tableau Postgres —
- * `ANY` échoue alors sur « malformed array literal ». Vérifié sur la base réelle.
- */
-async function marquerSupprimes(identifiants: string[]): Promise<void> {
-  if (identifiants.length === 0) return;
-  await sql`
-		UPDATE discord_messages
-		   SET deleted_at = now(), synced_at = now()
-		 WHERE message_id IN (SELECT jsonb_array_elements_text(${identifiants}))
-		   AND deleted_at IS NULL
-	`;
-}
-
-/**
- * Branche les écouteurs de la passerelle sur les salons suivis.
- *
- * C'est ce qui rend la page « temps réel » : l'écriture en base est immédiate,
- * le trigger Postgres `rg_realtime_notify()` publie ensuite sur le canal
- * `rg_realtime`, que `rg-realtime` (:8812) rediffuse en SSE.
- *
- * L'ensemble des salons suivis est celui rempli par la dernière synchro ; tant
- * qu'aucune synchro n'a tourné, aucun événement n'est retenu (le filet de
- * sécurité toutes les 15 minutes rattrape ce court intervalle de démarrage).
- */
-export function brancherVeilleMessagesTempsReel(client: Client): void {
-  client.on("messageCreate", async message => {
-    if (!estSalonSuivi(message.channelId)) return;
-    try {
-      await archiverDepuisApi(message.channelId, message.id);
-    } catch (err) {
-      console.error(`${PREFIXE} Archivage du nouveau message ${message.id} impossible :`, err);
-    }
-  });
-
-  client.on("messageUpdate", async (_ancien, nouveau) => {
-    const salonId = await resoudreSalon(nouveau);
-    if (!estSalonSuivi(salonId)) return;
-    try {
-      await archiverDepuisApi(salonId!, nouveau.id);
-    } catch (err) {
-      console.error(`${PREFIXE} Mise à jour du message ${nouveau.id} impossible :`, err);
-    }
-  });
-
-  client.on("messageDelete", async message => {
-    const salonId = await resoudreSalon(message);
-    if (!estSalonSuivi(salonId)) return;
-    await marquerSupprimes([message.id]).catch(err =>
-      console.error(`${PREFIXE} Marquage de suppression impossible :`, err),
-    );
-  });
-
-  client.on("messageDeleteBulk", async messages => {
-    const identifiants: string[] = [];
-    for (const message of messages.values()) {
-      const salonId = await resoudreSalon(message);
-      if (estSalonSuivi(salonId)) identifiants.push(message.id);
-    }
-    await marquerSupprimes(identifiants).catch(err =>
-      console.error(`${PREFIXE} Marquage de suppression en masse impossible :`, err),
-    );
-  });
-
-  // Les trois événements de réaction n'apportent pas le décompte consolidé :
-  // on redemande le message complet, dont le champ `reactions` fait foi.
-  const surReaction = async (reaction: MessageReaction | PartialMessageReaction) => {
-    try {
-      // Une réaction sur un message hors cache arrive « partielle » : il faut la
-      // compléter avant de lire le message auquel elle se rapporte.
-      const complete = reaction.partial ? await reaction.fetch() : reaction;
-      const salonId = await resoudreSalon(complete.message);
-      if (!estSalonSuivi(salonId)) return;
-      programmerRafraichissement(salonId!, complete.message.id);
-    } catch (err) {
-      console.error(`${PREFIXE} Traitement d'une réaction impossible :`, err);
-    }
-  };
-
-  client.on("messageReactionAdd", reaction => void surReaction(reaction));
-  client.on("messageReactionRemove", reaction => void surReaction(reaction));
-  client.on("messageReactionRemoveAll", async message => {
-    const salonId = await resoudreSalon(message);
-    if (!estSalonSuivi(salonId)) return;
-    programmerRafraichissement(salonId!, message.id);
-  });
-
-  console.info(`${PREFIXE} Veille temps réel des salons suivis branchée sur la passerelle.`);
 }

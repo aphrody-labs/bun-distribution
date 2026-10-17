@@ -2,7 +2,7 @@
   "name": "@rosegriffon/cron",
   "version": "1.4.4",
   "private": false,
-  "description": "Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API",
+  "description": "Tâches planifiées Rose Griffon (maintenance DB, Discord, campagnes, SEO) : registre, route HTTP serverless et CLI",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
@@ -25,20 +25,17 @@
     "@aphrody/agent-browser": "catalog:",
     "@aphrody/paths": "catalog:",
     "@aphrody/x": "catalog:",
-    "@asteasolutions/zod-to-openapi": "catalog:",
     "@rosegriffon/assets": "workspace:*",
-    "@rosegriffon/auth": "workspace:*",
     "@rosegriffon/db": "workspace:*",
     "@rosegriffon/discord-sync": "workspace:*",
     "@rosegriffon/inagle": "workspace:*",
     "@rosegriffon/types": "workspace:*",
+    "@vercel/functions": "catalog:",
     "cheerio": "catalog:",
-    "discord.js": "catalog:",
-    "zod": "catalog:"
+    "discord.js": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
+    "@types/bun": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

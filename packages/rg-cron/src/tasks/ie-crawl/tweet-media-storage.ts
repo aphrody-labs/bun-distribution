@@ -4,35 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Ré-hébergement des images de tweets dans le Storage self-host.
+// Ré-hébergement des images de tweets dans Supabase Storage.
 //
 // POURQUOI RÉ-HÉBERGER
 // Les URLs pbs.twimg.com ne sont pas des archives : X purge les médias des comptes
 // supprimés et fait tourner ses CDN. Une galerie de campagne qui pointerait
 // directement sur pbs afficherait des trous quelques mois plus tard. On recopie
-// donc chaque image sur notre disque, et la page sert l'origine du site (zéro
-// cross-origin, aucune entrée `remotePatterns` requise par next/image).
+// donc chaque image dans le bucket `tweets`, et la page sert l'origine du site
+// (`/storage/v1` est relayé vers Supabase : zéro cross-origin).
 //
 // CONVENTIONS (identiques à scripts/ops/refetch-tweet-media.ts — ne pas dévier :
 // ce script reconstruit le bucket depuis `tweets.media[n].original_url` en se
 // fiant EXACTEMENT à ce nommage) :
-//   fichier : <ROOT>/tweets/<tweetId>/<tweetId>_<n>.<ext>
-//   index   : une ligne dans storage.objects (bucket_id='tweets', name=<chemin>)
-//   n       : position du média dans `tweets.media`
+//   objet : tweets/<tweetId>/<tweetId>_<n>.<ext>
+//   n     : position du média dans `tweets.media`
 //
-// IDEMPOTENCE : si le fichier est déjà sur le disque, on ne retélécharge pas. La
-// détection se fait par LISTAGE du dossier (pas par nom exact), parce que
+// L'écriture passe par l'API Storage (`televerserObjet`), qui tient elle-même
+// `storage.objects` : aucun disque local, la tâche tourne en fonction serverless.
+//
+// IDEMPOTENCE : si l'objet existe déjà, on ne retélécharge pas. La détection se
+// fait par PRÉFIXE dans `storage.objects` (pas par nom exact), parce que
 // l'extension dépend du content-type renvoyé par X et n'est donc pas connue avant
 // le téléchargement — la deviner reviendrait à retélécharger à chaque passage.
 
-import { mkdir, readdir, stat } from "node:fs/promises";
-import { dirname, join } from "node:path";
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 import type { SQL } from "bun";
+import { televerserObjet } from "../../lib/storage-assets.js";
 import type { MediaItem } from "./tweet-row";
 
-/** Racine disque du Storage self-host (cf. apps/storage/server.ts). */
-const RACINE = Bun.env.RG_STORAGE_ROOT ?? "/var/www/rg-storage";
 const BUCKET = "tweets";
 
 /**
@@ -110,54 +109,28 @@ function urlPublique(chemin: string): string {
 }
 
 /**
- * Cherche un fichier déjà présent pour ce (tweet, index), quelle que soit son
- * extension. Renvoie le chemin relatif au bucket, ou null.
+ * Cherche un objet déjà présent pour ce (tweet, index), quelle que soit son
+ * extension. Renvoie le chemin relatif au bucket, sa taille et son type, ou null.
  */
-async function fichierDejaPresent(tweetId: string, index: number): Promise<string | null> {
-  try {
-    const entrees = await readdir(join(RACINE, BUCKET, tweetId));
-    const motif = new RegExp(`^${tweetId}_${index}\\.[a-z0-9]+$`, "i");
-    const trouve = entrees.find(e => motif.test(e));
-    return trouve ? `${tweetId}/${trouve}` : null;
-  } catch {
-    // Dossier absent : rien de ré-hébergé pour ce tweet.
-    return null;
-  }
-}
-
-/**
- * Insère ou met à jour la ligne d'index dans `storage.objects`.
- *
- * ⚠ On BINDE L'OBJET directement, sans `JSON.stringify`. Bun sérialise déjà les
- * objets vers JSON : un `${JSON.stringify(x)}::jsonb` encode DEUX fois et produit
- * un jsonb de type `string` dont `metadata->>'mimetype'` vaut NULL. C'est le bug
- * de scripts/ops/refetch-tweet-media.ts et d'apps/storage/server.ts — mesuré le
- * 12/8/2026 : 5535 des 6423 lignes du bucket `tweets` sont doublement encodées.
- * Ne pas recopier leur forme.
- *
- * `path_tokens` est GENERATED ALWAYS : ne jamais l'écrire.
- * Aucune suppression ici : `storage.protect_delete` lève 42501 hors transaction
- * explicitement autorisée, et ce module n'a aucune raison de supprimer.
- */
-async function indexer(chemin: string, octets: number, mime: string, ecraser: boolean): Promise<void> {
-  const metadonnees = { size: octets, mimetype: mime, cacheControl: "max-age=3600" };
-  if (ecraser) {
-    await db()`
-			insert into storage.objects
-				(bucket_id, name, metadata, created_at, updated_at, last_accessed_at, version)
-			values (${BUCKET}, ${chemin}, ${metadonnees}, now(), now(), now(), gen_random_uuid()::text)
-			on conflict (bucket_id, name) do update
-				set metadata = excluded.metadata, updated_at = now()`;
-  } else {
-    // Fichier déjà sur le disque : on se contente de garantir que la ligne
-    // d'index existe (listings, MCP live_storage, refetch-tweet-media.ts),
-    // sans réécrire des métadonnées peut-être plus justes que les nôtres.
-    await db()`
-			insert into storage.objects
-				(bucket_id, name, metadata, created_at, updated_at, last_accessed_at, version)
-			values (${BUCKET}, ${chemin}, ${metadonnees}, now(), now(), now(), gen_random_uuid()::text)
-			on conflict (bucket_id, name) do nothing`;
-  }
+async function objetDejaPresent(
+  tweetId: string,
+  index: number,
+): Promise<{ chemin: string; octets: number; mime: string } | null> {
+  const motif = new RegExp(`^${tweetId}/${tweetId}_${index}\\.[a-z0-9]+$`, "i");
+  const lignes = (await db()`
+		select name, metadata
+		  from storage.objects
+		 where bucket_id = ${BUCKET}
+		   and name like ${`${tweetId}/%`}`) as {
+    name: string;
+    metadata: { size?: number; mimetype?: string } | null;
+  }[];
+  const trouve = lignes.find(ligne => motif.test(ligne.name));
+  if (!trouve) return null;
+  const ext = trouve.name.split(".").pop() ?? "jpg";
+  const mime =
+    trouve.metadata?.mimetype ?? Object.entries(MIMES_IMAGE).find(([, e]) => e === ext)?.[0] ?? "image/jpeg";
+  return { chemin: trouve.name, octets: Number(trouve.metadata?.size ?? 0), mime };
 }
 
 /**
@@ -171,17 +144,11 @@ export async function rehebergerImage(
   sourceUrl: string,
 ): Promise<ResultatRehebergement | null> {
   // 1) Déjà là ? On ne retélécharge pas.
-  const existant = await fichierDejaPresent(tweetId, index);
-  if (existant) {
-    try {
-      const infos = await stat(join(RACINE, BUCKET, existant));
-      const ext = existant.split(".").pop() ?? "jpg";
-      const mime = Object.entries(MIMES_IMAGE).find(([, e]) => e === ext)?.[0] ?? "image/jpeg";
-      await indexer(existant, infos.size, mime, false);
-      return { chemin: existant, url: urlPublique(existant), octets: infos.size, mime, deja: true };
-    } catch {
-      return null;
-    }
+  try {
+    const existant = await objetDejaPresent(tweetId, index);
+    if (existant) return { ...existant, url: urlPublique(existant.chemin), deja: true };
+  } catch {
+    return null;
   }
 
   // 2) Téléchargement.
@@ -202,10 +169,8 @@ export async function rehebergerImage(
     if (contenu.byteLength === 0) return null;
 
     const chemin = `${tweetId}/${tweetId}_${index}.${ext}`;
-    const cible = join(RACINE, BUCKET, chemin);
-    await mkdir(dirname(cible), { recursive: true });
-    await Bun.write(cible, contenu);
-    await indexer(chemin, contenu.byteLength, mime, true);
+    const envoi = await televerserObjet(BUCKET, chemin, contenu, mime);
+    if (!envoi.ok) return null;
 
     return { chemin, url: urlPublique(chemin), octets: contenu.byteLength, mime, deja: false };
   } catch {
@@ -269,7 +234,7 @@ export async function rehebergerMediasTweet(
       preview_url: res.url,
       previewUrl: res.url,
       // `original_url` doit rester l'URL pbs : c'est elle qui permet de
-      // reconstruire le bucket si le disque est perdu.
+      // reconstruire le bucket si le stockage est perdu.
       original_url: item.original_url ?? source,
       storage_path: res.chemin,
       storage_url: res.url,

@@ -4,7 +4,7 @@
  */
 
 /**
- * Ré-hébergement d'un fichier Discord dans le Storage self-host.
+ * Ré-hébergement d'un fichier Discord dans Supabase Storage.
  *
  * POURQUOI CE FICHIER EXISTE
  * Toute image venue de Discord doit être RECOPIÉE avant d'être publiée : les URL
@@ -23,14 +23,15 @@
 import { resignerPiecesJointes } from "./discord-rest.js";
 
 /**
- * Base du service Storage self-host — JAMAIS l'origine publique côté serveur.
+ * Base du service Storage : le projet Supabase (`/storage/v1`).
  *
- * Repli sur rg-api:8800 (2026-09-26, aphrody-infra docs/PORTS-AND-DOMAINS.md item 13) :
- * rg-api absorbe le storage en-process et c'est la seule cible que la conf nginx live
- * route réellement ; `:8811` n'est jamais écouté en production.
+ * `SUPABASE_INTERNAL_URL` garde la priorité pour viser une autre instance ; à
+ * défaut, l'URL du projet Supabase. Aucun repli sur une boucle locale : une
+ * fonction serverless n'a pas de service Storage sur sa machine.
  */
 export function baseStorage(): string {
-  const brut = Bun.env.SUPABASE_INTERNAL_URL || "http://127.0.0.1:8800";
+  const brut = Bun.env.SUPABASE_INTERNAL_URL || Bun.env.SUPABASE_URL || Bun.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  if (!brut) throw new Error("SUPABASE_URL (ou SUPABASE_INTERNAL_URL) n'est pas configurée.");
   return brut.replace(/\/+$/, "");
 }
 
@@ -92,7 +93,7 @@ export async function telechargerPieceJointeDiscord(
 }
 
 /**
- * Écrit un objet dans un bucket du Storage self-host.
+ * Écrit un objet dans un bucket de Supabase Storage.
  *
  * `x-upsert: true` rend l'opération rejouable à l'infini sur un chemin
  * déterministe : une seconde passe réécrit le même octet au même endroit plutôt
@@ -106,8 +107,14 @@ export async function televerserObjet(
 ): Promise<{ ok: boolean; motif?: string }> {
   const cle = Bun.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!cle) return { ok: false, motif: "SUPABASE_SERVICE_ROLE_KEY absente" };
+  let base: string;
+  try {
+    base = baseStorage();
+  } catch (err) {
+    return { ok: false, motif: err instanceof Error ? err.message : String(err) };
+  }
 
-  const envoi = await fetch(`${baseStorage()}/storage/v1/object/${bucket}/${chemin}`, {
+  const envoi = await fetch(`${base}/storage/v1/object/${bucket}/${chemin}`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${cle}`,

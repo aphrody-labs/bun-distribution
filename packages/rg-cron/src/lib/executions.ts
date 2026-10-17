@@ -5,30 +5,25 @@
  */
 
 /**
- * Registre des exécutions de tâches du démon cron.
+ * Règles d'exécution des tâches cron : types, troncature, seuil d'alerte.
  *
  * POURQUOI CE MODULE EXISTE
- * `index.ts` ne tenait qu'un objet `metrics` en mémoire : `startedAt`,
- * trois compteurs globaux et un `lastExecution` d'UNE seule ligne par tâche.
- * Conséquences mesurables :
- *   1. tout l'historique disparaît à chaque redémarrage du service — impossible
- *      de dire « la sauvegarde a échoué toutes les nuits depuis six semaines »,
- *      ce qui est pourtant exactement ce qui s'est produit (cf. l'en-tête de
- *      `tasks/db.ts`, six semaines de sauvegardes muettes) ;
- *   2. rien ne compte les échecs CONSÉCUTIFS, donc rien ne peut alerter ;
- *   3. l'écrasement de `lastExecution[nom]` efface le dernier SUCCÈS dès le
- *      premier échec : on ne sait plus depuis quand la tâche est morte.
+ * Le démon ne tenait qu'un objet `metrics` en mémoire, perdu à chaque
+ * redémarrage : impossible de dire « la sauvegarde a échoué toutes les nuits
+ * depuis six semaines », ce qui s'est pourtant produit (cf. `tasks/db.ts`).
+ * Les tâches tournent désormais en fonctions serverless, sans mémoire entre deux
+ * appels : l'historique persisté (`public.cron_executions`) est la SEULE source
+ * des échecs consécutifs, et la décision d'alerte est calculée à partir de lui.
  *
- * Ce module est volontairement PUR (aucun accès réseau, base ou disque) pour
- * rester testable et pour ne jamais pouvoir faire tomber le démon. L'écriture
- * en base vit dans `executions-postgres.ts`, l'alerte Discord dans
- * `alertes-cron.ts` ; tous deux consomment ce que le registre décide ici.
+ * Ce module est volontairement PUR (aucun accès réseau, base ou disque) : la
+ * lecture de l'historique vit dans `executions-postgres.ts`, l'envoi Discord
+ * dans `alertes-cron.ts`. La règle anti-spam, elle, ne vit qu'ici.
  */
 
 /** D'où vient un déclenchement. Recopié tel quel dans la colonne `origine`. */
 export type OrigineExecution = "planifie" | "manuel" | "cli" | "pont";
 
-/** Ce que le démon rapporte au registre à la fin d'une exécution. */
+/** Ce que l'exécuteur consigne à la fin d'une exécution. */
 export interface ResultatExecution {
   nom: string;
   /** Instant de début, en millisecondes epoch. */
@@ -42,28 +37,8 @@ export interface ResultatExecution {
   expiree?: boolean;
 }
 
-/** État cumulé d'une tâche depuis le démarrage du démon. */
-export interface EtatTache {
-  succes: number;
-  echecs: number;
-  /** Exécutions refusées parce que la même tâche tournait déjà. */
-  ignorees: number;
-  /** Échecs dus au dépassement du délai maximal (sous-ensemble de `echecs`). */
-  expirations: number;
-  echecsConsecutifs: number;
-  /** Une alerte a déjà été postée pour la série d'échecs en cours. */
-  alerteEnvoyee: boolean;
-  derniereLe: number | null;
-  derniereDureeMs: number | null;
-  derniereReussie: boolean | null;
-  dernierSuccesLe: number | null;
-  dernierEchecLe: number | null;
-  /** Dernier message d'erreur connu, déjà tronqué. */
-  derniereErreur: string | null;
-}
-
 /**
- * Décision d'alerte rendue par le registre.
+ * Décision d'alerte d'une exécution terminée.
  *
  * ANTI-SPAM : la série d'échecs ne produit qu'UNE seule `alerte` (au passage du
  * seuil), et le retour à la normale exactement UNE `retablissement`. Une tâche
@@ -100,111 +75,29 @@ export function tronquerErreur(erreur: string | undefined | null): string | null
   return propre.length > LONGUEUR_ERREUR_MAX ? `${propre.slice(0, LONGUEUR_ERREUR_MAX - 1)}…` : propre;
 }
 
-function etatNeuf(): EtatTache {
-  return {
-    succes: 0,
-    echecs: 0,
-    ignorees: 0,
-    expirations: 0,
-    echecsConsecutifs: 0,
-    alerteEnvoyee: false,
-    derniereLe: null,
-    derniereDureeMs: null,
-    derniereReussie: null,
-    dernierSuccesLe: null,
-    dernierEchecLe: null,
-    derniereErreur: null,
-  };
-}
-
 /**
- * Registre en mémoire. Une instance par démon ; les tests en créent la leur.
+ * Décision d'alerte d'une exécution, d'après l'historique qui la précède.
+ *
+ * `echecsPrecedents` compte les échecs consécutifs juste AVANT cette exécution
+ * (depuis le dernier succès). L'unicité par série découle de l'arithmétique :
+ * l'alerte part quand la série atteint EXACTEMENT le seuil, le rétablissement
+ * quand un succès suit une série qui l'avait atteint. Aucun état à garder.
  */
-export class RegistreExecutions {
-  readonly demarreLe: number;
-  private readonly taches = new Map<string, EtatTache>();
-  private readonly seuil: number;
-
-  constructor(options: { seuil?: number; demarreLe?: number } = {}) {
-    this.seuil = options.seuil ?? seuilAlerte();
-    this.demarreLe = options.demarreLe ?? Date.now();
+export function decisionDepuisHistorique(
+  resultat: Pick<ResultatExecution, "nom" | "succes" | "erreur" | "dureeMs">,
+  echecsPrecedents: number,
+  seuil = seuilAlerte(),
+): DecisionAlerte {
+  if (resultat.succes) {
+    return echecsPrecedents >= seuil
+      ? { type: "retablissement", nom: resultat.nom, echecsPrecedents, dureeMs: resultat.dureeMs }
+      : { type: "aucune" };
   }
-
-  /** Vue en lecture seule, pour le rendu Prometheus et le JSON d'observabilité. */
-  etats(): ReadonlyMap<string, EtatTache> {
-    return this.taches;
-  }
-
-  etat(nom: string): EtatTache | undefined {
-    return this.taches.get(nom);
-  }
-
-  private ou(nom: string): EtatTache {
-    let etat = this.taches.get(nom);
-    if (!etat) {
-      etat = etatNeuf();
-      this.taches.set(nom, etat);
-    }
-    return etat;
-  }
-
-  /** Comptabilise un lancement refusé parce que la tâche tournait déjà. */
-  noterIgnoree(nom: string): void {
-    this.ou(nom).ignorees += 1;
-  }
-
-  /**
-   * Enregistre une exécution terminée et rend la décision d'alerte associée.
-   *
-   * Le registre ne poste rien lui-même : il DÉCIDE, l'appelant exécute. C'est
-   * ce qui permet de tester la règle anti-spam sans jeton Discord.
-   */
-  noter(resultat: ResultatExecution): DecisionAlerte {
-    const etat = this.ou(resultat.nom);
-    const fin = resultat.debutLe + resultat.dureeMs;
-    etat.derniereLe = fin;
-    etat.derniereDureeMs = resultat.dureeMs;
-    etat.derniereReussie = resultat.succes;
-
-    if (resultat.succes) {
-      etat.succes += 1;
-      etat.dernierSuccesLe = fin;
-      etat.derniereErreur = null;
-      const echecsPrecedents = etat.echecsConsecutifs;
-      etat.echecsConsecutifs = 0;
-      if (etat.alerteEnvoyee) {
-        etat.alerteEnvoyee = false;
-        return {
-          type: "retablissement",
-          nom: resultat.nom,
-          echecsPrecedents,
-          dureeMs: resultat.dureeMs,
-        };
-      }
-      return { type: "aucune" };
-    }
-
-    etat.echecs += 1;
-    if (resultat.expiree) etat.expirations += 1;
-    etat.dernierEchecLe = fin;
-    etat.echecsConsecutifs += 1;
-    etat.derniereErreur = tronquerErreur(resultat.erreur);
-
-    if (etat.echecsConsecutifs >= this.seuil && !etat.alerteEnvoyee) {
-      etat.alerteEnvoyee = true;
-      return {
-        type: "alerte",
-        nom: resultat.nom,
-        echecsConsecutifs: etat.echecsConsecutifs,
-        erreur: etat.derniereErreur,
-      };
-    }
-    return { type: "aucune" };
-  }
+  const echecsConsecutifs = echecsPrecedents + 1;
+  return echecsConsecutifs === seuil
+    ? { type: "alerte", nom: resultat.nom, echecsConsecutifs, erreur: tronquerErreur(resultat.erreur) }
+    : { type: "aucune" };
 }
-
-/** Registre du démon. Créé à l'import, comme l'objet `metrics` qu'il complète. */
-export const registreExecutions = new RegistreExecutions();
 
 /** Rend une durée en français court, pour les messages d'alerte. */
 export function formaterDuree(ms: number): string {

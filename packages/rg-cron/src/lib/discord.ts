@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Client, IntentsBitField, Partials, ActivityType, type Guild, type GuildMember, type User } from "discord.js";
+import { Client, IntentsBitField, Routes, type Guild, type GuildMember } from "discord.js";
+import { listGuildMembers } from "@rosegriffon/discord-sync";
 import { sql } from "./db.js";
 import { resolveGuildId } from "@rosegriffon/types/discord";
 
@@ -29,303 +30,42 @@ export const GUILDES_SUIVIES = [
 
 export type CleGuilde = (typeof GUILDES_SUIVIES)[number]["cle"];
 
-export interface DiscordTelemetry {
-  onlineCount: number;
-  idleCount: number;
-  dndCount: number;
-  offlineCount: number;
-  totalMembers: number;
-  voiceStateCount: number;
-  streamingCount: number;
-  activeGames: { game: string; count: number }[];
-  voiceChannels: { channelId: string; name: string; count: number }[];
-  lastUpdate: string;
-}
-
 let discordClient: Client | null = null;
-const verifiedRosterGuilds = new Set<string>();
+let botId: string | null = null;
 
-export function hasVerifiedDiscordRoster(guildId: string): boolean {
-  return verifiedRosterGuilds.has(guildId);
-}
-let latestTelemetry: DiscordTelemetry | null = null;
-let telemetryCallbacks: ((telemetry: DiscordTelemetry) => void)[] = [];
-
+/**
+ * Client discord.js en mode REST seul : aucune connexion à la passerelle.
+ *
+ * Une fonction serverless ne tient pas de WebSocket ouverte entre deux appels,
+ * et toutes les lectures des tâches passent par l'API REST (`guilds.fetch`,
+ * `roles.fetch`, `channels.fetch`, `members.list`, `users.fetch`). Le client
+ * n'est donc jamais connecté : seul son jeton REST est posé. Les intents ne
+ * servent qu'à la passerelle ; `GuildMembers` est déclaré pour que le miroir
+ * partagé reconnaisse un inventaire complet obtenu par `members.list`.
+ */
 export function getDiscordClient(): Client | null {
+  if (!DISCORD_TOKEN) return null;
+  if (!discordClient) {
+    const client = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers] });
+    client.token = DISCORD_TOKEN;
+    client.rest.setToken(DISCORD_TOKEN);
+    discordClient = client;
+  }
   return discordClient;
 }
 
-export function getDiscordTelemetry(): DiscordTelemetry | null {
-  if (!latestTelemetry && discordClient && GUILD_ID) {
-    const guild = discordClient.guilds.cache.get(GUILD_ID);
-    if (guild) {
-      latestTelemetry = computeTelemetry(guild);
-    }
+/** Identifiant de l'utilisateur bot du jeton (`GET /users/@me`), mis en cache. */
+export async function identifiantBot(client: Client): Promise<string> {
+  if (!botId) {
+    const moi = (await client.rest.get(Routes.user())) as { id: string };
+    botId = moi.id;
   }
-  return latestTelemetry;
+  return botId;
 }
 
-export function onTelemetryUpdate(callback: (telemetry: DiscordTelemetry) => void) {
-  telemetryCallbacks.push(callback);
-}
-
-function notifyTelemetryUpdate(telemetry: DiscordTelemetry) {
-  latestTelemetry = telemetry;
-  for (const cb of telemetryCallbacks) {
-    try {
-      cb(telemetry);
-    } catch (err) {
-      console.error("[discord-telemetry] Callback error:", err);
-    }
-  }
-}
-
-export function computeTelemetry(guild: Guild): DiscordTelemetry {
-  let onlineCount = 0;
-  let idleCount = 0;
-  let dndCount = 0;
-  let offlineCount = 0;
-  let voiceStateCount = 0;
-  let streamingCount = 0;
-  const activeGamesMap = new Map<string, number>();
-  const voiceChannelsMap = new Map<string, { name: string; count: number }>();
-
-  for (const member of guild.members.cache.values()) {
-    const presence = member.presence;
-    if (!presence || presence.status === "offline") {
-      offlineCount++;
-    } else {
-      if (presence.status === "online") onlineCount++;
-      else if (presence.status === "idle") idleCount++;
-      else if (presence.status === "dnd") dndCount++;
-
-      if (presence.activities) {
-        for (const activity of presence.activities) {
-          if (activity.type === ActivityType.Playing) {
-            activeGamesMap.set(activity.name, (activeGamesMap.get(activity.name) || 0) + 1);
-          }
-          if (activity.type === ActivityType.Streaming) {
-            streamingCount++;
-          }
-        }
-      }
-    }
-
-    const voiceState = member.voice;
-    if (voiceState && voiceState.channelId) {
-      voiceStateCount++;
-      const ch = voiceState.channel;
-      if (ch) {
-        const current = voiceChannelsMap.get(ch.id) || { name: ch.name, count: 0 };
-        current.count++;
-        voiceChannelsMap.set(ch.id, current);
-      }
-    }
-  }
-
-  const activeGames = [...activeGamesMap.entries()]
-    .map(([game, count]) => ({ game, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  const voiceChannels = [...voiceChannelsMap.entries()].map(([channelId, { name, count }]) => ({
-    channelId,
-    name,
-    count,
-  }));
-
-  return {
-    onlineCount,
-    idleCount,
-    dndCount,
-    offlineCount,
-    totalMembers: guild.memberCount,
-    voiceStateCount,
-    streamingCount,
-    activeGames,
-    voiceChannels,
-    lastUpdate: new Date().toISOString(),
-  };
-}
-
-/** Intents historiques du démon : télémétrie, membres, présences, salons vocaux. */
-const INTENTS_HISTORIQUES = [
-  IntentsBitField.Flags.Guilds,
-  IntentsBitField.Flags.GuildMembers,
-  IntentsBitField.Flags.GuildPresences,
-  IntentsBitField.Flags.GuildVoiceStates,
-];
-
-/** Intents supplémentaires exigés par la veille des salons suivis. */
-const INTENTS_VEILLE_MESSAGES = [
-  IntentsBitField.Flags.GuildMessages,
-  IntentsBitField.Flags.MessageContent,
-  IntentsBitField.Flags.GuildMessageReactions,
-];
-
-const PARTIALS_HISTORIQUES = [Partials.GuildMember, Partials.User];
-const PARTIALS_VEILLE_MESSAGES = [Partials.Message, Partials.Channel, Partials.Reaction];
-
-let veilleTempsReelDisponible = false;
-
-/**
- * Indique si la passerelle a bien obtenu les intents de la veille des messages.
- * À `false`, l'archivage des salons se limite au rattrapage REST périodique.
- */
-export function laVeilleTempsReelEstDisponible(): boolean {
-  return veilleTempsReelDisponible;
-}
-
-/** Reconnaît le refus d'un intent privilégié (fermeture 4014 de la passerelle). */
-function estRefusDIntents(err: unknown): boolean {
-  const code = (err as { code?: unknown } | null)?.code;
-  const message = err instanceof Error ? err.message : String(err);
-  return code === "DisallowedIntents" || /disallowed intents|privileged intent|4014/i.test(message);
-}
-
-export async function initDiscord(): Promise<Client | null> {
-  if (!DISCORD_TOKEN) {
-    console.warn("⚠ DISCORD_TOKEN is not set. Discord integration disabled.");
-    return null;
-  }
-
-  if (!GUILD_ID) {
-    console.warn("⚠ DISCORD_GUILD_ID is not set. Discord integration disabled.");
-    return null;
-  }
-
-  console.log("[Discord] Initialisation du client Discord...");
-
-  // Première tentative avec les intents étendus (messages, contenu, réactions).
-  const etendu = await connecterClient(true);
-  if (etendu.client) {
-    veilleTempsReelDisponible = true;
-    return etendu.client;
-  }
-
-  // GARDE-FOU : si le portail développeur n'autorise pas ces intents privilégiés,
-  // Discord ferme la connexion et le démon cron ENTIER ne démarrerait plus. On
-  // retente donc avec le jeu d'intents historique, quitte à perdre le temps réel.
-  if (!etendu.intentsRefuses) return null;
-
-  console.warn(
-    "⚠ [Discord] Intents messages refusés par Discord (GuildMessages / MessageContent / GuildMessageReactions non activés sur le portail développeur).",
-  );
-  console.warn(
-    "⚠ [Discord] Reconnexion avec les intents historiques : la veille des salons est DÉGRADÉE en simple rattrapage REST (aucun événement temps réel, uniquement la synchro périodique).",
-  );
-  const replique = await connecterClient(false);
-  return replique.client;
-}
-
-/** Construit un client, branche ses écouteurs et le connecte. */
-function connecterClient(avecVeilleMessages: boolean): Promise<{ client: Client | null; intentsRefuses: boolean }> {
-  verifiedRosterGuilds.clear();
-  const client = new Client({
-    intents: avecVeilleMessages ? [...INTENTS_HISTORIQUES, ...INTENTS_VEILLE_MESSAGES] : INTENTS_HISTORIQUES,
-    partials: avecVeilleMessages ? [...PARTIALS_HISTORIQUES, ...PARTIALS_VEILLE_MESSAGES] : PARTIALS_HISTORIQUES,
-  });
-
-  return new Promise<{ client: Client | null; intentsRefuses: boolean }>(resolve => {
-    client.once("ready", async () => {
-      console.log(`✓ Discord connecté en tant que ${client.user?.tag}`);
-      // Affectation ici AUSSI : `ready` peut précéder la résolution de
-      // `login()`, et les tâches lancées juste après `initDiscord()` appellent
-      // `getDiscordClient()` sans attendre.
-      discordClient = client;
-
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (!guild) {
-        console.warn(`⚠ Bot n'est pas dans le serveur avec l'ID : ${GUILD_ID}`);
-        resolve({ client, intentsRefuses: false });
-        return;
-      }
-
-      // Pré-remplir le cache des membres pour avoir des présences et des stats précises au démarrage
-      try {
-        console.log("[Discord] Chargement initial des membres et présences...");
-        await guild.members.fetch();
-        verifiedRosterGuilds.add(guild.id);
-        console.log(`✓ ${guild.members.cache.size} membres chargés.`);
-
-        // Première génération de la télémétrie
-        const telemetry = computeTelemetry(guild);
-        notifyTelemetryUpdate(telemetry);
-      } catch (err) {
-        console.error("✗ Échec du chargement initial des membres:", err);
-      }
-      resolve({ client, intentsRefuses: false });
-    });
-
-    // Événements en temps réel pour la télémétrie
-    client.on("presenceUpdate", (oldPresence, newPresence) => {
-      if (newPresence.guild?.id !== GUILD_ID) return;
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (guild) {
-        notifyTelemetryUpdate(computeTelemetry(guild));
-      }
-    });
-
-    client.on("voiceStateUpdate", (oldState, newState) => {
-      if (newState.guild?.id !== GUILD_ID) return;
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (guild) {
-        notifyTelemetryUpdate(computeTelemetry(guild));
-      }
-    });
-
-    client.on("guildMemberAdd", async member => {
-      if (member.guild.id !== GUILD_ID) return;
-      console.log(`[Discord] Membre rejoint : ${member.user.tag}`);
-      await syncOneMember(member).catch(err => console.error("[guildMemberAdd] sync failed:", err));
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (guild) notifyTelemetryUpdate(computeTelemetry(guild));
-    });
-
-    client.on("guildMemberRemove", async member => {
-      if (member.guild.id !== GUILD_ID) return;
-      console.log(`[Discord] Membre parti : ${member.user.tag}`);
-      // Marquage plutôt que suppression : un DELETE perdait `joined_at` et
-      // l'historique de rôles, et surtout ne rattrapait jamais les départs
-      // survenus pendant une coupure du démon — 173 lignes fantômes constatées
-      // le 11/8/2026. Le profil pré-créé correspondant part avec.
-      await sql`UPDATE discord_members SET left_at = now(), updated_at = now() WHERE discord_id = ${member.id}`.catch(
-        err => console.error("[guildMemberRemove] marquage du départ impossible:", err),
-      );
-      await sql`DELETE FROM profiles WHERE discord_id = ${member.id} AND claimed_at IS NULL`.catch(err =>
-        console.error("[guildMemberRemove] retrait du profil pré-créé impossible:", err),
-      );
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (guild) notifyTelemetryUpdate(computeTelemetry(guild));
-    });
-
-    client.on("guildMemberUpdate", async (oldMember, newMember) => {
-      if (newMember.guild.id !== GUILD_ID) return;
-      await syncOneMember(newMember).catch(err => console.error("[guildMemberUpdate] sync failed:", err));
-    });
-
-    client.on("userUpdate", async (oldUser, newUser) => {
-      const guild = client.guilds.cache.get(GUILD_ID);
-      if (!guild) return;
-      await syncOneUser(newUser, guild).catch(err => console.error("[userUpdate] sync failed:", err));
-    });
-
-    client
-      .login(DISCORD_TOKEN)
-      .then(() => {
-        discordClient = client;
-      })
-      .catch(err => {
-        const intentsRefuses = estRefusDIntents(err);
-        if (!intentsRefuses) {
-          console.error("✗ Échec de la connexion Discord:", err);
-        }
-        // Le client à moitié connecté doit être libéré avant toute nouvelle
-        // tentative, sinon sa reconnexion automatique rejoue le même refus.
-        void client.destroy().catch(() => {});
-        resolve({ client: null, intentsRefuses });
-      });
-  });
+/** Nombre de membres annoncé par Discord : `member_count` en passerelle, approximation en REST. */
+export function membresAnnonces(guild: Guild): number {
+  return guild.memberCount ?? guild.approximateMemberCount ?? 0;
 }
 
 // ─── SERVICES DE SYNCHRONISATION ──────────────────────────────────────────
@@ -336,10 +76,6 @@ function resolveAvatarUrl(member: GuildMember): string | null {
   const userAvatar = member.user.avatarURL({ size: 256, extension: "webp" });
   if (userAvatar) return userAvatar;
   return member.user.defaultAvatarURL ?? null;
-}
-
-function resolveUserAvatarUrl(user: User): string | null {
-  return user.avatarURL({ size: 256, extension: "webp" }) ?? user.defaultAvatarURL ?? null;
 }
 
 function toPgTextArray(values: string[]): string {
@@ -359,7 +95,7 @@ interface MemberRow {
   updated_at: string;
 }
 
-export function memberToRow(member: GuildMember): MemberRow {
+function memberToRow(member: GuildMember): MemberRow {
   const roleIds = [...member.roles.cache.keys()].filter(id => id !== member.guild.id);
   return {
     discord_id: member.id,
@@ -375,16 +111,27 @@ export function memberToRow(member: GuildMember): MemberRow {
   };
 }
 
-async function upsertRow(row: MemberRow): Promise<void> {
-  const rolesLiteral = toPgTextArray(row.roles || []);
+/** Taille des lots d'écriture : une requête par lot, quel que soit le serveur. */
+const TAILLE_LOT = 1000;
+
+/** Les lignes d'un lot, liées en UN texte JSON (Bun.sql lie un tableau d'objets comme un tableau Postgres). */
+function lot(rows: readonly MemberRow[]): string {
+  return JSON.stringify(rows);
+}
+
+/** Écrit l'identité Rose Griffon (`discord_members`) d'un lot de membres. */
+async function upsertRows(rows: readonly MemberRow[]): Promise<void> {
   await sql`
     INSERT INTO discord_members (
       discord_id, username, display_name, nickname,
       avatar_url, joined_at, premium_since, roles, is_bot, updated_at
-    ) VALUES (
-      ${row.discord_id}, ${row.username}, ${row.display_name}, ${row.nickname},
-      ${row.avatar_url}, ${row.joined_at}, ${row.premium_since}, ${rolesLiteral}::text[], ${row.is_bot}, NOW()
     )
+    SELECT r.discord_id, r.username, r.display_name, r.nickname, r.avatar_url, r.joined_at, r.premium_since,
+           ARRAY(SELECT jsonb_array_elements_text(r.roles))::text[], r.is_bot, NOW()
+      FROM jsonb_to_recordset(${lot(rows)}::text::jsonb) AS r(
+        discord_id text, username text, display_name text, nickname text, avatar_url text,
+        joined_at timestamptz, premium_since timestamptz, roles jsonb, is_bot boolean
+      )
     ON CONFLICT (discord_id) DO UPDATE SET
       username = EXCLUDED.username,
       display_name = EXCLUDED.display_name,
@@ -399,23 +146,24 @@ async function upsertRow(row: MemberRow): Promise<void> {
 }
 
 /**
- * Écrit l'appartenance à un serveur donné.
+ * Écrit l'appartenance à un serveur donné, pour un lot de membres.
  *
- * Même ligne source que `upsertRow`, autre question : `discord_members` dit
+ * Même ligne source que `upsertRows`, autre question : `discord_members` dit
  * « qui est cette personne pour Rose Griffon », `discord_appartenances` dit
  * « de quels serveurs elle est membre, avec quels rôles ».
  */
-async function upsertAppartenance(guildId: string, row: MemberRow): Promise<void> {
-  const rolesLiteral = toPgTextArray(row.roles || []);
+async function upsertAppartenances(guildId: string, rows: readonly MemberRow[]): Promise<void> {
   await sql`
     INSERT INTO discord_appartenances (
       guild_id, discord_id, username, display_name, nickname,
       avatar_url, joined_at, premium_since, roles, is_bot, updated_at, left_at
-    ) VALUES (
-      ${guildId}, ${row.discord_id}, ${row.username}, ${row.display_name}, ${row.nickname},
-      ${row.avatar_url}, ${row.joined_at}, ${row.premium_since}, ${rolesLiteral}::text[],
-      ${row.is_bot}, NOW(), NULL
     )
+    SELECT ${guildId}, r.discord_id, r.username, r.display_name, r.nickname, r.avatar_url, r.joined_at,
+           r.premium_since, ARRAY(SELECT jsonb_array_elements_text(r.roles))::text[], r.is_bot, NOW(), NULL
+      FROM jsonb_to_recordset(${lot(rows)}::text::jsonb) AS r(
+        discord_id text, username text, display_name text, nickname text, avatar_url text,
+        joined_at timestamptz, premium_since timestamptz, roles jsonb, is_bot boolean
+      )
     ON CONFLICT (guild_id, discord_id) DO UPDATE SET
       username = EXCLUDED.username,
       display_name = EXCLUDED.display_name,
@@ -431,13 +179,17 @@ async function upsertAppartenance(guildId: string, row: MemberRow): Promise<void
   `;
 }
 
-async function syncUserImage(discordId: string, avatarUrl: string | null): Promise<void> {
-  if (!avatarUrl) return;
+/** Recopie l'avatar Discord sur les comptes du site reliés à ces membres. */
+async function syncUserImages(rows: readonly MemberRow[]): Promise<void> {
   await sql`
     UPDATE "user" u
-    SET image = ${avatarUrl}, updated_at = NOW()
-    FROM account a
-    WHERE a.user_id = u.id AND a.provider_id = 'discord' AND a.account_id = ${discordId}
+       SET image = r.avatar_url, updated_at = NOW()
+      FROM account a, jsonb_to_recordset(${lot(rows)}::text::jsonb) AS r(discord_id text, avatar_url text)
+     WHERE a.user_id = u.id
+       AND a.provider_id = 'discord'
+       AND a.account_id = r.discord_id
+       AND r.avatar_url IS NOT NULL
+       AND u.image IS DISTINCT FROM r.avatar_url
   `;
 }
 
@@ -455,19 +207,15 @@ export async function syncAllMembers(
   verifiedMembers?: ReadonlyMap<string, GuildMember>,
 ): Promise<SyncReport> {
   const start = Date.now();
-  // Le cache peut contenir seulement les membres vus depuis le démarrage.
-  // Un inventaire incomplet ne doit jamais déclencher la purge des départs.
-  const members = verifiedMembers ?? (await guild.members.fetch());
-  if (members.size === 0 && guild.memberCount > 0) {
-    throw new Error(`Inventaire Discord vide pour ${guild.id} (${guild.memberCount} membres annoncés).`);
+  // Inventaire complet par REST paginé : un inventaire incomplet ne doit jamais
+  // déclencher la purge des départs.
+  const members = verifiedMembers ?? (await listGuildMembers(guild));
+  if (members.size === 0 && membresAnnonces(guild) > 0) {
+    throw new Error(`Inventaire Discord vide pour ${guild.id} (${membresAnnonces(guild)} membres annoncés).`);
   }
   console.log(`[Cron Discord] ${members.size} membres récupérés depuis Discord.`);
   const errors: SyncReport["errors"] = [];
   let upserted = 0;
-
-  // Récupérer les comptes Discord reliés pour éviter 1900+ requêtes SQL lentes d'update inutile sur la table "user"
-  const linkedAccounts = await sql`SELECT account_id FROM account WHERE provider_id = 'discord'`;
-  const linkedDiscordIds = new Set(linkedAccounts.map((a: any) => a.account_id));
 
   // `discord_members` et la pré-création des profils ne valent QUE pour le
   // serveur Rose Griffon : ce sont des mécanismes d'identité du site, pas
@@ -476,20 +224,21 @@ export async function syncAllMembers(
   // « partis » tous les membres de l'autre serveur à chaque balayage.
   const estServeurPrincipal = guild.id === (GUILD_ID ?? GUILDES_SUIVIES[0].id);
 
-  for (const member of members.values()) {
+  // Écriture par lots : une requête par millier de membres, et non trois par
+  // membre — une fonction serverless n'a pas le temps de 6000 allers-retours.
+  const rows = [...members.values()].map(memberToRow);
+  for (let i = 0; i < rows.length; i += TAILLE_LOT) {
+    const tranche = rows.slice(i, i + TAILLE_LOT);
     try {
-      const row = memberToRow(member);
-      await upsertAppartenance(guild.id, row);
+      await upsertAppartenances(guild.id, tranche);
       if (estServeurPrincipal) {
-        await upsertRow(row);
-        if (linkedDiscordIds.has(row.discord_id)) {
-          await syncUserImage(row.discord_id, row.avatar_url);
-        }
+        await upsertRows(tranche);
+        await syncUserImages(tranche);
       }
-      upserted++;
+      upserted += tranche.length;
     } catch (err) {
       errors.push({
-        discordId: member.id,
+        discordId: `${tranche[0]?.discord_id ?? guild.id}…`,
         reason: err instanceof Error ? err.message : String(err),
       });
     }
@@ -555,31 +304,6 @@ export async function syncAllMembers(
     errors,
     durationMs: Date.now() - start,
   };
-}
-
-export async function syncOneMember(member: GuildMember): Promise<void> {
-  const row = memberToRow(member);
-  await upsertRow(row);
-  await syncUserImage(row.discord_id, row.avatar_url);
-}
-
-export async function syncOneUser(user: User, guild: Guild): Promise<void> {
-  const member = guild.members.cache.get(user.id) ?? (await guild.members.fetch(user.id).catch(() => null));
-  if (member) {
-    await syncOneMember(member);
-    return;
-  }
-  const avatarUrl = resolveUserAvatarUrl(user);
-  await sql`
-    UPDATE discord_members
-    SET username = ${user.username},
-        display_name = ${user.globalName ?? null},
-        avatar_url = ${avatarUrl},
-        is_bot = ${user.bot},
-        updated_at = NOW()
-    WHERE discord_id = ${user.id}
-  `;
-  await syncUserImage(user.id, avatarUrl);
 }
 
 interface StaffRow {

@@ -1,87 +1,34 @@
 /**
- * Non-dérive entre le démon et le catalogue partagé.
+ * Non-dérive entre le registre des tâches et le catalogue partagé.
  *
  * ── LE DÉFAUT QUE CE FICHIER EMPÊCHE DE REVENIR ────────────────────────────
- * Trois surfaces nomment les mêmes tâches : `runnerMap` ici, le catalogue de
- * `@rosegriffon/types/cron`, et la réponse de `GET /tasks`. Elles étaient
- * recopiées à la main, et elles avaient divergé : le bot connaissait dix-huit
- * tâches quand le démon en servait vingt-deux, si bien que `/cron lancer
- * noctaly:import` répondait « tâche inconnue » sur une tâche qui marche.
- *
- * Le catalogue est désormais unique, mais `runnerMap` reste ici — c'est le seul
- * endroit qui puisse associer un nom à une fonction. Ce test relie les deux :
- * ajouter une entrée au démon sans la décrire dans le catalogue (ou l'inverse)
- * fait échouer la CI, avec le nom manquant dans le message.
- *
- * Il lit le fichier source plutôt que d'importer le module : importer
- * `src/daemon.ts` démarrerait vraiment le démon (planifications, serveurs HTTP,
- * passerelle Discord).
+ * Deux surfaces nomment les mêmes tâches : `REGISTRE_TACHES` (`registry.ts`,
+ * le seul endroit qui associe un nom à une fonction) et le catalogue de
+ * `@rosegriffon/types/cron`, que le bot, le site et la route `GET /v1/cron`
+ * lisent. Recopiées à la main, elles avaient divergé : le bot connaissait
+ * dix-huit tâches quand le démon en servait vingt-deux. Ce test les relie.
  */
 import { describe, expect, test } from "bun:test";
-import { fileURLToPath } from "node:url";
 
 import { CATALOGUE_TACHES, normaliserNomTache, TACHES_CRON } from "@rosegriffon/types/cron";
+import { REGISTRE_TACHES } from "./registry";
 
-const SOURCE = fileURLToPath(new URL("./daemon.ts", import.meta.url));
+const CLEFS = new Set(Object.keys(REGISTRE_TACHES).map(normaliserNomTache));
 
-/** Les clés de `runnerMap`, lues dans le source du démon. */
-async function clefsDuRunnerMap(): Promise<Set<string>> {
-  const source = await Bun.file(SOURCE).text();
-  const debut = source.indexOf("const runnerMap");
-  expect(debut).toBeGreaterThan(-1);
-  const fin = source.indexOf("const taskFn = runnerMap[taskName]", debut);
-  expect(fin).toBeGreaterThan(debut);
-  const bloc = source.slice(debut, fin);
-
-  const clefs = new Set<string>();
-  // `"discord:scan": runDiscordChannelScan,` et `db: runInaglePush,`
-  let indentation: string | undefined;
-  for (const trouve of bloc.matchAll(/^([ \t]+)(?:"([^"]+)"|([a-z]+)):/gm)) {
-    indentation ??= trouve[1];
-    if (trouve[1] === indentation) clefs.add(trouve[2] ?? trouve[3]!);
-  }
-  return clefs;
-}
-
-describe("catalogue partagé vs démon", () => {
-  /**
-   * `GET /tasks` ne recopie plus rien : il rend `TACHES_CRON`,
-   * `PLANIFICATIONS` et `CATALOGUE_TACHES` tels quels. Ce test verrouille ce
-   * choix — remettre une liste littérale dans la route ferait revenir la
-   * dérive que tout ce fichier existe pour empêcher.
-   */
-  test("la route /tasks sert le catalogue, elle ne le recopie pas", async () => {
-    const source = await Bun.file(SOURCE).text();
-    const debut = source.indexOf('url.pathname === "/tasks"');
-    expect(debut).toBeGreaterThan(-1);
-    const bloc = source.slice(debut, source.indexOf("// 5.", debut));
-    expect(bloc).toContain("tasks: TACHES_CRON");
-    expect(bloc).toContain("schedules: PLANIFICATIONS");
-    expect(bloc).toContain("catalogue: CATALOGUE_TACHES");
-  });
-
-  test("toute tâche du catalogue a un exécutant dans runnerMap", async () => {
-    const clefs = new Set([...(await clefsDuRunnerMap())].map(normaliserNomTache));
-    const orphelines = TACHES_CRON.filter(nom => !clefs.has(normaliserNomTache(nom)));
+describe("catalogue partagé vs registre", () => {
+  test("toute tâche du catalogue a un exécutant dans le registre", () => {
+    const orphelines = TACHES_CRON.filter(nom => !CLEFS.has(normaliserNomTache(nom)));
     expect(orphelines).toEqual([]);
   });
 
   /**
-   * L'inverse n'est PAS symétrique : `runnerMap` porte des alias d'écriture
-   * (`discord-scan` pour `discord:scan`) et une entrée non publiée
-   * (`discord:archives`). On vérifie donc seulement qu'aucune entrée non
-   * aliasée ne manque au catalogue.
-   *
-   * `zukan:videos` était tolérée ici tant qu'elle n'était lançable qu'à la
-   * main ; elle est publiée depuis qu'elle est planifiée (2h00, entre la
-   * poussée des données et la sauvegarde SQLite).
+   * L'inverse n'est PAS symétrique : le registre porte des tâches non publiées,
+   * lançables en CLI seulement (`discord:archives`, les veilles X ciblées).
    */
-  test("les entrées du démon absentes du catalogue sont connues et assumées", async () => {
+  test("les entrées du registre absentes du catalogue sont connues et assumées", () => {
     const catalogue = new Set(TACHES_CRON.map(normaliserNomTache));
-    const tolerees = new Set(["discord:archives"]);
-    const surplus = [...(await clefsDuRunnerMap())]
-      .map(normaliserNomTache)
-      .filter(nom => !catalogue.has(nom) && !tolerees.has(nom));
+    const tolerees = new Set(["discord:archives", "x", "x:search"]);
+    const surplus = [...CLEFS].filter(nom => !catalogue.has(nom) && !tolerees.has(nom));
     expect(surplus).toEqual([]);
   });
 });

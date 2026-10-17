@@ -347,6 +347,7 @@
         "@rosegriffon/assets": "workspace:*",
         "@rosegriffon/auth": "workspace:*",
         "@rosegriffon/azalee": "workspace:*",
+        "@rosegriffon/cron": "workspace:*",
         "@rosegriffon/db": "workspace:*",
         "@rosegriffon/inagle": "workspace:*",
         "@rosegriffon/types": "workspace:*",
