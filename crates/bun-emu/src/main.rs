@@ -1,8 +1,10 @@
 use std::{fs, path::PathBuf, process::ExitCode};
 
-use bun_emu::{Machine, Step, nds::Nds};
+use std::io::Write;
 
-const USAGE: &str = "usage: bun-emu nds <rom.nds> [--frames N] [--out DIR]";
+use bun_emu::{Machine, Step, arm::ArmFirmware, nds::Nds};
+
+const USAGE: &str = "usage: bun-emu <nds|arm> <image> [--frames N] [--out DIR]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
@@ -30,15 +32,23 @@ fn main() -> ExitCode {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
+        "arm" => match ArmFirmware::from_image(&rom, 128) {
+            Ok(m) => Box::new(m),
+            Err(e) => return fail(e),
+        },
         other => return fail(format!("unsupported system `{other}`")),
     };
     let mut done = 0;
     while done < frames {
         match machine.run_frame() {
             Step::Frame => done += 1,
-            Step::Shutdown => break,
+            Step::Shutdown => {
+                flush(&mut *machine);
+                break;
+            }
             Step::Stopped => {}
         }
+        flush(&mut *machine);
     }
     println!("{}: {done} frames", machine.name());
     if let Some(dir) = out {
@@ -54,6 +64,13 @@ fn main() -> ExitCode {
         }
     }
     ExitCode::SUCCESS
+}
+
+fn flush(machine: &mut dyn Machine) {
+    let out = machine.console();
+    if !out.is_empty() {
+        let _ = std::io::stdout().write_all(&out);
+    }
 }
 
 fn fail(msg: String) -> ExitCode {

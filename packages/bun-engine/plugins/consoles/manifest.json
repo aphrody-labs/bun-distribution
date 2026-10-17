@@ -551,6 +551,67 @@
           "path": "crates/bun-emu/vendor/pcsx2"
         }
       ]
+    },
+    {
+      "id": "gecko",
+      "console": "nintendo-wii-gamecube",
+      "cpu": [
+        "powerpc-gekko",
+        "powerpc-broadway"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "see-upstream-LICENSE",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "91950c6364d8a464d6eb0a666dbf3a6dec24d5bb",
+      "buildOwner": "crates/bun-emu/vendor/gecko/Cargo.toml",
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/bun-emu/vendor/gecko"
+        }
+      ]
+    },
+    {
+      "id": "oboromi",
+      "console": "nintendo-switch",
+      "cpu": [
+        "aarch64"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "see-upstream-LICENSE",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "a4d9f7503f484a19cfa1218412f9e15b3dfbe48d",
+      "buildOwner": "crates/bun-emu/vendor/oboromi/Cargo.toml",
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/bun-emu/vendor/oboromi"
+        }
+      ]
+    },
+    {
+      "id": "nexium",
+      "console": "nintendo-switch",
+      "cpu": [
+        "aarch64"
+      ],
+      "runtime": "hle-core",
+      "firmwarePolicy": "caller-supplied-only",
+      "license": "see-upstream-LICENSE",
+      "publicationGate": "deferred-review",
+      "integration": "submodule",
+      "sourceRev": "d9878f72a4aac607a5aa32b837158a3099bbbe00",
+      "buildOwner": "crates/bun-emu/vendor/nexium/Cargo.toml",
+      "sources": [
+        {
+          "kind": "rust-crate",
+          "path": "crates/bun-emu/vendor/nexium"
+        }
+      ]
     }
   ]
 }

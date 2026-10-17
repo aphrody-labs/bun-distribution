@@ -15,5 +15,7 @@ aphrody-dust-core = { path = "../aphrody-dust-core" }
 aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d" }
 aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d" }
 
+rdynarmic = { path = "../rdynarmic" }
+
 [lints]
 workspace = true

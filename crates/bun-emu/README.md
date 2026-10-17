@@ -12,7 +12,10 @@ the cores below; no wrapper around external emulator executables.
 | 3DS | `vendor/azahar` (fork of Azahar) | pinned, not built |
 | GameCube/Wii | `vendor/dolphin` (fork of Dolphin) | pinned, not built |
 | DS (reference) | `vendor/melonds` (fork of melonDS) | pinned, not built |
-| ARM firmware, Linux, Windows | `rdynarmic` (ARM JIT), WHP/KVM (planned) | not started |
+| Wii/GameCube (Rust) | `vendor/gecko` (fork of ioncodes/gecko) | pinned, not built |
+| Switch (Rust) | `vendor/oboromi`, `vendor/nexium` (forks) | pinned, not built |
+| ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs: `bun-emu arm <image>`; a hand-assembled image prints over the UART and stops on WFI |
+| Linux, Windows | WHP/KVM hypervisor (planned) | not started |
 | Android | Android SDK emulator (QEMU) | external AVD only |
 
 ## Stack decisions

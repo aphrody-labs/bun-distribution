@@ -575,3 +575,12 @@
 [submodule "crates/bun-emu/vendor/pcsx2"]
 	path = crates/bun-emu/vendor/pcsx2
 	url = https://github.com/aphrody-labs/pcsx2.git
+[submodule "crates/bun-emu/vendor/gecko"]
+	path = crates/bun-emu/vendor/gecko
+	url = https://github.com/aphrody-labs/gecko.git
+[submodule "crates/bun-emu/vendor/oboromi"]
+	path = crates/bun-emu/vendor/oboromi
+	url = https://github.com/aphrody-labs/oboromi.git
+[submodule "crates/bun-emu/vendor/nexium"]
+	path = crates/bun-emu/vendor/nexium
+	url = https://github.com/aphrody-labs/nexium.git
