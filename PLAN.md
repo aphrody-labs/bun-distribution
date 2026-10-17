@@ -212,6 +212,7 @@
       duplicates of existing owners are not carried. No IECODE component
       remains pending.
 - [x] NIE readers qualified on the real Inazuma Eleven: Victory Road install on the VPS (`/home/ubuntu/apps/nie/game`, read-only): `nie info` (nie.exe 33.9 MB, VFS 255,308 entries in 936 packs, launch chain complete), `nie format` and `nie decode` on a real `.cfg.bin` (T2B). The `rg-core`-supervised `aphrody-nie-model-serve` answers `/health` and `/ui/theme.json`.
+- [x] `aphrody-nie-ffi` (cdylib `iecode.dll`) builds through the serialized wrapper inside `bun msvc exec --toolset 14.44`; the .NET AOT `IECODE.Ffi` publishes with `vswhere.exe` on PATH. `niepy` with both libraries: 129 passed, 17 skipped (game-root tests), 0 failed (previously 9 failed). A stale user-level `NIE_FFI_PATH` (C:\iecode\target\release) must be overridden.
 - [ ] Qualify the IECODE C++ member through `bun msvc vcpkg`.
 
 ## IECODE absorption, RE merge and forge recovery — 2026-10-16
