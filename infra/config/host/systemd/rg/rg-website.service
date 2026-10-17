@@ -30,7 +30,8 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
-ReadWritePaths=/home/ubuntu/apps/rg/current/apps/rg-website/.next/cache
+# ISR writes regenerated pages under .next/server and its fetch/image data under .next/cache.
+ReadWritePaths=/home/ubuntu/apps/rg/current/apps/rg-website/.next/cache /home/ubuntu/apps/rg/current/apps/rg-website/.next/server
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=rg-website
