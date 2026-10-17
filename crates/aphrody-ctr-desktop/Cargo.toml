@@ -1,0 +1,40 @@
+[package]
+name = "aphrody-ctr-desktop"
+description = "Nintendo 3DS emulator frontend: winit window, wgpu screen renderer with optional anaglyph 3D, cpal audio, saved states, and a WebGPU wasm build."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["nintendo-3ds", "emulator", "wgpu", "wasm"]
+categories = ["emulators"]
+publish = false
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[features]
+default = ["desktop"]
+# Native window, audio and the `aphrody-ctr` binary.
+desktop = ["dep:winit", "dep:cpal", "dep:pollster"]
+# Browser build (wasm32-unknown-unknown): WebGPU canvas renderer behind wasm-bindgen.
+web = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:console_error_panic_hook"]
+
+[dependencies]
+aphrody-ctr-emu = { path = "../aphrody-ctr-emu" }
+wgpu = { workspace = true }
+winit = { workspace = true, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"], optional = true }
+cpal = { version = "0.16", optional = true }
+pollster = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, features = ["std"], optional = true }
+wasm-bindgen-futures = { workspace = true, optional = true }
+web-sys = { workspace = true, features = ["HtmlCanvasElement"], optional = true }
+console_error_panic_hook = { workspace = true, optional = true }
+
+[[bin]]
+name = "aphrody-ctr"
+path = "src/main.rs"
+required-features = ["desktop"]

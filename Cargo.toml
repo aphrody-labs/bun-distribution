@@ -525,6 +525,8 @@ members = [
   "crates/aphrody-dust-soft-3d",
   "apps/iecode-web-wasm",
   "crates/aphrody-dust-wgpu",
+  "crates/aphrody-ctr-emu",
+  "crates/aphrody-ctr-desktop",
   "crates/aphrody-emu-utils",
   "crates/aphrody-emu-utils-macros",
   "crates/aphrody-homebrew",

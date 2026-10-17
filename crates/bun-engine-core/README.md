@@ -47,7 +47,7 @@ with `crates/re`, rea and Replica.
 | ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs EL0 code: `bun-engine run arm <image>` |
 | x86 guests | Windows Hypervisor Platform partition, COM1 | runs flat images: `bun-engine run x86 <image>`; Linux 64-bit boot in progress |
 | GameCube / Wii | `aphrody-wii-runtime` (Gekko/Broadway interpreter, DOL direct boot, XFB readback) | runs: `bun-engine run gc|wii <dol>`; GX scenes need the GPU renderer |
-| Nintendo 3DS | `vendor/zakuro` (HLE kernel and services, software PICA renderer), feature `ctr` | runs: `bun-engine run 3ds <3dsx|cia|cxi|cci>`; `.3dsx` is relocated and wrapped in a NoCrypto CXI (RomFS included); FBI 2.6.1 (MIT) CIA and 3DSX reach the main menu on both screens |
+| Nintendo 3DS | `crates/aphrody-ctr-emu` over `vendor/zakuro` (HLE kernel and services, software PICA renderer), feature `ctr` | runs: `bun-engine run 3ds <3dsx|cia|cxi|cci>`; `.3dsx` is relocated and wrapped in a NoCrypto CXI (RomFS included); FBI 2.6.1 (MIT) CIA and 3DSX reach the main menu on both screens |
 | Switch | `crates/ruzu-*` (Ruzu, rdynarmic JIT, HLE services), feature `switch` | runs: `bun-engine run switch <nro|nso>` without keys or firmware; Ruzu's null renderer reads every composited framebuffer back from device memory (block-linear), so CPU-drawn surfaces (libnx console/framebuffer) show and GPU-rendered scenes stay black; `svcOutputDebugString` is the console, `BUN_ENGINE_LOG=1` echoes Ruzu warnings; nx-hbmenu 3.6.1 (ISC) boots and draws its console |
 | Other Rust cores | `vendor/{gopher64,jgenesis,retroboy}` | pinned in the console catalog |
 | C++ cores | `vendor/{ares,mame,retroarch}` | pinned in the console catalog |

@@ -1,0 +1,19 @@
+[package]
+name = "aphrody-ctr-emu"
+description = "Nintendo 3DS emulation core: ARM11 interpreter, HLE kernel and services, PICA200 rendering, DSP audio, saved states and debugger, over Zakuro."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["nintendo-3ds", "emulator", "arm11", "pica200"]
+categories = ["emulators"]
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# Zakuro (MIT): ARM11 MPCore interpreter, HLE kernel and services, PICA200 GPU, DSP.
+zakuro-core = { path = "../../vendor/zakuro/crates/zakuro-core" }
+zakuro-common = { path = "../../vendor/zakuro/crates/zakuro-common" }
