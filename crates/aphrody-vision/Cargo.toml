@@ -5,7 +5,6 @@ version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
 description            = "Visual transcription over local GGUF vision models: caption, dense-region description, full-page OCR and VQA."

@@ -5,7 +5,6 @@ version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
 description            = "Conversation session tracker for aphrody — turns + tool calls + token usage + cost, persisted as JSONL with atomic writes and deterministic replay; incremental mirror of external agent sessions (Antigravity CLI, Codex, Claude Code)."

@@ -5,7 +5,6 @@ version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
 description            = "Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels."

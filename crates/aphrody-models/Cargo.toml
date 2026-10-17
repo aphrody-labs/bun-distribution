@@ -5,7 +5,6 @@ version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
 description            = "Local model lifecycle for aphrody: pinned HuggingFace/URL references, a curated catalog of OCR / visual-transcription / speech-to-text / embedding models, a digest-checked resumable downloader, hand-rolled GGUF / GGML / safetensors / ONNX header inspection, and an LRU-evicting on-disk store under ~/.aphrody/models."

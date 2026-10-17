@@ -7,7 +7,6 @@ rust-version = "1.97"
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/aphrody"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/aphrody"
 description = "Shared SQL owner for Aphrody: PostgreSQL pool (TLS by URL, pgvector), SQLite open policy (WAL, sqlite-vec), checksummed plain-SQL migrations and database URL resolution."
 
 [features]

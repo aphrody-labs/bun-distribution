@@ -1,6 +1,5 @@
 [package]
 name = "artcraft-build_metadata"
-resolver = "2" # NB: Required by `build-info`
 edition = "2024"
 version = "0.0.1"
 authors = [

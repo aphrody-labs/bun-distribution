@@ -6,7 +6,6 @@ version.workspace      = true
 edition.workspace      = true
 rust-version.workspace = true
 authors = ["aphrody-code"]
-homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-toolcall"
 repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-toolcall"
 license = "Apache-2.0"
 description            = "Tool catalogue model for the aphrody agent engine: ToolDefinition (name / description / JSON-schema input & output), the async ToolExecutor trait, ToolExposure (Direct / Deferred / DirectModelOnly / Hidden), and a JsonSchema type with prompt-budget compaction passes. Inspired by OpenAI Codex tools (Apache-2.0)."

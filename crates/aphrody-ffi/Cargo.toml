@@ -6,7 +6,6 @@ edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
 license = "Apache-2.0"
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 description            = "Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host."
 

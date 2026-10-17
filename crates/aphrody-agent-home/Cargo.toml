@@ -5,7 +5,6 @@ edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
 license = "Apache-2.0"
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 description            = "aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup."
 

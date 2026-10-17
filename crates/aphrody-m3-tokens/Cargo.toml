@@ -5,7 +5,6 @@ version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
-homepage = "https://github.com/aphrody-labs/material"
 repository = "https://github.com/aphrody-labs/material"
 license = "Apache-2.0"
 description = "Canonical Material Design 3 tokens and dynamic color for web, native and COSMIC adapters"

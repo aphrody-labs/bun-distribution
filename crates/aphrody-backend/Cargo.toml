@@ -5,7 +5,6 @@ edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
 license = "Apache-2.0"
-homepage = "https://github.com/aphrody-labs/aphrody"
 repository = "https://github.com/aphrody-labs/aphrody"
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 categories = ["command-line-utilities", "development-tools", "web-programming"]

@@ -7,7 +7,6 @@ rust-version = "1.97"
 authors = ["aphrody-code"]
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/aphrody"
-homepage = "https://github.com/aphrody-labs/aphrody"
 description = "Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark)"
 
 [lib]

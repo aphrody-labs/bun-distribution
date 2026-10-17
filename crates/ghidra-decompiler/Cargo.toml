@@ -17,13 +17,6 @@ object = { version = "0.37", default-features = false, features = ["read_core", 
 regex = "1"
 rustc-demangle = { version = "0.1.28", optional = true }
 
-[profile.test]
-opt-level = 1
-
-[profile.profiling]
-inherits = "release"
-debug = true
-
 [features]
 default = ["demangle", "x86", "arm", "aarch64", "mips", "powerpc", "riscv"]
 demangle = ["dep:cpp_demangle", "dep:rustc-demangle"]

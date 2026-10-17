@@ -7,7 +7,6 @@ version.workspace = true
 edition.workspace      = true
 rust-version.workspace = true
 authors = ["aphrody-code"]
-homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-agent-proto"
 repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-agent-proto"
 license = "Apache-2.0"
 readme                 = "README.md"

@@ -6,7 +6,6 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 authors = ["aphrody-code"]
-homepage = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-subsystem"
 repository = "https://source.aphrody.app/aphrody-dev/bun-crate-aphrody-subsystem"
 license = "Apache-2.0"
 description = "The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus."
