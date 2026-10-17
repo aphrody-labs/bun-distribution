@@ -18,7 +18,7 @@ with `crates/re`, rea and Replica.
 
 ## Features
 
-`window`, `nds`, `host` (`bevy-web` for wasm), `nes`, `arm`, `x86`, `wii`, `cartridge`. Consumers take
+`window`, `nds`, `host` (`bevy-web` for wasm), `nes`, `gba`, `arm`, `x86`, `wii`, `cartridge`. Consumers take
 `bun-engine` from the workspace with `default-features = false` and enable what they share.
 
 ## Machines
@@ -26,6 +26,7 @@ with `crates/re`, rea and Replica.
 | System | Core | State |
 | --- | --- | --- |
 | Nintendo DS | `aphrody-dust-core` (interpreter, soft 2D/3D, HLE BIOS) | runs: `bun-engine run nds <rom>` |
+| Game Boy Advance | `vendor/rustboyadvance-ng/core` with Normmatt's free BIOS | runs: `bun-engine run gba <rom>`; jsmolka arm, thumb and memory tests pass |
 | NES | `vendor/tetanes/tetanes-core` (TetaNES) | runs: `bun-engine run nes <rom>`; 175 free ROMs via `bep roms nintendo-nes` |
 | ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs EL0 code: `bun-engine run arm <image>` |
 | x86 guests | Windows Hypervisor Platform partition, COM1 | runs flat images: `bun-engine run x86 <image>`; Linux 64-bit boot in progress |

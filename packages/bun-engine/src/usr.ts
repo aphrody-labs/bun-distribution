@@ -115,6 +115,15 @@ async function unpack(archive: string, into: string, pkg: ReleasePackage): Promi
   }
 }
 
+/** Windows Installer packages are unpacked with an administrative install: files only, no registration. */
+async function unpackInstallers(dir: string): Promise<void> {
+  if (process.platform !== "win32") return;
+  for await (const path of new Bun.Glob("**/*.msi").scan({ cwd: dir, onlyFiles: true, absolute: true })) {
+    if (!run(["msiexec", "/a", path, "/qn", `TARGETDIR=${join(dir, basename(path, ".msi"))}`]))
+      throw new Error(`could not unpack ${basename(path)}`);
+  }
+}
+
 async function findExecutable(dir: string, exe: string, asset: string): Promise<string> {
   const wanted = new Set([exe.toLowerCase(), `${exe}.exe`.toLowerCase()]);
   const candidates: string[] = [];
@@ -205,6 +214,7 @@ export async function installRelease(
   const lib = join(usrRoot(), "lib", id);
   await rm(lib, { recursive: true, force: true });
   await unpack(archive, lib, pkg);
+  await unpackInstallers(lib);
   const exe = await findExecutable(lib, pkg.exe, release.asset);
   await writeLauncher(id, exe);
   await linkSource(id, pkg.source);

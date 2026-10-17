@@ -6,7 +6,7 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware, nds::Nds};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|nes|wii|gc|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] [--cmdline ARGS]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine run <nds|gba|nes|wii|gc|arm|x86|linux> <image> [--headless] [--frames N] [--out DIR] [--cmdline ARGS]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -44,6 +44,10 @@ fn main() -> ExitCode {
     };
     let mut machine: Box<dyn Machine> = match system.as_str() {
         "nds" => match Nds::from_rom(&rom) {
+            Ok(m) => Box::new(m),
+            Err(e) => return fail(e),
+        },
+        "gba" => match bun_engine::machine::gba::Gba::from_rom(&rom, None) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },

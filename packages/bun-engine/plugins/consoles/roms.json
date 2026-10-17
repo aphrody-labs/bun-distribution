@@ -17,6 +17,14 @@
       "source": "vendor/tetanes",
       "glob": "tetanes-core/test_roms/**/*.nes",
       "license": "NES accuracy test ROMs (blargg and others) bundled by TetaNES"
+    },
+    {
+      "id": "gba-tests",
+      "console": "nintendo-game-boy-advance",
+      "kind": "test",
+      "source": "vendor/rustboyadvance-ng",
+      "glob": "external/gba-tests/**/*.gba",
+      "license": "jsmolka/gba-tests (MIT), nested in RustBoyAdvance-NG"
     }
   ]
 }

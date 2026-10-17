@@ -5,3 +5,7 @@ jobs = 1
 
 [install]
 root = "install"
+
+[resolver]
+# Prefer the newest compatible versions; the MSRV fallback picked windows 0.54 for gpu-allocator and broke wgpu DX12.
+incompatible-rust-versions = "allow"
