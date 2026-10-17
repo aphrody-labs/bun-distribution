@@ -19,6 +19,26 @@ export {
 } from "./registry";
 export { handleCronHttp } from "./http";
 export { handleAnnounceHttp } from "./announce";
+export type { ClientPasserelle } from "./tasks/discord-messages";
+
+/**
+ * Surfaces des hôtes long-courants (`rg-core` sur le VPS). Chargées à la demande : la fonction
+ * serverless qui importe ce module ne charge ni le navigateur CDP ni l'historique.
+ */
+export const historiqueExecutions = (limite?: number) =>
+  import("./lib/executions-postgres").then(m => m.historiqueRecent(limite));
+
+/** Veille temps réel des salons suivis, branchée sur la passerelle du processus qui la tient. */
+export const brancherVeilleMessagesTempsReel = (client: import("./tasks/discord-messages").ClientPasserelle) =>
+  import("./tasks/discord-messages").then(m => m.brancherVeilleMessagesTempsReel(client));
+
+/** Verbes de scraping (`scrape.*`, `x.*`) servis en processus par `rg-core`. */
+export const servirVerbeScrape = (verbe: string, requete: Record<string, unknown>) =>
+  import("./tasks/ie-crawl/scrape-service").then(m =>
+    m.estVerbeScrape(verbe)
+      ? m.servirVerbeScrape(verbe, requete)
+      : { success: false, error: `Commande inconnue : « ${verbe} ».`, code: "verbe_inconnu" },
+  );
 
 /** Ordre de `--run all` : celui de l'ancien démon. */
 const TOUTES = [

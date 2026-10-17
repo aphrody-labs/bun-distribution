@@ -20,7 +20,46 @@
  * finiraient par diverger sur le traitement d'une URL périmée.
  */
 
+import { mkdir } from "node:fs/promises";
+import { dirname, join, normalize, sep } from "node:path";
 import { resignerPiecesJointes } from "./discord-rest.js";
+
+/**
+ * Médias lourds hors de Supabase Storage (quota gratuit : 1 Go, 5 Go d'egress).
+ *
+ * Avec `RG_MEDIA_ROOT` (`rg-core` sur le VPS : `/var/lib/rg-core/media`), les buckets PUBLICS
+ * lourds s'écrivent sur disque sous `<racine>/<bucket>/<chemin>` et sont servis par nginx derrière
+ * le cache Cloudflare de `cdn.rosegriffon.fr`, à la MÊME forme d'URL que Storage
+ * (`/storage/v1/object/public/<bucket>/<chemin>`) : un lien existant reste valable quel que soit
+ * l'hôte qui le sert. Les petits buckets privés (avatars, preuves ranked, patreon) restent sur Storage.
+ */
+const BUCKETS_MEDIAS_LOURDS = new Set(["tweets", "assets"]);
+
+/** Racine disque des médias lourds, ou `null` (écriture vers Supabase Storage). */
+export function racineMedias(): string | null {
+  return Bun.env.RG_MEDIA_ROOT?.trim() || null;
+}
+
+/** Fichier disque d'un objet de média lourd, ou `null` s'il vit dans Storage. */
+export function fichierMedia(bucket: string, chemin: string): string | null {
+  const racine = racineMedias();
+  if (!racine || !BUCKETS_MEDIAS_LOURDS.has(bucket)) return null;
+  const dossier = join(racine, bucket);
+  const fichier = normalize(join(dossier, chemin));
+  if (!fichier.startsWith(dossier + sep)) throw new Error(`Chemin d'objet hors du bucket : ${chemin}`);
+  return fichier;
+}
+
+/**
+ * URL publique d'un objet : l'origine des médias (`RG_MEDIA_PUBLIC_ORIGIN`, `cdn.rosegriffon.fr`)
+ * quand il vit sur disque, sinon `origineStorage` (l'origine qui relaie Supabase Storage).
+ */
+export function urlPubliqueObjet(bucket: string, chemin: string, origineStorage: string): string {
+  const origine = fichierMedia(bucket, chemin)
+    ? (Bun.env.RG_MEDIA_PUBLIC_ORIGIN ?? "https://cdn.rosegriffon.fr")
+    : origineStorage;
+  return `${origine.replace(/\/+$/, "")}/storage/v1/object/public/${bucket}/${chemin}`;
+}
 
 /**
  * Base du service Storage : le projet Supabase (`/storage/v1`).
@@ -93,7 +132,7 @@ export async function telechargerPieceJointeDiscord(
 }
 
 /**
- * Écrit un objet dans un bucket de Supabase Storage.
+ * Écrit un objet dans un bucket de Supabase Storage, ou sur le disque des médias lourds (`RG_MEDIA_ROOT`).
  *
  * `x-upsert: true` rend l'opération rejouable à l'infini sur un chemin
  * déterministe : une seconde passe réécrit le même octet au même endroit plutôt
@@ -105,6 +144,16 @@ export async function televerserObjet(
   octets: ArrayBuffer,
   typeMime: string,
 ): Promise<{ ok: boolean; motif?: string }> {
+  const fichier = fichierMedia(bucket, chemin);
+  if (fichier) {
+    try {
+      await mkdir(dirname(fichier), { recursive: true });
+      await Bun.write(fichier, octets);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, motif: `écriture disque ${err instanceof Error ? err.message : String(err)}` };
+    }
+  }
   const cle = Bun.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!cle) return { ok: false, motif: "SUPABASE_SERVICE_ROLE_KEY absente" };
   let base: string;

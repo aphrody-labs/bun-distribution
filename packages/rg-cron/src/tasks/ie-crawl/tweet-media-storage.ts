@@ -19,8 +19,9 @@
 //   objet : tweets/<tweetId>/<tweetId>_<n>.<ext>
 //   n     : position du média dans `tweets.media`
 //
-// L'écriture passe par l'API Storage (`televerserObjet`), qui tient elle-même
-// `storage.objects` : aucun disque local, la tâche tourne en fonction serverless.
+// L'écriture passe par `televerserObjet` : sur le VPS (`RG_MEDIA_ROOT`, `rg-core`) le fichier va
+// sur le disque des médias lourds servi par `cdn.rosegriffon.fr` ; sans cette racine, par l'API
+// Storage, qui tient elle-même `storage.objects`.
 //
 // IDEMPOTENCE : si l'objet existe déjà, on ne retélécharge pas. La détection se
 // fait par PRÉFIXE dans `storage.objects` (pas par nom exact), parce que
@@ -29,7 +30,7 @@
 
 import { createBunSql } from "@rosegriffon/db/bun-sql";
 import type { SQL } from "bun";
-import { televerserObjet } from "../../lib/storage-assets.js";
+import { fichierMedia, televerserObjet, urlPubliqueObjet } from "../../lib/storage-assets.js";
 import type { MediaItem } from "./tweet-row";
 
 const BUCKET = "tweets";
@@ -105,7 +106,7 @@ export function meilleureSourcePbs(url: string): string {
 
 /** URL publique d'un chemin du bucket. */
 function urlPublique(chemin: string): string {
-  return `${ORIGINE_PUBLIQUE}/storage/v1/object/public/${BUCKET}/${chemin}`;
+  return urlPubliqueObjet(BUCKET, chemin, ORIGINE_PUBLIQUE);
 }
 
 /**
@@ -117,6 +118,16 @@ async function objetDejaPresent(
   index: number,
 ): Promise<{ chemin: string; octets: number; mime: string } | null> {
   const motif = new RegExp(`^${tweetId}/${tweetId}_${index}\\.[a-z0-9]+$`, "i");
+  const dossierDisque = fichierMedia(BUCKET, tweetId);
+  if (dossierDisque) {
+    const glob = new Bun.Glob(`${tweetId}_${index}.*`);
+    for await (const nom of glob.scan({ cwd: dossierDisque, onlyFiles: true, throwErrorOnBrokenSymlink: false })) {
+      const ext = nom.split(".").pop() ?? "jpg";
+      const mime = Object.entries(MIMES_IMAGE).find(([, e]) => e === ext)?.[0] ?? "image/jpeg";
+      return { chemin: `${tweetId}/${nom}`, octets: Bun.file(`${dossierDisque}/${nom}`).size, mime };
+    }
+    return null;
+  }
   const lignes = (await db()`
 		select name, metadata
 		  from storage.objects

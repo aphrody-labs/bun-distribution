@@ -740,3 +740,150 @@ export async function runDiscordMessagesBackfill(): Promise<{
   await sql`UPDATE discord_channels SET backfill_complete = false, updated_at = now() WHERE suivi`;
   return runDiscordMessagesSync();
 }
+
+// ─── VEILLE TEMPS RÉEL (PASSERELLE) ──────────────────────────────────────────
+
+/** Fenêtre de regroupement des rafales de réactions sur un même message. */
+const REGROUPEMENT_REACTIONS_MS = 1500;
+/** Relecture de la liste des salons suivis, que la synchro planifiée peut avoir étendue. */
+const RELECTURE_SALONS_MS = 15 * 60_000;
+
+/** Ce que la veille lit d'un message de passerelle (sous-ensemble structurel de discord.js). */
+interface MessagePasserelle {
+  id: string;
+  channelId?: string | null;
+  partial?: boolean;
+  fetch?: () => Promise<{ channelId?: string | null }>;
+}
+
+interface ReactionPasserelle {
+  partial?: boolean;
+  fetch: () => Promise<ReactionPasserelle>;
+  message: MessagePasserelle;
+}
+
+/** Client de passerelle : seuls `on`/`off` servent ici (un `Client` discord.js convient). */
+export interface ClientPasserelle {
+  on(evenement: string, ecouteur: (...args: never[]) => unknown): unknown;
+  off(evenement: string, ecouteur: (...args: never[]) => unknown): unknown;
+}
+
+const rafraichissementsEnAttente = new Map<string, ReturnType<typeof setTimeout>>();
+
+async function salonDuMessage(message: MessagePasserelle): Promise<string | null> {
+  if (message.channelId) return message.channelId;
+  if (message.partial && message.fetch) return (await message.fetch().catch(() => null))?.channelId ?? null;
+  return null;
+}
+
+/** Redemande le message brut à l'API et l'écrit en base : un seul mapping message → ligne. */
+async function archiverDepuisApi(salonId: string, messageId: string): Promise<void> {
+  const brut = await appelDiscord<MessageBrut>(`/channels/${salonId}/messages/${messageId}`);
+  await enregistrerMessage(brut, salonId, brut.guild_id ?? GUILD_ID ?? "");
+}
+
+function programmerRafraichissement(salonId: string, messageId: string): void {
+  const enCours = rafraichissementsEnAttente.get(messageId);
+  if (enCours) clearTimeout(enCours);
+  rafraichissementsEnAttente.set(
+    messageId,
+    setTimeout(() => {
+      rafraichissementsEnAttente.delete(messageId);
+      archiverDepuisApi(salonId, messageId).catch(err =>
+        console.error(`${PREFIXE} Réarchivage du message ${messageId} impossible :`, err),
+      );
+    }, REGROUPEMENT_REACTIONS_MS),
+  );
+}
+
+/**
+ * Suppression logique. La liste passe par `jsonb_array_elements_text` : Bun.SQL sérialise un
+ * tableau JS en JSON, pas en littéral de tableau Postgres.
+ */
+async function marquerSupprimes(identifiants: string[]): Promise<void> {
+  if (identifiants.length === 0) return;
+  await sql`
+		UPDATE discord_messages
+		   SET deleted_at = now(), synced_at = now()
+		 WHERE message_id IN (SELECT jsonb_array_elements_text(${identifiants}))
+		   AND deleted_at IS NULL
+	`;
+}
+
+/**
+ * Branche la veille temps réel des salons suivis sur la passerelle du bot (`rg-core`, qui tient
+ * la seule connexion gateway) : chaque création, édition ou suppression est écrite en base dès
+ * réception, le trigger `rg_realtime_notify()` en assure la diffusion. Le rattrapage REST planifié
+ * (`discord:messages`) reste le filet. Renvoie la fonction qui débranche les écouteurs.
+ *
+ * Les réactions n'arrivent que si le profil demande l'intent `GuildMessageReactions` ; sans lui,
+ * leurs décomptes sont rattrapés par la synchro planifiée.
+ */
+export function brancherVeilleMessagesTempsReel(client: ClientPasserelle): () => void {
+  const recharger = () =>
+    chargerSalonsSuivis().catch(err => console.error(`${PREFIXE} Lecture des salons suivis impossible :`, err));
+  void recharger();
+  const minuteur = setInterval(recharger, RELECTURE_SALONS_MS);
+  minuteur.unref?.();
+
+  const surCreation = async (message: MessagePasserelle) => {
+    if (!message.channelId || !estSalonSuivi(message.channelId)) return;
+    await archiverDepuisApi(message.channelId, message.id).catch(err =>
+      console.error(`${PREFIXE} Archivage du nouveau message ${message.id} impossible :`, err),
+    );
+  };
+  const surEdition = async (_ancien: MessagePasserelle, nouveau: MessagePasserelle) => {
+    const salonId = await salonDuMessage(nouveau);
+    if (!salonId || !estSalonSuivi(salonId)) return;
+    await archiverDepuisApi(salonId, nouveau.id).catch(err =>
+      console.error(`${PREFIXE} Mise à jour du message ${nouveau.id} impossible :`, err),
+    );
+  };
+  const surSuppression = async (message: MessagePasserelle) => {
+    if (!estSalonSuivi(await salonDuMessage(message))) return;
+    await marquerSupprimes([message.id]).catch(err =>
+      console.error(`${PREFIXE} Marquage de suppression impossible :`, err),
+    );
+  };
+  const surSuppressionEnMasse = async (messages: { values(): Iterable<MessagePasserelle> }) => {
+    const identifiants: string[] = [];
+    for (const message of messages.values()) {
+      if (estSalonSuivi(await salonDuMessage(message))) identifiants.push(message.id);
+    }
+    await marquerSupprimes(identifiants).catch(err =>
+      console.error(`${PREFIXE} Marquage de suppression en masse impossible :`, err),
+    );
+  };
+  const surReaction = async (reaction: ReactionPasserelle) => {
+    try {
+      const complete = reaction.partial ? await reaction.fetch() : reaction;
+      const salonId = await salonDuMessage(complete.message);
+      if (salonId && estSalonSuivi(salonId)) programmerRafraichissement(salonId, complete.message.id);
+    } catch (err) {
+      console.error(`${PREFIXE} Traitement d'une réaction impossible :`, err);
+    }
+  };
+  const surReactionsRetirees = async (message: MessagePasserelle) => {
+    const salonId = await salonDuMessage(message);
+    if (salonId && estSalonSuivi(salonId)) programmerRafraichissement(salonId, message.id);
+  };
+
+  const ecouteurs: Array<[string, (...args: never[]) => unknown]> = [
+    ["messageCreate", surCreation],
+    ["messageUpdate", surEdition],
+    ["messageDelete", surSuppression],
+    ["messageDeleteBulk", surSuppressionEnMasse],
+    ["messageReactionAdd", surReaction],
+    ["messageReactionRemove", surReaction],
+    ["messageReactionRemoveAll", surReactionsRetirees],
+  ];
+  for (const [evenement, ecouteur] of ecouteurs) client.on(evenement, ecouteur);
+  console.info(`${PREFIXE} Veille temps réel des salons suivis branchée sur la passerelle.`);
+
+  return () => {
+    clearInterval(minuteur);
+    for (const [evenement, ecouteur] of ecouteurs) client.off(evenement, ecouteur);
+    for (const attente of rafraichissementsEnAttente.values()) clearTimeout(attente);
+    rafraichissementsEnAttente.clear();
+  };
+}
