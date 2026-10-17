@@ -391,7 +391,7 @@
 	url = https://github.com/aphrody-labs/tetanes.git
 [submodule "vendor/zakuro"]
 	path = vendor/zakuro
-	url = ssh://git@source.aphrody.app:29022/aphrody-dev/zakuro.git
+	url = https://github.com/aphrody-labs/zakuro.git
 	branch = bun-os
 [submodule "vendor/cmake"]
 	path = vendor/cmake
