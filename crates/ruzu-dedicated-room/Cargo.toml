@@ -1,9 +1,9 @@
 [package]
 name = "dedicated_room"
 version.workspace = true
-edition.workspace = true
+edition = "2021"
 rust-version.workspace = true
-license.workspace = true
+license = "GPL-3.0-or-later"
 
 [[bin]]
 name = "dedicated-room"

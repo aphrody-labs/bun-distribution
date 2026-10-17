@@ -1,9 +1,9 @@
 [package]
 name = "ruzu_cmd"
 version.workspace = true
-edition.workspace = true
+edition = "2021"
 rust-version.workspace = true
-license.workspace = true
+license = "GPL-3.0-or-later"
 
 [lints.rust]
 # `objc` 0.2 expands this legacy feature probe in downstream crates.

@@ -1,5 +1,5 @@
 [package]
-license.workspace = true
+license-file = "../../docs/licenses/iecode/nie/LICENSE"
 name = "aphrody-nie-emu"
 description = "Canonical emulator backend registry and capability contracts for Inazuma Eleven"
 version.workspace = true

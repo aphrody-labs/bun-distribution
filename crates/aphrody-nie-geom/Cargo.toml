@@ -1,5 +1,5 @@
 [package]
-license.workspace = true
+license-file = "../../docs/licenses/iecode/nie/LICENSE"
 name = "aphrody-nie-geom"
 description = "Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace."
 version.workspace = true

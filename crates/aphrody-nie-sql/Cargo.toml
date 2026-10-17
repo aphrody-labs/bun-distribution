@@ -1,5 +1,5 @@
 [package]
-license.workspace = true
+license-file = "../../docs/licenses/iecode/nie/LICENSE"
 name = "aphrody-nie-sql"
 description = "Shared read-only SQL boundary for NIE hosts"
 version.workspace = true

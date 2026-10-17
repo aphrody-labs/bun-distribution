@@ -1,5 +1,5 @@
 [package]
-license.workspace = true
+license-file = "../../docs/licenses/iecode/nie/LICENSE"
 name = "aphrody-nie-tasks"
 description = "Cancelable, pausable asynchronous job orchestration with progress reporting."
 version.workspace = true

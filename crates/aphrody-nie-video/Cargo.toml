@@ -1,5 +1,5 @@
 [package]
-license.workspace = true
+license-file = "../../docs/licenses/iecode/nie/LICENSE"
 name = "aphrody-nie-video"
 description = "Streaming RGBA-to-video encoding capability for IECODE."
 version.workspace = true
