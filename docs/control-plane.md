@@ -67,6 +67,20 @@ Gitea 28.1.0, Runner 5.0.0, Komodo 2.3.3 and MongoDB 8.0.32 use version and
 registry digest pins in their canonical Compose sources. Runtime databases,
 repositories and runner registration live under each app's protected data tree.
 
+## Canonical repository
+
+Bun OS is self-hosted: the canonical repository is `aphrody-dev/bun-os` on
+`source.aphrody.app` (SSH `git@bun-forge:aphrody-dev/bun-os.git` through the VPS jump host,
+pinned ED25519 host key `SHA256:M48ORSUT/TU1sYsWPunaXwQliH0bUVRviGx7m4gWOAs`). `main` is the
+default branch and `os` the integration branch; workstations use the forge as `origin`. The
+former GitHub repository `aphrody-labs/bun-distribution` and its Gitea pull mirror are no longer
+written to.
+
+Heavy builds run on the VPS: the `aphrody-bun-linux` runner job container gets 4 CPUs, 12 GiB and
+a persistent `/cache` volume (`~/build/cache/gitea-runner`) for the Cargo home and target, and
+`.gitea/workflows/bun-engine.yaml` builds the native engine and runs its machines on free
+content on every engine change.
+
 ## CI contract
 
 Use `builtin:checkout` and explicit Bun commands. Stock JavaScript actions

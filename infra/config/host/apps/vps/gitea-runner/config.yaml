@@ -22,16 +22,18 @@ container:
   privileged: false
   force_pull: false
   options: >-
-    --cpus=2 --memory=8g --pids-limit=512
+    --cpus=4 --memory=12g --pids-limit=1024
     --volume=/home/ubuntu/.bun/bin/bun:/usr/local/bin/bun:ro
     --volume=/home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner:/run/aphrody/git-ssh/identity:ro
     --volume=/home/ubuntu/apps/gitea-runner/ssh/config:/run/aphrody/git-ssh/config:ro
     --volume=/home/ubuntu/apps/gitea-runner/ssh/known_hosts:/run/aphrody/git-ssh/known_hosts:ro
+    --volume=/home/ubuntu/build/cache/gitea-runner:/cache
   valid_volumes:
     - /home/ubuntu/.bun/bin/bun:ro
     - /home/ubuntu/.aphrody/secrets/gitea/bun-os-crate-runner:ro
     - /home/ubuntu/apps/gitea-runner/ssh/config:ro
     - /home/ubuntu/apps/gitea-runner/ssh/known_hosts:ro
+    - /home/ubuntu/build/cache/gitea-runner
   sweep: true
 cache:
   enabled: false
