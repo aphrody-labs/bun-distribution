@@ -35,6 +35,9 @@ struct Ctx<'a> {
 /// Lift every function reachable from the entry point, exports and function symbols.
 #[must_use]
 pub fn lift_image(img: &Image, opts: LiftOptions) -> (IrModule, Vec<u8>) {
+    if img.arch == "aarch64" {
+        return super::lift_aarch64::lift_image(img, opts);
+    }
     let imports: Vec<ImportEntry> = img
         .imports
         .iter()
@@ -84,6 +87,7 @@ pub fn lift_image(img: &Image, opts: LiftOptions) -> (IrModule, Vec<u8>) {
         schema_version: 1,
         format: img.format.to_string(),
         arch: if img.bits == 64 { "x86_64".into() } else { "x86".into() },
+        abi: None,
         bits: img.bits,
         image_base: img.base,
         entry: img.entry,

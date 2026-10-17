@@ -78,6 +78,8 @@ pub enum BinKind {
     Or,
     /// Bitwise xor.
     Xor,
+    /// Multiplication keeping the low half (flags are left untouched).
+    Mul,
     /// Shift left.
     Shl,
     /// Logical shift right.
@@ -334,6 +336,20 @@ pub struct SectionEntry {
     pub write: bool,
 }
 
+/// Register file of a link-register architecture (AArch64). Absent for x86, whose register file and
+/// stack-based calls are built into the emitters.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Abi {
+    /// Names of the 64-bit CPU registers (struct fields of the emitted CPU).
+    pub regs: Vec<String>,
+    /// Link register written by calls.
+    pub link: String,
+    /// Stack pointer register.
+    pub sp: String,
+    /// Integer return-value register.
+    pub ret: String,
+}
+
 /// Lifted module.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IrModule {
@@ -341,8 +357,11 @@ pub struct IrModule {
     pub schema_version: u32,
     /// Source container (`pe` or `elf`).
     pub format: String,
-    /// Instruction set (`x86` or `x86_64`).
+    /// Instruction set (`x86`, `x86_64` or `aarch64`).
     pub arch: String,
+    /// Register file for link-register architectures.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub abi: Option<Abi>,
     /// Address width in bits.
     pub bits: u8,
     /// Preferred image base.

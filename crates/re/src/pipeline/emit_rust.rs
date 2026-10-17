@@ -270,6 +270,9 @@ impl Em<'_> {
                             self.wr(dst, "r")
                         )
                     }
+                    BinKind::Mul => {
+                        format!("{{ let a = {av}; let b = {}; let r = a.wrapping_mul(b) & {m}; {} }}", self.rd(src, d), self.wr(dst, "r"))
+                    }
                     _ => {
                         let cnt = if d == 64 { 63 } else { 31 };
                         let (e, cf) = match kind {

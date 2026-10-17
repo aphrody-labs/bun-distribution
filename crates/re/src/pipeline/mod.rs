@@ -10,6 +10,7 @@ pub mod ghidra;
 pub mod image;
 pub mod ir;
 pub mod lift;
+pub mod lift_aarch64;
 pub mod registry;
 pub mod schema;
 pub mod stages;

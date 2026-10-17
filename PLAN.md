@@ -654,4 +654,5 @@ license and notice with its source. Do not force-push.
 - [x] `bun re pipeline <input> --target <os|bios|firmware>`, MCP tools and a loopback API over `bunre pipeline`.
 - [x] Ghidra 12 headless (import + analysis) and the built-in pipeline qualified on a clang-built PE x64: all stages ok, x86 lift 15/15 instructions, C and Rust rebuild verified.
 - [x] Replica suite (`packages/re/tests/replica`): 52 unittest tests pass.
-- [ ] Add lifters for ARM, MIPS and PowerPC through the registry.
+- [x] AArch64 lifter (`aarch64-lift`, ELF and PE): fixed-width core subset (arithmetic, logic, move-wide, bitfield, load/store incl. pairs and pre/post-index, branches, csel/cset, mul) on a link-register ABI in the shared IR/C emitter. Qualified on a clang-built static ELF: 61/61 instructions modelled, rebuilt C returns the expected value.
+- [ ] ARM (32-bit), MIPS and PowerPC lifters through the registry (delay slots and condition-register models are still to design).

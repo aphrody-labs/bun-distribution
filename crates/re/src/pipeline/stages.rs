@@ -59,8 +59,19 @@ fn has_ir(c: &Ctx) -> bool {
     c.ir.is_some()
 }
 
+fn is_aarch64(c: &Ctx) -> bool {
+    c.payload_ident
+        .as_ref()
+        .and_then(|i| i.arch.as_deref())
+        .is_some_and(|a| a.eq_ignore_ascii_case("aarch64") || a.eq_ignore_ascii_case("arm64"))
+}
+
 fn liftable(c: &Ctx) -> bool {
-    c.payload.is_some() && c.payload_ident.as_ref().is_some_and(|i| i.liftable)
+    c.payload.is_some() && c.payload_ident.as_ref().is_some_and(|i| i.liftable) && !is_aarch64(c)
+}
+
+fn liftable_aarch64(c: &Ctx) -> bool {
+    c.payload.is_some() && c.payload_ident.as_ref().is_some_and(|i| i.liftable) && is_aarch64(c)
 }
 
 /// Built-in adapters in execution order.
@@ -75,8 +86,9 @@ pub fn builtins() -> Vec<Box<dyn StageAdapter>> {
         b("zip-apk-unpack", Stage::Unpack, &["*"], always, unpack),
         b("triage", Stage::Analyze, &["*"], |c| c.payload.is_some(), analyze),
         b("x86-lift", Stage::Lift, &["pe", "elf"], liftable, lift),
+        b("aarch64-lift", Stage::Lift, &["pe", "elf"], liftable_aarch64, lift_aarch64),
         b("emit-c", Stage::Decompile, &["pe", "elf"], has_ir, emit_c_stage),
-        b("emit-rust", Stage::Decompile, &["pe"], |c| c.ir.as_ref().is_some_and(|m| m.format == "pe"), emit_rust_stage),
+        b("emit-rust", Stage::Decompile, &["pe"], |c| c.ir.as_ref().is_some_and(|m| m.format == "pe" && m.abi.is_none()), emit_rust_stage),
         b("clang-c", Stage::Rebuild, &["pe", "elf"], |c| c.c_dir.is_some(), rebuild_c),
         b("rustc-lib", Stage::Rebuild, &["pe"], |c| c.rust_file.is_some(), rebuild_rust),
         b("lift-verify", Stage::Verify, &["pe", "elf"], has_ir, verify),
@@ -157,7 +169,7 @@ pub fn identify(b: &[u8]) -> IdentifyOutput {
         }
         match Image::load(b) {
             Ok(_) => out.liftable = true,
-            Err(e) => out.notes.push(format!("not liftable by the built-in x86 lifter: {e}")),
+            Err(e) => out.notes.push(format!("not liftable by the built-in x86 and AArch64 lifters: {e}")),
         }
     } else if matches!(b.get(0..4), Some([0xfe, 0xed, 0xfa, 0xce | 0xcf] | [0xce | 0xcf, 0xfa, 0xed, 0xfe])) {
         set(&mut out, InputKind::Macho, "mach-o", Some("macos"));
@@ -391,7 +403,14 @@ fn analyze(ctx: &mut Ctx) -> StageReport {
 // ---------------------------------------------------------------------------------------------
 
 fn lift(ctx: &mut Ctx) -> StageReport {
-    let id = "x86-lift";
+    lift_with(ctx, "x86-lift")
+}
+
+fn lift_aarch64(ctx: &mut Ctx) -> StageReport {
+    lift_with(ctx, "aarch64-lift")
+}
+
+fn lift_with(ctx: &mut Ctx, id: &'static str) -> StageReport {
     let Some(path) = ctx.payload.clone() else {
         return report(Stage::Lift, id, StageStatus::Skipped, "no payload");
     };

@@ -34,6 +34,8 @@ pub struct ImportSym {
 pub struct Image {
     /// `pe` or `elf`.
     pub format: &'static str,
+    /// `x86`, `x86_64` or `aarch64`.
+    pub arch: &'static str,
     /// 32 or 64.
     pub bits: u8,
     /// Preferred base.
@@ -51,7 +53,7 @@ pub struct Image {
 }
 
 impl Image {
-    /// Parse a PE32/PE32+ or x86/x86-64 ELF.
+    /// Parse a PE32/PE32+ or an x86, x86-64 or AArch64 ELF.
     ///
     /// # Errors
     /// Returns a message when the bytes are not a supported x86 PE/ELF.
@@ -132,6 +134,11 @@ fn load_pe(pe: &goblin::pe::PE, bytes: &[u8]) -> Result<Image, String> {
     }
     Ok(Image {
         format: "pe",
+        arch: match (pe.header.coff_header.machine, pe.is_64) {
+            (0xaa64, _) => "aarch64",
+            (_, true) => "x86_64",
+            _ => "x86",
+        },
         bits: if pe.is_64 { 64 } else { 32 },
         base,
         entry: base + u64::from(pe.entry),
@@ -144,10 +151,11 @@ fn load_pe(pe: &goblin::pe::PE, bytes: &[u8]) -> Result<Image, String> {
 
 fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
     use goblin::elf::{header, program_header::PT_LOAD};
-    let bits = match elf.header.e_machine {
-        header::EM_X86_64 => 64,
-        header::EM_386 => 32,
-        m => return Err(format!("ELF machine {m} is not x86/x86-64")),
+    let (bits, arch) = match elf.header.e_machine {
+        header::EM_X86_64 => (64, "x86_64"),
+        header::EM_386 => (32, "x86"),
+        header::EM_AARCH64 => (64, "aarch64"),
+        m => return Err(format!("ELF machine {m} is not x86, x86-64 or AArch64")),
     };
     let mut segments = Vec::new();
     for (i, ph) in elf.program_headers.iter().enumerate() {
@@ -192,6 +200,10 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
             }
         }
     }
+    if arch == "aarch64" {
+        // The PLT parsing above assumes the x86 stub layout.
+        imports.clear();
+    }
     let mut symbols = BTreeMap::new();
     for s in elf.syms.iter().chain(elf.dynsyms.iter()) {
         if s.is_function() && s.st_value != 0 && s.st_shndx != 0 {
@@ -207,6 +219,7 @@ fn load_elf(elf: &goblin::elf::Elf, bytes: &[u8]) -> Result<Image, String> {
     }
     Ok(Image {
         format: "elf",
+        arch,
         bits,
         base: segments.first().map_or(0, |s| s.vaddr),
         entry: elf.entry,
