@@ -4,7 +4,7 @@ use std::io::Write;
 
 use bun_emu::{Machine, Step, arm::ArmFirmware, nds::Nds};
 
-const USAGE: &str = "usage: bun-emu <nds|arm> <image> [--frames N] [--out DIR]";
+const USAGE: &str = "usage: bun-emu <nds|arm|x86> <image> [--frames N] [--out DIR]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
@@ -33,6 +33,11 @@ fn main() -> ExitCode {
             Err(e) => return fail(e),
         },
         "arm" => match ArmFirmware::from_image(&rom, 128) {
+            Ok(m) => Box::new(m),
+            Err(e) => return fail(e),
+        },
+        #[cfg(windows)]
+        "x86" => match bun_emu::x86::X86::from_image(&rom, 128) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },

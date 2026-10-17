@@ -15,7 +15,7 @@ the cores below; no wrapper around external emulator executables.
 | Wii/GameCube (Rust) | `vendor/gecko` (fork of ioncodes/gecko) | pinned, not built |
 | Switch (Rust) | `vendor/oboromi`, `vendor/nexium` (forks) | pinned, not built |
 | ARM firmware | `rdynarmic` A64 JIT, QEMU `virt` map (RAM 0x4000_0000, PL011) | runs: `bun-emu arm <image>`; a hand-assembled image prints over the UART and stops on WFI |
-| Linux, Windows | WHP/KVM hypervisor (planned) | not started |
+| x86 guests (Linux, Windows) | Windows Hypervisor Platform partition, real-mode entry, COM1 | runs: `bun-emu x86 <flat.bin>` boots a 13-byte image that prints over COM1 and halts; Linux boot protocol and UEFI not done |
 | Android | Android SDK emulator (QEMU) | external AVD only |
 
 ## Stack decisions

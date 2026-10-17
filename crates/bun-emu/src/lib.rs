@@ -2,6 +2,8 @@
 
 pub mod arm;
 pub mod nds;
+#[cfg(windows)]
+pub mod x86;
 
 /// A 24-bit RGB image, row-major.
 pub struct Screen {

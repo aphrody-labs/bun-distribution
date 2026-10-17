@@ -17,5 +17,8 @@ aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d" }
 
 rdynarmic = { path = "../rdynarmic" }
 
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_System_Hypervisor", "Win32_System_Memory"] }
+
 [lints]
 workspace = true
