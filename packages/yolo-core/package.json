@@ -52,8 +52,8 @@
   },
   "dependencies": {
     "@aphrody/paths": "workspace:*",
-    "@aphrody/runtime-sdk": "catalog:",
-    "@oxc-project/types": "catalog:"
+    "@aphrody/runtime-sdk": "0.1.3",
+    "@oxc-project/types": "0.152.0"
   },
   "engines": {
     "bun": "=1.4.4"

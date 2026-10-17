@@ -17,8 +17,6 @@ const buildRoot = path.resolve(process.cwd(), "../../");
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // Sortie standalone : l'app est servie par systemd derrière nginx.
-  output: "standalone",
   outputFileTracingRoot: buildRoot,
   turbopack: {
     root: buildRoot,
@@ -88,14 +86,6 @@ const nextConfig: NextConfig = {
 
   experimental: {
     cpus: 2,
-    /**
-     * Production runs from an immutable release (/srv/rg/releases/<id>,
-     * ProtectSystem=strict): regenerated ISR pages must not be written back
-     * into `.next/server/app`, which is read-only and produced thousands of
-     * EROFS "Failed to update prerender cache" errors. Regenerated entries
-     * stay in the in-memory cache; build-time prerenders are still read.
-     */
-    isrFlushToDisk: false,
     optimizePackageImports: [
       "lucide-react",
       "date-fns",
@@ -355,25 +345,11 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    // Storage self-host : nginx intercepte déjà /storage/v1/ et le route vers
-    // rg-api (127.0.0.1:8800), qui absorbe rg-storage en-process. Ce rewrite reste
-    // le filet de repli quand l'app est servie sans nginx devant (dev local,
-    // healthcheck direct). Repointé depuis :8811 le 2026-09-26 (aphrody-infra
-    // docs/PORTS-AND-DOMAINS.md item 13) : ce port n'est jamais écouté en production.
-    const FALLBACK_STORAGE_URL = "http://127.0.0.1:8800";
-    const storageUrl =
-      process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || FALLBACK_STORAGE_URL;
-
-    const destination = storageUrl.startsWith("http")
-      ? `${storageUrl}/storage/v1/:path*`
-      : `${FALLBACK_STORAGE_URL}/storage/v1/:path*`;
-
-    return [
-      {
-        destination,
-        source: "/storage/v1/:path*",
-      },
-    ];
+    // Les URL relatives `/storage/v1/…` déjà enregistrées en base restent
+    // valides : elles sont relayées vers Supabase Storage.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    if (!supabaseUrl?.startsWith("https://")) return [];
+    return [{ destination: `${supabaseUrl}/storage/v1/:path*`, source: "/storage/v1/:path*" }];
   },
 
   async headers() {
@@ -436,6 +412,7 @@ const nextConfig: NextConfig = {
     }),
     remotePatterns: [
       { hostname: "cdn.rosegriffon.fr", protocol: "https" },
+      { hostname: "*.supabase.co", pathname: "/storage/v1/**", protocol: "https" },
       { hostname: "placehold.co", protocol: "https" },
       { hostname: "rosegriffon.fr", protocol: "https" },
       { hostname: "azalee.rosegriffon.fr", protocol: "https" },

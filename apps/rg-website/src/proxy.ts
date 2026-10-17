@@ -4,10 +4,7 @@ import type { NextRequest } from "next/server";
 
 const PROTECTED_PATHS = ["/dashboard", "/admin", "/profil/settings"];
 
-export async function middleware(request: NextRequest) {
-  // Le mode maintenance est servi par nginx (location @maintenance sur
-  // 502/503/504), pas par l'application : rien à vérifier ici.
-
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PATHS.some(p => pathname.startsWith(p));
   if (!isProtected) {

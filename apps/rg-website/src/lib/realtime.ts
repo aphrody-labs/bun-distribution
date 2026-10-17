@@ -1,11 +1,14 @@
 "use client";
 
-// Client de temps réel self-host — remplace `supabase.channel().on("postgres_changes")`.
+// Client de temps réel — Supabase Realtime (Broadcast).
 //
-// Le service rg-realtime (apps/realtime/server.ts) diffuse en SSE les
-// changements des tables munies du trigger `public.rg_realtime_notify()`
-// (comments, settings, profiles). Le flux est servi sur la même origine que
-// l'app, via nginx (`/realtime/v1/stream`) — donc aucune requête cross-origin.
+// Le trigger `public.rg_realtime_notify()` assainit chaque changement des
+// tables publiques (comments, settings, profiles, tables Discord) puis le
+// diffuse avec `realtime.send()` sur le topic public `rg:<table>`. Le
+// navigateur n'écoute donc jamais `postgres_changes` : seule la charge déjà
+// filtrée côté base quitte Postgres. Un canal est partagé par table et
+// distribué aux abonnés locaux, qui appliquent leur filtre `colonne=eq.valeur`.
+import { createSupabaseBrowserClient } from "@rosegriffon/db/browser";
 
 export type RealtimeEventType = "INSERT" | "UPDATE" | "DELETE";
 
@@ -15,7 +18,7 @@ export interface RealtimeEvent<T = Record<string, unknown>> {
   eventType: RealtimeEventType;
   new: T | null;
   old: T | null;
-  /** Charge utile trop grosse pour NOTIFY : seuls les identifiants sont fournis. */
+  /** Charge utile réduite (ligne privée ou trop grosse) : seuls les identifiants sont fournis. */
   truncated?: boolean;
 }
 
@@ -26,9 +29,46 @@ export interface SubscribeOptions {
   filter?: string;
 }
 
+type RealtimeChannel = ReturnType<ReturnType<typeof createSupabaseBrowserClient>["channel"]>;
+
+type Listener = (event: RealtimeEvent) => void;
+
+interface SharedChannel {
+  channel: RealtimeChannel;
+  listeners: Set<Listener>;
+}
+
+const channels = new Map<string, SharedChannel>();
+
+function parseFilter(raw: string | undefined): { column: string; value: string } | null {
+  if (!raw) return null;
+  const match = raw.match(/^([a-z0-9_]+)=eq\.(.*)$/i);
+  return match ? { column: match[1], value: match[2] } : null;
+}
+
+function topicOf(schema: string, table: string): string {
+  return schema === "public" ? `rg:${table}` : `rg:${schema}.${table}`;
+}
+
+function acquire(topic: string): SharedChannel {
+  const existing = channels.get(topic);
+  if (existing) return existing;
+  const listeners = new Set<Listener>();
+  const channel = createSupabaseBrowserClient()
+    .channel(topic, { config: { private: false } })
+    .on("broadcast", { event: "*" }, message => {
+      const event = message.payload as RealtimeEvent;
+      for (const listener of listeners) listener(event);
+    })
+    .subscribe();
+  const shared = { channel, listeners };
+  channels.set(topic, shared);
+  return shared;
+}
+
 /**
  * Ouvre un flux d'événements sur une table et renvoie la fonction de
- * désabonnement. La reconnexion est prise en charge par `EventSource`.
+ * désabonnement. La reconnexion est prise en charge par le client Realtime.
  */
 export function subscribeTable<T = Record<string, unknown>>(
   options: SubscribeOptions,
@@ -36,18 +76,25 @@ export function subscribeTable<T = Record<string, unknown>>(
 ): () => void {
   if (typeof window === "undefined") return () => {};
 
-  const params = new URLSearchParams({ table: options.table });
-  if (options.schema) params.set("schema", options.schema);
-  if (options.filter) params.set("filter", options.filter);
+  const schema = options.schema ?? "public";
+  const filter = parseFilter(options.filter);
+  const topic = topicOf(schema, options.table);
+  const shared = acquire(topic);
 
-  const source = new EventSource(`/realtime/v1/stream?${params.toString()}`);
-  source.onmessage = message => {
-    try {
-      onEvent(JSON.parse(message.data) as RealtimeEvent<T>);
-    } catch {
-      // message illisible — on ignore plutôt que de casser l'abonnement
+  const listener: Listener = event => {
+    if (event.table !== options.table || event.schema !== schema) return;
+    if (filter) {
+      const row = event.new ?? event.old;
+      if (String(row?.[filter.column] ?? "") !== filter.value) return;
     }
+    onEvent(event as RealtimeEvent<T>);
   };
+  shared.listeners.add(listener);
 
-  return () => source.close();
+  return () => {
+    shared.listeners.delete(listener);
+    if (shared.listeners.size > 0) return;
+    channels.delete(topic);
+    void createSupabaseBrowserClient().removeChannel(shared.channel);
+  };
 }

@@ -6,7 +6,6 @@ const keys = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_INTERNAL_URL",
   "SUPABASE_SECRET_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
@@ -44,7 +43,6 @@ test("the legacy gateway keeps its JWT contract and does not send a Cloud opaque
 
 test("opaque Cloud server keys are apikey headers while legacy JWTs retain their Bearer header", async () => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://fixture.supabase.co";
-  delete process.env.SUPABASE_INTERNAL_URL;
   process.env.SUPABASE_SECRET_KEY = "sb_secret_private_server_fixture";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "fixture.legacy.service";
   const fetch = spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));

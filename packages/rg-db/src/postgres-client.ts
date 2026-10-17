@@ -257,7 +257,7 @@ export function createPostgresClient(connectionString?: string) {
   const rg = () => createAchilleaSql<Database>(connectionString ? { url: connectionString } : {});
   const inagle = () => createInagleSql<Database>();
   const dbFor = (table: string) => (table.startsWith("inagle_") ? inagle() : rg());
-  const baseUrl = getSupabaseUrl(true).replace(/\/$/, "");
+  const baseUrl = getSupabaseUrl().replace(/\/$/, "");
   const serviceKey = getSupabaseServiceRoleKey();
   const headers = () => ({
     apikey: serviceKey ?? "",
