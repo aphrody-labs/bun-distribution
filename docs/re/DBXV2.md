@@ -1,0 +1,31 @@
+# DBXV2 reverse engineering (bun-re, WASM, FFI, Shenron)
+
+One capability merges four former owners:
+
+| Owner | Role now |
+|---|---|
+| `packages/dbxv2` (Python toolkit, submodule) | Reference implementation and format catalogue (`formats.json`, `DATA.md`, `docs/`). Kept for `serve`, `rag`/`llm`/`caption` (Gemini), `tools clone` and `setup`, which have no Rust port. |
+| `crates/re` (`bun-re`, feature `dbxv2`) | The port of every other Python pass: `bunre dbxv2 map|reverse|extract|tex|audio|text|models|parse|index|classify|search|stats|sav|report`, with the gameplay readers (BAC/BCM/BCS/BDM/BSA/EAN/EMM/ESK) ported from pyxenoverse offset for offset. |
+| `packages/re` (Bun fork of morluto/rea) + `packages/re/replica` | Binary-analysis tooling and the Replica skills; DBXV2 reuses it for the `reverse` pass only. |
+| Shenron (`packages/shenron-*`) | Consumer of the in-memory surface below. |
+
+## In-memory surface
+
+`bun_re::game::api` (features `dbxv2` or `wasm`) works on bytes only:
+
+- `identify(bytes, name)`: magic first, extension second, with the `formats.json` category.
+- `cpk_list` / `cpk_extract`: plain `CPK ` archives through the canonical `aphrody-nie-formats` reader (CRILAYLA decompressed).
+- `summarize(bytes, name)`: JSON for EMB, EMD (counts per part), ESK, CMS, CUS, PUP, MSG and the gameplay formats.
+- `audio_to_wav(bytes)` (feature `dbxv2`): HCA, ADX, AWB and embedded-AWB ACB to PCM16 WAV, one per subsong.
+
+## WebAssembly
+
+`wasm_identify_format`, `wasm_summarize`, `wasm_triage_cpk`, `wasm_extract_cpk_file` (feature `wasm`) and `wasm_audio_to_wav` (adds `dbxv2`) in `crates/re/src/game/wasm.rs`. Build with `wasm-pack build crates/re --target web --features wasm`. Typed loader: `loadDbxv2Wasm` in `@shenron/dbxv2`.
+
+## C ABI
+
+`crates/shenron-dbxv2` (cdylib + rlib) exports `shenron_dbxv2_{abi_version,version,last_error,buf_free,identify,cpk_list,cpk_extract,summarize,audio_to_wav}`. Results come back through an out buffer (`ptr`, `len`) freed with `shenron_dbxv2_buf_free`; status is 0, -1 (error, see `last_error`) or -2 (panic). Typed `bun:ffi` loader: `loadDbxv2Ffi` in `packages/shenron-dbxv2` (library from `SHENRON_DBXV2_LIB` or `target/{release,debug}`).
+
+## Not in scope
+
+EEPK/EMP effects, USM video demux in the in-memory surface (the file-based export already remuxes USM), IDB and quest formats are catalogued only: the Python toolkit never parsed them either. Game assets are never committed; the private dump on the VPS is read-only verification data.
