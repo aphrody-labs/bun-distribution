@@ -1,7 +1,7 @@
 import { dlopen, FFIType, ptr, toArrayBuffer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { CpkEntry, Dbxv2, FormatInfo, Summary } from "./types.ts";
+import type { CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
 
 /** ABI version this loader was written against (`shenron_dbxv2_abi_version`). */
 export const EXPECTED_ABI_VERSION = 1;
@@ -44,6 +44,28 @@ const symbols = {
     args: [FFIType.ptr, FFIType.u64, FFIType.ptr],
     returns: FFIType.i32,
   },
+  shenron_dbxv2_cpk_find_file: {
+    args: [FFIType.cstring, FFIType.cstring, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_cpk_read_file: {
+    args: [FFIType.cstring, FFIType.cstring, FFIType.u64, FFIType.u64, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_emb_to_png: {
+    args: [FFIType.ptr, FFIType.u64, FFIType.u32, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_model_json: {
+    args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_model_glb: {
+    args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_usm_to_video: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+  shenron_dbxv2_font_to_sfnt: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
 } as const;
 
 /** NUL-terminated UTF-8 argument for a `const char *` parameter. */
@@ -52,7 +74,7 @@ function cstr(value: string): Uint8Array {
 }
 
 /** Load the C ABI and return the typed operations. Throws on an ABI version mismatch. */
-export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & { close(): void } {
+export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & Dbxv2CpkFiles & { close(): void } {
   const library = dlopen(resolveLibraryPath(libraryPath), symbols);
   const native = library.symbols;
   const abi = native.shenron_dbxv2_abi_version();
@@ -77,7 +99,9 @@ export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & { close(): void } {
   }
 
   const json = <T>(bytes: Uint8Array): T => JSON.parse(new TextDecoder().decode(bytes)) as T;
-  const size = (bytes: Uint8Array) => BigInt(bytes.byteLength);
+  const size = (bytes?: Uint8Array) => BigInt(bytes?.byteLength ?? 0);
+  /** Optional input: a null pointer with length 0 when absent or empty. */
+  const opt = (bytes?: Uint8Array) => (bytes && bytes.byteLength > 0 ? ptr(bytes) : null);
 
   return {
     identify: (bytes, fileName = "") =>
@@ -106,6 +130,51 @@ export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 & { close(): void } {
       }
       return waves;
     },
+    cpkFind: (cpkPath, query = "") =>
+      json<IndexEntry[]>(
+        call(out => native.shenron_dbxv2_cpk_find_file(cstr(cpkPath) as never, cstr(query) as never, ptr(out))),
+      ),
+    cpkRead: (cpkPath, entry, range) =>
+      call(out =>
+        native.shenron_dbxv2_cpk_read_file(
+          cstr(cpkPath) as never,
+          cstr(entry) as never,
+          BigInt(range?.start ?? 0),
+          BigInt(range?.length ?? 0),
+          ptr(out),
+        ),
+      ),
+    embToPng: (bytes, index) => call(out => native.shenron_dbxv2_emb_to_png(ptr(bytes), size(bytes), index, ptr(out))),
+    modelJson: (name, emd, emb, esk) =>
+      json<ModelJson>(
+        call(out =>
+          native.shenron_dbxv2_model_json(
+            cstr(name) as never,
+            ptr(emd),
+            size(emd),
+            opt(emb),
+            size(emb),
+            opt(esk),
+            size(esk),
+            ptr(out),
+          ),
+        ),
+      ),
+    modelGlb: (name, emd, emb, esk) =>
+      call(out =>
+        native.shenron_dbxv2_model_glb(
+          cstr(name) as never,
+          ptr(emd),
+          size(emd),
+          opt(emb),
+          size(emb),
+          opt(esk),
+          size(esk),
+          ptr(out),
+        ),
+      ),
+    usmToVideo: bytes => call(out => native.shenron_dbxv2_usm_to_video(ptr(bytes), size(bytes), ptr(out))),
+    fontToSfnt: bytes => call(out => native.shenron_dbxv2_font_to_sfnt(ptr(bytes), size(bytes), ptr(out))),
     close: () => library.close(),
   };
 }
