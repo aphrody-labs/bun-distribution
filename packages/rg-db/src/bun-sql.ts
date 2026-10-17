@@ -27,14 +27,16 @@ export function createBunSql(options: BunSqlOptions = {}): SQL {
   const url = options.url ?? getDatabaseURL();
 
   const max = options.max ?? resolvePoolSize(Bun.env.DATABASE_POOL_MAX, { fallback: 4, ceiling: 4 });
-  // TLS and prepare stay with the URL and Bun's defaults (historical contract).
+  // TLS stays with the URL and Bun's defaults (historical contract). Prepared statements are turned off behind a
+  // transaction pooler (Supavisor 6543, PgBouncer): serverless functions reach Supabase through it, and a statement
+  // prepared on one backend does not exist on the next one.
   return createSql(url, {
     max,
     idleTimeout: options.idleTimeout ?? 30,
     maxLifetime: options.maxLifetime ?? 1_800,
     connectionTimeout: options.connectionTimeout ?? 10,
     tls: "inherit",
-    prepare: "inherit",
+    prepare: "auto",
   });
 }
 

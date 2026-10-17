@@ -13,6 +13,7 @@
     "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@rosegriffon/db": "workspace:*",
     "discord.js": "catalog:"
   },
   "engines": {
