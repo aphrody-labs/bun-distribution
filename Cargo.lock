@@ -8851,6 +8851,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "capture_harness"
+version = "1.4.4"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ctrlc",
+ "evdev",
+ "libc",
+ "nix 0.29.0",
+ "serde",
+ "serde_json",
+ "toml 1.1.8+spec-1.1.0",
+]
+
+[[package]]
 name = "cargo-mobile2"
 version = "0.22.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14372,6 +14387,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "evdev"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25b686663ba7f08d92880ff6ba22170f1df4e83629341cba34cf82cd65ebea99"
+dependencies = [
+ "bitvec",
+ "cfg-if 1.0.5",
+ "libc",
+ "nix 0.29.0",
 ]
 
 [[package]]

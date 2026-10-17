@@ -158,6 +158,7 @@ members = [
     "crates/artcraft_client_identity",
     "crates/artcraft_router",
     "crates/browser_emulation",
+    "crates/capture_harness",
     "crates/cadcraft-xtask",
     "crates/cloudflare_errors",
     "crates/cloudflare_mitigation",
